@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venjy's Fanpage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+        }
+
+        header {
+            background-color: #2d2d2d;
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 5px solid #4caf50;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: #4caf50;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .post {
+            background-color: #333;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #000;
+            text-align: center;
+        }
+
+        .post img {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 5px;
+        }
+
+        table {
+            margin: 2rem auto;
+            border-collapse: collapse;
+            width: 80%;
+            background-color: #2c2c2c;
+            border: 2px solid #4caf50;
+        }
+
+        th,
+        td {
+            border: 1px solid #4caf50;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: #000;
+        }
+
+        .gallery-header {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .gallery-header h3 {
+            font-size: 1.2rem;
+            color: #4caf50;
+        }
+
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .gallery img {
+            width: 250px;
+            border-radius: 10px;
+            border: 2px solid #4caf50;
+        }
+
+        footer {
+            background-color: #2d2d2d;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-top: 5px solid #4caf50;
+        }
+
+        footer a {
+            display: inline-block;
+            margin: 0.5rem;
+            color: #4caf50;
+            text-decoration: none;
+        }
+
+        footer p {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        @media (max-width: 600px) {
+
+            .post img,
+            .gallery img {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+    <!-- Le tuve que meter aqui cosas de css porque me daba un poco de pereza xd -->
+</head>
+
+<body>
+    <header>
+        <h1>Venjy's Stuff</h1>
+        <p>👾 Dev | Indie Creator | Cat Dad 🐾</p>
+    </header>
+
+    <section class="container">
+        <article class="post">
+            <h2>Dev in Software and Indie Games</h2>
+            <img src="Venjy.png" alt="Venjy photo">
+            <p>Hi! I'm Venjy, a Computer Engineering student from Chile, passionate about programming software and
+                games.</p>
+            <p>Currently in my second year, I'm building my skills in Python, C#, Java, and web development. I'm also
+                developing an indie game and offering computer maintenance services.</p>
+        </article>
+
+        <article class="post">
+            <h2>My Cats 🐱</h2>
+            <img src="MilayGala.jfif" alt="Mila and Gala">
+            <p>Cute :3</p>
+            <p>Miau miau miauiau miaaau miau miau!!</p>
+        </article>
+
+        <article class="post">
+            <h2>Galatea</h2>
+            <img src="Gala.jfif" alt="Galatea">
+            <p>3 years old :3</p>
+        </article>
+
+        <article class="post">
+            <h2>Mila</h2>
+            <img src="Mila.jpg" alt="Mila">
+            <p>Carey + fat = Mila</p>
+            <p>4 years old</p>
+        </article>
+    </section>
+
+    <table>
+        <tr>
+            <th>Venjy</th>
+            <th>Stats</th>
+        </tr>
+        <tr>
+            <td>Age</td>
+            <td>21</td>
+        </tr>
+        <tr>
+            <td>Real name</td>
+            <td>Benjamin</td>
+        </tr>
+        <tr>
+            <td>Height</td>
+            <td>6'0ft</td>
+        </tr>
+    </table>
+
+    <div class="gallery-header">
+        <h3>Best photos of my cats</h3>
+    </div>
+    <div class="gallery">
+        <!-- <img src="MilayGala2.jpg" alt="Image 1"> -->
+        <img src="Mila1.jfif" alt="Image 2">
+        <img src="Gala2.jfif" alt="Image 3">
+    </div>
+
+    <footer>
+        <section>
+            <a href="#">Back to top ⬆️</a>
+            <a href="mailto:benjaf243@gmail.com">Email me 💌</a>
+        </section>
+        <p>COPYRIGHT 2024 © Venjy</p>
+    </footer>
+</body>
+
+</html>
