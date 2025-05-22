@@ -71,7 +71,7 @@ header {
     text-align: center;
     padding: 2rem;
     background-color: #2d2d2d;
-    background-image: url(/images/MilayGala2.jpg);
+    background-image: url(MilayGala2.jpg);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -205,22 +205,30 @@ header p {
 }
 
 #about .post img {
-    width: 250px;
-    height: 250px;
-    object-fit: contain;
-    /* Cambiamos de 'cover' a 'contain' para evitar zoom */
+    width: 250px !important;
+    /* Tamaño fijo */
+    height: 250px !important;
+    /* Tamaño fijo */
+    min-width: 250px !important;
+    /* Bloquea tamaño mínimo */
+    max-width: 250px !important;
+    /* Bloquea tamaño máximo */
+    min-height: 250px !important;
+    /* Bloquea tamaño mínimo */
+    max-height: 250px !important;
+    /* Bloquea tamaño máximo */
+    object-fit: cover;
+    /* Recorte inteligente */
     object-position: center top;
+    /* Ajusta esto para tu cara */
     border-radius: 50%;
     border: 5px solid var(--primary-color);
     box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
-    aspect-ratio: 1/1;
     display: block;
-    background-color: #2A1F14;
-    /* Color de fondo para áreas no cubiertas */
-    max-width: 100%;
-    /* Limita el crecimiento en pantallas grandes */
-    transform: scale(1);
-    /* Fuerza escala original */
+    flex-shrink: 0;
+    /* Evita que se encoja */
+    background: #2A1F14;
+    /* Color de fondo */
 }
 
 #about .photo-container {
@@ -249,10 +257,12 @@ header p {
     }
 
     #about .post img {
-        width: 200px;
-        height: 200px;
-        object-position: center 25%;
-        /* Ajusta posición vertical en móvil */
+        width: 200px !important;
+        height: 200px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+        min-height: 200px !important;
+        max-height: 200px !important;
     }
 }
 
