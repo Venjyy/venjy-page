@@ -1,3 +1,17 @@
+const header = document.querySelector('.dynamic-header'); // Selecciona el header con la clase
+const images = ['images/MilayGala2.jpg', 'images/Galeriamila10.jfif', 'images/Cutes.gif']; // Lista de imágenes
+let currentIndex = 0;
+
+function changeBackground() {
+    if (header) {
+        header.style.backgroundImage = `url(${images[currentIndex]})`;
+        currentIndex = (currentIndex + 1) % images.length; // Cambia al siguiente índice
+    }
+}
+
+// Cambia la imagen cada 5 segundos
+setInterval(changeBackground, 5000);
+
 // Modal para imágenes
 const modal = document.getElementById("imageModal");
 const modalImg = document.getElementById("modalImage");
@@ -12,26 +26,26 @@ document.querySelectorAll('.gallery img').forEach(img => {
     }
 });
 
-//Cerrar modal
+// Cerrar modal
 span.onclick = function () {
     modal.style.display = "none";
 }
 
-//Cerrar al hacer click fuera
+// Cerrar al hacer click fuera
 modal.onclick = function (event) {
     if (event.target === modal) {
         modal.style.display = "none";
     }
 }
 
-//Cerrar con tecla ESC
+// Cerrar con tecla ESC
 document.addEventListener('keydown', function (event) {
     if (event.key === "Escape" && modal.style.display === "block") {
         modal.style.display = "none";
     }
 });
 
-//scroll suave para navegación interna
+// Scroll suave para navegación interna
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();

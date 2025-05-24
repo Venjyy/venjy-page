@@ -71,12 +71,29 @@ header {
     text-align: center;
     padding: 2rem;
     background-color: #2d2d2d;
-    background-image: url(MilayGala2.jpg);
+    background-image: url(images/MilayGala2.jpg);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     position: relative;
     margin-top: 60px;
+}
+
+.dynamic-header {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    margin-top: 60px;
+    transition: background-image 1s ease-out;
+    /* Transición suave */
 }
 
 header::before {
@@ -218,9 +235,9 @@ header p {
     max-height: 250px !important;
     /* Bloquea tamaño máximo */
     object-fit: cover;
-    /* Recorte inteligente */
+
     object-position: center top;
-    /* Ajusta esto para tu cara */
+
     border-radius: 50%;
     border: 5px solid var(--primary-color);
     box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
@@ -241,11 +258,22 @@ header p {
     border: 5px solid var(--primary-color);
 }
 
+@font-face {
+    font-family: 'PixelCraft';
+    src: url('font/pixelcraft.ttf') format('truetype');
+}
+
 #about .post-content {
     flex: 1;
 }
 
-
+.custom-font {
+    font-family: 'PixelCraft', sans-serif;
+    font-size: 48px;
+    /* Ajusta el tamaño si es necesario */
+    line-height: 1.2;
+    /* Mejora la legibilidad */
+}
 
 /* Versión móvil mejorada */
 @media (max-width: 768px) {
@@ -278,7 +306,11 @@ header p {
 }
 
 .skill-card li {
-    word-break: break-word;
+    font-family: 'PixelCraft', sans-serif;
+    font-size: 14px;
+    /* Ajusta el tamaño si es necesario */
+    line-height: 1.5;
+    /* Mejora la legibilidad */
 }
 
 /* Get in Touch - Igualar tamaño de cajas */
@@ -344,7 +376,6 @@ header p {
     }
 }
 
-/* --- FIN MODIFICACIONES --- */
 
 /* Tarjetas */
 .post,
@@ -410,6 +441,14 @@ header p {
     flex-grow: 1;
 }
 
+.project-info p {
+    font-family: 'PixelCraft', sans-serif;
+    font-size: 14px;
+    /* Ajusta el tamaño si es necesario */
+    line-height: 1.5;
+    /* Mejora la legibilidad */
+}
+
 .btn {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -439,6 +478,13 @@ header p {
     margin: 0.5rem 0;
     font-size: 1.2rem;
     color: var(--primary-color);
+}
+
+.post p {
+    font-family: 'PixelCraft', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    /* Mejora la legibilidad */
 }
 
 .post img {

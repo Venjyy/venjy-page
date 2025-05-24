@@ -3,35 +3,40 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Reserva espacios para eventos en Cañete. Salones, áreas al aire libre y servicios adicionales para tus celebraciones.">
+    <meta name="author" content="Centro de Eventos Cañete">
     <title>Centro de Eventos Cañete</title>
     <link rel="stylesheet" href="style.css">
     <script defer src="script.js"></script>
 </head>
 
 <body>
-
+    <!-- Encabezado -->
     <header>
         <div class="container header-content">
-            <div class="logo">Centro de Eventos Cañete</div>
-            <nav>
+            <div class="logo" aria-label="Centro de Eventos Cañete">Centro de Eventos Cañete</div>
+            <nav aria-label="Navegación principal">
                 <a href="#servicios">Servicios</a>
-                <a href="#reservas">Agendar</a>
+                <a href="#reservas">Reservas</a>
                 <a href="#conoce">Conócenos</a>
                 <a href="#contacto">Contacto</a>
             </nav>
         </div>
     </header>
 
+    <!-- Hero -->
     <section class="hero">
         <div class="overlay"></div>
         <div class="hero-content">
             <h1>Reserva tu evento ideal en Cañete</h1>
-            <p id="textoRotativo">Asegura tu lugar con nosotros</p>
+            <p id="textoRotativo" aria-live="polite">Asegura tu lugar con nosotros</p>
             <a href="#reservas" class="btn">Agendar ahora</a>
         </div>
     </section>
 
+    <!-- Servicios -->
     <section id="servicios" class="servicios container">
         <h2>Servicios que ofrecemos</h2>
         <div class="servicios-grid">
@@ -40,73 +45,77 @@
                 <p>Amplio salón de madera con capacidad para 100 personas.</p>
             </div>
             <div class="servicio-card">
-                <h3>Atencion inmediata</h3>
-                <p>Atencion personalizada para un evento inolvidable</p>
+                <h3>Atención personalizada</h3>
+                <p>Atención inmediata para un evento inolvidable.</p>
             </div>
             <div class="servicio-card">
                 <h3>Área al aire libre</h3>
-                <p>Jardines, quincho, y zona de juegos infantiles.</p>
+                <p>Jardines, quincho y zona de juegos infantiles.</p>
             </div>
         </div>
     </section>
 
+    <!-- Reservas -->
     <section id="reservas" class="reservas">
         <h2>Reserva tu fecha</h2>
-        <form id="formReserva" class="form">
+        <form id="formReserva" class="form" aria-labelledby="reservas">
             <label for="nombre">Nombre completo</label>
-            <input type="text" id="nombre" required>
+            <input type="text" id="nombre" name="nombre" required placeholder="Ej: Juan Pérez">
 
             <label for="rut">RUT</label>
-            <input type="text" id="rut" required placeholder="12.345.678-9">
+            <input type="text" id="rut" name="rut" required placeholder="12.345.678-9">
 
             <label for="correo">Correo electrónico</label>
-            <input type="email" id="correo" required placeholder="ejemplo@correo.com">
+            <input type="email" id="correo" name="correo" required placeholder="ejemplo@correo.com">
 
             <label for="contacto">Número de contacto</label>
-            <input type="tel" id="contacto" required placeholder="+56 9 1234 5678">
+            <input type="tel" id="contacto" name="contacto" required placeholder="+56 9 1234 5678">
 
             <label for="fecha">Fecha del evento</label>
-            <input type="date" id="fecha" required>
+            <input type="date" id="fecha" name="fecha" required>
 
             <label for="horario">Horario</label>
-            <select id="horario" required>
+            <select id="horario" name="horario" required>
                 <option value="">Seleccione un horario</option>
                 <option value="08:00">08:00 AM</option>
                 <option value="09:00">09:00 AM</option>
                 <option value="10:00">10:00 AM</option>
                 <option value="11:00">11:00 AM</option>
                 <option value="12:00">12:00 PM</option>
-                <option value="13:00">13:00 PM</option>
-                <option value="14:00">14:00 PM</option>
-                <option value="15:00">15:00 PM</option>
-                <option value="16:00">16:00 PM</option>
-                <option value="17:00">17:00 PM</option>
-                <option value="18:00">18:00 PM</option>
-                <option value="19:00">19:00 PM</option>
-                <option value="20:00">20:00 PM</option>
-                <option value="21:00">21:00 PM</option>
+                <option value="13:00">01:00 PM</option>
+                <option value="14:00">02:00 PM</option>
+                <option value="15:00">03:00 PM</option>
+                <option value="16:00">04:00 PM</option>
+                <option value="17:00">05:00 PM</option>
+                <option value="18:00">06:00 PM</option>
+                <option value="19:00">07:00 PM</option>
+                <option value="20:00">08:00 PM</option>
+                <option value="21:00">09:00 PM</option>
             </select>
 
             <label for="personas">Cantidad de personas</label>
-            <input type="number" id="personas" min="1" max="100" required>
+            <input type="number" id="personas" name="personas" min="1" max="100" required placeholder="Ej: 50">
 
-            <label for="razon">Ingrese razón del evento</label>
-            <textarea id="razon" rows="3" required placeholder="Ej: Cumpleaños, matrimonio, reunión, etc."></textarea>
+            <label for="razon">Razón del evento</label>
+            <textarea id="razon" name="razon" rows="3" required
+                placeholder="Ej: Cumpleaños, matrimonio, reunión, etc."></textarea>
 
             <button type="submit" class="btn">Reservar ahora</button>
         </form>
     </section>
 
+    <!-- Conócenos -->
     <section id="conoce" class="servicios container">
         <h2>Conoce el lugar</h2>
         <div class="galeria-grid">
-            <img src="fotoref.png" alt="Jardín">
-            <img src="saloninterior.jpg" alt="Salón de eventos">
-            <img src="cocina.jfif" alt="Área de cocina">
-            <img src="fotoref.png" alt="Terraza">
+            <img src="fotoref.png" alt="Vista del jardín">
+            <img src="saloninterior.jpg" alt="Interior del salón de eventos">
+            <img src="cocina.jfif" alt="Área de cocina equipada">
+            <img src="fotoref.png" alt="Terraza al aire libre">
         </div>
     </section>
 
+    <!-- Datos de interés -->
     <section class="datos-interes container">
         <h2>Datos de interés</h2>
         <ul>
@@ -118,24 +127,17 @@
         </ul>
     </section>
 
-    <section class="datos-interes container">
-        <h2>Más información del sitio</h2>
-        <p>El Centro de Eventos Cañete está diseñado para brindar un espacio acogedor, natural y seguro para
-            celebraciones familiares, eventos sociales y reuniones al aire libre. Nuestro recinto está inspirado en la
-            cultura local, utilizando madera nativa y rodeado de flora autóctona. La cercanía a la cultura mapuche y los
-            paisajes verdes sureños lo convierten en un lugar único para disfrutar y celebrar.</p>
-    </section>
-
+    <!-- Contacto -->
     <section id="contacto" class="contacto">
         <h2>Contacto</h2>
         <p>Para más información, llámanos al <a href="tel:+56912345678">+56 9 1234 5678</a> o escríbenos a <a
                 href="mailto:contacto@eventoscanete.cl">contacto@eventoscanete.cl</a>.</p>
     </section>
 
+    <!-- Pie de página -->
     <footer>
         <p>&copy; 2025 Centro de Eventos Cañete. Todos los derechos reservados.</p>
     </footer>
-
 </body>
 
 </html>

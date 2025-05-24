@@ -24,9 +24,9 @@ function inicializarAplicacion() {
     configurarFormulario();
     configurarNavegacionSuave();
     configurarGaleria();
-    configurarAnimacionesScroll();
     configurarValidacionRUT();
     configurarFechaMinima();
+    configurarAnimacionesScroll(); // Esta línea debe ir al final
 }
 
 // === TEXTO ROTATIVO EN HERO ===
@@ -351,16 +351,86 @@ function configurarGaleria() {
     // Aquí podrías agregar lógica para una galería interactiva si lo deseas
 }
 
-// === ANIMACIONES AL HACER SCROLL (opcional, ejemplo simple) ===
+// === ANIMACIONES AL HACER SCROLL (mejorada con efectos y delays) ===
 function configurarAnimacionesScroll() {
-    const secciones = document.querySelectorAll('section, .servicio-card');
-    const mostrarSeccion = (entrada) => {
-        entrada.forEach(e => {
-            if (e.isIntersecting) {
-                e.target.classList.add('visible');
+    const elementosAnimables = document.querySelectorAll(
+        'section, .servicio-card, .form, .galeria-grid img, .datos-interes ul li, h2, h3, p'
+    );
+
+    // Ocultar todos los elementos animables al inicio
+    elementosAnimables.forEach(el => {
+        el.classList.add('hidden');
+
+        // Asignar diferentes efectos según el tipo de elemento
+        if (el.classList.contains('servicio-card')) {
+            el.classList.add('scale-in');
+        } else if (el.classList.contains('form')) {
+            el.classList.add('scale-in');
+        } else if (el.classList.contains('galeria-grid')) {
+            // No aplicar a la grid, solo a las imágenes
+        } else if (el.tagName === 'H2') {
+            el.classList.add('slide-up');
+        } else if (el.tagName === 'H3') {
+            el.classList.add('slide-right');
+        } else if (el.tagName === 'P') {
+            el.classList.add('slide-left');
+        } else {
+            el.classList.add('fade-in');
+        }
+    });
+
+    // Animar el hero inmediatamente (sin ocultarlo)
+    const heroContent = document.querySelector('.hero-content');
+    if (heroContent) {
+        heroContent.classList.remove('hidden');
+        heroContent.style.opacity = '1';
+        heroContent.style.transform = 'none';
+        heroContent.classList.add('animated');
+    }
+
+    // Configurar el Intersection Observer
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const element = entry.target;
+
+                // Si es el formulario, añade clase especial
+                if (element.classList.contains('form')) {
+                    element.classList.add('animated');
+                }
+
+                // Quitar clase hidden y añadir animate
+                element.classList.remove('hidden');
+                element.classList.add('animate');
+
+                // Para elementos en listas (como servicios), añadir delays
+                if (element.parentElement && element.parentElement.classList.contains('servicios-grid')) {
+                    const index = Array.from(element.parentElement.children).indexOf(element);
+                    element.classList.add(`delay-${index % 3}`);
+                }
+
+                // Para imágenes en galería
+                if (element.parentElement && element.parentElement.classList.contains('galeria-grid')) {
+                    const index = Array.from(element.parentElement.children).indexOf(element);
+                    element.classList.add(`delay-${index % 4}`);
+                }
+
+                // Para elementos de lista
+                if (element.parentElement && element.parentElement.tagName === 'UL') {
+                    const index = Array.from(element.parentElement.children).indexOf(element);
+                    element.classList.add(`delay-${index % 3}`);
+                }
             }
         });
-    };
-    const observer = new IntersectionObserver(mostrarSeccion, { threshold: 0.1 });
-    secciones.forEach(sec => observer.observe(sec));
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    });
+
+    // Observar todos los elementos animables (excepto hero-content)
+    elementosAnimables.forEach(el => {
+        if (!el.classList.contains('hero-content')) {
+            observer.observe(el);
+        }
+    });
 }
