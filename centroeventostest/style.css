@@ -199,6 +199,19 @@ nav a:hover {
     box-shadow: 0 12px 35px rgba(200, 134, 13, 0.4);
 }
 
+.btn-admin {
+    background-color: #007BFF;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn-admin:hover {
+    background-color: #0056b3;
+}
+
 /* Servicios */
 .servicios {
     padding: 100px 0;

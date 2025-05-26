@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backoffice - Centro de Eventos</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
+                <span class="logo-text">Centro Eventos</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active">
+                    <a href="#">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-users"></i>
+                        <span class="menu-text">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-building"></i>
+                        <span class="menu-text">Espacios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span class="menu-text">Servicios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="menu-text">Reservas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Pagos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="menu-text">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="Usuario" class="user-avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="toggle-sidebar" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <h1 class="page-title">Panel de Administración</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar...">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="cards-container">
+                    <div class="card">
+                        <div class="card-icon bg-green-1">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Clientes</h3>
+                            <p>124 Registrados</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon bg-green-2">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Espacios</h3>
+                            <p>8 Disponibles</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon bg-green-3">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Reservas</h3>
+                            <p>32 Activas</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon bg-green-4">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Ingresos</h3>
+                            <p>$4,250,000</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tables-container">
+                    <div class="recent-reservations">
+                        <h2>Reservas Recientes</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Espacio</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#125</td>
+                                    <td>Juan Pérez</td>
+                                    <td>Sala Principal</td>
+                                    <td>25-05-2025</td>
+                                    <td><span class="status confirmed">Confirmada</span></td>
+                                    <td>
+                                        <button class="action-btn view"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#124</td>
+                                    <td>María González</td>
+                                    <td>Terraza</td>
+                                    <td>28-05-2025</td>
+                                    <td><span class="status pending">Pendiente</span></td>
+                                    <td>
+                                        <button class="action-btn view"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#123</td>
+                                    <td>Carlos Rojas</td>
+                                    <td>Sala Pequeña</td>
+                                    <td>30-05-2025</td>
+                                    <td><span class="status confirmed">Confirmada</span></td>
+                                    <td>
+                                        <button class="action-btn view"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#122</td>
+                                    <td>Ana Silva</td>
+                                    <td>Jardín</td>
+                                    <td>01-06-2025</td>
+                                    <td><span class="status cancelled">Cancelada</span></td>
+                                    <td>
+                                        <button class="action-btn view"><i class="fas fa-eye"></i></button>
+                                        <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h2>Acciones Rápidas</h2>
+                        <div class="actions-grid">
+                            <button class="action-button">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Nuevo Cliente</span>
+                            </button>
+                            <button class="action-button">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Nueva Reserva</span>
+                            </button>
+                            <button class="action-button">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>Registrar Pago</span>
+                            </button>
+                            <button class="action-button">
+                                <i class="fas fa-print"></i>
+                                <span>Generar Reporte</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+
+</html>
