@@ -87,7 +87,7 @@ if (contactForm) {
         const message = this.querySelector('textarea').value;
 
         if (name && email && message) {
-            alert('Message sent! Thank you for contacting me.');
+            alert('This button doesnt work due to GitHub page limitations. If youd like to contact me, please contact me on LinkedIn.');
             this.reset();
         } else {
             alert('Please fill in all fields.');
