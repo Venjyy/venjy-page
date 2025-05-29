@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios - Centro de Eventos</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
+                <span class="logo-text">Centro Eventos</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="index.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="clientes.html">
+                        <i class="fas fa-users"></i>
+                        <span class="menu-text">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="espacios.html">
+                        <i class="fas fa-building"></i>
+                        <span class="menu-text">Espacios</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="servicios.html">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span class="menu-text">Servicios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reservas.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="menu-text">Reservas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="pagos.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Pagos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reportes.html">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="menu-text">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="Usuario" class="user-avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="toggle-sidebar" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <h1 class="page-title">Gestión de Servicios</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar servicios..." id="searchServicios">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <!-- Contenido principal de la página de servicios -->
+            <div class="content-section">
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="btnAgregarServicio">
+                        <i class="fas fa-plus"></i> Nuevo Servicio
+                    </button>
+                    <div class="filter-options">
+                        <select id="filterCategoria">
+                            <option value="">Categoría (Todas)</option>
+                            <option value="entretenimiento">Entretenimiento</option>
+                            <option value="decoracion">Decoración</option>
+                            <option value="gastronomia">Gastronomía</option>
+                            <option value="tecnologia">Tecnología</option>
+                        </select>
+                        <select id="filterDisponibilidad">
+                            <option value="">Disponibilidad (Todos)</option>
+                            <option value="disponible">Disponible</option>
+                            <option value="nodisponible">No disponible</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Costo</th>
+                                <th>Disponibilidad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serviciosTableBody">
+                            <tr>
+                                <td>S001</td>
+                                <td>Pintacaritas</td>
+                                <td>Entretenimiento</td>
+                                <td>$80.000</td>
+                                <td><span class="status-badge available">Disponible</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>S002</td>
+                                <td>Cama Saltarina</td>
+                                <td>Entretenimiento</td>
+                                <td>$120.000</td>
+                                <td><span class="status-badge available">Disponible</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>S003</td>
+                                <td>Cuatrimotos</td>
+                                <td>Entretenimiento</td>
+                                <td>$200.000</td>
+                                <td><span class="status-badge maintenance">No disponible</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>S004</td>
+                                <td>Servicio de Catering</td>
+                                <td>Gastronomía</td>
+                                <td>$150.000</td>
+                                <td><span class="status-badge available">Disponible</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>S005</td>
+                                <td>Decoración Temática</td>
+                                <td>Decoración</td>
+                                <td>$180.000</td>
+                                <td><span class="status-badge available">Disponible</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button class="btn-page"><i class="fas fa-angle-double-left"></i></button>
+                    <button class="btn-page"><i class="fas fa-angle-left"></i></button>
+                    <button class="btn-page active">1</button>
+                    <button class="btn-page">2</button>
+                    <button class="btn-page">3</button>
+                    <button class="btn-page"><i class="fas fa-angle-right"></i></button>
+                    <button class="btn-page"><i class="fas fa-angle-double-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar servicio -->
+    <div class="modal" id="servicioModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Agregar Nuevo Servicio</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="servicioForm">
+                    <div class="form-group">
+                        <label for="nombreServicio">Nombre del Servicio</label>
+                        <input type="text" id="nombreServicio" name="nombreServicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoriaServicio">Categoría</label>
+                        <select id="categoriaServicio" name="categoriaServicio" required>
+                            <option value="entretenimiento">Entretenimiento</option>
+                            <option value="decoracion">Decoración</option>
+                            <option value="gastronomia">Gastronomía</option>
+                            <option value="tecnologia">Tecnología</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="costoServicio">Costo ($)</label>
+                        <input type="number" id="costoServicio" name="costoServicio" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="disponibilidadServicio">Disponibilidad</label>
+                        <select id="disponibilidadServicio" name="disponibilidadServicio" required>
+                            <option value="disponible">Disponible</option>
+                            <option value="nodisponible">No disponible</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcionServicio">Descripción</label>
+                        <textarea id="descripcionServicio" name="descripcionServicio" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="imagenesServicio">Imágenes</label>
+                        <input type="file" id="imagenesServicio" name="imagenesServicio" multiple accept="image/*">
+                        <div class="image-preview" id="imagePreview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="duracionServicio">Duración (horas)</label>
+                        <input type="number" id="duracionServicio" name="duracionServicio" min="1" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Restricciones/Requisitos</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="requisitos" value="edad"> Restricción de edad</label>
+                            <label><input type="checkbox" name="requisitos" value="espacio"> Requiere espacio
+                                amplio</label>
+                            <label><input type="checkbox" name="requisitos" value="electricidad"> Requiere
+                                electricidad</label>
+                            <label><input type="checkbox" name="requisitos" value="personal"> Incluye personal</label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="btnCancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación para eliminar -->
+    <div class="modal" id="confirmDeleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar eliminación</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea eliminar este servicio? Esta acción no se puede deshacer.</p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarEliminar">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+    <script src="servicios.js"></script>
+</body>
+
+</html>
