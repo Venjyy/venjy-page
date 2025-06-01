@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - Centro de Eventos</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
+                <span class="logo-text">Centro Eventos</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="index.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="clientes.html">
+                        <i class="fas fa-users"></i>
+                        <span class="menu-text">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="espacios.html">
+                        <i class="fas fa-building"></i>
+                        <span class="menu-text">Espacios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="servicios.html">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span class="menu-text">Servicios</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="reservas.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="menu-text">Reservas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="pagos.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Pagos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reportes.html">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="menu-text">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="Usuario" class="user-avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="toggle-sidebar" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <h1 class="page-title">Gestión de Reservas</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar reservas..." id="searchReservas">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <!-- Contenido principal de la página de reservas -->
+            <div class="content-section">
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="btnAgregarReserva">
+                        <i class="fas fa-plus"></i> Nueva Reserva
+                    </button>
+                    <div class="filter-options">
+                        <input type="date" id="filterFecha" class="date-filter">
+                        <select id="filterEstado">
+                            <option value="">Estado (Todos)</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="confirmada">Confirmada</option>
+                            <option value="cancelada">Cancelada</option>
+                            <option value="finalizada">Finalizada</option>
+                        </select>
+                        <select id="filterEspacio">
+                            <option value="">Espacio (Todos)</option>
+                            <option value="salon-principal">Salón Principal</option>
+                            <option value="salon-terraza">Salón Terraza</option>
+                            <option value="sala-vip">Sala VIP</option>
+                            <option value="jardin-central">Jardín Central</option>
+                            <option value="salon-conferencias">Salón Conferencias</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Espacio</th>
+                                <th>Fecha</th>
+                                <th>Horario</th>
+                                <th>Estado</th>
+                                <th>Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservasTableBody">
+                            <tr>
+                                <td>RES001</td>
+                                <td>Ana María Rodríguez</td>
+                                <td>Salón Principal</td>
+                                <td>12/06/2025</td>
+                                <td>18:00 - 23:00</td>
+                                <td><span class="status-badge confirmed">Confirmada</span></td>
+                                <td>$450.000</td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Cancelar">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RES002</td>
+                                <td>Carlos Sánchez</td>
+                                <td>Jardín Central</td>
+                                <td>15/06/2025</td>
+                                <td>10:00 - 15:00</td>
+                                <td><span class="status-badge pending">Pendiente</span></td>
+                                <td>$320.000</td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Cancelar">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RES003</td>
+                                <td>Empresa Tecnova</td>
+                                <td>Salón Conferencias</td>
+                                <td>20/06/2025</td>
+                                <td>09:00 - 18:00</td>
+                                <td><span class="status-badge confirmed">Confirmada</span></td>
+                                <td>$380.000</td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Cancelar">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RES004</td>
+                                <td>Julia Méndez</td>
+                                <td>Salón Terraza</td>
+                                <td>22/06/2025</td>
+                                <td>19:00 - 23:30</td>
+                                <td><span class="status-badge canceled">Cancelada</span></td>
+                                <td>$230.000</td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Restaurar">
+                                        <i class="fas fa-undo-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RES005</td>
+                                <td>Roberto Pérez</td>
+                                <td>Sala VIP</td>
+                                <td>25/06/2025</td>
+                                <td>14:00 - 17:00</td>
+                                <td><span class="status-badge confirmed">Confirmada</span></td>
+                                <td>$150.000</td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Cancelar">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button class="btn-page"><i class="fas fa-angle-double-left"></i></button>
+                    <button class="btn-page"><i class="fas fa-angle-left"></i></button>
+                    <button class="btn-page active">1</button>
+                    <button class="btn-page">2</button>
+                    <button class="btn-page">3</button>
+                    <button class="btn-page"><i class="fas fa-angle-right"></i></button>
+                    <button class="btn-page"><i class="fas fa-angle-double-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar reserva -->
+    <div class="modal" id="reservaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Agregar Nueva Reserva</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="reservaForm">
+                    <div class="form-group">
+                        <label for="clienteReserva">Cliente</label>
+                        <select id="clienteReserva" name="clienteReserva" required>
+                            <option value="">Seleccione un cliente</option>
+                            <option value="1">Ana María Rodríguez</option>
+                            <option value="2">Carlos Sánchez</option>
+                            <option value="3">Empresa Tecnova</option>
+                            <option value="4">Julia Méndez</option>
+                            <option value="5">Roberto Pérez</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="espacioReserva">Espacio</label>
+                        <select id="espacioReserva" name="espacioReserva" required>
+                            <option value="">Seleccione un espacio</option>
+                            <option value="1">Salón Principal</option>
+                            <option value="2">Salón Terraza</option>
+                            <option value="3">Sala VIP</option>
+                            <option value="4">Jardín Central</option>
+                            <option value="5">Salón Conferencias</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="fechaReserva">Fecha</label>
+                            <input type="date" id="fechaReserva" name="fechaReserva" required>
+                        </div>
+                        <div class="form-group half">
+                            <label for="tipoEvento">Tipo de Evento</label>
+                            <select id="tipoEvento" name="tipoEvento" required>
+                                <option value="">Seleccione tipo</option>
+                                <option value="boda">Boda</option>
+                                <option value="corporativo">Evento Corporativo</option>
+                                <option value="cumpleanos">Cumpleaños</option>
+                                <option value="conferencia">Conferencia</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="horaInicio">Hora de Inicio</label>
+                            <input type="time" id="horaInicio" name="horaInicio" required>
+                        </div>
+                        <div class="form-group half">
+                            <label for="horaFin">Hora de Finalización</label>
+                            <input type="time" id="horaFin" name="horaFin" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cantidadPersonas">Cantidad de Personas</label>
+                        <input type="number" id="cantidadPersonas" name="cantidadPersonas" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="estadoReserva">Estado</label>
+                        <select id="estadoReserva" name="estadoReserva" required>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="confirmada">Confirmada</option>
+                            <option value="cancelada">Cancelada</option>
+                            <option value="finalizada">Finalizada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Servicios Adicionales</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="servicios" value="catering"> Catering</label>
+                            <label><input type="checkbox" name="servicios" value="decoracion"> Decoración</label>
+                            <label><input type="checkbox" name="servicios" value="musica"> Música/DJ</label>
+                            <label><input type="checkbox" name="servicios" value="meseros"> Meseros</label>
+                            <label><input type="checkbox" name="servicios" value="fotografia"> Fotografía</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="observacionesReserva">Observaciones</label>
+                        <textarea id="observacionesReserva" name="observacionesReserva" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="montoTotal">Monto Total ($)</label>
+                            <input type="number" id="montoTotal" name="montoTotal" required min="0">
+                        </div>
+                        <div class="form-group half">
+                            <label for="adelanto">Adelanto ($)</label>
+                            <input type="number" id="adelanto" name="adelanto" min="0">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="btnCancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación para cancelar reserva -->
+    <div class="modal" id="confirmCancelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar cancelación</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea cancelar esta reserva? Esta acción puede generar cargos según la política de
+                    cancelación.</p>
+                <div class="form-group">
+                    <label for="motivoCancelacion">Motivo de cancelación</label>
+                    <textarea id="motivoCancelacion" name="motivoCancelacion" rows="2" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarAccion">Volver</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarCancelacion">Confirmar
+                        Cancelación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+    <script src="reservas.js"></script>
+</body>
+
+</html>

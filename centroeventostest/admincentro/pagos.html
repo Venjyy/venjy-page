@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos - Centro de Eventos</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
+                <span class="logo-text">Centro Eventos</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="index.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="clientes.html">
+                        <i class="fas fa-users"></i>
+                        <span class="menu-text">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="espacios.html">
+                        <i class="fas fa-building"></i>
+                        <span class="menu-text">Espacios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="servicios.html">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span class="menu-text">Servicios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reservas.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="menu-text">Reservas</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="pagos.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Pagos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reportes.html">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="menu-text">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="Usuario" class="user-avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="toggle-sidebar" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <h1 class="page-title">Gestión de Pagos</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar pagos..." id="searchPagos">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <!-- Contenido principal de la página de pagos -->
+            <div class="content-section">
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="btnRegistrarPago">
+                        <i class="fas fa-plus"></i> Registrar Nuevo Pago
+                    </button>
+                    <div class="filter-options">
+                        <input type="date" id="filterFecha" class="date-filter">
+                        <select id="filterEstado">
+                            <option value="">Estado (Todos)</option>
+                            <option value="completado">Completado</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="rechazado">Rechazado</option>
+                            <option value="reembolsado">Reembolsado</option>
+                        </select>
+                        <select id="filterMetodo">
+                            <option value="">Método de Pago (Todos)</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta de Crédito</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="digital">Pago Digital</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Pago</th>
+                                <th>ID Reserva</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Método</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pagosTableBody">
+                            <tr>
+                                <td>PAG001</td>
+                                <td>RES001</td>
+                                <td>Ana María Rodríguez</td>
+                                <td>05/05/2025</td>
+                                <td>Transferencia</td>
+                                <td>Adelanto</td>
+                                <td>$150.000</td>
+                                <td><span class="status-badge confirmed">Completado</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Imprimir">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PAG002</td>
+                                <td>RES003</td>
+                                <td>Empresa Tecnova</td>
+                                <td>06/05/2025</td>
+                                <td>Tarjeta Crédito</td>
+                                <td>Completo</td>
+                                <td>$380.000</td>
+                                <td><span class="status-badge confirmed">Completado</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Imprimir">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PAG003</td>
+                                <td>RES002</td>
+                                <td>Carlos Sánchez</td>
+                                <td>08/05/2025</td>
+                                <td>Efectivo</td>
+                                <td>Adelanto</td>
+                                <td>$100.000</td>
+                                <td><span class="status-badge confirmed">Completado</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Imprimir">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PAG004</td>
+                                <td>RES005</td>
+                                <td>Roberto Pérez</td>
+                                <td>10/05/2025</td>
+                                <td>Transferencia</td>
+                                <td>Adelanto</td>
+                                <td>$75.000</td>
+                                <td><span class="status-badge confirmed">Completado</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Imprimir">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PAG005</td>
+                                <td>RES004</td>
+                                <td>Julia Méndez</td>
+                                <td>11/05/2025</td>
+                                <td>Tarjeta Crédito</td>
+                                <td>Adelanto</td>
+                                <td>$90.000</td>
+                                <td><span class="status-badge canceled">Reembolsado</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Imprimir">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PAG006</td>
+                                <td>RES002</td>
+                                <td>Carlos Sánchez</td>
+                                <td>15/05/2025</td>
+                                <td>Transferencia</td>
+                                <td>Saldo</td>
+                                <td>$220.000</td>
+                                <td><span class="status-badge pending">Pendiente</span></td>
+                                <td class="actions-cell">
+                                    <button class="btn-icon" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Cancelar">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button class="btn-page"><i class="fas fa-angle-double-left"></i></button>
+                    <button class="btn-page"><i class="fas fa-angle-left"></i></button>
+                    <button class="btn-page active">1</button>
+                    <button class="btn-page">2</button>
+                    <button class="btn-page">3</button>
+                    <button class="btn-page"><i class="fas fa-angle-right"></i></button>
+                    <button class="btn-page"><i class="fas fa-angle-double-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registrar/editar pago -->
+    <div class="modal" id="pagoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Registrar Nuevo Pago</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="pagoForm">
+                    <div class="form-group">
+                        <label for="reservaId">Reserva Asociada</label>
+                        <select id="reservaId" name="reservaId" required>
+                            <option value="">Seleccione una reserva</option>
+                            <option value="RES001">RES001 - Ana María Rodríguez (12/06/2025)</option>
+                            <option value="RES002">RES002 - Carlos Sánchez (15/06/2025)</option>
+                            <option value="RES003">RES003 - Empresa Tecnova (20/06/2025)</option>
+                            <option value="RES005">RES005 - Roberto Pérez (25/06/2025)</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="fechaPago">Fecha de Pago</label>
+                            <input type="date" id="fechaPago" name="fechaPago" required>
+                        </div>
+                        <div class="form-group half">
+                            <label for="tipoPago">Tipo de Pago</label>
+                            <select id="tipoPago" name="tipoPago" required>
+                                <option value="">Seleccione tipo</option>
+                                <option value="adelanto">Adelanto</option>
+                                <option value="saldo">Saldo</option>
+                                <option value="completo">Pago Completo</option>
+                                <option value="adicional">Cargo Adicional</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="metodoPago">Método de Pago</label>
+                            <select id="metodoPago" name="metodoPago" required>
+                                <option value="">Seleccione método</option>
+                                <option value="transferencia">Transferencia Bancaria</option>
+                                <option value="tarjeta">Tarjeta de Crédito</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="digital">Pago Digital</option>
+                            </select>
+                        </div>
+                        <div class="form-group half">
+                            <label for="estadoPago">Estado del Pago</label>
+                            <select id="estadoPago" name="estadoPago" required>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="completado">Completado</option>
+                                <option value="rechazado">Rechazado</option>
+                                <option value="reembolsado">Reembolsado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="comprobantePago">Comprobante de Pago</label>
+                        <input type="file" id="comprobantePago" name="comprobantePago">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="montoTotal">Monto Total Reserva ($)</label>
+                            <input type="number" id="montoTotal" name="montoTotal" readonly>
+                        </div>
+                        <div class="form-group half">
+                            <label for="montoPagado">Monto Pagado ($)</label>
+                            <input type="number" id="montoPagado" name="montoPagado" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="montoPendiente">Monto Pendiente ($)</label>
+                            <input type="number" id="montoPendiente" name="montoPendiente" readonly>
+                        </div>
+                        <div class="form-group half">
+                            <label for="montoPago">Monto de este Pago ($)</label>
+                            <input type="number" id="montoPago" name="montoPago" required min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="observacionesPago">Observaciones</label>
+                        <textarea id="observacionesPago" name="observacionesPago" rows="3"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="btnCancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuardar">Registrar Pago</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación para anular pago -->
+    <div class="modal" id="confirmCancelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar anulación de pago</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea anular este pago? Esta acción puede requerir aprobación según las políticas de
+                    la empresa.</p>
+                <div class="form-group">
+                    <label for="motivoAnulacion">Motivo de anulación</label>
+                    <textarea id="motivoAnulacion" name="motivoAnulacion" rows="2" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarAccion">Volver</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarAnulacion">Confirmar Anulación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+    <script src="pagos.js"></script>
+</body>
+
+</html>

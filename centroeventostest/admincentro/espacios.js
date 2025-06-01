@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
         button.parentElement.addEventListener('click', function () {
             document.getElementById('modalTitle').textContent = 'Editar Espacio';
             // Aquí cargarías los datos del espacio a editar
+
             espacioModal.classList.add('show');
         });
     });
