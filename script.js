@@ -94,3 +94,41 @@ if (contactForm) {
         }
     });
 }
+// Animación de máquina de escribir
+const typewriterElement = document.getElementById('typewriter');
+const texts = ['Full Stack Dev', 'Indie Creator', 'Student'];
+let currentTextIndex = 0;
+let currentCharIndex = 0;
+let isDeleting = false;
+
+function typeWriter() {
+    const currentText = texts[currentTextIndex];
+
+    if (isDeleting) {
+        // Borrar caracteres
+        typewriterElement.textContent = currentText.substring(0, currentCharIndex - 1);
+        currentCharIndex--;
+
+        if (currentCharIndex === 0) {
+            isDeleting = false;
+            currentTextIndex = (currentTextIndex + 1) % texts.length;
+            setTimeout(typeWriter, 500); // Pausa antes de escribir el siguiente texto
+        } else {
+            setTimeout(typeWriter, 50); // Velocidad de borrado más rápida
+        }
+    } else {
+        // Escribir caracteres
+        typewriterElement.textContent = currentText.substring(0, currentCharIndex + 1);
+        currentCharIndex++;
+
+        if (currentCharIndex === currentText.length) {
+            isDeleting = true;
+            setTimeout(typeWriter, 2000); // Pausa antes de empezar a borrar
+        } else {
+            setTimeout(typeWriter, 100); // Velocidad de escritura
+        }
+    }
+}
+
+// Iniciar la animación después de un pequeño delay
+setTimeout(typeWriter, 1000);
