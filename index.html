@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venjy | Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Barra de navegación -->
+    <nav id="navbar">
+        <ul>
+            <li><a href="#home" data-en="Home" data-es="Inicio">Home</a></li>
+            <li><a href="#about" data-en="About" data-es="Sobre Mí">About</a></li>
+            <li><a href="#experience" data-en="Experience" data-es="Experiencia">Experience</a></li>
+            <li><a href="#skills" data-en="Skills" data-es="Habilidades">Skills</a></li>
+            <li><a href="#projects" data-en="Projects" data-es="Proyectos">Projects</a></li>
+            <li><a href="#cats" data-en="My Cats" data-es="Mis Gatos">My Cats</a></li>
+            <li><a href="#contact" data-en="Contact" data-es="Contacto">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar de idiomas -->
+    <div id="language-sidebar" class="sidebar">
+        <div class="sidebar-content">
+            <div class="sidebar-icon">🌐</div>
+            <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+            <button class="lang-btn" data-lang="es">🇨🇱 Español</button>
+        </div>
+    </div>
+
+    <!-- Sección de inicio -->
+    <header id="home" class="dynamic-header">
+        <h1>Venjy's Portfolio</h1>
+        <p>👾 <span id="typewriter"></span> 💻</p>
+        
+        <!-- Botones de descarga de CV -->
+        <div class="cv-download-buttons">
+            <a href="images/cv/CV_BenjaminFlores.pdf" download="CV_BenjaminFlores.pdf" class="cv-btn" data-en="📄 Download CV (PDF)" data-es="📄 Descargar CV (PDF)">
+                📄 Download CV (PDF)
+            </a>
+            <a href="images/cv/CV_BenjaminFlores.csv" download="CV_BenjaminFlores.csv" class="cv-btn" data-en="📊 Download CV (CSV)" data-es="📊 Descargar CV (CSV)">
+                📊 Download CV (CSV)
+            </a>
+        </div>
+        
+        <div class="scroll-down">
+            <a href="#about">▼</a>
+        </div>
+    </header>
+    <!-- Contenido principal -->
+    <main>
+        <!-- Sección "Sobre mí" -->
+        <section id="about" class="section">
+            <h2 class="section-title" data-en="About Me" data-es="Sobre Mí">About Me</h2>
+            <div class="about-container">
+                <div class="about-photo">
+                    <img src="images/Venjy.png" alt="Venjy photo">
+                </div>
+                <div class="about-content">
+                    <h1 class="about-name">Benjamin "Venjy" Flores</h1>
+                    <div class="about-description">
+                        <p data-en="Hi! I'm Venjy, a Computer Engineering student from Chile, passionate about programming software and games." data-es="¡Hola! Soy Venjy, estudiante de Ingeniería en Informática de Chile, apasionado por programar software y juegos.">Hi! I'm Venjy, a Computer Engineering student from Chile, passionate about programming software and games.</p>
+                        <p data-en="Currently in my second year, I'm building my skills in Python, C#, Java, and web development." data-es="Actualmente en mi segundo año, estoy desarrollando mis habilidades en Python, C#, Java y desarrollo web.">Currently in my second year, I'm building my skills in Python, C#, Java, and web development.</p>
+                        <p data-en="I'm also a game developer, creating indie games with Unity and pixel art. I love the challenge of bringing ideas to life through code and design." data-es="También soy desarrollador de juegos, creando juegos indie con Unity y pixel art. Me encanta el desafío de dar vida a ideas a través del código y el diseño.">I'm also a game developer, creating indie games with Unity and pixel art. I love the challenge of bringing ideas to life through code and design.</p>
+                        
+                        <div class="about-experience-summary">
+                            <p data-en="4 years of experience in technical support and basic system maintenance" data-es="4 años de experiencia en soporte técnico y mantenimiento básico de sistemas">4 years of experience in technical support and basic system maintenance</p>
+                            <p data-en="1+ year of experience in indie game development" data-es="1+ año de experiencia en desarrollo de juegos indie">1+ year of experience in indie game development</p>
+                            <p data-en="Nearly 1 year of experience in ERP and web application development" data-es="Casi 1 año de experiencia en desarrollo de ERP y aplicaciones web">Nearly 1 year of experience in ERP and web application development</p>
+                            <p data-en="4 months of professional experience as an Inclusive Mentor in a university environment" data-es="4 meses de experiencia profesional como Mentor Inclusivo en un entorno universitario">4 months of professional experience as an Inclusive Mentor in a university environment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de Experiencia -->
+        <section id="experience" class="section dark-bg experience-section">
+            <h2 class="section-title" data-en="⚔️ Experience (Logbook) ⚔️" data-es="⚔️ Experiencia (Registro) ⚔️">⚔️ Experience (Logbook) ⚔️</h2>
+            <div class="experience-container">
+                <!-- Experiencia 1: Full Stack Developer IDafa-connect -->
+                <article class="experience-entry">
+                    <div class="experience-header">
+                        <h3 class="experience-role">🏢 <span data-en="Full Stack Developer – IDafa-connect" data-es="Desarrollador Full Stack – IDafa-connect">Full Stack Developer – IDafa-connect</span></h3>
+                        <span class="experience-date" data-en="06/2025 – Present | Chile" data-es="06/2025 – Presente | Chile">06/2025 – Present | Chile</span>
+                    </div>
+                    <div class="experience-company">IDafa-connect</div>
+                    <p class="experience-description" data-en="ERP for Human Resources (not agricultural). Full-stack development focused on HR management system, including employee data management, process automation, and reporting features." data-es="ERP para Recursos Humanos (no agrícola). Desarrollo full-stack enfocado en sistema de gestión de RRHH, incluyendo gestión de datos de empleados, automatización de procesos y funcionalidades de reportes.">ERP for Human Resources (not agricultural). Full-stack development focused on HR management system, including employee data management, process automation, and reporting features.</p>
+                    <div class="experience-responsibilities">
+                        <strong data-en="Main responsibilities:" data-es="Responsabilidades principales:">Main responsibilities:</strong>
+                        <ul>
+                            <li data-en="Frontend development with React and modern UI libraries" data-es="Desarrollo frontend con React y bibliotecas de UI modernas">Frontend development with React and modern UI libraries</li>
+                            <li data-en="Backend API development and database management" data-es="Desarrollo de APIs backend y gestión de bases de datos">Backend API development and database management</li>
+                            <li data-en="System integration and data synchronization" data-es="Integración de sistemas y sincronización de datos">System integration and data synchronization</li>
+                            <li data-en="User support and feature implementation" data-es="Soporte a usuarios e implementación de funcionalidades">User support and feature implementation</li>
+                            <li data-en="Scrum methodology and agile development" data-es="Metodología Scrum y desarrollo ágil">Scrum methodology and agile development</li>
+                        </ul>
+                    </div>
+                    <div class="experience-tech">
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">Node.js</span>
+                        <span class="tech-tag">SQL</span>
+                        <span class="tech-tag">REST APIs</span>
+                        <span class="tech-tag">HTML/CSS</span>
+                        <span class="tech-tag">JavaScript</span>
+                    </div>
+                </article>
+
+                <!-- Experiencia 2: Full Stack Developer El Patio de Lea -->
+                <article class="experience-entry">
+                    <div class="experience-header">
+                        <h3 class="experience-role">🏗 <span data-en="Full Stack Developer – 'El Patio de Lea' (ERP + Landing Page)" data-es="Desarrollador Full Stack – 'El Patio de Lea' (ERP + Landing Page)">Full Stack Developer – "El Patio de Lea" (ERP + Landing Page)</span></h3>
+                        <span class="experience-date">2025/02 – 2025/07 | Chile</span>
+                    </div>
+                    <div class="experience-company">El Patio de Lea</div>
+                    <p class="experience-description" data-en="Developed a complete custom ERP system and a landing page for an event center. The platform includes space booking, service management, availability control, and client administration." data-es="Desarrollé un sistema ERP personalizado completo y una landing page para un centro de eventos. La plataforma incluye reserva de espacios, gestión de servicios, control de disponibilidad y administración de clientes.">Developed a complete custom ERP system and a landing page for an event center. The platform includes space booking, service management, availability control, and client administration.</p>
+                    <div class="experience-responsibilities">
+                        <strong data-en="Key contributions:" data-es="Contribuciones clave:">Key contributions:</strong>
+                        <ul>
+                            <li data-en="Design and development of a full booking and management system" data-es="Diseño y desarrollo de un sistema completo de reservas y gestión">Design and development of a full booking and management system</li>
+                            <li data-en="Real-time availability tracking" data-es="Seguimiento de disponibilidad en tiempo real">Real-time availability tracking</li>
+                            <li data-en="Client and service administration" data-es="Administración de clientes y servicios">Client and service administration</li>
+                            <li data-en="Public landing page for visibility and contact" data-es="Landing page pública para visibilidad y contacto">Public landing page for visibility and contact</li>
+                            <li data-en="Khipu API for payments" data-es="API de Khipu para pagos">Khipu API for payments</li>
+                        </ul>
+                    </div>
+                    <div class="experience-tech">
+                        <span class="tech-tag">Node.js</span>
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">MySQL</span>
+                        <span class="tech-tag">HTML/CSS</span>
+                        <span class="tech-tag">JavaScript</span>
+                        <span class="tech-tag">DigitalOcean</span>
+                    </div>
+                </article>
+
+                <!-- Experiencia 3: Inclusive Mentor -->
+                <article class="experience-entry">
+                    <div class="experience-header">
+                        <h3 class="experience-role">🎓 <span data-en="Inclusive Mentor – Universidad Santo Tomás" data-es="Mentor Inclusivo – Universidad Santo Tomás">Inclusive Mentor – Universidad Santo Tomás</span></h3>
+                        <span class="experience-date">06/2025</span>
+                    </div>
+                    <div class="experience-company">Universidad Santo Tomás</div>
+                    <p class="experience-description" data-en="Paid employment position at the university as an Inclusive Mentor, supporting students with learning difficulties and promoting equal access to education through academic guidance and personalized accompaniment." data-es="Puesto de empleo remunerado en la universidad como Mentor Inclusivo, apoyando a estudiantes con dificultades de aprendizaje y promoviendo la igualdad de acceso a la educación a través de orientación académica y acompañamiento personalizado.">Paid employment position at the university as an Inclusive Mentor, supporting students with learning difficulties and promoting equal access to education through academic guidance and personalized accompaniment.</p>
+                    <div class="experience-responsibilities">
+                        <strong data-en="Subjects taught and support provided:" data-es="Materias impartidas y apoyo realizado:">Subjects taught and support provided:</strong>
+                        <ul>
+                            <li data-en="Inclusion" data-es="Inclusión">Inclusion</li>
+                            <li data-en="Education" data-es="Educación">Education</li>
+                            <li data-en="Data Structures and Algorithms" data-es="Estructura de Datos y Algoritmos">Data Structures and Algorithms</li>
+                            <li data-en="Object-Oriented Programming (OOP)" data-es="Programación Orientada a Objetos (POO)">Object-Oriented Programming (OOP)</li>
+                            <li data-en="Software Design" data-es="Diseño de Software">Software Design</li>
+                            <li data-en="Requirements Specification" data-es="Especificación de Requerimientos">Requirements Specification</li>
+                        </ul>
+                    </div>
+                    <div class="experience-tech">
+                        <span class="tech-tag" data-en="Mentorship" data-es="Mentoría">Mentorship</span>
+                        <span class="tech-tag" data-en="Education" data-es="Educación">Education</span>
+                        <span class="tech-tag" data-en="Inclusion" data-es="Inclusión">Inclusion</span>
+                        <span class="tech-tag" data-en="Academic Support" data-es="Apoyo Académico">Academic Support</span>
+                    </div>
+                </article>
+
+                <!-- Experiencia 4: Computer Maintenance -->
+                <article class="experience-entry">
+                    <div class="experience-header">
+                        <h3 class="experience-role">🔧 <span data-en="Computer Maintenance & Technical Support" data-es="Mantenimiento de Computadoras y Soporte Técnico">Computer Maintenance & Technical Support</span></h3>
+                        <span class="experience-date">2021 – 2025</span>
+                    </div>
+                    <div class="experience-company" data-en="Various Clients" data-es="Varios Clientes">Various Clients</div>
+                    <p class="experience-description" data-en="Provided technical support and computer maintenance services for personal and business clients." data-es="Brindé servicios de soporte técnico y mantenimiento de computadoras para clientes personales y empresariales.">Provided technical support and computer maintenance services for personal and business clients.</p>
+                    <div class="experience-responsibilities">
+                        <strong data-en="Skills:" data-es="Habilidades:">Skills:</strong>
+                        <ul>
+                            <li data-en="Windows & Linux configuration" data-es="Configuración de Windows y Linux">Windows & Linux configuration</li>
+                            <li data-en="Hardware diagnostics and repair" data-es="Diagnóstico y reparación de hardware">Hardware diagnostics and repair</li>
+                            <li data-en="Software troubleshooting" data-es="Resolución de problemas de software">Software troubleshooting</li>
+                            <li data-en="System optimization" data-es="Optimización de sistemas">System optimization</li>
+                        </ul>
+                    </div>
+                    <div class="experience-tech">
+                        <span class="tech-tag">Windows</span>
+                        <span class="tech-tag">Linux</span>
+                        <span class="tech-tag">Hardware</span>
+                        <span class="tech-tag" data-en="Troubleshooting" data-es="Resolución de Problemas">Troubleshooting</span>
+                    </div>
+                </article>
+
+                <!-- Experiencia 5: Game Developer Projects -->
+                <article class="experience-entry">
+                    <div class="experience-header">
+                        <h3 class="experience-role">🎮 <span data-en="Game Developer – Independent Projects" data-es="Desarrollador de Juegos – Proyectos Independientes">Game Developer – Independent Projects</span></h3>
+                        <span class="experience-date">04/2025 – Present</span>
+                    </div>
+                    <div class="experience-company" data-en="Independent" data-es="Independiente">Independent</div>
+                    
+                    <div class="game-projects">
+                        <div class="game-project">
+                            <h4>1) Unknown Abyss – Unity</h4>
+                            <p data-en="Developing an indie vertical shooter with cave-runner mechanics. Responsible for gameplay systems, pixel art, and progression design." data-es="Desarrollando un shooter vertical indie con mecánicas de cave-runner. Responsable de sistemas de juego, pixel art y diseño de progresión.">Developing an indie vertical shooter with cave-runner mechanics. Responsible for gameplay systems, pixel art, and progression design.</p>
+                            <div class="experience-tech">
+                                <span class="tech-tag">Unity</span>
+                                <span class="tech-tag">C#</span>
+                                <span class="tech-tag">Pixel Art</span>
+                                <span class="tech-tag" data-en="Game Design" data-es="Diseño de Juegos">Game Design</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-project">
+                            <h4>2) Cat Clicker – Android (Java)</h4>
+                            <p data-en="A mobile clicker game developed in Android Studio, integrating cloud services for data storage and synchronization." data-es="Un juego móvil tipo clicker desarrollado en Android Studio, integrando servicios en la nube para almacenamiento y sincronización de datos.">A mobile clicker game developed in Android Studio, integrating cloud services for data storage and synchronization.</p>
+                            <div class="experience-tech">
+                                <span class="tech-tag">Java</span>
+                                <span class="tech-tag">Firebase</span>
+                                <span class="tech-tag">Firestore</span>
+                                <span class="tech-tag">MariaDB</span>
+                                <span class="tech-tag">Azure</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Sección de Habilidades -->
+        <section id="skills" class="section skills-section">
+            <h2 class="section-title" data-en="🛠️ Skills & Technologies 🛠️" data-es="🛠️ Habilidades y Tecnologías 🛠️">🛠️ Skills & Technologies 🛠️</h2>
+            <div class="skills-grid">
+                <!-- Lenguajes -->
+                <div class="skill-category">
+                    <h3 class="category-title" data-en="⚙️ Programming Languages" data-es="⚙️ Lenguajes de Programación">⚙️ Programming Languages</h3>
+                    <div class="skill-blocks">
+                        <div class="skill-block">Python</div>
+                        <div class="skill-block">C# (.NET)</div>
+                        <div class="skill-block">Java</div>
+                        <div class="skill-block">JavaScript</div>
+                        <div class="skill-block">SQL</div>
+                    </div>
+                </div>
+
+                <!-- Frameworks & Herramientas -->
+                <div class="skill-category">
+                    <h3 class="category-title" data-en="🔨 Frameworks & Tools" data-es="🔨 Frameworks y Herramientas">🔨 Frameworks & Tools</h3>
+                    <div class="skill-blocks">
+                        <div class="skill-block">Unity Engine</div>
+                        <div class="skill-block">HTML/CSS</div>
+                        <div class="skill-block">Linux</div>
+                        <div class="skill-block">Windows Server</div>
+                    </div>
+                </div>
+
+                <!-- Game Development -->
+                <div class="skill-category">
+                    <h3 class="category-title" data-en="🎮 Game Development" data-es="🎮 Desarrollo de Juegos">🎮 Game Development</h3>
+                    <div class="skill-blocks">
+                        <div class="skill-block" data-en="2D Game Design" data-es="Diseño de Juegos 2D">2D Game Design</div>
+                        <div class="skill-block">Pixel Art</div>
+                        <div class="skill-block" data-en="Game Mechanics" data-es="Mecánicas de Juego">Game Mechanics</div>
+                        <div class="skill-block" data-en="Design Patterns" data-es="Patrones de Diseño">Design Patterns</div>
+                    </div>
+                </div>
+
+                <!-- Soft Skills -->
+                <div class="skill-category">
+                    <h3 class="category-title" data-en="🤝 Other Skills" data-es="🤝 Otras Habilidades">🤝 Other Skills</h3>
+                    <div class="skill-blocks">
+                        <div class="skill-block" data-en="Problem Solving" data-es="Resolución de Problemas">Problem Solving</div>
+                        <div class="skill-block" data-en="Team Collaboration" data-es="Colaboración en Equipo">Team Collaboration</div>
+                        <div class="skill-block" data-en="Technical Support" data-es="Soporte Técnico">Technical Support</div>
+                        <div class="skill-block" data-en="English" data-es="Inglés">English</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de proyectos -->
+        <section id="projects" class="section">
+            <h2 class="section-title">My Projects</h2>
+            <div class="container">
+                <article class="project-card">
+                    <img src="images/prototipo2.gif" alt="Project 1">
+                    <div class="project-info">
+                        <h3>Unknown Abyss</h3>
+                        <p>Currently developing an indie game using Unity with vertical shooter and caverunner mechanics
+                            using a pixel art style.</p>
+                        <a href="#" class="btn">View Details</a>
+                    </div>
+                </article>
+
+                <article class="project-card">
+                    <img src="images/webdevgif.gif" alt="Project 2">
+                    <div class="project-info">
+                        <h3>Web Development</h3>
+                        <p>Various web projects including this portfolio and other (or not) experimental sites.</p>
+                        <a href="#home" class="btn">View Details</a>
+                    </div>
+                </article>
+
+                <article class="project-card">
+                    <img src="images/pagcentroevn.gif" alt="Centro de Eventos Cañete">
+                    <div class="project-info">
+                        <h3>Centro de Eventos Cañete</h3>
+                        <p>Full Stack freelance project for a local event center, including web design, booking system,
+                            and admin panel.</p>
+                        <a href="centroeventostest/" class="btn" target="_blank">View Details</a>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Sección de gatos -->
+        <section id="cats" class="section dark-bg">
+            <h2 class="section-title">My Cats</h2>
+            <div class="container">
+                <article class="post">
+                    <h3>Meet Mila & Gala</h3>
+                    <img src="images/MilayGala.jfif" alt="Mila and Gala">
+                    <p>These are my adorable feline companions who keep me company during coding sessions.</p>
+                </article>
+
+                <article class="post">
+                    <h3>Galatea</h3>
+                    <img src="images/Gala.jfif" alt="Galatea">
+                    <p>3 years old :3</p>
+                    <p>She is a little diva who loves to be the center of attention.</p>
+                </article>
+
+                <article class="post">
+                    <h3>Mila</h3>
+                    <img src="images/MilaGod.jfif" alt="Mila">
+                    <p>Carey + fat = Mila</p>
+                    <p>4 years old</p>
+                    <p>She is a little angel who loves to cuddle and play.</p>
+                </article>
+            </div>
+
+            <!-- Galería de fotos -->
+            <div class="gallery-header">
+                <h3>Best photos of my cats</h3>
+            </div>
+            <div class="gallery">
+                <img src="images/Mila1.jfif" alt="Mila">
+                <img src="images/Gala2.jfif" alt="Gala">
+                <img src="images/Gala3.jfif" alt="Gala">
+                <img src="images/Mila3.jfif" alt="Mila">
+                <img src="images/GalayMila.jfif" alt="Gala y Mila">
+                <img src="images/Galapatitas.jfif" alt="Gala patitas">
+                <img src="images/MilaCuestionando.jfif" alt="Mila cuestionando">
+                <img src="images/Galatuto.jfif" alt="Gala túnica">
+                <img src="images/Galapatona.jfif" alt="Gala patona">
+                <img src="images/MilaHombre.jfif" alt="Mila hombre">
+                <img src="images/Milasol.jfif" alt="Mila al sol">
+                <img src="images/Milapetit.jfif" alt="Mila pequeña">
+                <img src="images/Cutes.gif" alt="Lesbianas">
+                <img src="images/Galeriamila10.jfif" alt="Gala">
+                <img src="images/Mila11.jfif" alt="Gala">
+                <img src="images/Mila12.jfif" alt="Gala">
+                <img src="images/Gala10.jfif" alt="Gala">
+                <img src="images/Gala11.jfif" alt="">
+                <img src="images/MilaAceituna.jfif" alt="Mila aceituna">
+                <img src="images/Milaestudiando.jfif" alt="Mila Estudiando">
+                <img src="images/Gala13.jfif" alt="Galaa">
+            </div>
+        </section>
+
+        <!-- Sección de contacto -->
+        <section id="contact" class="section">
+            <h2 class="section-title">Get In Touch</h2>
+            <div class="container">
+                <article class="contact-card">
+                    <h3>Contact Information</h3>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="icon">✉️</i>
+                            <div>
+                                <span class="contact-label">Email:</span>
+                                <a href="mailto:benjaf243@gmail.com">benjaf243@gmail.com</a>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="icon">🐙</i>
+                            <div>
+                                <span class="contact-label">GitHub:</span>
+                                <a href="https://github.com/Venjyy" target="_blank">github.com/Venjyy</a>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="icon">🔗</i>
+                            <div>
+                                <span class="contact-label">LinkedIn:</span>
+                                <a href="https://www.linkedin.com/in/benjamin-flores-aa59112b5/"
+                                    target="_blank">linkedin.com/in/BenjaminF</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="contact-form">
+                    <h3>Send me a message</h3>
+                    <form>
+                        <input type="text" placeholder="Your Name" required>
+                        <input type="email" placeholder="Your Email" required>
+                        <textarea placeholder="Your Message" required></textarea>
+                        <button type="submit" class="btn">Send Message</button>
+                    </form>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pie de página -->
+    <footer>
+        <div class="footer-content">
+            <section class="footer-links">
+                <a href="#home">Home</a>
+                <a href="#about">About</a>
+                <a href="#skills">Skills</a>
+                <a href="#projects">Projects</a>
+                <a href="#cats">Cats</a>
+                <a href="#contact">Contact</a>
+            </section>
+            <p>© 2025 Venjy | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <!-- Modal para imágenes -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

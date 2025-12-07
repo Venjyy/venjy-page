@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Centro de Eventos</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Añadimos Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
+                <span class="logo-text">Centro Eventos</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="index.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="clientes.html">
+                        <i class="fas fa-users"></i>
+                        <span class="menu-text">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="espacios.html">
+                        <i class="fas fa-building"></i>
+                        <span class="menu-text">Espacios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="servicios.html">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span class="menu-text">Servicios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reservas.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="menu-text">Reservas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="pagos.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Pagos</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="reportes.html">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="menu-text">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="Usuario" class="user-avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="toggle-sidebar" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <h1 class="page-title">Reportes y Estadísticas</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar reportes..." id="searchReportes">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <!-- Contenido principal de la página de reportes -->
+            <div class="content-section">
+                <div class="action-buttons">
+                    <div class="date-range-selector">
+                        <label for="dateFrom">Desde:</label>
+                        <input type="date" id="dateFrom" value="2025-01-01">
+                        <label for="dateTo">Hasta:</label>
+                        <input type="date" id="dateTo" value="2025-05-31">
+                        <button class="btn btn-primary" id="btnFiltrarFechas">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                    </div>
+                    <div class="export-options">
+                        <button class="btn btn-secondary" id="btnExportarPDF">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </button>
+                        <button class="btn btn-secondary" id="btnExportarExcel">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas resumen -->
+                <div class="cards-container">
+                    <div class="card bg-green-1">
+                        <div class="card-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Ingresos Totales</h3>
+                            <p>$8.250.000</p>
+                        </div>
+                    </div>
+                    <div class="card bg-green-2">
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Reservas Completadas</h3>
+                            <p>42</p>
+                        </div>
+                    </div>
+                    <div class="card bg-green-3">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Nuevos Clientes</h3>
+                            <p>18</p>
+                        </div>
+                    </div>
+                    <div class="card bg-green-4">
+                        <div class="card-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Tasa de Ocupación</h3>
+                            <p>76%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos principales -->
+                <div class="reports-section">
+                    <!-- Gráfico de ganancias (mensual) -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2>Ganancias Mensuales (2025)</h2>
+                            <div class="chart-actions">
+                                <button class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button class="btn-icon" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="gananciasMensuales"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <div class="stat-item">
+                                <span class="stat-label">Ganancia neta:</span>
+                                <span class="stat-value text-success">$6.750.000</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Impuestos (19%):</span>
+                                <span class="stat-value">$1.282.500</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Gastos operativos:</span>
+                                <span class="stat-value text-danger">$2.430.000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de espacios y su ocupación -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2>Ocupación por Espacio</h2>
+                            <div class="chart-actions">
+                                <button class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button class="btn-icon" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="ocupacionEspacios"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <div class="stat-item">
+                                <span class="stat-label">Espacio más reservado:</span>
+                                <span class="stat-value">Salón Principal (85%)</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Espacio menos reservado:</span>
+                                <span class="stat-value">Sala VIP (42%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de reservas por tipo de evento -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2>Reservas por Tipo de Evento</h2>
+                            <div class="chart-actions">
+                                <button class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button class="btn-icon" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="reservasPorTipo"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <div class="stat-item">
+                                <span class="stat-label">Evento más común:</span>
+                                <span class="stat-value">Cumpleaños (38%)</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Mayor ingreso por tipo:</span>
+                                <span class="stat-value">Bodas ($3.450.000)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de clientes nuevos vs recurrentes -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2>Clientes Nuevos vs. Recurrentes</h2>
+                            <div class="chart-actions">
+                                <button class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button class="btn-icon" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="clientesNuevosRecurrentes"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <div class="stat-item">
+                                <span class="stat-label">Clientes nuevos (último trimestre):</span>
+                                <span class="stat-value">18</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Tasa de retención:</span>
+                                <span class="stat-value">62%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de servicios más solicitados -->
+                <div class="data-table-container">
+                    <h2>Servicios Adicionales Más Solicitados</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Servicio</th>
+                                <th>Solicitudes</th>
+                                <th>Ingreso Total</th>
+                                <th>% del Total</th>
+                                <th>Tendencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Servicio de Catering</td>
+                                <td>34</td>
+                                <td>$5.100.000</td>
+                                <td>36%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i> 12%</td>
+                            </tr>
+                            <tr>
+                                <td>Decoración Temática</td>
+                                <td>28</td>
+                                <td>$3.780.000</td>
+                                <td>26%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i> 8%</td>
+                            </tr>
+                            <tr>
+                                <td>Pintacaritas</td>
+                                <td>22</td>
+                                <td>$1.760.000</td>
+                                <td>12%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i> 15%</td>
+                            </tr>
+                            <tr>
+                                <td>Cama Saltarina</td>
+                                <td>18</td>
+                                <td>$2.160.000</td>
+                                <td>15%</td>
+                                <td><i class="fas fa-equals text-neutral"></i> 0%</td>
+                            </tr>
+                            <tr>
+                                <td>Cuatrimotos</td>
+                                <td>12</td>
+                                <td>$1.600.000</td>
+                                <td>11%</td>
+                                <td><i class="fas fa-arrow-down text-danger"></i> 5%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Gráfico comparativo de rendimiento (periodos) -->
+                <div class="chart-container full-width">
+                    <div class="chart-header">
+                        <h2>Comparativa de Rendimiento</h2>
+                        <div class="chart-actions">
+                            <select id="periodoComparacion">
+                                <option value="trimestre">Trimestral</option>
+                                <option value="semestre">Semestral</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                            <button class="btn-icon" title="Ver detalles">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button class="btn-icon" title="Descargar">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="comparativaRendimiento"></canvas>
+                    </div>
+                    <div class="chart-footer">
+                        <div class="stat-item">
+                            <span class="stat-label">Crecimiento vs periodo anterior:</span>
+                            <span class="stat-value text-success">+15.4%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Proyección próximo periodo:</span>
+                            <span class="stat-value">$9.800.000 (+18.8%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para los gráficos -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Datos para gráfico de ganancias mensuales
+            const ctxGanancias = document.getElementById('gananciasMensuales').getContext('2d');
+            const gananciasMensuales = new Chart(ctxGanancias, {
+                type: 'bar',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: [1200000, 1350000, 1850000, 1950000, 1900000],
+                            backgroundColor: 'rgba(46, 125, 50, 0.7)',
+                        },
+                        {
+                            label: 'Gastos',
+                            data: [450000, 480000, 510000, 490000, 500000],
+                            backgroundColor: 'rgba(211, 47, 47, 0.7)',
+                        },
+                        {
+                            label: 'Impuestos',
+                            data: [228000, 256500, 351500, 370500, 361000],
+                            backgroundColor: 'rgba(245, 124, 0, 0.7)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Datos para gráfico de ocupación por espacio
+            const ctxOcupacion = document.getElementById('ocupacionEspacios').getContext('2d');
+            const ocupacionEspacios = new Chart(ctxOcupacion, {
+                type: 'bar',
+                data: {
+                    labels: ['Salón Principal', 'Salón Terraza', 'Sala VIP', 'Jardín Central', 'Salón Conferencias'],
+                    datasets: [{
+                        label: 'Ocupación (%)',
+                        data: [85, 72, 42, 68, 65],
+                        backgroundColor: [
+                            'rgba(46, 125, 50, 0.7)',
+                            'rgba(56, 142, 60, 0.7)',
+                            'rgba(76, 175, 80, 0.7)',
+                            'rgba(129, 199, 132, 0.7)',
+                            'rgba(165, 214, 167, 0.7)'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function (value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Datos para gráfico de reservas por tipo de evento
+            const ctxReservas = document.getElementById('reservasPorTipo').getContext('2d');
+            const reservasPorTipo = new Chart(ctxReservas, {
+                type: 'pie',
+                data: {
+                    labels: ['Cumpleaños', 'Bodas', 'Corporativos', 'Baby Shower', 'Otros'],
+                    datasets: [{
+                        data: [38, 24, 18, 15, 5],
+                        backgroundColor: [
+                            'rgba(46, 125, 50, 0.7)',
+                            'rgba(56, 142, 60, 0.7)',
+                            'rgba(76, 175, 80, 0.7)',
+                            'rgba(129, 199, 132, 0.7)',
+                            'rgba(165, 214, 167, 0.7)'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Datos para gráfico de clientes nuevos vs recurrentes
+            const ctxClientes = document.getElementById('clientesNuevosRecurrentes').getContext('2d');
+            const clientesData = new Chart(ctxClientes, {
+                type: 'line',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
+                    datasets: [
+                        {
+                            label: 'Clientes Nuevos',
+                            data: [4, 6, 5, 3, 4],
+                            borderColor: 'rgba(46, 125, 50, 0.7)',
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            fill: true
+                        },
+                        {
+                            label: 'Clientes Recurrentes',
+                            data: [5, 7, 8, 10, 12],
+                            borderColor: 'rgba(76, 175, 80, 0.7)',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Datos para gráfico comparativo de rendimiento
+            const ctxComparativa = document.getElementById('comparativaRendimiento').getContext('2d');
+            const comparativaRendimiento = new Chart(ctxComparativa, {
+                type: 'line',
+                data: {
+                    labels: ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024', 'Q1 2025', 'Q2 2025'],
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: [3200000, 3500000, 3800000, 4100000, 4400000, 5250000],
+                            borderColor: 'rgba(46, 125, 50, 0.7)',
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            fill: true
+                        },
+                        {
+                            label: 'Ganancias Netas',
+                            data: [1280000, 1400000, 1520000, 1640000, 1760000, 2100000],
+                            borderColor: 'rgba(21, 101, 192, 0.7)',
+                            backgroundColor: 'rgba(21, 101, 192, 0.1)',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+    <script src="index.js"></script>
+    <script src="reportes.js"></script>
+</body>
+
+</html>
