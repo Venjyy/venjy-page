@@ -6,7 +6,7 @@ let currentLanguage = 'en';
 function changeLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('preferredLanguage', lang);
-    
+
     // Actualizar todos los elementos con atributos data-en y data-es
     document.querySelectorAll('[data-en]').forEach(element => {
         if (lang === 'en' && element.getAttribute('data-en')) {
@@ -15,7 +15,7 @@ function changeLanguage(lang) {
             element.textContent = element.getAttribute('data-es');
         }
     });
-    
+
     // Actualizar botones de idioma
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -26,13 +26,13 @@ function changeLanguage(lang) {
 }
 
 // Inicializar idioma al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const savedLang = localStorage.getItem('preferredLanguage') || 'en';
     changeLanguage(savedLang);
-    
+
     // Event listeners para botones de idioma
     document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const lang = this.getAttribute('data-lang');
             changeLanguage(lang);
             playClickSound();

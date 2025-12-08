@@ -67,6 +67,7 @@ body {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -222,7 +223,7 @@ header p {
     text-decoration: none;
     border: 4px solid var(--primary-color);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5),
-                inset 0 0 10px rgba(255, 255, 255, 0.2);
+        inset 0 0 10px rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -235,9 +236,9 @@ header p {
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
-        linear-gradient(0deg, transparent 48%, rgba(255,255,255,0.1) 50%, transparent 52%),
-        linear-gradient(90deg, transparent 48%, rgba(255,255,255,0.1) 50%, transparent 52%);
+    background:
+        linear-gradient(0deg, transparent 48%, rgba(255, 255, 255, 0.1) 50%, transparent 52%),
+        linear-gradient(90deg, transparent 48%, rgba(255, 255, 255, 0.1) 50%, transparent 52%);
     background-size: 8px 8px;
     pointer-events: none;
 }
@@ -246,7 +247,7 @@ header p {
     background: linear-gradient(135deg, #66BB6A 0%, var(--primary-color) 100%);
     transform: translateY(-5px) scale(1.05);
     box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6),
-                inset 0 0 20px rgba(255, 255, 255, 0.3);
+        inset 0 0 20px rgba(255, 255, 255, 0.3);
     border-color: #FFD700;
 }
 
