@@ -577,21 +577,56 @@ header p {
     /* Mejora la legibilidad */
 }
 
+.project-info h3 {
+    color: var(--primary-color);
+    margin: 0 0 0.8rem 0;
+    font-size: 1.1rem;
+}
+
+/* Contenedor de múltiples enlaces para proyectos */
+.project-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
 .btn {
     display: inline-block;
     padding: 0.5rem 1rem;
     background-color: var(--primary-color);
     color: var(--light-text);
     text-decoration: none;
-    border: none;
+    border: 3px solid var(--primary-color);
     cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 1rem;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.65rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn:hover {
     background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
     transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(94, 124, 22, 0.4);
+}
+
+/* Botón secundario para enlaces adicionales */
+.btn-secondary {
+    background-color: #8B4513;
+    border-color: #8B4513;
+}
+
+.btn-secondary:hover {
+    background-color: #CD853F;
+    border-color: #CD853F;
+}
+
+/* Para botones dentro de project-links */
+.project-links .btn {
+    margin-top: 0;
 }
 
 .post:hover,
@@ -1436,6 +1471,17 @@ button,
         font-size: 0.6rem;
         padding: 0.8rem 0.4rem;
     }
+
+    /* Projects responsive */
+    .project-links {
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .btn {
+        font-size: 0.6rem;
+        padding: 0.6rem 0.9rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1551,6 +1597,26 @@ button,
     #navbar a {
         font-size: 0.6rem;
         padding: 0.4rem 0.6rem;
+    }
+
+    /* Projects mobile small */
+    .project-links {
+        flex-direction: column;
+    }
+
+    .btn {
+        font-size: 0.55rem;
+        padding: 0.5rem 0.8rem;
+        width: 100%;
+        text-align: center;
+    }
+
+    .project-info h3 {
+        font-size: 0.95rem;
+    }
+
+    .project-info p {
+        font-size: 13px;
     }
 }
 
