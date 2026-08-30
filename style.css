@@ -575,6 +575,14 @@ header p {
     text-shadow: 2px 2px 0 #000;
 }
 
+.projects-layout > .project-zone-title + .container {
+    margin-top: 0.75rem;
+}
+
+.projects-layout > .container + .project-zone-title {
+    margin-top: 2.25rem;
+}
+
 .featured-zone-title {
     border-color: #FFD700;
     color: #fff5a8;
