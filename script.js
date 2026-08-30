@@ -3,6 +3,26 @@
 // ===================================
 let currentLanguage = 'en';
 
+function getPreferredLanguage() {
+    const params = new URLSearchParams(window.location.search);
+    const urlLang = params.get('lang');
+    if (urlLang === 'es' || urlLang === 'en') {
+        return urlLang;
+    }
+
+    try {
+        const savedLang = localStorage.getItem('preferredLanguage');
+        if (savedLang === 'es' || savedLang === 'en') {
+            return savedLang;
+        }
+    } catch (error) {
+        console.warn('No se pudo leer preferredLanguage:', error);
+    }
+
+    const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    return browserLang.startsWith('es') ? 'es' : 'en';
+}
+
 function updateCvDownloadLinks(lang) {
     document.querySelectorAll('.cv-btn').forEach(link => {
         const fileKey = lang === 'es' ? 'data-file-es' : 'data-file-en';
@@ -22,7 +42,17 @@ function updateCvDownloadLinks(lang) {
 
 function changeLanguage(lang) {
     currentLanguage = lang;
-    localStorage.setItem('preferredLanguage', lang);
+    document.documentElement.lang = lang;
+
+    try {
+        localStorage.setItem('preferredLanguage', lang);
+    } catch (error) {
+        console.warn('No se pudo guardar preferredLanguage:', error);
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', lang);
+    window.history.replaceState({}, '', url);
 
     // Actualizar todos los elementos con atributos data-en y data-es
     document.querySelectorAll('[data-en]').forEach(element => {
@@ -46,8 +76,8 @@ function changeLanguage(lang) {
 
 // Inicializar idioma al cargar la página
 document.addEventListener('DOMContentLoaded', function () {
-    const savedLang = localStorage.getItem('preferredLanguage') || 'en';
-    changeLanguage(savedLang);
+    const initialLang = getPreferredLanguage();
+    changeLanguage(initialLang);
 
     // Event listeners para botones de idioma
     document.querySelectorAll('.lang-btn').forEach(btn => {
