@@ -3,6 +3,23 @@
 // ===================================
 let currentLanguage = 'en';
 
+function updateCvDownloadLinks(lang) {
+    document.querySelectorAll('.cv-btn').forEach(link => {
+        const fileKey = lang === 'es' ? 'data-file-es' : 'data-file-en';
+        const downloadKey = lang === 'es' ? 'data-download-es' : 'data-download-en';
+        const file = link.getAttribute(fileKey);
+        const downloadName = link.getAttribute(downloadKey);
+
+        if (file) {
+            link.href = file;
+        }
+
+        if (downloadName) {
+            link.setAttribute('download', downloadName);
+        }
+    });
+}
+
 function changeLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('preferredLanguage', lang);
@@ -15,6 +32,8 @@ function changeLanguage(lang) {
             element.textContent = element.getAttribute('data-es');
         }
     });
+
+    updateCvDownloadLinks(lang);
 
     // Actualizar botones de idioma
     document.querySelectorAll('.lang-btn').forEach(btn => {
