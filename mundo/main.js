@@ -81,6 +81,13 @@ cargaEl.textContent = TXT[idioma].cargando;
 
 const DISTANCIA = 10;
 
+function pedirPuntero() {
+    try {
+        const r = lienzo.requestPointerLock();
+        if (r && r.catch) r.catch(() => { /* el navegador rechazó el bloqueo del puntero */ });
+    } catch (e) { /* sin pointer lock */ }
+}
+
 async function iniciar() {
     await new Promise(r => setTimeout(r, 30)); // deja pintar el texto de carga
     const datos = generarDatos('h');
@@ -91,7 +98,7 @@ async function iniciar() {
     camara.far = 2000;
     camara.updateProjectionMatrix();
 
-    const cielo = crearCielo(scene, terreno.BW, terreno.BD);
+    const cielo = crearCielo(scene, terreno.BW, terreno.BD, materiales);
     const mundo = new MundoVoxel(scene, terreno, materiales, DISTANCIA);
     const jugador = new Jugador(camara, mundo, lienzo, { x: terreno.BW, z: terreno.BD });
 
@@ -104,15 +111,15 @@ async function iniciar() {
     jugador.colocar(px + 0.5, terreno.HT[pz * terreno.BW + px] + 1, pz + 0.5);
     jugador.yaw = Math.PI / 2 * -1; // mirando hacia el este (hacia el título)
 
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene };
+    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
     botonJugar.focus();
 
-    botonJugar.addEventListener('click', () => lienzo.requestPointerLock());
-    lienzo.addEventListener('click', () => { if (!jugador.activo) lienzo.requestPointerLock(); });
-    pantallaInicio.addEventListener('click', e => { if (e.target === pantallaInicio) lienzo.requestPointerLock(); });
+    botonJugar.addEventListener('click', () => pedirPuntero());
+    lienzo.addEventListener('click', () => { if (!jugador.activo) pedirPuntero(); });
+    pantallaInicio.addEventListener('click', e => { if (e.target === pantallaInicio) pedirPuntero(); });
 
     jugador.alCambiarActivo = activo => {
         pantallaInicio.hidden = activo;
@@ -134,7 +141,7 @@ async function iniciar() {
         anterior = ahora;
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
-        cielo.actualizar(camara);
+        cielo.actualizar(camara, dt);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.construir(5);
         renderer.render(scene, camara);

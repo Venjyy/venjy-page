@@ -1407,8 +1407,28 @@ button.marco:hover img {
     border-top: 6px solid #000;
 }
 
+.boton-portal {
+    margin-bottom: 24px;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+}
+
+.boton-portal .icono {
+    flex: none;
+    width: 32px;
+    height: 32px;
+}
+
+.boton-portal:focus-visible {
+    outline: 3px solid var(--mc-amarillo);
+    outline-offset: 3px;
+}
+
 .lecho p {
-    display: inline-block;
+    display: block;
+    width: fit-content;
+    margin-inline: auto;
     padding: 3px 12px 5px;
     background: rgb(0 0 0 / 0.6);
 }
