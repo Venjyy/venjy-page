@@ -10,8 +10,8 @@ export const NOMBRES_ZONA = {
 };
 
 const TXT = {
-    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', ir: 'Ir a', chunks: 'chunks' },
-    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', ir: 'Go to', chunks: 'chunks' }
+    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonido de las gatas', ir: 'Ir a', chunks: 'chunks' },
+    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'Cat sounds', ir: 'Go to', chunks: 'chunks' }
 };
 
 const CLAVE = 'venjy-mundo-ajustes';
@@ -24,11 +24,11 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, pedirPuntero }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, pedirPuntero }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
     const guardado = leer();
-    const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, ...guardado };
+    const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, auto: true, fps: true, ...guardado };
 
     const sec = document.createElement('section');
     sec.className = 'ajustes';
@@ -60,7 +60,23 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         scene.fog.near = borde * 0.55;
         scene.fog.far = borde * 0.95;
     };
-    fila(t.distancia, 4, 16, 1, cfg.distancia, v => `${v} ${t.chunks}`, aplicarDistancia);
+    let efectiva = cfg.distancia;
+    const distFila = fila(t.distancia, 4, 16, 1, cfg.distancia, v => {
+        efectiva = v;
+        return `${v} ${t.chunks}`;
+    }, aplicarDistancia);
+    const distSalida = distFila.parentNode.querySelector('output');
+    // Distancia aplicada por el auto-ajuste: no toca el máximo guardado (slider)
+    const aplicarDistanciaAuto = n => {
+        efectiva = n;
+        mundo.distancia = n;
+        mundo.ultimo = null;
+        const borde = n * CHUNK;
+        scene.fog.near = borde * 0.55;
+        scene.fog.far = borde * 0.95;
+        distSalida.textContent = n === cfg.distancia ? `${n} ${t.chunks}` : `${n}/${cfg.distancia} ${t.chunks}`;
+    };
+    distFila.addEventListener('input', () => { distSalida.textContent = `${cfg.distancia} ${t.chunks}`; });
     fila(t.fov, 50, 100, 1, cfg.fov, v => `${v}°`, v => { cfg.fov = v; camara.fov = v; camara.updateProjectionMatrix(); });
     fila(t.sens, 0.4, 2.5, 0.1, cfg.sens, v => `${v.toFixed(1)}×`, v => { cfg.sens = v; jugador.sensibilidad = 0.0022 * v; });
 
@@ -79,8 +95,29 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
     cicloFila.append(cb, cbTxt);
     sec.appendChild(cicloFila);
 
+    const marca = (etiqueta, valor, alCambiar) => {
+        const f = document.createElement('label');
+        f.className = 'fila marca';
+        const c = document.createElement('input');
+        c.type = 'checkbox'; c.checked = valor;
+        const s = document.createElement('span');
+        s.textContent = etiqueta;
+        c.addEventListener('change', () => { alCambiar(c.checked); guardar(cfg); });
+        f.append(c, s);
+        sec.appendChild(f);
+        return c;
+    };
+    const fpsEl = document.getElementById('fps');
+    const aplicarFps = v => { cfg.fps = v; if (fpsEl) fpsEl.style.display = v ? '' : 'none'; };
+    marca(t.auto, cfg.auto, v => {
+        cfg.auto = v;
+        if (!v) aplicarDistanciaAuto(cfg.distancia); // vuelve al máximo elegido
+    });
+    marca(t.fps, cfg.fps, aplicarFps);
+    if (gatas) marca(t.sonido, !gatas.silenciado, v => gatas.silenciar(!v));
+
     // Teletransporte
-    const ir = document.createElement('h2');
+    const ir= document.createElement('h2');
     ir.textContent = t.ir;
     sec.appendChild(ir);
     const rejilla = document.createElement('div');
@@ -119,8 +156,13 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
     camara.fov = cfg.fov; camara.updateProjectionMatrix();
     jugador.sensibilidad = 0.0022 * cfg.sens;
     cielo.pausado = !cfg.ciclo;
+    aplicarFps(cfg.fps);
 
     return {
+        aplicarDistanciaAuto,
+        get auto() { return cfg.auto; },
+        get distanciaMax() { return cfg.distancia; },
+        get distanciaEfectiva() { return efectiva; },
         // Nombre de la zona cercana, o '' si estás lejos de todas
         zonaEn(x, z) {
             const cx = x / ESCALA, cz = z / ESCALA;

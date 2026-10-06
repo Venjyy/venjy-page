@@ -57,7 +57,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - [x] Pozo de la aldea (agua, piedra labrada, techo) y buzón del correo (`colocarDecor`). [x] Cajas de la gatera: cajones abiertos de 2×2 por dentro (naranjo y negro). Falta: que las gatas duerman dentro.
 - [x] Letras "VENJY" elevadas a 18 bloques (`ALTO_LETRAS`). Cada píxel sigue midiendo 32×32 bloques; valorar reducir la escala.
 - [x] Cielo: domo con gradiente, sol cuadrado y nubes de bloques estáticas (`mundo/cielo.js`). Luna, estrellas, ciclo día/noche de 8 min y nubes móviles ya hechos (`cielo.js`; `cielo.fijarHora(h)`, `cielo.pausado`).
-- [ ] Niebla/colores más fieles al Minecraft real; agua con animación de textura.
+- [ ] Niebla/colores más fieles al Minecraft real. [x] Agua animada ( `animarAgua` en `texturas.js`, 5 cuadros/s).
 - [x] Árboles: roble, abedul (1 de cada 4) y pino en zonas altas; el bosquecillo del registro ahora son árboles. [x] Flores (amapola, diente de león, aciano) y pasto alto en cruz (bloques tipo 4, planta). 
 - [ ] Suavizar los escalones del terreno (hoy se ven curvas de nivel de 1 bloque).
 - [x] Cultivos: franjas de tierra labrada con trigo (cubo con textura recortada). [x] Trigo en cruz.
@@ -66,7 +66,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 ### Gatas (Mila y Gala)
 - [x] Modelos, pelajes y caminata por la Gatera, con entrada y salida de la casa por la puerta (`mundo/gatas.js`). **Mila**: carey gordita, casi toda negra con poquito amarillo y naranjo, SIN blanco. **Gala**: toda gris, guantes blancos delante, botas blancas detrás, pecho blanco y panza gris.
 - [ ] Revisar con fotos reales de `images/` (Mila.jpg es la carey; no abrir los `.jfif` como texto) y ajustar proporciones, rostro y manchas.
-- [ ] Poses: sentarse, echarse a dormir (p. ej. sobre las cajas de la gatera) y ronronear; maullido opcional al acercarte.
+- [x] Poses (de pie, sentada, echada) con transiciones suaves, acercarse al jugador, maullido y ronroneo sintéticos con WebAudio (interruptor 'Sonido de las gatas' en pausa). Falta: que duerman dentro de las cajas de la gatera.
 - [ ] Nombres flotantes opcionales al mirarlas.
 - Limitación: no esquivan árboles ni obstáculos con un buscador de rutas, solo eligen otro destino si algo bloquea; el sombreado de sus caras es fijo respecto al modelo.
 
@@ -77,7 +77,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - [x] Minimapa en el HUD y mapa grande con tecla M (`mundo/minimapa.js`).
 - [x] Ajustes en pausa: distancia de render, FOV, sensibilidad, hora y ciclo (`mundo/ajustes.js`, se guardan en localStorage).
 - [x] Controles táctiles (`mundo/tactil.js`). Verificados con eventos simulados; falta probar en un teléfono real.
-- [ ] Auto-ajuste de distancia de render según FPS.
+- [x] Auto-ajuste de distancia de render según FPS (casilla 'Distancia automática'; el slider es el máximo) y casilla 'Mostrar FPS'.
 
 ### Técnico / deuda
 - [ ] Mallado en Web Worker si el meshing en el hilo principal se nota al volar rápido.
@@ -105,6 +105,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 
+- 2026-10-06 · **Poses y sonido de las gatas, auto-ajuste de distancia, agua animada** · `mundo/gatas.js` (poses, `silenciar`), `mundo/ajustes.js` (casillas auto, FPS y sonido; `aplicarDistanciaAuto`), `mundo/main.js` (`autoAjustar`, animación del agua, `window.__venjy.auto` para depurar), `mundo/texturas.js` (`animarAgua`).
 - 2026-10-06 · **Mina, cajas y plantas**: plaza y túnel de la mina, cajas abiertas, flores, pasto alto y trigo en cruz · `mundo/voxeles.js` (nuevo tipo de bloque 4 «planta», mallado en cruz, `HUECO` 5/6 para cajas, decorado `mina`), `mundo/texturas.js` (ids 30-33, trigo nuevo). Los troncos de árbol reemplazan plantas.
 - 2026-10-06 · **Gatas Mila y Gala**: modelos y pelajes hechos con código, caminata por la Gatera y entrada/salida de su casa · `mundo/gatas.js` (nuevo), `mundo/main.js` (crearGatas, `window.__venjy.gatas`), `mundo/voxeles.js` (exporta `BASE_ESTRUCTURA`). Nota: el PR #4 se fusionó en la rama del PR #3 y no en `main`, así que `main` aún no lo tiene; esta rama se creó sobre `feature/add-joaquin-salinas`.
 - 2026-10-06 · **Actualización grande (PR de la rama `feature/mundo-3d-fase-2`)**: ventanas de vidrio; trigo; pozo y buzón; bosquecillo como árboles; abedules y pinos; ciclo día/noche con luna, estrellas y nubes móviles; ajustes de pausa; teletransporte; nombre de zona en el HUD; minimapa con mapa grande (M); controles táctiles; enlace en el pie de `index.html` · archivos: `mundo/{texturas,voxeles,cielo,main,ajustes,minimapa,tactil}.js`, `mundo/{mundo,tactil}.css`, `mundo.html`, y `index.html`/`script.js`/`style.css` (solo el botón del pie, ícono `portal` y estilos `.boton-portal`) · Pendiente destacado: mina, cajas de la gatera, luz interior, flores, mallado en worker.

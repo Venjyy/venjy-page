@@ -185,6 +185,24 @@ const PINTORES = {
 export const NOMBRES_TILE = Object.keys(PINTORES);
 export const TILE = Object.fromEntries(NOMBRES_TILE.map((n, i) => [n, i]));
 
+// Agua animada: redibuja el tile del agua con ondas que se desplazan con el cuadro
+export function animarAgua(canvas, cuadro) {
+    const ctx = canvas.getContext('2d');
+    const ox = (TILE.agua % COLS) * TAM, oy = Math.floor(TILE.agua / COLS) * TAM;
+    const img = ctx.createImageData(TAM, TAM);
+    const base = [47, 95, 208];
+    for (let y = 0; y < TAM; y++) {
+        for (let x = 0; x < TAM; x++) {
+            const s = Math.sin(x * 0.8 + cuadro * 0.5) + Math.sin(y * 0.7 - cuadro * 0.4) + Math.sin((x + y) * 0.5 + cuadro * 0.3);
+            const brillo = (s > 2.55 ? 1.25 : 1) * (0.9 + (s / 3) * 0.1);
+            const [r, g, b] = ajustar(base, brillo);
+            const i = (y * TAM + x) * 4;
+            img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = Math.min(255, b); img.data[i + 3] = 255;
+        }
+    }
+    ctx.putImageData(img, ox, oy);
+}
+
 export function crearAtlas() {
     const ancho = COLS * TAM, alto = FILAS * TAM;
     const canvas = document.createElement('canvas');

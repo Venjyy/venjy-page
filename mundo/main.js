@@ -4,7 +4,7 @@
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
 import { generarDatos } from './mundo-datos.js';
-import { crearAtlas } from './texturas.js';
+import { crearAtlas, animarAgua } from './texturas.js';
 import { prepararTerreno, MundoVoxel, ESCALA, CHUNK } from './voxeles.js';
 import { Jugador } from './jugador.js';
 import { crearCielo, COLOR_HORIZONTE } from './cielo.js';
@@ -53,7 +53,9 @@ scene.background = COLOR_CIELO;
 
 const camara = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const atlas = new THREE.CanvasTexture(crearAtlas());
+const atlasLienzo = crearAtlas();
+const atlas = new THREE.CanvasTexture(atlasLienzo);
+let cuadroAgua = 0, relojAgua = 0;
 atlas.magFilter = THREE.NearestFilter;
 atlas.minFilter = THREE.NearestFilter;
 atlas.generateMipmaps = false;
@@ -118,7 +120,7 @@ async function iniciar() {
 
     const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, pedirPuntero: () => entrar() });
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, pedirPuntero: () => entrar() });
     window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas };
 
     cargaEl.hidden = true;
@@ -149,6 +151,32 @@ async function iniciar() {
 
     let anterior = performance.now(), cuadros = 0, acumulado = 0;
     const fpsEl = document.getElementById('fps');
+    // Distancia automática: el slider es el máximo; baja si hay pocos FPS y sube si sobran
+    const auto = { fpsSimulados: null, tiempo: 0, ultimoCambio: -99, ventana: 0, ventanaFps: 0, medidas: [], alto: 0, escala: 1 };
+    window.__venjy.auto = auto; // auto.escala acelera el reloj (solo depuración)
+    function autoAjustar(fps, paso) {
+        if (!jugador.activo || mundo.cola.length > 0) { auto.ventana = 0; auto.ventanaFps = 0; auto.alto = 0; return; }
+        auto.tiempo += paso * auto.escala;
+        if (!ajustes.auto) return;
+        auto.ventana += paso * auto.escala; auto.ventanaFps += fps * paso * auto.escala;
+        auto.alto = fps > 58 ? auto.alto + paso * auto.escala : 0;
+        if (auto.ventana >= 3) {
+            auto.medidas.push(auto.ventanaFps / auto.ventana);
+            if (auto.medidas.length > 3) auto.medidas.shift();
+            auto.ventana = 0; auto.ventanaFps = 0;
+        }
+        if (auto.tiempo < 6 || auto.tiempo - auto.ultimoCambio < 5) return;
+        const actual = mundo.distancia, max = ajustes.distanciaMax;
+        const prom = auto.medidas.reduce((a, b) => a + b, 0) / (auto.medidas.length || 1);
+        let nueva = actual;
+        if (auto.medidas.length >= 3 && prom < 40 && actual > 5) nueva = actual - 1;
+        else if (auto.alto >= 10 && actual < max) nueva = actual + 1;
+        else if (actual > max) nueva = max;
+        if (nueva !== actual) {
+            ajustes.aplicarDistanciaAuto(nueva);
+            auto.ultimoCambio = auto.tiempo; auto.medidas.length = 0; auto.alto = 0;
+        }
+    }
     function bucle(ahora) {
         requestAnimationFrame(bucle);
         const dt = (ahora - anterior) / 1000;
@@ -157,6 +185,8 @@ async function iniciar() {
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
         gatas.actualizar(dt);
+        relojAgua += dt;
+        if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.construir(5);
@@ -164,8 +194,11 @@ async function iniciar() {
 
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {
-            fpsEl.textContent = Math.round(cuadros / acumulado) + ' FPS';
+            const paso = acumulado;
+            const fps = auto.fpsSimulados ?? cuadros / acumulado;
+            fpsEl.textContent = Math.round(fps) + ' FPS';
             cuadros = 0; acumulado = 0;
+            autoAjustar(fps, paso);
             zonaEl.textContent = ajustes.zonaEn(jugador.pos.x, jugador.pos.z);
             zonaEl.hidden = !zonaEl.textContent;
             coordsEl.textContent = `X ${jugador.pos.x.toFixed(1)}  Y ${jugador.pos.y.toFixed(1)}  Z ${jugador.pos.z.toFixed(1)}`;
