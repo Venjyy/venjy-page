@@ -19,3 +19,7 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 - Todo texto visible lleva su par `data-es` / `data-en`.
 - Solo fuente `PixelCraft`; sin emojis como íconos (se dibujan en `ICONOS` de `script.js`).
+
+## Mundo 3D (`mundo.html`)
+
+Minecraft 3D jugable con Three.js (carpeta `mundo/`, `vendor/`). Antes de tocarlo lee `mundo/PENDIENTES.md` (estado, arquitectura y tareas) y **actualízalo en cada cambio**: marca tareas hechas y añade una entrada a la bitácora.
