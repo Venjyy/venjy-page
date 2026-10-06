@@ -54,6 +54,8 @@ html, body {
 
 .panel {
     width: min(520px, 100%);
+    max-height: 96vh;
+    overflow-y: auto;
     padding: 24px 22px;
     background: var(--fondo-panel);
     border: 4px solid #000;
@@ -159,3 +161,36 @@ html, body {
     .controles li { flex-direction: column; gap: 0; }
     .controles span { text-align: left; }
 }
+
+/* Ajustes y teletransporte */
+.ajustes { margin-top: 14px; text-align: left; }
+.ajustes h2 {
+    margin: 12px 0 6px;
+    font-size: 1.05rem;
+    font-weight: normal;
+    color: var(--amarillo);
+    text-shadow: 2px 2px 0 #3f3f15;
+}
+.fila {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 5.2em;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 0.95rem;
+}
+.fila.marca { grid-template-columns: auto 1fr; justify-content: start; }
+.fila output { text-align: right; color: var(--gris); }
+.fila input[type='range'] { width: 100%; accent-color: #7d8cc4; }
+.fila input[type='checkbox'] { width: 18px; height: 18px; accent-color: #7d8cc4; }
+.ir-a { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.boton.chico { margin: 0; padding: 8px 4px; font-size: 0.85rem; }
+.datos .zona { color: var(--amarillo); }
+@media (max-width: 520px) {
+    .ir-a { grid-template-columns: repeat(2, 1fr); }
+    .fila { grid-template-columns: 1fr 1fr 4.6em; }
+}
+
+/* El minimapa ocupa la esquina superior derecha: la pausa táctil baja debajo de él */
+.tactil .tactil-pausa { top: calc(env(safe-area-inset-top, 0px) + 134px) !important; }
+@media (min-width: 601px) { .tactil .tactil-pausa { top: calc(env(safe-area-inset-top, 0px) + 184px) !important; } }

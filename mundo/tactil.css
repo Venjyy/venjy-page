@@ -1,0 +1,125 @@
+/* =========================================================
+   VENJY · Controles táctiles del mundo 3D
+   Panel oscuro translúcido con bisel gris, fuente PixelCraft.
+   ========================================================= */
+
+.tactil {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'PixelCraft', monospace;
+    color: #fff;
+}
+
+.tactil[hidden] { display: none !important; }
+
+.tactil-mirar {
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+.tactil-joy, .tactil-boton {
+    pointer-events: auto;
+    touch-action: none;
+}
+
+/* Joystick */
+.tactil-joy {
+    position: absolute;
+    left: calc(28px + env(safe-area-inset-left, 0px));
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    width: 132px;
+    height: 132px;
+    background: rgb(16 10 6 / 0.5);
+    border: 4px solid #000;
+    box-shadow: inset 4px 4px 0 rgb(139 139 139 / 0.55), inset -4px -4px 0 rgb(55 55 55 / 0.8);
+    image-rendering: pixelated;
+}
+
+.tactil-joy::before, .tactil-joy::after {
+    content: '';
+    position: absolute;
+    background: rgb(255 255 255 / 0.18);
+}
+.tactil-joy::before { left: 50%; top: 14px; bottom: 14px; width: 4px; margin-left: -2px; }
+.tactil-joy::after { top: 50%; left: 14px; right: 14px; height: 4px; margin-top: -2px; }
+
+.tactil-joy-palanca {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+    background: #6f6f6f;
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 #8b8b8b, inset -3px -3px 0 #373737;
+    z-index: 1;
+}
+
+.tactil-joy.corre .tactil-joy-palanca { background: #7d8cc4; }
+
+/* Botones */
+.tactil-boton {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font: inherit;
+    font-size: 1rem;
+    color: #fff;
+    text-shadow: 2px 2px 0 #3f3f3f;
+    background: rgb(111 111 111 / 0.7);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 #8b8b8b, inset -3px -3px 0 #373737;
+    cursor: pointer;
+}
+
+.tactil-boton.pulsado { background: rgb(125 140 196 / 0.9); }
+
+.tactil-saltar {
+    right: calc(28px + env(safe-area-inset-right, 0px));
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    width: 104px;
+    height: 104px;
+}
+
+.tactil-bajar {
+    right: calc(150px + env(safe-area-inset-right, 0px));
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    width: 88px;
+    height: 88px;
+}
+
+.tactil-pausa {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    width: 44px;
+    height: 44px;
+}
+
+/* Icono de pausa dibujado con bordes (dos barras) */
+.tactil-icono-pausa {
+    display: block;
+    width: 6px;
+    height: 18px;
+    background: #fff;
+    box-shadow: 10px 0 0 #fff, 2px 2px 0 #3f3f3f, 12px 2px 0 #3f3f3f;
+    margin-right: 10px;
+}
+
+@media (max-height: 420px) {
+    .tactil-joy { width: 108px; height: 108px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+    .tactil-joy-palanca { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
+    .tactil-saltar { width: 88px; height: 88px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+    .tactil-bajar { width: 76px; height: 76px; right: calc(128px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+}
