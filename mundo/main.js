@@ -8,6 +8,9 @@ import { crearAtlas } from './texturas.js';
 import { prepararTerreno, MundoVoxel, ESCALA, CHUNK } from './voxeles.js';
 import { Jugador } from './jugador.js';
 import { crearCielo, COLOR_HORIZONTE } from './cielo.js';
+import { iniciarAjustes } from './ajustes.js';
+import { iniciarTactil } from './tactil.js';
+import { crearMinimapa } from './minimapa.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -75,6 +78,7 @@ const pantallaInicio = document.getElementById('inicio');
 const hudEl = document.getElementById('hud');
 const coordsEl = document.getElementById('coords');
 const modoEl = document.getElementById('modo');
+const zonaEl = document.getElementById('zona');
 const pausaEl = document.getElementById('pausa-titulo');
 
 cargaEl.textContent = TXT[idioma].cargando;
@@ -111,24 +115,32 @@ async function iniciar() {
     jugador.colocar(px + 0.5, terreno.HT[pz * terreno.BW + px] + 1, pz + 0.5);
     jugador.yaw = Math.PI / 2 * -1; // mirando hacia el este (hacia el título)
 
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo };
+    const minimapa = crearMinimapa(datos, hudEl, ESCALA);
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, pedirPuntero: () => entrar() });
+    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
     botonJugar.focus();
 
-    botonJugar.addEventListener('click', () => pedirPuntero());
-    lienzo.addEventListener('click', () => { if (!jugador.activo) pedirPuntero(); });
-    pantallaInicio.addEventListener('click', e => { if (e.target === pantallaInicio) pedirPuntero(); });
+    botonJugar.addEventListener('click', () => entrar());
+    lienzo.addEventListener('click', () => { if (!jugador.activo) entrar(); });
+    pantallaInicio.addEventListener('click', e => { if (e.target === pantallaInicio) entrar(); });
 
-    jugador.alCambiarActivo = activo => {
+    const alActivo = activo => {
         pantallaInicio.hidden = activo;
         hudEl.hidden = !activo;
         if (!activo) {
+            ajustes.sincronizarHora();
             pausaEl.textContent = pausaEl.dataset[idioma === 'en' ? 'enPausa' : 'esPausa'];
             botonJugar.textContent = botonJugar.dataset[idioma === 'en' ? 'enContinuar' : 'esContinuar'];
         }
     };
+    jugador.alCambiarActivo = alActivo;
+    // En pantallas táctiles no hay pointer lock: se usan los controles en pantalla
+    const tactil = iniciarTactil(jugador, { alEntrar: alActivo });
+    if (tactil) document.querySelector('.controles').hidden = true;
+    const entrar = () => (tactil ? tactil.activar() : pedirPuntero());
     const actualizarModo = v => { modoEl.textContent = v ? TXT[idioma].vuelo : TXT[idioma].suelo; };
     jugador.alCambiarVuelo = actualizarModo;
     actualizarModo(false);
@@ -142,6 +154,7 @@ async function iniciar() {
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
+        minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.construir(5);
         renderer.render(scene, camara);
@@ -150,6 +163,8 @@ async function iniciar() {
         if (acumulado >= 0.5) {
             fpsEl.textContent = Math.round(cuadros / acumulado) + ' FPS';
             cuadros = 0; acumulado = 0;
+            zonaEl.textContent = ajustes.zonaEn(jugador.pos.x, jugador.pos.z);
+            zonaEl.hidden = !zonaEl.textContent;
             coordsEl.textContent = `X ${jugador.pos.x.toFixed(1)}  Y ${jugador.pos.y.toFixed(1)}  Z ${jugador.pos.z.toFixed(1)}`;
         }
     }
