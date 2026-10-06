@@ -7,6 +7,7 @@ import { generarDatos } from './mundo-datos.js';
 import { crearAtlas } from './texturas.js';
 import { prepararTerreno, MundoVoxel, ESCALA, CHUNK } from './voxeles.js';
 import { Jugador } from './jugador.js';
+import { crearCielo, COLOR_HORIZONTE } from './cielo.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -43,7 +44,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 
 const scene = new THREE.Scene();
-const COLOR_CIELO = new THREE.Color('#8fbcf7');
+const COLOR_CIELO = COLOR_HORIZONTE;
 scene.background = COLOR_CIELO;
 
 const camara = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -87,9 +88,10 @@ async function iniciar() {
 
     const bordeFog = DISTANCIA * CHUNK;
     scene.fog = new THREE.Fog(COLOR_CIELO, bordeFog * 0.55, bordeFog * 0.95);
-    camara.far = bordeFog * 1.2;
+    camara.far = 2000;
     camara.updateProjectionMatrix();
 
+    const cielo = crearCielo(scene, terreno.BW, terreno.BD);
     const mundo = new MundoVoxel(scene, terreno, materiales, DISTANCIA);
     const jugador = new Jugador(camara, mundo, lienzo, { x: terreno.BW, z: terreno.BD });
 
@@ -132,6 +134,7 @@ async function iniciar() {
         anterior = ahora;
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
+        cielo.actualizar(camara);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.construir(5);
         renderer.render(scene, camara);

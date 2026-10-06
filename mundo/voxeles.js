@@ -21,6 +21,7 @@ const hash = (x, z, s) => {
 
 const vh = e => Math.round(NIVEL_AGUA + (e - NIVEL_AGUA) * FACTOR_Y);
 const BASE_ESTRUCTURA = vh(18);
+const ALTO_LETRAS = 18; // las letras del título se elevan para leerse mejor
 
 const MATERIAL_ESTRUCTURA = {
     rojo: B.ROJO, azul: B.AZUL, naranjo: B.NARANJO, negro: B.NEGRO, madera: B.TABLONES,
@@ -99,7 +100,48 @@ export function prepararTerreno(datos) {
             else { SUP[o] = B.PASTO; SUB[o] = B.TIERRA; }
         }
     }
-    return { BW, BD, HT, SUP, SUB, ES, datos };
+    // Segunda pasada: volumen de casas, puertas, letras altas y pedestal del faro
+    const HUECO = new Uint8Array(BW * BD); // 1 interior hueco · 2 pared · 3 pared con puerta
+    const { tx0, ty0, anchoT, altoT } = datos.titulo;
+    const [fcx, fcz] = datos.P.faro;
+    const CASAS = new Set([B.ROJO, B.AZUL, B.NARANJO, B.PODZOL, B.TABLONES, B.CUARZO]);
+    const esCasa = o => ES[o] === 1 && HT[o] - BASE_ESTRUCTURA >= 4 && CASAS.has(SUP[o]);
+    for (let bz = 0; bz < BD; bz++) {
+        const cz = Math.floor(bz / ESCALA);
+        for (let bx = 0; bx < BW; bx++) {
+            const o = bz * BW + bx;
+            if (ES[o] !== 1) continue;
+            const cx = Math.floor(bx / ESCALA);
+            if (cx >= fcx - 2 && cx < fcx + 2 && cz >= fcz - 2 && cz < fcz + 2) {
+                ES[o] = 3; HT[o] = vh(19); SUP[o] = B.PIEDRA; SUB[o] = B.PIEDRA;
+                continue;
+            }
+            const enTitulo = cx >= tx0 && cx < tx0 + anchoT && cz >= ty0 && cz < ty0 + altoT;
+            if (enTitulo && SUP[o] === B.CUARZO) { HT[o] = BASE_ESTRUCTURA + ALTO_LETRAS; continue; }
+            if (!esCasa(o) || bx < 1 || bz < 1 || bx >= BW - 1 || bz >= BD - 1) continue;
+            const igual = p => esCasa(p) && SUP[p] === SUP[o];
+            HUECO[o] = igual(o - 1) && igual(o + 1) && igual(o - BW) && igual(o + BW) ? 1 : 2;
+        }
+    }
+    // Puertas: el felpudo de madera queda a ras del piso y se abre un hueco de 2×3 en la pared
+    for (let cz = 1; cz < H; cz++) {
+        for (let cx = 0; cx < W; cx++) {
+            const ci = cz * W + cx;
+            if (!F[ci] || T[ci] !== 'madera' || E[ci] !== 19) continue;
+            for (let dz = 0; dz < ESCALA; dz++) {
+                for (let dx = 0; dx < ESCALA; dx++) {
+                    const o = (cz * ESCALA + dz) * BW + cx * ESCALA + dx;
+                    HT[o] = BASE_ESTRUCTURA; SUP[o] = B.TABLONES; SUB[o] = B.TIERRA;
+                }
+            }
+            for (let dx = 1; dx <= 2; dx++) {
+                const o = (cz * ESCALA - 1) * BW + cx * ESCALA + dx;
+                if (HUECO[o] === 2) HUECO[o] = 3;
+            }
+        }
+    }
+    const faro = { x: fcx * ESCALA, z: fcz * ESCALA, y: vh(19) + 1 };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, datos };
 }
 
 // ---------------------------------------------------------
@@ -127,7 +169,7 @@ function colocarArbol(vox, wx0, wz0, tx, ty, tz, h) {
 }
 
 export function llenarChunk(terreno, cx, cz) {
-    const { BW, BD, HT, SUP, SUB, ES, datos } = terreno;
+    const { BW, BD, HT, SUP, SUB, ES, HUECO, datos } = terreno;
     const vox = new Uint8Array(VENT * VENT * ALTO);
     const wx0 = cx * CHUNK - 1, wz0 = cz * CHUNK - 1;
     let maxY = 0;
@@ -135,16 +177,22 @@ export function llenarChunk(terreno, cx, cz) {
     for (let lz = 0; lz < VENT; lz++) {
         for (let lx = 0; lx < VENT; lx++) {
             const bx = wx0 + lx, bz = wz0 + lz;
-            let h, sup, sub, es = 0;
+            let h, sup, sub, es = 0, hueco = 0;
             if (bx < 0 || bz < 0 || bx >= BW || bz >= BD) { h = 8; sup = B.ARENA; sub = B.ARENA; }
-            else { const o = bz * BW + bx; h = HT[o]; sup = SUP[o]; sub = SUB[o]; es = ES[o]; }
+            else { const o = bz * BW + bx; h = HT[o]; sup = SUP[o]; sub = SUB[o]; es = ES[o]; hueco = HUECO[o]; }
             const tope = Math.min(ALTO - 1, h);
             // Piso natural (para estructuras, solo hasta la base)
             const suelo = es === 1 ? Math.min(tope, BASE_ESTRUCTURA - 1) : tope;
+            const pared = sup === B.CUARZO ? B.CUARZO : B.TABLONES;
             for (let y = 0; y <= tope; y++) {
                 let id;
                 if (es === 2) id = y === tope ? sup : y > NIVEL_AGUA - 4 ? B.AGUA : B.ARENA;
                 else if (y === tope) id = sup;
+                else if (hueco && y >= BASE_ESTRUCTURA) {
+                    if (y === BASE_ESTRUCTURA) id = B.TABLONES; // piso a ras del suelo
+                    else if (hueco === 1) id = B.AIRE;
+                    else id = hueco === 3 && y <= BASE_ESTRUCTURA + 3 ? B.AIRE : pared;
+                }
                 else if (es === 1 && y >= BASE_ESTRUCTURA) id = sup;
                 else if (y > suelo - 4) id = sub;
                 else id = B.PIEDRA;
@@ -173,7 +221,37 @@ export function llenarChunk(terreno, cx, cz) {
             if (HT[o] + alto + 2 > maxY) maxY = HT[o] + alto + 2;
         }
     }
+    // Faro: torre de rayas con linterna en la cima
+    const f = terreno.faro;
+    if (Math.abs(f.x - (wx0 + VENT / 2)) < 40 && Math.abs(f.z - (wz0 + VENT / 2)) < 40) {
+        colocarFaro(vox, wx0, wz0, f);
+        maxY = Math.max(maxY, f.y + 38);
+    }
     return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
+}
+
+function colocarFaro(vox, wx0, wz0, f) {
+    const poner = (x, y, z, id) => {
+        const lx = x - wx0, lz = z - wz0;
+        if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
+        vox[(y * VENT + lz) * VENT + lx] = id;
+    };
+    const anillo = (y, r, id, relleno) => {
+        for (let dz = -r; dz <= r; dz++) {
+            for (let dx = -r; dx <= r; dx++) {
+                const borde = Math.abs(dx) === r || Math.abs(dz) === r;
+                if (borde || relleno) poner(f.x + dx, f.y + y, f.z + dz, id);
+                else poner(f.x + dx, f.y + y, f.z + dz, B.AIRE);
+            }
+        }
+    };
+    for (let y = 0; y < 31; y++) anillo(y, y < 18 ? 3 : 2, (y >> 2) & 1 ? B.ROJO : B.CUARZO, y === 0);
+    for (let y = 0; y < 3; y++) { poner(f.x, f.y + y, f.z + 3, B.AIRE); } // puerta
+    anillo(31, 3, B.NEGRO, true);
+    for (let y = 32; y <= 34; y++) anillo(y, 1, B.DIAMANTE, false);
+    poner(f.x, f.y + 33, f.z, B.ORO);
+    anillo(35, 2, B.NEGRO, true);
+    poner(f.x, f.y + 36, f.z, B.NEGRO);
 }
 
 // ---------------------------------------------------------

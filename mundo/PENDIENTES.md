@@ -23,6 +23,7 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, si
 | `mundo/texturas.js` | Atlas 8×8 de tiles 16×16 (`PINTORES`), ids de bloque `B`, definición por cara `BLOQUES`, tipo `TIPO` (1 sólido, 2 hoja, 3 agua). |
 | `mundo/voxeles.js` | `prepararTerreno` (alturas y materiales por columna), `llenarChunk` (bloques + árboles), `mallarChunk` (culling + AO + vertex colors), `MundoVoxel` (carga por distancia con presupuesto por cuadro). |
 | `mundo/jugador.js` | Caminar con colisión AABB, vuelo con doble Espacio, correr, agua básica. |
+| `mundo/cielo.js` | Domo de gradiente, sol y nubes de bloques. |
 | `mundo/main.js` | Escena, render, niebla, bucle, idioma, HUD. |
 | `mundo/mundo.css` | Estilo de menús tipo Minecraft (fuente PixelCraft). |
 | `vendor/` | Three.js 0.186.1 sin minificar + licencia. |
@@ -45,12 +46,12 @@ Cómo se arma una columna: la altura sale de interpolar `E` (suavizado bilineal 
 Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ### Fase 2 · Pulido Minecraft
-- [ ] Casas con volumen real: paredes, techo del color del mapa, puerta de madera, ventanas, interior hueco. Sobre los rectángulos `F` (hoy son losas). Casas: roja (casa), azul (registro), 3 de la aldea, naranja (gatera), correo.
-- [ ] Mina: túnel/entrada en la montaña (celdas `negro` con alto −2), dintel de madera.
-- [ ] Faro de cuarzo con núcleo de diamante (hoy es un cubo 4×4 celdas).
+- [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Falta: ventanas, muebles, techo a dos aguas, iluminación interior.
+- [ ] Mina: túnel/entrada en la montaña. Hoy las celdas `negro` (E=16) forman un pozo hundido dentro de la montaña, sin túnel ni dintel; al estar en altura 17 quedan como un cráter.
+- [x] Faro: torre de rayas rojas/blancas con linterna de diamante, balcón y puerta, sobre pedestal de piedra (`colocarFaro` en `voxeles.js`).
 - [ ] Pozo de la aldea, buzón del correo, cajas de la gatera con forma propia.
-- [ ] Letras "VENJY": hoy cada píxel mide 32×32 bloques y solo se leen desde el aire. Valorar hacerlas más altas (monumento) o reducir su escala.
-- [ ] Cielo: gradiente, sol y luna cuadrados, nubes planas de bloques blancos, ciclo día/noche opcional.
+- [x] Letras "VENJY" elevadas a 18 bloques (`ALTO_LETRAS`). Cada píxel sigue midiendo 32×32 bloques; valorar reducir la escala.
+- [x] Cielo: domo con gradiente, sol cuadrado y nubes de bloques estáticas (`mundo/cielo.js`). Falta: luna, ciclo día/noche, que las nubes se muevan.
 - [ ] Niebla/colores más fieles al Minecraft real; agua con animación de textura.
 - [ ] Árboles: variedad (altura, abedul), pinos en zonas altas; flores/pasto alto opcional.
 - [ ] Suavizar los escalones del terreno (hoy se ven curvas de nivel de 1 bloque).
@@ -87,6 +88,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 
+- 2026-10-06 · **Fase 2 parcial**: casas huecas con puerta, faro, letras elevadas, cielo con sol y nubes · `mundo/voxeles.js` (capa `HUECO`, `colocarFaro`, `ALTO_LETRAS`, `faro` en el terreno), `mundo/cielo.js` (nuevo), `mundo/main.js` (integra el cielo; `camara.far = 2000`) · Piso de las casas a ras del suelo para entrar caminando. Pendiente: mina, pozo/buzón/cajas, ventanas, luna, cultivos.
 - 2026-10-06 · **Fase 1 completa**: página `mundo.html`, generador sin DOM con paridad exacta, conversión mapa→bloques por chunks (culling + AO), texturas procedurales, árboles, jugador creativo (caminar/volar), menú ES/EN. Archivos: `mundo.html`, `mundo/*`, `vendor/*`. Mapa 2D e `index.html` sin tocar. PR #3.
 - 2026-10-06 · Se subió el techo de vuelo de `ALTO + 120` a 600 · `mundo/jugador.js` · para poder ver el título desde arriba.
 - 2026-10-06 · Se creó este archivo · `mundo/PENDIENTES.md`.
