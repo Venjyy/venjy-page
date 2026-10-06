@@ -104,6 +104,7 @@ export function prepararTerreno(datos) {
     const HUECO = new Uint8Array(BW * BD); // 1 interior hueco · 2 pared · 3 pared con puerta
     const { tx0, ty0, anchoT, altoT } = datos.titulo;
     const [fcx, fcz] = datos.P.faro;
+    const [pax, pay] = datos.P.aldea, [pcx, pcy] = datos.P.correo;
     const CASAS = new Set([B.ROJO, B.AZUL, B.NARANJO, B.PODZOL, B.TABLONES, B.CUARZO]);
     const esCasa = o => ES[o] === 1 && HT[o] - BASE_ESTRUCTURA >= 4 && CASAS.has(SUP[o]);
     for (let bz = 0; bz < BD; bz++) {
@@ -114,6 +115,13 @@ export function prepararTerreno(datos) {
             const cx = Math.floor(bx / ESCALA);
             if (cx >= fcx - 2 && cx < fcx + 2 && cz >= fcz - 2 && cz < fcz + 2) {
                 ES[o] = 3; HT[o] = vh(19); SUP[o] = B.PIEDRA; SUB[o] = B.PIEDRA;
+                continue;
+            }
+            if (SUP[o] === B.HOJAS && HT[o] === BASE_ESTRUCTURA) { SUP[o] = B.CULTIVO; HUECO[o] = 4; continue; } // trigo
+            const enPozo = cx >= pax - 1 && cx <= pax && cz >= pay - 5 && cz <= pay - 4;
+            const enBuzon = cx === pcx - 3 && cz === pcy - 5;
+            if (SUP[o] === B.HOJAS || enPozo || enBuzon) { // bosquecillo a árboles; pozo y buzón a decorado
+                ES[o] = 0; HT[o] = BASE_ESTRUCTURA; SUP[o] = B.PASTO; SUB[o] = B.TIERRA;
                 continue;
             }
             const enTitulo = cx >= tx0 && cx < tx0 + anchoT && cz >= ty0 && cz < ty0 + altoT;
@@ -140,32 +148,54 @@ export function prepararTerreno(datos) {
             }
         }
     }
+    const decor = [
+        { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA },
+        { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA }
+    ];
     const faro = { x: fcx * ESCALA, z: fcz * ESCALA, y: vh(19) + 1 };
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, datos };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, datos };
 }
 
 // ---------------------------------------------------------
 // Chunk: llena la ventana de bloques (con borde y árboles)
 // ---------------------------------------------------------
-function colocarArbol(vox, wx0, wz0, tx, ty, tz, h) {
+const HOJAS_ID = [B.HOJAS, B.HOJAS_ABEDUL, B.HOJAS_PINO];
+const TRONCO_ID = [B.TRONCO, B.TRONCO_ABEDUL, B.TRONCO_PINO];
+
+function colocarArbol(vox, wx0, wz0, tx, ty, tz, h, tipo = 0) {
     const poner = (x, y, z, id, sobreescribe) => {
         const lx = x - wx0, lz = z - wz0;
         if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
         const i = (y * VENT + lz) * VENT + lx;
-        if (vox[i] === B.AIRE || (sobreescribe && vox[i] === B.HOJAS)) vox[i] = id;
+        if (vox[i] === B.AIRE || (sobreescribe && vox[i] === HOJAS_ID[tipo])) vox[i] = id;
     };
     const tope = ty + h;
+    const hoja = HOJAS_ID[tipo], tronco = TRONCO_ID[tipo];
+    if (tipo === 2) { // pino: copa cónica
+        for (let y = ty + 2; y <= tope + 2; y++) {
+            const k = y - (ty + 2);
+            const r = y >= tope + 1 ? 0 : Math.max(1, 2 - Math.floor(k * 3 / (h + 1)) + (k % 2 === 0 ? 1 : 0));
+            for (let dz = -r; dz <= r; dz++) {
+                for (let dx = -r; dx <= r; dx++) {
+                    if (Math.abs(dx) + Math.abs(dz) > r + (r > 1 ? 1 : 0)) continue;
+                    poner(tx + dx, y, tz + dz, hoja, false);
+                }
+            }
+        }
+        for (let y = ty + 1; y <= tope + 1; y++) poner(tx, y, tz, tronco, true);
+        return;
+    }
     for (let y = tope - 2; y <= tope + 1; y++) {
         const r = y >= tope ? 1 : 2;
         for (let dz = -r; dz <= r; dz++) {
             for (let dx = -r; dx <= r; dx++) {
                 if (r === 2 && Math.abs(dx) === 2 && Math.abs(dz) === 2 && (hash(tx + dx, tz + dz, y) & 1)) continue;
                 if (y === tope + 1 && Math.abs(dx) + Math.abs(dz) > 1) continue;
-                poner(tx + dx, y, tz + dz, B.HOJAS, false);
+                poner(tx + dx, y, tz + dz, hoja, false);
             }
         }
     }
-    for (let y = ty + 1; y <= tope; y++) poner(tx, y, tz, B.TRONCO, true);
+    for (let y = ty + 1; y <= tope; y++) poner(tx, y, tz, tronco, true);
 }
 
 export function llenarChunk(terreno, cx, cz) {
@@ -191,13 +221,17 @@ export function llenarChunk(terreno, cx, cz) {
                 else if (hueco && y >= BASE_ESTRUCTURA) {
                     if (y === BASE_ESTRUCTURA) id = B.TABLONES; // piso a ras del suelo
                     else if (hueco === 1) id = B.AIRE;
-                    else id = hueco === 3 && y <= BASE_ESTRUCTURA + 3 ? B.AIRE : pared;
+                    else if (hueco === 3 && y <= BASE_ESTRUCTURA + 3) id = B.AIRE;
+                    else if (hueco === 2 && pared === B.TABLONES && y >= BASE_ESTRUCTURA + 2 && y <= BASE_ESTRUCTURA + 3
+                        && [2, 3].includes((bx + bz) & 7)) id = B.VIDRIO;
+                    else id = pared;
                 }
                 else if (es === 1 && y >= BASE_ESTRUCTURA) id = sup;
                 else if (y > suelo - 4) id = sub;
                 else id = B.PIEDRA;
                 vox[(y * VENT + lz) * VENT + lx] = id;
             }
+            if (hueco === 4 && tope + 1 < ALTO) vox[((tope + 1) * VENT + lz) * VENT + lx] = B.TRIGO;
             if (es !== 2) for (let y = tope + 1; y <= NIVEL_AGUA; y++) vox[(y * VENT + lz) * VENT + lx] = B.AGUA;
             if (Math.max(tope, NIVEL_AGUA) > maxY) maxY = Math.max(tope, NIVEL_AGUA);
         }
@@ -210,15 +244,23 @@ export function llenarChunk(terreno, cx, cz) {
     for (let ccz = Math.max(0, c0z); ccz <= Math.min(H - 1, c1z); ccz++) {
         for (let ccx = Math.max(0, c0x); ccx <= Math.min(W - 1, c1x); ccx++) {
             const ci = ccz * W + ccx;
-            if (T[ci] !== 'hojas' || F[ci]) continue;
+            if (T[ci] !== 'hojas') continue;
             const hs = hash(ccx, ccz, 3);
             const tx = ccx * ESCALA + 1 + (hs % 2), tz = ccz * ESCALA + 1 + ((hs >>> 3) % 2);
             const o = tz * BW + tx;
             if (ES[o] || SUP[o] !== B.PASTO || HT[o] < NIVEL_AGUA + 1) continue;
-            const alto = 4 + ((hs >>> 6) % 2);
-            if (HT[o] + alto + 2 >= ALTO) continue;
-            colocarArbol(vox, wx0, wz0, tx, HT[o], tz, alto);
+            const tipo = HT[o] > vh(26) ? 2 : ((hs >>> 9) % 4 === 0 ? 1 : 0); // 0 roble, 1 abedul, 2 pino
+            const alto = tipo === 2 ? 6 + ((hs >>> 6) % 3) : 4 + ((hs >>> 6) % 2) + tipo;
+            if (HT[o] + alto + 3 >= ALTO) continue;
+            colocarArbol(vox, wx0, wz0, tx, HT[o], tz, alto, tipo);
             if (HT[o] + alto + 2 > maxY) maxY = HT[o] + alto + 2;
+        }
+    }
+    // Decorados: pozo de la aldea y buzón del correo
+    for (const d of terreno.decor) {
+        if (Math.abs(d.x + 4 - (wx0 + VENT / 2)) < 24 && Math.abs(d.z + 4 - (wz0 + VENT / 2)) < 24) {
+            colocarDecor(vox, wx0, wz0, d, BASE_ESTRUCTURA + 1);
+            maxY = Math.max(maxY, BASE_ESTRUCTURA + 8);
         }
     }
     // Faro: torre de rayas con linterna en la cima
@@ -228,6 +270,35 @@ export function llenarChunk(terreno, cx, cz) {
         maxY = Math.max(maxY, f.y + 38);
     }
     return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
+}
+
+function colocarDecor(vox, wx0, wz0, d, y0) {
+    const poner = (x, y, z, id) => {
+        const lx = x - wx0, lz = z - wz0;
+        if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
+        vox[(y * VENT + lz) * VENT + lx] = id;
+    };
+    if (d.t === 'pozo') {
+        for (let dz = 0; dz < 8; dz++) {
+            for (let dx = 0; dx < 8; dx++) {
+                const borde = dx === 0 || dx === 7 || dz === 0 || dz === 7;
+                const esquina = (dx === 0 || dx === 7) && (dz === 0 || dz === 7);
+                if (borde) {
+                    poner(d.x + dx, y0, d.z + dz, B.LABRADA);
+                    poner(d.x + dx, y0 + 1, d.z + dz, B.LABRADA);
+                } else {
+                    for (let y = y0 - 3; y < y0; y++) poner(d.x + dx, y, d.z + dz, B.AGUA);
+                }
+                if (esquina) for (let y = y0 + 2; y <= y0 + 4; y++) poner(d.x + dx, y, d.z + dz, B.TRONCO);
+                poner(d.x + dx, y0 + 5, d.z + dz, B.TABLONES);
+            }
+        }
+    } else if (d.t === 'buzon') {
+        for (let y = 0; y < 3; y++) poner(d.x + 1, y0 + y, d.z + 1, B.TRONCO);
+        poner(d.x + 1, y0 + 3, d.z + 1, B.ROJO);
+        poner(d.x + 2, y0 + 3, d.z + 1, B.ROJO);
+        poner(d.x + 3, y0 + 4, d.z + 1, B.NARANJO);
+    }
 }
 
 function colocarFaro(vox, wx0, wz0, f) {

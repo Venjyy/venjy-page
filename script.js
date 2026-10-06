@@ -275,6 +275,27 @@ const ICONOS = {
             '................'
         ]
     },
+    portal: {
+        p: { K: '#14101e', O: '#2b1a4a', V: '#8932b8', v: '#b86be0', P: '#5d217e' },
+        m: [
+            '................',
+            '..KKKKKKKKKKKK..',
+            '..KOOOOOOOOOOK..',
+            '..KOVvVPVvVPOK..',
+            '..KOPVvVPVvVOK..',
+            '..KOVPVvVPVvOK..',
+            '..KOvVPVvVPVOK..',
+            '..KOVvVPVvVPOK..',
+            '..KOPVvVPVvVOK..',
+            '..KOVPVvVPVvOK..',
+            '..KOvVPVvVPVOK..',
+            '..KOVvVPVvVPOK..',
+            '..KOOOOOOOOOOK..',
+            '..KKKKKKKKKKKK..',
+            '................',
+            '................'
+        ]
+    },
     cofre: {
         p: { K: '#2a1708', B: '#a86c2a', b: '#7c4b1b', Y: '#d6d6d6', y: '#7a7a7a' },
         m: [
@@ -1010,6 +1031,7 @@ function cambiarIdioma(nuevo, guardar = true) {
         if (sr && !sr.hasAttribute('data-es')) sr.textContent = nombreRanura(r);
     });
     document.getElementById('idioma-texto').textContent = nuevo.toUpperCase();
+    document.querySelectorAll('a[data-mundo]').forEach(a => a.setAttribute('href', `mundo.html?lang=${nuevo}`));
     actualizarCV();
     reiniciarMaquina();
     elegirSplash();

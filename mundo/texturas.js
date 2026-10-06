@@ -113,6 +113,42 @@ const PINTORES = {
         const v = r();
         if (v < 0.35) return [0, 0, 0, 0];
         return ajustar(v < 0.7 ? [64, 150, 52] : [98, 176, 60], 0.9 + r() * 0.2);
+    },
+    vidrio: (x, y, r) => {
+        if (x === 0 || y === 0 || x === 15 || y === 15) return [200, 228, 238];
+        if ((x - y === 0 || x - y === 1) && x > 2 && x < 9) return [232, 246, 252];
+        return [0, 0, 0, 0];
+    },
+    piedra_labrada: (x, y, r) => {
+        const junta = (x + (Math.floor(y / 4) % 2) * 4) % 8 === 0 || y % 4 === 0;
+        const g = (junta ? 78 : 122) * (0.85 + r() * 0.25);
+        return [g, g, g];
+    },
+    hojas_abedul: (x, y, r) => {
+        const v = r();
+        if (v < 0.16) return [0, 0, 0, 0];
+        return ajustar(v < 0.5 ? [112, 156, 62] : v < 0.8 ? [128, 172, 70] : [92, 134, 52], 0.9 + r() * 0.2);
+    },
+    tronco_abedul_lado: (x, y, r) => {
+        const mancha = r() < 0.12 || (y % 5 === 2 && x % 3 !== 0 && r() < 0.5);
+        return mancha ? [46, 44, 40] : ajustar([226, 224, 214], 0.92 + r() * 0.14);
+    },
+    tronco_abedul_top: (x, y, r) => {
+        const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+        return d > 6.5 ? ajustar([200, 198, 186], 0.9 + r() * 0.2) : ajustar([196, 176, 120], (Math.floor(d) % 2 ? 0.9 : 1) * (0.94 + r() * 0.12));
+    },
+    hojas_pino: (x, y, r) => {
+        const v = r();
+        if (v < 0.14) return [0, 0, 0, 0];
+        return ajustar(v < 0.5 ? [30, 84, 52] : v < 0.8 ? [38, 100, 60] : [22, 66, 42], 0.9 + r() * 0.2);
+    },
+    tronco_pino_lado: (x, y, r) => {
+        const franja = (x % 4 === 1 || x % 5 === 3) ? 0.7 : 1;
+        return ajustar([68, 48, 28], franja * (0.85 + r() * 0.25));
+    },
+    tronco_pino_top: (x, y, r) => {
+        const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+        return d > 6.5 ? ajustar([60, 42, 24], 0.9 + r() * 0.2) : ajustar([120, 90, 52], (Math.floor(d) % 2 ? 0.88 : 1) * (0.94 + r() * 0.12));
     }
 };
 
@@ -151,7 +187,8 @@ const def = (nombre, tipo, top, lado = top, fondo = lado) =>
 export const B = {
     AIRE: 0, PASTO: 1, TIERRA: 2, PIEDRA: 3, ARENA: 4, NIEVE: 5, AGUA: 6, HOJAS: 7, TRONCO: 8,
     TABLONES: 9, CUARZO: 10, ROJO: 11, AZUL: 12, NARANJO: 13, NEGRO: 14, ORO: 15, DIAMANTE: 16,
-    ESMERALDA: 17, PODZOL: 18, ARCILLA: 19, GRIS: 20, CAMINO: 21, CULTIVO: 22
+    ESMERALDA: 17, PODZOL: 18, ARCILLA: 19, GRIS: 20, CAMINO: 21, CULTIVO: 22,
+    TRIGO: 23, VIDRIO: 24, LABRADA: 25, HOJAS_ABEDUL: 26, TRONCO_ABEDUL: 27, HOJAS_PINO: 28, TRONCO_PINO: 29
 };
 
 export const BLOQUES = [];
@@ -177,6 +214,13 @@ BLOQUES[B.ARCILLA] = def('arcilla', 's', 'arcilla');
 BLOQUES[B.GRIS] = def('gris', 's', 'gris');
 BLOQUES[B.CAMINO] = def('camino', 's', 'camino_top', 'tierra', 'tierra');
 BLOQUES[B.CULTIVO] = def('cultivo', 's', 'cultivo_top', 'tierra', 'tierra');
+BLOQUES[B.TRIGO] = def('trigo', 'h', 'cultivo_planta');
+BLOQUES[B.VIDRIO] = def('vidrio', 'h', 'vidrio');
+BLOQUES[B.LABRADA] = def('piedra labrada', 's', 'piedra_labrada');
+BLOQUES[B.HOJAS_ABEDUL] = def('hojas de abedul', 'h', 'hojas_abedul');
+BLOQUES[B.TRONCO_ABEDUL] = def('tronco de abedul', 's', 'tronco_abedul_top', 'tronco_abedul_lado', 'tronco_abedul_top');
+BLOQUES[B.HOJAS_PINO] = def('hojas de pino', 'h', 'hojas_pino');
+BLOQUES[B.TRONCO_PINO] = def('tronco de pino', 's', 'tronco_pino_top', 'tronco_pino_lado', 'tronco_pino_top');
 
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua
 export const TIPO = new Uint8Array(BLOQUES.length);
