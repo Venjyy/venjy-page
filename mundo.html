@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venjy · Mundo</title>
+    <link rel="preload" href="font/pixelcraft.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="mundo/mundo.css">
+</head>
+<body>
+    <canvas id="juego"></canvas>
+
+    <div id="hud" hidden>
+        <div class="mira" aria-hidden="true"></div>
+        <div class="datos">
+            <span id="modo"></span>
+            <span id="coords"></span>
+            <span id="fps"></span>
+        </div>
+    </div>
+
+    <main id="inicio">
+        <section class="panel">
+            <h1 id="pausa-titulo" data-es="Mundo de Venjy" data-en="Venjy's World"
+                data-es-pausa="Juego en pausa" data-en-pausa="Game paused">Mundo de Venjy</h1>
+            <p class="sub" data-es="El mapa del portafolio, ahora en 3D. Modo creativo."
+               data-en="The portfolio map, now in 3D. Creative mode.">El mapa del portafolio, ahora en 3D. Modo creativo.</p>
+
+            <p id="carga" class="carga">Generando el mundo…</p>
+            <button id="jugar" class="boton" hidden
+                    data-es="Jugar" data-en="Play"
+                    data-es-continuar="Continuar" data-en-continuar="Resume">Jugar</button>
+
+            <ul class="controles">
+                <li><b>W A S D</b> <span data-es="Moverte" data-en="Move">Moverte</span></li>
+                <li><b>Mouse</b> <span data-es="Mirar" data-en="Look">Mirar</span></li>
+                <li><b data-es="Espacio" data-en="Space">Espacio</b> <span data-es="Saltar" data-en="Jump">Saltar</span></li>
+                <li><b data-es="2× Espacio" data-en="2× Space">2× Espacio</b> <span data-es="Volar / dejar de volar" data-en="Toggle flight">Volar / dejar de volar</span></li>
+                <li><b data-es="Espacio / Shift" data-en="Space / Shift">Espacio / Shift</b> <span data-es="Subir / bajar (volando)" data-en="Up / down (flying)">Subir / bajar (volando)</span></li>
+                <li><b>Ctrl</b> <span data-es="Correr" data-en="Sprint">Correr</span></li>
+                <li><b>Esc</b> <span data-es="Pausa" data-en="Pause">Pausa</span></li>
+            </ul>
+
+            <a id="volver" class="boton secundario" href="index.html"
+               data-es="Volver al portafolio" data-en="Back to portfolio">Volver al portafolio</a>
+        </section>
+    </main>
+
+    <script type="module" src="mundo/main.js"></script>
+</body>
+</html>

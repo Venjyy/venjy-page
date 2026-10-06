@@ -1,0 +1,161 @@
+/* =========================================================
+   VENJY · Mundo 3D
+   Paneles y botones al estilo de los menús de Minecraft.
+   ========================================================= */
+
+@font-face {
+    font-family: 'PixelCraft';
+    src: url('../font/pixelcraft.ttf') format('truetype');
+    font-display: swap;
+}
+
+:root {
+    --fondo-panel: rgb(16 10 6 / 0.82);
+    --borde-claro: #8b8b8b;
+    --borde-oscuro: #373737;
+    --boton: #6f6f6f;
+    --boton-hover: #7d8cc4;
+    --blanco: #ffffff;
+    --gris: #aaaaaa;
+    --amarillo: #ffff55;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #8fbcf7;
+    font-family: 'PixelCraft', monospace;
+    color: var(--blanco);
+}
+
+#juego {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+}
+
+[hidden] { display: none !important; }
+
+/* Pantalla de inicio / pausa */
+#inicio {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgb(0 0 0 / 0.45);
+}
+
+.panel {
+    width: min(520px, 100%);
+    padding: 24px 22px;
+    background: var(--fondo-panel);
+    border: 4px solid #000;
+    box-shadow: inset 4px 4px 0 #3a2a1c, inset -4px -4px 0 #0c0704;
+    text-align: center;
+}
+
+.panel h1 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+    font-weight: normal;
+    color: var(--amarillo);
+    text-shadow: 3px 3px 0 #3f3f15;
+}
+
+.sub {
+    margin: 0 0 18px;
+    color: var(--gris);
+    font-size: 1rem;
+}
+
+.carga { margin: 18px 0; color: var(--blanco); }
+
+.boton {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px 10px;
+    font: inherit;
+    font-size: 1.15rem;
+    color: var(--blanco);
+    text-decoration: none;
+    text-shadow: 2px 2px 0 #3f3f3f;
+    background: var(--boton);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 var(--borde-claro), inset -3px -3px 0 var(--borde-oscuro);
+    cursor: pointer;
+}
+
+.boton:hover, .boton:focus-visible {
+    background: var(--boton-hover);
+    outline: none;
+}
+
+.boton.secundario { font-size: 1rem; }
+
+.controles {
+    list-style: none;
+    margin: 18px 0 8px;
+    padding: 12px 14px;
+    text-align: left;
+    background: rgb(0 0 0 / 0.35);
+    border: 2px solid #000;
+    font-size: 0.95rem;
+}
+
+.controles li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+}
+
+.controles b { font-weight: normal; color: var(--amarillo); }
+.controles span { color: var(--gris); text-align: right; }
+
+/* HUD durante el juego */
+#hud { position: fixed; inset: 0; pointer-events: none; }
+
+.mira {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: difference;
+}
+
+.mira::before, .mira::after {
+    content: '';
+    position: absolute;
+    background: #fff;
+}
+.mira::before { left: 8px; top: 0; width: 2px; height: 18px; }
+.mira::after { left: 0; top: 8px; width: 18px; height: 2px; }
+
+.datos {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.95rem;
+    text-shadow: 2px 2px 0 #3f3f3f;
+}
+
+.datos span { background: rgb(0 0 0 / 0.35); padding: 1px 6px; align-self: flex-start; }
+
+@media (max-width: 520px) {
+    .panel h1 { font-size: 1.5rem; }
+    .controles li { flex-direction: column; gap: 0; }
+    .controles span { text-align: left; }
+}
