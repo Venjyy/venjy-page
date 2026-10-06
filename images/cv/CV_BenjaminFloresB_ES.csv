@@ -1,0 +1,54 @@
+Seccion,Subseccion,Detalle
+Datos Personales,Nombre,Benjamín Flores Bravo
+Datos Personales,Titulo,Desarrollador Full Stack | React · Node.js · Docker · Cloud (Azure/DigitalOcean)
+Datos Personales,Ubicacion,"Concepción, Chile"
+Datos Personales,Telefono,+569 5040 1247
+Datos Personales,Email,benjaf243@gmail.com
+Datos Personales,GitHub,github.com/Venjyy
+Datos Personales,LinkedIn,https://www.linkedin.com/in/benjamin-flores-v/
+Resumen Profesional,Resumen,"Desarrollador Full Stack con experiencia en el diseño, desarrollo y despliegue de sistemas ERP, APIs REST y arquitecturas de microservicios. Especializado en React, Node.js, Express y MySQL, con experiencia práctica en containerización con Docker, control de versiones con Git y despliegue en entornos cloud (Azure, DigitalOcean). Historial comprobado en migración de sistemas monolíticos a microservicios, integración de APIs de terceros (pagos, clima, autenticación, asistencia) y aplicación de buenas prácticas de seguridad (JWT, validación de entradas, prevención de SQL Injection). Orientado a la mejora continua de procesos, calidad de datos y prácticas de CI/CD, con administración básica de Linux."
+Habilidades Tecnicas,Lenguajes,"JavaScript, Python, TypeScript (básico), SQL, HTML5, CSS3, C#"
+Habilidades Tecnicas,Frontend,"React.js, React Hooks, Context API, diseño responsivo, arquitectura de componentes reutilizables"
+Habilidades Tecnicas,Backend,"Node.js, Express.js, ASP.NET MVC, Entity Framework, APIs REST, autenticación JWT, arquitectura de microservicios"
+Habilidades Tecnicas,Bases de Datos,"MySQL, SQL Server, modelado relacional, optimización de consultas SQL"
+Habilidades Tecnicas,DevOps / Cloud,"Docker, Docker Compose, CI/CD, Git/GitHub, despliegue en Azure y DigitalOcean, administración básica de Linux"
+Habilidades Tecnicas,Integraciones,"APIs de terceros (GeoVictoria, Khipu, Meteored, Gmail API), Webhooks, autenticación OAuth/JWT"
+Habilidades Tecnicas,Seguridad,"Validación de entradas, prevención de SQL Injection, manejo seguro de tokens y credenciales"
+Habilidades Tecnicas,Prácticas,"Metodologías ágiles (Scrum/Kanban), control de calidad de datos, documentación técnica"
+Habilidades Tecnicas,Idiomas,"Español (nativo), Inglés B2 (intermedio-alto)"
+Experiencia Profesional,Cargo,Desarrollador Full Stack
+Experiencia Profesional,Empresa,Dafa Facility – iDafa Connect
+Experiencia Profesional,Ubicacion,"Coronel, Chile"
+Experiencia Profesional,Periodo,Jun. 2025 – Ene. 2026
+Experiencia Profesional,Descripcion,Sistema ERP para gestión de recursos humanos, contabilidad y prevención de riesgos.
+Experiencia Profesional,Logro,"Lideré el diseño y la migración completa de una arquitectura monolítica a microservicios mediante Docker (backend y base de datos), reduciendo el tiempo de despliegue en 60% y mejorando la escalabilidad del sistema."
+Experiencia Profesional,Logro,"Desarrollé y mantuve un sistema ERP para RRHH y contabilidad utilizado por 10 usuarios internos, optimizando procesos administrativos en 45%."
+Experiencia Profesional,Logro,"Rediseñé el frontend en React implementando identidad visual configurable por empresa (white-label), mejorando la satisfacción del usuario y reduciendo tickets de soporte en 50%."
+Experiencia Profesional,Logro,"Implementé 8 nuevos módulos funcionales según requerimientos del negocio, entregados dentro de los plazos establecidos."
+Experiencia Profesional,Logro,"Diseñé y desarrollé APIs REST en Node.js y modelé bases de datos MySQL, procesando +700 solicitudes/día con tiempos de respuesta optimizados."
+Experiencia Profesional,Logro,"Configuré entornos reproducibles de desarrollo, testing y apoyo a CI/CD, reduciendo errores de despliegue en 40%."
+Experiencia Profesional,Logro,"Integré de forma segura la API de GeoVictoria para control de asistencia, automatizando el registro de +30 empleados."
+Experiencia Profesional,Logro,"Mejoré la calidad, normalización y estandarización de datos del sistema, disminuyendo inconsistencias en un 35%."
+Experiencia Profesional,Stack Tecnologico,"React, Node.js, MySQL, Docker, Git, Postman, Claude Agent"
+Experiencia Profesional,Cargo,Consultor y Desarrollador Full Stack
+Experiencia Profesional,Empresa,El Patio de Lea
+Experiencia Profesional,Ubicacion,"Concepción, Chile"
+Experiencia Profesional,Periodo,Feb. 2025 – Dic. 2025
+Experiencia Profesional,Logro,"Desarrollé end-to-end un sistema web de reservas y gestión de eventos, incrementando las reservas gestionadas digitalmente en 80%."
+Experiencia Profesional,Logro,"Construí el frontend en React y el backend en Node.js + Express, diseñando APIs REST con autenticación JWT para +50 usuarios concurrentes."
+Experiencia Profesional,Logro,"Modelé y optimicé consultas SQL en MySQL, mejorando los tiempos de respuesta de consulta en 40%."
+Experiencia Profesional,Logro,"Desplegué y administré la infraestructura en DigitalOcean, configurando entornos de producción y variables de entorno para garantizar una disponibilidad de 99.5%."
+Experiencia Profesional,Logro,"Integré APIs externas de terceros: Khipu (pagos), Meteored (clima) y Gmail API (notificaciones automatizadas), reduciendo el tiempo de gestión manual en 50%."
+Experiencia Profesional,Logro,"Apliqué buenas prácticas de seguridad —validación de entradas, protección contra SQL Injection y manejo seguro de tokens— sin incidentes de seguridad reportados."
+Experiencia Profesional,Cargo,Mentor Inclusivo
+Experiencia Profesional,Empresa,Instituto Santo Tomás
+Experiencia Profesional,Ubicacion,"Concepción, Chile"
+Experiencia Profesional,Periodo,Mar. 2025 – Jul. 2025
+Experiencia Profesional,Logro,"Brindé acompañamiento académico personalizado a 1 estudiante en situación de discapacidad o vulnerabilidad, mejorando su desempeño académico y logrando el cierre exitoso del semestre."
+Experiencia Profesional,Logro,"Desarrollé habilidades interpersonales, empatía y comunicación efectiva en contextos educativos, fortaleciendo competencias blandas transferibles al trabajo en equipo."
+Educacion,Titulo,Ingeniería en Informática (Tercer año)
+Educacion,Institucion,"Instituto Santo Tomás, Concepción, Chile"
+Educacion,Periodo,2024 – Presente
+Cursos y Certificaciones,Curso,"Máster en SQL Server: Desde Cero a Profesional — Udemy · 16 horas · Finalizado 10/2025 (Instructor: Mariano Puglisi) — https://www.udemy.com/certificate/UC-27be7e11-4d11-43c5-971d-627706fd60f0/"
+Cursos y Certificaciones,Curso,"Master en ASP .NET MVC: Entity Framework (.NET 9) — Udemy · 22 horas · Finalizado 10/2025 (Instructor: render2web) — https://www.udemy.com/certificate/UC-00a0a7de-1a5d-4ddb-a698-0e6d400620a8/"
+Cursos y Certificaciones,Curso,"Ultimate Python: de cero a programador experto — Udemy · 18 horas · Finalizado 09/2025 (Instructor: Nicolas Schurmann) — https://www.udemy.com/certificate/UC-8e6c80a0-5b44-4134-a5ca-1b11a3274139/"

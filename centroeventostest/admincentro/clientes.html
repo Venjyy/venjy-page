@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - Centro de Eventos</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/50" alt="Logo" class="logo">
+                <span class="logo-text">Centro Eventos</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="index.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="clientes.html">
+                        <i class="fas fa-users"></i>
+                        <span class="menu-text">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="espacios.html">
+                        <i class="fas fa-building"></i>
+                        <span class="menu-text">Espacios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="servicios.html">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span class="menu-text">Servicios</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reservas.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="menu-text">Reservas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="pagos.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Pagos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reportes.html">
+                        <i class="fas fa-chart-bar"></i>
+                        <span class="menu-text">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/40" alt="Usuario" class="user-avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+                <a href="#" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="menu-text">Cerrar sesión</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="toggle-sidebar" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <h1 class="page-title">Gestión de Clientes</h1>
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar clientes..." id="searchClientes">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="clientes-header">
+                    <h2>Lista de Clientes</h2>
+                    <div class="clientes-actions">
+                        <button class="action-button" id="nuevoCliente">
+                            <i class="fas fa-plus"></i>
+                            <span>Nuevo Cliente</span>
+                        </button>
+                        <button class="action-button" id="exportarClientes">
+                            <i class="fas fa-file-export"></i>
+                            <span>Exportar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <table class="clientes-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Empresa</th>
+                            <th>Reservas</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CL001</td>
+                            <td>Juan Pérez</td>
+                            <td>juan.perez@example.com</td>
+                            <td>+56 9 1234 5678</td>
+                            <td>Pérez & Asociados</td>
+                            <td>5</td>
+                            <td><span class="cliente-status status-active">Activo</span></td>
+                            <td class="table-actions">
+                                <button class="view-btn" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                                <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="delete-btn" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>CL002</td>
+                            <td>María González</td>
+                            <td>maria.gonzalez@example.com</td>
+                            <td>+56 9 8765 4321</td>
+                            <td>González Eventos</td>
+                            <td>12</td>
+                            <td><span class="cliente-status status-active">Activo</span></td>
+                            <td class="table-actions">
+                                <button class="view-btn" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                                <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="delete-btn" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>CL003</td>
+                            <td>Carlos Rojas</td>
+                            <td>carlos.rojas@example.com</td>
+                            <td>+56 9 5555 1234</td>
+                            <td>Rojas Producciones</td>
+                            <td>3</td>
+                            <td><span class="cliente-status status-active">Activo</span></td>
+                            <td class="table-actions">
+                                <button class="view-btn" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                                <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="delete-btn" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>CL004</td>
+                            <td>Ana Silva</td>
+                            <td>ana.silva@example.com</td>
+                            <td>+56 9 9999 8888</td>
+                            <td>Silva Corporación</td>
+                            <td>8</td>
+                            <td><span class="cliente-status status-inactive">Inactivo</span></td>
+                            <td class="table-actions">
+                                <button class="view-btn" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                                <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="delete-btn" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>CL005</td>
+                            <td>Luis Martínez</td>
+                            <td>luis.martinez@example.com</td>
+                            <td>+56 9 7777 6666</td>
+                            <td>Martínez & Cía</td>
+                            <td>2</td>
+                            <td><span class="cliente-status status-active">Activo</span></td>
+                            <td class="table-actions">
+                                <button class="view-btn" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                                <button class="edit-btn" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="delete-btn" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+    <script src="clientes.js"></script>
+</body>
+
+</html>

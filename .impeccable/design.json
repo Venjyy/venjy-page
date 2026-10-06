@@ -1,0 +1,886 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T15:25:01.734Z",
+  "title": "Design System: Venjy",
+  "extensions": {
+    "colorMeta": {
+      "abeto": {
+        "role": "neutral",
+        "displayName": "Muro de Abeto",
+        "canonical": "#34251a",
+        "tonalRamp": [
+          "#140801",
+          "#302117",
+          "#4e3e33",
+          "#6f5d51",
+          "#917e71",
+          "#b4a193",
+          "#d9c5b7",
+          "#ffeadc"
+        ]
+      },
+      "abeto-oscuro": {
+        "role": "neutral",
+        "displayName": "Abeto Oscuro",
+        "canonical": "#22180f",
+        "tonalRamp": [
+          "#120903",
+          "#2d2319",
+          "#4b4035",
+          "#6b5f54",
+          "#8d8074",
+          "#b0a297",
+          "#d4c6ba",
+          "#faecdf"
+        ]
+      },
+      "roble": {
+        "role": "primary",
+        "displayName": "Roble de Marco",
+        "canonical": "#a07f4c",
+        "tonalRamp": [
+          "#1c0300",
+          "#3a1e00",
+          "#593b00",
+          "#7a5b27",
+          "#9d7c49",
+          "#c19f6b",
+          "#e6c38e",
+          "#ffe8b2"
+        ]
+      },
+      "roble-claro": {
+        "role": "primary",
+        "displayName": "Roble Claro",
+        "canonical": "#b8945f",
+        "tonalRamp": [
+          "#1d0300",
+          "#3b1d00",
+          "#5a3b00",
+          "#7c5a25",
+          "#9f7c47",
+          "#c39e69",
+          "#e8c28c",
+          "#ffe8b0"
+        ]
+      },
+      "roble-oscuro": {
+        "role": "primary",
+        "displayName": "Roble Oscuro",
+        "canonical": "#6e5431",
+        "tonalRamp": [
+          "#190500",
+          "#361f00",
+          "#553d19",
+          "#765c39",
+          "#997d59",
+          "#bda07b",
+          "#e2c49e",
+          "#ffe9c2"
+        ]
+      },
+      "roble-borde": {
+        "role": "primary",
+        "displayName": "Contorno de Roble",
+        "canonical": "#2b1c0e",
+        "tonalRamp": [
+          "#150800",
+          "#312113",
+          "#4f3e2f",
+          "#6f5d4e",
+          "#917e6e",
+          "#b5a190",
+          "#dac5b3",
+          "#ffead8"
+        ]
+      },
+      "letrero": {
+        "role": "neutral",
+        "displayName": "Tablón de Letrero",
+        "canonical": "#ae8a56",
+        "tonalRamp": [
+          "#1d0200",
+          "#3b1d00",
+          "#5b3b00",
+          "#7c5a26",
+          "#9f7b48",
+          "#c39e6a",
+          "#e8c28d",
+          "#ffe8b1"
+        ]
+      },
+      "letrero-tinta": {
+        "role": "neutral",
+        "displayName": "Tinta de Letrero",
+        "canonical": "#1b1208",
+        "tonalRamp": [
+          "#120902",
+          "#2d2318",
+          "#4b4034",
+          "#6a5f53",
+          "#8c8073",
+          "#afa395",
+          "#d4c7b9",
+          "#f9ecde"
+        ]
+      },
+      "mapa-pasto": {
+        "role": "tertiary",
+        "displayName": "Pasto de Mapa",
+        "canonical": "#7fb238",
+        "tonalRamp": [
+          "#001200",
+          "#053000",
+          "#244f00",
+          "#427100",
+          "#639407",
+          "#84b83f",
+          "#a8dd66",
+          "#ccff8c"
+        ]
+      },
+      "mapa-agua": {
+        "role": "tertiary",
+        "displayName": "Agua de Mapa",
+        "canonical": "#4040ff",
+        "tonalRamp": [
+          "#14005e",
+          "#170083",
+          "#2725a9",
+          "#3f4dd0",
+          "#5c72f8",
+          "#7b97ff",
+          "#9dbdff",
+          "#c0e3ff"
+        ]
+      },
+      "mapa-arena": {
+        "role": "tertiary",
+        "displayName": "Arena de Mapa",
+        "canonical": "#f7e9a3",
+        "tonalRamp": [
+          "#160800",
+          "#312400",
+          "#4f4100",
+          "#6f611a",
+          "#90833f",
+          "#b4a662",
+          "#d8ca85",
+          "#fef0aa"
+        ]
+      },
+      "piedra": {
+        "role": "neutral",
+        "displayName": "Piedra",
+        "canonical": "#6d6d6d",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "pizarra": {
+        "role": "neutral",
+        "displayName": "Pizarra Profunda",
+        "canonical": "#45454c",
+        "tonalRamp": [
+          "#0b0a10",
+          "#24242b",
+          "#414148",
+          "#606068",
+          "#818189",
+          "#a4a4ac",
+          "#c8c8d1",
+          "#ededf6"
+        ]
+      },
+      "tierra": {
+        "role": "neutral",
+        "displayName": "Tierra",
+        "canonical": "#3b2a1c",
+        "tonalRamp": [
+          "#150700",
+          "#312113",
+          "#503e2f",
+          "#705d4e",
+          "#927e6e",
+          "#b6a090",
+          "#dbc4b3",
+          "#ffead8"
+        ]
+      },
+      "lecho": {
+        "role": "neutral",
+        "displayName": "Lecho de Roca",
+        "canonical": "#2b2b2b",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "mc-blanco": {
+        "role": "neutral",
+        "displayName": "Blanco de Chat",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "texto-suave": {
+        "role": "neutral",
+        "displayName": "Texto Suave",
+        "canonical": "#e6e6e6",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "mc-gris": {
+        "role": "neutral",
+        "displayName": "Gris de Chat",
+        "canonical": "#aaaaaa",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "mc-gris-oscuro": {
+        "role": "neutral",
+        "displayName": "Gris Oscuro de Chat",
+        "canonical": "#555555",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "mc-amarillo": {
+        "role": "primary",
+        "displayName": "Amarillo de Chat",
+        "canonical": "#ffff55",
+        "tonalRamp": [
+          "#150900",
+          "#302500",
+          "#4c4500",
+          "#6b6600",
+          "#8c8800",
+          "#afac00",
+          "#d3d200",
+          "#f8f84c"
+        ]
+      },
+      "mc-oro": {
+        "role": "tertiary",
+        "displayName": "Oro de Chat",
+        "canonical": "#ffaa00",
+        "tonalRamp": [
+          "#2e0000",
+          "#510000",
+          "#742700",
+          "#984a00",
+          "#bd6d00",
+          "#e49000",
+          "#ffb523",
+          "#ffdb59"
+        ]
+      },
+      "mc-aqua": {
+        "role": "tertiary",
+        "displayName": "Aqua de Chat",
+        "canonical": "#55ffff",
+        "tonalRamp": [
+          "#00161d",
+          "#003539",
+          "#005558",
+          "#007779",
+          "#009a9c",
+          "#00bfbf",
+          "#2ae4e5",
+          "#64ffff"
+        ]
+      },
+      "mc-verde": {
+        "role": "tertiary",
+        "displayName": "Verde de Chat",
+        "canonical": "#55ff55",
+        "tonalRamp": [
+          "#001700",
+          "#003700",
+          "#005800",
+          "#007a00",
+          "#099e15",
+          "#45c344",
+          "#6ee96b",
+          "#95ff90"
+        ]
+      },
+      "mc-rojo": {
+        "role": "tertiary",
+        "displayName": "Rojo de Chat",
+        "canonical": "#ff5555",
+        "tonalRamp": [
+          "#3f0000",
+          "#670000",
+          "#8f0000",
+          "#b8001e",
+          "#e13e41",
+          "#ff6663",
+          "#ff8c86",
+          "#ffb3aa"
+        ]
+      },
+      "mc-encantamiento": {
+        "role": "tertiary",
+        "displayName": "Lila de Encantamiento",
+        "canonical": "#8b8bff",
+        "tonalRamp": [
+          "#13004e",
+          "#220072",
+          "#392a96",
+          "#554ebc",
+          "#7371e3",
+          "#9495ff",
+          "#b7baff",
+          "#dbe0ff"
+        ]
+      },
+      "tt-fondo": {
+        "role": "secondary",
+        "displayName": "Fondo de Tooltip",
+        "canonical": "rgb(16 0 16 / 0.95)",
+        "tonalRamp": [
+          "#170217",
+          "#331a33",
+          "#523751",
+          "#735671",
+          "#957793",
+          "#b999b7",
+          "#debddc",
+          "#ffe2ff"
+        ]
+      },
+      "tt-borde-claro": {
+        "role": "secondary",
+        "displayName": "Borde Morado Claro",
+        "canonical": "#5a1fd1",
+        "tonalRamp": [
+          "#1b0059",
+          "#2c007d",
+          "#4415a3",
+          "#6041ca",
+          "#7f66f1",
+          "#a08bff",
+          "#c3b0ff",
+          "#e8d6ff"
+        ]
+      },
+      "tt-borde-oscuro": {
+        "role": "secondary",
+        "displayName": "Borde Morado Oscuro",
+        "canonical": "#2b0a6b",
+        "tonalRamp": [
+          "#130044",
+          "#280366",
+          "#422c8a",
+          "#5f4faf",
+          "#7f71d5",
+          "#a194fb",
+          "#c4b9ff",
+          "#e9deff"
+        ]
+      },
+      "ui-gris": {
+        "role": "secondary",
+        "displayName": "Gris de Botón",
+        "canonical": "#6f6f6f",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "ui-gris-claro": {
+        "role": "secondary",
+        "displayName": "Bisel Claro",
+        "canonical": "#a9a9a9",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "ui-gris-oscuro": {
+        "role": "secondary",
+        "displayName": "Bisel Oscuro",
+        "canonical": "#3e3e3e",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "ui-panel": {
+        "role": "secondary",
+        "displayName": "Panel de Inventario",
+        "canonical": "#c6c6c6",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "ui-ranura": {
+        "role": "secondary",
+        "displayName": "Ranura de Inventario",
+        "canonical": "#8b8b8b",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "boton-hover": {
+        "role": "secondary",
+        "displayName": "Azul de Botón Activo",
+        "canonical": "#4f5590",
+        "tonalRamp": [
+          "#080031",
+          "#1c1c52",
+          "#373b73",
+          "#555b96",
+          "#757cbb",
+          "#969fe0",
+          "#bac4ff",
+          "#dfe9ff"
+        ]
+      },
+      "boton-verde": {
+        "role": "secondary",
+        "displayName": "Verde de Acción",
+        "canonical": "#2f7420",
+        "tonalRamp": [
+          "#001400",
+          "#003200",
+          "#025200",
+          "#2e731f",
+          "#519643",
+          "#74ba66",
+          "#97df89",
+          "#bcffad"
+        ]
+      },
+      "logro-fondo": {
+        "role": "neutral",
+        "displayName": "Fondo de Logro",
+        "canonical": "#212121",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "diamante": {
+        "role": "tertiary",
+        "displayName": "Diamante",
+        "canonical": "#5cdbd5",
+        "tonalRamp": [
+          "#001516",
+          "#003332",
+          "#005350",
+          "#007470",
+          "#009792",
+          "#34bbb6",
+          "#62e0da",
+          "#8bffff"
+        ]
+      },
+      "oro": {
+        "role": "tertiary",
+        "displayName": "Oro",
+        "canonical": "#fcee4b",
+        "tonalRamp": [
+          "#190600",
+          "#352200",
+          "#534100",
+          "#736200",
+          "#958500",
+          "#b8a900",
+          "#dcce11",
+          "#fff452"
+        ]
+      },
+      "redstone": {
+        "role": "tertiary",
+        "displayName": "Redstone",
+        "canonical": "#ff3b30",
+        "tonalRamp": [
+          "#3f0000",
+          "#670000",
+          "#8f0000",
+          "#b80407",
+          "#e14034",
+          "#ff6857",
+          "#ff8e7b",
+          "#ffb49f"
+        ]
+      },
+      "esmeralda": {
+        "role": "tertiary",
+        "displayName": "Esmeralda",
+        "canonical": "#17dd62",
+        "tonalRamp": [
+          "#001900",
+          "#003900",
+          "#005a00",
+          "#007c00",
+          "#00a032",
+          "#16c557",
+          "#53eb7c",
+          "#7fffa0"
+        ]
+      },
+      "lapis": {
+        "role": "tertiary",
+        "displayName": "Lapislázuli",
+        "canonical": "#7aa2ff",
+        "tonalRamp": [
+          "#040046",
+          "#051669",
+          "#1c398c",
+          "#395bb1",
+          "#587ed7",
+          "#79a1fe",
+          "#9cc6ff",
+          "#c0ecff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Nombre de zona",
+        "purpose": "Título gigante de cada zona sobre su franja de terreno."
+      },
+      "headline": {
+        "displayName": "Subzona",
+        "purpose": "Encabezados dentro de una zona."
+      },
+      "title": {
+        "displayName": "Título de tooltip",
+        "purpose": "Cargos y proyectos dentro de tooltips."
+      },
+      "body": {
+        "displayName": "Texto",
+        "purpose": "Texto general y de tooltip (máx. 68ch)."
+      },
+      "body-letrero": {
+        "displayName": "Texto de letrero",
+        "purpose": "Lectura larga sobre tablón en Sobre mí (máx. 62ch)."
+      },
+      "label": {
+        "displayName": "Etiqueta",
+        "purpose": "Logros, fechas, encantamientos, errores."
+      },
+      "label-sm": {
+        "displayName": "Etiqueta pequeña",
+        "purpose": "Coordenadas, etiquetas de tooltip, notas."
+      }
+    },
+    "shadows": [
+      {
+        "name": "bisel-boton",
+        "value": "inset 3px 3px 0 #a9a9a9, inset -3px -5px 0 #3e3e3e",
+        "purpose": "Botón gris en reposo."
+      },
+      {
+        "name": "bisel-boton-hover",
+        "value": "inset 3px 3px 0 #8f95cf, inset -3px -5px 0 #333865",
+        "purpose": "Botón en hover."
+      },
+      {
+        "name": "bisel-boton-activo",
+        "value": "inset 3px 3px 0 #3e3e3e, inset -3px -3px 0 #a9a9a9",
+        "purpose": "Botón presionado (con translateY 2px)."
+      },
+      {
+        "name": "bisel-panel",
+        "value": "inset 3px 3px 0 #fff, inset -3px -3px 0 #555",
+        "purpose": "Panel de inventario."
+      },
+      {
+        "name": "anillo-logro",
+        "value": "inset 0 0 0 3px #555",
+        "purpose": "Logros."
+      },
+      {
+        "name": "anillo-canal",
+        "value": "inset 0 0 0 2px #3a3a3a",
+        "purpose": "Canales de contacto; blanco en hover."
+      },
+      {
+        "name": "marco-en-mapa",
+        "value": "0 0 0 2px #2b1c0e, inset 0 0 0 2px rgb(0 0 0 / 0.35)",
+        "purpose": "Divisiones del muro de mapas."
+      },
+      {
+        "name": "sombra-texto",
+        "value": "0.1em 0.1em 0 rgb(0 0 0 / 0.55)",
+        "purpose": "Sombra de texto del juego, sin desenfoque."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-salida",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Estandartes (160ms), menas (120ms), minimapa (300ms), logros (520ms, cascada 140ms), toasts (4.2s)."
+      },
+      {
+        "name": "boton",
+        "value": "80ms linear",
+        "purpose": "Cambio de color de botón."
+      },
+      {
+        "name": "latido",
+        "value": "0.5s ease-in-out infinite alternate",
+        "purpose": "Texto splash amarillo."
+      },
+      {
+        "name": "parpadeo",
+        "value": "1s steps(1) infinite",
+        "purpose": "Caret del chat."
+      },
+      {
+        "name": "picar",
+        "value": "260ms steps(3)",
+        "purpose": "Sacudida de mena al picar."
+      },
+      {
+        "name": "faro",
+        "value": "1.6s ease-in-out infinite",
+        "purpose": "Luz del faro de ProcedimientoSeguro."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "prefers-reduced-motion apaga animaciones y transiciones."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mapa-detalle",
+        "value": "560px (container)"
+      },
+      {
+        "name": "sm",
+        "value": "600px"
+      },
+      {
+        "name": "md",
+        "value": "760px"
+      },
+      {
+        "name": "lg",
+        "value": "960px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón de Minecraft",
+      "kind": "button",
+      "refersTo": "boton",
+      "description": "Botón gris biselado del juego; hover azul con texto amarillo.",
+      "html": "<button class=\"ds-boton\">Descargar CV</button>",
+      "css": ".ds-boton{font-family:'PixelCraft',ui-monospace,monospace;font-size:17px;display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:6px 22px 9px;color:#fff;text-shadow:.1em .1em 0 #3f3f3f;background:#6f6f6f;border:3px solid #000;border-radius:0;box-shadow:inset 3px 3px 0 #a9a9a9,inset -3px -5px 0 #3e3e3e;cursor:pointer;transition:background-color 80ms linear}.ds-boton:hover{background:#4f5590;box-shadow:inset 3px 3px 0 #8f95cf,inset -3px -5px 0 #333865;color:#ffff55}.ds-boton:focus-visible{outline:3px solid #ffff55;outline-offset:3px}.ds-boton:active{transform:translateY(2px);box-shadow:inset 3px 3px 0 #3e3e3e,inset -3px -3px 0 #a9a9a9}"
+    },
+    {
+      "name": "Botón verde",
+      "kind": "button",
+      "refersTo": "boton-verde",
+      "description": "Acción principal dentro de un tooltip.",
+      "html": "<button class=\"ds-boton-verde\">Ver en línea</button>",
+      "css": ".ds-boton-verde{font-family:'PixelCraft',ui-monospace,monospace;font-size:17px;min-height:46px;padding:6px 22px 9px;color:#fff;text-shadow:.1em .1em 0 #3f3f3f;background:#2f7420;border:3px solid #000;border-radius:0;box-shadow:inset 3px 3px 0 #6cc349,inset -3px -5px 0 #24561a;cursor:pointer}.ds-boton-verde:hover{background:#357a22;box-shadow:inset 3px 3px 0 #86d965,inset -3px -5px 0 #2b6a1f}.ds-boton-verde:focus-visible{outline:3px solid #ffff55;outline-offset:3px}"
+    },
+    {
+      "name": "Ficha de inventario",
+      "kind": "button",
+      "refersTo": "ficha",
+      "description": "Ranura hundida con ícono pixelado y texto; acciones de la portada.",
+      "html": "<a class=\"ds-ficha\" href=\"#\"><svg width=\"34\" height=\"34\" viewBox=\"0 0 8 8\" shape-rendering=\"crispEdges\"><rect x=\"1\" y=\"2\" width=\"6\" height=\"5\" fill=\"#a86c2a\"/><rect x=\"1\" y=\"2\" width=\"6\" height=\"1\" fill=\"#7c4b1b\"/><rect x=\"3\" y=\"4\" width=\"2\" height=\"1\" fill=\"#d6d6d6\"/></svg><span>Currículum</span></a>",
+      "css": ".ds-ficha{font-family:'PixelCraft',ui-monospace,monospace;display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:6px 16px 6px 8px;color:#fff;text-decoration:none;background:#8b8b8b;border:3px solid;border-color:#373737 #fff #fff #373737;outline:3px solid #000;text-shadow:.1em .1em 0 #3f3f3f;font-size:18px}.ds-ficha:hover{background:#a8a8a8;color:#ffff55}.ds-ficha:focus-visible{outline:3px solid #ffff55;outline-offset:3px}"
+    },
+    {
+      "name": "Tooltip de ítem",
+      "kind": "card",
+      "refersTo": "tooltip",
+      "description": "Contenedor de lectura de experiencia y proyectos.",
+      "html": "<div class=\"ds-tooltip\"><h3 class=\"ds-tt-titulo\">Cofundador y desarrollador</h3><p class=\"ds-tt-gris\">2026 – presente</p><p class=\"ds-tt-desc\">Aplicación web en producción para confeccionar actas desde el celular.</p><p class=\"ds-tt-enc\">Next.js, TypeScript, Prisma</p></div>",
+      "css": ".ds-tooltip{position:relative;padding:24px 28px 26px;background:rgb(16 0 16 / .95);border:3px solid #100010;font-family:'PixelCraft',ui-monospace,monospace;font-size:18px;line-height:1.55;color:#fff}.ds-tooltip::before{content:'';position:absolute;inset:0;border:3px solid;border-color:#5a1fd1 #2b0a6b #2b0a6b #5a1fd1;pointer-events:none}.ds-tt-titulo{margin:0;font-weight:normal;font-size:1.6rem;line-height:1.2;color:#ffaa00;text-shadow:.1em .1em 0 rgb(0 0 0 / .7)}.ds-tt-gris{margin:0;color:#aaa;font-size:16px}.ds-tt-desc{margin:14px 0 0;color:#e6e6e6}.ds-tt-enc{margin:16px 0 0;color:#8b8bff;font-size:16px}"
+    },
+    {
+      "name": "Marco de ítem",
+      "kind": "card",
+      "refersTo": "marco",
+      "description": "Marco de roble biselado para imágenes y video.",
+      "html": "<figure class=\"ds-marco\"><div class=\"ds-marco-img\"></div></figure>",
+      "css": ".ds-marco{margin:0;width:220px;background:#2b1c0e;border:9px solid;border-color:#b8945f #6e5431 #6e5431 #b8945f;outline:3px solid #2b1c0e}.ds-marco-img{aspect-ratio:4/3;background:repeating-linear-gradient(90deg,#7fb238 0 16px,#5d8a26 16px 32px)}.ds-marco:hover{border-color:#d2ad72 #8a6a3d #8a6a3d #d2ad72}"
+    },
+    {
+      "name": "Logro",
+      "kind": "custom",
+      "refersTo": "logro",
+      "description": "Toast de logro; también la lista de logros de Sobre mí.",
+      "html": "<div class=\"ds-logro\"><span class=\"ds-logro-icono\"></span><span class=\"ds-logro-titulo\">Logro desbloqueado</span><span class=\"ds-logro-texto\">App en producción</span></div>",
+      "css": ".ds-logro{display:grid;grid-template-columns:48px 1fr;column-gap:14px;align-items:center;width:360px;padding:12px 18px 13px 12px;background:#212121;border:3px solid #000;box-shadow:inset 0 0 0 3px #555;font-family:'PixelCraft',ui-monospace,monospace;font-size:16px}.ds-logro-icono{grid-row:1/3;width:40px;height:40px;margin-left:4px;background:#17dd62;box-shadow:inset -4px -4px 0 #0c8b3a}.ds-logro-titulo{color:#ffff55;line-height:1.3}.ds-logro-texto{color:#fff;line-height:1.4}"
+    },
+    {
+      "name": "Campo de chat",
+      "kind": "input",
+      "refersTo": "campo",
+      "description": "Campo negro de borde gris con caret amarillo.",
+      "html": "<label class=\"ds-campo\"><span>Tu nombre</span><input placeholder=\"Steve\"></label>",
+      "css": ".ds-campo{display:grid;gap:6px;font-family:'PixelCraft',ui-monospace,monospace;color:#e6e6e6;font-size:18px}.ds-campo input{font:inherit;padding:10px 12px;color:#fff;background:#000;border:3px solid #a0a0a0;border-radius:0;caret-color:#ffff55}.ds-campo input:focus{outline:none;border-color:#fff}"
+    },
+    {
+      "name": "Barra de ítems",
+      "kind": "nav",
+      "refersTo": "ranura",
+      "description": "HUD inferior: ranuras de 50px con atajo y selector de ranura activa.",
+      "html": "<nav class=\"ds-barra\"><a class=\"ds-ranura ds-activa\" href=\"#\">1</a><a class=\"ds-ranura\" href=\"#\">2</a><a class=\"ds-ranura\" href=\"#\">3</a><a class=\"ds-ranura ds-es\" href=\"#\">ES</a></nav>",
+      "css": ".ds-barra{display:inline-flex;padding:3px;background:rgb(28 28 28 / .82);border:3px solid #000;font-family:'PixelCraft',ui-monospace,monospace;}.ds-ranura{position:relative;display:grid;place-items:end;width:50px;height:50px;padding:0 3px;box-sizing:border-box;color:#fff;font-size:13px;text-decoration:none;text-shadow:.1em .1em 0 #3f3f3f;background:rgb(139 139 139 / .25);border:3px solid;border-color:#2b2b2b #6f6f6f #6f6f6f #2b2b2b}.ds-ranura:hover{background:rgb(255 255 255 / .18)}.ds-ranura:focus-visible{outline:3px solid #ffff55;outline-offset:3px}.ds-activa::after{content:'';position:absolute;inset:-7px;border:4px solid #e8e8e8;outline:2px solid #000;box-shadow:inset 0 0 0 2px #000}.ds-es{place-items:center;font-size:17px;color:#ffff55}"
+    },
+    {
+      "name": "Etiqueta de mena",
+      "kind": "chip",
+      "refersTo": "mena",
+      "description": "Habilidad como mena sobre placa negra; se pica al hacer clic.",
+      "html": "<span class=\"ds-mena\"><i></i>TypeScript</span>",
+      "css": ".ds-mena{display:inline-flex;align-items:center;gap:10px;padding:5px 14px 6px 5px;background:rgb(0 0 0 / .62);border:3px solid #111;color:#fff;font-family:'PixelCraft',ui-monospace,monospace;font-size:18px;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1)}.ds-mena i{width:30px;height:30px;background:#717171;box-shadow:inset 8px 8px 0 -4px #5cdbd5,inset -8px -8px 0 -4px #5cdbd5}.ds-mena:hover{border-color:#fff}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El Muro de Mapas",
+    "overview": "El portafolio es el mundo explorado de Venjy. La página es un muro de tablones oscuros de abeto del que cuelgan mapas de Minecraft en marcos de ítem de roble; cada apartado es una zona del mapa, marcada con un estandarte y con su propia franja de terreno generado. Todo el control vive en el HUD del juego: barra de ítems inferior, minimapa con flecha del jugador, toasts de logro y tooltips morados de ítem. No hay chrome web genérico: no hay barra de navegación, ni tarjetas redondeadas, ni sombras difusas.\n\nLa densidad es de juego, no de revista: texto pixelado sobre placas negras translúcidas, biseles de 3px, colores de la paleta de chat de Minecraft para jerarquizar (amarillo para lo accionable, oro para cargos, gris para lo secundario, verde para \"en línea\"). Las texturas (tablones, piedra, pizarra, tierra, lecho de roca, camino) y los íconos son pixel art generado en `script.js` con semilla fija, y el mapa de portada usa la paleta real de mapas de Minecraft con cuatro sombras por color.\n\nSe rechazan de forma explícita (AGENTS.md, PRODUCT.md) los looks modernos o minimalistas que rompan la temática, la pantalla de título con botones grises como composición y la columna de tarjetas iguales.",
+    "keyCharacteristics": [
+      "Una sola tipografía pixelada (PixelCraft), siempre en peso normal, sin suavizado.",
+      "Esquinas rectas en todo: el radio es cero, sin excepciones.",
+      "Profundidad por biseles (luz arriba-izquierda, sombra abajo-derecha) y contornos negros, nunca por sombra difusa.",
+      "Materiales de bloque como superficies: abeto, roble, letrero, piedra, pizarra, tierra, lecho de roca.",
+      "El HUD de juego es el único set de controles persistente.",
+      "Movimiento corto y con pasos: latidos, parpadeo de cursor, picar menas, toasts que entran y salen."
+    ],
+    "rules": [
+      {
+        "name": "La Regla del Amarillo",
+        "body": "El amarillo de chat marca lo que se puede tocar o lo que está seleccionado. No se usa como decoración ni como fondo.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de la Placa",
+        "body": "Ningún texto se apoya directo sobre textura de material o terreno de mapa: va sobre una placa negra translúcida o lleva la sombra de texto del juego.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla del Mapa",
+        "body": "La paleta de mapa (pasto, agua, arena y sus sombras) se queda dentro de canvases de mapa y franja. La interfaz no la toma prestada.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla del Peso Único",
+        "body": "Todo va en peso normal (400). Nada de negritas sintéticas: la jerarquía es tamaño, color y sombra.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla de la Sombra de Juego",
+        "body": "La sombra de texto es un desplazamiento duro de 0.1em sin desenfoque (`0.1em 0.1em 0` en negro al 55–75% o en #3f3f3f), como el texto del juego. Nunca con desenfoque.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla del Bisel",
+        "body": "Todo volumen es un bisel de color plano: claro arriba-izquierda, oscuro abajo-derecha. Si una superficie necesita destacar, se le da contorno negro o bisel, nunca sombra con desenfoque.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** usar PixelCraft en peso 400 para todo texto, con sombra dura de 0.1em y sin desenfoque.",
+      "**Do** dejar todas las esquinas rectas (radio 0) y construir volumen con biseles de 3px y contornos negros.",
+      "**Do** enmarcar imágenes y video en marcos de ítem de roble biselados y renderizarlos pixelados.",
+      "**Do** poner texto sobre textura o mapa encima de una placa negra translúcida (`rgb(0 0 0 / 0.5–0.72)`).",
+      "**Do** reservar el amarillo de chat para lo accionable, el hover y el foco.",
+      "**Do** generar texturas, íconos y estandartes como pixel art con semilla fija, siguiendo la paleta de materiales.",
+      "**Do** que cada zona nueva tenga su franja de terreno, su estandarte en el mapa y un material propio."
+    ],
+    "donts": [
+      "**Don't** usar looks modernos o minimalistas: nada de esquinas redondeadas, sombras difusas, gradientes suaves ni tarjetas genéricas (AGENTS.md).",
+      "**Don't** usar negritas ni una segunda familia tipográfica.",
+      "**Don't** armar una columna de tarjetas iguales ni una pantalla de título con botones grises apilados como composición.",
+      "**Don't** agregar controles fuera del HUD de juego (no hay barra de navegación web).",
+      "**Don't** sacar la paleta de mapa (pasto, agua, arena) de los canvases de mapa y franja.",
+      "**Don't** suavizar texto o imágenes: sin antialiasing de fuente y con `image-rendering: pixelated`."
+    ]
+  }
+}

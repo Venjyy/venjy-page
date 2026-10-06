@@ -1,0 +1,1847 @@
+/* =========================================================
+   VENJY · El mapa de Venjy
+   Un muro de mapas de Minecraft: cada apartado es una zona.
+   ========================================================= */
+
+@font-face {
+    font-family: 'PixelCraft';
+    src: url('font/pixelcraft.ttf') format('truetype');
+    font-display: swap;
+}
+
+:root {
+    /* Muro de abeto (fondo de página) */
+    --abeto: #34251a;
+    --abeto-oscuro: #22180f;
+    --abeto-claro: #4a3524;
+
+    /* Roble (marcos de ítem y letreros) */
+    --roble: #a07f4c;
+    --roble-claro: #b8945f;
+    --roble-oscuro: #6e5431;
+    --roble-borde: #2b1c0e;
+    --letrero: #ae8a56;
+    --letrero-tinta: #1b1208;
+
+    /* Paleta de texto de Minecraft */
+    --mc-blanco: #ffffff;
+    --mc-gris: #aaaaaa;
+    --mc-gris-oscuro: #555555;
+    --mc-amarillo: #ffff55;
+    --mc-oro: #ffaa00;
+    --mc-aqua: #55ffff;
+    --mc-verde: #55ff55;
+    --mc-rojo: #ff5555;
+    --mc-encantamiento: #8b8bff;
+
+    /* Tooltip */
+    --tt-fondo: rgb(16 0 16 / 0.95);
+    --tt-borde-claro: #5a1fd1;
+    --tt-borde-oscuro: #2b0a6b;
+
+    /* Interfaz gris (botones, inventario) */
+    --ui-gris: #6f6f6f;
+    --ui-gris-claro: #a9a9a9;
+    --ui-gris-oscuro: #3e3e3e;
+    --ui-panel: #c6c6c6;
+    --ui-ranura: #8b8b8b;
+
+    /* Minerales */
+    --diamante: #5cdbd5;
+    --oro: #fcee4b;
+    --redstone: #ff3b30;
+    --esmeralda: #17dd62;
+    --lapis: #4a80ff;
+
+    /* Ritmo */
+    --gutter: clamp(16px, 4vw, 48px);
+    --ancho: 1200px;
+    --sombra-texto: 0.1em 0.1em 0 rgb(0 0 0 / 0.55);
+
+    /* Texturas generadas por script.js (con color de respaldo) */
+    --tex-abeto: none;
+    --tex-letrero: none;
+    --tex-piedra: none;
+    --tex-pizarra: none;
+    --tex-tierra: none;
+    --tex-lecho: none;
+    --tex-camino: none;
+
+    color-scheme: dark;
+    scrollbar-color: var(--roble) var(--abeto-oscuro);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'PixelCraft', ui-monospace, monospace;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--mc-blanco);
+    background-color: var(--abeto);
+    background-image: var(--tex-abeto);
+    background-size: 96px 96px;
+    image-rendering: pixelated;
+    overflow-x: hidden;
+    -webkit-font-smoothing: none;
+}
+
+img,
+video,
+canvas {
+    display: block;
+    max-width: 100%;
+}
+
+canvas,
+.icono svg {
+    image-rendering: pixelated;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure {
+    margin: 0;
+}
+
+ul,
+ol {
+    padding: 0;
+    list-style: none;
+}
+
+a {
+    color: inherit;
+}
+
+::selection {
+    background: #3b5bdb;
+    color: #fff;
+}
+
+:focus-visible {
+    outline: 3px solid var(--mc-amarillo);
+    outline-offset: 3px;
+}
+
+.sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.saltar {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    padding: 8px 14px;
+    background: #000;
+    color: #fff;
+    transform: translateY(-200%);
+}
+
+.saltar:focus {
+    transform: none;
+}
+
+/* ---------------------------------------------------------
+   Íconos pixelados (SVG generados en script.js)
+   --------------------------------------------------------- */
+.icono {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    flex: none;
+}
+
+.icono svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ---------------------------------------------------------
+   Botón de Minecraft
+   --------------------------------------------------------- */
+.boton {
+    font: inherit;
+    font-size: 17px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 6px 22px 9px;
+    color: #fff;
+    text-decoration: none;
+    text-shadow: 0.1em 0.1em 0 #3f3f3f;
+    background: var(--ui-gris);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 var(--ui-gris-claro), inset -3px -5px 0 var(--ui-gris-oscuro);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 80ms linear;
+}
+
+.boton:hover {
+    background: #4f5590;
+    box-shadow: inset 3px 3px 0 #8f95cf, inset -3px -5px 0 #333865;
+    color: var(--mc-amarillo);
+}
+
+.boton:active {
+    transform: translateY(2px);
+    box-shadow: inset 3px 3px 0 var(--ui-gris-oscuro), inset -3px -3px 0 var(--ui-gris-claro);
+}
+
+.boton-verde {
+    background: #2f7420;
+    box-shadow: inset 3px 3px 0 #6cc349, inset -3px -5px 0 #24561a;
+}
+
+.boton-verde:hover {
+    background: #357a22;
+    box-shadow: inset 3px 3px 0 #86d965, inset -3px -5px 0 #2b6a1f;
+    color: #fff;
+}
+
+/* ---------------------------------------------------------
+   Marco de ítem (roble)
+   --------------------------------------------------------- */
+.marco {
+    position: relative;
+    display: block;
+    padding: 0;
+    background: var(--roble-borde);
+    border: 9px solid var(--roble);
+    border-color: var(--roble-claro) var(--roble-oscuro) var(--roble-oscuro) var(--roble-claro);
+    outline: 3px solid var(--roble-borde);
+}
+
+.marco img,
+.marco video {
+    width: 100%;
+    height: auto;
+}
+
+button.marco {
+    font: inherit;
+    color: inherit;
+    cursor: zoom-in;
+}
+
+button.marco:hover {
+    border-color: #d2ad72 #8a6a3d #8a6a3d #d2ad72;
+}
+
+button.marco:hover img {
+    filter: brightness(1.08);
+}
+
+/* Placa de nombre (name tag sobre un mob) */
+.placa-nombre {
+    display: table;
+    margin: 0 auto 12px;
+    padding: 3px 10px 5px;
+    background: rgb(0 0 0 / 0.5);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+/* ---------------------------------------------------------
+   INICIO · el muro de mapas
+   --------------------------------------------------------- */
+.inicio {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: 20px var(--gutter) 104px;
+}
+
+.muro {
+    width: 100%;
+    display: grid;
+    justify-items: center;
+    gap: 20px;
+}
+
+.mapa {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    width: min(100%, calc((100svh - 140px) * 1.5));
+    background: #3f5a1b;
+    border: 12px solid var(--roble);
+    border-color: var(--roble-claro) var(--roble-oscuro) var(--roble-oscuro) var(--roble-claro);
+    outline: 4px solid var(--roble-borde);
+    container-type: inline-size;
+}
+
+.mapa[data-orient="v"] {
+    aspect-ratio: 2 / 3;
+    width: min(100%, calc((100svh - 300px) * 0.6667));
+    min-width: min(100%, 300px);
+}
+
+.mapa canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.splash {
+    position: absolute;
+    z-index: 3;
+    left: 78%;
+    top: 22%;
+    color: var(--mc-amarillo);
+    font-size: clamp(14px, 2.1cqi, 28px);
+    text-shadow: 0.1em 0.1em 0 #3f3f15;
+    white-space: nowrap;
+    pointer-events: none;
+    transform-origin: 50% 50%;
+    transform: translate(-50%, -50%) rotate(-18deg);
+    animation: latido 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes latido {
+    to {
+        transform: translate(-50%, -50%) rotate(-18deg) scale(1.08);
+    }
+}
+
+.letrero-inicio {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 46%;
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    text-align: center;
+    width: max-content;
+    max-width: 92%;
+}
+
+.letrero-nombre,
+.letrero-rol {
+    padding: 3px 12px 6px;
+    background: rgb(0 0 0 / 0.55);
+    line-height: 1.25;
+}
+
+.letrero-nombre {
+    font-size: clamp(18px, 2.6cqi, 34px);
+    text-shadow: var(--sombra-texto);
+}
+
+.letrero-rol {
+    font-size: clamp(15px, 1.9cqi, 24px);
+    color: var(--mc-amarillo);
+    min-width: 18ch;
+}
+
+.cursor-chat {
+    color: var(--mc-gris);
+}
+
+.caret {
+    animation: parpadeo 1s steps(1) infinite;
+}
+
+@keyframes parpadeo {
+    50% {
+        opacity: 0;
+    }
+}
+
+.acciones-inicio {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.muro > .letrero-inicio {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+}
+
+.mapa[data-orient="v"] .splash {
+    font-size: 14px;
+}
+
+/* La versión vertical saca el letrero bajo el mapa */
+.letrero-fuera {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+/* Marcadores de estandarte */
+.marcador {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    transform: translate(-50%, -44px);
+}
+
+.estandarte {
+    width: 28px;
+    height: 44px;
+    background-size: 100% 100%;
+    image-rendering: pixelated;
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.marcador-nombre {
+    margin-top: 2px;
+    padding: 1px 7px 3px;
+    background: rgb(0 0 0 / 0.6);
+    color: #fff;
+    font-size: clamp(12px, 1.5cqi, 18px);
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+.marcador:hover .estandarte,
+.marcador:focus-visible .estandarte {
+    transform: translateY(-5px);
+}
+
+.marcador:hover .marcador-nombre,
+.marcador:focus-visible .marcador-nombre {
+    color: var(--mc-amarillo);
+}
+
+.marcador.marcador-faro {
+    flex-direction: row-reverse;
+    gap: 6px;
+    transform: translate(calc(-100% + 9px), -50%);
+}
+
+.marcador-faro .marcador-nombre {
+    margin-top: 0;
+    font-size: clamp(11px, 1.2cqi, 15px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.faro-luz {
+    width: 14px;
+    height: 14px;
+    background: var(--diamante);
+    border: 2px solid #0e3b39;
+    animation: faro 1.6s ease-in-out infinite;
+}
+
+@keyframes faro {
+    50% {
+        background: #c9fffb;
+        transform: scale(1.25);
+    }
+}
+
+.punto-en-linea {
+    width: 8px;
+    height: 8px;
+    background: var(--mc-verde);
+}
+
+.en-linea {
+    color: var(--mc-verde);
+}
+
+.jugador {
+    position: absolute;
+    z-index: 2;
+    width: 18px;
+    height: 18px;
+    transform: translate(-50%, -50%) rotate(90deg);
+    background: var(--flecha) center / 100% 100% no-repeat;
+    image-rendering: pixelated;
+}
+
+/* Niveles de detalle: el mapa suelta capas al achicarse */
+@container (max-width: 560px) {
+    .marcador-faro .en-linea {
+        display: none;
+    }
+
+    .estandarte {
+        width: 20px;
+        height: 32px;
+    }
+
+    .marcador {
+        transform: translate(-50%, -32px);
+    }
+}
+
+/* ---------------------------------------------------------
+   Zonas (secciones)
+   --------------------------------------------------------- */
+.zona {
+    position: relative;
+    overflow-x: clip;
+}
+
+.franja {
+    position: relative;
+    height: clamp(150px, 19vw, 240px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 max(var(--gutter), calc((100% - var(--ancho)) / 2)) clamp(16px, 2vw, 28px);
+    overflow: hidden;
+    background: #4f6f22;
+    border-top: 6px solid var(--abeto-oscuro);
+    border-bottom: 6px solid var(--abeto-oscuro);
+}
+
+.franja-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.franja-titulo {
+    position: relative;
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    font-weight: normal;
+    line-height: 1.35;
+    margin-bottom: 0;
+    letter-spacing: 0.01em;
+    text-shadow: 0.08em 0.08em 0 rgb(0 0 0 / 0.6);
+    text-wrap: balance;
+}
+
+.franja-lugar {
+    position: relative;
+    flex: none;
+    margin-bottom: 0.4em;
+    padding: 2px 9px 4px;
+    background: rgb(0 0 0 / 0.6);
+    font-size: 15px;
+    color: var(--mc-gris);
+}
+
+.franja-lugar .coords {
+    color: #fff;
+    margin-left: 6px;
+}
+
+.contenido {
+    max-width: var(--ancho);
+    margin: 0 auto;
+    padding: clamp(56px, 8vw, 120px) var(--gutter) clamp(72px, 10vw, 140px);
+}
+
+.subzona {
+    font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+    font-weight: normal;
+    line-height: 1.1;
+    margin: clamp(72px, 9vw, 128px) 0 clamp(24px, 3vw, 40px);
+    text-shadow: var(--sombra-texto);
+}
+
+/* ---------------------------------------------------------
+   Tooltip de ítem
+   --------------------------------------------------------- */
+.tooltip {
+    position: relative;
+    padding: 24px 28px 26px;
+    background: var(--tt-fondo);
+    border: 3px solid #100010;
+}
+
+.tooltip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 3px solid;
+    border-color: var(--tt-borde-claro) var(--tt-borde-oscuro) var(--tt-borde-oscuro) var(--tt-borde-claro);
+    pointer-events: none;
+}
+
+.tt-titulo {
+    font-size: clamp(1.3rem, 2.4vw, 1.75rem);
+    font-weight: normal;
+    line-height: 1.2;
+    text-shadow: 0.1em 0.1em 0 rgb(0 0 0 / 0.7);
+}
+
+.tt-oro {
+    color: var(--mc-oro);
+}
+
+.tt-aqua {
+    color: var(--mc-aqua);
+}
+
+.tt-amarillo {
+    color: var(--mc-amarillo);
+}
+
+.tt-empresa {
+    margin-top: 4px;
+    color: #fff;
+}
+
+.tt-fecha {
+    color: var(--mc-gris);
+    font-size: 16px;
+}
+
+.tt-rol {
+    color: var(--mc-oro);
+    margin-bottom: 12px;
+}
+
+.tt-etiqueta {
+    font-size: 15px;
+    color: var(--mc-gris);
+    margin-bottom: 4px;
+}
+
+.tt-etiqueta.tt-oro {
+    color: var(--mc-oro);
+}
+
+.tt-desc {
+    margin-top: 14px;
+    color: #e6e6e6;
+    max-width: 68ch;
+}
+
+.tt-lista {
+    margin-top: 14px;
+    display: grid;
+    gap: 8px;
+    color: var(--mc-gris);
+    max-width: 68ch;
+}
+
+.tt-lista li {
+    position: relative;
+    padding-left: 22px;
+}
+
+.tt-lista li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 0.55em;
+    width: 8px;
+    height: 8px;
+    background: var(--mc-gris-oscuro);
+    box-shadow: inset -2px -2px 0 #333;
+}
+
+.tt-encantamientos {
+    margin-top: 16px;
+    color: var(--mc-encantamiento);
+    font-size: 16px;
+}
+
+.tt-enlace {
+    display: inline-block;
+    margin-top: 16px;
+    color: var(--mc-amarillo);
+    text-underline-offset: 5px;
+}
+
+.acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.tooltip > .boton {
+    margin-top: 22px;
+}
+
+/* ---------------------------------------------------------
+   SOBRE MÍ · la casa
+   --------------------------------------------------------- */
+.casa {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) 1.5fr;
+    grid-template-areas:
+        "retrato letrero"
+        "retrato logros";
+    column-gap: clamp(32px, 5vw, 72px);
+    row-gap: 40px;
+    align-items: start;
+}
+
+.retrato {
+    grid-area: retrato;
+    position: sticky;
+    top: 40px;
+}
+
+.marco-retrato img {
+    aspect-ratio: 439 / 414;
+    object-fit: cover;
+    filter: contrast(1.05);
+}
+
+.letrero {
+    grid-area: letrero;
+    position: relative;
+    padding: clamp(24px, 3vw, 40px) clamp(24px, 3.4vw, 44px);
+    color: var(--letrero-tinta);
+    background-color: var(--letrero);
+    background-image: var(--tex-letrero);
+    background-size: 128px 128px;
+    border: 6px solid #5b4226;
+    outline: 3px solid var(--roble-borde);
+    font-size: 19px;
+    line-height: 1.6;
+}
+
+.letrero p {
+    max-width: 62ch;
+}
+
+.letrero p + p {
+    margin-top: 1em;
+}
+
+.letrero-titulo {
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    font-weight: normal;
+    line-height: 1.15;
+    margin-bottom: 18px;
+}
+
+.logros {
+    grid-area: logros;
+    display: grid;
+    gap: 12px;
+    justify-items: end;
+}
+
+.logro {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    align-items: center;
+    width: min(100%, 520px);
+    padding: 12px 18px 13px 12px;
+    background: #212121;
+    border: 3px solid #000;
+    box-shadow: inset 0 0 0 3px #555;
+    transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1), opacity 520ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--i, 0) * 140ms);
+}
+
+.logro .icono {
+    grid-row: 1 / 3;
+    width: 40px;
+    height: 40px;
+    margin-left: 4px;
+}
+
+.logro-titulo {
+    color: var(--mc-amarillo);
+    font-size: 16px;
+    line-height: 1.3;
+}
+
+.logro-texto {
+    color: #fff;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.js .logros:not(.visto) .logro {
+    transform: translateX(48px);
+    opacity: 0;
+}
+
+/* ---------------------------------------------------------
+   EXPERIENCIA · el camino del registro
+   --------------------------------------------------------- */
+.camino {
+    position: relative;
+    display: grid;
+    gap: clamp(40px, 5vw, 64px);
+    padding-left: calc(var(--gutter) + 64px);
+}
+
+.camino::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--gutter) + 14px);
+    top: clamp(56px, 8vw, 120px);
+    bottom: clamp(72px, 10vw, 140px);
+    width: 16px;
+    background-color: #8a6440;
+    background-image: var(--tex-camino);
+    background-size: 64px 64px;
+    border-left: 3px solid #4d3520;
+    border-right: 3px solid #4d3520;
+}
+
+.parada {
+    position: relative;
+}
+
+.parada::before {
+    content: "";
+    position: absolute;
+    left: -60px;
+    top: 18px;
+    width: 28px;
+    height: 44px;
+    background: var(--estandarte-azul) center / 100% 100% no-repeat;
+    image-rendering: pixelated;
+}
+
+.parada:first-child::before {
+    background-image: var(--estandarte-oro);
+}
+
+.parada .tooltip {
+    max-width: 880px;
+}
+
+.parada-corta .tooltip {
+    max-width: 700px;
+    padding: 20px 24px 22px;
+}
+
+.parada-corta .tt-titulo {
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+}
+
+.parada-corta::before {
+    width: 22px;
+    height: 34px;
+    left: -57px;
+}
+
+.tt-mas {
+    margin-top: 12px;
+}
+
+.tt-mas summary {
+    cursor: pointer;
+    color: var(--mc-amarillo);
+    width: max-content;
+    list-style: none;
+}
+
+.tt-mas summary::-webkit-details-marker {
+    display: none;
+}
+
+.tt-mas summary::before {
+    content: "+ ";
+}
+
+.tt-mas[open] summary::before {
+    content: "- ";
+}
+
+.tt-mas summary:hover {
+    text-decoration: underline;
+    text-underline-offset: 5px;
+}
+
+/* Marcos de ítem sobre cada mapa del muro */
+.marcos {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    pointer-events: none;
+}
+
+.mapa[data-orient="v"] .marcos {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+}
+
+.marcos i {
+    border: 4px solid;
+    border-color: var(--roble-claro) var(--roble-oscuro) var(--roble-oscuro) var(--roble-claro);
+    box-shadow: 0 0 0 2px var(--roble-borde), inset 0 0 0 2px rgb(0 0 0 / 0.35);
+}
+
+/* Acciones de la portada: ranuras de inventario */
+.ficha {
+    font: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 50px;
+    padding: 4px 14px 4px 6px;
+    color: #fff;
+    text-decoration: none;
+    background: rgb(28 28 28 / 0.82);
+    border: 3px solid;
+    border-color: #2b2b2b #6f6f6f #6f6f6f #2b2b2b;
+    outline: 3px solid #000;
+    cursor: pointer;
+}
+
+.ficha .icono {
+    width: 34px;
+    height: 34px;
+}
+
+.ficha-texto {
+    font-size: clamp(16px, 1.7cqi, 20px);
+    text-shadow: 0.1em 0.1em 0 #3f3f3f;
+}
+
+.muro > .letrero-inicio .ficha-texto {
+    font-size: 16px;
+}
+
+.muro > .letrero-inicio .acciones-inicio {
+    flex-wrap: nowrap;
+}
+
+.ficha:hover {
+    background: rgb(255 255 255 / 0.16);
+}
+
+.ficha:hover .ficha-texto {
+    color: var(--mc-amarillo);
+}
+
+/* ---------------------------------------------------------
+   HABILIDADES · la mina
+   --------------------------------------------------------- */
+.mina {
+    position: relative;
+}
+
+.veta {
+    padding: clamp(36px, 5vw, 64px) max(var(--gutter), calc((100% - var(--ancho)) / 2));
+    background-color: #6d6d6d;
+    background-image: var(--tex-piedra);
+    background-size: 96px 96px;
+    border-bottom: 4px solid rgb(0 0 0 / 0.35);
+}
+
+.veta:nth-child(n + 3) {
+    background-color: #45454c;
+    background-image: var(--tex-pizarra);
+}
+
+.veta-titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+    font-size: clamp(1.35rem, 2.8vw, 2.1rem);
+    font-weight: normal;
+    line-height: 1.15;
+    margin-bottom: 22px;
+    text-shadow: 0.1em 0.1em 0 rgb(0 0 0 / 0.75);
+}
+
+.veta-mineral {
+    font-size: 16px;
+    padding: 1px 8px 3px;
+    background: rgb(0 0 0 / 0.6);
+    color: var(--mineral);
+    text-shadow: none;
+}
+
+.veta[data-mineral="diamante"] {
+    --mineral: var(--diamante);
+}
+
+.veta[data-mineral="oro"] {
+    --mineral: var(--oro);
+}
+
+.veta[data-mineral="redstone"] {
+    --mineral: var(--redstone);
+}
+
+.veta[data-mineral="esmeralda"] {
+    --mineral: var(--esmeralda);
+}
+
+.veta[data-mineral="lapis"] {
+    --mineral: #7aa2ff;
+}
+
+.menas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.mena {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 14px 6px 5px;
+    background: rgb(0 0 0 / 0.62);
+    border: 3px solid #111;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mena::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    flex: none;
+    background: var(--mena-img) center / 100% 100% no-repeat;
+    image-rendering: pixelated;
+}
+
+.mena:hover {
+    border-color: #fff;
+}
+
+.mena.picando {
+    animation: picar 260ms steps(3) 1;
+}
+
+@keyframes picar {
+    33% {
+        transform: translate(-2px, 1px);
+    }
+
+    66% {
+        transform: translate(2px, -1px);
+    }
+}
+
+.mina-pista {
+    padding: 20px max(var(--gutter), calc((100% - var(--ancho)) / 2)) 28px;
+    background: #2a2a2e;
+    color: var(--mc-gris);
+    font-size: 16px;
+}
+
+.particula {
+    position: fixed;
+    z-index: 90;
+    width: 8px;
+    height: 8px;
+    pointer-events: none;
+    animation: particula 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes particula {
+    to {
+        transform: translate(var(--dx), var(--dy));
+        opacity: 0;
+    }
+}
+
+/* ---------------------------------------------------------
+   PROYECTOS · la aldea
+   --------------------------------------------------------- */
+.destacado {
+    scroll-margin-top: 24px;
+}
+
+.servidor {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    align-items: center;
+    gap: 16px 18px;
+    padding: 10px 16px 10px 10px;
+    margin-bottom: 26px;
+    background: rgb(0 0 0 / 0.72);
+    border: 3px solid #808080;
+    outline: 3px solid #000;
+}
+
+.servidor-icono {
+    width: 64px;
+    height: 64px;
+}
+
+.servidor-nombre {
+    font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+    font-weight: normal;
+    line-height: 1.2;
+}
+
+.servidor-motd {
+    color: var(--mc-gris);
+}
+
+.servidor-estado {
+    color: var(--mc-verde);
+    font-size: 16px;
+}
+
+.ping {
+    align-self: start;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 20px;
+    margin-top: 6px;
+}
+
+.ping i {
+    width: 4px;
+    background: var(--mc-verde);
+    box-shadow: inset -1px -1px 0 #1d7a1d;
+}
+
+.ping i:nth-child(1) { height: 4px; }
+.ping i:nth-child(2) { height: 8px; }
+.ping i:nth-child(3) { height: 12px; }
+.ping i:nth-child(4) { height: 16px; }
+.ping i:nth-child(5) { height: 20px; }
+
+.destacado-cuerpo {
+    display: grid;
+    grid-template-columns: 1.45fr 1fr;
+    gap: clamp(20px, 2.4vw, 32px) clamp(24px, 3vw, 40px);
+    align-items: start;
+}
+
+.ps-rasgos {
+    grid-column: 1 / -1;
+    padding-top: 20px;
+    padding-bottom: 22px;
+}
+
+.ps-lista {
+    margin-top: 0;
+    max-width: none;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 40px;
+    color: #e6e6e6;
+}
+
+.marco-video video {
+    aspect-ratio: 16 / 9;
+    background: #0a332a;
+}
+
+.obra-grande {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: clamp(24px, 3vw, 40px);
+    align-items: center;
+    margin-top: clamp(56px, 6vw, 88px);
+}
+
+.galeria-obras {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(24px, 3vw, 40px);
+    align-items: start;
+}
+
+.galeria-obras .marco img {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+.galeria-obras .tooltip {
+    margin-top: 14px;
+    padding: 20px 22px 22px;
+}
+
+.galeria-obras .tt-titulo {
+    font-size: 1.35rem;
+}
+
+.galeria-obras .tt-desc {
+    font-size: 16px;
+}
+
+/* ---------------------------------------------------------
+   MIS GATAS · la gatera
+   --------------------------------------------------------- */
+.gatera-intro {
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    max-width: 40ch;
+    margin-bottom: clamp(40px, 5vw, 64px);
+    text-shadow: var(--sombra-texto);
+}
+
+.mobs {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: clamp(24px, 3vw, 40px);
+    align-items: end;
+}
+
+.mob .marco img {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+.mob-duo .marco img {
+    aspect-ratio: 4 / 3;
+}
+
+.mob-ficha {
+    display: grid;
+    gap: 4px;
+    margin-top: 16px;
+    color: #e6e6e6;
+    font-size: 16px;
+}
+
+.mob-dato {
+    color: var(--mc-amarillo);
+}
+
+.muro-fotos {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: clamp(120px, 14vw, 200px);
+    grid-auto-flow: dense;
+    gap: 18px;
+}
+
+.muro-fotos .marco {
+    width: 100%;
+    height: 100%;
+    border-width: 7px;
+    background: #1d140b;
+}
+
+.muro-fotos .marco:nth-child(5n + 1) {
+    grid-row: span 2;
+}
+
+.muro-fotos .marco:nth-child(7n + 3) {
+    grid-column: span 2;
+}
+
+.muro-fotos .marco img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ---------------------------------------------------------
+   CONTACTO · el correo
+   --------------------------------------------------------- */
+.correo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+}
+
+.correo-gancho {
+    font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+    line-height: 1.35;
+    margin-bottom: 32px;
+    text-shadow: var(--sombra-texto);
+    max-width: 30ch;
+}
+
+.canales {
+    display: grid;
+    gap: 12px;
+}
+
+.canal {
+    display: grid;
+    grid-template-columns: 40px auto 1fr;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px 10px 12px;
+    text-decoration: none;
+    background: rgb(0 0 0 / 0.55);
+    border: 3px solid #000;
+    box-shadow: inset 0 0 0 2px #3a3a3a;
+}
+
+.canal .icono {
+    width: 36px;
+    height: 36px;
+}
+
+.canal-tipo {
+    color: var(--mc-gris);
+}
+
+.canal-valor {
+    color: #fff;
+    overflow-wrap: anywhere;
+}
+
+.canal:hover {
+    box-shadow: inset 0 0 0 2px #fff;
+}
+
+.canal:hover .canal-valor {
+    color: var(--mc-amarillo);
+}
+
+.formulario {
+    display: grid;
+    gap: 18px;
+    padding: clamp(24px, 3vw, 36px);
+    background-color: #3b2a1c;
+    background-image: var(--tex-tierra);
+    background-size: 96px 96px;
+    border: 3px solid #000;
+    box-shadow: inset 0 0 0 3px #5a4330;
+}
+
+.formulario-titulo {
+    font-size: 1.5rem;
+    font-weight: normal;
+    text-shadow: var(--sombra-texto);
+}
+
+.campo {
+    display: grid;
+    gap: 6px;
+}
+
+.campo-etiqueta {
+    color: #e6e6e6;
+}
+
+.campo input,
+.campo textarea {
+    font: inherit;
+    font-size: 18px;
+    width: 100%;
+    padding: 10px 12px;
+    color: #fff;
+    background: #000;
+    border: 3px solid #a0a0a0;
+    border-radius: 0;
+    caret-color: var(--mc-amarillo);
+    resize: vertical;
+}
+
+.campo input:focus,
+.campo textarea:focus {
+    outline: none;
+    border-color: #fff;
+}
+
+.campo [aria-invalid="true"] {
+    border-color: var(--mc-rojo);
+}
+
+.campo-error {
+    color: var(--mc-rojo);
+    font-size: 16px;
+    min-height: 0;
+}
+
+.campo-error:empty {
+    display: none;
+}
+
+.formulario .boton {
+    justify-self: start;
+}
+
+.formulario-nota {
+    color: #d0c2b4;
+    font-size: 15px;
+}
+
+/* ---------------------------------------------------------
+   Lecho de roca (pie)
+   --------------------------------------------------------- */
+.lecho {
+    padding: 40px var(--gutter) 128px;
+    text-align: center;
+    color: var(--mc-gris);
+    background-color: #2b2b2b;
+    background-image: var(--tex-lecho);
+    background-size: 96px 96px;
+    border-top: 6px solid #000;
+}
+
+.lecho p {
+    display: inline-block;
+    padding: 3px 12px 5px;
+    background: rgb(0 0 0 / 0.6);
+}
+
+/* ---------------------------------------------------------
+   HUD · barra de ítems, inventario y minimapa
+   --------------------------------------------------------- */
+.hud {
+    position: fixed;
+    z-index: 60;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.hud > * {
+    pointer-events: auto;
+}
+
+.item-nombre {
+    min-height: 1.4em;
+    padding: 0 8px;
+    font-size: 19px;
+    text-shadow: 0.1em 0.1em 0 #3f3f3f;
+    opacity: 0;
+    transition: opacity 400ms linear;
+    pointer-events: none;
+}
+
+.item-nombre.visible {
+    opacity: 1;
+    transition-duration: 60ms;
+}
+
+.barra {
+    display: flex;
+    padding: 3px;
+    background: rgb(28 28 28 / 0.82);
+    border: 3px solid #000;
+}
+
+.ranura {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    color: #fff;
+    font: inherit;
+    text-decoration: none;
+    background: rgb(139 139 139 / 0.25);
+    border: 3px solid;
+    border-color: #2b2b2b #6f6f6f #6f6f6f #2b2b2b;
+    cursor: pointer;
+}
+
+.ranura .icono {
+    width: 32px;
+    height: 32px;
+}
+
+.ranura kbd {
+    position: absolute;
+    right: 2px;
+    bottom: 0;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1;
+    text-shadow: 0.1em 0.1em 0 #3f3f3f;
+}
+
+.ranura:hover {
+    background: rgb(255 255 255 / 0.18);
+}
+
+.ranura.activa::after {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    border: 4px solid #e8e8e8;
+    outline: 2px solid #000;
+    box-shadow: inset 0 0 0 2px #000;
+    pointer-events: none;
+}
+
+.ranura[aria-expanded="true"] {
+    background: rgb(255 255 85 / 0.22);
+}
+
+.idioma-texto {
+    font-size: 17px;
+    color: var(--mc-amarillo);
+    text-shadow: 0.1em 0.1em 0 #3f3f15;
+}
+
+.inventario {
+    padding: 12px 14px 14px;
+    background: var(--ui-panel);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 #fff, inset -3px -3px 0 #555;
+}
+
+.inventario[hidden] {
+    display: none;
+}
+
+.inventario-titulo {
+    color: #3f3f3f;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.inventario-ranuras {
+    display: flex;
+    gap: 6px;
+}
+
+.ranura-cv {
+    width: 78px;
+    height: 72px;
+    gap: 2px;
+    align-content: center;
+    background: var(--ui-ranura);
+    border-color: #373737 #fff #fff #373737;
+}
+
+.ranura-cv:hover {
+    background: #a8a8a8;
+}
+
+.ranura-texto {
+    font-size: 15px;
+    line-height: 1;
+    text-shadow: 0.1em 0.1em 0 #3f3f3f;
+}
+
+.minimapa {
+    position: fixed;
+    z-index: 55;
+    top: 16px;
+    right: 16px;
+    border: 6px solid var(--roble);
+    border-color: var(--roble-claro) var(--roble-oscuro) var(--roble-oscuro) var(--roble-claro);
+    outline: 3px solid var(--roble-borde);
+    background: #d4bf8e;
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.minimapa.visible {
+    opacity: 1;
+    transform: none;
+}
+
+.minimapa canvas {
+    width: 192px;
+    height: auto;
+}
+
+.minimapa-flecha {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 0;
+    top: 0;
+    background: var(--flecha) center / 100% 100% no-repeat;
+    image-rendering: pixelated;
+    transform: translate(-50%, -50%);
+}
+
+.minimapa-coords {
+    position: absolute;
+    left: -6px;
+    top: calc(100% + 9px);
+    padding: 1px 7px 3px;
+    background: rgb(0 0 0 / 0.6);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Toasts de logro (esquina superior) */
+.toasts {
+    position: fixed;
+    z-index: 80;
+    top: 16px;
+    left: 16px;
+    display: grid;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.toasts .logro {
+    width: min(360px, calc(100vw - 32px));
+    animation: toast 4.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toast {
+    0% {
+        transform: translateX(-110%);
+    }
+
+    10%,
+    88% {
+        transform: none;
+    }
+
+    100% {
+        transform: translateX(-110%);
+    }
+}
+
+/* Visor de fotos */
+.visor {
+    max-width: min(92vw, 1100px);
+    max-height: 90vh;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    overflow: visible;
+}
+
+.visor::backdrop {
+    background: rgb(10 6 3 / 0.86);
+}
+
+.visor img {
+    max-width: 100%;
+    max-height: 82vh;
+    width: auto;
+    margin: 0 auto;
+    border: 9px solid;
+    border-color: var(--roble-claro) var(--roble-oscuro) var(--roble-oscuro) var(--roble-claro);
+    outline: 3px solid var(--roble-borde);
+}
+
+.visor-cerrar {
+    position: absolute;
+    top: -58px;
+    right: 0;
+}
+
+/* ---------------------------------------------------------
+   Adaptación
+   --------------------------------------------------------- */
+@media (max-width: 960px) {
+    .casa {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "retrato"
+            "letrero"
+            "logros";
+    }
+
+    .retrato {
+        position: static;
+        width: min(100%, 320px);
+    }
+
+    .logros {
+        justify-items: stretch;
+    }
+
+    .ps-lista {
+        grid-template-columns: 1fr;
+    }
+
+    .destacado-cuerpo,
+    .obra-grande,
+    .correo {
+        grid-template-columns: 1fr;
+    }
+
+    .galeria-obras {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mobs {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mob-duo {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 760px) {
+    .minimapa {
+        display: none;
+    }
+
+    .franja {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .franja-lugar {
+        order: -1;
+        margin: 0;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        font-size: 17px;
+    }
+
+    .inicio {
+        padding-top: 16px;
+        padding-bottom: 96px;
+    }
+
+    .mapa {
+        border-width: 8px;
+    }
+
+    .galeria-obras,
+    .mobs {
+        grid-template-columns: 1fr;
+    }
+
+    .camino {
+        padding-left: 0;
+    }
+
+    .camino::before,
+    .parada::before {
+        display: none;
+    }
+
+    .tooltip {
+        padding: 20px 18px 22px;
+    }
+
+    .letrero {
+        font-size: 17px;
+    }
+
+    .servidor {
+        grid-template-columns: 48px 1fr;
+    }
+
+    .servidor-icono {
+        width: 48px;
+        height: 48px;
+    }
+
+    .ping {
+        display: none;
+    }
+
+    .muro-fotos {
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 130px;
+        gap: 12px;
+    }
+
+    .muro-fotos .marco {
+        border-width: 5px;
+    }
+
+    .canal {
+        grid-template-columns: 36px 1fr;
+        row-gap: 0;
+    }
+
+    .canal .icono {
+        grid-row: span 2;
+    }
+
+    .canal-tipo {
+        font-size: 15px;
+    }
+
+    .ranura {
+        width: 38px;
+        height: 38px;
+        border-width: 2px;
+    }
+
+    .ranura .icono {
+        width: 26px;
+        height: 26px;
+    }
+
+    .ranura kbd {
+        display: none;
+    }
+
+    .ranura.activa::after {
+        inset: -5px;
+        border-width: 3px;
+    }
+
+    .ranura-cv {
+        width: 72px;
+        height: 64px;
+    }
+
+    .item-nombre {
+        font-size: 16px;
+    }
+
+    .boton {
+        white-space: normal;
+        text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .js .logros:not(.visto) .logro {
+        transform: none;
+        opacity: 1;
+    }
+}

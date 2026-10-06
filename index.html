@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venjy | Portafolio</title>
+    <meta name="description"
+        content="Portafolio de Benjamín «Venjy» Flores, desarrollador full stack de Chile. Proyectos en producción, experiencia, habilidades y mis gatas Mila y Gala.">
+    <meta name="theme-color" content="#2a1d12">
+    <link rel="preload" href="font/pixelcraft.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <a class="saltar" href="#sobre-mi" data-es="Saltar al contenido" data-en="Skip to content">Saltar al contenido</a>
+
+    <!-- ============ INICIO: el muro de mapas ============ -->
+    <header id="inicio" class="inicio" data-zona="0">
+        <div class="muro">
+            <div class="mapa" id="mapa">
+                <canvas id="mapa-canvas" aria-hidden="true"></canvas>
+                <div class="marcos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+                <h1 class="titulo-mapa">
+                    <span class="sr" data-es="Venjy, portafolio de Benjamín Flores"
+                        data-en="Venjy, Benjamin Flores's portfolio">Venjy, portafolio de Benjamín Flores</span>
+                </h1>
+
+                <p class="splash" id="splash" aria-hidden="true">¡Con dos gatas!</p>
+
+                <div class="letrero-inicio">
+                    <p class="letrero-nombre">Benjamín «Venjy» Flores</p>
+                    <p class="letrero-rol"><span class="cursor-chat" aria-hidden="true">&gt;</span> <span
+                            id="typewriter">Desarrollador full stack</span><span class="caret"
+                            aria-hidden="true">_</span></p>
+                    <div class="acciones-inicio">
+                        <button class="ficha" type="button" id="ficha-cv" aria-controls="inventario-cv"><span class="icono" data-icono="cofre" aria-hidden="true"></span><span class="ficha-texto" data-es="Currículum" data-en="Résumé">Currículum</span></button>
+                        <a class="ficha" href="#contacto"><span class="icono" data-icono="carta" aria-hidden="true"></span><span class="ficha-texto" data-es="Escríbeme" data-en="Get in touch">Escríbeme</span></a>
+                    </div>
+                </div>
+
+                <!-- Estandartes: cada uno es una puerta a su zona -->
+                <nav class="marcadores" aria-label="Mapa del portafolio" data-aria-es="Mapa del portafolio"
+                    data-aria-en="Portfolio map">
+                    <a class="marcador" href="#sobre-mi" data-punto="casa" data-color="rojo">
+                        <span class="estandarte" aria-hidden="true"></span>
+                        <span class="marcador-nombre" data-es="Sobre mí" data-en="About me">Sobre mí</span>
+                    </a>
+                    <a class="marcador" href="#experiencia" data-punto="registro" data-color="azul">
+                        <span class="estandarte" aria-hidden="true"></span>
+                        <span class="marcador-nombre" data-es="Experiencia" data-en="Experience">Experiencia</span>
+                    </a>
+                    <a class="marcador" href="#habilidades" data-punto="mina" data-color="cian">
+                        <span class="estandarte" aria-hidden="true"></span>
+                        <span class="marcador-nombre" data-es="Habilidades" data-en="Skills">Habilidades</span>
+                    </a>
+                    <a class="marcador" href="#proyectos" data-punto="aldea" data-color="verde">
+                        <span class="estandarte" aria-hidden="true"></span>
+                        <span class="marcador-nombre" data-es="Proyectos" data-en="Projects">Proyectos</span>
+                    </a>
+                    <a class="marcador" href="#gatos" data-punto="gatera" data-color="naranjo">
+                        <span class="estandarte" aria-hidden="true"></span>
+                        <span class="marcador-nombre" data-es="Mis gatas" data-en="My cats">Mis gatas</span>
+                    </a>
+                    <a class="marcador" href="#contacto" data-punto="correo" data-color="morado">
+                        <span class="estandarte" aria-hidden="true"></span>
+                        <span class="marcador-nombre" data-es="Contacto" data-en="Contact">Contacto</span>
+                    </a>
+                    <a class="marcador marcador-faro" href="#procedimiento-seguro" data-punto="faro">
+                        <span class="faro-luz" aria-hidden="true"></span>
+                        <span class="marcador-nombre"><span class="punto-en-linea" aria-hidden="true"></span>
+                            ProcedimientoSeguro <span class="en-linea" data-es="en línea" data-en="online">en
+                                línea</span></span>
+                    </a>
+                </nav>
+
+                <span class="jugador" id="jugador" aria-hidden="true"></span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ============ SOBRE MÍ ============ -->
+        <section id="sobre-mi" class="zona zona-casa" data-zona="1" aria-labelledby="t-sobre-mi">
+            <div class="franja" data-punto="casa">
+                <canvas class="franja-canvas" aria-hidden="true"></canvas>
+                <h2 class="franja-titulo" id="t-sobre-mi" data-es="Sobre mí" data-en="About me">Sobre mí</h2>
+                <p class="franja-lugar" aria-hidden="true"><span data-es="La casa" data-en="The house">La
+                        casa</span> <span class="coords"></span></p>
+            </div>
+
+            <div class="contenido casa">
+                <figure class="retrato">
+                    <span class="placa-nombre" aria-hidden="true">Venjy</span>
+                    <div class="marco marco-retrato">
+                        <img src="images/Venjy.png" width="439" height="414" id="retrato"
+                            alt="Retrato de Benjamín Flores" data-alt-es="Retrato de Benjamín Flores"
+                            data-alt-en="Portrait of Benjamin Flores">
+                    </div>
+                </figure>
+
+                <div class="letrero">
+                    <h3 class="letrero-titulo">Benjamín «Venjy» Flores</h3>
+                    <p data-es="¡Hola! Soy Venjy, estudiante de Ingeniería en Informática de Chile, apasionado por programar software y juegos."
+                        data-en="Hi! I'm Venjy, a Computer Engineering student from Chile, passionate about programming software and games.">
+                        ¡Hola! Soy Venjy, estudiante de Ingeniería en Informática de Chile, apasionado por programar
+                        software y juegos.</p>
+                    <p data-es="Voy en tercer año y estoy fortaleciendo mis habilidades en Python, C#, Java y desarrollo web."
+                        data-en="I'm in my third year, strengthening my skills in Python, C#, Java, and web development.">
+                        Voy en tercer año y estoy fortaleciendo mis habilidades en Python, C#, Java y desarrollo web.
+                    </p>
+                    <p data-es="También me entusiasma la ciberseguridad, sobre todo el pentesting. Me motiva entender cómo se pueden atacar los sistemas para luego fortalecerlos con código seguro, validaciones y arquitecturas más robustas."
+                        data-en="I'm also an enthusiastic learner in cybersecurity, especially pentesting. I enjoy understanding how systems can be attacked and then reinforcing them through secure coding, validation, and safer architectures.">
+                        También me entusiasma la ciberseguridad, sobre todo el pentesting. Me motiva entender cómo se
+                        pueden atacar los sistemas para luego fortalecerlos con código seguro, validaciones y
+                        arquitecturas más robustas.</p>
+                </div>
+
+                <ul class="logros" aria-label="Logros" data-aria-es="Logros" data-aria-en="Achievements">
+                    <li class="logro" style="--i:0">
+                        <span class="icono" data-icono="faro" aria-hidden="true"></span>
+                        <span class="logro-titulo" data-es="¡Logro conseguido!" data-en="Advancement made!">¡Logro
+                            conseguido!</span>
+                        <span class="logro-texto"
+                            data-es="Cofundé ProcedimientoSeguro y lo desarrollé completo: en producción desde octubre de 2026"
+                            data-en="Co-founded ProcedimientoSeguro and built the whole app: in production since October 2026">Cofundé
+                            ProcedimientoSeguro y lo desarrollé completo: en producción desde octubre de 2026</span>
+                    </li>
+                    <li class="logro" style="--i:1">
+                        <span class="icono" data-icono="libro" aria-hidden="true"></span>
+                        <span class="logro-titulo" data-es="¡Logro conseguido!" data-en="Advancement made!">¡Logro
+                            conseguido!</span>
+                        <span class="logro-texto"
+                            data-es="Más de 1 año (19 meses) desarrollando ERP y aplicaciones web"
+                            data-en="1+ year (19 months) building ERP and web applications">Más de 1 año (19 meses)
+                            desarrollando ERP y aplicaciones web</span>
+                    </li>
+                    <li class="logro" style="--i:2">
+                        <span class="icono" data-icono="esmeralda" aria-hidden="true"></span>
+                        <span class="logro-titulo" data-es="¡Logro conseguido!" data-en="Advancement made!">¡Logro
+                            conseguido!</span>
+                        <span class="logro-texto" data-es="6 meses en desarrollo de juegos indie"
+                            data-en="6 months in indie game development">6 meses en desarrollo de juegos indie</span>
+                    </li>
+                    <li class="logro" style="--i:3">
+                        <span class="icono" data-icono="cabeza" aria-hidden="true"></span>
+                        <span class="logro-titulo" data-es="¡Logro conseguido!" data-en="Advancement made!">¡Logro
+                            conseguido!</span>
+                        <span class="logro-texto"
+                            data-es="4 meses como Mentor Inclusivo en un entorno universitario"
+                            data-en="4 months as an Inclusive Mentor in a university setting">4 meses como Mentor
+                            Inclusivo en un entorno universitario</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ============ EXPERIENCIA ============ -->
+        <section id="experiencia" class="zona zona-registro" data-zona="2" aria-labelledby="t-experiencia">
+            <div class="franja" data-punto="registro">
+                <canvas class="franja-canvas" aria-hidden="true"></canvas>
+                <h2 class="franja-titulo" id="t-experiencia" data-es="Experiencia" data-en="Experience">Experiencia
+                </h2>
+                <p class="franja-lugar" aria-hidden="true"><span data-es="El registro" data-en="The logbook">El
+                        registro</span> <span class="coords"></span></p>
+            </div>
+
+            <ol class="contenido camino">
+                <!-- ProcedimientoSeguro -->
+                <li class="parada">
+                    <article class="tooltip">
+                        <header class="tooltip-cabeza">
+                            <h3 class="tt-titulo tt-oro" data-es="Cofundador y desarrollador"
+                                data-en="Co-founder and developer">Cofundador y desarrollador</h3>
+                            <p class="tt-empresa">ProcedimientoSeguro</p>
+                            <p class="tt-fecha" data-es="2026 – presente · Chile" data-en="2026 – present · Chile">2026
+                                – presente · Chile</p>
+                        </header>
+                        <p class="tt-desc"
+                            data-es="Aplicación web en producción para que funcionarios de las Fuerzas de Orden y Seguridad Pública confeccionen actas y declaraciones desde el celular. Cofundador junto a mi socio y responsable del desarrollo completo de la aplicación."
+                            data-en="Production web app that lets Chilean law enforcement officers write official reports and statements from their phone. Co-founder alongside my partner and responsible for building the entire application.">
+                            Aplicación web en producción para que funcionarios de las Fuerzas de Orden y Seguridad
+                            Pública confeccionen actas y declaraciones desde el celular. Cofundador junto a mi socio y
+                            responsable del desarrollo completo de la aplicación.</p>
+                        <ul class="tt-lista">
+                            <li data-es="Arquitectura y desarrollo completo en Next.js, TypeScript, Prisma y PostgreSQL, con validación en Zod y formularios que siempre dicen qué campo falla y por qué."
+                                data-en="Full architecture and development in Next.js, TypeScript, Prisma, and PostgreSQL, with Zod validation and forms that always say which field fails and why.">
+                                Arquitectura y desarrollo completo en Next.js, TypeScript, Prisma y PostgreSQL, con
+                                validación en Zod y formularios que siempre dicen qué campo falla y por qué.</li>
+                            <li data-es="Declaraciones y denuncias, registro de controles, actas de tránsito con croquis, medidas cautelares, fijación fotográfica y procedimientos con detenidos que generan de 3 a 7 actas de una vez, en PDF y Word."
+                                data-en="Statements and reports, ID and vehicle checks, traffic reports with sketches, protective orders, photo records, and arrest procedures that produce 3 to 7 documents at once, as PDF and Word.">
+                                Declaraciones y denuncias, registro de controles, actas de tránsito con croquis, medidas
+                                cautelares, fijación fotográfica y procedimientos con detenidos que generan de 3 a 7
+                                actas de una vez, en PDF y Word.</li>
+                            <li data-es="App instalable que funciona sin señal: las actas se guardan solo en el teléfono y el servidor nunca recibe su contenido."
+                                data-en="Installable app that works offline: reports stay on the phone and the server never receives their content.">
+                                App instalable que funciona sin señal: las actas se guardan solo en el teléfono y el
+                                servidor nunca recibe su contenido.</li>
+                            <li data-es="Despliegue propio en una VM Linux de Azure con Cloudflare Tunnel, systemd, respaldos diarios cifrados y vuelta atrás automática si algo falla."
+                                data-en="Self-managed deployment on an Azure Linux VM with Cloudflare Tunnel, systemd, encrypted daily backups, and automatic rollback on failure.">
+                                Despliegue propio en una VM Linux de Azure con Cloudflare Tunnel, systemd, respaldos
+                                diarios cifrados y vuelta atrás automática si algo falla.</li>
+                        </ul>
+                        <p class="tt-encantamientos">Next.js · TypeScript · Prisma · PostgreSQL · Tailwind · Zod ·
+                            Azure · Cloudflare</p>
+                        <a class="tt-enlace" href="#procedimiento-seguro" data-es="Ver el proyecto"
+                            data-en="See the project">Ver el proyecto</a>
+                    </article>
+                </li>
+
+                <!-- IDafa-connect -->
+                <li class="parada parada-corta">
+                    <article class="tooltip">
+                        <header class="tooltip-cabeza">
+                            <h3 class="tt-titulo tt-aqua" data-es="Desarrollador Full Stack"
+                                data-en="Full Stack Developer">Desarrollador Full Stack</h3>
+                            <p class="tt-empresa">Dafa Facility · IDafa-connect</p>
+                            <p class="tt-fecha">06/2025 – 01/2026 · Chile</p>
+                        </header>
+                        <p class="tt-desc"
+                            data-es="Sistema ERP para gestión de recursos humanos, contabilidad y prevención."
+                            data-en="ERP system for human resources, accounting, and prevention.">Sistema ERP para
+                            gestión de recursos humanos, contabilidad y prevención.</p>
+                        <details class="tt-mas"><summary data-es="Ver detalles" data-en="Show details">Ver detalles</summary><ul class="tt-lista">
+                            <li data-es="Diseño, implementación y migración completa a una arquitectura de microservicios con Docker (backend y base de datos)."
+                                data-en="Design, implementation, and full migration to a Docker-based microservices architecture (backend and database).">
+                                Diseño, implementación y migración completa a una arquitectura de microservicios con
+                                Docker (backend y base de datos).</li>
+                            <li data-es="Desarrollo y mantención de módulos ERP para RR. HH. y contabilidad."
+                                data-en="Development and maintenance of ERP modules for HR and accounting.">Desarrollo
+                                y mantención de módulos ERP para RR. HH. y contabilidad.</li>
+                            <li data-es="Rediseño del frontend en React con identidad visual configurable por empresa."
+                                data-en="Frontend redesign in React with configurable visual identity per company.">
+                                Rediseño del frontend en React con identidad visual configurable por empresa.</li>
+                            <li data-es="Módulos funcionales según requerimientos del negocio, con entornos reproducibles para desarrollo y testing apoyados en CI/CD."
+                                data-en="Functional modules built to business requirements, plus reproducible development and testing environments backed by CI/CD.">
+                                Módulos funcionales según requerimientos del negocio, con entornos reproducibles para
+                                desarrollo y testing apoyados en CI/CD.</li>
+                            <li data-es="APIs REST en Node.js, modelado en MySQL, integración segura de la API de GeoVictoria y estandarización de la calidad de datos."
+                                data-en="REST APIs in Node.js, MySQL modeling, secure GeoVictoria API integration, and data quality standardization.">
+                                APIs REST en Node.js, modelado en MySQL, integración segura de la API de GeoVictoria y
+                                estandarización de la calidad de datos.</li>
+                        </ul></details>
+                        <p class="tt-encantamientos">React · Node.js · MySQL · Docker · CI/CD · GeoVictoria API</p>
+                    </article>
+                </li>
+
+                <!-- El Patio de Lea -->
+                <li class="parada parada-corta">
+                    <article class="tooltip">
+                        <header class="tooltip-cabeza">
+                            <h3 class="tt-titulo tt-aqua" data-es="Consultor y Desarrollador Full Stack"
+                                data-en="Consultant and Full Stack Developer">Consultor y Desarrollador Full Stack
+                            </h3>
+                            <p class="tt-empresa">El Patio de Lea</p>
+                            <p class="tt-fecha">02/2025 – 12/2025 · Chile</p>
+                        </header>
+                        <p class="tt-desc"
+                            data-es="Desarrollo de punta a punta de un sistema web de reservas y gestión de eventos."
+                            data-en="End-to-end development of a web reservation and event management system.">
+                            Desarrollo de punta a punta de un sistema web de reservas y gestión de eventos.</p>
+                        <details class="tt-mas"><summary data-es="Ver detalles" data-en="Show details">Ver detalles</summary><ul class="tt-lista">
+                            <li data-es="Frontend en React y backend en Node.js + Express, con APIs REST y autenticación JWT."
+                                data-en="React frontend and Node.js + Express backend, with REST APIs and JWT authentication.">
+                                Frontend en React y backend en Node.js + Express, con APIs REST y autenticación JWT.
+                            </li>
+                            <li data-es="Modelado y consultas SQL en MySQL." data-en="SQL modeling and queries in MySQL.">
+                                Modelado y consultas SQL en MySQL.</li>
+                            <li data-es="Despliegue y administración en Azure, incluida la configuración de producción y las variables de entorno."
+                                data-en="Deployment and administration on Azure, including production setup and environment variables.">
+                                Despliegue y administración en Azure, incluida la configuración de producción y las
+                                variables de entorno.</li>
+                            <li data-es="Integraciones con Khipu (pagos), Meteored (clima) y la API de Gmail (notificaciones)."
+                                data-en="Integrations with Khipu (payments), Meteored (weather), and the Gmail API (notifications).">
+                                Integraciones con Khipu (pagos), Meteored (clima) y la API de Gmail (notificaciones).
+                            </li>
+                            <li data-es="Buenas prácticas de seguridad: validación de entradas, protección contra inyección SQL y manejo seguro de tokens."
+                                data-en="Secure practices: input validation, SQL injection protection, and safe token handling.">
+                                Buenas prácticas de seguridad: validación de entradas, protección contra inyección SQL y
+                                manejo seguro de tokens.</li>
+                        </ul></details>
+                        <p class="tt-encantamientos">React · Node.js · Express · MySQL · Azure · JWT</p>
+                    </article>
+                </li>
+
+                <!-- Mentor Inclusivo -->
+                <li class="parada parada-corta">
+                    <article class="tooltip">
+                        <header class="tooltip-cabeza">
+                            <h3 class="tt-titulo tt-amarillo" data-es="Mentor Inclusivo" data-en="Inclusive Mentor">
+                                Mentor Inclusivo</h3>
+                            <p class="tt-empresa">Instituto Santo Tomás</p>
+                            <p class="tt-fecha">03/2025 – 07/2025 · Chile</p>
+                        </header>
+                        <p class="tt-desc"
+                            data-es="Cargo remunerado acompañando de cerca y de forma personalizada a estudiantes en contextos de vulnerabilidad o discapacidad."
+                            data-en="Paid role providing close, personalized guidance to students in vulnerable or disability contexts.">
+                            Cargo remunerado acompañando de cerca y de forma personalizada a estudiantes en contextos de
+                            vulnerabilidad o discapacidad.</p>
+                        <details class="tt-mas"><summary data-es="Ver detalles" data-en="Show details">Ver detalles</summary><ul class="tt-lista">
+                            <li data-es="Apoyo académico personalizado a estudiantes en situación de vulnerabilidad o discapacidad."
+                                data-en="Personalized academic support for students facing vulnerability or disability.">
+                                Apoyo académico personalizado a estudiantes en situación de vulnerabilidad o
+                                discapacidad.</li>
+                            <li data-es="Fortalecí habilidades interpersonales, empatía y comunicación efectiva en contextos educativos."
+                                data-en="Strengthened interpersonal skills, empathy, and effective communication in educational settings.">
+                                Fortalecí habilidades interpersonales, empatía y comunicación efectiva en contextos
+                                educativos.</li>
+                        </ul></details>
+                        <p class="tt-encantamientos" data-es="Mentoría · Educación · Inclusión · Apoyo académico"
+                            data-en="Mentorship · Education · Inclusion · Academic support">Mentoría · Educación ·
+                            Inclusión · Apoyo académico</p>
+                    </article>
+                </li>
+            </ol>
+        </section>
+
+        <!-- ============ HABILIDADES ============ -->
+        <section id="habilidades" class="zona zona-mina" data-zona="3" aria-labelledby="t-habilidades">
+            <div class="franja" data-punto="mina">
+                <canvas class="franja-canvas" aria-hidden="true"></canvas>
+                <h2 class="franja-titulo" id="t-habilidades" data-es="Habilidades" data-en="Skills">Habilidades</h2>
+                <p class="franja-lugar" aria-hidden="true"><span data-es="La mina" data-en="The mine">La mina</span>
+                    <span class="coords"></span></p>
+            </div>
+
+            <div class="mina">
+                <div class="veta" data-mineral="diamante">
+                    <h3 class="veta-titulo"><span data-es="Lenguajes de programación"
+                            data-en="Programming languages">Lenguajes de programación</span> <span class="veta-mineral"
+                            data-es="diamante" data-en="diamond">diamante</span></h3>
+                    <ul class="menas">
+                        <li class="mena">Python</li>
+                        <li class="mena">C# (.NET)</li>
+                        <li class="mena">Java</li>
+                        <li class="mena">JavaScript</li>
+                        <li class="mena">TypeScript</li>
+                        <li class="mena">SQL</li>
+                        <li class="mena">Bash</li>
+                    </ul>
+                </div>
+                <div class="veta" data-mineral="oro">
+                    <h3 class="veta-titulo"><span data-es="Frameworks y herramientas"
+                            data-en="Frameworks and tools">Frameworks y herramientas</span> <span class="veta-mineral"
+                            data-es="oro" data-en="gold">oro</span></h3>
+                    <ul class="menas">
+                        <li class="mena">React</li>
+                        <li class="mena">Next.js</li>
+                        <li class="mena">Node.js</li>
+                        <li class="mena">Express</li>
+                        <li class="mena">Prisma</li>
+                        <li class="mena">PostgreSQL</li>
+                        <li class="mena">MySQL</li>
+                        <li class="mena">Docker</li>
+                        <li class="mena">Git</li>
+                        <li class="mena">REST APIs</li>
+                        <li class="mena">JWT</li>
+                        <li class="mena">Tailwind CSS</li>
+                        <li class="mena">HTML/CSS</li>
+                        <li class="mena">Unity</li>
+                        <li class="mena">Linux</li>
+                        <li class="mena">Windows Server</li>
+                    </ul>
+                </div>
+                <div class="veta" data-mineral="redstone">
+                    <h3 class="veta-titulo"><span data-es="Cloud, integraciones y seguridad"
+                            data-en="Cloud, integrations and security">Cloud, integraciones y seguridad</span> <span
+                            class="veta-mineral">redstone</span></h3>
+                    <ul class="menas">
+                        <li class="mena">Azure</li>
+                        <li class="mena">Cloudflare</li>
+                        <li class="mena">DigitalOcean</li>
+                        <li class="mena">CI/CD</li>
+                        <li class="mena" data-es="Microservicios" data-en="Microservices">Microservicios</li>
+                        <li class="mena" data-es="Integración de APIs" data-en="API integration">Integración de APIs</li>
+                        <li class="mena" data-es="Bases de pentesting" data-en="Pentesting basics">Bases de pentesting
+                        </li>
+                        <li class="mena" data-es="Seguridad SQL" data-en="SQL security">Seguridad SQL</li>
+                    </ul>
+                </div>
+                <div class="veta" data-mineral="esmeralda">
+                    <h3 class="veta-titulo"><span data-es="Desarrollo de juegos" data-en="Game development">Desarrollo
+                            de juegos</span> <span class="veta-mineral" data-es="esmeralda"
+                            data-en="emerald">esmeralda</span></h3>
+                    <ul class="menas">
+                        <li class="mena" data-es="Diseño de juegos 2D" data-en="2D game design">Diseño de juegos 2D</li>
+                        <li class="mena">Pixel art</li>
+                        <li class="mena" data-es="Mecánicas de juego" data-en="Game mechanics">Mecánicas de juego</li>
+                        <li class="mena" data-es="Patrones de diseño" data-en="Design patterns">Patrones de diseño</li>
+                    </ul>
+                </div>
+                <div class="veta" data-mineral="lapis">
+                    <h3 class="veta-titulo"><span data-es="Otras habilidades" data-en="Other skills">Otras
+                            habilidades</span> <span class="veta-mineral" data-es="lapislázuli"
+                            data-en="lapis lazuli">lapislázuli</span></h3>
+                    <ul class="menas">
+                        <li class="mena" data-es="Resolución de problemas" data-en="Problem solving">Resolución de
+                            problemas</li>
+                        <li class="mena" data-es="Trabajo en equipo" data-en="Teamwork">Trabajo en equipo</li>
+                        <li class="mena" data-es="Empatía y mentoría" data-en="Empathy and mentoring">Empatía y mentoría
+                        </li>
+                        <li class="mena" data-es="Comunicación efectiva" data-en="Effective communication">Comunicación
+                            efectiva</li>
+                        <li class="mena" data-es="Adaptabilidad" data-en="Adaptability">Adaptabilidad</li>
+                        <li class="mena" data-es="Inglés (B2)" data-en="English (B2)">Inglés (B2)</li>
+                    </ul>
+                </div>
+                <p class="mina-pista" data-es="Pista: haz clic en una mena para picarla."
+                    data-en="Tip: click an ore to mine it.">Pista: haz clic en una mena para picarla.</p>
+            </div>
+        </section>
+
+        <!-- ============ PROYECTOS ============ -->
+        <section id="proyectos" class="zona zona-aldea" data-zona="4" aria-labelledby="t-proyectos">
+            <div class="franja" data-punto="aldea">
+                <canvas class="franja-canvas" aria-hidden="true"></canvas>
+                <h2 class="franja-titulo" id="t-proyectos" data-es="Proyectos" data-en="Projects">Proyectos</h2>
+                <p class="franja-lugar" aria-hidden="true"><span data-es="La aldea" data-en="The village">La
+                        aldea</span> <span class="coords"></span></p>
+            </div>
+
+            <div class="contenido aldea">
+                <!-- Destacado: ProcedimientoSeguro -->
+                <article class="destacado" id="procedimiento-seguro" aria-labelledby="t-ps">
+                    <div class="servidor">
+                        <img class="servidor-icono" src="images/procseg/icono.svg" width="64" height="64" alt="">
+                        <div class="servidor-texto">
+                            <h3 class="servidor-nombre" id="t-ps">ProcedimientoSeguro</h3>
+                            <p class="servidor-motd" data-es="Actas y procedimientos policiales, desde el celular."
+                                data-en="Police reports and procedures, straight from the phone.">Actas y procedimientos
+                                policiales, desde el celular.</p>
+                            <p class="servidor-estado" data-es="En línea desde el 02/10/2026 · piloto gratuito"
+                                data-en="Online since 10/02/2026 · free pilot">En línea desde el 02/10/2026 · piloto
+                                gratuito</p>
+                        </div>
+                        <span class="ping" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                    </div>
+
+                    <div class="destacado-cuerpo">
+                        <div class="marco marco-video">
+                            <video id="video-ps" src="images/procseg/promo.mp4" poster="images/procseg/promo-poster.jpg"
+                                muted loop playsinline preload="none" controls
+                                aria-label="Video promocional de ProcedimientoSeguro"
+                                data-aria-es="Video promocional de ProcedimientoSeguro"
+                                data-aria-en="ProcedimientoSeguro promo video"></video>
+                        </div>
+
+                        <div class="tooltip tooltip-ps">
+                            <p class="tt-rol" data-es="Cofundador · desarrollo completo de la aplicación"
+                                data-en="Co-founder · built the entire application">Cofundador · desarrollo completo de
+                                la aplicación</p>
+                            <p class="tt-desc"
+                                data-es="Un funcionario termina el procedimiento y empieza el papeleo. ProcedimientoSeguro lo resuelve en el teléfono: llena el formulario en terreno, revisa y edita el documento, y lo descarga en PDF o Word o lo comparte por WhatsApp."
+                                data-en="An officer finishes the procedure and the paperwork begins. ProcedimientoSeguro handles it on the phone: fill in the form in the field, review and edit the document, then download it as PDF or Word or share it on WhatsApp.">
+                                Un funcionario termina el procedimiento y empieza el papeleo. ProcedimientoSeguro lo
+                                resuelve en el teléfono: llena el formulario en terreno, revisa y edita el documento, y
+                                lo descarga en PDF o Word o lo comparte por WhatsApp.</p>
+                            <p class="tt-encantamientos">Next.js · TypeScript · Prisma · PostgreSQL · Azure · Cloudflare
+                            </p>
+                            <div class="acciones">
+                                <a class="boton boton-verde" href="https://app.procedimientoseguro.cl" target="_blank"
+                                    rel="noopener noreferrer" data-es="Abrir la app" data-en="Open the app">Abrir la
+                                    app</a>
+                                <a class="boton" href="https://procedimientoseguro.cl" target="_blank"
+                                    rel="noopener noreferrer" data-es="Ver el sitio" data-en="Visit the site">Ver el
+                                    sitio</a>
+                            </div>
+                        </div>
+
+                        <div class="tooltip ps-rasgos">
+                        <ul class="tt-lista ps-lista">
+                            <li data-es="Funciona sin señal y se instala como app." data-en="Works offline and installs as an app.">
+                                Funciona sin señal y se instala como app.</li>
+                            <li data-es="Las actas no salen del teléfono: el servidor no recibe su contenido."
+                                data-en="Reports never leave the phone: the server never receives their content.">
+                                Las actas no salen del teléfono: el servidor no recibe su contenido.</li>
+                            <li data-es="Perfil y firma se cargan solos en cada documento."
+                                data-en="Profile and signature fill in automatically on every document.">Perfil y
+                                firma se cargan solos en cada documento.</li>
+                            <li data-es="Un procedimiento con detenido genera de 3 a 7 actas de una vez."
+                                data-en="An arrest procedure generates 3 to 7 documents at once.">Un procedimiento
+                                con detenido genera de 3 a 7 actas de una vez.</li>
+                        </ul>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Freelance: El Patio de LEA -->
+                <article class="obra obra-grande" aria-labelledby="t-lea">
+                    <div class="marco">
+                        <img src="images/pagcentroevn.gif" width="854" height="430" loading="lazy" decoding="async"
+                            alt="Recorrido por el sitio de El Patio de LEA" data-alt-es="Recorrido por el sitio de El Patio de LEA"
+                            data-alt-en="Walkthrough of the El Patio de LEA website">
+                    </div>
+                    <div class="tooltip">
+                        <h3 class="tt-titulo tt-aqua" id="t-lea">El Patio de LEA</h3>
+                        <p class="tt-desc"
+                            data-es="Proyecto freelance pagado, full stack, para un centro de eventos local: diseño web, sistema de reservas y panel de administración, con impacto directo en el negocio."
+                            data-en="Paid full stack freelance project for a local event venue: web design, reservation system, and admin panel, with direct business impact.">
+                            Proyecto freelance pagado, full stack, para un centro de eventos local: diseño web, sistema de
+                            reservas y panel de administración, con impacto directo en el negocio.</p>
+                        <p class="tt-encantamientos">React · Node.js · Express · MySQL · Azure · Khipu</p>
+                        <a class="boton" href="https://github.com/Venjyy/ElPatiodeLea" target="_blank"
+                            rel="noopener noreferrer" data-es="Ver en GitHub" data-en="View on GitHub">Ver en GitHub</a>
+                    </div>
+                </article>
+
+                <h3 class="subzona" data-es="Juegos indie y proyectos personales"
+                    data-en="Indie games and personal builds">Juegos indie y proyectos personales</h3>
+
+                <div class="galeria-obras">
+                    <article class="obra" aria-labelledby="t-plantotchi">
+                        <div class="marco">
+                            <img src="images/Plantotchi.gif" width="526" height="480" loading="lazy" decoding="async"
+                                alt="Plantotchi funcionando" data-alt-es="Plantotchi funcionando"
+                                data-alt-en="Plantotchi in action">
+                        </div>
+                        <div class="tooltip">
+                            <h3 class="tt-titulo tt-aqua" id="t-plantotchi">Plantotchi</h3>
+                            <p class="tt-desc"
+                                data-es="Mascota virtual de planta IoT inspirada en Tamagotchi, con un ESP8266: hay que cuidar la planta en el tiempo mediante sensores y actuadores. Servicios de Azure, Node-RED para automatizar flujos, MQTT para comunicación y MariaDB para persistencia."
+                                data-en="IoT virtual plant pet inspired by Tamagotchi, built on an ESP8266: you care for the plant over time through sensors and actuators. Azure services, Node-RED for flow automation, MQTT for messaging, and MariaDB for persistence.">
+                                Mascota virtual de planta IoT inspirada en Tamagotchi, con un ESP8266: hay que cuidar la
+                                planta en el tiempo mediante sensores y actuadores. Servicios de Azure, Node-RED para
+                                automatizar flujos, MQTT para comunicación y MariaDB para persistencia.</p>
+                            <div class="acciones">
+                                <a class="boton" href="https://github.com/salonas/plantochi" target="_blank"
+                                    rel="noopener noreferrer" data-es="Ver en GitHub" data-en="View on GitHub">Ver en
+                                    GitHub</a>
+                                <a class="boton"
+                                    href="https://docs.google.com/document/d/15qzyrvOWHEPQYBTEO5H173aFRgzDYVicBRMFk5D_bfQ/edit?usp=sharing"
+                                    target="_blank" rel="noopener noreferrer" data-es="Informe IoT (80+ páginas)"
+                                    data-en="IoT report (80+ pages)">Informe IoT (80+ páginas)</a>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="obra" aria-labelledby="t-catclicker">
+                        <div class="marco">
+                            <img src="images/CatClicker.gif" width="1183" height="655" loading="lazy" decoding="async"
+                                alt="Cat Clicker en juego" data-alt-es="Cat Clicker en juego"
+                                data-alt-en="Cat Clicker gameplay">
+                        </div>
+                        <div class="tooltip">
+                            <h3 class="tt-titulo tt-aqua" id="t-catclicker">Cat Clicker</h3>
+                            <p class="tt-desc"
+                                data-es="Juego incremental de clics para Android, hecho en Android Studio con Java, y Firebase con Firestore para guardar y sincronizar datos en la nube."
+                                data-en="Incremental clicker game for Android, built in Android Studio with Java, using Firebase and Firestore to store and sync data in the cloud.">
+                                Juego incremental de clics para Android, hecho en Android Studio con Java, y Firebase
+                                con Firestore para guardar y sincronizar datos en la nube.</p>
+                            <a class="boton" href="https://github.com/Venjyy/catsclicker" target="_blank"
+                                rel="noopener noreferrer" data-es="Ver en GitHub" data-en="View on GitHub">Ver en
+                                GitHub</a>
+                        </div>
+                    </article>
+
+                    <article class="obra" aria-labelledby="t-instantgif">
+                        <div class="marco">
+                            <img src="images/InstantGIF.gif" width="892" height="720" loading="lazy" decoding="async"
+                                alt="InstantGIF generando un GIF" data-alt-es="InstantGIF generando un GIF"
+                                data-alt-en="InstantGIF generating a GIF">
+                        </div>
+                        <div class="tooltip">
+                            <h3 class="tt-titulo tt-aqua" id="t-instantgif">InstantGIF</h3>
+                            <p class="tt-desc"
+                                data-es="Herramienta que genera GIFs al instante a partir de texto o imágenes. La hice para practicar interactividad en el frontend y respuesta visual rápida."
+                                data-en="A tool that instantly generates GIFs from text or images. Built to practice frontend interactivity and fast visual feedback.">
+                                Herramienta que genera GIFs al instante a partir de texto o imágenes. La hice para
+                                practicar interactividad en el frontend y respuesta visual rápida.</p>
+                            <a class="boton" href="https://github.com/Venjyy/instantgif" target="_blank"
+                                rel="noopener noreferrer" data-es="Ver en GitHub" data-en="View on GitHub">Ver en
+                                GitHub</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ MIS GATAS ============ -->
+        <section id="gatos" class="zona zona-gatera" data-zona="5" aria-labelledby="t-gatos">
+            <div class="franja" data-punto="gatera">
+                <canvas class="franja-canvas" aria-hidden="true"></canvas>
+                <h2 class="franja-titulo" id="t-gatos" data-es="Mis gatas" data-en="My cats">Mis gatas</h2>
+                <p class="franja-lugar" aria-hidden="true"><span data-es="La gatera" data-en="The cat house">La
+                        gatera</span> <span class="coords"></span></p>
+            </div>
+
+            <div class="contenido gatera">
+                <p class="gatera-intro"
+                    data-es="Mila y Gala, mis compañeras felinas, me acompañan en cada sesión de código."
+                    data-en="Mila and Gala, my feline companions, keep me company through every coding session.">Mila y
+                    Gala, mis compañeras felinas, me acompañan en cada sesión de código.</p>
+
+                <div class="mobs">
+                    <figure class="mob mob-duo">
+                        <span class="placa-nombre">Mila &amp; Gala</span>
+                        <button class="marco foto" type="button" data-foto="images/MilayGala.jfif">
+                            <img src="images/MilayGala.jfif" width="828" height="621" loading="lazy" decoding="async"
+                                alt="Mila y Gala juntas" data-alt-es="Mila y Gala juntas" data-alt-en="Mila and Gala together">
+                        </button>
+                    </figure>
+                    <figure class="mob">
+                        <span class="placa-nombre">Galatea</span>
+                        <button class="marco foto" type="button" data-foto="images/Gala.jfif">
+                            <img src="images/Gala.jfif" width="1280" height="960" loading="lazy" decoding="async"
+                                alt="Galatea" data-alt-es="Galatea" data-alt-en="Galatea">
+                        </button>
+                        <figcaption class="mob-ficha">
+                            <span class="mob-dato" data-es="3 años :3" data-en="3 years old :3">3 años :3</span>
+                            <span data-es="Una pequeña diva a la que le encanta ser el centro de atención."
+                                data-en="A little diva who loves being the center of attention.">Una pequeña diva a la que
+                                le encanta ser el centro de atención.</span>
+                        </figcaption>
+                    </figure>
+                    <figure class="mob">
+                        <span class="placa-nombre">Mila</span>
+                        <button class="marco foto" type="button" data-foto="images/MilaGod.jfif">
+                            <img src="images/MilaGod.jfif" width="1280" height="960" loading="lazy" decoding="async"
+                                alt="Mila" data-alt-es="Mila" data-alt-en="Mila">
+                        </button>
+                        <figcaption class="mob-ficha">
+                            <span class="mob-dato" data-es="4 años · carey + gordita = Mila"
+                                data-en="4 years old · calico + chubby = Mila">4 años · carey + gordita = Mila</span>
+                            <span data-es="Un angelito al que le encanta acurrucarse y jugar."
+                                data-en="A little angel who loves to cuddle and play.">Un angelito al que le encanta
+                                acurrucarse y jugar.</span>
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <h3 class="subzona" data-es="Las mejores fotos de mis gatas" data-en="Best photos of my cats">Las mejores
+                    fotos de mis gatas</h3>
+                <div class="muro-fotos" id="muro-fotos">
+                    <button class="marco foto" type="button"><img src="images/Mila1.jfif" loading="lazy" decoding="async" alt="Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/Gala2.jfif" loading="lazy" decoding="async" alt="Gala"></button>
+                    <button class="marco foto" type="button"><img src="images/Gala3.jfif" loading="lazy" decoding="async" alt="Gala"></button>
+                    <button class="marco foto" type="button"><img src="images/Mila3.jfif" loading="lazy" decoding="async" alt="Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/GalayMila.jfif" loading="lazy" decoding="async" alt="Gala y Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/Galapatitas.jfif" loading="lazy" decoding="async" alt="Las patitas de Gala"></button>
+                    <button class="marco foto" type="button"><img src="images/MilaCuestionando.jfif" loading="lazy" decoding="async" alt="Mila cuestionándolo todo"></button>
+                    <button class="marco foto" type="button"><img src="images/Galatuto.jfif" loading="lazy" decoding="async" alt="Gala con tuto"></button>
+                    <button class="marco foto" type="button"><img src="images/Galapatona.jfif" loading="lazy" decoding="async" alt="Gala patona"></button>
+                    <button class="marco foto" type="button"><img src="images/MilaHombre.jfif" loading="lazy" decoding="async" alt="Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/Milasol.jfif" loading="lazy" decoding="async" alt="Mila al sol"></button>
+                    <button class="marco foto" type="button"><img src="images/Milapetit.jfif" loading="lazy" decoding="async" alt="Mila pequeña"></button>
+                    <button class="marco foto" type="button"><img src="images/Cutes.gif" loading="lazy" decoding="async" alt="Mila y Gala juntas"></button>
+                    <button class="marco foto" type="button"><img src="images/Galeriamila10.jfif" loading="lazy" decoding="async" alt="Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/Mila11.jfif" loading="lazy" decoding="async" alt="Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/Mila12.jfif" loading="lazy" decoding="async" alt="Mila"></button>
+                    <button class="marco foto" type="button"><img src="images/Gala10.jfif" loading="lazy" decoding="async" alt="Gala"></button>
+                    <button class="marco foto" type="button"><img src="images/Gala11.jfif" loading="lazy" decoding="async" alt="Gala"></button>
+                    <button class="marco foto" type="button"><img src="images/MilaAceituna.jfif" loading="lazy" decoding="async" alt="Mila Aceituna"></button>
+                    <button class="marco foto" type="button"><img src="images/Milaestudiando.jfif" loading="lazy" decoding="async" alt="Mila estudiando"></button>
+                    <button class="marco foto" type="button"><img src="images/Gala13.jfif" loading="lazy" decoding="async" alt="Gala"></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ CONTACTO ============ -->
+        <section id="contacto" class="zona zona-correo" data-zona="6" aria-labelledby="t-contacto">
+            <div class="franja" data-punto="correo">
+                <canvas class="franja-canvas" aria-hidden="true"></canvas>
+                <h2 class="franja-titulo" id="t-contacto" data-es="Contacto" data-en="Contact">Contacto</h2>
+                <p class="franja-lugar" aria-hidden="true"><span data-es="El correo" data-en="The post office">El
+                        correo</span> <span class="coords"></span></p>
+            </div>
+
+            <div class="contenido correo">
+                <div class="correo-intro">
+                    <p class="correo-gancho"
+                        data-es="¿Buscas a alguien para tu equipo o necesitas un sistema para tu negocio? Escríbeme."
+                        data-en="Looking for someone to join your team, or need a system for your business? Write to me.">
+                        ¿Buscas a alguien para tu equipo o necesitas un sistema para tu negocio? Escríbeme.</p>
+                    <ul class="canales">
+                        <li><a class="canal" href="mailto:benjaf243@gmail.com"><span class="icono" data-icono="carta"
+                                    aria-hidden="true"></span><span class="canal-tipo">Email</span><span
+                                    class="canal-valor">benjaf243@gmail.com</span></a></li>
+                        <li><a class="canal" href="https://github.com/Venjyy" target="_blank"
+                                rel="noopener noreferrer"><span class="icono" data-icono="cofre"
+                                    aria-hidden="true"></span><span class="canal-tipo">GitHub</span><span
+                                    class="canal-valor">github.com/Venjyy</span></a></li>
+                        <li><a class="canal" href="https://www.linkedin.com/in/benjamin-flores-aa59112b5/"
+                                target="_blank" rel="noopener noreferrer"><span class="icono" data-icono="cabeza"
+                                    aria-hidden="true"></span><span class="canal-tipo">LinkedIn</span><span
+                                    class="canal-valor">Benjamín Flores</span></a></li>
+                    </ul>
+                </div>
+
+                <form class="formulario" id="formulario" novalidate>
+                    <h3 class="formulario-titulo" data-es="Envíame un mensaje" data-en="Send me a message">Envíame un
+                        mensaje</h3>
+                    <label class="campo">
+                        <span class="campo-etiqueta" data-es="Tu nombre" data-en="Your name">Tu nombre</span>
+                        <input type="text" name="nombre" autocomplete="name" required>
+                        <span class="campo-error" aria-live="polite"></span>
+                    </label>
+                    <label class="campo">
+                        <span class="campo-etiqueta" data-es="Tu correo" data-en="Your email">Tu correo</span>
+                        <input type="email" name="correo" autocomplete="email" required>
+                        <span class="campo-error" aria-live="polite"></span>
+                    </label>
+                    <label class="campo">
+                        <span class="campo-etiqueta" data-es="Tu mensaje" data-en="Your message">Tu mensaje</span>
+                        <textarea name="mensaje" rows="5" required></textarea>
+                        <span class="campo-error" aria-live="polite"></span>
+                    </label>
+                    <button type="submit" class="boton boton-verde" data-es="Abrir en mi correo"
+                        data-en="Open in my email app">Abrir en mi correo</button>
+                    <p class="formulario-nota"
+                        data-es="Se abrirá tu aplicación de correo con el mensaje listo para enviar."
+                        data-en="Your email app will open with the message ready to send.">Se abrirá tu aplicación de
+                        correo con el mensaje listo para enviar.</p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="lecho">
+        <p data-es="© 2026 Venjy · Hecho bloque por bloque en Chile"
+            data-en="© 2026 Venjy · Built block by block in Chile">© 2026 Venjy · Hecho bloque por bloque en Chile</p>
+    </footer>
+
+    <!-- ============ HUD ============ -->
+    <aside class="minimapa" id="minimapa" aria-hidden="true">
+        <canvas id="minimapa-canvas"></canvas>
+        <span class="minimapa-flecha" id="minimapa-flecha"></span>
+        <span class="minimapa-coords" id="minimapa-coords"></span>
+    </aside>
+
+    <div class="hud">
+        <p class="item-nombre" id="item-nombre" aria-live="polite"></p>
+
+        <div class="inventario" id="inventario-cv" hidden>
+            <p class="inventario-titulo" data-es="Currículum" data-en="Résumé">Currículum</p>
+            <div class="inventario-ranuras">
+                <a class="ranura ranura-cv cv-link" data-fmt="pdf" href="images/cv/CV_BenjaminFloresB_ES.pdf"
+                    download="CV_BenjaminFloresB_ES.pdf"><span class="icono" data-icono="papel"
+                        aria-hidden="true"></span><span class="ranura-texto">PDF</span></a>
+                <a class="ranura ranura-cv cv-link" data-fmt="docx" href="images/cv/CV_BenjaminFloresB_ES.docx"
+                    download="CV_BenjaminFloresB_ES.docx"><span class="icono" data-icono="libro"
+                        aria-hidden="true"></span><span class="ranura-texto">Word</span></a>
+                <a class="ranura ranura-cv cv-link" data-fmt="csv" href="images/cv/CV_BenjaminFloresB_ES.csv"
+                    download="CV_BenjaminFloresB_ES.csv"><span class="icono" data-icono="mapa"
+                        aria-hidden="true"></span><span class="ranura-texto">CSV</span></a>
+            </div>
+        </div>
+
+        <nav class="barra" aria-label="Secciones" data-aria-es="Secciones" data-aria-en="Sections">
+            <a class="ranura" href="#inicio" data-es-nombre="Inicio" data-en-nombre="Home"><span class="icono"
+                    data-icono="pasto" aria-hidden="true"></span><kbd>1</kbd><span class="sr">Inicio</span></a>
+            <a class="ranura" href="#sobre-mi" data-es-nombre="Sobre mí" data-en-nombre="About me"><span
+                    class="icono" data-icono="cabeza" aria-hidden="true"></span><kbd>2</kbd><span class="sr">Sobre
+                    mí</span></a>
+            <a class="ranura" href="#experiencia" data-es-nombre="Experiencia" data-en-nombre="Experience"><span
+                    class="icono" data-icono="libro" aria-hidden="true"></span><kbd>3</kbd><span
+                    class="sr">Experiencia</span></a>
+            <a class="ranura" href="#habilidades" data-es-nombre="Habilidades" data-en-nombre="Skills"><span
+                    class="icono" data-icono="pico" aria-hidden="true"></span><kbd>4</kbd><span
+                    class="sr">Habilidades</span></a>
+            <a class="ranura" href="#proyectos" data-es-nombre="Proyectos" data-en-nombre="Projects"><span
+                    class="icono" data-icono="esmeralda" aria-hidden="true"></span><kbd>5</kbd><span
+                    class="sr">Proyectos</span></a>
+            <a class="ranura" href="#gatos" data-es-nombre="Mis gatas" data-en-nombre="My cats"><span class="icono"
+                    data-icono="gato" aria-hidden="true"></span><kbd>6</kbd><span class="sr">Mis gatas</span></a>
+            <a class="ranura" href="#contacto" data-es-nombre="Contacto" data-en-nombre="Contact"><span
+                    class="icono" data-icono="carta" aria-hidden="true"></span><kbd>7</kbd><span
+                    class="sr">Contacto</span></a>
+            <button class="ranura" type="button" id="boton-cv" aria-expanded="false" aria-controls="inventario-cv"
+                data-es-nombre="Currículum (PDF, Word, CSV)" data-en-nombre="Résumé (PDF, Word, CSV)"><span
+                    class="icono" data-icono="cofre" aria-hidden="true"></span><kbd>8</kbd><span
+                    class="sr">Currículum</span></button>
+            <button class="ranura ranura-idioma" type="button" id="boton-idioma"
+                data-es-nombre="Idioma: español" data-en-nombre="Language: English"><span class="idioma-texto"
+                    id="idioma-texto">ES</span><kbd>9</kbd><span class="sr" data-es="Cambiar a inglés"
+                    data-en="Switch to Spanish">Cambiar a inglés</span></button>
+        </nav>
+    </div>
+
+    <ol class="toasts" id="toasts" aria-live="polite"></ol>
+
+    <dialog class="visor" id="visor" aria-label="Foto ampliada">
+        <form method="dialog"><button class="visor-cerrar boton" data-es="Cerrar" data-en="Close"
+                >Cerrar</button></form>
+        <img id="visor-img" alt="">
+    </dialog>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,54 @@
+Section,Subsection,Detail
+Personal Data,Name,Benjamín Flores Bravo
+Personal Data,Title,Full Stack Developer | React · Node.js · Docker · Cloud (Azure/DigitalOcean)
+Personal Data,Location,"Concepción, Chile"
+Personal Data,Phone,+569 5040 1247
+Personal Data,Email,benjaf243@gmail.com
+Personal Data,GitHub,github.com/Venjyy
+Personal Data,LinkedIn,https://www.linkedin.com/in/benjamin-flores-v/
+Professional Summary,Summary,"Full Stack Developer with experience designing, building, and deploying ERP systems, REST APIs, and microservices architectures. Specialized in React, Node.js, Express, and MySQL, with hands-on experience containerizing applications with Docker, version control with Git, and cloud deployment (Azure, DigitalOcean). Proven track record migrating monolithic systems to microservices, integrating third-party APIs (payments, weather, authentication, attendance tracking), and applying security best practices (JWT, input validation, SQL injection prevention). Focused on continuous process improvement, data quality, and CI/CD practices, with basic Linux administration skills."
+Technical Skills,Languages,"JavaScript, Python, TypeScript (basic), SQL, HTML5, CSS3, C#"
+Technical Skills,Frontend,"React.js, React Hooks, Context API, responsive design, reusable component architecture"
+Technical Skills,Backend,"Node.js, Express.js, ASP.NET MVC, Entity Framework, REST APIs, JWT authentication, microservices architecture"
+Technical Skills,Databases,"MySQL, SQL Server, relational data modeling, SQL query optimization"
+Technical Skills,DevOps / Cloud,"Docker, Docker Compose, CI/CD, Git/GitHub, deployment on Azure and DigitalOcean, basic Linux administration"
+Technical Skills,Integrations,"Third-party APIs (GeoVictoria, Khipu, Meteored, Gmail API), Webhooks, OAuth/JWT authentication"
+Technical Skills,Security,"Input validation, SQL injection prevention, secure token and credential handling"
+Technical Skills,Practices,"Agile methodologies (Scrum/Kanban), data quality control, technical documentation"
+Technical Skills,Languages Spoken,"Spanish (native), English B2 (upper-intermediate)"
+Professional Experience,Role,Full Stack Developer
+Professional Experience,Company,Dafa Facility – iDafa Connect
+Professional Experience,Location,"Coronel, Chile"
+Professional Experience,Period,Jun. 2025 – Jan. 2026
+Professional Experience,Description,ERP system for human resources, accounting, and risk-prevention management.
+Professional Experience,Achievement,"Led the design and full migration of a monolithic architecture to microservices using Docker (backend and database), cutting deployment time by 60% and improving system scalability."
+Professional Experience,Achievement,"Developed and maintained an ERP system for HR and accounting used by 10 internal users, streamlining administrative processes by 45%."
+Professional Experience,Achievement,"Redesigned the React frontend with a configurable, white-label visual identity per company, improving user satisfaction and reducing support tickets by 50%."
+Professional Experience,Achievement,"Implemented 8 new functional modules based on business requirements, delivered on schedule."
+Professional Experience,Achievement,"Designed and built REST APIs in Node.js and modeled MySQL databases, processing 700+ requests/day with optimized response times."
+Professional Experience,Achievement,"Configured reproducible development and testing environments and supported CI/CD adoption, reducing deployment errors by 40%."
+Professional Experience,Achievement,"Securely integrated the GeoVictoria API for attendance tracking, automating time-tracking for 30+ employees."
+Professional Experience,Achievement,"Improved data quality, normalization, and standardization across the system, reducing inconsistencies by 35%."
+Professional Experience,Tech Stack,"React, Node.js, MySQL, Docker, Git, Postman, Claude Agent"
+Professional Experience,Role,Full Stack Developer & Consultant
+Professional Experience,Company,El Patio de Lea
+Professional Experience,Location,"Concepción, Chile"
+Professional Experience,Period,Feb. 2025 – Dec. 2025
+Professional Experience,Achievement,"Built an end-to-end web reservation and event management system, increasing digitally managed bookings by 80%."
+Professional Experience,Achievement,"Developed the React frontend and Node.js + Express backend, designing REST APIs with JWT authentication for 50+ concurrent users."
+Professional Experience,Achievement,"Modeled and optimized MySQL queries, improving query response times by 40%."
+Professional Experience,Achievement,"Deployed and managed infrastructure on DigitalOcean, configuring production environments and environment variables to ensure 99.5% uptime."
+Professional Experience,Achievement,"Integrated third-party APIs: Khipu (payments), Meteored (weather), and Gmail API (automated notifications), cutting manual management time by 50%."
+Professional Experience,Achievement,"Applied security best practices — input validation, SQL injection protection, and secure token handling — with zero reported security incidents."
+Professional Experience,Role,Inclusive Learning Mentor
+Professional Experience,Company,Instituto Santo Tomás
+Professional Experience,Location,"Concepción, Chile"
+Professional Experience,Period,Mar. 2025 – Jul. 2025
+Professional Experience,Achievement,"Provided personalized academic support to 1 student with disabilities/vulnerable circumstances, improving academic performance and achieving a successful semester completion."
+Professional Experience,Achievement,"Developed interpersonal skills, empathy, and effective communication in educational settings, strengthening soft skills transferable to team-based work."
+Education,Degree,B.S. in Computer Engineering (3rd year)
+Education,Institution,"Instituto Santo Tomás, Concepción, Chile"
+Education,Period,2024 – Present
+Courses & Certifications,Course,"SQL Server Master Course: From Zero to Professional — Udemy · 16 hours · Completed 10/2025 (Instructor: Mariano Puglisi) — https://www.udemy.com/certificate/UC-27be7e11-4d11-43c5-971d-627706fd60f0/"
+Courses & Certifications,Course,"ASP.NET MVC Master Course: Entity Framework (.NET 9) — Udemy · 22 hours · Completed 10/2025 (Instructor: render2web) — https://www.udemy.com/certificate/UC-00a0a7de-1a5d-4ddb-a698-0e6d400620a8/"
+Courses & Certifications,Course,"Ultimate Python: From Zero to Expert Programmer — Udemy · 18 hours · Completed 09/2025 (Instructor: Nicolas Schurmann) — https://www.udemy.com/certificate/UC-8e6c80a0-5b44-4134-a5ca-1b11a3274139/"
