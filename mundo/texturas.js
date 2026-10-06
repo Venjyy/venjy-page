@@ -57,6 +57,18 @@ const ladoConTecho = (techo, fondo, alturas) => {
     };
 };
 
+// Flor de 16×16: tallo verde y capullo de 4×4 arriba
+function florPintor(x, y, r, color, centro) {
+    if (x === 7 && y >= 7) return ajustar([60, 130, 44], 0.85 + r() * 0.3);
+    if (x === 8 && y >= 10 && y <= 12) return ajustar([60, 130, 44], 0.8);
+    if (x >= 5 && x <= 9 && y >= 2 && y <= 6) {
+        if (x >= 6 && x <= 8 && y >= 3 && y <= 5) return centro;
+        if ((x === 5 || x === 9) && (y === 2 || y === 6)) return [0, 0, 0, 0];
+        return ajustar(color, 0.9 + r() * 0.2);
+    }
+    return [0, 0, 0, 0];
+}
+
 const PINTORES = {
     pasto_top: ruidoso('#79b24a', 0.3, { p: 0.08, color: '#5f9a35' }),
     pasto_lado: ladoConTecho('#79b24a', '#866043', [3, 4, 3, 5, 4, 3, 3, 4, 5, 3, 4, 4, 3, 5, 4, 3]),
@@ -146,6 +158,24 @@ const PINTORES = {
         const franja = (x % 4 === 1 || x % 5 === 3) ? 0.7 : 1;
         return ajustar([68, 48, 28], franja * (0.85 + r() * 0.25));
     },
+    pasto_alto: (x, y, r) => {
+        const hojas = [[2, 11], [4, 8], [6, 12], [8, 7], [10, 11], [12, 9], [13, 12]];
+        for (const [px, alto] of hojas) {
+            if (x === px && y >= 15 - alto) return ajustar([80, 150, 52], 0.85 + (15 - y) / 30 + r() * 0.15);
+        }
+        return [0, 0, 0, 0];
+    },
+    flor_roja: (x, y, r) => florPintor(x, y, r, [208, 48, 52], [250, 210, 70]),
+    flor_amarilla: (x, y, r) => florPintor(x, y, r, [246, 214, 58], [220, 130, 30]),
+    flor_azul: (x, y, r) => florPintor(x, y, r, [76, 110, 226], [230, 236, 250]),
+    trigo: (x, y, r) => {
+        const tallos = [2, 5, 8, 11, 14];
+        for (const px of tallos) {
+            if (x === px && y >= 4) return ajustar([120, 160, 56], 0.85 + r() * 0.3);
+            if (Math.abs(x - px) <= 1 && y >= 1 && y <= 5 && !(x !== px && y === 5 && r() < 0.5)) return ajustar([222, 190, 84], 0.82 + r() * 0.3);
+        }
+        return [0, 0, 0, 0];
+    },
     tronco_pino_top: (x, y, r) => {
         const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
         return d > 6.5 ? ajustar([60, 42, 24], 0.9 + r() * 0.2) : ajustar([120, 90, 52], (Math.floor(d) % 2 ? 0.88 : 1) * (0.94 + r() * 0.12));
@@ -188,7 +218,8 @@ export const B = {
     AIRE: 0, PASTO: 1, TIERRA: 2, PIEDRA: 3, ARENA: 4, NIEVE: 5, AGUA: 6, HOJAS: 7, TRONCO: 8,
     TABLONES: 9, CUARZO: 10, ROJO: 11, AZUL: 12, NARANJO: 13, NEGRO: 14, ORO: 15, DIAMANTE: 16,
     ESMERALDA: 17, PODZOL: 18, ARCILLA: 19, GRIS: 20, CAMINO: 21, CULTIVO: 22,
-    TRIGO: 23, VIDRIO: 24, LABRADA: 25, HOJAS_ABEDUL: 26, TRONCO_ABEDUL: 27, HOJAS_PINO: 28, TRONCO_PINO: 29
+    TRIGO: 23, VIDRIO: 24, LABRADA: 25, HOJAS_ABEDUL: 26, TRONCO_ABEDUL: 27, HOJAS_PINO: 28, TRONCO_PINO: 29,
+    PASTO_ALTO: 30, FLOR_ROJA: 31, FLOR_AMARILLA: 32, FLOR_AZUL: 33
 };
 
 export const BLOQUES = [];
@@ -214,7 +245,11 @@ BLOQUES[B.ARCILLA] = def('arcilla', 's', 'arcilla');
 BLOQUES[B.GRIS] = def('gris', 's', 'gris');
 BLOQUES[B.CAMINO] = def('camino', 's', 'camino_top', 'tierra', 'tierra');
 BLOQUES[B.CULTIVO] = def('cultivo', 's', 'cultivo_top', 'tierra', 'tierra');
-BLOQUES[B.TRIGO] = def('trigo', 'h', 'cultivo_planta');
+BLOQUES[B.TRIGO] = def('trigo', 'p', 'trigo');
+BLOQUES[B.PASTO_ALTO] = def('pasto alto', 'p', 'pasto_alto');
+BLOQUES[B.FLOR_ROJA] = def('amapola', 'p', 'flor_roja');
+BLOQUES[B.FLOR_AMARILLA] = def('diente de leon', 'p', 'flor_amarilla');
+BLOQUES[B.FLOR_AZUL] = def('aciano', 'p', 'flor_azul');
 BLOQUES[B.VIDRIO] = def('vidrio', 'h', 'vidrio');
 BLOQUES[B.LABRADA] = def('piedra labrada', 's', 'piedra_labrada');
 BLOQUES[B.HOJAS_ABEDUL] = def('hojas de abedul', 'h', 'hojas_abedul');
@@ -222,6 +257,6 @@ BLOQUES[B.TRONCO_ABEDUL] = def('tronco de abedul', 's', 'tronco_abedul_top', 'tr
 BLOQUES[B.HOJAS_PINO] = def('hojas de pino', 'h', 'hojas_pino');
 BLOQUES[B.TRONCO_PINO] = def('tronco de pino', 's', 'tronco_pino_top', 'tronco_pino_lado', 'tronco_pino_top');
 
-// Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua
+// Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz
 export const TIPO = new Uint8Array(BLOQUES.length);
-BLOQUES.forEach((b, i) => { if (b) TIPO[i] = b.tipo === 's' ? 1 : b.tipo === 'h' ? 2 : 3; });
+BLOQUES.forEach((b, i) => { if (b) TIPO[i] = b.tipo === 's' ? 1 : b.tipo === 'h' ? 2 : b.tipo === 'p' ? 4 : 3; });

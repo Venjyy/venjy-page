@@ -104,7 +104,7 @@ export function prepararTerreno(datos) {
     const HUECO = new Uint8Array(BW * BD); // 1 interior hueco · 2 pared · 3 pared con puerta
     const { tx0, ty0, anchoT, altoT } = datos.titulo;
     const [fcx, fcz] = datos.P.faro;
-    const [pax, pay] = datos.P.aldea, [pcx, pcy] = datos.P.correo;
+    const [pax, pay] = datos.P.aldea, [pcx, pcy] = datos.P.correo, [mix, miy] = datos.P.mina;
     const CASAS = new Set([B.ROJO, B.AZUL, B.NARANJO, B.PODZOL, B.TABLONES, B.CUARZO]);
     const esCasa = o => ES[o] === 1 && HT[o] - BASE_ESTRUCTURA >= 4 && CASAS.has(SUP[o]);
     for (let bz = 0; bz < BD; bz++) {
@@ -120,6 +120,12 @@ export function prepararTerreno(datos) {
             if (SUP[o] === B.HOJAS && HT[o] === BASE_ESTRUCTURA) { SUP[o] = B.CULTIVO; HUECO[o] = 4; continue; } // trigo
             const enPozo = cx >= pax - 1 && cx <= pax && cz >= pay - 5 && cz <= pay - 4;
             const enBuzon = cx === pcx - 3 && cz === pcy - 5;
+            const enMina = (cz >= miy - 4 && cz <= miy - 2 && cx >= mix - 2 && cx <= mix + 1)
+                || (cz === miy - 5 && cx >= mix - 3 && cx <= mix + 2);
+            if (enMina) { // el foso de la mina se convierte en una plaza de piedra a ras del camino
+                ES[o] = 0; HT[o] = BASE_ESTRUCTURA; SUP[o] = B.GRIS; SUB[o] = B.PIEDRA;
+                continue;
+            }
             if (SUP[o] === B.HOJAS || enPozo || enBuzon) { // bosquecillo a árboles; pozo y buzón a decorado
                 ES[o] = 0; HT[o] = BASE_ESTRUCTURA; SUP[o] = B.PASTO; SUB[o] = B.TIERRA;
                 continue;
@@ -130,6 +136,13 @@ export function prepararTerreno(datos) {
             const igual = p => esCasa(p) && SUP[p] === SUP[o];
             HUECO[o] = igual(o - 1) && igual(o + 1) && igual(o - BW) && igual(o + BW) ? 1 : 2;
         }
+    }
+    // Cajas de la gatera: cajones abiertos de 2×2 por dentro
+    const caja = o => ES[o] === 1 && (SUP[o] === B.NARANJO || SUP[o] === B.NEGRO) && HT[o] - BASE_ESTRUCTURA === 2;
+    for (let o = BW + 1; o < BW * (BD - 1) - 1; o++) {
+        if (!caja(o)) continue;
+        const igual = p => caja(p) && SUP[p] === SUP[o];
+        HUECO[o] = igual(o - 1) && igual(o + 1) && igual(o - BW) && igual(o + BW) ? 6 : 5;
     }
     // Puertas: el felpudo de madera queda a ras del piso y se abre un hueco de 2×3 en la pared
     for (let cz = 1; cz < H; cz++) {
@@ -149,8 +162,9 @@ export function prepararTerreno(datos) {
         }
     }
     const decor = [
-        { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA },
-        { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA }
+        { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
+        { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
+        { t: 'mina', x: mix * ESCALA, z: (miy - 5) * ESCALA, cx: mix * ESCALA, cz: (miy - 5) * ESCALA - 14, r: 18 }
     ];
     const faro = { x: fcx * ESCALA, z: fcz * ESCALA, y: vh(19) + 1 };
     return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, datos };
@@ -167,7 +181,7 @@ function colocarArbol(vox, wx0, wz0, tx, ty, tz, h, tipo = 0) {
         const lx = x - wx0, lz = z - wz0;
         if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
         const i = (y * VENT + lz) * VENT + lx;
-        if (vox[i] === B.AIRE || (sobreescribe && vox[i] === HOJAS_ID[tipo])) vox[i] = id;
+        if (vox[i] === B.AIRE || TIPO[vox[i]] === 4 || (sobreescribe && vox[i] === HOJAS_ID[tipo])) vox[i] = id;
     };
     const tope = ty + h;
     const hoja = HOJAS_ID[tipo], tronco = TRONCO_ID[tipo];
@@ -217,8 +231,8 @@ export function llenarChunk(terreno, cx, cz) {
             for (let y = 0; y <= tope; y++) {
                 let id;
                 if (es === 2) id = y === tope ? sup : y > NIVEL_AGUA - 4 ? B.AGUA : B.ARENA;
-                else if (y === tope) id = sup;
-                else if (hueco && y >= BASE_ESTRUCTURA) {
+                else if (y === tope) id = hueco === 6 ? B.AIRE : sup;
+                else if (hueco && hueco <= 3 && y >= BASE_ESTRUCTURA) {
                     if (y === BASE_ESTRUCTURA) id = B.TABLONES; // piso a ras del suelo
                     else if (hueco === 1) id = B.AIRE;
                     else if (hueco === 3 && y <= BASE_ESTRUCTURA + 3) id = B.AIRE;
@@ -232,6 +246,11 @@ export function llenarChunk(terreno, cx, cz) {
                 vox[(y * VENT + lz) * VENT + lx] = id;
             }
             if (hueco === 4 && tope + 1 < ALTO) vox[((tope + 1) * VENT + lz) * VENT + lx] = B.TRIGO;
+            else if (es === 0 && sup === B.PASTO && tope > NIVEL_AGUA && tope + 1 < ALTO) {
+                const q = hash(bx, bz, 11) % 1000;
+                const planta = q < 80 ? B.PASTO_ALTO : q < 88 ? B.FLOR_ROJA : q < 96 ? B.FLOR_AMARILLA : q < 102 ? B.FLOR_AZUL : 0;
+                if (planta) vox[((tope + 1) * VENT + lz) * VENT + lx] = planta;
+            }
             if (es !== 2) for (let y = tope + 1; y <= NIVEL_AGUA; y++) vox[(y * VENT + lz) * VENT + lx] = B.AGUA;
             if (Math.max(tope, NIVEL_AGUA) > maxY) maxY = Math.max(tope, NIVEL_AGUA);
         }
@@ -258,7 +277,7 @@ export function llenarChunk(terreno, cx, cz) {
     }
     // Decorados: pozo de la aldea y buzón del correo
     for (const d of terreno.decor) {
-        if (Math.abs(d.x + 4 - (wx0 + VENT / 2)) < 24 && Math.abs(d.z + 4 - (wz0 + VENT / 2)) < 24) {
+        if (Math.abs(d.cx - (wx0 + VENT / 2)) < d.r + VENT / 2 && Math.abs(d.cz - (wz0 + VENT / 2)) < d.r + VENT / 2) {
             colocarDecor(vox, wx0, wz0, d, BASE_ESTRUCTURA + 1);
             maxY = Math.max(maxY, BASE_ESTRUCTURA + 8);
         }
@@ -293,6 +312,21 @@ function colocarDecor(vox, wx0, wz0, d, y0) {
                 poner(d.x + dx, y0 + 5, d.z + dz, B.TABLONES);
             }
         }
+    } else if (d.t === 'mina') {
+        const ores = [B.DIAMANTE, B.ORO, B.ESMERALDA];
+        for (let k = 1; k <= 28; k++) {
+            const z = d.z - k;
+            for (let dx = -3; dx <= 3; dx++) for (let y = y0; y <= y0 + 3; y++) poner(d.x + dx, y, z, B.AIRE);
+            if (k % 7 === 1) { // marco de madera
+                for (let y = y0; y <= y0 + 2; y++) { poner(d.x - 3, y, z, B.TRONCO); poner(d.x + 3, y, z, B.TRONCO); }
+                for (let dx = -3; dx <= 3; dx++) poner(d.x + dx, y0 + 3, z, B.TABLONES);
+            } else if (k % 5 === 3) { // vetas de mineral en las paredes
+                poner(d.x - 4, y0 + 1, z, ores[k % 3]);
+                poner(d.x + 4, y0 + 2, z, ores[(k + 1) % 3]);
+            }
+        }
+        poner(d.x, y0, d.z - 28, B.ORO);
+        poner(d.x, y0 + 1, d.z - 28, B.DIAMANTE);
     } else if (d.t === 'buzon') {
         for (let y = 0; y < 3; y++) poner(d.x + 1, y0 + y, d.z + 1, B.TRONCO);
         poner(d.x + 1, y0 + 3, d.z + 1, B.ROJO);
@@ -386,6 +420,25 @@ export function mallarChunk(cx, cz, relleno) {
                 if (id === 0) continue;
                 const tipo = TIPO[id];
                 const def = BLOQUES[id];
+                if (tipo === 4) { // planta: dos planos cruzados, visibles por ambos lados
+                    const base = solido.n;
+                    const planos = [[[0, 0, 0], [1, 0, 1], [1, 1, 1], [0, 1, 0]], [[1, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 0]]];
+                    const cuv = [[0, 0], [1, 0], [1, 1], [0, 1]];
+                    const s = aSRGB(0.92);
+                    for (const plano of planos) {
+                        const b0 = solido.n;
+                        plano.forEach((c, k) => {
+                            solido.p.push(ox + x - 1 + c[0], y + c[1], oz + z - 1 + c[2]);
+                            const [u, w] = uvTile(def.top, cuv[k][0], cuv[k][1]);
+                            solido.u.push(u, w);
+                            solido.c.push(s, s, s);
+                        });
+                        solido.i.push(b0, b0 + 1, b0 + 2, b0, b0 + 2, b0 + 3, b0, b0 + 2, b0 + 1, b0, b0 + 3, b0 + 2);
+                        solido.n += 4;
+                    }
+                    void base;
+                    continue;
+                }
                 for (let f = 0; f < 6; f++) {
                     const cara = CARAS[f];
                     const nx = x + cara.d[0], ny = y + cara.d[1], nz = z + cara.d[2];

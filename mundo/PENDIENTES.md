@@ -11,6 +11,7 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, si
 ## Cómo ejecutar
 
 - `python -m http.server 5510` y abrir `http://localhost:5510/mundo.html` (no sirve con `file://`, usa módulos ES).
+- `node mundo/tests/paridad.mjs` para verificar que el mapa 3D coincide con el 2D.
 - Depuración en consola: `window.__venjy` = `{ datos, terreno, mundo, jugador, camara, renderer, scene }`. Para ver el mapa sin pointer lock: ocultar `#inicio`, poner `jugador.noclipVuelo = true` y usar `jugador.colocar(x, y, z)`, `jugador.yaw/pitch` y `jugador.actualizar(0)`.
 - PR de la Fase 1: https://github.com/Venjyy/venjy-page/pull/3
 
@@ -51,15 +52,15 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ### Fase 2 · Pulido Minecraft
 - [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Falta: muebles, techo a dos aguas, iluminación interior.
-- [ ] Mina: túnel/entrada en la montaña. Hoy las celdas `negro` (E=16) forman un pozo hundido dentro de la montaña, sin túnel ni dintel; al estar en altura 17 quedan como un cráter.
+- [x] Mina: el foso se convirtió en una plaza de piedra a ras del camino y un túnel de 28 bloques con marcos de madera, vetas de mineral y un bloque de oro y otro de diamante al fondo (`colocarDecor`, tipo `mina`). Falta: vías, antorchas/luz, cofre.
 - [x] Faro: torre de rayas rojas/blancas con linterna de diamante, balcón y puerta, sobre pedestal de piedra (`colocarFaro` en `voxeles.js`).
-- [x] Pozo de la aldea (agua, piedra labrada, techo) y buzón del correo (`colocarDecor`). [ ] Cajas de la gatera con forma propia (hoy cubos 4×4×2).
+- [x] Pozo de la aldea (agua, piedra labrada, techo) y buzón del correo (`colocarDecor`). [x] Cajas de la gatera: cajones abiertos de 2×2 por dentro (naranjo y negro). Falta: que las gatas duerman dentro.
 - [x] Letras "VENJY" elevadas a 18 bloques (`ALTO_LETRAS`). Cada píxel sigue midiendo 32×32 bloques; valorar reducir la escala.
 - [x] Cielo: domo con gradiente, sol cuadrado y nubes de bloques estáticas (`mundo/cielo.js`). Luna, estrellas, ciclo día/noche de 8 min y nubes móviles ya hechos (`cielo.js`; `cielo.fijarHora(h)`, `cielo.pausado`).
 - [ ] Niebla/colores más fieles al Minecraft real; agua con animación de textura.
-- [x] Árboles: roble, abedul (1 de cada 4) y pino en zonas altas; el bosquecillo del registro ahora son árboles. [ ] Flores y pasto alto.
+- [x] Árboles: roble, abedul (1 de cada 4) y pino en zonas altas; el bosquecillo del registro ahora son árboles. [x] Flores (amapola, diente de león, aciano) y pasto alto en cruz (bloques tipo 4, planta). 
 - [ ] Suavizar los escalones del terreno (hoy se ven curvas de nivel de 1 bloque).
-- [x] Cultivos: franjas de tierra labrada con trigo (cubo con textura recortada). [ ] Trigo en forma de cruz (plantas no cúbicas).
+- [x] Cultivos: franjas de tierra labrada con trigo (cubo con textura recortada). [x] Trigo en cruz.
 - [ ] Luz en interiores y en la mina (hoy no hay iluminación por bloque).
 
 ### Gatas (Mila y Gala)
@@ -85,7 +86,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - [ ] Soportar el mapa vertical (`DISENOS.v`) si algún día se quiere; hoy solo `'h'`.
 - [ ] Chunks sin cargar se tratan como pared invisible: revisar que no moleste al volar rápido.
 - [ ] Revisar `.claude/launch.json`: el puerto 5510 puede estar ocupado por otro chat.
-- [ ] Test de paridad reutilizable en el repo (hoy se corrió con un script temporal que ejecuta `generarMundo` con un `document` falso y compara el bitmap).
+- [x] Test de paridad reutilizable en el repo (`mundo/tests/paridad.mjs` ejecuta `generarMundo` con un `document` falso y compara el bitmap; 0 celdas distintas).
 
 ## Notas para depurar
 
@@ -104,6 +105,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 
+- 2026-10-06 · **Mina, cajas y plantas**: plaza y túnel de la mina, cajas abiertas, flores, pasto alto y trigo en cruz · `mundo/voxeles.js` (nuevo tipo de bloque 4 «planta», mallado en cruz, `HUECO` 5/6 para cajas, decorado `mina`), `mundo/texturas.js` (ids 30-33, trigo nuevo). Los troncos de árbol reemplazan plantas.
 - 2026-10-06 · **Gatas Mila y Gala**: modelos y pelajes hechos con código, caminata por la Gatera y entrada/salida de su casa · `mundo/gatas.js` (nuevo), `mundo/main.js` (crearGatas, `window.__venjy.gatas`), `mundo/voxeles.js` (exporta `BASE_ESTRUCTURA`). Nota: el PR #4 se fusionó en la rama del PR #3 y no en `main`, así que `main` aún no lo tiene; esta rama se creó sobre `feature/add-joaquin-salinas`.
 - 2026-10-06 · **Actualización grande (PR de la rama `feature/mundo-3d-fase-2`)**: ventanas de vidrio; trigo; pozo y buzón; bosquecillo como árboles; abedules y pinos; ciclo día/noche con luna, estrellas y nubes móviles; ajustes de pausa; teletransporte; nombre de zona en el HUD; minimapa con mapa grande (M); controles táctiles; enlace en el pie de `index.html` · archivos: `mundo/{texturas,voxeles,cielo,main,ajustes,minimapa,tactil}.js`, `mundo/{mundo,tactil}.css`, `mundo.html`, y `index.html`/`script.js`/`style.css` (solo el botón del pie, ícono `portal` y estilos `.boton-portal`) · Pendiente destacado: mina, cajas de la gatera, luz interior, flores, mallado en worker.
 - 2026-10-06 · **Fase 2 parcial**: casas huecas con puerta, faro, letras elevadas, cielo con sol y nubes · `mundo/voxeles.js` (capa `HUECO`, `colocarFaro`, `ALTO_LETRAS`, `faro` en el terreno), `mundo/cielo.js` (nuevo), `mundo/main.js` (integra el cielo; `camara.far = 2000`) · Piso de las casas a ras del suelo para entrar caminando. Pendiente: mina, pozo/buzón/cajas, ventanas, luna, cultivos.
