@@ -11,6 +11,7 @@ import { crearCielo, COLOR_HORIZONTE } from './cielo.js';
 import { iniciarAjustes } from './ajustes.js';
 import { iniciarTactil } from './tactil.js';
 import { crearMinimapa } from './minimapa.js';
+import { crearGatas } from './gatas.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -115,9 +116,10 @@ async function iniciar() {
     jugador.colocar(px + 0.5, terreno.HT[pz * terreno.BW + px] + 1, pz + 0.5);
     jugador.yaw = Math.PI / 2 * -1; // mirando hacia el este (hacia el título)
 
+    const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, pedirPuntero: () => entrar() });
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa };
+    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -154,6 +156,7 @@ async function iniciar() {
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
+        gatas.actualizar(dt);
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.construir(5);

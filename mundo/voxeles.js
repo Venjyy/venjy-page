@@ -20,7 +20,7 @@ const hash = (x, z, s) => {
 };
 
 const vh = e => Math.round(NIVEL_AGUA + (e - NIVEL_AGUA) * FACTOR_Y);
-const BASE_ESTRUCTURA = vh(18);
+export const BASE_ESTRUCTURA = vh(18);
 const ALTO_LETRAS = 18; // las letras del título se elevan para leerse mejor
 
 const MATERIAL_ESTRUCTURA = {

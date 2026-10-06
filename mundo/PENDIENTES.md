@@ -27,6 +27,7 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, si
 | `mundo/ajustes.js` | Ajustes de pausa, teletransporte y nombre de zona. |
 | `mundo/minimapa.js` | Minimapa y mapa grande (tecla M). |
 | `mundo/tactil.js` + `tactil.css` | Joystick y botones para móvil. |
+| `mundo/gatas.js` | Las gatas Mila y Gala (modelos de cajas con texturas pintadas por código) que deambulan por la Gatera y entran/salen de su casa. |
 | `mundo/main.js` | Escena, render, niebla, bucle, idioma, HUD. |
 | `mundo/mundo.css` | Estilo de menús tipo Minecraft (fuente PixelCraft). |
 | `vendor/` | Three.js 0.186.1 sin minificar + licencia. |
@@ -60,6 +61,13 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - [ ] Suavizar los escalones del terreno (hoy se ven curvas de nivel de 1 bloque).
 - [x] Cultivos: franjas de tierra labrada con trigo (cubo con textura recortada). [ ] Trigo en forma de cruz (plantas no cúbicas).
 - [ ] Luz en interiores y en la mina (hoy no hay iluminación por bloque).
+
+### Gatas (Mila y Gala)
+- [x] Modelos, pelajes y caminata por la Gatera, con entrada y salida de la casa por la puerta (`mundo/gatas.js`). **Mila**: carey gordita, casi toda negra con poquito amarillo y naranjo, SIN blanco. **Gala**: toda gris, guantes blancos delante, botas blancas detrás, pecho blanco y panza gris.
+- [ ] Revisar con fotos reales de `images/` (Mila.jpg es la carey; no abrir los `.jfif` como texto) y ajustar proporciones, rostro y manchas.
+- [ ] Poses: sentarse, echarse a dormir (p. ej. sobre las cajas de la gatera) y ronronear; maullido opcional al acercarte.
+- [ ] Nombres flotantes opcionales al mirarlas.
+- Limitación: no esquivan árboles ni obstáculos con un buscador de rutas, solo eligen otro destino si algo bloquea; el sombreado de sus caras es fijo respecto al modelo.
 
 ### Fase 3 · Jugador y extras
 - [x] (hecho) Enlace de entrada desde `index.html` (estandarte/slot "Mundo" o botón en el hero) con `data-es`/`data-en`. Cuidado: la hotbar usa teclas 1–9 y 8/9 ya están ocupadas (`script.js:1256`).
@@ -96,6 +104,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 
+- 2026-10-06 · **Gatas Mila y Gala**: modelos y pelajes hechos con código, caminata por la Gatera y entrada/salida de su casa · `mundo/gatas.js` (nuevo), `mundo/main.js` (crearGatas, `window.__venjy.gatas`), `mundo/voxeles.js` (exporta `BASE_ESTRUCTURA`). Nota: el PR #4 se fusionó en la rama del PR #3 y no en `main`, así que `main` aún no lo tiene; esta rama se creó sobre `feature/add-joaquin-salinas`.
 - 2026-10-06 · **Actualización grande (PR de la rama `feature/mundo-3d-fase-2`)**: ventanas de vidrio; trigo; pozo y buzón; bosquecillo como árboles; abedules y pinos; ciclo día/noche con luna, estrellas y nubes móviles; ajustes de pausa; teletransporte; nombre de zona en el HUD; minimapa con mapa grande (M); controles táctiles; enlace en el pie de `index.html` · archivos: `mundo/{texturas,voxeles,cielo,main,ajustes,minimapa,tactil}.js`, `mundo/{mundo,tactil}.css`, `mundo.html`, y `index.html`/`script.js`/`style.css` (solo el botón del pie, ícono `portal` y estilos `.boton-portal`) · Pendiente destacado: mina, cajas de la gatera, luz interior, flores, mallado en worker.
 - 2026-10-06 · **Fase 2 parcial**: casas huecas con puerta, faro, letras elevadas, cielo con sol y nubes · `mundo/voxeles.js` (capa `HUECO`, `colocarFaro`, `ALTO_LETRAS`, `faro` en el terreno), `mundo/cielo.js` (nuevo), `mundo/main.js` (integra el cielo; `camara.far = 2000`) · Piso de las casas a ras del suelo para entrar caminando. Pendiente: mina, pozo/buzón/cajas, ventanas, luna, cultivos.
 - 2026-10-06 · **Fase 1 completa**: página `mundo.html`, generador sin DOM con paridad exacta, conversión mapa→bloques por chunks (culling + AO), texturas procedurales, árboles, jugador creativo (caminar/volar), menú ES/EN. Archivos: `mundo.html`, `mundo/*`, `vendor/*`. Mapa 2D e `index.html` sin tocar. PR #3.
