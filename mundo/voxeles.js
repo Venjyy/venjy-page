@@ -4,7 +4,8 @@
 // por chunks de 16×16 con culling de caras y oclusión ambiental.
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
-import { B, TIPO, BLOQUES, TAM, COLS, FILAS } from './texturas.js';
+import { crearRuido } from './mundo-datos.js';
+import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
 export const FACTOR_Y = 1.5;    // relieve vertical (el mapa 2D es muy plano a esta escala)
@@ -34,6 +35,7 @@ const MATERIAL_ESTRUCTURA = {
 // ---------------------------------------------------------
 export function prepararTerreno(datos) {
     const { W, H, E, T, F } = datos;
+    const ruidoAltura = crearRuido(31337); // rompe las curvas de nivel rectas sin tocar las zonas planas
     const BW = W * ESCALA, BD = H * ESCALA;
     const HT = new Int16Array(BW * BD);   // altura del bloque superior
     const SUP = new Uint8Array(BW * BD);  // bloque de la superficie
@@ -78,7 +80,7 @@ export function prepararTerreno(datos) {
             const x0 = Math.floor(u), z0 = Math.floor(v);
             const fx = u - x0, fz = v - z0;
             const a = g(x0, z0), b = g(x0 + 1, z0), c = g(x0, z0 + 1), d = g(x0 + 1, z0 + 1);
-            const h = Math.round(a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz);
+            const h = Math.round(a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz + (ruidoAltura(bx / 7, bz / 7, 2) - 0.5) * 0.9);
             HT[o] = h;
 
             // Material: bioma de la celda, con el borde desordenado para no verse cuadriculado
@@ -161,13 +163,57 @@ export function prepararTerreno(datos) {
             }
         }
     }
+    // Casas: se agrupan las columnas de cada casa y se les da techo a dos aguas
+    const casas = [];
+    const visto = new Uint8Array(BW * BD);
+    const esVol = o => HUECO[o] >= 1 && HUECO[o] <= 3;
+    for (let o0 = 0; o0 < BW * BD; o0++) {
+        if (visto[o0] || !esVol(o0)) continue;
+        const sup = SUP[o0];
+        const pila = [o0];
+        const cols = [];
+        visto[o0] = 1;
+        let minx = BW, maxx = 0, minz = BD, maxz = 0, dxs = 0, dn = 0;
+        while (pila.length) {
+            const o = pila.pop();
+            cols.push(o);
+            const bx = o % BW, bz = (o - bx) / BW;
+            if (bx < minx) minx = bx;
+            if (bx > maxx) maxx = bx;
+            if (bz < minz) minz = bz;
+            if (bz > maxz) maxz = bz;
+            if (HUECO[o] === 3) { dxs += bx; dn++; }
+            for (const p of [o - 1, o + 1, o - BW, o + BW]) {
+                if (p >= 0 && p < BW * BD && !visto[p] && esVol(p) && SUP[p] === sup) { visto[p] = 1; pila.push(p); }
+            }
+        }
+        const lleno = cols.length / ((maxx - minx + 1) * (maxz - minz + 1));
+        const ejeX = maxx - minx >= maxz - minz;
+        if (lleno >= 0.9) { // casa rectangular: el techo sube un bloque cada dos hacia la cumbrera
+            for (const o of cols) {
+                const bx = o % BW, bz = (o - bx) / BW;
+                const p = ejeX ? Math.min(bz - minz, maxz - bz) : Math.min(bx - minx, maxx - bx);
+                HT[o] = BASE_ESTRUCTURA + 5 + Math.min(8, p >> 1);
+            }
+        }
+        casas.push({
+            minx, maxx, minz, maxz, ejeX, sup, puertaX: dn ? Math.round(dxs / dn) : (minx + maxx) >> 1,
+            amueblar: lleno >= 0.9 && ejeX && sup !== B.NARANJO && maxx - minx >= 20 && maxz - minz >= 14
+        });
+    }
     const decor = [
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
         { t: 'mina', x: mix * ESCALA, z: (miy - 5) * ESCALA, cx: mix * ESCALA, cz: (miy - 5) * ESCALA - 14, r: 18 }
     ];
     const faro = { x: fcx * ESCALA, z: fcz * ESCALA, y: vh(19) + 1 };
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, datos };
+    // Zonas donde puede haber emisores de luz (antorchas, piedra luminosa): los chunks a menos
+    // de RADIO_LUZ bloques de una zona calculan la luz con la ventana ampliada (ver calcularLuz).
+    // Quien coloque emisores fuera del decorado o del faro debe agregar aquí su rectángulo.
+    const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
+    zonasLuz.push({ x0: faro.x - 4, z0: faro.z - 4, x1: faro.x + 4, z1: faro.z + 4 });
+    for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -176,11 +222,11 @@ export function prepararTerreno(datos) {
 const HOJAS_ID = [B.HOJAS, B.HOJAS_ABEDUL, B.HOJAS_PINO];
 const TRONCO_ID = [B.TRONCO, B.TRONCO_ABEDUL, B.TRONCO_PINO];
 
-function colocarArbol(vox, wx0, wz0, tx, ty, tz, h, tipo = 0) {
+function colocarArbol(vox, wx0, wz0, ancho, tx, ty, tz, h, tipo = 0) {
     const poner = (x, y, z, id, sobreescribe) => {
         const lx = x - wx0, lz = z - wz0;
-        if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
-        const i = (y * VENT + lz) * VENT + lx;
+        if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
+        const i = (y * ancho + lz) * ancho + lx;
         if (vox[i] === B.AIRE || TIPO[vox[i]] === 4 || (sobreescribe && vox[i] === HOJAS_ID[tipo])) vox[i] = id;
     };
     const tope = ty + h;
@@ -212,10 +258,22 @@ function colocarArbol(vox, wx0, wz0, tx, ty, tz, h, tipo = 0) {
     for (let y = ty + 1; y <= tope; y++) poner(tx, y, tz, tronco, true);
 }
 
+// Llena el chunk (ventana VENT con borde 1) y calcula su luz.
+// Devuelve { vox, maxY, luz }; luz usa el mismo índice que vox (ver calcularLuz).
 export function llenarChunk(terreno, cx, cz) {
+    const relleno = llenarVentana(terreno, cx * CHUNK - 1, cz * CHUNK - 1, VENT);
+    relleno.luz = calcularLuz(terreno, cx, cz, relleno);
+    return relleno;
+}
+
+// Llena una ventana cuadrada de `ancho` columnas con origen (wx0, wz0) en bloques del mundo.
+// El resultado no depende del tamaño de la ventana: sirve tanto para el chunk como para la
+// ventana ampliada del cálculo de luz. `destino` permite reutilizar un arreglo (se limpia).
+function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
+    if (terreno.arena) return llenarArena(terreno, wx0, wz0, ancho, destino);
     const { BW, BD, HT, SUP, SUB, ES, HUECO, datos } = terreno;
-    const vox = new Uint8Array(VENT * VENT * ALTO);
-    const wx0 = cx * CHUNK - 1, wz0 = cz * CHUNK - 1;
+    const VENT = ancho; // dentro de esta función la "ventana" es la pedida
+    const vox = destino ? destino.fill(0) : new Uint8Array(VENT * VENT * ALTO);
     let maxY = 0;
 
     for (let lz = 0; lz < VENT; lz++) {
@@ -271,31 +329,143 @@ export function llenarChunk(terreno, cx, cz) {
             const tipo = HT[o] > vh(26) ? 2 : ((hs >>> 9) % 4 === 0 ? 1 : 0); // 0 roble, 1 abedul, 2 pino
             const alto = tipo === 2 ? 6 + ((hs >>> 6) % 3) : 4 + ((hs >>> 6) % 2) + tipo;
             if (HT[o] + alto + 3 >= ALTO) continue;
-            colocarArbol(vox, wx0, wz0, tx, HT[o], tz, alto, tipo);
+            colocarArbol(vox, wx0, wz0, VENT, tx, HT[o], tz, alto, tipo);
             if (HT[o] + alto + 2 > maxY) maxY = HT[o] + alto + 2;
         }
     }
     // Decorados: pozo de la aldea y buzón del correo
     for (const d of terreno.decor) {
         if (Math.abs(d.cx - (wx0 + VENT / 2)) < d.r + VENT / 2 && Math.abs(d.cz - (wz0 + VENT / 2)) < d.r + VENT / 2) {
-            colocarDecor(vox, wx0, wz0, d, BASE_ESTRUCTURA + 1);
+            colocarDecor(vox, wx0, wz0, VENT, d, BASE_ESTRUCTURA + 1);
             maxY = Math.max(maxY, BASE_ESTRUCTURA + 8);
+        }
+    }
+    // Casas: chimenea, cama, librero, mesa con antorcha y cofre
+    for (const c of terreno.casas) {
+        if (c.amueblar && c.maxx + 2 > wx0 && c.minx - 2 < wx0 + VENT && c.maxz + 2 > wz0 && c.minz - 2 < wz0 + VENT) {
+            amueblarCasa(vox, wx0, wz0, VENT, c, terreno);
         }
     }
     // Faro: torre de rayas con linterna en la cima
     const f = terreno.faro;
-    if (Math.abs(f.x - (wx0 + VENT / 2)) < 40 && Math.abs(f.z - (wz0 + VENT / 2)) < 40) {
-        colocarFaro(vox, wx0, wz0, f);
+    if (Math.abs(f.x - (wx0 + VENT / 2)) < 4 + VENT / 2 && Math.abs(f.z - (wz0 + VENT / 2)) < 4 + VENT / 2) {
+        colocarFaro(vox, wx0, wz0, VENT, f);
         maxY = Math.max(maxY, f.y + 38);
     }
+    maxY = Math.max(maxY, aplicarEdiciones(terreno, vox, wx0, wz0, VENT));
     return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
 }
 
-function colocarDecor(vox, wx0, wz0, d, y0) {
+// Terreno de la arena skywars (online/arena.js): copia la ventana desde un arreglo denso
+function llenarArena(terreno, wx0, wz0, ancho, destino) {
+    const { vox: fuente, W, D } = terreno.arena;
+    const vox = destino ? destino.fill(0) : new Uint8Array(ancho * ancho * ALTO);
+    if (terreno.arena.maxY === undefined) {
+        let m = 0;
+        for (let i = 0; i < fuente.length; i++) if (fuente[i]) { const y = Math.floor(i / (W * D)); if (y > m) m = y; }
+        terreno.arena.maxY = m;
+    }
+    const x0 = Math.max(0, wx0), x1 = Math.min(W, wx0 + ancho);
+    if (x1 > x0) {
+        for (let y = 0; y <= terreno.arena.maxY; y++) {
+            for (let lz = 0; lz < ancho; lz++) {
+                const z = wz0 + lz;
+                if (z < 0 || z >= D) continue;
+                const o = (y * D + z) * W;
+                vox.set(fuente.subarray(o + x0, o + x1), (y * ancho + lz) * ancho + (x0 - wx0));
+            }
+        }
+    }
+    const maxY = Math.max(terreno.arena.maxY, aplicarEdiciones(terreno, vox, wx0, wz0, ancho));
+    return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
+}
+
+// ---------------------------------------------------------
+// Ediciones de bloques (romper / poner)
+// Se guardan por chunk en terreno.ediciones: clave de chunk -> Map('x,y,z' -> id).
+// llenarVentana las aplica al final, así que el llenado, la luz y el mallado las ven igual en
+// el hilo principal y en los workers (que reciben la misma lista).
+// ---------------------------------------------------------
+export function claveChunk(x, z) { return Math.floor(x / CHUNK) + ',' + Math.floor(z / CHUNK); }
+
+export function guardarEdicion(terreno, x, y, z, id) {
+    const k = claveChunk(x, z);
+    let m = terreno.ediciones.get(k);
+    if (!m) terreno.ediciones.set(k, m = new Map());
+    m.set(x + ',' + y + ',' + z, id);
+}
+
+function aplicarEdiciones(terreno, vox, wx0, wz0, ancho) {
+    if (!terreno.ediciones.size) return 0;
+    let maxY = 0;
+    const c0x = Math.floor(wx0 / CHUNK), c1x = Math.floor((wx0 + ancho - 1) / CHUNK);
+    const c0z = Math.floor(wz0 / CHUNK), c1z = Math.floor((wz0 + ancho - 1) / CHUNK);
+    for (let cz = c0z; cz <= c1z; cz++) {
+        for (let cx = c0x; cx <= c1x; cx++) {
+            const m = terreno.ediciones.get(cx + ',' + cz);
+            if (!m) continue;
+            for (const [clave, id] of m) {
+                const [x, y, z] = clave.split(',').map(Number);
+                const lx = x - wx0, lz = z - wz0;
+                if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) continue;
+                vox[(y * ancho + lz) * ancho + lx] = id;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+    return maxY;
+}
+
+// ¿Hay ediciones en alguno de los chunks que tocan el rectángulo (con margen)?
+function hayEdicionesCerca(terreno, x0, z0, x1, z1) {
+    if (!terreno.ediciones.size) return false;
+    for (let cz = Math.floor(z0 / CHUNK); cz <= Math.floor(z1 / CHUNK); cz++) {
+        for (let cx = Math.floor(x0 / CHUNK); cx <= Math.floor(x1 / CHUNK); cx++) {
+            if (terreno.ediciones.has(cx + ',' + cz)) return true;
+        }
+    }
+    return false;
+}
+
+function amueblarCasa(vox, wx0, wz0, ancho, c, terreno) {
     const poner = (x, y, z, id) => {
         const lx = x - wx0, lz = z - wz0;
-        if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
-        vox[(y * VENT + lz) * VENT + lx] = id;
+        if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
+        vox[(y * ancho + lz) * ancho + lx] = id;
+    };
+    const y0 = BASE_ESTRUCTURA + 1;
+    const ix0 = c.minx + 1, ix1 = c.maxx - 1, iz0 = c.minz + 1, iz1 = c.maxz - 1;
+    const cz = (c.minz + c.maxz) >> 1;
+    // Chimenea contra la pared oeste, con un hogar de antorcha y salida sobre el techo
+    const tope = terreno.HT[cz * terreno.BW + ix0 + 1] + 3;
+    for (let x = ix0; x <= ix0 + 2; x++) {
+        for (let z = cz - 1; z <= cz + 1; z++) for (let y = y0; y <= tope; y++) poner(x, y, z, B.LADRILLO);
+    }
+    poner(ix0 + 2, y0, cz, B.ANTORCHA);
+    poner(ix0 + 2, y0 + 1, cz, B.AIRE);
+    // Muebles (se omiten los que no caben)
+    const hay = (x, z, w, d) => x >= ix0 + 4 && x + w - 1 <= ix1 && z >= iz0 && z + d - 1 <= iz1
+        && !(x <= c.puertaX + 2 && x + w - 1 >= c.puertaX - 1 && z + d - 1 >= cz);
+    const bloques = (x, z, w, d, id, alto = 1) => {
+        for (let dz = 0; dz < d; dz++) for (let dx = 0; dx < w; dx++) for (let y = 0; y < alto; y++) poner(x + dx, y0 + y, z + dz, id);
+    };
+    if (hay(ix1 - 3, iz0, 2, 3)) bloques(ix1 - 3, iz0, 2, 3, B.CAMA);
+    if (hay(ix0 + 5, iz0, 3, 1)) bloques(ix0 + 5, iz0, 3, 1, B.LIBRERO, 2);
+    const mx = Math.min(ix1 - 1, Math.max(ix0 + 6, c.puertaX + 3));
+    if (hay(mx, cz, 2, 2)) { bloques(mx, cz, 2, 2, B.TABLONES); poner(mx, y0 + 1, cz, B.ANTORCHA); }
+    if (hay(ix1, iz1, 1, 1)) poner(ix1, y0, iz1, B.COFRE);
+    // Antorchas en las paredes largas para que el interior no quede a oscuras
+    for (const x of [ix0 + 10, ix1 - 8, (ix0 + ix1) >> 1]) {
+        poner(x, y0 + 2, iz0, B.ANTORCHA);
+        if (Math.abs(x - c.puertaX) > 2) poner(x, y0 + 2, iz1, B.ANTORCHA);
+    }
+}
+
+function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
+    const poner = (x, y, z, id) => {
+        const lx = x - wx0, lz = z - wz0;
+        if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
+        vox[(y * ancho + lz) * ancho + lx] = id;
     };
     if (d.t === 'pozo') {
         for (let dz = 0; dz < 8; dz++) {
@@ -325,6 +495,13 @@ function colocarDecor(vox, wx0, wz0, d, y0) {
                 poner(d.x + 4, y0 + 2, z, ores[(k + 1) % 3]);
             }
         }
+        // Antorchas pegadas a las paredes cada 7 bloques, alternando el lado
+        for (let k = 4; k <= 28; k += 7) {
+            const lado = (k - 4) % 14 === 0 ? -1 : 1;
+            poner(d.x + lado * 3, y0 + 1, d.z - k, B.ANTORCHA);
+        }
+        for (let k = 1; k <= 27; k++) poner(d.x, y0 - 1, d.z - k, B.RIEL);
+        poner(d.x + 2, y0, d.z - 27, B.COFRE);
         poner(d.x, y0, d.z - 28, B.ORO);
         poner(d.x, y0 + 1, d.z - 28, B.DIAMANTE);
     } else if (d.t === 'buzon') {
@@ -335,11 +512,11 @@ function colocarDecor(vox, wx0, wz0, d, y0) {
     }
 }
 
-function colocarFaro(vox, wx0, wz0, f) {
+function colocarFaro(vox, wx0, wz0, ancho, f) {
     const poner = (x, y, z, id) => {
         const lx = x - wx0, lz = z - wz0;
-        if (lx < 0 || lz < 0 || lx >= VENT || lz >= VENT || y < 0 || y >= ALTO) return;
-        vox[(y * VENT + lz) * VENT + lx] = id;
+        if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
+        vox[(y * ancho + lz) * ancho + lx] = id;
     };
     const anillo = (y, r, id, relleno) => {
         for (let dz = -r; dz <= r; dz++) {
@@ -353,10 +530,148 @@ function colocarFaro(vox, wx0, wz0, f) {
     for (let y = 0; y < 31; y++) anillo(y, y < 18 ? 3 : 2, (y >> 2) & 1 ? B.ROJO : B.CUARZO, y === 0);
     for (let y = 0; y < 3; y++) { poner(f.x, f.y + y, f.z + 3, B.AIRE); } // puerta
     anillo(31, 3, B.NEGRO, true);
-    for (let y = 32; y <= 34; y++) anillo(y, 1, B.DIAMANTE, false);
-    poner(f.x, f.y + 33, f.z, B.ORO);
+    // Linterna: pilares de diamante en las esquinas y vidrio en los lados para que se vea el farol
+    for (let y = 32; y <= 34; y++) {
+        anillo(y, 1, B.DIAMANTE, false);
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) poner(f.x + dx, f.y + y, f.z + dz, B.VIDRIO);
+    }
+    poner(f.x, f.y + 32, f.z, B.PIEDRA_LUMINOSA);
+    poner(f.x, f.y + 33, f.z, B.PIEDRA_LUMINOSA);
     anillo(35, 2, B.NEGRO, true);
     poner(f.x, f.y + 36, f.z, B.NEGRO);
+}
+
+// ---------------------------------------------------------
+// Luz por bloque (tipo Minecraft): dos canales 0-15
+//  · cielo: 15 en toda celda con vista directa al cielo (sobre el bloque opaco más alto de su
+//    columna; aire, vidrio, hojas, plantas y agua dejan pasar) y desde ahí se propaga por BFS,
+//    -1 por bloque, hacia cuevas, el túnel de la mina e interiores (entra por puertas y ventanas).
+//  · bloque: BFS desde los emisores (LUZ_EMISION de texturas.js), -1 por bloque.
+// Se guarda empacada en un byte por celda: (cielo << 4) | bloque, con el mismo índice que vox.
+//
+// Bordes entre chunks sin costuras: el valor de una celda solo depende de lo que hay a menos
+// de 15 pasos, así que se calcula sobre una ventana ampliada RADIO_LUZ bloques por lado y el
+// resultado es exacto (idéntico al que calcularía el vecino para las mismas celdas).
+// Como eso cuesta, hay un atajo exacto: el terreno natural es un mapa de alturas sin aleros, de
+// modo que si en la ventana del chunk ninguna celda transparente queda bajo un bloque opaco y no
+// hay emisores cerca (zonasLuz de prepararTerreno, o en la propia ventana), toda celda
+// transparente tiene cielo 15 y bloque 0. Solo los chunks con casas, puentes, faro, pozo o mina
+// (o a menos de RADIO_LUZ de un decorado) pagan la ventana ampliada.
+// ---------------------------------------------------------
+const RADIO_LUZ = 14;                 // la luz de un emisor 15 se apaga a los 15 pasos
+const VL = VENT + 2 * RADIO_LUZ;      // ancho de la ventana ampliada
+const VOX_GRANDE = new Uint8Array(VL * VL * ALTO);
+const CIELO = new Uint8Array(VL * VL * ALTO);
+const BLOQ = new Uint8Array(VL * VL * ALTO);
+const COLA = new Int32Array(VL * VL * ALTO);
+const PISO = new Int16Array(VL * VL);
+export const LUZ_CIELO_ABIERTO = 15 << 4;
+const EMISOR = 2; // valor de luz de bloque en el vértice que marca una cara emisora (brillo pleno)
+
+// Propaga la luz del arreglo `nivel` desde las `n` celdas en COLA (BFS, cola circular)
+function propagar(nivel, vox, G, tope, n) {
+    const M = COLA.length, GG = G * G;
+    let cab = 0, fin = n;
+    while (cab !== fin) {
+        const i = COLA[cab];
+        cab = cab + 1 === M ? 0 : cab + 1;
+        const L = nivel[i] - 1;
+        if (L <= 0) continue;
+        const x = i % G, z = ((i - x) / G) % G, y = (i - x - z * G) / GG;
+        const ir = j => {
+            if (nivel[j] < L && TIPO[vox[j]] !== 1) {
+                nivel[j] = L;
+                COLA[fin] = j;
+                fin = fin + 1 === M ? 0 : fin + 1;
+            }
+        };
+        if (x > 0) ir(i - 1);
+        if (x < G - 1) ir(i + 1);
+        if (z > 0) ir(i - G);
+        if (z < G - 1) ir(i + G);
+        if (y > 0) ir(i - GG);
+        if (y < tope - 1) ir(i + GG);
+    }
+}
+
+function calcularLuz(terreno, cx, cz, relleno) {
+    const { vox, maxY } = relleno;
+    const tope = Math.min(ALTO, maxY + 2); // desde aquí hacia arriba todo es aire a cielo abierto
+    const NN = VENT * VENT;
+    const luz = new Uint8Array(NN * ALTO);
+    luz.fill(LUZ_CIELO_ABIERTO, tope * NN);
+
+    // ¿Necesita la ventana ampliada? Emisores cercanos según las zonas del terreno
+    const wx0 = cx * CHUNK - 1, wz0 = cz * CHUNK - 1;
+    let ampliada = terreno.zonasLuz.some(r =>
+        r.x1 >= wx0 - RADIO_LUZ && r.x0 <= wx0 + VENT + RADIO_LUZ && r.z1 >= wz0 - RADIO_LUZ && r.z0 <= wz0 + VENT + RADIO_LUZ);
+
+    if (!ampliada) ampliada = hayEdicionesCerca(terreno, wx0 - RADIO_LUZ, wz0 - RADIO_LUZ, wx0 + VENT + RADIO_LUZ, wz0 + VENT + RADIO_LUZ);
+
+    // Atajo: piso de cielo por columna; si hay celdas transparentes cubiertas o emisores, se descarta
+    if (!ampliada) {
+        for (let c = 0; c < NN && !ampliada; c++) {
+            let y = tope - 1;
+            for (; y >= 0; y--) {
+                const id = vox[y * NN + c];
+                if (LUZ_EMISION[id]) { ampliada = true; break; }
+                if (TIPO[id] === 1) break;
+            }
+            for (let k = y + 1; k < tope; k++) luz[k * NN + c] = LUZ_CIELO_ABIERTO;
+            for (let k = y - 1; k >= 0 && !ampliada; k--) {
+                const id = vox[k * NN + c];
+                if (TIPO[id] !== 1 || LUZ_EMISION[id]) ampliada = true;
+            }
+        }
+        if (!ampliada) return luz;
+    }
+
+    // Ventana ampliada: se llena otra vez el terreno con RADIO_LUZ de margen y se propaga
+    const G = VL, GG = G * G, R = RADIO_LUZ;
+    const g = llenarVentana(terreno, wx0 - R, wz0 - R, G, VOX_GRANDE);
+    const big = g.vox;
+    const topeG = Math.min(ALTO, g.maxY + 2);
+    CIELO.fill(0, 0, topeG * GG);
+    BLOQ.fill(0, 0, topeG * GG);
+    for (let c = 0; c < GG; c++) {
+        let y = topeG - 1;
+        while (y >= 0 && TIPO[big[y * GG + c]] !== 1) y--;
+        PISO[c] = y + 1;
+        for (let k = y + 1; k < topeG; k++) CIELO[k * GG + c] = 15;
+    }
+    // Semillas de cielo: celdas a cielo abierto junto a una celda transparente cubierta
+    let n = 0;
+    for (let z = 0; z < G; z++) {
+        for (let x = 0; x < G; x++) {
+            const c = z * G + x, p = PISO[c];
+            const vecino = v => {
+                for (let y = p; y < PISO[v]; y++) {
+                    if (TIPO[big[y * GG + v]] !== 1) COLA[n++] = y * GG + c;
+                }
+            };
+            if (x > 0) vecino(c - 1);
+            if (x < G - 1) vecino(c + 1);
+            if (z > 0) vecino(c - G);
+            if (z < G - 1) vecino(c + G);
+        }
+    }
+    propagar(CIELO, big, G, topeG, n);
+    // Emisores
+    n = 0;
+    for (let i = 0; i < topeG * GG; i++) {
+        const e = LUZ_EMISION[big[i]];
+        if (e) { BLOQ[i] = e; COLA[n++] = i; }
+    }
+    if (n) propagar(BLOQ, big, G, topeG, n);
+
+    // Recorta la ventana del chunk (topeG >= tope: la ventana ampliada contiene la del chunk)
+    for (let y = 0; y < topeG; y++) {
+        for (let lz = 0; lz < VENT; lz++) {
+            const gi = y * GG + (lz + R) * G + R, li = (y * VENT + lz) * VENT;
+            for (let lx = 0; lx < VENT; lx++) luz[li + lx] = (CIELO[gi + lx] << 4) | BLOQ[gi + lx];
+        }
+    }
+    return luz;
 }
 
 // ---------------------------------------------------------
@@ -393,25 +708,48 @@ function uvTile(tile, u, v) {
 }
 
 class Buffer {
-    constructor() { this.p = []; this.u = []; this.c = []; this.i = []; this.n = 0; }
+    constructor() { this.p = []; this.u = []; this.c = []; this.l = []; this.i = []; this.n = 0; }
     get vacio() { return this.n === 0; }
-    geometria() {
-        const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
-        g.setAttribute('uv', new THREE.Float32BufferAttribute(this.u, 2));
-        g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
-        g.setIndex(this.i);
-        g.computeBoundingSphere();
-        return g;
+    // Arreglos tipados listos para transferir desde un worker
+    datos() {
+        return {
+            p: new Float32Array(this.p), u: new Float32Array(this.u), c: new Float32Array(this.c),
+            l: new Float32Array(this.l), i: new Uint32Array(this.i)
+        };
     }
+    geometria() { return geometriaDe(this.datos()); }
 }
 
-export function mallarChunk(cx, cz, relleno) {
+// Construye la geometría de Three.js a partir de los arreglos de un chunk (hilo principal)
+export function geometriaDe(d) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(d.p, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(d.u, 2));
+    g.setAttribute('color', new THREE.BufferAttribute(d.c, 3));
+    g.setAttribute('luz', new THREE.BufferAttribute(d.l, 2)); // cielo, bloque (0..1)
+    g.setIndex(new THREE.BufferAttribute(d.i, 1));
+    g.computeBoundingSphere();
+    return g;
+}
+
+function mallarBuffers(cx, cz, relleno) {
     const { vox, maxY } = relleno;
+    const luz = relleno.luz;
     const solido = new Buffer(), agua = new Buffer();
     const ox = cx * CHUNK, oz = cz * CHUNK;
     const at = (x, y, z) => (y < 0 ? 1 : y >= ALTO ? 0 : TIPO[vox[(y * VENT + z) * VENT + x]]);
     const ocluye = (x, y, z) => { const t = at(x, y, z); return t === 1 || t === 2 ? 1 : 0; };
+    // Luz empacada de una celda transparente; -1 si es opaca (no aporta al promedio)
+    const luzEn = (x, y, z) => {
+        if (y >= ALTO) return LUZ_CIELO_ABIERTO;
+        if (y < 0) return -1;
+        const i = (y * VENT + z) * VENT + x;
+        if (TIPO[vox[i]] === 1) return -1;
+        return luz ? luz[i] : LUZ_CIELO_ABIERTO;
+    };
+    // Suma de muestras para la luz suave de cada vértice
+    let sumaCielo = 0, sumaBloque = 0, muestras = 0;
+    const sumar = v => { if (v >= 0) { sumaCielo += v >> 4; sumaBloque += v & 15; muestras++; } };
 
     for (let y = 0; y <= maxY; y++) {
         for (let z = 1; z <= CHUNK; z++) {
@@ -420,23 +758,32 @@ export function mallarChunk(cx, cz, relleno) {
                 if (id === 0) continue;
                 const tipo = TIPO[id];
                 const def = BLOQUES[id];
+                const emite = LUZ_EMISION[id];
                 if (tipo === 4) { // planta: dos planos cruzados, visibles por ambos lados
-                    const base = solido.n;
                     const planos = [[[0, 0, 0], [1, 0, 1], [1, 1, 1], [0, 1, 0]], [[1, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 0]]];
                     const cuv = [[0, 0], [1, 0], [1, 1], [0, 1]];
                     const s = aSRGB(0.92);
+                    const propia = luzEn(x, y, z);
+                    const lc = (propia >> 4) / 15, lb = emite ? EMISOR : (propia & 15) / 15;
+                    // Antorcha de pared: sin apoyo abajo y con un muro al lado, se pega a él inclinada
+                    let px = 0, pz = 0, sube = 0;
+                    if (emite && at(x, y - 1, z) !== 1) {
+                        const muro = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dx, dz]) => at(x + dx, y, z + dz) === 1);
+                        if (muro) { px = muro[0]; pz = muro[1]; sube = 0.2; }
+                    }
                     for (const plano of planos) {
                         const b0 = solido.n;
                         plano.forEach((c, k) => {
-                            solido.p.push(ox + x - 1 + c[0], y + c[1], oz + z - 1 + c[2]);
+                            const corre = c[1] ? 0.22 : 0.4; // la base va más pegada al muro que la llama
+                            solido.p.push(ox + x - 1 + c[0] + px * corre, y + c[1] + sube, oz + z - 1 + c[2] + pz * corre);
                             const [u, w] = uvTile(def.top, cuv[k][0], cuv[k][1]);
                             solido.u.push(u, w);
                             solido.c.push(s, s, s);
+                            solido.l.push(lc, lb);
                         });
                         solido.i.push(b0, b0 + 1, b0 + 2, b0, b0 + 2, b0 + 3, b0, b0 + 2, b0 + 1, b0, b0 + 3, b0 + 2);
                         solido.n += 4;
                     }
-                    void base;
                     continue;
                 }
                 for (let f = 0; f < 6; f++) {
@@ -475,6 +822,22 @@ export function mallarChunk(cx, cz, relleno) {
                         ao[k] = a;
                         const s = SOMBRA[f] * AO_NIVEL[a];
                         buf.c.push(s, s, s);
+
+                        // Luz suave: promedio de las celdas transparentes que tocan el vértice
+                        // (la vecina de la cara, las dos laterales y la diagonal si no está tapada)
+                        sumaCielo = 0; sumaBloque = 0; muestras = 0;
+                        sumar(luzEn(nx, ny, nz));
+                        const [t1, t2] = cara.t;
+                        const d1 = co[t1] * 2 - 1, d2 = co[t2] * 2 - 1;
+                        const ax = t1 === 0 ? d1 : t2 === 0 ? d2 : 0;
+                        const ay = t1 === 1 ? d1 : t2 === 1 ? d2 : 0;
+                        const az = t1 === 2 ? d1 : t2 === 2 ? d2 : 0;
+                        const l1 = luzEn(nx + (t1 === 0 ? d1 : 0), ny + (t1 === 1 ? d1 : 0), nz + (t1 === 2 ? d1 : 0));
+                        const l2 = luzEn(nx + (t2 === 0 ? d2 : 0), ny + (t2 === 1 ? d2 : 0), nz + (t2 === 2 ? d2 : 0));
+                        sumar(l1); sumar(l2);
+                        if (l1 >= 0 || l2 >= 0) sumar(luzEn(nx + ax, ny + ay, nz + az));
+                        if (muestras === 0) muestras = 1;
+                        buf.l.push(sumaCielo / (muestras * 15), emite ? EMISOR : sumaBloque / (muestras * 15));
                     }
                     if (ao[0] + ao[2] > ao[1] + ao[3]) buf.i.push(base, base + 1, base + 2, base, base + 2, base + 3);
                     else buf.i.push(base + 1, base + 2, base + 3, base + 1, base + 3, base);
@@ -483,7 +846,63 @@ export function mallarChunk(cx, cz, relleno) {
             }
         }
     }
-    return { solido: solido.vacio ? null : solido.geometria(), agua: agua.vacio ? null : agua.geometria() };
+    return { solido: solido.vacio ? null : solido, agua: agua.vacio ? null : agua };
+}
+
+export function mallarChunk(cx, cz, relleno) {
+    const b = mallarBuffers(cx, cz, relleno);
+    return { solido: b.solido && b.solido.geometria(), agua: b.agua && b.agua.geometria() };
+}
+
+// Igual que mallarChunk pero devuelve arreglos tipados (para el worker)
+export function mallarChunkCrudo(cx, cz, relleno) {
+    const b = mallarBuffers(cx, cz, relleno);
+    return { solido: b.solido && b.solido.datos(), agua: b.agua && b.agua.datos() };
+}
+
+// ---------------------------------------------------------
+// Material con luz por bloque
+// Parchea un MeshBasicMaterial del mundo (onBeforeCompile) para usar el atributo 'luz'
+// (cielo, bloque en 0..1). El color difuso del material se ignora como multiplicador: pasa a ser
+// el uniform uLuzCielo (vec3, 0..1), el tinte día/noche que cielo.js escribe en material.color
+// cada cuadro (se comparte la misma referencia, así que se actualiza solo).
+// Brillo = max(cielo, bloque) con la curva del lightmap de Minecraft (curvaLuz) y un mínimo
+// ambiental; se multiplica por la sombra de cara y el AO del color de vértice, como antes.
+// ---------------------------------------------------------
+export const LUZ_MINIMA = 0.07;              // brillo sRGB de la oscuridad total (no negro puro)
+const COLOR_LUZ_BLOQUE = [1.0, 0.8, 0.56];   // luz de antorcha cálida (lineal)
+
+export function aplicarLuzMaterial(material) {
+    if (!material || material.userData.luzVoxel) return;
+    material.userData.luzVoxel = true;
+    const minimo = Math.pow(LUZ_MINIMA, 2.2).toFixed(6);
+    const [r, g, b] = COLOR_LUZ_BLOQUE.map(v => v.toFixed(3));
+    material.onBeforeCompile = shader => {
+        shader.uniforms.uLuzCielo = { value: material.color };
+        shader.vertexShader = shader.vertexShader
+            .replace('#include <common>', '#include <common>\nattribute vec2 luz;\nvarying vec2 vLuz;')
+            .replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvLuz = luz;');
+        shader.fragmentShader = shader.fragmentShader
+            .replace('uniform vec3 diffuse;', `uniform vec3 diffuse;
+uniform vec3 uLuzCielo;
+varying vec2 vLuz;
+// Curva del lightmap de Minecraft (brillo 30 %): b = f / (4 - 3f), aclarada un 30 % hacia
+// 1 - (1 - b)^4; se calcula en sRGB y se pasa a lineal. Nivel 15 da exactamente 1.
+float curvaLuz( float f ) {
+	float b = f / ( 4.0 - 3.0 * f );
+	float c = 1.0 - b;
+	b = mix( b, 1.0 - c * c * c * c, 0.3 );
+	return pow( b, 2.2 );
+}`)
+            .replace('vec4 diffuseColor = vec4( diffuse, opacity );', 'vec4 diffuseColor = vec4( vec3( 1.0 ), opacity );')
+            .replace('#include <color_fragment>', `#include <color_fragment>
+	float brilloCielo = curvaLuz( vLuz.x );
+	float brilloBloque = curvaLuz( min( vLuz.y, 1.0 ) );
+	vec3 luzMundo = max( uLuzCielo * brilloCielo, vec3( ${r}, ${g}, ${b} ) * brilloBloque );
+	luzMundo = mix( luzMundo, vec3( 1.0 ), step( 1.5, vLuz.y ) ); // caras emisoras: brillo pleno
+	diffuseColor.rgb *= max( luzMundo, vec3( ${minimo} ) );`);
+    };
+    material.needsUpdate = true;
 }
 
 // ---------------------------------------------------------
@@ -494,12 +913,167 @@ export class MundoVoxel {
         this.scene = scene;
         this.terreno = terreno;
         this.mat = materiales;
+        aplicarLuzMaterial(materiales.solido);
+        aplicarLuzMaterial(materiales.agua);
         this.distancia = distancia;
         this.chunks = new Map();
         this.cx = terreno.BW / CHUNK;
         this.cz = terreno.BD / CHUNK;
         this.cola = [];
         this.ultimo = null;
+        this.todosWorkers = [];  // incluye los que aún arrancan (para no perder ediciones)
+        this.workers = [];       // workers de chunks listos para recibir trabajo
+        this.enVuelo = new Map(); // clave de chunk pedido a un worker -> versión de ediciones al pedirlo
+        this.terrenoPrincipal = terreno; // el mundo normal (la arena lo reemplaza temporalmente)
+        this.gen = 0;             // cambia al cambiar de terreno: descarta resultados atrasados de los workers
+        this.version = 0;         // sube con cada edición
+        this.versionChunk = new Map(); // clave de chunk -> última versión que lo afectó
+        this.remallado = new Set();    // chunks que deben volver a mallarse por una edición
+        this.resultados = [];     // chunks ya calculados esperando su malla en el hilo principal
+    }
+
+    // Arranca workers que generan y mallan chunks fuera del hilo principal.
+    // Si el navegador no los soporta, procesar() cae al mallado en el hilo principal.
+    iniciarWorkers(orient, cantidad = 2) {
+        try {
+            for (let n = 0; n < cantidad; n++) {
+                const w = new Worker(new URL('./worker-chunks.js', import.meta.url), { type: 'module' });
+                const est = { w, listo: false, pedidos: 0 };
+                this.todosWorkers.push(est);
+                w.onmessage = e => {
+                    const m = e.data;
+                    if (m.t === 'listo') { est.listo = true; this.workers.push(est); }
+                    else if (m.t === 'chunk') { est.pedidos--; if (m.gen === this.gen) this.resultados.push(m); }
+                    else if (m.t === 'error') { console.error('worker de chunks:', m.mensaje); est.pedidos = Math.max(0, est.pedidos - 1); }
+                };
+                w.onerror = err => { console.error('worker de chunks:', err.message); est.listo = false; };
+                w.postMessage({ t: 'init', orient, ediciones: this.listaEdiciones() });
+            }
+        } catch (e) { /* sin workers: se malla en el hilo principal */ }
+    }
+
+    // Un cuadro de trabajo: reparte chunks a los workers y crea las mallas de los que ya llegaron.
+    // Sin workers listos, malla en el hilo principal con el presupuesto indicado.
+    procesar(presupuestoMs = 5) {
+        if (!this.workers.length) return this.construir(presupuestoMs);
+        const t0 = performance.now();
+        this.procesarRemallado(1);
+        while (this.resultados.length && performance.now() - t0 < presupuestoMs) {
+            const m = this.resultados.shift();
+            const ver = this.enVuelo.get(m.k) || 0;
+            this.enVuelo.delete(m.k);
+            if (this.chunks.has(m.k) || !this.deseado(m.x, m.z)) continue;
+            this.instalar(m.k, m.g, m.vox, m.luz);
+            if ((this.versionChunk.get(m.k) || 0) > ver) this.remallado.add(m.k); // se editó mientras el worker trabajaba
+        }
+        const MAX = 3; // pedidos simultáneos por worker
+        for (const est of this.workers) {
+            while (est.pedidos < MAX && this.cola.length) {
+                const { x, z, k } = this.cola.shift();
+                if (this.chunks.has(k) || this.enVuelo.has(k)) continue;
+                this.enVuelo.set(k, this.version);
+                est.pedidos++;
+                est.w.postMessage({ t: 'chunk', x, z, k, g: this.gen });
+            }
+        }
+        return this.cola.length + this.enVuelo.size;
+    }
+
+    // ---- Edición de bloques ----
+    listaEdiciones() {
+        const lista = [];
+        for (const m of this.terreno.ediciones.values()) {
+            for (const [clave, id] of m) { const [x, y, z] = clave.split(',').map(Number); lista.push([x, y, z, id]); }
+        }
+        return lista;
+    }
+
+    // Cambia un bloque. `inmediato`: malla ya el chunk (y vecinos de borde); el resto, en cola.
+    editar(x, y, z, id, inmediato = true) {
+        this.editarLote([[x, y, z, id]], inmediato);
+    }
+
+    editarLote(lista, inmediato = false) {
+        const tocados = new Set();
+        const R = RADIO_LUZ + 1;
+        this.version++;
+        for (const [x, y, z, id] of lista) {
+            if (y < 0 || y >= ALTO || x < 0 || z < 0 || x >= this.terreno.BW || z >= this.terreno.BD) continue;
+            guardarEdicion(this.terreno, x, y, z, id);
+            for (let cz = Math.floor((z - R) / CHUNK); cz <= Math.floor((z + R) / CHUNK); cz++) {
+                for (let cx = Math.floor((x - R) / CHUNK); cx <= Math.floor((x + R) / CHUNK); cx++) {
+                    const k = cx + ',' + cz;
+                    this.versionChunk.set(k, this.version);
+                    tocados.add(k);
+                }
+            }
+            // Los vecinos directos (borde del chunk) se rehacen siempre ya: se ven las caras ocultas
+            if (inmediato) {
+                const propio = claveChunk(x, z);
+                this.remallarYa(propio);
+                const lx = ((x % CHUNK) + CHUNK) % CHUNK, lz = ((z % CHUNK) + CHUNK) % CHUNK;
+                if (lx === 0) this.remallarYa(claveChunk(x - 1, z));
+                if (lx === CHUNK - 1) this.remallarYa(claveChunk(x + 1, z));
+                if (lz === 0) this.remallarYa(claveChunk(x, z - 1));
+                if (lz === CHUNK - 1) this.remallarYa(claveChunk(x, z + 1));
+            }
+        }
+        for (const k of tocados) if (this.chunks.has(k)) this.remallado.add(k);
+        if (this.terreno === this.terrenoPrincipal) for (const est of this.todosWorkers) est.w.postMessage({ t: 'ediciones', lista });
+    }
+
+    remallarYa(k) {
+        this.remallado.delete(k);
+        const ch = this.chunks.get(k);
+        if (!ch) return;
+        const [cx, cz] = k.split(',').map(Number);
+        const relleno = llenarChunk(this.terreno, cx, cz);
+        this.liberar(ch);
+        this.chunks.delete(k);
+        this.instalar(k, mallarChunkCrudo(cx, cz, relleno), relleno.vox, relleno.luz);
+    }
+
+    // Rehace hasta `maximo` chunks pendientes por cuadro
+    procesarRemallado(maximo = 1) {
+        for (const k of this.remallado) {
+            if (maximo-- <= 0) break;
+            this.remallarYa(k);
+        }
+    }
+
+    // Cambia el mundo entero (p. ej. a la arena y de vuelta). Los workers solo conocen el mundo normal.
+    cambiarTerreno(terreno) {
+        for (const ch of this.chunks.values()) this.liberar(ch);
+        this.chunks.clear();
+        this.cola = []; this.resultados = []; this.enVuelo.clear(); this.remallado.clear(); this.versionChunk.clear();
+        this.ultimo = null;
+        this.gen++;
+        this.terreno = terreno;
+        this.cx = terreno.BW / CHUNK;
+        this.cz = terreno.BD / CHUNK;
+        this.workers = terreno === this.terrenoPrincipal ? this.todosWorkers.filter(e => e.listo) : [];
+    }
+
+    deseado(x, z) {
+        if (!this.ultimo) return true;
+        const dx = x - this.ultimo[0], dz = z - this.ultimo[1];
+        return dx * dx + dz * dz <= (this.distancia + 1) * (this.distancia + 1);
+    }
+
+    instalar(k, g, vox, luz) {
+        const mallas = [];
+        if (g.solido) {
+            const m = new THREE.Mesh(geometriaDe(g.solido), this.mat.solido);
+            m.matrixAutoUpdate = false;
+            this.scene.add(m); mallas.push(m);
+        }
+        if (g.agua) {
+            const m = new THREE.Mesh(geometriaDe(g.agua), this.mat.agua);
+            m.matrixAutoUpdate = false;
+            m.renderOrder = 1;
+            this.scene.add(m); mallas.push(m);
+        }
+        this.chunks.set(k, { mallas, vox, luz });
     }
 
     bloque(x, y, z) {
@@ -508,6 +1082,17 @@ export class MundoVoxel {
         if (!ch || y < 0 || y >= ALTO) return -1; // -1: aún no cargado
         const lx = x - Math.floor(x / CHUNK) * CHUNK + 1, lz = z - Math.floor(z / CHUNK) * CHUNK + 1;
         return ch.vox[(y * VENT + lz) * VENT + lx];
+    }
+
+    // Luz empacada de la celda: (cielo << 4) | bloque, 0-15 cada uno; -1 si no está cargada.
+    // Ej.: const v = mundo.nivelLuz(x, y, z); cielo = v >> 4; bloque = v & 15.
+    nivelLuz(x, y, z) {
+        x = Math.floor(x); y = Math.floor(y); z = Math.floor(z);
+        if (y >= ALTO) return LUZ_CIELO_ABIERTO;
+        const ch = this.chunks.get(Math.floor(x / CHUNK) + ',' + Math.floor(z / CHUNK));
+        if (!ch || y < 0) return -1;
+        const lx = x - Math.floor(x / CHUNK) * CHUNK + 1, lz = z - Math.floor(z / CHUNK) * CHUNK + 1;
+        return ch.luz[(y * VENT + lz) * VENT + lx];
     }
 
     planificar(px, pz) {
@@ -547,22 +1132,12 @@ export class MundoVoxel {
         while (this.cola.length && performance.now() - t0 < presupuestoMs) {
             const { x, z, k } = this.cola.shift();
             if (this.chunks.has(k)) continue;
+            if (this.enVuelo.has(k)) continue; // ya lo está calculando un worker
             const relleno = llenarChunk(this.terreno, x, z);
-            const g = mallarChunk(x, z, relleno);
-            const mallas = [];
-            if (g.solido) {
-                const m = new THREE.Mesh(g.solido, this.mat.solido);
-                m.matrixAutoUpdate = false;
-                this.scene.add(m); mallas.push(m);
-            }
-            if (g.agua) {
-                const m = new THREE.Mesh(g.agua, this.mat.agua);
-                m.matrixAutoUpdate = false;
-                m.renderOrder = 1;
-                this.scene.add(m); mallas.push(m);
-            }
-            this.chunks.set(k, { mallas, vox: relleno.vox });
+            const c = mallarChunkCrudo(x, z, relleno);
+            this.instalar(k, c, relleno.vox, relleno.luz);
         }
+        this.procesarRemallado(1);
         return this.cola.length;
     }
 }

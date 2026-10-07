@@ -12,6 +12,8 @@ import { iniciarAjustes } from './ajustes.js';
 import { iniciarTactil } from './tactil.js';
 import { crearMinimapa } from './minimapa.js';
 import { crearGatas } from './gatas.js';
+import { crearBrujula } from './brujula.js';
+import { iniciarOnline } from './online/online.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -87,6 +89,9 @@ const pausaEl = document.getElementById('pausa-titulo');
 cargaEl.textContent = TXT[idioma].cargando;
 
 const DISTANCIA = 10;
+// Orientación del mapa: ?mapa=v (vertical) o ?mapa=h (horizontal, por defecto)
+let orientacion = 'h';
+try { orientacion = new URLSearchParams(location.search).get('mapa') === 'v' ? 'v' : 'h'; } catch (e) { /* sin parámetros */ }
 
 function pedirPuntero() {
     try {
@@ -97,7 +102,7 @@ function pedirPuntero() {
 
 async function iniciar() {
     await new Promise(r => setTimeout(r, 30)); // deja pintar el texto de carga
-    const datos = generarDatos('h');
+    const datos = generarDatos(orientacion);
     const terreno = prepararTerreno(datos);
 
     const bordeFog = DISTANCIA * CHUNK;
@@ -115,13 +120,18 @@ async function iniciar() {
     mundo.planificar(px, pz);
     const cercanos = mundo.cola.filter(c => c.d2 <= 9).length;
     while (mundo.chunks.size < cercanos) mundo.construir(40);
+    mundo.iniciarWorkers(orientacion, Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 4) - 2)));
     jugador.colocar(px + 0.5, terreno.HT[pz * terreno.BW + px] + 1, pz + 0.5);
-    jugador.yaw = Math.PI / 2 * -1; // mirando hacia el este (hacia el título)
+    // Mira hacia el título, esté donde esté en el mapa (este en el horizontal)
+    const tit = datos.titulo;
+    jugador.yaw = Math.atan2(-(tit.tx0 + tit.anchoT / 2 - sx), -(tit.ty0 + tit.altoT / 2 - sz));
 
     const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, pedirPuntero: () => entrar() });
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas };
+    const brujula = crearBrujula(hudEl, idioma);
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar() });
+    const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
+    window.__venjy = { online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -184,12 +194,14 @@ async function iniciar() {
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
-        gatas.actualizar(dt);
+        if (!(online && online.enArena)) gatas.actualizar(dt);
+        if (online) online.actualizar(dt);
         relojAgua += dt;
         if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
+        brujula.actualizar(jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
-        mundo.construir(5);
+        mundo.procesar(5);
         renderer.render(scene, camara);
 
         cuadros++; acumulado += dt;
@@ -200,7 +212,7 @@ async function iniciar() {
             cuadros = 0; acumulado = 0;
             autoAjustar(fps, paso);
             zonaEl.textContent = ajustes.zonaEn(jugador.pos.x, jugador.pos.z);
-            zonaEl.hidden = !zonaEl.textContent;
+            zonaEl.hidden = !zonaEl.textContent || !!(online && online.enArena);
             coordsEl.textContent = `X ${jugador.pos.x.toFixed(1)}  Y ${jugador.pos.y.toFixed(1)}  Z ${jugador.pos.z.toFixed(1)}`;
         }
     }

@@ -1,9 +1,9 @@
 // =========================================================
 // VENJY · Datos del mundo (sin DOM)
-// Copia fiel de generarMundo() de script.js: mismas semillas y
-// mismo orden de llamadas a r(), para que el mapa 3D sea
-// idéntico al mapa 2D del portafolio.
-// Añade la capa F (1 = celda de estructura) y alturas exactas.
+// Única fuente de verdad del mapa: la usan script.js (mapa 2D del
+// portafolio) y el mundo 3D. Mismas semillas y mismo orden de llamadas
+// a r(): si se cambian, el mapa 2D y el 3D dejan de coincidir.
+// Incluye la capa F (1 = celda de estructura) y alturas exactas.
 // =========================================================
 
 export function azar(semilla) {

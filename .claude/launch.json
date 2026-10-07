@@ -4,8 +4,9 @@
     {
       "name": "venjy",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5510"],
-      "port": 5510
+      "runtimeArgs": ["-c", "import os, http.server as h; h.test(HandlerClass=h.SimpleHTTPRequestHandler, port=int(os.environ.get('PORT', '5510')), bind='127.0.0.1')"],
+      "port": 5510,
+      "autoPort": true
     }
   ]
 }
