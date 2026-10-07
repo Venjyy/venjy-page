@@ -161,7 +161,7 @@ function habilidades({ portafolio, terreno, contenido, nombres }) {
         });
     });
     portafolio.carteles.agregar({
-        x: d.x + 0.5, y: y0 + 3.4, z: d.z + 3, ancho: 4.5, tamano: 34, color: '#ffffff', distancia: 60, texto: nombres.mina
+        x: d.x + 0.5, y: y0 + 3.4, z: d.z + 3, ancho: 3.4, tamano: 30, color: '#ffffff', distancia: 60, texto: nombres.mina
     });
 }
 
@@ -197,22 +197,18 @@ function proyectos({ portafolio, terreno, datos, contenido, nombres }) {
 
 // ---------- Zona 5 · Mis gatas: cuadros con las fotos en las paredes de la gatera ----------
 const FOTOS_GATAS = [
-    // [archivo, pared (s/n/o/e), posición a lo largo de la pared]
-    ['MilayGala', 's', 739.5], ['Gala', 's', 743.5], ['MilaGod', 's', 756], ['Galapatitas', 's', 760],
-    ['Mila1', 'n', 741], ['Gala2', 'n', 746], ['Milasol', 'n', 751], ['GalayMila', 'n', 756], ['Galatuto', 'n', 761],
-    ['Milapetit', 'o', 824], ['Gala3', 'o', 829], ['MilaCuestionando', 'o', 834],
-    ['Mila3', 'e', 824], ['Galapatona', 'e', 829], ['MilaAceituna', 'e', 834]
+    // [archivo, pared (n norte, s sur, o oeste, e este), posición a lo largo de la pared]; todas por dentro de la casa
+    ['MilayGala', 'n', 739.5], ['Gala', 'n', 743], ['MilaGod', 'n', 746.5], ['Galapatitas', 'n', 750],
+    ['Mila1', 'n', 753.5], ['Gala2', 'n', 757], ['Milasol', 'n', 760.5],
+    ['GalayMila', 'o', 825], ['Galatuto', 'o', 829], ['Milapetit', 'o', 833],
+    ['Gala3', 'e', 825], ['MilaCuestionando', 'e', 829], ['Mila3', 'e', 833],
+    ['Galapatona', 's', 743.5], ['MilaAceituna', 's', 756]
 ];
 
-function gatas({ portafolio, terreno, datos, contenido }) {
-    const [gx, gz] = datos.P.gatera;
-    let c = null, dm = Infinity;
-    for (const k of terreno.casas) {
-        const d = Math.hypot((k.minx + k.maxx) / 2 - gx * ESCALA, (k.minz + k.maxz) / 2 - gz * ESCALA);
-        if (k.sup === 13 && d < dm) { dm = d; c = k; } // NARANJO: la casa de las gatas
-    }
+function gatas({ portafolio, terreno, contenido, nombres }) {
+    const c = terreno.gatera;
     if (!c) return;
-    const yc = BASE_ESTRUCTURA + 3.4;
+    const yc = BASE_ESTRUCTURA + 3.6;
     // Fichas de Mila y Gala (de la sección «Mis gatas» de la página)
     const ficha = {};
     for (const mob of contenido.varios('#gatos .mob')) {
@@ -233,15 +229,16 @@ function gatas({ portafolio, terreno, datos, contenido }) {
         const quien = gala ? ['Gala'] : mila ? ['Mila'] : ['Mila', 'Gala'];
         const nombreCartel = quien.join(' y ');
         let x, z, normal;
-        if (pared === 's') { x = pos; z = c.maxz + 1.04; normal = 'z+'; }
-        else if (pared === 'n') { x = pos; z = c.minz - 0.04; normal = 'z-'; }
-        else if (pared === 'o') { x = c.minx - 0.04; z = pos; normal = 'x-'; }
-        else { x = c.maxx + 1.04; z = pos; normal = 'x+'; }
+        // Planos pegados a la cara INTERIOR de cada muro (el muro ocupa [min, min+1) y [max, max+1))
+        if (pared === 'n') { x = pos; z = c.minz + 1.04; normal = 'z+'; }
+        else if (pared === 's') { x = pos; z = c.maxz - 0.04; normal = 'z-'; }
+        else if (pared === 'o') { x = c.minx + 1.04; z = pos; normal = 'x+'; }
+        else { x = c.maxx - 0.04; z = pos; normal = 'x-'; }
         portafolio.agregarCuadro({
             x, y: yc, z, ancho: 2.5, alto: 2.2, normal, imagen: `images/mundo/${archivo}.jpg`,
             poi: {
-                id: 'gata-' + archivo, radio: 3.2,
-                cartel: { texto: { es: nombreCartel, en: nombreCartel }, dy: 1.7, ancho: 1.8, tamano: 26, color: '#ffff55', distancia: 16 },
+                id: 'gata-' + archivo, radio: 3.4,
+                cartel: { texto: { es: nombreCartel, en: nombreCartel }, dy: 1.6, ancho: 1.8, tamano: 26, color: '#ffff55', distancia: 14 },
                 titulo: { es: a.es, en: a.en },
                 paginas: l => [{
                     titulo: l === 'en' ? a.en : a.es, imagen: `images/mundo/${archivo}.jpg`,
@@ -250,29 +247,48 @@ function gatas({ portafolio, terreno, datos, contenido }) {
             }
         });
     }
+    portafolio.carteles.agregar({
+        x: c.px + 0.5, y: BASE_ESTRUCTURA + 6, z: c.maxz + 3, ancho: 4.5, tamano: 34, color: '#ffffff', distancia: 70, texto: nombres.gatera
+    });
 }
 
-// ---------- Zona 6 · Contacto: el buzón del correo ----------
+// ---------- Zona 6 · Contacto: el correo por dentro (un atril por canal) y el buzón de la entrada ----------
 function contacto({ portafolio, terreno, contenido, nombres }) {
-    const d = terreno.decor.find(x => x.t === 'buzon');
-    if (!d) return;
+    const g = terreno.correo;
     const y0 = BASE_ESTRUCTURA + 1;
     const gancho = contenido.texto('.correo-gancho');
     const filas = contenido.varios('#contacto a.canal').map(a => ({
         tipo: a.querySelector('.canal-tipo')?.textContent.trim(), valor: a.querySelector('.canal-valor')?.textContent.trim(), url: a.getAttribute('href')
     }));
-    portafolio.agregarPOI({
-        id: 'contacto-buzon', x: d.x + 1.5, y: y0 + 3.2, z: d.z + 1.5, radio: 5,
-        cartel: { texto: nombres.correo, dy: 1.7, ancho: 3.4, tamano: 30, color: '#ffff55' },
-        titulo: nombres.correo,
-        paginas: l => paginar({ titulo: por(nombres.correo, l), parrafos: [por(gancho, l)], items: filas.map(f => `${f.tipo}: ${f.valor}`) }),
-        recurso: () => filas.map(f => ({ url: f.url, etiqueta: { es: f.tipo, en: f.tipo } }))
-    });
-    // Letrero sobre la puerta del correo (el edificio de cuarzo)
-    const casa = terreno.casas.find(k => k.sup === 10);
-    if (casa) {
+    // Un atril por canal dentro del edificio: el panel muestra el dato y su botón
+    if (g) {
+        filas.forEach((f, i) => {
+            const p = g.puestos[i];
+            if (!p) return;
+            portafolio.agregarPOI({
+                id: 'contacto-' + i, x: p.x + 0.5, y: y0 + 2.6, z: p.z + 0.5,
+                cartel: { texto: { es: f.tipo, en: f.tipo }, dy: 1.6, ancho: 3, tamano: 30, color: '#ffff55' },
+                titulo: { es: f.tipo, en: f.tipo },
+                paginas: l => [{ titulo: f.tipo, parrafos: [por(gancho, l), f.valor] }],
+                recurso: () => ({ url: f.url, etiqueta: { es: 'Abrir ' + f.tipo, en: 'Open ' + f.tipo } })
+            });
+        });
         portafolio.carteles.agregar({
-            x: casa.puertaX + 0.5, y: y0 + 5.4, z: casa.maxz + 4, ancho: 4.5, tamano: 34, color: '#ffffff', distancia: 70, texto: nombres.correo
+            x: g.centro.x, y: g.centro.y, z: g.centro.z, ancho: 7, tamano: 34, color: '#ffff55', distancia: 40, texto: nombres.correo
+        });
+        portafolio.carteles.agregar({
+            x: g.px + 1, y: y0 + 5.4, z: g.maxz + 4, ancho: 4.5, tamano: 34, color: '#ffffff', distancia: 70, texto: nombres.correo
+        });
+    }
+    // Buzón de la entrada: resumen con los tres canales
+    const d = terreno.decor.find(x => x.t === 'buzon');
+    if (d) {
+        portafolio.agregarPOI({
+            id: 'contacto-buzon', x: d.x + 1.5, y: y0 + 3.2, z: d.z + 1.5, radio: 5,
+            cartel: { texto: nombres.correo, dy: 1.7, ancho: 3.4, tamano: 30, color: '#ffff55' },
+            titulo: nombres.correo,
+            paginas: l => paginar({ titulo: por(nombres.correo, l), parrafos: [por(gancho, l)], items: filas.map(f => `${f.tipo}: ${f.valor}`) }),
+            recurso: () => filas.map(f => ({ url: f.url, etiqueta: { es: f.tipo, en: f.tipo } }))
         });
     }
 }
@@ -289,7 +305,7 @@ function faro({ portafolio, terreno, contenido }) {
         x: s.centro.x, y: s.centro.y, z: s.centro.z, ancho: 5.6, alto: 3, normal: 'z+', marco: 0.1,
         imagen: 'images/procseg/promo-poster.jpg', video: 'images/procseg/promo.mp4',
         poi: {
-            id: 'faro-ps', radio: 7,
+            id: 'faro-ps', radio: 5,
             cartel: { texto: l => `${nombre}\n${l === 'en' ? 'online' : 'en línea'}`, dy: 2.6, ancho: 5.2, tamano: 30, color: '#ffff55', distancia: 60 },
             titulo: { es: nombre, en: nombre },
             paginas: l => paginar({
@@ -309,13 +325,35 @@ function siguientes({ portafolio, terreno, datos, nombres }) {
     const orden = ['casa', 'registro', 'mina', 'aldea', 'gatera', 'correo', 'faro'];
     for (let i = 0; i < orden.length - 1; i++) {
         const [cx, cz] = datos.P[orden[i]];
-        const x = cx * ESCALA + 5, z = cz * ESCALA + 2;
+        const x = cx * ESCALA + 2, z = cz * ESCALA + 2; // justo sobre el camino
         const sig = nombres[orden[i + 1]];
         portafolio.carteles.agregar({
             x, y: bloqueEn(terreno, x, z) + 3.6, z, ancho: 5, tamano: 26, color: '#aaffaa', distancia: 36,
             texto: l => `${l === 'en' ? 'Next' : 'Siguiente'}: ${por(sig, l)} >`
         });
     }
+}
+
+// Dónde aparece el visitante al elegir una zona en «Ir a»: frente a su entrada y mirando hacia ella
+// (norte = yaw 0). Sin `y`, se usa el suelo del lugar.
+function destinos({ terreno, datos }) {
+    const y1 = BASE_ESTRUCTURA + 1;
+    const d = {};
+    if (terreno.sobreMi) d.casa = { x: terreno.sobreMi.px + 0.5, z: terreno.sobreMi.iz1 + 6, y: y1, yaw: 0 };
+    if (terreno.registro) d.registro = { x: terreno.registro.px + 0.5, z: terreno.registro.iz1 + 6, y: y1, yaw: 0 };
+    const mina = terreno.decor.find(x => x.t === 'mina');
+    if (mina) d.mina = { x: mina.x + 0.5, z: mina.z + 8, y: y1, yaw: 0 };
+    const [ax, az] = datos.P.aldea;
+    let c = null, dm = Infinity;
+    for (const k of terreno.casas) {
+        const dd = Math.hypot((k.minx + k.maxx) / 2 - ax * ESCALA, (k.minz + k.maxz) / 2 - az * ESCALA);
+        if (k.sup === 18 && dd < dm) { dm = dd; c = k; }
+    }
+    if (c) d.aldea = { x: c.puertaX + 0.5, z: c.maxz + 7, y: undefined, yaw: 0 };
+    if (terreno.gatera) d.gatera = { x: terreno.gatera.px + 0.5, z: terreno.gatera.maxz - 3, y: y1, yaw: 0 }; // dentro de la casa, mirando las fotos (frente a la puerta hay cajas)
+    if (terreno.correo) d.correo = { x: terreno.correo.px + 1, z: terreno.correo.maxz + 5, y: y1, yaw: 0 };
+    d.faro = { x: terreno.faro.x - 4, z: terreno.faro.z + 14, y: undefined, yaw: 0 };
+    return d;
 }
 
 export function registrarZonas(ctx) {
@@ -330,5 +368,5 @@ export function registrarZonas(ctx) {
     contacto(c);
     faro(c);
     siguientes(c);
-    return { nombres };
+    return { nombres, destinos: destinos(c) };
 }

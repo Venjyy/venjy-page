@@ -39,7 +39,7 @@ function el(tag, clase, padre, texto) {
     return e;
 }
 
-export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma: idiomaInicial = 'es', alAbrir = null }) {
+export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma: idiomaInicial = 'es', alAbrir = null, exigirPunteria = () => false }) {
     let idioma = idiomaInicial;
     const carteles = crearCarteles(scene, camara, idioma);
     const cuadros = crearCuadros({ scene, camara, materiales });
@@ -175,7 +175,8 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
         return Math.hypot(px, py, pz) < RADIO_APUNTAR;
     }
     window.addEventListener('mousedown', e => {
-        if (!activo || !jugador.activo || !apuntando()) return;
+        // Sin edición de bloques el clic no tiene otro uso: pasa la página aunque no se apunte exacto al objeto
+        if (!activo || !jugador.activo || (exigirPunteria() && !apuntando())) return;
         if (e.button === 0) ir(1);
         else if (e.button === 2) ir(-1);
         else return;

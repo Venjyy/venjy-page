@@ -24,7 +24,7 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [], nombresZona = null, getIdioma = () => idioma }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [], destinosZona = {}, nombresZona = null, getIdioma = () => idioma }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
     // Nombres de las zonas tal como los pone el portafolio (index.html), en el idioma actual
@@ -180,6 +180,8 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
     panel.insertBefore(sec, panel.querySelector('.controles'));
 
     function teletransportar(clave) {
+        const dz = destinosZona[clave]; // frente a la entrada de la zona, mirando hacia ella
+        if (dz) { irA(dz.x, dz.z, dz.y, dz.yaw); return; }
         let [cx, cz] = datos.P[clave];
         let bx = cx * ESCALA + 2, bz = cz * ESCALA + 2;
         if (clave === 'faro') bz += 10; // junto al pedestal, no dentro de la torre

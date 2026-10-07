@@ -83,3 +83,71 @@ export function levantarPantallaFaro(poner, f) {
     for (const dx of [0, s.ancho - 1]) for (let dy = 0; dy < s.alto; dy++) poner(s.x0 + dx, s.yBase + dy, s.z, B.TRONCO);
     for (const dx of [-1, s.ancho]) poner(s.x0 + dx, f.y, s.z + 1, B.ANTORCHA);
 }
+
+// ---------- Mis gatas (gatera): interior decorado ----------
+// Las gatas eligen destinos al azar en el centro de la casa (x0+2…x1-2 en gatas.js), así que los
+// muebles van solo en las franjas junto a las paredes y el pasillo de la puerta queda libre.
+export function geometriaGatera(c, base) {
+    return { base, minx: c.minx, maxx: c.maxx, minz: c.minz, maxz: c.maxz, px: c.puertaX };
+}
+
+export function levantarGatera(poner, g, y0) {
+    const ix0 = g.minx + 1, ix1 = g.maxx - 1, iz0 = g.minz + 1, iz1 = g.maxz - 1;
+    // Alfombra crema con borde naranjo al centro (solo el piso: las gatas caminan encima)
+    for (let z = iz0 + 4; z <= iz1 - 4; z++) {
+        for (let x = ix0 + 5; x <= ix1 - 5; x++) {
+            const borde = z === iz0 + 4 || z === iz1 - 4 || x === ix0 + 5 || x === ix1 - 5;
+            poner(x, y0 - 1, z, borde ? B.NARANJO : B.ARENA);
+        }
+    }
+    // Repisa de libros bajo los cuadros de la pared norte
+    for (let x = ix0 + 1; x <= ix1 - 1; x++) poner(x, y0, iz0, B.LIBRERO);
+    // Camas junto a la pared oeste
+    for (const z of [iz0 + 4, iz0 + 10]) for (let dz = 0; dz < 3; dz++) for (let dx = 0; dx < 2; dx++) poner(ix0 + dx, y0, z + dz, B.CAMA);
+    // Rascadores: torre de troncos con plataformas (noreste) y poste (sureste)
+    for (let y = 0; y < 4; y++) poner(ix1 - 1, y0 + y, iz0 + 3, B.TRONCO);
+    for (const y of [1, 3]) for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 0; dx++) poner(ix1 - 1 + dx, y0 + y, iz0 + 3 + dz, B.TABLONES);
+    for (let y = 0; y < 3; y++) poner(ix1, y0 + y, iz1 - 3, B.TRONCO);
+    // Mesita con antorcha, comedero de gatas (dos bloques de piedra) y cofre de juguetes en el sureste
+    poner(ix1, y0, iz0 + 12, B.TABLONES);
+    poner(ix1, y0 + 1, iz0 + 12, B.ANTORCHA);
+    poner(ix0, y0, iz1 - 1, B.GRIS); poner(ix0 + 1, y0, iz1 - 1, B.GRIS);
+    poner(ix1, y0, iz1 - 6, B.COFRE);
+    // Luz: antorchas en las paredes y lámparas bajo la cumbrera
+    for (const z of [iz0 + 7, iz0 + 14]) { poner(ix0 - 0, y0 + 2, z, B.ANTORCHA); poner(ix1, y0 + 2, z, B.ANTORCHA); }
+    for (const dx of [-6, 0, 6]) poner(g.px + dx, y0 + 6, (iz0 + iz1) >> 1, B.PIEDRA_LUMINOSA);
+}
+
+// ---------- Contacto (correo): el oficio de correos por dentro ----------
+// c: casa de cuarzo ({ minx, maxx, minz, maxz, puertaX }); el edificio es un anillo con un bloque central
+// macizo: prepararTerreno lo vacía para dejar un salón único y le abre la puerta en el muro sur.
+export function geometriaCorreo(c, base) {
+    const ix0 = c.minx + 1, ix1 = c.maxx - 1, iz0 = c.minz + 1, iz1 = c.maxz - 1;
+    const px = c.puertaX, cz = (c.minz + c.maxz) >> 1;
+    const zPuesto = cz - 2;
+    const puestos = [-6, 1, 8].map((dx, i) => ({ id: 'cor-' + i, x: px + dx, z: zPuesto }));
+    return { base, ix0, ix1, iz0, iz1, px, cz, zPuesto, maxz: c.maxz, puestos, centro: { x: px + 0.5, y: base + 8, z: cz + 0.5 } };
+}
+
+export function levantarCorreo(poner, g, y0) {
+    const { ix0, ix1, iz0, iz1, px, zPuesto } = g;
+    for (let z = iz1; z >= zPuesto; z--) for (let x = px; x <= px + 1; x++) poner(x, y0 - 1, z, B.ROJO);
+    for (let x = px - 8; x <= px + 10; x++) for (let dz = -1; dz <= 1; dz++) poner(x, y0 - 1, zPuesto + dz, B.ROJO);
+    // Un atril por canal (correo, GitHub, LinkedIn)
+    for (const p of g.puestos) {
+        poner(p.x, y0, p.z, B.TABLONES);
+        poner(p.x, y0 + 1, p.z, B.TABLONES);
+        poner(p.x, y0 + 2, p.z, B.LIBRERO);
+        poner(p.x - 2, y0, p.z, B.ANTORCHA);
+        poner(p.x + 2, y0, p.z, B.ANTORCHA);
+        poner(p.x, y0 + 6, p.z, B.PIEDRA_LUMINOSA);
+    }
+    // Casilleros (libreros) contra la pared norte, antorchas y lámparas
+    for (let x = ix0 + 2; x <= ix1 - 2; x++) {
+        if ((x - ix0) % 5 === 0) { poner(x, y0 + 2, iz0, B.ANTORCHA); continue; }
+        poner(x, y0, iz0, B.LIBRERO);
+        poner(x, y0 + 1, iz0, B.LIBRERO);
+    }
+    for (const x of [ix0 + 4, ix1 - 4]) poner(x, y0 + 2, iz1, B.ANTORCHA);
+    for (const dx of [-7, 0, 7]) poner(px + dx, y0 + 6, g.cz + 4, B.PIEDRA_LUMINOSA);
+}
