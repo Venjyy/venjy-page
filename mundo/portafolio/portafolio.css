@@ -1,0 +1,49 @@
+/* =========================================================
+   VENJY · Paneles del portafolio dentro del mundo 3D
+   Mismo lenguaje visual que los menús: oscuro, borde negro, bisel y fuente PixelCraft.
+   ========================================================= */
+
+.pf-panel {
+    position: fixed; left: 50%; bottom: 130px; transform: translateX(-50%);
+    width: min(580px, 94vw); max-height: 54vh; display: flex; flex-direction: column;
+    background: rgb(16 10 6 / 0.93); color: #fff; font-family: 'PixelCraft', monospace;
+    border: 4px solid #000; box-shadow: inset 4px 4px 0 #3a2a1c, inset -4px -4px 0 #0c0704;
+    z-index: 45; text-shadow: 1px 1px 0 #000;
+}
+.pf-panel[hidden] { display: none; }
+.pf-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 18px 6px; }
+.pf-titulo { margin: 0; font-size: 1.15rem; font-weight: normal; color: #ffff55; text-shadow: 2px 2px 0 #3f3f15; }
+.pf-num { font-size: 0.85rem; color: #aaa; white-space: nowrap; }
+.pf-cuerpo { padding: 4px 18px 8px; overflow-y: auto; font-size: 0.92rem; line-height: 1.55; overscroll-behavior: contain; }
+.pf-cuerpo p { margin: 0 0 8px; }
+.pf-sub { margin-bottom: 6px; }
+.pf-sub b { display: block; color: #ffd966; font-weight: normal; }
+.pf-lista { margin: 0 0 6px; padding-left: 18px; }
+.pf-lista li { margin-bottom: 5px; }
+.pf-nota { color: #aaa; font-size: 0.82rem; }
+.pf-imagen { display: block; max-width: 100%; max-height: 30vh; margin: 0 auto 8px; border: 3px solid #000; image-rendering: auto; }
+.pf-pie { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 18px 10px; }
+.pf-boton {
+    font: inherit; font-size: 0.85rem; color: #fff; text-decoration: none; text-shadow: 2px 2px 0 #3f3f3f; cursor: pointer;
+    padding: 7px 12px; background: #6f6f6f; border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 #8b8b8b, inset -3px -3px 0 #373737;
+}
+.pf-boton:hover, .pf-boton:focus-visible { background: #7d8cc4; outline: none; }
+.pf-boton:disabled { opacity: 0.45; cursor: default; }
+.pf-boton[hidden] { display: none; }
+.pf-recurso { background: #4a7a2c; }
+.pf-recurso:hover { background: #5e9a38; }
+.pf-teclas { margin: 0; padding: 0 18px 10px; font-size: 0.72rem; color: #aaa; }
+
+.pf-panel.pf-grande { inset: 3vh 3vw; left: 3vw; transform: none; width: auto; max-height: none; bottom: 3vh; z-index: 60; }
+.pf-panel.pf-grande .pf-cuerpo { font-size: 1.08rem; flex: 1; }
+.pf-panel.pf-grande .pf-titulo { font-size: 1.4rem; }
+.pf-panel.pf-grande .pf-imagen { max-height: 50vh; }
+
+@media (pointer: coarse) {
+    .pf-panel { bottom: auto; top: 118px; max-height: 40vh; }
+    .pf-cuerpo { font-size: 0.85rem; }
+}
+@media (pointer: coarse) and (max-height: 420px) {
+    .pf-panel { top: 56px; max-height: 70vh; left: 50%; width: min(520px, 60vw); }
+}

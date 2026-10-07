@@ -24,7 +24,7 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [] }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
     const guardado = leer();
@@ -157,6 +157,17 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         b.addEventListener('click', () => { teletransportar(k); pedirPuntero(); });
         rejilla.appendChild(b);
     }
+    // Destinos propios del portafolio (Sala del CV…), con su nombre en cada idioma
+    for (const d of destinos) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'boton chico';
+        b.textContent = d.nombre[idioma] || d.nombre.es;
+        b.setAttribute('data-es', d.nombre.es);
+        b.setAttribute('data-en', d.nombre.en);
+        b.addEventListener('click', () => { irA(d.x, d.z, d.y, d.yaw); pedirPuntero(); });
+        rejilla.appendChild(b);
+    }
     sec.appendChild(rejilla);
 
     const panel = document.querySelector('#inicio .panel');
@@ -168,13 +179,20 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         if (clave === 'faro') bz += 10; // junto al pedestal, no dentro de la torre
         bx = Math.max(2, Math.min(terreno.BW - 3, bx));
         bz = Math.max(2, Math.min(terreno.BD - 3, bz));
+        irA(bx + 0.5, bz + 0.5);
+    }
+
+    // Lleva al jugador a (x, z) en bloques; si se da y, aparece justo ahí, y si se da yaw mira hacia allá
+    function irA(x, z, y, yaw) {
+        const bx = Math.floor(x), bz = Math.floor(z);
         mundo.ultimo = null;
         mundo.planificar(bx, bz);
         let intentos = 0;
         while (mundo.cola.some(c => c.d2 <= 4) && intentos++ < 200) mundo.construir(30);
         jugador.vuela = false;
         const suelo = terreno.HT[bz * terreno.BW + bx];
-        jugador.colocar(bx + 0.5, Math.max(suelo, 14) + 2, bz + 0.5);
+        jugador.colocar(x, y !== undefined ? y : Math.max(suelo, 14) + 2, z);
+        if (yaw !== undefined) { jugador.yaw = yaw; jugador.pitch = 0; }
         jugador.alCambiarVuelo && jugador.alCambiarVuelo(false);
     }
 

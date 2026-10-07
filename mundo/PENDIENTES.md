@@ -33,6 +33,7 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, ma
 | `mundo/brujula.js` | Brújula del HUD. |
 | `mundo/worker-chunks.js` | Worker que llena, ilumina y malla chunks fuera del hilo principal (cada uno calcula su propio terreno con la misma semilla). |
 | `mundo/online/` | Modo online (opcional, solo si hay sala): `config.js` (URL y clave pública de Supabase), `red.js` (sala, Presence, Broadcast, guardado de bloques), `avatares.js` (otros jugadores), `edicion.js` (romper/poner + hotbar), `online.js` (lobby e integración), `partida.js` (Skywars), `arena.js` (mapa de islas), `schema.sql` (tablas y RLS), `tests/conexion.html` (prueba de red). |
+| `mundo/portafolio/` | Portafolio interactivo: `portafolio.js` (puntos de interés, panel por proximidad, páginas, idioma), `carteles.js` (carteles flotantes con PixelCraft), `contenido.js` (lee `index.html`: una sola fuente de textos), `cv-datos.js` (CV en ES/EN), `salacv.js` (geometría y bloques de la Sala del CV), `zonas.js` (qué POI y destinos crea cada zona), `portafolio.css`. |
 | `mundo/main.js` | Escena, render, niebla, bucle, idioma, HUD. |
 | `mundo/mundo.css` | Estilo de menús tipo Minecraft (fuente PixelCraft). |
 | `vendor/` | Three.js 0.186.1 minificado (~750 KB) y supabase-js 2.117.2 minificado (~220 KB, solo se descarga al entrar a una sala) + licencias. |
@@ -56,6 +57,18 @@ Solo para pasar el rato con amigos. Sin sala no se descarga nada de Supabase y e
 - **Celular**: la hotbar se toca para elegir bloque y hay botones ROMPER / PONER (PONER también abre cofres y ROMPER golpea). Pueden afinarse al probarlos en un teléfono real.
 - **Controles**: correr con R, Ctrl o doble W (Ctrl+W cierra la pestaña en Windows; además hay aviso de confirmación al cerrar dentro de una sala); Shift agacha en el suelo (lento, baja la cámara y no te deja caer por el borde).
 - **Pendiente online**: chat; la arena no oculta el menú de teletransporte; probar con amigos reales desde la red del colegio; limpieza periódica de salas viejas (`select public.limpiar_salas_viejas()` a mano).
+
+## Portafolio interactivo (el mundo como portafolio)
+
+Cada lugar del mundo muestra el contenido real del portafolio: cartel flotante encima y panel al acercarse (~4,5 bloques).
+
+- **Sistema base** (`mundo/portafolio/`): `crearPortafolio` registra puntos de interés con `agregarPOI({ id, x, y, z, cartel, titulo, paginas(idioma), recurso(idioma) })`. El panel se abre al acercarse y se cierra al alejarse. Escritorio: clic izquierdo = página siguiente y derecho = anterior (solo apuntando al objeto, así no rompe bloques), flechas, `E` abre el recurso real (PDF, enlace…), `G` agranda, `L` cambia el idioma. Celular: botones del panel y tocar el texto lo agranda a pantalla completa.
+- **Idioma**: sale de `?lang=` / `preferredLanguage` y cambia en vivo con `L` (paneles, carteles y textos de la página).
+- **Una sola fuente de contenido**: `contenido.js` hace `fetch` de `index.html` y lee sus pares `data-es` / `data-en` (`texto`, `textos`, `enlace`). Lo que no está en `index.html` (el CV) está en `cv-datos.js`, extraído del DOCX; **si cambias el CV hay que actualizar ese archivo**.
+- **Nuevas zonas**: añadir una función en `zonas.js` que llame a `agregarPOI` y devuelva sus destinos de teletransporte `{ clave, nombre: {es,en}, x, y, z, yaw }`; `ajustes.js` los pinta en «Ir a». Si la zona lleva bloques nuevos, crear su `levantar…` (como `salacv.js`) y llamarlo desde `colocarDecor` en `voxeles.js`; el terreno se nivela en `prepararTerreno` (ES=3 evita árboles).
+- **Zona A · Sala del CV** (hecha): salón de 31×21 bloques junto al spawn (`SALA_CV` en `salacv.js`, bloques x 124-154, z 456-476), puerta al oeste, alfombra roja, libreros, dos atriles (izquierda/norte «CV · Español», derecha/sur «CV · English», cada uno siempre en su idioma, con botón al PDF real) y un cartel grande con el nombre del sitio en el centro. Destino «Sala del CV» en el menú de pausa.
+- **Por hacer, en orden**: B Gatera (cuadros con fotos), C Casa (libro y fotos), D Mina (vetas por tecnología), E Registro (pantalla con el video y tablero de proyectos), F Aldea (casas por trabajo), G Correo (buzón), H Faro (redes). Extras: guía en la brújula, nombres reales en el teletransporte y sonido sutil al abrir un panel.
+- **Por confirmar con el dueño**: el CV dice DigitalOcean para El Patio de Lea y Coronel como ciudad de Dafa, mientras que `index.html` dice Azure y Chile; el CV usa «Benjamín Flores Bravo» y el sitio «Benjamín Flores». El panel del CV no muestra el teléfono (sí está en el PDF).
 
 ## Estado actual (Fase 1 completa)
 
@@ -123,6 +136,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-07 · **Portafolio interactivo: sistema base y Sala del CV** (rama `feature/mundo-3d-portafolio`): `mundo/portafolio/*` (carteles flotantes, panel por proximidad con páginas, idioma en vivo con `L`, contenido de `index.html` + `cv-datos.js`), Sala del CV construida en `voxeles.js` (`salaCV` en el terreno, decorado `cv`, nivelación del terreno), destinos propios en `ajustes.js` (`destinos`, `irA`), `main.js` (carga el contenido, crea el portafolio y la tecla L), `mundo.html` y `portafolio.css`. Verificado en escritorio y emulación de celular, sin errores de consola.
 
 - 2026-10-07 · **Mejoras online y controles** (rama `feature/mundo-3d-mejoras`): botón destacado «Entrar a la sala de amigos» bajo «Jugar» y sala pública; arreglo del avatar invisible en el mundo normal (la posición podía llegar antes que la presencia: ahora se guarda hasta que aparece); nombre del bloque y pista de controles sobre la hotbar, aviso «abrir cofre» y guía al iniciar Skywars; correr con R, agacharse con Shift (`jugador.agachado`), aviso al cerrar con Ctrl+W en una sala; hotbar táctil y botones ROMPER/PONER (`tactil.agregarAccion`, `edicion.abajo/arriba`) · `jugador.js`, `tactil.js/css`, `mundo/online/*`, `mundo.html`.
 
