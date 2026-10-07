@@ -119,8 +119,11 @@ async function iniciar() {
     mundo.planificar(px, pz);
     const cercanos = mundo.cola.filter(c => c.d2 <= 9).length;
     while (mundo.chunks.size < cercanos) mundo.construir(40);
+    mundo.iniciarWorkers(orientacion, Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 4) - 2)));
     jugador.colocar(px + 0.5, terreno.HT[pz * terreno.BW + px] + 1, pz + 0.5);
-    jugador.yaw = Math.PI / 2 * -1; // mirando hacia el este (hacia el título)
+    // Mira hacia el título, esté donde esté en el mapa (este en el horizontal)
+    const tit = datos.titulo;
+    jugador.yaw = Math.atan2(-(tit.tx0 + tit.anchoT / 2 - sx), -(tit.ty0 + tit.altoT / 2 - sz));
 
     const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
@@ -195,7 +198,7 @@ async function iniciar() {
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         brujula.actualizar(jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
-        mundo.construir(5);
+        mundo.procesar(5);
         renderer.render(scene, camara);
 
         cuadros++; acumulado += dt;

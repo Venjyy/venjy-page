@@ -4,6 +4,7 @@
 // por chunks de 16×16 con culling de caras y oclusión ambiental.
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
+import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -34,6 +35,7 @@ const MATERIAL_ESTRUCTURA = {
 // ---------------------------------------------------------
 export function prepararTerreno(datos) {
     const { W, H, E, T, F } = datos;
+    const ruidoAltura = crearRuido(31337); // rompe las curvas de nivel rectas sin tocar las zonas planas
     const BW = W * ESCALA, BD = H * ESCALA;
     const HT = new Int16Array(BW * BD);   // altura del bloque superior
     const SUP = new Uint8Array(BW * BD);  // bloque de la superficie
@@ -78,7 +80,7 @@ export function prepararTerreno(datos) {
             const x0 = Math.floor(u), z0 = Math.floor(v);
             const fx = u - x0, fz = v - z0;
             const a = g(x0, z0), b = g(x0 + 1, z0), c = g(x0, z0 + 1), d = g(x0 + 1, z0 + 1);
-            const h = Math.round(a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz);
+            const h = Math.round(a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz + (ruidoAltura(bx / 7, bz / 7, 2) - 0.5) * 0.9);
             HT[o] = h;
 
             // Material: bioma de la celda, con el borde desordenado para no verse cuadriculado
@@ -161,6 +163,44 @@ export function prepararTerreno(datos) {
             }
         }
     }
+    // Casas: se agrupan las columnas de cada casa y se les da techo a dos aguas
+    const casas = [];
+    const visto = new Uint8Array(BW * BD);
+    const esVol = o => HUECO[o] >= 1 && HUECO[o] <= 3;
+    for (let o0 = 0; o0 < BW * BD; o0++) {
+        if (visto[o0] || !esVol(o0)) continue;
+        const sup = SUP[o0];
+        const pila = [o0];
+        const cols = [];
+        visto[o0] = 1;
+        let minx = BW, maxx = 0, minz = BD, maxz = 0, dxs = 0, dn = 0;
+        while (pila.length) {
+            const o = pila.pop();
+            cols.push(o);
+            const bx = o % BW, bz = (o - bx) / BW;
+            if (bx < minx) minx = bx;
+            if (bx > maxx) maxx = bx;
+            if (bz < minz) minz = bz;
+            if (bz > maxz) maxz = bz;
+            if (HUECO[o] === 3) { dxs += bx; dn++; }
+            for (const p of [o - 1, o + 1, o - BW, o + BW]) {
+                if (p >= 0 && p < BW * BD && !visto[p] && esVol(p) && SUP[p] === sup) { visto[p] = 1; pila.push(p); }
+            }
+        }
+        const lleno = cols.length / ((maxx - minx + 1) * (maxz - minz + 1));
+        const ejeX = maxx - minx >= maxz - minz;
+        if (lleno >= 0.9) { // casa rectangular: el techo sube un bloque cada dos hacia la cumbrera
+            for (const o of cols) {
+                const bx = o % BW, bz = (o - bx) / BW;
+                const p = ejeX ? Math.min(bz - minz, maxz - bz) : Math.min(bx - minx, maxx - bx);
+                HT[o] = BASE_ESTRUCTURA + 5 + Math.min(8, p >> 1);
+            }
+        }
+        casas.push({
+            minx, maxx, minz, maxz, ejeX, sup, puertaX: dn ? Math.round(dxs / dn) : (minx + maxx) >> 1,
+            amueblar: lleno >= 0.9 && ejeX && sup !== B.NARANJO && maxx - minx >= 20 && maxz - minz >= 14
+        });
+    }
     const decor = [
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
@@ -172,7 +212,8 @@ export function prepararTerreno(datos) {
     // Quien coloque emisores fuera del decorado o del faro debe agregar aquí su rectángulo.
     const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
     zonasLuz.push({ x0: faro.x - 4, z0: faro.z - 4, x1: faro.x + 4, z1: faro.z + 4 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, zonasLuz, datos };
+    for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos };
 }
 
 // ---------------------------------------------------------
@@ -298,6 +339,12 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
             maxY = Math.max(maxY, BASE_ESTRUCTURA + 8);
         }
     }
+    // Casas: chimenea, cama, librero, mesa con antorcha y cofre
+    for (const c of terreno.casas) {
+        if (c.amueblar && c.maxx + 2 > wx0 && c.minx - 2 < wx0 + VENT && c.maxz + 2 > wz0 && c.minz - 2 < wz0 + VENT) {
+            amueblarCasa(vox, wx0, wz0, VENT, c, terreno);
+        }
+    }
     // Faro: torre de rayas con linterna en la cima
     const f = terreno.faro;
     if (Math.abs(f.x - (wx0 + VENT / 2)) < 4 + VENT / 2 && Math.abs(f.z - (wz0 + VENT / 2)) < 4 + VENT / 2) {
@@ -305,6 +352,40 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
         maxY = Math.max(maxY, f.y + 38);
     }
     return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
+}
+
+function amueblarCasa(vox, wx0, wz0, ancho, c, terreno) {
+    const poner = (x, y, z, id) => {
+        const lx = x - wx0, lz = z - wz0;
+        if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
+        vox[(y * ancho + lz) * ancho + lx] = id;
+    };
+    const y0 = BASE_ESTRUCTURA + 1;
+    const ix0 = c.minx + 1, ix1 = c.maxx - 1, iz0 = c.minz + 1, iz1 = c.maxz - 1;
+    const cz = (c.minz + c.maxz) >> 1;
+    // Chimenea contra la pared oeste, con un hogar de antorcha y salida sobre el techo
+    const tope = terreno.HT[cz * terreno.BW + ix0 + 1] + 3;
+    for (let x = ix0; x <= ix0 + 2; x++) {
+        for (let z = cz - 1; z <= cz + 1; z++) for (let y = y0; y <= tope; y++) poner(x, y, z, B.LADRILLO);
+    }
+    poner(ix0 + 2, y0, cz, B.ANTORCHA);
+    poner(ix0 + 2, y0 + 1, cz, B.AIRE);
+    // Muebles (se omiten los que no caben)
+    const hay = (x, z, w, d) => x >= ix0 + 4 && x + w - 1 <= ix1 && z >= iz0 && z + d - 1 <= iz1
+        && !(x <= c.puertaX + 2 && x + w - 1 >= c.puertaX - 1 && z + d - 1 >= cz);
+    const bloques = (x, z, w, d, id, alto = 1) => {
+        for (let dz = 0; dz < d; dz++) for (let dx = 0; dx < w; dx++) for (let y = 0; y < alto; y++) poner(x + dx, y0 + y, z + dz, id);
+    };
+    if (hay(ix1 - 3, iz0, 2, 3)) bloques(ix1 - 3, iz0, 2, 3, B.CAMA);
+    if (hay(ix0 + 5, iz0, 3, 1)) bloques(ix0 + 5, iz0, 3, 1, B.LIBRERO, 2);
+    const mx = Math.min(ix1 - 1, Math.max(ix0 + 6, c.puertaX + 3));
+    if (hay(mx, cz, 2, 2)) { bloques(mx, cz, 2, 2, B.TABLONES); poner(mx, y0 + 1, cz, B.ANTORCHA); }
+    if (hay(ix1, iz1, 1, 1)) poner(ix1, y0, iz1, B.COFRE);
+    // Antorchas en las paredes largas para que el interior no quede a oscuras
+    for (const x of [ix0 + 10, ix1 - 8, (ix0 + ix1) >> 1]) {
+        poner(x, y0 + 2, iz0, B.ANTORCHA);
+        if (Math.abs(x - c.puertaX) > 2) poner(x, y0 + 2, iz1, B.ANTORCHA);
+    }
 }
 
 function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
@@ -346,6 +427,8 @@ function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
             const lado = (k - 4) % 14 === 0 ? -1 : 1;
             poner(d.x + lado * 3, y0 + 1, d.z - k, B.ANTORCHA);
         }
+        for (let k = 1; k <= 27; k++) poner(d.x, y0 - 1, d.z - k, B.RIEL);
+        poner(d.x + 2, y0, d.z - 27, B.COFRE);
         poner(d.x, y0, d.z - 28, B.ORO);
         poner(d.x, y0 + 1, d.z - 28, B.DIAMANTE);
     } else if (d.t === 'buzon') {
@@ -552,19 +635,29 @@ function uvTile(tile, u, v) {
 class Buffer {
     constructor() { this.p = []; this.u = []; this.c = []; this.l = []; this.i = []; this.n = 0; }
     get vacio() { return this.n === 0; }
-    geometria() {
-        const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
-        g.setAttribute('uv', new THREE.Float32BufferAttribute(this.u, 2));
-        g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
-        g.setAttribute('luz', new THREE.Float32BufferAttribute(this.l, 2)); // cielo, bloque (0..1)
-        g.setIndex(this.i);
-        g.computeBoundingSphere();
-        return g;
+    // Arreglos tipados listos para transferir desde un worker
+    datos() {
+        return {
+            p: new Float32Array(this.p), u: new Float32Array(this.u), c: new Float32Array(this.c),
+            l: new Float32Array(this.l), i: new Uint32Array(this.i)
+        };
     }
+    geometria() { return geometriaDe(this.datos()); }
 }
 
-export function mallarChunk(cx, cz, relleno) {
+// Construye la geometría de Three.js a partir de los arreglos de un chunk (hilo principal)
+export function geometriaDe(d) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(d.p, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(d.u, 2));
+    g.setAttribute('color', new THREE.BufferAttribute(d.c, 3));
+    g.setAttribute('luz', new THREE.BufferAttribute(d.l, 2)); // cielo, bloque (0..1)
+    g.setIndex(new THREE.BufferAttribute(d.i, 1));
+    g.computeBoundingSphere();
+    return g;
+}
+
+function mallarBuffers(cx, cz, relleno) {
     const { vox, maxY } = relleno;
     const luz = relleno.luz;
     const solido = new Buffer(), agua = new Buffer();
@@ -678,7 +771,18 @@ export function mallarChunk(cx, cz, relleno) {
             }
         }
     }
-    return { solido: solido.vacio ? null : solido.geometria(), agua: agua.vacio ? null : agua.geometria() };
+    return { solido: solido.vacio ? null : solido, agua: agua.vacio ? null : agua };
+}
+
+export function mallarChunk(cx, cz, relleno) {
+    const b = mallarBuffers(cx, cz, relleno);
+    return { solido: b.solido && b.solido.geometria(), agua: b.agua && b.agua.geometria() };
+}
+
+// Igual que mallarChunk pero devuelve arreglos tipados (para el worker)
+export function mallarChunkCrudo(cx, cz, relleno) {
+    const b = mallarBuffers(cx, cz, relleno);
+    return { solido: b.solido && b.solido.datos(), agua: b.agua && b.agua.datos() };
 }
 
 // ---------------------------------------------------------
@@ -742,6 +846,74 @@ export class MundoVoxel {
         this.cz = terreno.BD / CHUNK;
         this.cola = [];
         this.ultimo = null;
+        this.workers = [];       // workers de chunks listos para recibir trabajo
+        this.enVuelo = new Set(); // claves de chunks pedidos a un worker
+        this.resultados = [];     // chunks ya calculados esperando su malla en el hilo principal
+    }
+
+    // Arranca workers que generan y mallan chunks fuera del hilo principal.
+    // Si el navegador no los soporta, procesar() cae al mallado en el hilo principal.
+    iniciarWorkers(orient, cantidad = 2) {
+        try {
+            for (let n = 0; n < cantidad; n++) {
+                const w = new Worker(new URL('./worker-chunks.js', import.meta.url), { type: 'module' });
+                const est = { w, listo: false, pedidos: 0 };
+                w.onmessage = e => {
+                    const m = e.data;
+                    if (m.t === 'listo') { est.listo = true; this.workers.push(est); }
+                    else if (m.t === 'chunk') { est.pedidos--; this.resultados.push(m); }
+                    else if (m.t === 'error') { console.error('worker de chunks:', m.mensaje); est.pedidos = Math.max(0, est.pedidos - 1); }
+                };
+                w.onerror = err => { console.error('worker de chunks:', err.message); est.listo = false; };
+                w.postMessage({ t: 'init', orient });
+            }
+        } catch (e) { /* sin workers: se malla en el hilo principal */ }
+    }
+
+    // Un cuadro de trabajo: reparte chunks a los workers y crea las mallas de los que ya llegaron.
+    // Sin workers listos, malla en el hilo principal con el presupuesto indicado.
+    procesar(presupuestoMs = 5) {
+        if (!this.workers.length) return this.construir(presupuestoMs);
+        const t0 = performance.now();
+        while (this.resultados.length && performance.now() - t0 < presupuestoMs) {
+            const m = this.resultados.shift();
+            this.enVuelo.delete(m.k);
+            if (this.chunks.has(m.k) || !this.deseado(m.x, m.z)) continue;
+            this.instalar(m.k, m.g, m.vox, m.luz);
+        }
+        const MAX = 3; // pedidos simultáneos por worker
+        for (const est of this.workers) {
+            while (est.pedidos < MAX && this.cola.length) {
+                const { x, z, k } = this.cola.shift();
+                if (this.chunks.has(k) || this.enVuelo.has(k)) continue;
+                this.enVuelo.add(k);
+                est.pedidos++;
+                est.w.postMessage({ t: 'chunk', x, z, k });
+            }
+        }
+        return this.cola.length + this.enVuelo.size;
+    }
+
+    deseado(x, z) {
+        if (!this.ultimo) return true;
+        const dx = x - this.ultimo[0], dz = z - this.ultimo[1];
+        return dx * dx + dz * dz <= (this.distancia + 1) * (this.distancia + 1);
+    }
+
+    instalar(k, g, vox, luz) {
+        const mallas = [];
+        if (g.solido) {
+            const m = new THREE.Mesh(geometriaDe(g.solido), this.mat.solido);
+            m.matrixAutoUpdate = false;
+            this.scene.add(m); mallas.push(m);
+        }
+        if (g.agua) {
+            const m = new THREE.Mesh(geometriaDe(g.agua), this.mat.agua);
+            m.matrixAutoUpdate = false;
+            m.renderOrder = 1;
+            this.scene.add(m); mallas.push(m);
+        }
+        this.chunks.set(k, { mallas, vox, luz });
     }
 
     bloque(x, y, z) {
@@ -800,21 +972,10 @@ export class MundoVoxel {
         while (this.cola.length && performance.now() - t0 < presupuestoMs) {
             const { x, z, k } = this.cola.shift();
             if (this.chunks.has(k)) continue;
+            if (this.enVuelo.has(k)) continue; // ya lo está calculando un worker
             const relleno = llenarChunk(this.terreno, x, z);
-            const g = mallarChunk(x, z, relleno);
-            const mallas = [];
-            if (g.solido) {
-                const m = new THREE.Mesh(g.solido, this.mat.solido);
-                m.matrixAutoUpdate = false;
-                this.scene.add(m); mallas.push(m);
-            }
-            if (g.agua) {
-                const m = new THREE.Mesh(g.agua, this.mat.agua);
-                m.matrixAutoUpdate = false;
-                m.renderOrder = 1;
-                this.scene.add(m); mallas.push(m);
-            }
-            this.chunks.set(k, { mallas, vox: relleno.vox, luz: relleno.luz });
+            const c = mallarChunkCrudo(x, z, relleno);
+            this.instalar(k, c, relleno.vox, relleno.luz);
         }
         return this.cola.length;
     }

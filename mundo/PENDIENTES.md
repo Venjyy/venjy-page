@@ -31,6 +31,7 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, ma
 | `mundo/gatas.js` | Las gatas Mila y Gala (modelos de cajas con texturas pintadas por código) que deambulan por la Gatera y entran/salen de su casa. |
 | `mundo/pintado.js` | Paleta `MC`, tonos y `pintarBitmap`: el bitmap del mapa 2D, puro y sin DOM (lo usa `script.js`). |
 | `mundo/brujula.js` | Brújula del HUD. |
+| `mundo/worker-chunks.js` | Worker que llena, ilumina y malla chunks fuera del hilo principal (cada uno calcula su propio terreno con la misma semilla). |
 | `mundo/main.js` | Escena, render, niebla, bucle, idioma, HUD. |
 | `mundo/mundo.css` | Estilo de menús tipo Minecraft (fuente PixelCraft). |
 | `vendor/` | Three.js 0.186.1 sin minificar + licencia. |
@@ -53,17 +54,17 @@ Cómo se arma una columna: la altura sale de interpolar `E` (suavizado bilineal 
 Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ### Fase 2 · Pulido Minecraft
-- [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Falta: muebles, techo a dos aguas, iluminación interior.
-- [x] Mina: el foso se convirtió en una plaza de piedra a ras del camino y un túnel de 28 bloques con marcos de madera, vetas de mineral y un bloque de oro y otro de diamante al fondo (`colocarDecor`, tipo `mina`). Falta: vías, antorchas/luz, cofre.
+- [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Techo a dos aguas, chimenea con hogar, cama, librero, mesa con antorcha, cofre y antorchas en las paredes (hecho). La casa naranja de las gatas se deja sin muebles para que ellas circulen.
+- [x] Mina: el foso se convirtió en una plaza de piedra a ras del camino y un túnel de 28 bloques con marcos de madera, vetas de mineral y un bloque de oro y otro de diamante al fondo (`colocarDecor`, tipo `mina`). Vías, antorchas y cofre ya puestos.
 - [x] Faro: torre de rayas rojas/blancas con linterna de diamante, balcón y puerta, sobre pedestal de piedra (`colocarFaro` en `voxeles.js`).
 - [x] Pozo de la aldea (agua, piedra labrada, techo) y buzón del correo (`colocarDecor`). [x] Cajas de la gatera: cajones abiertos de 2×2 por dentro (naranjo y negro). Falta: que las gatas duerman dentro.
-- [x] Letras "VENJY" elevadas a 18 bloques (`ALTO_LETRAS`). Cada píxel sigue midiendo 32×32 bloques; valorar reducir la escala.
+- [x] Letras "VENJY" elevadas a 18 bloques (`ALTO_LETRAS`). Cada píxel sigue midiendo 32×32 bloques; Decidido mantener la escala: se leen mejor desde el aire.
 - [x] Cielo: domo con gradiente, sol cuadrado y nubes de bloques estáticas (`mundo/cielo.js`). Luna, estrellas, ciclo día/noche de 8 min y nubes móviles ya hechos (`cielo.js`; `cielo.fijarHora(h)`, `cielo.pausado`).
-- [ ] Niebla/colores más fieles al Minecraft real. [x] Agua animada ( `animarAgua` en `texturas.js`, 5 cuadros/s).
+- [x] Niebla y colores: decisión estética cerrada, se dejan como están (cambiar solo si el usuario lo pide). [x] Agua animada ( `animarAgua` en `texturas.js`, 5 cuadros/s).
 - [x] Árboles: roble, abedul (1 de cada 4) y pino en zonas altas; el bosquecillo del registro ahora son árboles. [x] Flores (amapola, diente de león, aciano) y pasto alto en cruz (bloques tipo 4, planta). 
-- [ ] Suavizar los escalones del terreno (hoy se ven curvas de nivel de 1 bloque).
+- [x] Terreno más suave: ruido de ±0,45 bloques sobre la altura interpolada rompe las curvas de nivel rectas sin tocar las zonas planas (`prepararTerreno`).
 - [x] Cultivos: franjas de tierra labrada con trigo (cubo con textura recortada). [x] Trigo en cruz.
-- [ ] Luz en interiores y en la mina (hoy no hay iluminación por bloque).
+- [x] Luz por bloque: cielo y bloque 0-15, antorcha (id 34) y piedra luminosa (id 35), interiores y mina oscuros con luz local. Ver comentarios de `calcularLuz` en `voxeles.js`; los emisores nuevos fuera de un decorado deben registrar su rectángulo en `terreno.zonasLuz`.
 
 ### Gatas (Mila y Gala)
 - [x] Modelos, pelajes y caminata por la Gatera, con entrada y salida de la casa por la puerta (`mundo/gatas.js`). **Mila**: carey gordita, casi toda negra con poquito amarillo y naranjo, SIN blanco. **Gala**: toda gris, guantes blancos delante, botas blancas detrás, pecho blanco y panza gris.
@@ -83,10 +84,10 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - [x] Auto-ajuste de distancia de render según FPS (casilla 'Distancia automática'; el slider es el máximo) y casilla 'Mostrar FPS'.
 
 ### Técnico / deuda
-- [ ] Mallado en Web Worker si el meshing en el hilo principal se nota al volar rápido.
-- [ ] Minificar Three.js o importar solo lo necesario (hoy ~2 MB sin minificar).
+- [x] Mallado en Web Workers (`mundo/worker-chunks.js`, 1-3 workers): al volar a máxima velocidad el peor cuadro fue de ~21 ms. Sin workers (o si fallan) se malla en el hilo principal.
+- [ ] Minificar Three.js (hoy ~2 MB sin minificar). Requiere descargar una herramienta de build (esbuild) con npm: pendiente de que el usuario lo autorice.
 - [x] `script.js` ahora es un módulo y consume `mundo/mundo-datos.js` + `mundo/pintado.js`: ya no hay generador duplicado. Consecuencia: `index.html` no abre con doble clic (`file://`), necesita servidor o hosting.
-- [x] Mapa vertical con `?mapa=v` (y selector en los ajustes). Pendiente cosmético: el yaw inicial mira al este y en el vertical el título queda al oeste.
+- [x] Mapa vertical con `?mapa=v` (y selector en los ajustes). El yaw inicial mira hacia el título en ambos mapas.
 - [x] Chunks sin cargar: volando se atraviesan (sin pared fantasma) y caminando la caída se congela hasta que carguen.
 - [x] `.claude/launch.json` usa la variable `PORT` con `autoPort: true`.
 - [x] Test de paridad reutilizable en el repo (`mundo/tests/paridad.mjs` ejecuta `generarMundo` con un `document` falso y compara el bitmap; 0 celdas distintas).
@@ -108,6 +109,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 
+- 2026-10-06 · **Casas, mina, terreno y worker (rama `feature/mundo-3d-fase-4`)**: techo a dos aguas con chimenea, cama, librero, mesa, cofre y antorchas (`amueblarCasa`, `casas` en el terreno), vías y cofre en la mina, ruido de altura, bloques 36-40 (ladrillo, librero, cofre, cama, riel), `worker-chunks.js` con `procesar()`/`iniciarWorkers()` en `MundoVoxel`, yaw inicial hacia el título · `mundo/voxeles.js`, `mundo/texturas.js`, `mundo/worker-chunks.js` (nuevo), `mundo/main.js`.
+- 2026-10-06 · **Luz por bloque** (`voxeles.js`, `texturas.js`): luz de cielo y de bloque con antorchas y piedra luminosa; la linterna del faro ahora es piedra luminosa tras vidrio.
 - 2026-10-06 · **Tanda de pendientes (rama `feature/mundo-3d-fase-4`)**: gatas durmiendo en cajas y nombres flotantes (`gatas.js`); brújula, vuelo sin paredes fantasma, mapa vertical `?mapa=v`, `launch.json` con `PORT` (`brujula.js`, `jugador.js`, `ajustes.js`, `main.js`, `mundo.css`, `.claude/launch.json`); generador deduplicado: `script.js` es módulo y usa `mundo-datos.js` + `pintado.js` (`script.js`, `index.html`, `mundo/tests/paridad.mjs` reescrito).
 - 2026-10-06 · **Poses y sonido de las gatas, auto-ajuste de distancia, agua animada** · `mundo/gatas.js` (poses, `silenciar`), `mundo/ajustes.js` (casillas auto, FPS y sonido; `aplicarDistanciaAuto`), `mundo/main.js` (`autoAjustar`, animación del agua, `window.__venjy.auto` para depurar), `mundo/texturas.js` (`animarAgua`).
 - 2026-10-06 · **Mina, cajas y plantas**: plaza y túnel de la mina, cajas abiertas, flores, pasto alto y trigo en cruz · `mundo/voxeles.js` (nuevo tipo de bloque 4 «planta», mallado en cruz, `HUECO` 5/6 para cajas, decorado `mina`), `mundo/texturas.js` (ids 30-33, trigo nuevo). Los troncos de árbol reemplazan plantas.

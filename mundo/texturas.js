@@ -200,6 +200,40 @@ const PINTORES = {
         if (v < 0.14) return ajustar([255, 238, 168], 0.95 + r() * 0.05);
         if (v < 0.26) return ajustar([150, 96, 40], 0.9 + r() * 0.2);
         return ajustar(v < 0.6 ? [222, 168, 78] : [240, 196, 102], 0.92 + r() * 0.16);
+    },
+    ladrillo: (x, y, r) => {
+        const fila = Math.floor(y / 4);
+        const junta = y % 4 === 3 || (x + (fila % 2) * 4) % 8 === 7;
+        return junta ? ajustar([168, 160, 150], 0.85 + r() * 0.2) : ajustar([150, 70, 52], 0.85 + r() * 0.3);
+    },
+    librero_lado: (x, y, r) => {
+        if (y <= 1 || y >= 14 || (y >= 7 && y <= 8)) return ajustar([168, 131, 79], 0.88 + r() * 0.2);
+        const libros = [[160, 40, 40], [50, 90, 160], [60, 130, 70], [190, 150, 50], [110, 60, 140], [180, 100, 40]];
+        if (x === 0 || x === 15) return ajustar([120, 90, 52], 0.9);
+        const [cr, cg, cb] = libros[(Math.floor(x / 2) + (y > 8 ? 3 : 0)) % libros.length];
+        return ajustar([cr, cg, cb], 0.8 + ((x % 2) * 0.2) + r() * 0.1);
+    },
+    cofre_lado: (x, y, r) => {
+        const borde = x === 0 || x === 15 || y === 0 || y === 15 || y === 6;
+        if (x >= 7 && x <= 8 && y >= 5 && y <= 8) return [190, 190, 196];
+        return borde ? ajustar([92, 60, 22], 0.9 + r() * 0.15) : ajustar([160, 110, 44], 0.88 + r() * 0.2);
+    },
+    cofre_top: (x, y, r) => {
+        const borde = x === 0 || x === 15 || y === 0 || y === 15;
+        return borde ? ajustar([92, 60, 22], 0.9 + r() * 0.15) : ajustar([164, 114, 46], 0.88 + r() * 0.2);
+    },
+    cama_top: (x, y, r) => {
+        if (y <= 4 && x >= 2 && x <= 13) return ajustar([238, 238, 236], 0.94 + r() * 0.08);
+        return ajustar([176, 44, 48], 0.88 + r() * 0.16);
+    },
+    cama_lado: (x, y, r) => {
+        if (y >= 11) return ajustar([120, 84, 44], 0.88 + r() * 0.2);
+        return ajustar([176, 44, 48], 0.86 + r() * 0.16);
+    },
+    riel_top: (x, y, r) => {
+        if (x === 4 || x === 11) return ajustar([170, 170, 176], 0.85 + r() * 0.2);
+        if (y % 4 === 1 && x >= 2 && x <= 13) return ajustar([120, 84, 44], 0.9 + r() * 0.15);
+        return ajustar([104, 98, 92], 0.82 + r() * 0.3);
     }
 };
 
@@ -259,7 +293,8 @@ export const B = {
     ESMERALDA: 17, PODZOL: 18, ARCILLA: 19, GRIS: 20, CAMINO: 21, CULTIVO: 22,
     TRIGO: 23, VIDRIO: 24, LABRADA: 25, HOJAS_ABEDUL: 26, TRONCO_ABEDUL: 27, HOJAS_PINO: 28, TRONCO_PINO: 29,
     PASTO_ALTO: 30, FLOR_ROJA: 31, FLOR_AMARILLA: 32, FLOR_AZUL: 33,
-    ANTORCHA: 34, PIEDRA_LUMINOSA: 35 // ids fijos: otros módulos los usan
+    ANTORCHA: 34, PIEDRA_LUMINOSA: 35, // ids fijos: otros módulos los usan
+    LADRILLO: 36, LIBRERO: 37, COFRE: 38, CAMA: 39, RIEL: 40
 };
 
 export const BLOQUES = [];
@@ -299,6 +334,11 @@ BLOQUES[B.TRONCO_PINO] = def('tronco de pino', 's', 'tronco_pino_top', 'tronco_p
 
 BLOQUES[B.ANTORCHA] = def('antorcha', 'p', 'antorcha');
 BLOQUES[B.PIEDRA_LUMINOSA] = def('piedra luminosa', 's', 'piedra_luminosa');
+BLOQUES[B.LADRILLO] = def('ladrillo', 's', 'ladrillo');
+BLOQUES[B.LIBRERO] = def('librero', 's', 'tablones', 'librero_lado', 'tablones');
+BLOQUES[B.COFRE] = def('cofre', 's', 'cofre_top', 'cofre_lado', 'cofre_top');
+BLOQUES[B.CAMA] = def('cama', 's', 'cama_top', 'cama_lado', 'tablones');
+BLOQUES[B.RIEL] = def('riel', 's', 'riel_top', 'piedra', 'piedra');
 
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz
 export const TIPO = new Uint8Array(BLOQUES.length);
