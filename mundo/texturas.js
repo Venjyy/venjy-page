@@ -234,6 +234,51 @@ const PINTORES = {
         if (x === 4 || x === 11) return ajustar([170, 170, 176], 0.85 + r() * 0.2);
         if (y % 4 === 1 && x >= 2 && x <= 13) return ajustar([120, 84, 44], 0.9 + r() * 0.15);
         return ajustar([104, 98, 92], 0.82 + r() * 0.3);
+    },
+    // Valla de madera: dos travesaños y postes en los bordes, el resto transparente (bloque recortado)
+    valla: (x, y, r) => {
+        const poste = x <= 1 || x >= 14;
+        const travesano = (y >= 3 && y <= 5) || (y >= 9 && y <= 11);
+        if (!poste && !travesano) return [0, 0, 0, 0];
+        const sombra = (y === 5 || y === 11) && !poste ? 0.72 : 1;
+        return ajustar([162, 126, 76], (0.86 + r() * 0.2) * sombra);
+    },
+    heno_top: (x, y, r) => {
+        const d = Math.hypot(x - 7.5, y - 7.5);
+        if (d > 6.5 && d < 7.6) return ajustar([150, 112, 30], 0.9 + r() * 0.15);
+        return ajustar([212, 176, 58], 0.8 + r() * 0.3);
+    },
+    heno_lado: (x, y, r) => {
+        if (y === 4 || y === 11) return ajustar([132, 54, 30], 0.9 + r() * 0.15); // amarras
+        return ajustar([206, 170, 54], (x % 3 === 0 ? 0.82 : 1) * (0.86 + r() * 0.22));
+    },
+    lana: (x, y, r) => ajustar([234, 236, 236], ((x + y * 3) % 5 === 0 ? 0.86 : 1) * (0.9 + r() * 0.12)),
+    lana_roja: (x, y, r) => ajustar([168, 46, 40], ((x + y * 3) % 5 === 0 ? 0.84 : 1) * (0.9 + r() * 0.14)),
+    obsidiana: (x, y, r) => {
+        const v = r();
+        if (v > 0.93) return ajustar([96, 62, 150], 0.9 + r() * 0.2);
+        return ajustar([22, 16, 34], 0.75 + v * 0.55);
+    },
+    barril_top: (x, y, r) => {
+        if (x === 0 || y === 0 || x === 15 || y === 15) return ajustar([78, 56, 32], 0.9 + r() * 0.15);
+        if (x >= 6 && x <= 9 && y >= 6 && y <= 9) return ajustar([60, 42, 24], 0.9 + r() * 0.1);
+        return ajustar([150, 108, 62], (y % 4 === 3 ? 0.78 : 1) * (0.88 + r() * 0.18));
+    },
+    barril_lado: (x, y, r) => {
+        if (y === 2 || y === 13) return ajustar([90, 90, 96], 0.85 + r() * 0.25); // aros de hierro
+        return ajustar([136, 96, 54], (x % 4 === 0 ? 0.76 : 1) * (0.88 + r() * 0.18));
+    },
+    piedra_agrietada: (x, y, r) => {
+        const grieta = (x === y + 2 && x > 4 && x < 13) || (y === 11 && x > 1 && x < 8) || (x === 3 && y < 6);
+        if (grieta) return ajustar([60, 60, 62], 0.9 + r() * 0.15);
+        if (x % 8 === 0 || y % 8 === 0) return ajustar([96, 96, 98], 0.92 + r() * 0.1);
+        return ajustar([128, 128, 130], 0.84 + r() * 0.25);
+    },
+    // Frente del amplificador de Salonas: marco negro, rejilla de tela y perillas
+    amplificador: (x, y, r) => {
+        if (x === 0 || y === 0 || x === 15 || y === 15) return ajustar([24, 24, 26], 0.9 + r() * 0.2);
+        if (y <= 3) return (x % 3 === 1 && y === 2) ? [214, 214, 210] : ajustar([40, 40, 42], 0.9 + r() * 0.1);
+        return ajustar([58, 54, 50], ((x + y) % 2 ? 0.7 : 1) * (0.9 + r() * 0.15));
     }
 };
 
@@ -294,7 +339,8 @@ export const B = {
     TRIGO: 23, VIDRIO: 24, LABRADA: 25, HOJAS_ABEDUL: 26, TRONCO_ABEDUL: 27, HOJAS_PINO: 28, TRONCO_PINO: 29,
     PASTO_ALTO: 30, FLOR_ROJA: 31, FLOR_AMARILLA: 32, FLOR_AZUL: 33,
     ANTORCHA: 34, PIEDRA_LUMINOSA: 35, // ids fijos: otros módulos los usan
-    LADRILLO: 36, LIBRERO: 37, COFRE: 38, CAMA: 39, RIEL: 40
+    LADRILLO: 36, LIBRERO: 37, COFRE: 38, CAMA: 39, RIEL: 40,
+    VALLA: 41, HENO: 42, LANA: 43, LANA_ROJA: 44, OBSIDIANA: 45, BARRIL: 46, PIEDRA_AGRIETADA: 47, AMPLIFICADOR: 48
 };
 
 export const BLOQUES = [];
@@ -339,6 +385,14 @@ BLOQUES[B.LIBRERO] = def('librero', 's', 'tablones', 'librero_lado', 'tablones')
 BLOQUES[B.COFRE] = def('cofre', 's', 'cofre_top', 'cofre_lado', 'cofre_top');
 BLOQUES[B.CAMA] = def('cama', 's', 'cama_top', 'cama_lado', 'tablones');
 BLOQUES[B.RIEL] = def('riel', 's', 'riel_top', 'piedra', 'piedra');
+BLOQUES[B.VALLA] = def('valla', 'h', 'valla');
+BLOQUES[B.HENO] = def('fardo de heno', 's', 'heno_top', 'heno_lado', 'heno_top');
+BLOQUES[B.LANA] = def('lana', 's', 'lana');
+BLOQUES[B.LANA_ROJA] = def('lana roja', 's', 'lana_roja');
+BLOQUES[B.OBSIDIANA] = def('obsidiana', 's', 'obsidiana');
+BLOQUES[B.BARRIL] = def('barril', 's', 'barril_top', 'barril_lado', 'barril_top');
+BLOQUES[B.PIEDRA_AGRIETADA] = def('piedra agrietada', 's', 'piedra_agrietada');
+BLOQUES[B.AMPLIFICADOR] = def('amplificador', 's', 'negro', 'amplificador', 'negro');
 
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz
 export const TIPO = new Uint8Array(BLOQUES.length);

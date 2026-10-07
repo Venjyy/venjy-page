@@ -81,6 +81,17 @@ Cada lugar del mundo muestra el contenido real del portafolio: cartel flotante e
 - **Extras hechos**: carteles «Siguiente: … >» en cada punto del camino, sonido sutil al abrir un panel (respeta el interruptor de sonido de las gatas), paginación automática de los paneles (`paginar` en `portafolio.js`: con el puntero bloqueado no se puede desplazar el texto), varios botones de recurso por panel (hasta 3), el cartel del panel activo se oculta.
 - **Pendiente**: flecha de la brújula hacia la siguiente sección; probar en un teléfono real; el video no se reproduce en el celular si el navegador bloquea el autoplay (se ve el póster).
 
+## Vida en el mundo (animales, NPCs, puente y construcciones)
+
+Plan acordado el 2026-10-07. Todo lo que va en el terreno es determinista (los workers recalculan `prepararTerreno`).
+
+- [x] **Puente de verdad**: `aguaDeCamino` reconoce las celdas del camino que cruzan agua (en el 2D los píxeles del camino se pisan y casi todo el cruce queda como 'tierra' de altura 15, no 'madera'); esas celdas pasan a ser agua y `trazarPuentes`/`construirPuente` ponen un tablero recto de orilla a orilla (~3 bloques útiles) con barandas de `VALLA`, postes de tronco con pilotes y antorchas (decorado `puente`). En el mapa horizontal hay uno (mina → aldea); en el vertical salen varios, algunos largos a lo largo de la costa.
+- [x] Bloques nuevos 41-48: `VALLA` (recortado, sólido), `HENO`, `LANA`, `LANA_ROJA`, `OBSIDIANA`, `BARRIL`, `PIEDRA_AGRIETADA`, `AMPLIFICADOR`. `colocarDecor` acepta `d.y` y `d.maxY`; un decorado puede traer su propio rectángulo de luz (`d.luz`).
+- [ ] Base de criaturas (`mundo/criaturas/cuerpo.js`).
+- [ ] NPCs: Pony (pescador del lago del puente), Salonas (bajista en un escenario de la aldea, riffs con sonido a Primus) y Lona (gatera).
+- [ ] Animales: granja con corrales en la aldea, manadas sueltas y pájaros.
+- [ ] Construcciones para explorar (molino, atalaya, campamento, portal en ruinas, iglú, naufragio).
+
 ## Estado actual (Fase 1 completa)
 
 - Mapa idéntico al 2D (test de paridad: 0 celdas distintas de 98.304).
@@ -147,6 +158,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-07 · **Puente de verdad y bloques nuevos**: cruces de agua del camino como tablero recto con barandas, pilotes y antorchas (`aguaDeCamino`, `trazarPuentes`, `construirPuente`), bloques 41-48 · `mundo/voxeles.js`, `mundo/texturas.js`. Paridad 2D intacta.
 
 - 2026-10-07 · **Correcciones tras la revisión del dueño**: ProcedimientoSeguro aclarado en `index.html` (Benjamín desarrolló toda la aplicación; Joaquín administra los servidores y la VM de Azure; se corrigió «infrastructura»), fotos de las gatas dentro de la casa y casa decorada, correo accesible con puerta, interior y tres atriles, teletransportes frente a la entrada de cada zona (Habilidades ya no queda dentro de la roca), el cartel largo del faro se achica para no cortarse (`carteles.js` ajusta la fuente al ancho), clic de los paneles más tolerante, carteles de puerta más chicos · `index.html`, `mundo/voxeles.js`, `mundo/portafolio/{bloques,zonas,carteles,portafolio}.js`, `mundo/ajustes.js`, `mundo/main.js`.
 
