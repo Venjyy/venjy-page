@@ -58,8 +58,12 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
     const pie = el('footer', 'pf-pie', panel);
     const bAnt = el('button', 'pf-boton', pie); bAnt.type = 'button';
     const bSig = el('button', 'pf-boton', pie); bSig.type = 'button';
-    const enlace = el('a', 'pf-boton pf-recurso', pie);
-    enlace.target = '_blank'; enlace.rel = 'noopener noreferrer';
+    // Hasta 3 botones de recurso (PDF, app, redes…)
+    const enlaces = [0, 1, 2].map(() => {
+        const a = el('a', 'pf-boton pf-recurso', pie);
+        a.target = '_blank'; a.rel = 'noopener noreferrer';
+        return a;
+    });
     const bGrande = el('button', 'pf-boton', pie); bGrande.type = 'button';
     const teclasEl = el('p', 'pf-teclas', panel);
 
@@ -94,9 +98,12 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
         bAnt.disabled = pagina <= 0;
         bSig.disabled = pagina >= paginas.length - 1;
         bAnt.hidden = bSig.hidden = paginas.length <= 1;
-        const r = activo.recurso ? activo.recurso(idioma) : null;
-        enlace.hidden = !r;
-        if (r) { enlace.href = r.url; enlace.textContent = loc(r.etiqueta) + (tactil ? '' : ' (E)'); }
+        const rs = recursosDe(activo);
+        enlaces.forEach((a, i) => {
+            const x = rs[i];
+            a.hidden = !x;
+            if (x) { a.href = x.url; a.textContent = loc(x.etiqueta) + (tactil || i ? '' : ' (E)'); }
+        });
         bGrande.textContent = grande ? t().reducir : t().agrandar;
         teclasEl.textContent = t().teclas;
         teclasEl.hidden = tactil;
@@ -104,13 +111,38 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
         panel.setAttribute('aria-label', tituloEl.textContent);
     }
 
+    // recurso(idioma) puede devolver un recurso o una lista de ellos
+    function recursosDe(poi) {
+        const x = poi.recurso ? poi.recurso(idioma) : null;
+        return (Array.isArray(x) ? x : [x]).filter(Boolean).slice(0, 3);
+    }
+
     function abrir(poi) {
         activo = poi; pagina = 0; grande = false;
         paginas = poi.paginas(idioma);
         panel.hidden = false;
         pintar();
+        sonar();
         alAbrir && alAbrir(poi);
     }
+    // Sonido sutil al abrir un panel (se respeta el interruptor de sonido de las gatas)
+    let audio = null;
+    function sonar() {
+        try {
+            if (localStorage.getItem('venjy-mundo-silencio') === '1') return;
+            audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+            if (audio.state === 'suspended') audio.resume();
+            const t0 = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+            o.type = 'square';
+            o.frequency.setValueAtTime(520, t0);
+            o.frequency.setValueAtTime(780, t0 + 0.06);
+            g.gain.setValueAtTime(0.025, t0);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+            o.connect(g).connect(audio.destination);
+            o.start(t0); o.stop(t0 + 0.18);
+        } catch (e) { /* sin sonido */ }
+    }
+
     function cerrar() {
         activo = null;
         panel.hidden = true;
@@ -156,7 +188,7 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
         else if (e.code === 'ArrowLeft') ir(-1);
         else if (e.code === 'KeyG') alternarGrande();
         else if (e.code === 'KeyE') {
-            const r = activo.recurso ? activo.recurso(idioma) : null;
+            const r = recursosDe(activo)[0];
             if (r) window.open(r.url, '_blank', 'noopener');
         }
     });
@@ -166,9 +198,9 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
     function agregarPOI(poi) {
         poi.radio = poi.radio || RADIO_ABRIR;
         if (poi.cartel) {
-            carteles.agregar({
+            poi._cartel = carteles.agregar({
                 x: poi.x, y: poi.y + (poi.cartel.dy ?? 1.6), z: poi.z, texto: poi.cartel.texto,
-                ancho: poi.cartel.ancho || 4, color: poi.cartel.color, tamano: poi.cartel.tamano, distancia: poi.cartel.distancia
+                ancho: poi.cartel.ancho || 4, color: poi.cartel.color, tamano: poi.cartel.tamano, distancia: poi.cartel.distancia, cerca: poi.cartel.cerca
             });
         }
         pois.push(poi);
@@ -185,6 +217,7 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
     function actualizar() {
         carteles.actualizar();
         cuadros.actualizar();
+        if (activo && activo._cartel) activo._cartel.sprite.visible = false; // el panel ya muestra el título
         panel.hidden = !activo || !jugador.activo; // en pausa se oculta
         if (!pois.length) return;
         const p = camara.position, pies = jugador.pos;
@@ -203,5 +236,31 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idi
         if (activo) { const n = pagina; paginas = activo.paginas(idioma); pagina = Math.min(n, paginas.length - 1); pintar(); }
     }
 
-    return { pois, agregarPOI, agregarCuadro, actualizar, setIdioma, carteles, cerrar, get idioma() { return idioma; }, get activo() { return activo; } };
+    return { pois, cuadros, agregarPOI, agregarCuadro, actualizar, setIdioma, carteles, cerrar, get idioma() { return idioma; }, get activo() { return activo; } };
+}
+
+// Parte un bloque { titulo, sub, parrafos, items, pie, imagen } en páginas que quepan en el panel
+// (con el puntero bloqueado no se puede desplazar el texto, así que cada página debe verse entera).
+export function paginar(bloque, max = 560) {
+    const unidades = [
+        ...(bloque.parrafos || []).map(t => ({ tipo: 'parrafos', t })),
+        ...(bloque.items || []).map(t => ({ tipo: 'items', t }))
+    ];
+    const base = (bloque.sub || []).reduce((n, x) => n + (x.cab || '').length + (x.texto || '').length, 0);
+    const paginas = [];
+    let actual = null, n = 0;
+    const nueva = primera => {
+        actual = { titulo: bloque.titulo };
+        if (primera) { if (bloque.sub) actual.sub = bloque.sub; if (bloque.imagen) actual.imagen = bloque.imagen; }
+        paginas.push(actual);
+        n = primera ? base : 0;
+    };
+    nueva(true);
+    for (const u of unidades) {
+        if (n + u.t.length > max && n > 0) nueva(false);
+        (actual[u.tipo] = actual[u.tipo] || []).push(u.t);
+        n += u.t.length;
+    }
+    if (bloque.pie) actual.pie = bloque.pie;
+    return paginas;
 }

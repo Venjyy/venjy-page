@@ -108,9 +108,10 @@ export function crearCarteles(scene, camara, idiomaInicial = 'es') {
             const p = camara.position;
             for (const c of lista) {
                 const d = Math.hypot(p.x - c.sprite.position.x, p.y - c.sprite.position.y, p.z - c.sprite.position.z);
-                const vis = d < c.distancia;
+                const cerca = c.op.cerca ?? 1.5; // muy cerca el cartel taparía la pantalla: se desvanece
+                const vis = d < c.distancia && d > cerca;
                 c.sprite.visible = vis;
-                if (vis) c.mat.opacity = Math.max(0, Math.min(1, (c.distancia - d) / DESVANECE));
+                if (vis) c.mat.opacity = Math.max(0, Math.min(1, (c.distancia - d) / DESVANECE, (d - cerca) / 1.5));
             }
         }
     };

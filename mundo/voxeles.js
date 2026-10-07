@@ -7,6 +7,7 @@ import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
+import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
 export const FACTOR_Y = 1.5;    // relieve vertical (el mapa 2D es muy plano a esta escala)
@@ -214,6 +215,18 @@ export function prepararTerreno(datos) {
         }
         if (mejor) { mejor.sobreMi = true; sobreMi = geometriaSobreMi(mejor, BASE_ESTRUCTURA); }
     }
+    // «Experiencia»: el edificio azul más cercano al punto `registro` lleva un puesto por trabajo
+    let registro = null;
+    {
+        const [rx, rz] = datos.P.registro;
+        let mejor = null, dm = Infinity;
+        for (const c of casas) {
+            if (!c.amueblar || c.sup !== B.AZUL) continue;
+            const d = Math.hypot((c.minx + c.maxx) / 2 - (rx * ESCALA + 2), (c.minz + c.maxz) / 2 - (rz * ESCALA + 2));
+            if (d < dm) { dm = d; mejor = c; }
+        }
+        if (mejor) { mejor.registro = true; registro = geometriaExperiencia(mejor, BASE_ESTRUCTURA); }
+    }
     const decor = [
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
@@ -224,9 +237,9 @@ export function prepararTerreno(datos) {
     // de RADIO_LUZ bloques de una zona calculan la luz con la ventana ampliada (ver calcularLuz).
     // Quien coloque emisores fuera del decorado o del faro debe agregar aquí su rectángulo.
     const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
-    zonasLuz.push({ x0: faro.x - 4, z0: faro.z - 4, x1: faro.x + 4, z1: faro.z + 4 });
+    zonasLuz.push({ x0: faro.x - 12, z0: faro.z - 12, x1: faro.x + 12, z1: faro.z + 12 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -361,7 +374,7 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
     }
     // Faro: torre de rayas con linterna en la cima
     const f = terreno.faro;
-    if (Math.abs(f.x - (wx0 + VENT / 2)) < 4 + VENT / 2 && Math.abs(f.z - (wz0 + VENT / 2)) < 4 + VENT / 2) {
+    if (Math.abs(f.x - (wx0 + VENT / 2)) < 12 + VENT / 2 && Math.abs(f.z - (wz0 + VENT / 2)) < 12 + VENT / 2) {
         colocarFaro(vox, wx0, wz0, VENT, f);
         maxY = Math.max(maxY, f.y + 38);
     }
@@ -458,6 +471,7 @@ function amueblarCasa(vox, wx0, wz0, ancho, c, terreno) {
     poner(ix0 + 2, y0 + 1, cz, B.AIRE);
     // La casa de «Sobre mí» lleva sus propios muebles (atriles del CV, mesa con el libro)
     if (c.sobreMi) { levantarSobreMi(poner, terreno.sobreMi, y0); return; }
+    if (c.registro) { levantarExperiencia(poner, terreno.registro, y0); return; }
     // Muebles (se omiten los que no caben)
     const hay = (x, z, w, d) => x >= ix0 + 4 && x + w - 1 <= ix1 && z >= iz0 && z + d - 1 <= iz1
         && !(x <= c.puertaX + 2 && x + w - 1 >= c.puertaX - 1 && z + d - 1 >= cz);
@@ -519,6 +533,7 @@ function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
         poner(d.x + 2, y0, d.z - 27, B.COFRE);
         poner(d.x, y0, d.z - 28, B.ORO);
         poner(d.x, y0 + 1, d.z - 28, B.DIAMANTE);
+        levantarVetas(poner, d, y0); // una veta por grupo de habilidades
     } else if (d.t === 'buzon') {
         for (let y = 0; y < 3; y++) poner(d.x + 1, y0 + y, d.z + 1, B.TRONCO);
         poner(d.x + 1, y0 + 3, d.z + 1, B.ROJO);
@@ -554,6 +569,7 @@ function colocarFaro(vox, wx0, wz0, ancho, f) {
     poner(f.x, f.y + 33, f.z, B.PIEDRA_LUMINOSA);
     anillo(35, 2, B.NEGRO, true);
     poner(f.x, f.y + 36, f.z, B.NEGRO);
+    levantarPantallaFaro(poner, f); // pantalla de ProcedimientoSeguro al pie del faro
 }
 
 // ---------------------------------------------------------

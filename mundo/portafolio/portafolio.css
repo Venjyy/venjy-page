@@ -21,7 +21,7 @@
 .pf-lista { margin: 0 0 6px; padding-left: 18px; }
 .pf-lista li { margin-bottom: 5px; }
 .pf-nota { color: #aaa; font-size: 0.82rem; }
-.pf-imagen { display: block; max-width: 100%; max-height: 30vh; margin: 0 auto 8px; border: 3px solid #000; image-rendering: auto; }
+.pf-imagen { display: block; max-width: 100%; max-height: 24vh; margin: 0 auto 8px; border: 3px solid #000; image-rendering: auto; }
 .pf-pie { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 18px 10px; }
 .pf-boton {
     font: inherit; font-size: 0.85rem; color: #fff; text-decoration: none; text-shadow: 2px 2px 0 #3f3f3f; cursor: pointer;
