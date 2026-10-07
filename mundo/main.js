@@ -132,8 +132,8 @@ async function iniciar() {
     const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
     // Portafolio interactivo: carteles y paneles con el contenido real (index.html + CV)
     const contenido = await cargarContenido();
-    const portafolio = crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma });
-    const { nombres: nombresZona } = registrarZonas({ portafolio, terreno, datos, contenido, mundo });
+    const portafolio = crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma, exigirPunteria: () => !!(online && online.edicion && online.edicion.activa) });
+    const { nombres: nombresZona, destinos: destinosZona } = registrarZonas({ portafolio, terreno, datos, contenido, mundo });
     // L cambia el idioma de los paneles, carteles y textos de la página
     document.addEventListener('keydown', e => {
         if (e.code !== 'KeyL' || e.repeat || !jugador.activo) return;
@@ -144,7 +144,7 @@ async function iniciar() {
     });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     const brujula = crearBrujula(hudEl, idioma);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, getIdioma: () => idioma });
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma });
     const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
     window.__venjy = { portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 

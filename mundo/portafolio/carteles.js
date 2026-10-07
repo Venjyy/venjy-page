@@ -67,9 +67,12 @@ export function crearCarteles(scene, camara, idiomaInicial = 'es') {
 
         cartel.pintar = () => {
             const texto = typeof op.texto === 'function' ? op.texto(idioma) : (op.texto[idioma] || op.texto.es);
-            const fuente = op.tamano || 26;
+            let fuente = op.tamano || 26;
             const ctx = c.getContext('2d');
             ctx.font = `${fuente}px PixelCraft, monospace`;
+            // Una palabra más ancha que el cartel no se puede partir: se achica la letra hasta que quepa
+            const maxPalabra = () => Math.max(...String(texto).split(/\s+/).map(w => ctx.measureText(w).width));
+            while (fuente > 12 && maxPalabra() > px - 28) { fuente -= 1; ctx.font = `${fuente}px PixelCraft, monospace`; }
             const lineas = envolver(ctx, texto, px - 28);
             const alto = Math.round(lineas.length * fuente * 1.25 + 26);
             c.height = alto; // al cambiar el alto se borra el lienzo: hay que volver a configurar el contexto
@@ -108,9 +111,10 @@ export function crearCarteles(scene, camara, idiomaInicial = 'es') {
             const p = camara.position;
             for (const c of lista) {
                 const d = Math.hypot(p.x - c.sprite.position.x, p.y - c.sprite.position.y, p.z - c.sprite.position.z);
-                const vis = d < c.distancia;
+                const cerca = c.op.cerca ?? 1.5; // muy cerca el cartel taparía la pantalla: se desvanece
+                const vis = d < c.distancia && d > cerca;
                 c.sprite.visible = vis;
-                if (vis) c.mat.opacity = Math.max(0, Math.min(1, (c.distancia - d) / DESVANECE));
+                if (vis) c.mat.opacity = Math.max(0, Math.min(1, (c.distancia - d) / DESVANECE, (d - cerca) / 1.5));
             }
         }
     };
