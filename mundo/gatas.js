@@ -225,8 +225,157 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
         return gata;
     });
 
+    // ---------------------------------------------------------
+    // Nombres flotantes: sprite con el nombre sobre la cabeza, visible solo de cerca y al mirarla
+    // ---------------------------------------------------------
+    const DIST_NOMBRE = 12, ANG_NOMBRE = 12 * Math.PI / 180;
+    function dibujarNombre(gata) {
+        const nombre = PELAJES[gata.clave].nombre;
+        const c = gata.nombreLienzo, ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.fillStyle = 'rgba(16, 12, 8, 0.62)';
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, c.width - 4, c.height - 4);
+        ctx.font = '24px PixelCraft';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillText(nombre, c.width / 2 + 2, c.height / 2 + 3);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(nombre, c.width / 2, c.height / 2 + 1);
+        gata.nombreTex.needsUpdate = true;
+    }
+    function crearNombre(gata) {
+        const c = document.createElement('canvas');
+        c.width = 128; c.height = 40;
+        const tex = new THREE.CanvasTexture(c);
+        tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+        tex.generateMipmaps = false; tex.colorSpace = THREE.SRGBColorSpace;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: true, depthWrite: false, fog: false }));
+        sp.scale.set(1.2, 0.375, 1);
+        sp.visible = false;
+        sp.renderOrder = 10;
+        scene.add(sp);
+        gata.nombreLienzo = c; gata.nombreTex = tex; gata.nombreSprite = sp; gata.nombreAlfa = 0;
+        const listo = () => dibujarNombre(gata);
+        listo();
+        try { document.fonts.load('24px PixelCraft').then(listo, () => {}); } catch (e) { /* sin fuentes */ }
+    }
+    for (const g of gatas) crearNombre(g);
+
+    function actualizarNombre(gata, dt, dJ) {
+        const sp = gata.nombreSprite;
+        let objetivo = 0;
+        const cam = jugador.camara;
+        const ox = cam.position.x, oy = cam.position.y, oz = cam.position.z;
+        const px = gata.x, py = gata.y + gata.e.patas + gata.e.alto * 0.5, pz = gata.z;
+        const vx = px - ox, vy = py - oy, vz = pz - oz, d = Math.hypot(vx, vy, vz);
+        if (gata.g.visible && d < DIST_NOMBRE && d > 0.01) {
+            cam.getWorldDirection(dir);
+            const cos = (vx * dir.x + vy * dir.y + vz * dir.z) / d;
+            if (cos > Math.cos(ANG_NOMBRE) && lineaLibre(ox, oy, oz, px, py, pz, d)) objetivo = 1;
+        }
+        gata.nombreAlfa += (objetivo - gata.nombreAlfa) * Math.min(1, dt * 6);
+        if (Math.abs(gata.nombreAlfa - objetivo) < 0.01) gata.nombreAlfa = objetivo;
+        sp.visible = gata.nombreAlfa > 0.01;
+        if (!sp.visible) return;
+        sp.material.opacity = gata.nombreAlfa;
+        const e = gata.e, alto = lerp(e.patas + e.alto + e.cabeza * 0.9, 0.03 + e.alto + e.cabeza * 0.4, gata.be);
+        sp.position.set(gata.x, gata.y + alto + 0.4, gata.z);
+        const f = Math.max(0.8, Math.min(1.5, d / 6)); // legible de cerca y de lejos
+        sp.scale.set(1.2 * f, 0.375 * f, 1);
+    }
+    const dir = new THREE.Vector3();
+    // Rayo simple contra los bloques para que el nombre no se vea a traves de paredes
+    function lineaLibre(ox, oy, oz, px, py, pz, d) {
+        const n = Math.ceil(d * 2);
+        for (let i = 1; i < n; i++) {
+            const k = i / n;
+            const b = mundo.bloque(ox + (px - ox) * k, oy + (py - oy) * k, oz + (pz - oz) * k);
+            if (b > 0 && TIPO[b] === 1) return false;
+        }
+        return true;
+    }
+
+    // ---------------------------------------------------------
+    // Cajas de la gatera: cajones abiertos de 4x4 bloques con hueco interior de 2x2
+    // (el borde es de altura HT; el piso interior queda un bloque mas abajo)
+    // ---------------------------------------------------------
+    const cajas = [[5, -4], [6, -4], [-7, -3], [-6, -3]].map(([dx, dz]) => {
+        const x0 = (gx + dx) * ESCALA, z0 = (gz + dz) * ESCALA;
+        return { x0, z0, cx: x0 + ESCALA / 2, cz: z0 + ESCALA / 2, ocupa: null, yPiso: 0, yBorde: 0 };
+    });
+    function alturaCajas() { // el piso interior es el tope del terreno (el bloque superior se vacia)
+        for (const c of cajas) {
+            const o = Math.floor(c.cz) * BW + Math.floor(c.cx);
+            c.yPiso = terreno.HT[o];
+            c.yBorde = terreno.HT[o] + 1;
+        }
+    }
+    alturaCajas();
+
+    // Punto de acercamiento fuera de la caja, por el lado norte o sur (las cajas contiguas se tocan en x)
+    function accesoCaja(c, gata) {
+        const norte = { x: c.cx, z: c.z0 - 0.9, lado: -1 }, sur = { x: c.cx, z: c.z0 + ESCALA + 0.9, lado: 1 };
+        const orden = Math.abs(gata.z - norte.z) < Math.abs(gata.z - sur.z) ? [norte, sur] : [sur, norte];
+        for (const p of orden) { if (sueloFuera(p.x, p.z)) return p; }
+        return null;
+    }
+
+    // Inicia la subida: dos saltos en arco (al borde y luego al interior)
+    function empezarSubida(gata, c, lado) {
+        const zBorde = lado < 0 ? c.z0 + 0.5 : c.z0 + ESCALA - 0.5;
+        gata.cajaEst = {
+            c, lado, fase: 'saltar', resto: rnd(20, 60), k: 0, t: 0,
+            segs: [
+                { x: c.cx, z: zBorde, y: c.yBorde, h: 0.7, dur: 0.55 },
+                { x: c.cx + rnd(-0.2, 0.2), z: c.cz + rnd(-0.2, 0.2), y: c.yPiso, h: 0.35, dur: 0.5 }
+            ]
+        };
+        c.ocupa = gata;
+        gata.ruta = [];
+        gata.dormirYaw = Math.PI / 4 + (Math.random() < 0.5 ? 0 : Math.PI / 2) + (Math.random() < 0.5 ? 0 : Math.PI);
+    }
+    function empezarBajada(gata) {
+        const e = gata.cajaEst, c = e.c;
+        const zBorde = e.lado < 0 ? c.z0 + 0.5 : c.z0 + ESCALA - 0.5;
+        const salida = accesoCaja(c, { z: e.lado < 0 ? c.z0 - 2 : c.z0 + ESCALA + 2 }) || { x: c.cx, z: c.z0 + (e.lado < 0 ? -0.9 : ESCALA + 0.9) };
+        e.fase = 'salir'; e.k = 0; e.t = 0;
+        e.segs = [
+            { x: c.cx, z: zBorde, y: c.yBorde, h: 0.5, dur: 0.5 },
+            { x: salida.x, z: salida.z, y: sueloFuera(salida.x, salida.z) || c.yPiso - 1, h: 0.4, dur: 0.5 }
+        ];
+    }
+    // Avanza el salto en arco; devuelve true mientras sigue saltando
+    function saltar(gata, dt) {
+        const e = gata.cajaEst, s = e.segs[e.k];
+        if (e.t === 0) { s.x0 = gata.x; s.z0 = gata.z; s.y0 = gata.y; }
+        e.t += dt;
+        const u = Math.min(1, e.t / s.dur), suave = u * u * (3 - 2 * u);
+        gata.x = lerp(s.x0, s.x, suave); gata.z = lerp(s.z0, s.z, suave);
+        gata.y = lerp(s.y0, s.y, u) + 4 * s.h * u * (1 - u);
+        const dx = s.x - s.x0, dz = s.z - s.z0;
+        if (Math.hypot(dx, dz) > 0.05) {
+            let dif = Math.atan2(dx, dz) - gata.yaw;
+            dif = Math.atan2(Math.sin(dif), Math.cos(dif));
+            gata.yaw += dif * Math.min(1, dt * 12);
+        }
+        if (u >= 1) { e.k++; e.t = 0; }
+        return e.k < e.segs.length;
+    }
+
     function elegirDestino(gata) {
         const adentro = estaDentro(gata.x, gata.z);
+        // De vez en cuando va a dormir a una caja libre cercana
+        if (!adentro && Math.random() < 0.3) {
+            const libres = cajas.filter(c => !c.ocupa && Math.hypot(c.cx - gata.x, c.cz - gata.z) < 60);
+            if (libres.length) {
+                const c = libres[Math.floor(Math.random() * libres.length)];
+                const p = accesoCaja(c, gata);
+                if (p) { gata.ruta = [{ x: p.x, z: p.z, caja: c, lado: p.lado }]; return; }
+            }
+        }
         const cerca = Math.hypot(gata.x - fuera.x, gata.z - fuera.z) < 34;
         const quiereCasa = (adentro && Math.random() < 0.55) || (!adentro && cerca && Math.random() < 0.35);
         const ruta = [];
@@ -381,7 +530,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
     function actualizarGata(gata, dt, t) {
         const dJ = Math.hypot(gata.x - jugador.pos.x, gata.z - jugador.pos.z);
         gata.g.visible = dJ < RADIO_VISIBLE;
-        if (!gata.g.visible) return;
+        if (!gata.g.visible) { gata.nombreSprite.visible = false; gata.nombreAlfa = 0; return; }
 
         const adentro = estaDentro(gata.x, gata.z);
         if (!gata.cargada) {
@@ -392,7 +541,25 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
 
         let moviendo = false;
         const pesoPose = gata.bs + gata.be;
-        if (gata.espera > 0) {
+        const ce = gata.cajaEst;
+        if (ce && ce.fase === 'dormir') {
+            // Durmiendo en la caja: echada y quieta; al terminar se levanta y sale
+            gata.pose = 'echada';
+            gata.yaw += (gata.dormirYaw - gata.yaw) * Math.min(1, dt * 4);
+            ce.resto -= dt;
+            if (ce.resto <= 0) { gata.pose = 'pie'; if (pesoPose < 0.12) empezarBajada(gata); }
+        } else if (ce) {
+            // Saltando hacia dentro o hacia fuera de la caja
+            gata.pose = 'pie'; gata.poseElegida = false;
+            if (pesoPose > 0.12) { /* primero se levanta */ }
+            else {
+                moviendo = true;
+                if (!saltar(gata, dt)) {
+                    if (ce.fase === 'saltar') { ce.fase = 'dormir'; gata.pose = 'echada'; }
+                    else { ce.c.ocupa = null; gata.cajaEst = null; gata.espera = rnd(2, 6); gata.ruta = []; }
+                }
+            }
+        } else if (gata.espera > 0) {
             gata.espera -= dt;
             // En espera: elegir una pose al azar una vez por pausa
             if (!gata.poseElegida) {
@@ -412,7 +579,8 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
             const dx = w.x - gata.x, dz = w.z - gata.z, d = Math.hypot(dx, dz);
             if (d < 0.35) {
                 gata.ruta.shift();
-                if (!gata.ruta.length) gata.espera = rnd(2, 7);
+                if (w.caja && !w.caja.ocupa) empezarSubida(gata, w.caja, w.lado);
+                else if (!gata.ruta.length) gata.espera = rnd(2, 7);
             } else {
                 const paso = Math.min(d, gata.velocidad * dt);
                 const nx = gata.x + dx / d * paso, nz = gata.z + dz / d * paso;
@@ -460,6 +628,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
 
         gata.g.position.set(gata.x, gata.y + (moviendo ? Math.abs(Math.sin(gata.fase)) * 0.04 : 0), gata.z);
         gata.g.rotation.y = gata.yaw;
+        actualizarNombre(gata, dt, dJ);
     }
 
     let tiempo = 0;

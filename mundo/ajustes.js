@@ -10,8 +10,8 @@ export const NOMBRES_ZONA = {
 };
 
 const TXT = {
-    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonido de las gatas', ir: 'Ir a', chunks: 'chunks' },
-    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'Cat sounds', ir: 'Go to', chunks: 'chunks' }
+    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonido de las gatas', brujula: 'Mostrar brújula', mapa: 'Mapa', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Ir a', chunks: 'chunks' },
+    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'Cat sounds', brujula: 'Show compass', mapa: 'Map', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Go to', chunks: 'chunks' }
 };
 
 const CLAVE = 'venjy-mundo-ajustes';
@@ -24,11 +24,11 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, pedirPuntero }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
     const guardado = leer();
-    const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, auto: true, fps: true, ...guardado };
+    const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, auto: true, fps: true, brujula: true, ...guardado };
 
     const sec = document.createElement('section');
     sec.className = 'ajustes';
@@ -115,6 +115,33 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
     });
     marca(t.fps, cfg.fps, aplicarFps);
     if (gatas) marca(t.sonido, !gatas.silenciado, v => gatas.silenciar(!v));
+    const aplicarBrujula = v => { cfg.brujula = v; if (brujula) brujula.mostrar(v); };
+    marca(t.brujula, cfg.brujula, aplicarBrujula);
+
+    // Orientación del mapa: recarga la página con ?mapa=h|v conservando el resto de parámetros
+    const mapaFila = document.createElement('div');
+    mapaFila.className = 'fila selector';
+    const mapaNombre = document.createElement('span');
+    mapaNombre.textContent = t.mapa;
+    const mapaOpciones = document.createElement('div');
+    mapaOpciones.className = 'opciones';
+    for (const [clave, texto] of [['h', t.horizontal], ['v', t.vertical]]) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'boton chico' + (clave === mapa ? ' activo' : '');
+        b.textContent = texto;
+        b.setAttribute('aria-pressed', clave === mapa ? 'true' : 'false');
+        b.addEventListener('click', () => {
+            if (clave === mapa) return;
+            const url = new URL(location.href);
+            url.searchParams.set('mapa', clave);
+            url.searchParams.set('lang', idioma);
+            location.href = url.toString();
+        });
+        mapaOpciones.appendChild(b);
+    }
+    mapaFila.append(mapaNombre, mapaOpciones);
+    sec.appendChild(mapaFila);
 
     // Teletransporte
     const ir= document.createElement('h2');
@@ -157,6 +184,7 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
     jugador.sensibilidad = 0.0022 * cfg.sens;
     cielo.pausado = !cfg.ciclo;
     aplicarFps(cfg.fps);
+    aplicarBrujula(cfg.brujula);
 
     return {
         aplicarDistanciaAuto,

@@ -12,6 +12,7 @@ import { iniciarAjustes } from './ajustes.js';
 import { iniciarTactil } from './tactil.js';
 import { crearMinimapa } from './minimapa.js';
 import { crearGatas } from './gatas.js';
+import { crearBrujula } from './brujula.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -87,6 +88,9 @@ const pausaEl = document.getElementById('pausa-titulo');
 cargaEl.textContent = TXT[idioma].cargando;
 
 const DISTANCIA = 10;
+// Orientación del mapa: ?mapa=v (vertical) o ?mapa=h (horizontal, por defecto)
+let orientacion = 'h';
+try { orientacion = new URLSearchParams(location.search).get('mapa') === 'v' ? 'v' : 'h'; } catch (e) { /* sin parámetros */ }
 
 function pedirPuntero() {
     try {
@@ -97,7 +101,7 @@ function pedirPuntero() {
 
 async function iniciar() {
     await new Promise(r => setTimeout(r, 30)); // deja pintar el texto de carga
-    const datos = generarDatos('h');
+    const datos = generarDatos(orientacion);
     const terreno = prepararTerreno(datos);
 
     const bordeFog = DISTANCIA * CHUNK;
@@ -120,8 +124,9 @@ async function iniciar() {
 
     const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, pedirPuntero: () => entrar() });
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas };
+    const brujula = crearBrujula(hudEl, idioma);
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar() });
+    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -188,6 +193,7 @@ async function iniciar() {
         relojAgua += dt;
         if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
+        brujula.actualizar(jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.construir(5);
         renderer.render(scene, camara);

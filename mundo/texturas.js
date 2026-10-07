@@ -179,6 +179,27 @@ const PINTORES = {
     tronco_pino_top: (x, y, r) => {
         const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
         return d > 6.5 ? ajustar([60, 42, 24], 0.9 + r() * 0.2) : ajustar([120, 90, 52], (Math.floor(d) % 2 ? 0.88 : 1) * (0.94 + r() * 0.12));
+    },
+    // Antorcha: palo marrón de 2 px y llama arriba, fondo transparente (se malla en cruz)
+    antorcha: (x, y, r) => {
+        if (x < 7 || x > 8) {
+            // destellos de la llama a los lados
+            if ((x === 6 || x === 9) && y === 6 && r() < 0.6) return [255, 170, 40];
+            return [0, 0, 0, 0];
+        }
+        if (y === 4) return x === 7 ? [255, 236, 150] : [0, 0, 0, 0];
+        if (y === 5) return [255, 214, 80];
+        if (y === 6) return x === 7 ? [255, 250, 210] : [255, 190, 50];
+        if (y === 7) return [250, 140, 30];
+        if (y >= 8) return ajustar(x === 7 ? [128, 94, 54] : [96, 68, 38], 0.9 + r() * 0.2);
+        return [0, 0, 0, 0];
+    },
+    // Piedra luminosa: base dorada con puntos claros y grietas oscuras
+    piedra_luminosa: (x, y, r) => {
+        const v = r();
+        if (v < 0.14) return ajustar([255, 238, 168], 0.95 + r() * 0.05);
+        if (v < 0.26) return ajustar([150, 96, 40], 0.9 + r() * 0.2);
+        return ajustar(v < 0.6 ? [222, 168, 78] : [240, 196, 102], 0.92 + r() * 0.16);
     }
 };
 
@@ -237,7 +258,8 @@ export const B = {
     TABLONES: 9, CUARZO: 10, ROJO: 11, AZUL: 12, NARANJO: 13, NEGRO: 14, ORO: 15, DIAMANTE: 16,
     ESMERALDA: 17, PODZOL: 18, ARCILLA: 19, GRIS: 20, CAMINO: 21, CULTIVO: 22,
     TRIGO: 23, VIDRIO: 24, LABRADA: 25, HOJAS_ABEDUL: 26, TRONCO_ABEDUL: 27, HOJAS_PINO: 28, TRONCO_PINO: 29,
-    PASTO_ALTO: 30, FLOR_ROJA: 31, FLOR_AMARILLA: 32, FLOR_AZUL: 33
+    PASTO_ALTO: 30, FLOR_ROJA: 31, FLOR_AMARILLA: 32, FLOR_AZUL: 33,
+    ANTORCHA: 34, PIEDRA_LUMINOSA: 35 // ids fijos: otros módulos los usan
 };
 
 export const BLOQUES = [];
@@ -275,6 +297,14 @@ BLOQUES[B.TRONCO_ABEDUL] = def('tronco de abedul', 's', 'tronco_abedul_top', 'tr
 BLOQUES[B.HOJAS_PINO] = def('hojas de pino', 'h', 'hojas_pino');
 BLOQUES[B.TRONCO_PINO] = def('tronco de pino', 's', 'tronco_pino_top', 'tronco_pino_lado', 'tronco_pino_top');
 
+BLOQUES[B.ANTORCHA] = def('antorcha', 'p', 'antorcha');
+BLOQUES[B.PIEDRA_LUMINOSA] = def('piedra luminosa', 's', 'piedra_luminosa');
+
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz
 export const TIPO = new Uint8Array(BLOQUES.length);
 BLOQUES.forEach((b, i) => { if (b) TIPO[i] = b.tipo === 's' ? 1 : b.tipo === 'h' ? 2 : b.tipo === 'p' ? 4 : 3; });
+
+// Luz que emite cada id (0-15), como en Minecraft. La lee el cálculo de luz de voxeles.js
+export const LUZ_EMISION = new Uint8Array(BLOQUES.length);
+LUZ_EMISION[B.ANTORCHA] = 14;
+LUZ_EMISION[B.PIEDRA_LUMINOSA] = 15;

@@ -6,7 +6,7 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 ## Ejecutar
 
-- Servidor local: `python -m http.server 5510` (configurado en `.claude/launch.json` como `venjy`).
+- Servidor local: `python -m http.server 5510` (configurado en `.claude/launch.json` como `venjy`). Ya no se puede abrir `index.html` con doble clic: `script.js` y el mundo 3D usan módulos ES y necesitan servidor o hosting.
 
 ## Mapa del proyecto
 

@@ -183,6 +183,9 @@ html, body {
 .fila output { text-align: right; color: var(--gris); }
 .fila input[type='range'] { width: 100%; accent-color: #7d8cc4; }
 .fila input[type='checkbox'] { width: 18px; height: 18px; accent-color: #7d8cc4; }
+.fila.selector { grid-template-columns: 1fr 2.2fr; }
+.fila.selector .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.boton.chico.activo { background: var(--boton-hover); color: var(--amarillo); cursor: default; }
 .ir-a { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .boton.chico { margin: 0; padding: 8px 4px; font-size: 0.85rem; }
 .datos .zona { color: var(--amarillo); }
