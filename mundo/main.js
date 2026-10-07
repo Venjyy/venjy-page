@@ -13,6 +13,7 @@ import { iniciarTactil } from './tactil.js';
 import { crearMinimapa } from './minimapa.js';
 import { crearGatas } from './gatas.js';
 import { crearBrujula } from './brujula.js';
+import { iniciarOnline } from './online/online.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -129,7 +130,8 @@ async function iniciar() {
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     const brujula = crearBrujula(hudEl, idioma);
     const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar() });
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
+    const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
+    window.__venjy = { online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -192,7 +194,8 @@ async function iniciar() {
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
-        gatas.actualizar(dt);
+        if (!(online && online.enArena)) gatas.actualizar(dt);
+        if (online) online.actualizar(dt);
         relojAgua += dt;
         if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
@@ -209,7 +212,7 @@ async function iniciar() {
             cuadros = 0; acumulado = 0;
             autoAjustar(fps, paso);
             zonaEl.textContent = ajustes.zonaEn(jugador.pos.x, jugador.pos.z);
-            zonaEl.hidden = !zonaEl.textContent;
+            zonaEl.hidden = !zonaEl.textContent || !!(online && online.enArena);
             coordsEl.textContent = `X ${jugador.pos.x.toFixed(1)}  Y ${jugador.pos.y.toFixed(1)}  Z ${jugador.pos.z.toFixed(1)}`;
         }
     }
