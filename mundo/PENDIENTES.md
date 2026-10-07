@@ -34,7 +34,7 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, ma
 | `mundo/worker-chunks.js` | Worker que llena, ilumina y malla chunks fuera del hilo principal (cada uno calcula su propio terreno con la misma semilla). |
 | `mundo/main.js` | Escena, render, niebla, bucle, idioma, HUD. |
 | `mundo/mundo.css` | Estilo de menús tipo Minecraft (fuente PixelCraft). |
-| `vendor/` | Three.js 0.186.1 sin minificar + licencia. |
+| `vendor/` | Three.js 0.186.1 minificado (~750 KB) + licencia. |
 
 Constantes clave (`voxeles.js`): `ESCALA = 4` (1 celda = 4×4 bloques), `FACTOR_Y = 1.5`, `CHUNK = 16`, `ALTO = 80`, `NIVEL_AGUA = 14`. El mundo mide 1536×1024 bloques. Norte = −Z, este = +X (igual que el mapa 2D).
 
@@ -85,7 +85,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ### Técnico / deuda
 - [x] Mallado en Web Workers (`mundo/worker-chunks.js`, 1-3 workers): al volar a máxima velocidad el peor cuadro fue de ~21 ms. Sin workers (o si fallan) se malla en el hilo principal.
-- [ ] Minificar Three.js (hoy ~2 MB sin minificar). Requiere descargar una herramienta de build (esbuild) con npm: pendiente de que el usuario lo autorice.
+- [x] Three.js minificado con esbuild (`npx esbuild three.module.js three.core.js --minify --format=esm --legal-comments=none`, sin bundle): de ~2 MB a ~750 KB. Los archivos conservan sus nombres en `vendor/`; la licencia MIT está en `vendor/three.LICENSE`. Para actualizar Three.js, repetir el proceso con el paquete npm `three`.
 - [x] `script.js` ahora es un módulo y consume `mundo/mundo-datos.js` + `mundo/pintado.js`: ya no hay generador duplicado. Consecuencia: `index.html` no abre con doble clic (`file://`), necesita servidor o hosting.
 - [x] Mapa vertical con `?mapa=v` (y selector en los ajustes). El yaw inicial mira hacia el título en ambos mapas.
 - [x] Chunks sin cargar: volando se atraviesan (sin pared fantasma) y caminando la caída se congela hasta que carguen.
@@ -109,6 +109,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 
+- 2026-10-06 · **Three.js minificado** (`vendor/three.module.js`, `vendor/three.core.js`): ~2 MB a ~750 KB, mismos nombres de archivo, verificado en mundo horizontal y vertical.
 - 2026-10-06 · **Casas, mina, terreno y worker (rama `feature/mundo-3d-fase-4`)**: techo a dos aguas con chimenea, cama, librero, mesa, cofre y antorchas (`amueblarCasa`, `casas` en el terreno), vías y cofre en la mina, ruido de altura, bloques 36-40 (ladrillo, librero, cofre, cama, riel), `worker-chunks.js` con `procesar()`/`iniciarWorkers()` en `MundoVoxel`, yaw inicial hacia el título · `mundo/voxeles.js`, `mundo/texturas.js`, `mundo/worker-chunks.js` (nuevo), `mundo/main.js`.
 - 2026-10-06 · **Luz por bloque** (`voxeles.js`, `texturas.js`): luz de cielo y de bloque con antorchas y piedra luminosa; la linterna del faro ahora es piedra luminosa tras vidrio.
 - 2026-10-06 · **Tanda de pendientes (rama `feature/mundo-3d-fase-4`)**: gatas durmiendo en cajas y nombres flotantes (`gatas.js`); brújula, vuelo sin paredes fantasma, mapa vertical `?mapa=v`, `launch.json` con `PORT` (`brujula.js`, `jugador.js`, `ajustes.js`, `main.js`, `mundo.css`, `.claude/launch.json`); generador deduplicado: `script.js` es módulo y usa `mundo-datos.js` + `pintado.js` (`script.js`, `index.html`, `mundo/tests/paridad.mjs` reescrito).
