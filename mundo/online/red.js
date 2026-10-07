@@ -133,9 +133,16 @@ export class Sala {
     enviarPosicion(j, extra = {}) {
         const t = performance.now();
         if (t - this.ultimoEnvio < 1000 / HZ_POSICION) return;
-        this.ultimoEnvio = t;
         const r = n => Math.round(n * 100) / 100;
-        this.enviar('pos', { x: r(j.pos.x), y: r(j.pos.y), z: r(j.pos.z), yaw: r(j.yaw), pit: r(j.pitch), v: j.vuela ? 1 : 0, ...extra });
+        const m = { x: r(j.pos.x), y: r(j.pos.y), z: r(j.pos.z), yaw: r(j.yaw), pit: r(j.pitch), v: j.vuela ? 1 : 0, ...extra };
+        // Quieto: solo un latido por segundo, para gastar pocos mensajes
+        const u = this.ultimaPos;
+        const igual = u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02
+            && Math.abs(u.yaw - m.yaw) < 0.02 && Math.abs(u.pit - m.pit) < 0.02 && u.v === m.v && u.mu === m.mu && u.h === m.h;
+        if (igual && t - this.ultimoEnvio < 1000) return;
+        this.ultimoEnvio = t;
+        this.ultimaPos = m;
+        this.enviar('pos', m);
     }
 
     // ---- Bloques ----

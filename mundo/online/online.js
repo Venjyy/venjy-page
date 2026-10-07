@@ -6,6 +6,7 @@ import { ONLINE_ACTIVO } from './config.js';
 import { Sala, normalizarCodigo, normalizarNombre } from './red.js';
 import { Avatares, aspectoDe } from './avatares.js';
 import { crearEdicion } from './edicion.js';
+import { iniciarPartida } from './partida.js';
 
 const CLAVE = 'venjy-mundo-online';
 
@@ -47,7 +48,7 @@ export function iniciarOnline(ctx) {
         mundo, jugador, camara, scene, hud: hudEl, atlasLienzo, idioma,
         alCambiar: (x, y, z, id) => sala.cambiarBloque(x, y, z, id, edicionMundo())
     });
-    const api = { sala, avatares, edicion, ctx, modo: null, mundoActual: 'libre', ganchos: [] };
+    const api = { sala, avatares, edicion, ctx, mundoActual: 'libre', ganchos: [], libreDiferido: [] };
     const edicionMundo = () => api.mundoActual;
 
     // ---- Lobby (dentro del panel de pausa) ----
@@ -97,6 +98,7 @@ export function iniciarOnline(ctx) {
         const yo = document.createElement('div');
         yo.textContent = sala.nombre;
         yo.className = 'yo';
+        yo.dataset.id = sala.id;
         listaEl.appendChild(yo);
         for (const [id, j] of sala.jugadores) {
             const f = document.createElement('div');
@@ -123,12 +125,12 @@ export function iniciarOnline(ctx) {
     sala.en('hola', () => sala.ultimoEnvio = 0);
     sala.en('pos', m => {
         const a = avatares.lista.get(m.de);
-        if (a) a.recibir(m);
+        if (a) { a.recibir(m); a.mu = m.mu || 'libre'; a.oculto = a.mu !== api.mundoActual; }
     });
     sala.en('bloque', m => {
-        if ((m.mu || 'libre') !== api.mundoActual) return;
-        if (api.mundoActual === 'libre') mundo.editar(m.x, m.y, m.z, m.b, false);
-        else if (api.editarArena) api.editarArena(m.x, m.y, m.z, m.b);
+        const mu = m.mu || 'libre';
+        if (mu === api.mundoActual) mundo.editar(m.x, m.y, m.z, m.b, false);
+        else if (mu === 'libre') api.libreDiferido.push([m.x, m.y, m.z, m.b]);
     });
     sala.en('estado', () => { mostrar(t.perdida, true); });
 
@@ -168,6 +170,8 @@ export function iniciarOnline(ctx) {
         location.reload(); // vuelve al mundo original sin ediciones locales
     });
     window.addEventListener('pagehide', () => { if (sala.activa) sala.guardarPendientes(); });
+
+    iniciarPartida(api);
 
     // ---- Bucle ----
     api.actualizar = dt => {

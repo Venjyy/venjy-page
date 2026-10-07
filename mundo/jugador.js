@@ -31,6 +31,10 @@ export class Jugador {
         this.ultimoAdelante = 0;
         this.activo = false;
         this.sensibilidad = 0.0022;
+        // Ganchos del modo online (arena): sin vuelo, sin piso en y<0, jugador congelado
+        this.sinVuelo = false;
+        this.congelado = false;
+        this.vacio = null; // { y, alCaer } cae al vacío bajo esa altura
 
         document.addEventListener('pointerlockchange', () => {
             this.activo = document.pointerLockElement === this.el;
@@ -72,6 +76,7 @@ export class Jugador {
     }
 
     alternarVuelo() {
+        if (this.sinVuelo) return;
         this.vuela = !this.vuela;
         this.vel.y = 0;
         this.alCambiarVuelo && this.alCambiarVuelo(this.vuela);
@@ -85,7 +90,7 @@ export class Jugador {
     solido(x, y, z) {
         const id = this.mundo.bloque(x, y, z);
         if (id === -1) {
-            if (y < 0) return true; // nunca se sale por debajo del mundo
+            if (y < 0) return !this.vacio; // nunca se sale por debajo del mundo (salvo en la arena, que tiene vacío)
             if (y >= ALTO) return false;
             // Chunk sin cargar: volando se atraviesa; caminando es una pared segura
             // para no caer a través de un suelo que aún no existe.
@@ -136,6 +141,12 @@ export class Jugador {
 
     actualizar(dt) {
         dt = Math.min(dt, 0.05);
+        if (this.congelado) {
+            this.vel.set(0, 0, 0);
+            this.camara.position.set(this.pos.x, this.pos.y + OJOS, this.pos.z);
+            this.camara.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+            return;
+        }
         const t = this.teclas;
         const adelante = (t.has('KeyW') ? 1 : 0) - (t.has('KeyS') ? 1 : 0);
         const lado = (t.has('KeyD') ? 1 : 0) - (t.has('KeyA') ? 1 : 0);
@@ -184,7 +195,9 @@ export class Jugador {
         const m = 2;
         this.pos.x = Math.max(m, Math.min(this.limites.x - m, this.pos.x));
         this.pos.z = Math.max(m, Math.min(this.limites.z - m, this.pos.z));
-        if (this.pos.y < 0) { this.pos.y = this.vuela ? 0 : NIVEL_AGUA + 40; this.vel.y = Math.max(this.vel.y, 0); }
+        if (this.vacio) {
+            if (this.pos.y < this.vacio.y) this.vacio.alCaer();
+        } else if (this.pos.y < 0) { this.pos.y = this.vuela ? 0 : NIVEL_AGUA + 40; this.vel.y = Math.max(this.vel.y, 0); }
         if (this.pos.y > TECHO) this.pos.y = TECHO;
 
         this.camara.position.set(this.pos.x, this.pos.y + OJOS, this.pos.z);

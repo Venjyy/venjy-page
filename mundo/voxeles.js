@@ -270,6 +270,7 @@ export function llenarChunk(terreno, cx, cz) {
 // El resultado no depende del tamaño de la ventana: sirve tanto para el chunk como para la
 // ventana ampliada del cálculo de luz. `destino` permite reutilizar un arreglo (se limpia).
 function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
+    if (terreno.arena) return llenarArena(terreno, wx0, wz0, ancho, destino);
     const { BW, BD, HT, SUP, SUB, ES, HUECO, datos } = terreno;
     const VENT = ancho; // dentro de esta función la "ventana" es la pedida
     const vox = destino ? destino.fill(0) : new Uint8Array(VENT * VENT * ALTO);
@@ -352,6 +353,30 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
         maxY = Math.max(maxY, f.y + 38);
     }
     maxY = Math.max(maxY, aplicarEdiciones(terreno, vox, wx0, wz0, VENT));
+    return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
+}
+
+// Terreno de la arena skywars (online/arena.js): copia la ventana desde un arreglo denso
+function llenarArena(terreno, wx0, wz0, ancho, destino) {
+    const { vox: fuente, W, D } = terreno.arena;
+    const vox = destino ? destino.fill(0) : new Uint8Array(ancho * ancho * ALTO);
+    if (terreno.arena.maxY === undefined) {
+        let m = 0;
+        for (let i = 0; i < fuente.length; i++) if (fuente[i]) { const y = Math.floor(i / (W * D)); if (y > m) m = y; }
+        terreno.arena.maxY = m;
+    }
+    const x0 = Math.max(0, wx0), x1 = Math.min(W, wx0 + ancho);
+    if (x1 > x0) {
+        for (let y = 0; y <= terreno.arena.maxY; y++) {
+            for (let lz = 0; lz < ancho; lz++) {
+                const z = wz0 + lz;
+                if (z < 0 || z >= D) continue;
+                const o = (y * D + z) * W;
+                vox.set(fuente.subarray(o + x0, o + x1), (y * ancho + lz) * ancho + (x0 - wx0));
+            }
+        }
+    }
+    const maxY = Math.max(terreno.arena.maxY, aplicarEdiciones(terreno, vox, wx0, wz0, ancho));
     return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
 }
 
@@ -899,6 +924,8 @@ export class MundoVoxel {
         this.todosWorkers = [];  // incluye los que aún arrancan (para no perder ediciones)
         this.workers = [];       // workers de chunks listos para recibir trabajo
         this.enVuelo = new Map(); // clave de chunk pedido a un worker -> versión de ediciones al pedirlo
+        this.terrenoPrincipal = terreno; // el mundo normal (la arena lo reemplaza temporalmente)
+        this.gen = 0;             // cambia al cambiar de terreno: descarta resultados atrasados de los workers
         this.version = 0;         // sube con cada edición
         this.versionChunk = new Map(); // clave de chunk -> última versión que lo afectó
         this.remallado = new Set();    // chunks que deben volver a mallarse por una edición
@@ -916,7 +943,7 @@ export class MundoVoxel {
                 w.onmessage = e => {
                     const m = e.data;
                     if (m.t === 'listo') { est.listo = true; this.workers.push(est); }
-                    else if (m.t === 'chunk') { est.pedidos--; this.resultados.push(m); }
+                    else if (m.t === 'chunk') { est.pedidos--; if (m.gen === this.gen) this.resultados.push(m); }
                     else if (m.t === 'error') { console.error('worker de chunks:', m.mensaje); est.pedidos = Math.max(0, est.pedidos - 1); }
                 };
                 w.onerror = err => { console.error('worker de chunks:', err.message); est.listo = false; };
@@ -946,7 +973,7 @@ export class MundoVoxel {
                 if (this.chunks.has(k) || this.enVuelo.has(k)) continue;
                 this.enVuelo.set(k, this.version);
                 est.pedidos++;
-                est.w.postMessage({ t: 'chunk', x, z, k });
+                est.w.postMessage({ t: 'chunk', x, z, k, g: this.gen });
             }
         }
         return this.cola.length + this.enVuelo.size;
@@ -992,7 +1019,7 @@ export class MundoVoxel {
             }
         }
         for (const k of tocados) if (this.chunks.has(k)) this.remallado.add(k);
-        for (const est of this.todosWorkers) est.w.postMessage({ t: 'ediciones', lista });
+        if (this.terreno === this.terrenoPrincipal) for (const est of this.todosWorkers) est.w.postMessage({ t: 'ediciones', lista });
     }
 
     remallarYa(k) {
@@ -1012,6 +1039,19 @@ export class MundoVoxel {
             if (maximo-- <= 0) break;
             this.remallarYa(k);
         }
+    }
+
+    // Cambia el mundo entero (p. ej. a la arena y de vuelta). Los workers solo conocen el mundo normal.
+    cambiarTerreno(terreno) {
+        for (const ch of this.chunks.values()) this.liberar(ch);
+        this.chunks.clear();
+        this.cola = []; this.resultados = []; this.enVuelo.clear(); this.remallado.clear(); this.versionChunk.clear();
+        this.ultimo = null;
+        this.gen++;
+        this.terreno = terreno;
+        this.cx = terreno.BW / CHUNK;
+        this.cz = terreno.BD / CHUNK;
+        this.workers = terreno === this.terrenoPrincipal ? this.todosWorkers.filter(e => e.listo) : [];
     }
 
     deseado(x, z) {

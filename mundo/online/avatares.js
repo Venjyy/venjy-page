@@ -165,7 +165,7 @@ export class Avatar {
     golpeado() { this.golpe = 0.25; }
 
     actualizar(dt, tinte, jugadorPos) {
-        this.grupo.visible = this.recibido && this.vivo;
+        this.grupo.visible = this.recibido && this.vivo && !this.oculto;
         if (!this.grupo.visible) return;
         const o = this.objetivo;
         const k = 1 - Math.exp(-14 * dt);

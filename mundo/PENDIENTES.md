@@ -32,13 +32,27 @@ Decisiones tomadas: página aparte `mundo.html`, Three.js local en `vendor/`, ma
 | `mundo/pintado.js` | Paleta `MC`, tonos y `pintarBitmap`: el bitmap del mapa 2D, puro y sin DOM (lo usa `script.js`). |
 | `mundo/brujula.js` | Brújula del HUD. |
 | `mundo/worker-chunks.js` | Worker que llena, ilumina y malla chunks fuera del hilo principal (cada uno calcula su propio terreno con la misma semilla). |
+| `mundo/online/` | Modo online (opcional, solo si hay sala): `config.js` (URL y clave pública de Supabase), `red.js` (sala, Presence, Broadcast, guardado de bloques), `avatares.js` (otros jugadores), `edicion.js` (romper/poner + hotbar), `online.js` (lobby e integración), `partida.js` (Skywars), `arena.js` (mapa de islas), `schema.sql` (tablas y RLS), `tests/conexion.html` (prueba de red). |
 | `mundo/main.js` | Escena, render, niebla, bucle, idioma, HUD. |
 | `mundo/mundo.css` | Estilo de menús tipo Minecraft (fuente PixelCraft). |
-| `vendor/` | Three.js 0.186.1 minificado (~750 KB) + licencia. |
+| `vendor/` | Three.js 0.186.1 minificado (~750 KB) y supabase-js 2.117.2 minificado (~220 KB, solo se descarga al entrar a una sala) + licencias. |
 
 Constantes clave (`voxeles.js`): `ESCALA = 4` (1 celda = 4×4 bloques), `FACTOR_Y = 1.5`, `CHUNK = 16`, `ALTO = 80`, `NIVEL_AGUA = 14`. El mundo mide 1536×1024 bloques. Norte = −Z, este = +X (igual que el mapa 2D).
 
 Cómo se arma una columna: la altura sale de interpolar `E` (suavizado bilineal por celda); el material, del tipo `T` de la celda con el borde desordenado. Las celdas con `F = 1` son estructuras: tope exacto `vh(E)` y material de color desde la altura base (`BASE_ESTRUCTURA`). Puentes (`T = madera` sin `F`) se tratan aparte (`ES = 2`).
+
+## Modo online (Supabase)
+
+Solo para pasar el rato con amigos. Sin sala no se descarga nada de Supabase y el mundo funciona exactamente igual que offline.
+
+- **Proyecto Supabase**: `venjy-mundo-online` (plan gratis, región São Paulo). Tablas `salas` y `cambios_bloques` con RLS: el rol `anon` solo puede leer, insertar y actualizar (con restricciones `check` de rango); no hay DELETE directo, solo la función `reiniciar_sala` (security definer). La clave del cliente es la *publishable* (pública por diseño); la service role key nunca va en el repo.
+- **Cómo se juega**: en el panel de pausa, «Jugar con amigos»: nombre + código de sala (3-12 letras o números, máx. 8 jugadores). Todos generan el mismo mapa; solo viajan jugadores y cambios.
+- **Realtime**: un canal `venjy:CODIGO` con Presence (nombre y aspecto) y Broadcast (evento `m` con `e` = pos, bloque, hola, inicio, golpe, muerte, situacion). Posición a 10 Hz, solo 1 Hz si el jugador está quieto.
+- **Bloques**: clic izquierdo rompe, derecho pone, hotbar 1-9 o rueda. Se aplican al instante, se difunden y se guardan en `cambios_bloques` (una fila por posición, gana el último). Quien entra tarde los lee al entrar. El motor aplica las ediciones en `llenarVentana` (`guardarEdicion`/`aplicarEdiciones` en `voxeles.js`), también en los workers.
+- **Skywars**: cualquier jugador pulsa «Iniciar partida» (mínimo 2). Todos pasan a la arena (`arena.js`: 8 islas de salida, 8 intermedias con cofres, islotes y una isla central con los cofres buenos), cuenta de 5 s, combate cuerpo a cuerpo (cada cliente decide su daño y su muerte), caer bajo y=-12 es morir, el último en pie gana, 7 s después todos vuelven al mundo. Cofres: clic derecho, botín determinista por (ronda, cofre). Quien entra durante una partida la mira como espectador (`situacion`).
+- **Prueba de red**: abrir `mundo/online/tests/conexion.html` desde la red del colegio (HTTPS, WebSocket, Broadcast, Presence).
+- **Límites del plan gratis a vigilar**: el proyecto se pausa tras ~7 días sin actividad (se reactiva desde el panel), tope de mensajes Realtime por segundo (~100) y por mes (~2 M), ~200 conexiones simultáneas y 500 MB de base.
+- **Pendiente online**: controles táctiles para romper/poner y atacar; chat; la arena no oculta el menú de teletransporte; probar con amigos reales desde la red del colegio; limpieza periódica de salas viejas (`select public.limpiar_salas_viejas()` a mano).
 
 ## Estado actual (Fase 1 completa)
 
@@ -106,6 +120,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-07 · **Modo online** (rama `feature/mundo-3d-online`): proyecto Supabase creado, `schema.sql` aplicado (tablas, RLS, `reiniciar_sala`), supabase-js local en `vendor/`, `mundo/online/*` (salas, Presence/Broadcast, avatares de cajas con piel pintada por código, romper/poner con hotbar y persistencia, arena Skywars con cofres, combate, rondas y espectadores), prueba `tests/conexion.html`. Motor: ediciones por chunk, `cambiarTerreno` para pasar a la arena, `gen` para descartar resultados de workers, ganchos de jugador (`sinVuelo`, `congelado`, `vacio`). Verificado en el navegador con dos clientes reales y uno simulado: presencia, posiciones, bloques, entrada tardía, cuenta, golpes, cofre, caída al vacío, fin de ronda y vuelta al mundo.
 
 Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo más reciente arriba.
 

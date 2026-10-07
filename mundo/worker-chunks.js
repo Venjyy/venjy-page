@@ -30,7 +30,7 @@ self.onmessage = e => {
             const relleno = llenarChunk(terreno, m.x, m.z);
             const g = mallarChunkCrudo(m.x, m.z, relleno);
             self.postMessage(
-                { t: 'chunk', k: m.k, x: m.x, z: m.z, g, vox: relleno.vox, luz: relleno.luz },
+                { t: 'chunk', k: m.k, x: m.x, z: m.z, gen: m.g, g, vox: relleno.vox, luz: relleno.luz },
                 [...buffersDe(g), relleno.vox.buffer, relleno.luz.buffer]
             );
         }

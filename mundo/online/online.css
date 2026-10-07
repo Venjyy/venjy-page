@@ -58,3 +58,9 @@
 .barra-vida i { display: block; height: 100%; background: #d33; }
 .destello-dano { position: fixed; inset: 0; background: rgb(255 0 0 / 0.28); pointer-events: none; animation: dano 0.3s linear forwards; }
 @keyframes dano { to { opacity: 0; } }
+
+.estado-combate {
+    position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); font-size: 0.9rem; color: var(--blanco);
+    text-shadow: 2px 2px 0 #000; pointer-events: none; white-space: nowrap;
+}
+.partida-caja { margin-top: 8px; }

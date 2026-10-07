@@ -24,6 +24,7 @@ export function crearEdicion({ mundo, jugador, camara, scene, hud, atlasLienzo, 
         elegido: 0,
         permitirRomper: () => true,
         interceptarClicIzquierdo: null, // fn() => true si otro sistema (el combate) consumió el clic
+        interceptarClicDerecho: null,   // fn(objetivo) => true si se usó (p. ej. abrir un cofre)
         objetivo: null
     };
 
@@ -130,7 +131,10 @@ export function crearEdicion({ mundo, jugador, camara, scene, hud, atlasLienzo, 
         if (e.button === 0) {
             if (estado.interceptarClicIzquierdo && estado.interceptarClicIzquierdo()) return;
             izquierdo = true; romper(); reloj = 0;
-        } else if (e.button === 2) { derecho = true; poner(); reloj = 0; }
+        } else if (e.button === 2) {
+            if (estado.interceptarClicDerecho && estado.interceptarClicDerecho(estado.objetivo)) return;
+            derecho = true; poner(); reloj = 0;
+        }
     });
     document.addEventListener('mouseup', e => { if (e.button === 0) izquierdo = false; if (e.button === 2) derecho = false; });
     document.addEventListener('contextmenu', e => { if (estado.activa && jugador.activo) e.preventDefault(); });

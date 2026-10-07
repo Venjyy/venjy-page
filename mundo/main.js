@@ -194,7 +194,7 @@ async function iniciar() {
         if (jugador.activo) jugador.actualizar(dt);
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
-        gatas.actualizar(dt);
+        if (!(online && online.enArena)) gatas.actualizar(dt);
         if (online) online.actualizar(dt);
         relojAgua += dt;
         if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
@@ -212,7 +212,7 @@ async function iniciar() {
             cuadros = 0; acumulado = 0;
             autoAjustar(fps, paso);
             zonaEl.textContent = ajustes.zonaEn(jugador.pos.x, jugador.pos.z);
-            zonaEl.hidden = !zonaEl.textContent;
+            zonaEl.hidden = !zonaEl.textContent || !!(online && online.enArena);
             coordsEl.textContent = `X ${jugador.pos.x.toFixed(1)}  Y ${jugador.pos.y.toFixed(1)}  Z ${jugador.pos.z.toFixed(1)}`;
         }
     }
