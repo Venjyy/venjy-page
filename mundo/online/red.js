@@ -47,13 +47,14 @@ export class Sala {
     emitir(evento, dato) { for (const fn of this.escuchas.get(evento) || []) fn(dato); }
 
     // Entra a una sala. Devuelve { cambios } con los bloques ya editados; lanza Error con .codigo
-    async entrar({ codigo, nombre, aspecto, modo = 'libre' }) {
+    async entrar({ codigo, nombre, aspecto, modo = 'libre', publica = false }) {
         if (!ONLINE_ACTIVO) throw fallo('sin-config', 'sin configurar');
         codigo = normalizarCodigo(codigo);
         nombre = normalizarNombre(nombre);
         if (!CODIGO_VALIDO.test(codigo)) throw fallo('codigo', 'código inválido');
         if (!nombre) throw fallo('nombre', 'nombre vacío');
         this.codigo = codigo; this.nombre = nombre; this.aspecto = aspecto;
+        this.publica = publica; // sala pública: solo Realtime, no se guarda nada
         this.estado = 'conectando';
         try {
             const { createClient } = await import('../../vendor/supabase.js');
@@ -61,16 +62,18 @@ export class Sala {
                 auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
                 realtime: { params: { eventsPerSecond: 40 } }
             });
-            // La sala se crea si no existe (sin pisar una existente)
-            const r = await this.cliente.from('salas').upsert({ codigo, modo }, { onConflict: 'codigo', ignoreDuplicates: true });
-            if (r.error) throw fallo('base', r.error.message);
-            const { data: sala } = await this.cliente.from('salas').select('modo, ronda').eq('codigo', codigo).single();
-            this.modoSala = sala ? sala.modo : modo;
-            this.ronda = sala ? sala.ronda : 0;
+            if (!publica) {
+                // La sala se crea si no existe (sin pisar una existente)
+                const r = await this.cliente.from('salas').upsert({ codigo, modo }, { onConflict: 'codigo', ignoreDuplicates: true });
+                if (r.error) throw fallo('base', r.error.message);
+                const { data: sala } = await this.cliente.from('salas').select('modo, ronda').eq('codigo', codigo).single();
+                this.modoSala = sala ? sala.modo : modo;
+                this.ronda = sala ? sala.ronda : 0;
+            }
 
             await this.conectarCanal();
             if (this.llena) throw fallo('llena', 'sala llena');
-            const cambios = await this.leerCambios('libre');
+            const cambios = publica ? [] : await this.leerCambios('libre');
             this.estado = 'conectado';
             return { cambios };
         } catch (e) {
@@ -162,6 +165,7 @@ export class Sala {
     // Cambio de bloque: se avisa a todos al instante y se guarda en lote (gana el último por posición)
     cambiarBloque(x, y, z, id, mundo = 'libre') {
         this.enviar('bloque', { x, y, z, b: id, mu: mundo });
+        if (this.publica) return;
         this.pendientes.set(mundo + '|' + x + ',' + y + ',' + z, { sala: this.codigo, mundo, x, y, z, bloque: id });
         if (!this.temporizador) this.temporizador = setTimeout(() => this.guardarPendientes(), 400);
     }
@@ -179,11 +183,11 @@ export class Sala {
 
     async reiniciarBloques(mundo) {
         this.pendientes.clear();
-        if (this.cliente) await this.cliente.rpc('reiniciar_sala', { p_codigo: this.codigo, p_mundo: mundo });
+        if (this.cliente && !this.publica) await this.cliente.rpc('reiniciar_sala', { p_codigo: this.codigo, p_mundo: mundo });
     }
 
     async guardarRonda(ronda, modo) {
-        if (this.cliente) await this.cliente.from('salas').update({ ronda, modo, actualizada: new Date().toISOString() }).eq('codigo', this.codigo);
+        if (this.cliente && !this.publica) await this.cliente.from('salas').update({ ronda, modo, actualizada: new Date().toISOString() }).eq('codigo', this.codigo);
     }
 
     async salir() {

@@ -123,3 +123,16 @@
     .tactil-saltar { width: 88px; height: 88px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
     .tactil-bajar { width: 76px; height: 76px; right: calc(128px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Acciones del modo online: romper y poner */
+.tactil-romper, .tactil-poner {
+    width: 84px; height: 84px;
+    bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+}
+.tactil-romper { right: calc(28px + env(safe-area-inset-right, 0px)); background: rgb(168 70 60 / 0.75); }
+.tactil-poner { right: calc(124px + env(safe-area-inset-right, 0px)); background: rgb(70 120 168 / 0.75); }
+.tactil-romper.pulsado, .tactil-poner.pulsado { background: rgb(125 140 196 / 0.95); }
+@media (max-height: 420px) {
+    .tactil-romper, .tactil-poner { width: 70px; height: 70px; bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+    .tactil-poner { right: calc(108px + env(safe-area-inset-right, 0px)); }
+}

@@ -154,6 +154,7 @@ async function iniciar() {
     // En pantallas táctiles no hay pointer lock: se usan los controles en pantalla
     const tactil = iniciarTactil(jugador, { alEntrar: alActivo });
     if (tactil) document.querySelector('.controles').hidden = true;
+    if (online && tactil) online.conTactil(tactil);
     const entrar = () => (tactil ? tactil.activar() : pedirPuntero());
     const actualizarModo = v => { modoEl.textContent = v ? TXT[idioma].vuelo : TXT[idioma].suelo; };
     jugador.alCambiarVuelo = actualizarModo;

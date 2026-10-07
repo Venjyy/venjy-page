@@ -11,8 +11,8 @@ const DOBLE_TOQUE_MS = 300;
 const SONDEO_MS = 150;
 
 const TEXTOS = {
-    es: { saltar: 'SALTAR', subir: 'SUBIR', bajar: 'BAJAR', pausa: 'Pausa' },
-    en: { saltar: 'JUMP', subir: 'UP', bajar: 'DOWN', pausa: 'Pause' }
+    es: { saltar: 'SALTAR', subir: 'SUBIR', bajar: 'BAJAR', agachar: 'AGACHAR', pausa: 'Pausa' },
+    en: { saltar: 'JUMP', subir: 'UP', bajar: 'DOWN', agachar: 'SNEAK', pausa: 'Pause' }
 };
 
 function cargarCSS() {
@@ -60,9 +60,9 @@ export function iniciarTactil(jugador, { alEntrar } = {}) {
     function etiquetas() {
         const t = TEXTOS[idioma()];
         bSaltar.textContent = jugador.vuela ? t.subir : t.saltar;
-        bBajar.textContent = t.bajar;
+        bBajar.textContent = jugador.vuela ? t.bajar : t.agachar; // en el suelo, Shift agacha
         bPausa.setAttribute('aria-label', t.pausa);
-        bBajar.hidden = !jugador.vuela;
+        bBajar.hidden = !!jugador.sinAgachar && !jugador.vuela;
     }
 
     const buscar = (lista, id) => {
@@ -184,6 +184,35 @@ export function iniciarTactil(jugador, { alEntrar } = {}) {
         else ultimoSalto = ahora;
     }, () => idSaltar, v => { idSaltar = v; });
     botonMantener(bBajar, 'ShiftLeft', null, () => idBajar, v => { idBajar = v; });
+
+    // ---------- Botones de acción añadidos desde fuera (romper / poner del modo online) ----------
+    const extras = [];
+    api.agregarAccion = (clase, texto, alPulsar, alSoltar) => {
+        const b = el('button', 'tactil-boton ' + clase, raiz);
+        b.type = 'button';
+        b.textContent = texto;
+        b.hidden = true;
+        let id = null;
+        b.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (id !== null) return;
+            id = e.changedTouches[0].identifier;
+            b.classList.add('pulsado');
+            alPulsar();
+        }, { passive: false });
+        b.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+        const fin = e => {
+            e.preventDefault();
+            if (!buscar(e.changedTouches, id)) return;
+            id = null;
+            b.classList.remove('pulsado');
+            alSoltar && alSoltar();
+        };
+        b.addEventListener('touchend', fin, { passive: false });
+        b.addEventListener('touchcancel', fin, { passive: false });
+        extras.push(b);
+        return b;
+    };
 
     // ---------- Pausa ----------
     bPausa.addEventListener('touchstart', e => e.preventDefault(), { passive: false });

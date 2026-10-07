@@ -23,14 +23,20 @@ const TXT = {
         preparados: 'Prepárense', pelea: '¡A pelear!', gana: 'Gana', empate: 'Empate', ronda: 'Ronda',
         vacio: 'Caíste al vacío', mato: 'Te eliminó', eliminaste: 'Eliminaste a', espectador: 'Eres espectador hasta la próxima ronda',
         cofre: 'Cofre', armadura: 'Armadura', vida: 'Vida', volver: 'Volviendo al mundo…', mejora: 'Mejora', curacion: 'curación',
-        nuevaArma: 'Nueva arma', nuevaArmadura: 'Armadura'
+        nuevaArma: 'Nueva arma', nuevaArmadura: 'Armadura',
+        abrirCofre: 'Clic derecho: abrir cofre', abrirCofreTactil: 'PONER: abrir cofre',
+        guia: ['<b>Cofres</b> (clic derecho): armas, armadura y curación', '<b>Clic izquierdo</b>: golpear a otro jugador', '<b>Shift</b>: agacharte (no te caes del borde) · pon bloques para hacer puentes', '<b>Caer al vacío = eliminado</b> · gana el último en pie'],
+        guiaTactil: ['<b>Cofres</b> (botón PONER): armas, armadura y curación', '<b>ROMPER</b>: golpear a otro jugador', '<b>AGACHAR</b>: no te caes del borde · pon bloques para hacer puentes', '<b>Caer al vacío = eliminado</b> · gana el último en pie']
     },
     en: {
         iniciar: 'Start Skywars match', necesitas: 'You need at least 2 players in the room.', enJuego: 'Match in progress',
         preparados: 'Get ready', pelea: 'Fight!', gana: 'Winner:', empate: 'Draw', ronda: 'Round',
         vacio: 'You fell into the void', mato: 'Eliminated by', eliminaste: 'You eliminated', espectador: 'You are a spectator until next round',
         cofre: 'Chest', armadura: 'Armor', vida: 'Health', volver: 'Returning to the world…', mejora: 'Upgrade', curacion: 'healing',
-        nuevaArma: 'New weapon', nuevaArmadura: 'Armor'
+        nuevaArma: 'New weapon', nuevaArmadura: 'Armor',
+        abrirCofre: 'Right click: open chest', abrirCofreTactil: 'PLACE: open chest',
+        guia: ['<b>Chests</b> (right click): weapons, armor and healing', '<b>Left click</b>: hit another player', '<b>Shift</b>: sneak (you will not fall off edges) · place blocks to build bridges', '<b>Falling into the void = eliminated</b> · last one standing wins'],
+        guiaTactil: ['<b>Chests</b> (PLACE button): weapons, armor and healing', '<b>BREAK</b>: hit another player', '<b>SNEAK</b>: you will not fall off edges · place blocks to build bridges', '<b>Falling into the void = eliminated</b> · last one standing wins']
     }
 };
 
@@ -63,7 +69,13 @@ export function iniciarPartida(api) {
     const equipo = document.createElement('div');
     equipo.className = 'estado-combate';
     equipo.hidden = true;
-    hudEl.append(aviso, barra, equipo);
+    const guia = document.createElement('div');
+    guia.className = 'ayuda-partida';
+    guia.hidden = true;
+    const tactil = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
+    guia.innerHTML = (tactil ? t.guiaTactil : t.guia).map(l => `<div>${l}</div>`).join('');
+    hudEl.append(aviso, barra, equipo, guia);
+    let pistaCofre = false;
 
     const mostrarAviso = (titulo, sub = '', segundos = 0) => {
         avisoTitulo.textContent = titulo;
@@ -175,6 +187,8 @@ export function iniciarPartida(api) {
         edicion.permitirPoner = null;
         barra.hidden = equipo.hidden = true;
         mostrarAviso('');
+        guia.hidden = true;
+        edicion.pista('');
         p.vivos = new Set(); p.participantes = [];
         refrescarBoton();
         api.pintarLista();
@@ -192,6 +206,7 @@ export function iniciarPartida(api) {
         p.cuentaLista = false;
         entrarArena({ espectador: !lista.includes(sala.id) });
         mostrarAviso(t.preparados, `${t.ronda} ${ronda}`);
+        guia.hidden = lista.includes(sala.id) ? false : true;
     }
 
     function iniciarMia() {
@@ -341,7 +356,7 @@ export function iniciarPartida(api) {
         p.fase = 'jugando';
         mostrarAviso(t.espectador, `${t.ronda} ${m.r}`, 3);
         jugador.congelado = false;
-        try { mundo.editarLote(await sala.leerCambios('arena')); } catch (e) { /* sin cambios */ }
+        try { if (!sala.publica) mundo.editarLote(await sala.leerCambios('arena')); } catch (e) { /* sin cambios */ }
         api.pintarLista();
     });
     sala.en('sale', m => {
@@ -375,6 +390,7 @@ export function iniciarPartida(api) {
                     p.fase = 'jugando';
                     jugador.congelado = false;
                     mostrarAviso(t.pelea, '', 1.5);
+                    setTimeout(() => { guia.hidden = true; }, 6000);
                     refrescarBoton();
                     revisarFin(); // por si alguien salió durante la cuenta
                 }
@@ -383,6 +399,12 @@ export function iniciarPartida(api) {
                 if (p.reloj <= 0) salirArena();
             }
             if (api.enArena) pintarEquipo();
+            // Pista al apuntar a un cofre
+            const sobreCofre = api.enArena && p.fase === 'jugando' && !p.espectador && !p.muerto && edicion.objetivo && edicion.objetivo.id === B.COFRE;
+            if (sobreCofre !== pistaCofre) {
+                pistaCofre = sobreCofre;
+                edicion.pista(sobreCofre ? (tactil ? t.abrirCofreTactil : t.abrirCofre) : '');
+            }
         }
     });
     api.extraPosicion = () => ({ mu: api.mundoActual, h: Math.round(p.vida) });
