@@ -52,7 +52,10 @@ Solo para pasar el rato con amigos. Sin sala no se descarga nada de Supabase y e
 - **Skywars**: cualquier jugador pulsa «Iniciar partida» (mínimo 2). Todos pasan a la arena (`arena.js`: 8 islas de salida, 8 intermedias con cofres, islotes y una isla central con los cofres buenos), cuenta de 5 s, combate cuerpo a cuerpo (cada cliente decide su daño y su muerte), caer bajo y=-12 es morir, el último en pie gana, 7 s después todos vuelven al mundo. Cofres: clic derecho, botín determinista por (ronda, cofre). Quien entra durante una partida la mira como espectador (`situacion`).
 - **Prueba de red**: abrir `mundo/online/tests/conexion.html` desde la red del colegio (HTTPS, WebSocket, Broadcast, Presence).
 - **Límites del plan gratis a vigilar**: el proyecto se pausa tras ~7 días sin actividad (se reactiva desde el panel), tope de mensajes Realtime por segundo (~100) y por mes (~2 M), ~200 conexiones simultáneas y 500 MB de base.
-- **Pendiente online**: controles táctiles para romper/poner y atacar; chat; la arena no oculta el menú de teletransporte; probar con amigos reales desde la red del colegio; limpieza periódica de salas viejas (`select public.limpiar_salas_viejas()` a mano).
+- **Sala pública**: botón «Sala pública» (código `PUBLICA`, máx. 8): solo Realtime, no se guarda nada en la base y no se crea fila en `salas`.
+- **Celular**: la hotbar se toca para elegir bloque y hay botones ROMPER / PONER (PONER también abre cofres y ROMPER golpea). Pueden afinarse al probarlos en un teléfono real.
+- **Controles**: correr con R, Ctrl o doble W (Ctrl+W cierra la pestaña en Windows; además hay aviso de confirmación al cerrar dentro de una sala); Shift agacha en el suelo (lento, baja la cámara y no te deja caer por el borde).
+- **Pendiente online**: chat; la arena no oculta el menú de teletransporte; probar con amigos reales desde la red del colegio; limpieza periódica de salas viejas (`select public.limpiar_salas_viejas()` a mano).
 
 ## Estado actual (Fase 1 completa)
 
@@ -120,6 +123,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-07 · **Mejoras online y controles** (rama `feature/mundo-3d-mejoras`): botón destacado «Entrar a la sala de amigos» bajo «Jugar» y sala pública; arreglo del avatar invisible en el mundo normal (la posición podía llegar antes que la presencia: ahora se guarda hasta que aparece); nombre del bloque y pista de controles sobre la hotbar, aviso «abrir cofre» y guía al iniciar Skywars; correr con R, agacharse con Shift (`jugador.agachado`), aviso al cerrar con Ctrl+W en una sala; hotbar táctil y botones ROMPER/PONER (`tactil.agregarAccion`, `edicion.abajo/arriba`) · `jugador.js`, `tactil.js/css`, `mundo/online/*`, `mundo.html`.
 
 - 2026-10-07 · **Modo online** (rama `feature/mundo-3d-online`): proyecto Supabase creado, `schema.sql` aplicado (tablas, RLS, `reiniciar_sala`), supabase-js local en `vendor/`, `mundo/online/*` (salas, Presence/Broadcast, avatares de cajas con piel pintada por código, romper/poner con hotbar y persistencia, arena Skywars con cofres, combate, rondas y espectadores), prueba `tests/conexion.html`. Motor: ediciones por chunk, `cambiarTerreno` para pasar a la arena, `gen` para descartar resultados de workers, ganchos de jugador (`sinVuelo`, `congelado`, `vacio`). Verificado en el navegador con dos clientes reales y uno simulado: presencia, posiciones, bloques, entrada tardía, cuenta, golpes, cofre, caída al vacío, fin de ronda y vuelta al mundo.
 

@@ -9,6 +9,7 @@ import { ALTO, CHUNK, NIVEL_AGUA } from './voxeles.js';
 
 const ANCHO = 0.6, ALTURA = 1.8, OJOS = 1.62;
 const GRAVEDAD = 32, SALTO = 9;
+const V_AGACHADO = 1.35, BAJA_OJOS_AGACHADO = 0.3;
 const V_CAMINAR = 4.3, V_CORRER = 5.6, V_VUELO = 10.9, V_VUELO_RAPIDO = 21.6;
 const DOBLE_TOQUE_MS = 300;
 const TECHO = 600; // altura máxima de vuelo: permite ver el mapa entero desde arriba
@@ -26,6 +27,8 @@ export class Jugador {
         this.vuela = false;
         this.enSuelo = false;
         this.corre = false;
+        this.agachado = false; // Shift en el suelo: lento y sin caerse de los bordes
+        this.ojos = OJOS;
         this.teclas = new Set();
         this.ultimoEspacio = 0;
         this.ultimoAdelante = 0;
@@ -55,7 +58,7 @@ export class Jugador {
     tecla(e, abajo) {
         if (!this.activo) return;
         const c = e.code;
-        if (['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ControlLeft', 'Tab'].includes(c)) e.preventDefault();
+        if (['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'ShiftLeft', 'ControlLeft', 'Tab'].includes(c)) e.preventDefault();
         if (abajo) {
             if (e.repeat) return;
             const ahora = performance.now();
@@ -67,11 +70,11 @@ export class Jugador {
                 if (ahora - this.ultimoAdelante < DOBLE_TOQUE_MS) this.corre = true;
                 this.ultimoAdelante = ahora;
             }
-            if (c === 'ControlLeft') this.corre = true;
+            if (c === 'ControlLeft' || c === 'KeyR') this.corre = true; // R sirve de Ctrl: Ctrl+W cierra la pestaña en el navegador
             this.teclas.add(c);
         } else {
             this.teclas.delete(c);
-            if (c === 'KeyW' || c === 'ControlLeft') this.corre = this.teclas.has('ControlLeft');
+            if (c === 'KeyW' || c === 'ControlLeft' || c === 'KeyR') this.corre = this.teclas.has('ControlLeft') || this.teclas.has('KeyR');
         }
     }
 
@@ -121,8 +124,9 @@ export class Jugador {
         const p = this.pos;
         // Volando y atrapado dentro de bloques (un chunk se cargó encima): se sale libremente
         if (this.vuela && this.choca(p.x, p.y, p.z) && p.y >= 0) { p.x += dx; p.y += dy; p.z += dz; return; }
-        if (!this.choca(p.x + dx, p.y, p.z)) p.x += dx; else this.vel.x = 0;
-        if (!this.choca(p.x, p.y, p.z + dz)) p.z += dz; else this.vel.z = 0;
+        const borde = this.agachado && this.enSuelo && this.choca(p.x, p.y - 0.5, p.z);
+        if (!this.choca(p.x + dx, p.y, p.z) && !(borde && !this.choca(p.x + dx, p.y - 0.5, p.z))) p.x += dx; else this.vel.x = 0;
+        if (!this.choca(p.x, p.y, p.z + dz) && !(borde && !this.choca(p.x, p.y - 0.5, p.z + dz))) p.z += dz; else this.vel.z = 0;
         this.enSuelo = false;
         if (!this.choca(p.x, p.y + dy, p.z)) p.y += dy;
         else {
@@ -150,7 +154,9 @@ export class Jugador {
         const t = this.teclas;
         const adelante = (t.has('KeyW') ? 1 : 0) - (t.has('KeyS') ? 1 : 0);
         const lado = (t.has('KeyD') ? 1 : 0) - (t.has('KeyA') ? 1 : 0);
-        if (!adelante) this.corre = this.corre && t.has('ControlLeft');
+        if (!adelante) this.corre = this.corre && (t.has('ControlLeft') || t.has('KeyR'));
+        this.agachado = t.has('ShiftLeft') && !this.vuela && !this.sinAgachar;
+        if (this.agachado) this.corre = false;
 
         const sen = Math.sin(this.yaw), cos = Math.cos(this.yaw);
         let ix = -sen * adelante + cos * lado;
@@ -159,7 +165,7 @@ export class Jugador {
         if (n > 0) { ix /= n; iz /= n; }
 
         const agua = !this.vuela && this.enAgua();
-        let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.corre ? V_CORRER : V_CAMINAR);
+        let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.agachado ? V_AGACHADO : this.corre ? V_CORRER : V_CAMINAR);
         if (agua) v *= 0.6;
 
         // Suavizado de la velocidad horizontal
@@ -200,7 +206,8 @@ export class Jugador {
         } else if (this.pos.y < 0) { this.pos.y = this.vuela ? 0 : NIVEL_AGUA + 40; this.vel.y = Math.max(this.vel.y, 0); }
         if (this.pos.y > TECHO) this.pos.y = TECHO;
 
-        this.camara.position.set(this.pos.x, this.pos.y + OJOS, this.pos.z);
+        this.ojos += ((this.agachado ? OJOS - BAJA_OJOS_AGACHADO : OJOS) - this.ojos) * (1 - Math.exp(-18 * dt));
+        this.camara.position.set(this.pos.x, this.pos.y + this.ojos, this.pos.z);
         this.camara.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
     }
 }

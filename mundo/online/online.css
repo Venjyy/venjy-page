@@ -64,3 +64,48 @@
     text-shadow: 2px 2px 0 #000; pointer-events: none; white-space: nowrap;
 }
 .partida-caja { margin-top: 8px; }
+
+/* Hotbar tocable, nombre del bloque y pistas de controles */
+.hotbar { z-index: 40; pointer-events: auto; touch-action: manipulation; }
+.hotbar-casilla { cursor: pointer; }
+.hotbar-nombre, .hotbar-pista {
+    position: fixed; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none;
+    color: var(--blanco); text-shadow: 2px 2px 0 #000; z-index: 40; max-width: 92vw;
+}
+.hotbar-nombre { bottom: 112px; font-size: 1.05rem; color: var(--amarillo); }
+.hotbar-pista { bottom: 140px; font-size: 0.9rem; background: rgb(0 0 0 / 0.5); padding: 4px 10px; }
+.hotbar-pista.cofre { color: var(--amarillo); font-size: 1.05rem; }
+@media (pointer: coarse) {
+    /* Encima de los botones táctiles (joystick, ROMPER, PONER, SALTAR) */
+    .hotbar { bottom: 250px; }
+    .hotbar-casilla { width: 36px; height: 36px; border-width: 2px; }
+    .hotbar-casilla canvas { width: 22px; height: 22px; }
+    .hotbar-casilla span { display: none; }
+    .hotbar-nombre { bottom: 296px; }
+    .hotbar-pista { bottom: 322px; font-size: 0.8rem; }
+    .barra-vida { bottom: 20px; width: 130px; left: 50%; }
+    .estado-combate { bottom: 38px; font-size: 0.75rem; }
+    .jugadores-lista { font-size: 0.7rem; min-width: 110px; top: 184px; }
+}
+@media (pointer: coarse) and (max-height: 420px) {
+    .hotbar { bottom: 8px; }
+    .hotbar-casilla { width: 30px; height: 30px; }
+    .hotbar-casilla canvas { width: 18px; height: 18px; }
+    .hotbar-nombre { bottom: 56px; }
+    .hotbar-pista { bottom: 80px; }
+    .barra-vida { bottom: 48px; }
+    .estado-combate { bottom: 66px; }
+}
+
+/* Entrada destacada a la sala de amigos */
+.amigos { margin: 12px 0 0; }
+.amigos .boton.grande { font-size: 1.3rem; padding: 14px 10px; background: #4a7a2c; }
+.amigos .boton.grande:hover, .amigos .boton.grande:focus-visible { background: #5e9a38; }
+.amigos .formulario { margin-top: 8px; }
+.amigos .formulario[hidden] { display: none; }
+.amigos .fila-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ayuda-partida {
+    position: fixed; left: 50%; top: 42%; transform: translateX(-50%); text-align: left; pointer-events: none;
+    background: rgb(0 0 0 / 0.55); padding: 10px 14px; font-size: 0.95rem; line-height: 1.6; text-shadow: 1px 1px 0 #000; z-index: 40; max-width: 92vw;
+}
+.ayuda-partida b { color: var(--amarillo); font-weight: normal; }

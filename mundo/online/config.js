@@ -15,3 +15,5 @@ export const ONLINE_ACTIVO = !!(CONFIG_ONLINE.url && CONFIG_ONLINE.clave);
 // Frecuencia de envío de la posición (Hz) y límites
 export const HZ_POSICION = 10; // el plan gratis limita los mensajes por segundo del proyecto
 export const MAX_JUGADORES = 8;
+// Sala abierta a cualquiera: tope de jugadores y nada se guarda en la base de datos
+export const CODIGO_PUBLICO = 'PUBLICA';
