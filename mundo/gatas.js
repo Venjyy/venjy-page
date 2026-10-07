@@ -5,41 +5,12 @@
 // Caminan por la zona de la Gatera y entran y salen de su casa por la puerta.
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
-import { azar } from './mundo-datos.js';
 import { ESCALA, BASE_ESTRUCTURA } from './voxeles.js';
 import { TIPO } from './texturas.js';
-
-const aSRGB = s => Math.pow(s, 2.2);
-const SOMBRA_CARA = [0.6, 0.6, 1, 0.5, 0.8, 0.8]; // +x -x +y -y +z -z
-const RADIO_VISIBLE = 160;
-
-const ajustar = ([r, g, b], f) => [r * f, g * f, b * f];
-const mezcla = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-
-function textura(semilla, pintor) {
-    const c = document.createElement('canvas');
-    c.width = c.height = 16;
-    const ctx = c.getContext('2d');
-    const img = ctx.createImageData(16, 16);
-    const r = azar(semilla);
-    for (let y = 0; y < 16; y++) {
-        for (let x = 0; x < 16; x++) {
-            const [cr, cg, cb] = pintor(x, y, r);
-            const i = (y * 16 + x) * 4;
-            img.data[i] = Math.max(0, Math.min(255, cr));
-            img.data[i + 1] = Math.max(0, Math.min(255, cg));
-            img.data[i + 2] = Math.max(0, Math.min(255, cb));
-            img.data[i + 3] = 255;
-        }
-    }
-    ctx.putImageData(img, 0, 0);
-    const t = new THREE.CanvasTexture(c);
-    t.magFilter = THREE.NearestFilter;
-    t.minFilter = THREE.NearestFilter;
-    t.generateMipmaps = false;
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-}
+import {
+    RADIO_VISIBLE, ajustar, lerp, textura, crearTinte, caja, crearNombre,
+    cuandoHayaAudio, audioMundo, sonando, silenciarMundo, mundoSilenciado, bufferRuido
+} from './criaturas/cuerpo.js';
 
 // ---------------------------------------------------------
 // Pelajes
@@ -113,22 +84,8 @@ function materialesDe(clave) {
 // Construcción del modelo (mira hacia +Z, origen en los pies)
 // ---------------------------------------------------------
 export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }) {
-    const todos = []; // materiales de las gatas, para teñirlos con la hora del día
-    const cache = new Map();
-    const mat = (mapa, sombra) => {
-        const k = mapa.uuid + sombra;
-        if (!cache.has(k)) {
-            const m = new THREE.MeshBasicMaterial({ map: mapa });
-            m.userData.sombra = aSRGB(sombra);
-            cache.set(k, m);
-            todos.push(m);
-        }
-        return cache.get(k);
-    };
-    // 6 caras (+x -x +y -y +z -z), con un mapa por cara opcional
-    const caras = (porDefecto, especial = {}) =>
-        SOMBRA_CARA.map((s, i) => mat(especial[i] || porDefecto, s));
-    const caja = (w, h, d, mats) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats);
+    const tinte = crearTinte(); // materiales de las gatas, teñidos con la hora del día
+    const caras = tinte.caras;
 
     function construirGata(clave) {
         const e = PELAJES[clave].escala;
@@ -225,77 +182,12 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
         return gata;
     });
 
-    // ---------------------------------------------------------
-    // Nombres flotantes: sprite con el nombre sobre la cabeza, visible solo de cerca y al mirarla
-    // ---------------------------------------------------------
-    const DIST_NOMBRE = 12, ANG_NOMBRE = 12 * Math.PI / 180;
-    function dibujarNombre(gata) {
-        const nombre = PELAJES[gata.clave].nombre;
-        const c = gata.nombreLienzo, ctx = c.getContext('2d');
-        ctx.clearRect(0, 0, c.width, c.height);
-        ctx.fillStyle = 'rgba(16, 12, 8, 0.62)';
-        ctx.fillRect(0, 0, c.width, c.height);
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(2, 2, c.width - 4, c.height - 4);
-        ctx.font = '24px PixelCraft';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#2a2a2a';
-        ctx.fillText(nombre, c.width / 2 + 2, c.height / 2 + 3);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(nombre, c.width / 2, c.height / 2 + 1);
-        gata.nombreTex.needsUpdate = true;
-    }
-    function crearNombre(gata) {
-        const c = document.createElement('canvas');
-        c.width = 128; c.height = 40;
-        const tex = new THREE.CanvasTexture(c);
-        tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-        tex.generateMipmaps = false; tex.colorSpace = THREE.SRGBColorSpace;
-        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: true, depthWrite: false, fog: false }));
-        sp.scale.set(1.2, 0.375, 1);
-        sp.visible = false;
-        sp.renderOrder = 10;
-        scene.add(sp);
-        gata.nombreLienzo = c; gata.nombreTex = tex; gata.nombreSprite = sp; gata.nombreAlfa = 0;
-        const listo = () => dibujarNombre(gata);
-        listo();
-        try { document.fonts.load('24px PixelCraft').then(listo, () => {}); } catch (e) { /* sin fuentes */ }
-    }
-    for (const g of gatas) crearNombre(g);
-
-    function actualizarNombre(gata, dt, dJ) {
-        const sp = gata.nombreSprite;
-        let objetivo = 0;
-        const cam = jugador.camara;
-        const ox = cam.position.x, oy = cam.position.y, oz = cam.position.z;
-        const px = gata.x, py = gata.y + gata.e.patas + gata.e.alto * 0.5, pz = gata.z;
-        const vx = px - ox, vy = py - oy, vz = pz - oz, d = Math.hypot(vx, vy, vz);
-        if (gata.g.visible && d < DIST_NOMBRE && d > 0.01) {
-            cam.getWorldDirection(dir);
-            const cos = (vx * dir.x + vy * dir.y + vz * dir.z) / d;
-            if (cos > Math.cos(ANG_NOMBRE) && lineaLibre(ox, oy, oz, px, py, pz, d)) objetivo = 1;
-        }
-        gata.nombreAlfa += (objetivo - gata.nombreAlfa) * Math.min(1, dt * 6);
-        if (Math.abs(gata.nombreAlfa - objetivo) < 0.01) gata.nombreAlfa = objetivo;
-        sp.visible = gata.nombreAlfa > 0.01;
-        if (!sp.visible) return;
-        sp.material.opacity = gata.nombreAlfa;
+    // Nombres flotantes: visibles solo de cerca y al mirarlas (criaturas/cuerpo.js)
+    for (const g of gatas) g.nombre = crearNombre(scene, PELAJES[g.clave].nombre);
+    function actualizarNombre(gata, dt) {
         const e = gata.e, alto = lerp(e.patas + e.alto + e.cabeza * 0.9, 0.03 + e.alto + e.cabeza * 0.4, gata.be);
-        sp.position.set(gata.x, gata.y + alto + 0.4, gata.z);
-        const f = Math.max(0.8, Math.min(1.5, d / 6)); // legible de cerca y de lejos
-        sp.scale.set(1.2 * f, 0.375 * f, 1);
-    }
-    const dir = new THREE.Vector3();
-    // Rayo simple contra los bloques para que el nombre no se vea a traves de paredes
-    function lineaLibre(ox, oy, oz, px, py, pz, d) {
-        const n = Math.ceil(d * 2);
-        for (let i = 1; i < n; i++) {
-            const k = i / n;
-            const b = mundo.bloque(ox + (px - ox) * k, oy + (py - oy) * k, oz + (pz - oz) * k);
-            if (b > 0 && TIPO[b] === 1) return false;
-        }
-        return true;
+        gata.nombre.actualizar(dt, jugador.camara, mundo, gata.g.visible, gata.x, gata.y + alto + 0.4, gata.z,
+            gata.x, gata.y + e.patas + e.alto * 0.5, gata.z);
     }
 
     // ---------------------------------------------------------
@@ -409,49 +301,27 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
     // ---------------------------------------------------------
     // Sonido (WebAudio perezoso, solo tras una interaccion del usuario)
     // ---------------------------------------------------------
-    let silencio = false;
-    try { silencio = localStorage.getItem('venjy-mundo-silencio') === '1'; } catch (e) { /* sin almacenamiento */ }
-    let audio = null; // { ctx, master, purrGain }
-    function iniciarAudio() {
-        try {
-            if (audio) { if (audio.ctx.state === 'suspended') audio.ctx.resume(); return; }
-            const AC = window.AudioContext || window.webkitAudioContext;
-            if (!AC) return;
-            const ctx = new AC();
-            const master = ctx.createGain();
-            master.gain.value = silencio ? 0 : 1;
-            master.connect(ctx.destination);
-            // Ronroneo: ruido filtrado con amplitud modulada a ~24 Hz, siempre sonando pero a volumen 0
-            const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-            const dat = buf.getChannelData(0);
-            for (let i = 0; i < dat.length; i++) dat[i] = Math.random() * 2 - 1;
-            const ruido = ctx.createBufferSource();
-            ruido.buffer = buf; ruido.loop = true;
-            const filtro = ctx.createBiquadFilter();
-            filtro.type = 'bandpass'; filtro.frequency.value = 140; filtro.Q.value = 0.8;
-            const am = ctx.createGain(); am.gain.value = 0.55;
-            const lfo = ctx.createOscillator(); lfo.frequency.value = 24;
-            const prof = ctx.createGain(); prof.gain.value = 0.45;
-            lfo.connect(prof); prof.connect(am.gain);
-            const purrGain = ctx.createGain(); purrGain.gain.value = 0;
-            ruido.connect(filtro); filtro.connect(am); am.connect(purrGain); purrGain.connect(master);
-            ruido.start(); lfo.start();
-            audio = { ctx, master, purrGain };
-            if (ctx.state === 'suspended') ctx.resume();
-        } catch (e) { audio = null; }
-    }
-    for (const ev of ['pointerdown', 'keydown', 'touchstart']) {
-        window.addEventListener(ev, function once() {
-            iniciarAudio();
-            window.removeEventListener('pointerdown', once); window.removeEventListener('keydown', once); window.removeEventListener('touchstart', once);
-        }, { passive: true });
-    }
-    function sonando() { return audio && audio.ctx.state === 'running' && !silencio; }
+    // Ronroneo: ruido filtrado con amplitud modulada a ~24 Hz, siempre sonando pero a volumen 0.
+    // Usa el AudioContext compartido del mundo (criaturas/cuerpo.js).
+    let purrGain = null;
+    cuandoHayaAudio(({ ctx, master }) => {
+        const ruido = ctx.createBufferSource();
+        ruido.buffer = bufferRuido(ctx); ruido.loop = true;
+        const filtro = ctx.createBiquadFilter();
+        filtro.type = 'bandpass'; filtro.frequency.value = 140; filtro.Q.value = 0.8;
+        const am = ctx.createGain(); am.gain.value = 0.55;
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 24;
+        const prof = ctx.createGain(); prof.gain.value = 0.45;
+        lfo.connect(prof); prof.connect(am.gain);
+        purrGain = ctx.createGain(); purrGain.gain.value = 0;
+        ruido.connect(filtro); filtro.connect(am); am.connect(purrGain); purrGain.connect(master);
+        ruido.start(); lfo.start();
+    });
 
     function maullar(gata, dist) {
         try {
             if (!sonando()) return;
-            const { ctx, master } = audio;
+            const { ctx, master } = audioMundo();
             const vol = 0.09 * Math.max(0, 1 - dist / 4.5);
             if (vol <= 0.003) return;
             const t0 = ctx.currentTime, base = gata.clave === 'mila' ? 430 : 560;
@@ -474,7 +344,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
 
     function actualizarPurr() {
         try {
-            if (!audio) return;
+            if (!purrGain) return;
             let v = 0;
             if (sonando()) {
                 for (const g of gatas) {
@@ -483,11 +353,10 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
                     v = Math.max(v, 0.07 * Math.max(0, 1 - d / 6));
                 }
             }
-            audio.purrGain.gain.setTargetAtTime(v, audio.ctx.currentTime, 0.25);
+            purrGain.gain.setTargetAtTime(v, audioMundo().ctx.currentTime, 0.25);
         } catch (e) { /* sin sonido */ }
     }
 
-    const lerp = (a, b, k) => a + (b - a) * k;
     const ANG_SENTADA = 0.61; // ~35 grados
 
     // Aplica la pose mezclada (bs = sentada, be = echada) sobre el modelo, ademas del ciclo de caminata
@@ -530,7 +399,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
     function actualizarGata(gata, dt, t) {
         const dJ = Math.hypot(gata.x - jugador.pos.x, gata.z - jugador.pos.z);
         gata.g.visible = dJ < RADIO_VISIBLE;
-        if (!gata.g.visible) { gata.nombreSprite.visible = false; gata.nombreAlfa = 0; return; }
+        if (!gata.g.visible) { gata.nombre.ocultar(); return; }
 
         const adentro = estaDentro(gata.x, gata.z);
         if (!gata.cargada) {
@@ -628,7 +497,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
 
         gata.g.position.set(gata.x, gata.y + (moviendo ? Math.abs(Math.sin(gata.fase)) * 0.04 : 0), gata.z);
         gata.g.rotation.y = gata.yaw;
-        actualizarNombre(gata, dt, dJ);
+        actualizarNombre(gata, dt);
     }
 
     let tiempo = 0;
@@ -637,17 +506,12 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
         actualizar(dt) {
             tiempo += dt;
             dt = Math.min(dt, 0.05);
-            const tinte = materiales.solido.color;
-            for (const m of todos) m.color.setScalar(m.userData.sombra).multiply(tinte);
+            tinte.aplicar(materiales.solido.color);
             for (const g of gatas) actualizarGata(g, dt, tiempo);
             actualizarPurr();
         },
-        // silenciar(true) apaga maullidos y ronroneo; la preferencia se recuerda
-        silenciar(valor = true) {
-            silencio = !!valor;
-            try { localStorage.setItem('venjy-mundo-silencio', silencio ? '1' : '0'); } catch (e) { /* sin almacenamiento */ }
-            try { if (audio) audio.master.gain.setTargetAtTime(silencio ? 0 : 1, audio.ctx.currentTime, 0.05); } catch (e) { /* sin sonido */ }
-        },
-        get silenciado() { return silencio; }
+        // silenciar(true) apaga todos los sonidos del mundo (gatas, animales y música); se recuerda
+        silenciar(valor = true) { silenciarMundo(valor); },
+        get silenciado() { return mundoSilenciado(); }
     };
 }

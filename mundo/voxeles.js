@@ -7,6 +7,7 @@ import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
+import { colocarPescador, colocarEscenario } from './construcciones.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -262,8 +263,13 @@ export function prepararTerreno(datos) {
             correo = geometriaCorreo(c, BASE_ESTRUCTURA);
         }
     }
+    // Lugares nuevos (construcciones.js): caseta del pescador y escenario de Salonas
+    const tt = { BW, BD, HT, SUP, SUB, ES, datos, ESCALA, NIVEL_AGUA };
+    const pescador = colocarPescador(tt, puentes);
+    const escenario = colocarEscenario(tt);
     const decor = [
         ...puentes,
+        ...[pescador, escenario].filter(Boolean).map(l => l.decor).filter(Boolean),
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
         { t: 'mina', x: mix * ESCALA, z: (miy - 5) * ESCALA, cx: mix * ESCALA, cz: (miy - 5) * ESCALA - 14, r: 18 }
@@ -275,7 +281,7 @@ export function prepararTerreno(datos) {
     const zonasLuz = decor.map(d => d.luz || { x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r });
     zonasLuz.push({ x0: faro.x - 12, z0: faro.z - 12, x1: faro.x + 12, z1: faro.z + 12 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, pescador, escenario, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -650,7 +656,7 @@ function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
         if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
         vox[(y * ancho + lz) * ancho + lx] = id;
     };
-    if (d.t === 'puente') {
+    if (d.t === 'puente' || d.t === 'bloques') {
         const b = d.bloques;
         for (let i = 0; i < b.length; i += 4) poner(b[i], b[i + 1], b[i + 2], b[i + 3]);
     } else if (d.t === 'pozo') {

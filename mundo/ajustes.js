@@ -10,8 +10,8 @@ export const NOMBRES_ZONA = {
 };
 
 const TXT = {
-    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonido de las gatas', brujula: 'Mostrar brújula', mapa: 'Mapa', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Ir a', chunks: 'chunks' },
-    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'Cat sounds', brujula: 'Show compass', mapa: 'Map', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Go to', chunks: 'chunks' }
+    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonidos del mundo', brujula: 'Mostrar brújula', mapa: 'Mapa', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Ir a', chunks: 'chunks' },
+    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'World sounds', brujula: 'Show compass', mapa: 'Map', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Go to', chunks: 'chunks' }
 };
 
 const CLAVE = 'venjy-mundo-ajustes';
