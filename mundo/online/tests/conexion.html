@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venjy · Prueba de conexión</title>
+    <style>
+        @font-face { font-family: 'PixelCraft'; src: url('../../../font/pixelcraft.ttf') format('truetype'); }
+        body { margin: 0; padding: 20px; background: #1b1209; color: #fff; font-family: 'PixelCraft', monospace; }
+        main { max-width: 640px; margin: 0 auto; }
+        h1 { color: #ffff55; font-weight: normal; font-size: 1.6rem; }
+        p { color: #aaa; }
+        button { font: inherit; font-size: 1.1rem; color: #fff; padding: 10px 16px; background: #6f6f6f; border: 3px solid #000; box-shadow: inset 3px 3px 0 #8b8b8b, inset -3px -3px 0 #373737; cursor: pointer; }
+        button:disabled { opacity: 0.6; cursor: default; }
+        ul { list-style: none; padding: 0; margin: 18px 0; }
+        li { padding: 8px 10px; margin: 6px 0; background: rgb(0 0 0 / 0.4); border-left: 6px solid #555; }
+        li.ok { border-color: #55ff55; }
+        li.mal { border-color: #ff5555; }
+        li small { display: block; color: #aaa; margin-top: 3px; }
+        .resumen { padding: 12px; background: rgb(0 0 0 / 0.5); border: 2px solid #000; }
+    </style>
+</head>
+<body>
+<main>
+    <h1 data-es="Prueba de conexión online" data-en="Online connection test">Prueba de conexión online</h1>
+    <p data-es="Abre esta página desde la red del colegio. Comprueba si el acceso al servidor y los WebSockets (Realtime) funcionan."
+       data-en="Open this page from the school network. It checks whether server access and WebSockets (Realtime) work.">Abre esta página desde la red del colegio. Comprueba si el acceso al servidor y los WebSockets (Realtime) funcionan.</p>
+    <button id="empezar" data-es="Probar ahora" data-en="Run test">Probar ahora</button>
+    <ul id="pasos"></ul>
+    <div id="resumen" class="resumen" hidden></div>
+</main>
+<script type="module">
+import { CONFIG_ONLINE, ONLINE_ACTIVO } from '../config.js';
+
+const en = new URLSearchParams(location.search).get('lang') === 'en';
+document.documentElement.lang = en ? 'en' : 'es';
+if (en) document.querySelectorAll('[data-en]').forEach(e => { e.textContent = e.dataset.en; });
+const L = (es, ing) => (en ? ing : es);
+
+const lista = document.getElementById('pasos');
+const resumen = document.getElementById('resumen');
+const boton = document.getElementById('empezar');
+
+function paso(titulo) {
+    const li = document.createElement('li');
+    li.textContent = titulo + '…';
+    const det = document.createElement('small');
+    li.appendChild(det);
+    lista.appendChild(li);
+    return {
+        ok(texto) { li.className = 'ok'; det.textContent = texto; li.firstChild.textContent = titulo + ' · OK'; },
+        mal(texto) { li.className = 'mal'; det.textContent = texto; li.firstChild.textContent = titulo + ' · ' + L('FALLÓ', 'FAILED'); }
+    };
+}
+const medir = async fn => { const t = performance.now(); const r = await fn(); return [r, Math.round(performance.now() - t)]; };
+
+async function probar() {
+    boton.disabled = true;
+    lista.replaceChildren();
+    resumen.hidden = true;
+    const resultados = [];
+
+    if (!ONLINE_ACTIVO) {
+        paso(L('Configuración', 'Configuration')).mal(L('Falta url o clave en mundo/online/config.js', 'Missing url or key in mundo/online/config.js'));
+        boton.disabled = false;
+        return;
+    }
+
+    // 1. HTTPS contra la API REST (lo que usa la base de datos)
+    let p = paso(L('1. Acceso HTTPS al servidor', '1. HTTPS access to the server'));
+    try {
+        const [r, ms] = await medir(() => fetch(CONFIG_ONLINE.url + '/rest/v1/salas?select=codigo&limit=1', { headers: { apikey: CONFIG_ONLINE.clave } }));
+        if (r.ok) { p.ok(`${ms} ms`); resultados.push(true); } else { p.mal(`HTTP ${r.status}`); resultados.push(false); }
+    } catch (e) { p.mal(L('Bloqueado o sin red: ', 'Blocked or offline: ') + e.message); resultados.push(false); }
+
+    // 2. WebSocket de Realtime
+    const { createClient } = await import('../../../vendor/supabase.js');
+    const opciones = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
+    const a = createClient(CONFIG_ONLINE.url, CONFIG_ONLINE.clave, opciones);
+    const b = createClient(CONFIG_ONLINE.url, CONFIG_ONLINE.clave, opciones);
+    const nombre = 'test-' + Math.random().toString(36).slice(2, 8);
+
+    const suscribir = (cliente, extra) => new Promise((ok, mal) => {
+        const canal = cliente.channel(nombre, { config: { broadcast: { self: false }, presence: { key: 'k' + Math.random().toString(36).slice(2, 6) } } });
+        if (extra) extra(canal);
+        const plazo = setTimeout(() => mal(new Error(L('tiempo agotado (10 s)', 'timed out (10 s)'))), 10000);
+        canal.subscribe(est => {
+            if (est === 'SUBSCRIBED') { clearTimeout(plazo); ok(canal); }
+            else if (est === 'CHANNEL_ERROR' || est === 'TIMED_OUT') { clearTimeout(plazo); mal(new Error(est)); }
+        });
+    });
+
+    p = paso(L('2. Conexión WebSocket (Realtime)', '2. WebSocket connection (Realtime)'));
+    let canalA, canalB, recibidos = [];
+    try {
+        const [c, ms] = await medir(() => suscribir(a));
+        canalA = c; p.ok(`${ms} ms`); resultados.push(true);
+    } catch (e) { p.mal(e.message + L(' · El colegio probablemente bloquea WebSockets.', ' · The school probably blocks WebSockets.')); resultados.push(false); }
+
+    // 3. Broadcast entre dos clientes y 4. Presence
+    if (canalA) {
+        p = paso(L('3. Mensajes entre dos jugadores (Broadcast)', '3. Messages between two players (Broadcast)'));
+        try {
+            let llegada;
+            const espera = new Promise(r => { llegada = r; });
+            canalB = await suscribir(b, c => {
+                c.on('broadcast', { event: 'ping' }, m => llegada(m.payload));
+                c.on('presence', { event: 'sync' }, () => { recibidos = Object.keys(c.presenceState()); });
+            });
+            const t0 = performance.now();
+            await canalA.send({ type: 'broadcast', event: 'ping', payload: { t: 1 } });
+            const r = await Promise.race([espera, new Promise(x => setTimeout(() => x(null), 6000))]);
+            if (r) { p.ok(L('Latencia ida: ', 'One-way latency: ') + Math.round(performance.now() - t0) + ' ms'); resultados.push(true); }
+            else { p.mal(L('El mensaje no llegó en 6 s', 'The message did not arrive in 6 s')); resultados.push(false); }
+        } catch (e) { p.mal(e.message); resultados.push(false); }
+
+        p = paso(L('4. Presencia (quién está conectado)', '4. Presence (who is online)'));
+        try {
+            await canalA.track({ n: 'a' });
+            await canalB.track({ n: 'b' });
+            await new Promise(r => setTimeout(r, 2500));
+            if (recibidos.length >= 2) { p.ok(L(`Se ven ${recibidos.length} jugadores`, `${recibidos.length} players see each other`)); resultados.push(true); }
+            else { p.mal(L('No se sincronizó la presencia', 'Presence did not sync')); resultados.push(false); }
+        } catch (e) { p.mal(e.message); resultados.push(false); }
+    }
+
+    try { await a.removeAllChannels(); await b.removeAllChannels(); } catch (e) { /* ya cerrado */ }
+    const todo = resultados.length >= 4 && resultados.every(Boolean);
+    resumen.hidden = false;
+    resumen.textContent = todo
+        ? L('Todo funciona: el modo online debería andar desde esta red.', 'Everything works: online mode should work from this network.')
+        : L('Hay fallos. Si falla el paso 2, la red bloquea WebSockets: prueba con datos móviles o con un hotspot del teléfono.', 'There are failures. If step 2 fails, the network blocks WebSockets: try mobile data or a phone hotspot.');
+    boton.disabled = false;
+}
+boton.addEventListener('click', probar);
+</script>
+</body>
+</html>

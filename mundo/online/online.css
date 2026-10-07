@@ -1,0 +1,60 @@
+/* =========================================================
+   VENJY · Mundo 3D online: lobby, hotbar y lista de jugadores
+   ========================================================= */
+
+.online { margin: 14px 0 6px; text-align: left; padding: 12px 14px; background: rgb(0 0 0 / 0.35); border: 2px solid #000; }
+.online h2 { margin: 0 0 6px; font-size: 1.15rem; font-weight: normal; color: var(--amarillo); }
+.online .ayuda { margin: 0 0 10px; color: var(--gris); font-size: 0.85rem; }
+.online .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.online label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--gris); }
+.online input {
+    font: inherit; font-size: 1rem; color: var(--blanco); padding: 8px 8px;
+    background: #000; border: 2px solid var(--borde-oscuro); box-shadow: inset 2px 2px 0 #1b1b1b;
+    text-transform: none; min-width: 0;
+}
+.online input#on-codigo { text-transform: uppercase; letter-spacing: 2px; }
+.online input:focus { outline: none; border-color: var(--blanco); }
+.online input:disabled { color: var(--gris); }
+.online .boton { margin: 10px 0 4px; }
+.online .boton:disabled { opacity: 0.6; cursor: default; }
+.online .estado { margin: 6px 0 0; min-height: 1.2em; font-size: 0.9rem; color: var(--blanco); }
+.online .estado.error { color: #ff8a8a; }
+@media (max-width: 480px) { .online .campos { grid-template-columns: 1fr; } }
+
+/* Hotbar */
+.hotbar {
+    position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    display: flex; gap: 2px; padding: 3px; background: rgb(0 0 0 / 0.55); border: 3px solid #000;
+    pointer-events: none;
+}
+.hotbar-casilla {
+    position: relative; width: 44px; height: 44px; display: grid; place-items: center;
+    border: 3px solid var(--borde-oscuro); background: rgb(60 60 60 / 0.6);
+}
+.hotbar-casilla.activa { border-color: var(--blanco); background: rgb(110 110 110 / 0.7); }
+.hotbar-casilla canvas { width: 28px; height: 28px; image-rendering: pixelated; }
+.hotbar-casilla span { position: absolute; left: 2px; top: 0; font-size: 0.65rem; color: var(--gris); text-shadow: 1px 1px 0 #000; }
+@media (max-width: 560px) { .hotbar-casilla { width: 32px; height: 32px; } .hotbar-casilla canvas { width: 20px; height: 20px; } }
+
+/* Jugadores y estado de la partida */
+.jugadores-lista {
+    position: fixed; right: 10px; top: 10px; min-width: 150px; max-width: 220px; padding: 6px 10px;
+    background: rgb(0 0 0 / 0.45); font-size: 0.85rem; line-height: 1.5; pointer-events: none; text-shadow: 1px 1px 0 #000;
+}
+.jugadores-lista .cab { color: var(--amarillo); margin-bottom: 2px; }
+.jugadores-lista .yo { color: #9be89b; }
+.jugadores-lista .muerto { color: #888; text-decoration: line-through; }
+.jugadores-lista .vidas { color: #ff6b6b; float: right; margin-left: 10px; }
+
+.aviso-partida {
+    position: fixed; left: 50%; top: 22%; transform: translateX(-50%); text-align: center;
+    font-size: 2rem; color: var(--blanco); text-shadow: 3px 3px 0 #000; pointer-events: none; white-space: nowrap;
+}
+.aviso-partida small { display: block; margin-top: 6px; font-size: 1rem; color: var(--amarillo); }
+.barra-vida {
+    position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); width: 180px; height: 12px;
+    background: #300; border: 2px solid #000; pointer-events: none;
+}
+.barra-vida i { display: block; height: 100%; background: #d33; }
+.destello-dano { position: fixed; inset: 0; background: rgb(255 0 0 / 0.28); pointer-events: none; animation: dano 0.3s linear forwards; }
+@keyframes dano { to { opacity: 0; } }

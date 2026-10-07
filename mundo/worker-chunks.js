@@ -5,7 +5,7 @@
 // que transferir los mapas de alturas: solo llegan los arreglos del chunk.
 // =========================================================
 import { generarDatos } from './mundo-datos.js';
-import { prepararTerreno, llenarChunk, mallarChunkCrudo } from './voxeles.js';
+import { prepararTerreno, llenarChunk, mallarChunkCrudo, guardarEdicion } from './voxeles.js';
 
 let terreno = null;
 
@@ -22,7 +22,10 @@ self.onmessage = e => {
     try {
         if (m.t === 'init') {
             terreno = prepararTerreno(generarDatos(m.orient));
+            for (const [x, y, z, id] of m.ediciones || []) guardarEdicion(terreno, x, y, z, id);
             self.postMessage({ t: 'listo' });
+        } else if (m.t === 'ediciones' && terreno) {
+            for (const [x, y, z, id] of m.lista) guardarEdicion(terreno, x, y, z, id);
         } else if (m.t === 'chunk' && terreno) {
             const relleno = llenarChunk(terreno, m.x, m.z);
             const g = mallarChunkCrudo(m.x, m.z, relleno);

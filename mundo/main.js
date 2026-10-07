@@ -13,6 +13,7 @@ import { iniciarTactil } from './tactil.js';
 import { crearMinimapa } from './minimapa.js';
 import { crearGatas } from './gatas.js';
 import { crearBrujula } from './brujula.js';
+import { iniciarOnline } from './online/online.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -129,7 +130,8 @@ async function iniciar() {
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     const brujula = crearBrujula(hudEl, idioma);
     const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar() });
-    window.__venjy = { datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
+    const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
+    window.__venjy = { online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -193,6 +195,7 @@ async function iniciar() {
         else jugador.actualizar(0);
         cielo.actualizar(camara, dt);
         gatas.actualizar(dt);
+        if (online) online.actualizar(dt);
         relojAgua += dt;
         if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);

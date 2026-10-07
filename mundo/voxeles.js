@@ -213,7 +213,7 @@ export function prepararTerreno(datos) {
     const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
     zonasLuz.push({ x0: faro.x - 4, z0: faro.z - 4, x1: faro.x + 4, z1: faro.z + 4 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -351,7 +351,55 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
         colocarFaro(vox, wx0, wz0, VENT, f);
         maxY = Math.max(maxY, f.y + 38);
     }
+    maxY = Math.max(maxY, aplicarEdiciones(terreno, vox, wx0, wz0, VENT));
     return { vox, maxY: Math.min(ALTO - 1, maxY + 1) };
+}
+
+// ---------------------------------------------------------
+// Ediciones de bloques (romper / poner)
+// Se guardan por chunk en terreno.ediciones: clave de chunk -> Map('x,y,z' -> id).
+// llenarVentana las aplica al final, así que el llenado, la luz y el mallado las ven igual en
+// el hilo principal y en los workers (que reciben la misma lista).
+// ---------------------------------------------------------
+export function claveChunk(x, z) { return Math.floor(x / CHUNK) + ',' + Math.floor(z / CHUNK); }
+
+export function guardarEdicion(terreno, x, y, z, id) {
+    const k = claveChunk(x, z);
+    let m = terreno.ediciones.get(k);
+    if (!m) terreno.ediciones.set(k, m = new Map());
+    m.set(x + ',' + y + ',' + z, id);
+}
+
+function aplicarEdiciones(terreno, vox, wx0, wz0, ancho) {
+    if (!terreno.ediciones.size) return 0;
+    let maxY = 0;
+    const c0x = Math.floor(wx0 / CHUNK), c1x = Math.floor((wx0 + ancho - 1) / CHUNK);
+    const c0z = Math.floor(wz0 / CHUNK), c1z = Math.floor((wz0 + ancho - 1) / CHUNK);
+    for (let cz = c0z; cz <= c1z; cz++) {
+        for (let cx = c0x; cx <= c1x; cx++) {
+            const m = terreno.ediciones.get(cx + ',' + cz);
+            if (!m) continue;
+            for (const [clave, id] of m) {
+                const [x, y, z] = clave.split(',').map(Number);
+                const lx = x - wx0, lz = z - wz0;
+                if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) continue;
+                vox[(y * ancho + lz) * ancho + lx] = id;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+    return maxY;
+}
+
+// ¿Hay ediciones en alguno de los chunks que tocan el rectángulo (con margen)?
+function hayEdicionesCerca(terreno, x0, z0, x1, z1) {
+    if (!terreno.ediciones.size) return false;
+    for (let cz = Math.floor(z0 / CHUNK); cz <= Math.floor(z1 / CHUNK); cz++) {
+        for (let cx = Math.floor(x0 / CHUNK); cx <= Math.floor(x1 / CHUNK); cx++) {
+            if (terreno.ediciones.has(cx + ',' + cz)) return true;
+        }
+    }
+    return false;
 }
 
 function amueblarCasa(vox, wx0, wz0, ancho, c, terreno) {
@@ -532,6 +580,8 @@ function calcularLuz(terreno, cx, cz, relleno) {
     const wx0 = cx * CHUNK - 1, wz0 = cz * CHUNK - 1;
     let ampliada = terreno.zonasLuz.some(r =>
         r.x1 >= wx0 - RADIO_LUZ && r.x0 <= wx0 + VENT + RADIO_LUZ && r.z1 >= wz0 - RADIO_LUZ && r.z0 <= wz0 + VENT + RADIO_LUZ);
+
+    if (!ampliada) ampliada = hayEdicionesCerca(terreno, wx0 - RADIO_LUZ, wz0 - RADIO_LUZ, wx0 + VENT + RADIO_LUZ, wz0 + VENT + RADIO_LUZ);
 
     // Atajo: piso de cielo por columna; si hay celdas transparentes cubiertas o emisores, se descarta
     if (!ampliada) {
@@ -846,8 +896,12 @@ export class MundoVoxel {
         this.cz = terreno.BD / CHUNK;
         this.cola = [];
         this.ultimo = null;
+        this.todosWorkers = [];  // incluye los que aún arrancan (para no perder ediciones)
         this.workers = [];       // workers de chunks listos para recibir trabajo
-        this.enVuelo = new Set(); // claves de chunks pedidos a un worker
+        this.enVuelo = new Map(); // clave de chunk pedido a un worker -> versión de ediciones al pedirlo
+        this.version = 0;         // sube con cada edición
+        this.versionChunk = new Map(); // clave de chunk -> última versión que lo afectó
+        this.remallado = new Set();    // chunks que deben volver a mallarse por una edición
         this.resultados = [];     // chunks ya calculados esperando su malla en el hilo principal
     }
 
@@ -858,6 +912,7 @@ export class MundoVoxel {
             for (let n = 0; n < cantidad; n++) {
                 const w = new Worker(new URL('./worker-chunks.js', import.meta.url), { type: 'module' });
                 const est = { w, listo: false, pedidos: 0 };
+                this.todosWorkers.push(est);
                 w.onmessage = e => {
                     const m = e.data;
                     if (m.t === 'listo') { est.listo = true; this.workers.push(est); }
@@ -865,7 +920,7 @@ export class MundoVoxel {
                     else if (m.t === 'error') { console.error('worker de chunks:', m.mensaje); est.pedidos = Math.max(0, est.pedidos - 1); }
                 };
                 w.onerror = err => { console.error('worker de chunks:', err.message); est.listo = false; };
-                w.postMessage({ t: 'init', orient });
+                w.postMessage({ t: 'init', orient, ediciones: this.listaEdiciones() });
             }
         } catch (e) { /* sin workers: se malla en el hilo principal */ }
     }
@@ -875,23 +930,88 @@ export class MundoVoxel {
     procesar(presupuestoMs = 5) {
         if (!this.workers.length) return this.construir(presupuestoMs);
         const t0 = performance.now();
+        this.procesarRemallado(1);
         while (this.resultados.length && performance.now() - t0 < presupuestoMs) {
             const m = this.resultados.shift();
+            const ver = this.enVuelo.get(m.k) || 0;
             this.enVuelo.delete(m.k);
             if (this.chunks.has(m.k) || !this.deseado(m.x, m.z)) continue;
             this.instalar(m.k, m.g, m.vox, m.luz);
+            if ((this.versionChunk.get(m.k) || 0) > ver) this.remallado.add(m.k); // se editó mientras el worker trabajaba
         }
         const MAX = 3; // pedidos simultáneos por worker
         for (const est of this.workers) {
             while (est.pedidos < MAX && this.cola.length) {
                 const { x, z, k } = this.cola.shift();
                 if (this.chunks.has(k) || this.enVuelo.has(k)) continue;
-                this.enVuelo.add(k);
+                this.enVuelo.set(k, this.version);
                 est.pedidos++;
                 est.w.postMessage({ t: 'chunk', x, z, k });
             }
         }
         return this.cola.length + this.enVuelo.size;
+    }
+
+    // ---- Edición de bloques ----
+    listaEdiciones() {
+        const lista = [];
+        for (const m of this.terreno.ediciones.values()) {
+            for (const [clave, id] of m) { const [x, y, z] = clave.split(',').map(Number); lista.push([x, y, z, id]); }
+        }
+        return lista;
+    }
+
+    // Cambia un bloque. `inmediato`: malla ya el chunk (y vecinos de borde); el resto, en cola.
+    editar(x, y, z, id, inmediato = true) {
+        this.editarLote([[x, y, z, id]], inmediato);
+    }
+
+    editarLote(lista, inmediato = false) {
+        const tocados = new Set();
+        const R = RADIO_LUZ + 1;
+        this.version++;
+        for (const [x, y, z, id] of lista) {
+            if (y < 0 || y >= ALTO || x < 0 || z < 0 || x >= this.terreno.BW || z >= this.terreno.BD) continue;
+            guardarEdicion(this.terreno, x, y, z, id);
+            for (let cz = Math.floor((z - R) / CHUNK); cz <= Math.floor((z + R) / CHUNK); cz++) {
+                for (let cx = Math.floor((x - R) / CHUNK); cx <= Math.floor((x + R) / CHUNK); cx++) {
+                    const k = cx + ',' + cz;
+                    this.versionChunk.set(k, this.version);
+                    tocados.add(k);
+                }
+            }
+            // Los vecinos directos (borde del chunk) se rehacen siempre ya: se ven las caras ocultas
+            if (inmediato) {
+                const propio = claveChunk(x, z);
+                this.remallarYa(propio);
+                const lx = ((x % CHUNK) + CHUNK) % CHUNK, lz = ((z % CHUNK) + CHUNK) % CHUNK;
+                if (lx === 0) this.remallarYa(claveChunk(x - 1, z));
+                if (lx === CHUNK - 1) this.remallarYa(claveChunk(x + 1, z));
+                if (lz === 0) this.remallarYa(claveChunk(x, z - 1));
+                if (lz === CHUNK - 1) this.remallarYa(claveChunk(x, z + 1));
+            }
+        }
+        for (const k of tocados) if (this.chunks.has(k)) this.remallado.add(k);
+        for (const est of this.todosWorkers) est.w.postMessage({ t: 'ediciones', lista });
+    }
+
+    remallarYa(k) {
+        this.remallado.delete(k);
+        const ch = this.chunks.get(k);
+        if (!ch) return;
+        const [cx, cz] = k.split(',').map(Number);
+        const relleno = llenarChunk(this.terreno, cx, cz);
+        this.liberar(ch);
+        this.chunks.delete(k);
+        this.instalar(k, mallarChunkCrudo(cx, cz, relleno), relleno.vox, relleno.luz);
+    }
+
+    // Rehace hasta `maximo` chunks pendientes por cuadro
+    procesarRemallado(maximo = 1) {
+        for (const k of this.remallado) {
+            if (maximo-- <= 0) break;
+            this.remallarYa(k);
+        }
     }
 
     deseado(x, z) {
@@ -977,6 +1097,7 @@ export class MundoVoxel {
             const c = mallarChunkCrudo(x, z, relleno);
             this.instalar(k, c, relleno.vox, relleno.luz);
         }
+        this.procesarRemallado(1);
         return this.cola.length;
     }
 }
