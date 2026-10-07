@@ -24,9 +24,14 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [], nombresZona = null, getIdioma = () => idioma }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
+    // Nombres de las zonas tal como los pone el portafolio (index.html), en el idioma actual
+    const nombreZona = k => {
+        const n = nombresZona && nombresZona[k];
+        return n ? (n[getIdioma()] || n.es) : nombres[k];
+    };
     const guardado = leer();
     const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, auto: true, fps: true, brujula: true, ...guardado };
 
@@ -153,8 +158,20 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'boton chico';
-        b.textContent = nombres[k];
+        b.textContent = nombreZona(k);
+        if (nombresZona && nombresZona[k]) { b.setAttribute('data-es', nombresZona[k].es); b.setAttribute('data-en', nombresZona[k].en); }
         b.addEventListener('click', () => { teletransportar(k); pedirPuntero(); });
+        rejilla.appendChild(b);
+    }
+    // Destinos propios del portafolio (Sala del CV…), con su nombre en cada idioma
+    for (const d of destinos) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'boton chico';
+        b.textContent = d.nombre[idioma] || d.nombre.es;
+        b.setAttribute('data-es', d.nombre.es);
+        b.setAttribute('data-en', d.nombre.en);
+        b.addEventListener('click', () => { irA(d.x, d.z, d.y, d.yaw); pedirPuntero(); });
         rejilla.appendChild(b);
     }
     sec.appendChild(rejilla);
@@ -168,13 +185,20 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         if (clave === 'faro') bz += 10; // junto al pedestal, no dentro de la torre
         bx = Math.max(2, Math.min(terreno.BW - 3, bx));
         bz = Math.max(2, Math.min(terreno.BD - 3, bz));
+        irA(bx + 0.5, bz + 0.5);
+    }
+
+    // Lleva al jugador a (x, z) en bloques; si se da y, aparece justo ahí, y si se da yaw mira hacia allá
+    function irA(x, z, y, yaw) {
+        const bx = Math.floor(x), bz = Math.floor(z);
         mundo.ultimo = null;
         mundo.planificar(bx, bz);
         let intentos = 0;
         while (mundo.cola.some(c => c.d2 <= 4) && intentos++ < 200) mundo.construir(30);
         jugador.vuela = false;
         const suelo = terreno.HT[bz * terreno.BW + bx];
-        jugador.colocar(bx + 0.5, Math.max(suelo, 14) + 2, bz + 0.5);
+        jugador.colocar(x, y !== undefined ? y : Math.max(suelo, 14) + 2, z);
+        if (yaw !== undefined) { jugador.yaw = yaw; jugador.pitch = 0; }
         jugador.alCambiarVuelo && jugador.alCambiarVuelo(false);
     }
 
@@ -197,7 +221,7 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
             let mejor = '', d2m = RADIO_ZONA * RADIO_ZONA;
             for (const k of Object.keys(datos.P)) {
                 const d2 = (datos.P[k][0] - cx) ** 2 + (datos.P[k][1] - cz) ** 2;
-                if (d2 < d2m) { d2m = d2; mejor = nombres[k]; }
+                if (d2 < d2m) { d2m = d2; mejor = nombreZona(k); }
             }
             return mejor;
         },

@@ -14,6 +14,9 @@ import { crearMinimapa } from './minimapa.js';
 import { crearGatas } from './gatas.js';
 import { crearBrujula } from './brujula.js';
 import { iniciarOnline } from './online/online.js';
+import { cargarContenido } from './portafolio/contenido.js';
+import { crearPortafolio } from './portafolio/portafolio.js';
+import { registrarZonas } from './portafolio/zonas.js';
 
 // ---------------------------------------------------------
 // Idioma (misma preferencia que el portafolio)
@@ -127,11 +130,23 @@ async function iniciar() {
     jugador.yaw = Math.atan2(-(tit.tx0 + tit.anchoT / 2 - sx), -(tit.ty0 + tit.altoT / 2 - sz));
 
     const gatas = crearGatas(scene, { datos, terreno, mundo, jugador, materiales });
+    // Portafolio interactivo: carteles y paneles con el contenido real (index.html + CV)
+    const contenido = await cargarContenido();
+    const portafolio = crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma });
+    const { nombres: nombresZona } = registrarZonas({ portafolio, terreno, datos, contenido, mundo });
+    // L cambia el idioma de los paneles, carteles y textos de la página
+    document.addEventListener('keydown', e => {
+        if (e.code !== 'KeyL' || e.repeat || !jugador.activo) return;
+        idioma = idioma === 'es' ? 'en' : 'es';
+        try { localStorage.setItem('preferredLanguage', idioma); } catch (err) { /* sin almacenamiento */ }
+        aplicarIdioma();
+        portafolio.setIdioma(idioma);
+    });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     const brujula = crearBrujula(hudEl, idioma);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar() });
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, getIdioma: () => idioma });
     const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
-    window.__venjy = { online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
+    window.__venjy = { portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -197,6 +212,7 @@ async function iniciar() {
         cielo.actualizar(camara, dt);
         if (!(online && online.enArena)) gatas.actualizar(dt);
         if (online) online.actualizar(dt);
+        portafolio.actualizar(dt);
         relojAgua += dt;
         if (relojAgua > 0.2) { relojAgua = 0; animarAgua(atlasLienzo, ++cuadroAgua); atlas.needsUpdate = true; }
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);

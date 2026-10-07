@@ -6,6 +6,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
+import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
 export const FACTOR_Y = 1.5;    // relieve vertical (el mapa 2D es muy plano a esta escala)
@@ -201,6 +202,18 @@ export function prepararTerreno(datos) {
             amueblar: lleno >= 0.9 && ejeX && sup !== B.NARANJO && maxx - minx >= 20 && maxz - minz >= 14
         });
     }
+    // «Sobre mí»: la casa roja más cercana al punto `casa` del mapa se amuebla con el CV y el libro
+    let sobreMi = null;
+    {
+        const [pcx0, pcz0] = datos.P.casa;
+        let mejor = null, dm = Infinity;
+        for (const c of casas) {
+            if (!c.amueblar || c.sup !== B.ROJO) continue;
+            const d = Math.hypot((c.minx + c.maxx) / 2 - (pcx0 * ESCALA + 2), (c.minz + c.maxz) / 2 - (pcz0 * ESCALA + 2));
+            if (d < dm) { dm = d; mejor = c; }
+        }
+        if (mejor) { mejor.sobreMi = true; sobreMi = geometriaSobreMi(mejor, BASE_ESTRUCTURA); }
+    }
     const decor = [
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
@@ -213,7 +226,7 @@ export function prepararTerreno(datos) {
     const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
     zonasLuz.push({ x0: faro.x - 4, z0: faro.z - 4, x1: faro.x + 4, z1: faro.z + 4 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -443,6 +456,8 @@ function amueblarCasa(vox, wx0, wz0, ancho, c, terreno) {
     }
     poner(ix0 + 2, y0, cz, B.ANTORCHA);
     poner(ix0 + 2, y0 + 1, cz, B.AIRE);
+    // La casa de «Sobre mí» lleva sus propios muebles (atriles del CV, mesa con el libro)
+    if (c.sobreMi) { levantarSobreMi(poner, terreno.sobreMi, y0); return; }
     // Muebles (se omiten los que no caben)
     const hay = (x, z, w, d) => x >= ix0 + 4 && x + w - 1 <= ix1 && z >= iz0 && z + d - 1 <= iz1
         && !(x <= c.puertaX + 2 && x + w - 1 >= c.puertaX - 1 && z + d - 1 >= cz);
