@@ -298,3 +298,53 @@ export function colocarEscenario(t) {
         rect: { x0: x0 - 1, z0: z0 - 1, x1: x0 + 11, z1: z0 + 9 }
     };
 }
+
+// ---------------------------------------------------------
+// Corrales de la granja (aldea): cerco de vallas con postes de tronco, portón abierto hacia
+// la aldea, bebedero y fardos de heno. Devuelve [{ rect, decor, tipo }] (rect = interior pisable).
+// ---------------------------------------------------------
+export function colocarCorrales(t) {
+    const { datos, ESCALA } = t;
+    const [ax, az] = datos.P.aldea;
+    const cx = ax * ESCALA + 2, cz = az * ESCALA + 2;
+    const lista = [];
+    for (const [tipo, w, d] of [['vacas', 16, 12], ['ovejas', 13, 11]]) {
+        const s = buscarSitio(t, { cx, cz, rmin: 20, rmax: 90, w: w + 2, d: d + 2, desnivel: 2 })
+            || buscarSitio(t, { cx, cz, rmin: 20, rmax: 140, w: w + 2, d: d + 2, desnivel: 3 });
+        if (!s) continue;
+        const x0 = s.x0 + 1, z0 = s.z0 + 1, h = s.h;
+        nivelar(t, s.x0, s.z0, w + 2, d + 2, h, null, 1);
+        // Portón: en el lado más cercano al centro de la aldea
+        const mx = x0 + w / 2, mz = z0 + d / 2;
+        const ddx = cx - mx, ddz = cz - mz;
+        const lado = Math.abs(ddx) > Math.abs(ddz) ? (ddx > 0 ? 'e' : 'o') : (ddz > 0 ? 's' : 'n');
+        const decor = aDecor(poner => {
+            const y = h + 1;
+            for (let x = x0 - 1; x <= x0 + w; x++) {
+                for (let z = z0 - 1; z <= z0 + d; z++) {
+                    const bx = x === x0 - 1 || x === x0 + w, bz = z === z0 - 1 || z === z0 + d;
+                    if (!bx && !bz) continue;
+                    const porton = (lado === 'n' && z === z0 - 1 || lado === 's' && z === z0 + d) && Math.abs(x - Math.floor(mx)) <= 0
+                        || (lado === 'o' && x === x0 - 1 || lado === 'e' && x === x0 + w) && Math.abs(z - Math.floor(mz)) <= 0;
+                    if (porton) continue;
+                    const esquina = bx && bz, poste = esquina || (bx ? (z - z0) % 4 === 0 : (x - x0) % 4 === 0);
+                    poner(x, y, z, poste ? B.TRONCO : B.VALLA);
+                    if (esquina) poner(x, y + 1, z, B.ANTORCHA);
+                }
+            }
+            // Bebedero de 3 bloques con borde de piedra labrada, hundido en el suelo
+            const bx = x0 + 1, bz = z0 + 1;
+            for (let k = -1; k <= 3; k++) {
+                for (let j = -1; j <= 1; j++) {
+                    const borde = k === -1 || k === 3 || j !== 0;
+                    poner(bx + k, h, bz + 1 + j, borde ? B.LABRADA : B.AGUA);
+                }
+            }
+            // Fardos de heno apilados en una esquina
+            const hx = x0 + w - 2, hz = z0 + d - 2;
+            poner(hx, y, hz, B.HENO); poner(hx - 1, y, hz, B.HENO); poner(hx, y, hz - 1, B.HENO); poner(hx, y + 1, hz, B.HENO);
+        });
+        lista.push({ tipo, decor, h, rect: { x0: x0 + 0.6, z0: z0 + 0.6, x1: x0 + w - 0.6, z1: z0 + d - 0.6 }, evitar: [{ x0: x0, z0: z0, x1: x0 + 5, z1: z0 + 3.5 }, { x0: x0 + w - 3.5, z0: z0 + d - 3.5, x1: x0 + w, z1: z0 + d }] });
+    }
+    return lista;
+}

@@ -13,6 +13,7 @@ import { iniciarTactil } from './tactil.js';
 import { crearMinimapa } from './minimapa.js';
 import { crearGatas } from './gatas.js';
 import { crearNPCs } from './criaturas/npcs.js';
+import { crearAnimales } from './criaturas/animales.js';
 import { crearBrujula } from './brujula.js';
 import { iniciarOnline } from './online/online.js';
 import { cargarContenido } from './portafolio/contenido.js';
@@ -136,6 +137,7 @@ async function iniciar() {
     const portafolio = crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma, exigirPunteria: () => !!(online && online.edicion && online.edicion.activa) });
     const { nombres: nombresZona, destinos: destinosZona } = registrarZonas({ portafolio, terreno, datos, contenido, mundo });
     // Amigos en el mundo: Pony (pescador), Salonas (bajista) y Lona (gatera)
+    const animales = crearAnimales(scene, { terreno, mundo, jugador, materiales });
     const npcs = crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, carteles: portafolio.carteles, idioma });
     // L cambia el idioma de los paneles, carteles y textos de la página
     document.addEventListener('keydown', e => {
@@ -150,7 +152,7 @@ async function iniciar() {
     const brujula = crearBrujula(hudEl, idioma);
     const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma });
     const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
-    window.__venjy = { npcs, portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
+    window.__venjy = { animales, npcs, portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -216,6 +218,7 @@ async function iniciar() {
         cielo.actualizar(camara, dt);
         if (!(online && online.enArena)) gatas.actualizar(dt);
         npcs.actualizar(dt, !!(online && online.enArena));
+        animales.actualizar(dt, !!(online && online.enArena));
         if (online) online.actualizar(dt);
         portafolio.actualizar(dt);
         relojAgua += dt;
