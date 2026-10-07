@@ -6,7 +6,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
-import { SALA_CV, geometriaSalaCV, levantarSalaCV } from './portafolio/salacv.js';
+import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
 export const FACTOR_Y = 1.5;    // relieve vertical (el mapa 2D es muy plano a esta escala)
@@ -202,20 +202,19 @@ export function prepararTerreno(datos) {
             amueblar: lleno >= 0.9 && ejeX && sup !== B.NARANJO && maxx - minx >= 20 && maxz - minz >= 14
         });
     }
-    // Sala del CV: se nivela el terreno bajo el salón y su margen; ES=3 evita árboles y flores allí
-    const salaCV = geometriaSalaCV(BASE_ESTRUCTURA);
-    for (let bz = salaCV.z0 - SALA_CV.margen; bz <= salaCV.z1 + SALA_CV.margen; bz++) {
-        for (let bx = salaCV.x0 - SALA_CV.margenOeste; bx <= salaCV.x1 + SALA_CV.margen; bx++) {
-            if (bx < 0 || bz < 0 || bx >= BW || bz >= BD) continue;
-            const o = bz * BW + bx;
-            const dentro = bx >= salaCV.x0 && bx <= salaCV.x1 && bz >= salaCV.z0 && bz <= salaCV.z1;
-            const plaza = bx < salaCV.x0 && Math.abs(bz - salaCV.puerta.z) <= 2; // losas frente a la puerta
-            ES[o] = 3; HT[o] = BASE_ESTRUCTURA; SUB[o] = B.TIERRA; HUECO[o] = 0;
-            SUP[o] = dentro ? B.TABLONES : plaza ? B.GRIS : B.PASTO;
+    // «Sobre mí»: la casa roja más cercana al punto `casa` del mapa se amuebla con el CV y el libro
+    let sobreMi = null;
+    {
+        const [pcx0, pcz0] = datos.P.casa;
+        let mejor = null, dm = Infinity;
+        for (const c of casas) {
+            if (!c.amueblar || c.sup !== B.ROJO) continue;
+            const d = Math.hypot((c.minx + c.maxx) / 2 - (pcx0 * ESCALA + 2), (c.minz + c.maxz) / 2 - (pcz0 * ESCALA + 2));
+            if (d < dm) { dm = d; mejor = c; }
         }
+        if (mejor) { mejor.sobreMi = true; sobreMi = geometriaSobreMi(mejor, BASE_ESTRUCTURA); }
     }
     const decor = [
-        { t: 'cv', x: salaCV.x0, z: salaCV.z0, cx: salaCV.cx, cz: salaCV.cz, r: 24, geo: salaCV },
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
         { t: 'mina', x: mix * ESCALA, z: (miy - 5) * ESCALA, cx: mix * ESCALA, cz: (miy - 5) * ESCALA - 14, r: 18 }
@@ -227,7 +226,7 @@ export function prepararTerreno(datos) {
     const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
     zonasLuz.push({ x0: faro.x - 4, z0: faro.z - 4, x1: faro.x + 4, z1: faro.z + 4 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, salaCV, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -351,7 +350,7 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
     for (const d of terreno.decor) {
         if (Math.abs(d.cx - (wx0 + VENT / 2)) < d.r + VENT / 2 && Math.abs(d.cz - (wz0 + VENT / 2)) < d.r + VENT / 2) {
             colocarDecor(vox, wx0, wz0, VENT, d, BASE_ESTRUCTURA + 1);
-            maxY = Math.max(maxY, BASE_ESTRUCTURA + (d.t === 'cv' ? 16 : 8));
+            maxY = Math.max(maxY, BASE_ESTRUCTURA + 8);
         }
     }
     // Casas: chimenea, cama, librero, mesa con antorcha y cofre
@@ -457,6 +456,8 @@ function amueblarCasa(vox, wx0, wz0, ancho, c, terreno) {
     }
     poner(ix0 + 2, y0, cz, B.ANTORCHA);
     poner(ix0 + 2, y0 + 1, cz, B.AIRE);
+    // La casa de «Sobre mí» lleva sus propios muebles (atriles del CV, mesa con el libro)
+    if (c.sobreMi) { levantarSobreMi(poner, terreno.sobreMi, y0); return; }
     // Muebles (se omiten los que no caben)
     const hay = (x, z, w, d) => x >= ix0 + 4 && x + w - 1 <= ix1 && z >= iz0 && z + d - 1 <= iz1
         && !(x <= c.puertaX + 2 && x + w - 1 >= c.puertaX - 1 && z + d - 1 >= cz);
@@ -481,9 +482,7 @@ function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
         if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
         vox[(y * ancho + lz) * ancho + lx] = id;
     };
-    if (d.t === 'cv') {
-        levantarSalaCV(poner, d.geo, y0);
-    } else if (d.t === 'pozo') {
+    if (d.t === 'pozo') {
         for (let dz = 0; dz < 8; dz++) {
             for (let dx = 0; dx < 8; dx++) {
                 const borde = dx === 0 || dx === 7 || dz === 0 || dz === 7;

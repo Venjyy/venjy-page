@@ -24,9 +24,14 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [] }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [], nombresZona = null, getIdioma = () => idioma }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
+    // Nombres de las zonas tal como los pone el portafolio (index.html), en el idioma actual
+    const nombreZona = k => {
+        const n = nombresZona && nombresZona[k];
+        return n ? (n[getIdioma()] || n.es) : nombres[k];
+    };
     const guardado = leer();
     const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, auto: true, fps: true, brujula: true, ...guardado };
 
@@ -153,7 +158,8 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'boton chico';
-        b.textContent = nombres[k];
+        b.textContent = nombreZona(k);
+        if (nombresZona && nombresZona[k]) { b.setAttribute('data-es', nombresZona[k].es); b.setAttribute('data-en', nombresZona[k].en); }
         b.addEventListener('click', () => { teletransportar(k); pedirPuntero(); });
         rejilla.appendChild(b);
     }
@@ -215,7 +221,7 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
             let mejor = '', d2m = RADIO_ZONA * RADIO_ZONA;
             for (const k of Object.keys(datos.P)) {
                 const d2 = (datos.P[k][0] - cx) ** 2 + (datos.P[k][1] - cz) ** 2;
-                if (d2 < d2m) { d2m = d2; mejor = nombres[k]; }
+                if (d2 < d2m) { d2m = d2; mejor = nombreZona(k); }
             }
             return mejor;
         },

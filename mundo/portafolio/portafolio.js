@@ -9,6 +9,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { crearCarteles } from './carteles.js';
+import { crearCuadros } from './cuadros.js';
 
 const RADIO_ABRIR = 4.5;      // bloques en horizontal
 const HISTERESIS = 1.5;       // para no parpadear en el borde
@@ -38,9 +39,10 @@ function el(tag, clase, padre, texto) {
     return e;
 }
 
-export function crearPortafolio({ scene, camara, jugador, hudEl, idioma: idiomaInicial = 'es', alAbrir = null }) {
+export function crearPortafolio({ scene, camara, jugador, hudEl, materiales, idioma: idiomaInicial = 'es', alAbrir = null }) {
     let idioma = idiomaInicial;
     const carteles = crearCarteles(scene, camara, idioma);
+    const cuadros = crearCuadros({ scene, camara, materiales });
     const pois = [];
     let activo = null, pagina = 0, paginas = [], grande = false;
     const tactil = esTactil();
@@ -173,8 +175,16 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, idioma: idiomaI
         return poi;
     }
 
+    // Cuadro con imagen (ver cuadros.js); si lleva `poi`, también abre un panel al acercarse
+    function agregarCuadro(op) {
+        const c = cuadros.agregar(op);
+        if (op.poi) agregarPOI({ x: op.x, y: op.y, z: op.z, ...op.poi });
+        return c;
+    }
+
     function actualizar() {
         carteles.actualizar();
+        cuadros.actualizar();
         panel.hidden = !activo || !jugador.activo; // en pausa se oculta
         if (!pois.length) return;
         const p = camara.position, pies = jugador.pos;
@@ -193,5 +203,5 @@ export function crearPortafolio({ scene, camara, jugador, hudEl, idioma: idiomaI
         if (activo) { const n = pagina; paginas = activo.paginas(idioma); pagina = Math.min(n, paginas.length - 1); pintar(); }
     }
 
-    return { pois, agregarPOI, actualizar, setIdioma, carteles, cerrar, get idioma() { return idioma; }, get activo() { return activo; } };
+    return { pois, agregarPOI, agregarCuadro, actualizar, setIdioma, carteles, cerrar, get idioma() { return idioma; }, get activo() { return activo; } };
 }

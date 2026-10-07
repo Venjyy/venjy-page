@@ -16,6 +16,12 @@ export async function cargarContenido() {
     return crearAcceso(doc);
 }
 
+const NOMBRES_POR_DEFECTO = {
+    spawn: { es: 'Inicio', en: 'Home' }, casa: { es: 'Sobre mí', en: 'About me' }, registro: { es: 'Experiencia', en: 'Experience' },
+    mina: { es: 'Habilidades', en: 'Skills' }, aldea: { es: 'Proyectos', en: 'Projects' }, gatera: { es: 'Mis gatas', en: 'My cats' },
+    correo: { es: 'Contacto', en: 'Contact' }, faro: { es: 'ProcedimientoSeguro', en: 'ProcedimientoSeguro' }
+};
+
 const limpiar = t => (t || '').replace(/\s+/g, ' ').trim();
 
 function crearAcceso(doc) {
@@ -34,6 +40,21 @@ function crearAcceso(doc) {
         texto: (sel, raiz = doc) => bi(uno(sel, raiz)),
         // Lista de textos bilingües
         textos: (sel, raiz = doc) => varios(sel, raiz).map(bi),
+        // Nombres de las zonas tal como los muestra el portafolio (menú del mapa y barra de secciones),
+        // por clave de punto del mapa: spawn, casa, registro, mina, aldea, gatera, correo, faro
+        nombresZona: () => {
+            const n = {};
+            for (const a of varios('.marcador[data-punto]')) {
+                const t = a.querySelector('.marcador-nombre');
+                if (t) n[a.getAttribute('data-punto')] = bi(t);
+            }
+            const inicio = uno('.ranura[href="#inicio"]');
+            if (inicio) n.spawn = { es: inicio.getAttribute('data-es-nombre') || 'Inicio', en: inicio.getAttribute('data-en-nombre') || 'Home' };
+            n.faro = { es: 'ProcedimientoSeguro', en: 'ProcedimientoSeguro' }; // el rótulo del mapa lleva además «en línea»
+            // Respaldo por si index.html no se pudo leer
+            for (const [k, v] of Object.entries(NOMBRES_POR_DEFECTO)) if (!n[k]) n[k] = v;
+            return n;
+        },
         // Enlace (href y etiqueta bilingüe)
         enlace: (sel, raiz = doc) => {
             const a = uno(sel, raiz);
