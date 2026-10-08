@@ -21,6 +21,36 @@ Una **interacción nueva con tecla** es un tipo B en su propio módulo: plantill
 
 ---
 
+## 0. Encargar la animación a un subagente (lo normal)
+
+El dueño suele pedir: «ejecuta un subagente Haiku (o Sonnet) que haga la animación X». Quien recibe
+ese pedido **no programa la animación**: escribe el encargo, lanza el subagente con el modelo pedido,
+revisa lo que entrega (video, hojas, medidas) y lo presenta. Si no se nombra el modelo, usa la tabla:
+
+| Modelo | Costo | Úsalo para | Ejemplos probados |
+|---|---|---|---|
+| **Haiku** (por defecto) | bajo | tipos A y B simples, interacciones con tecla, gestos nuevos, escenas cortas de 1–2 actores en lugares abiertos | caricias a las gatas (bien al primer intento); ronda del iglú (buena mecánica; la cámara necesitó 2 pasadas más) |
+| **Sonnet** | medio | escenas con 3+ actores, interiores estrechos, puesta en escena y cámara difíciles, cuando Haiku falló dos veces en lo mismo | — |
+
+**Plantilla del encargo** (cópiala y llena los `<…>`):
+
+```
+Trabajas en /home/user/venjy-page. Lee enteros CLAUDE.md, .claude/skills/animaciones-minecraft/SKILL.md
+y todos los archivos de su carpeta referencia/, y sigue la skill al pie de la letra.
+Lee además: <archivos del lugar/actores: p. ej. mundo/gatas.js, la sección X de mundo/criaturas/amigos.js>.
+TAREA: <qué pasa, quiénes, dónde, cómo se activa (tecla/botón/al acercarse), cuánto dura, cómo se sale>.
+Decisiones del dueño: <cámara, efectos, quién puede, textos especiales…>.
+Entrega: guion con tabla de tiempos antes del código, capturas medidas, hoja de planos si hay cámara,
+video con grabar.mjs, pruebas del repo, PENDIENTES.md actualizado.
+Temporales SOLO en <scratchpad>/<carpeta>/. NO hagas commit ni push. No edites la skill.
+Responde con: qué hace + tabla de tiempos, teclas/botones, archivos, rutas de capturas/video y qué
+viste, pruebas, y lo que de la skill fue confuso o faltó.
+```
+
+Al recibir el resultado: mira tú mismo la hoja de cuadros del video
+(`referencia/verificar.md` §2b), corre las pruebas, y si algo se ve mal pide una pasada más al
+mismo subagente o súbelo a Sonnet. Lleva a la skill lo que el subagente diga que faltó.
+
 ## 1. Reglas del estilo (no negociables)
 
 1. **Cajas rígidas que giran en sus pivotes.** Se anima solo `rotation` de los grupos pivote

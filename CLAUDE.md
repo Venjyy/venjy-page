@@ -24,7 +24,7 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 Minecraft 3D jugable con Three.js (carpeta `mundo/`, `vendor/`). Antes de tocarlo lee `mundo/PENDIENTES.md` (estado, arquitectura y tareas) y **actualízalo en cada cambio**: marca tareas hechas y añade una entrada a la bitácora.
 
-**Animaciones** (gestos, escenas, interacciones, cámara de cine): usa la skill `.claude/skills/animaciones-minecraft/`.
+**Animaciones** (gestos, escenas, interacciones, cámara de cine): usa la skill `.claude/skills/animaciones-minecraft/`. Por defecto se encargan a un subagente **Haiku** (bajo costo) con la plantilla de su §0; **Sonnet** si el dueño lo pide o la escena es compleja (3+ actores, interiores estrechos).
 
 **Modo supervivencia** (`supervivencia.html`, `mundo/supervivencia/`): página aparte sobre el mismo mapa (subido 48 bloques, altura 128, cuevas y menas). Arquitectura, decisiones y estado en la sección «Modo supervivencia» de `mundo/PENDIENTES.md`. Pruebas: `node mundo/tests/recetas.mjs` y `node mundo/tests/inventario.mjs`.
 
