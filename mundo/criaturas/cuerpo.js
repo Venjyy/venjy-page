@@ -252,6 +252,8 @@ export function crearNombre(scene, texto) {
 // ---------------------------------------------------------
 const ESCALA_GLOBO = [3.0, 1.25];
 const MARGEN_GLOBO = 0.04, TOPE_GLOBO = 0.9, ESCALAS_GLOBO = [1, 0.85, 0.7];
+// Legibilidad: medio alto mínimo del globo en pantalla (NDC) y roce leve que se tolera sin cambiar de lugar (área NDC)
+export const MIN_HH_GLOBO = 0.17, ROCE_GLOBO = 0.03;
 const vP = new THREE.Vector3();
 // Punto del padre → NDC de la cámara (delante = false si queda detrás; entonces se empuja al borde)
 function proyectarGlobo(camara, padre, x, y, z) {
@@ -266,7 +268,7 @@ function proyectarGlobo(camara, padre, x, y, z) {
 const solapeRect = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
 // Elige el lugar del globo. previo = { id, esc } para mantener la candidata elegida mientras siga libre.
 // Sin zonas devuelve solo el encaje clásico (corrido hacia dentro y achicado si no cabe).
-function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActual = false) {
+function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActual = false, estricto = false) {
     padre.updateWorldMatrix(true, false);
     const P = proyectarGlobo(camara, padre, ax, ay, az), { prof, t, asp, delante } = P;
     const ms = padre.matrixWorld.getMaxScaleOnAxis();
@@ -316,17 +318,23 @@ function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActu
     let mejor = null, elegida = null;
     if (!rects.length || soloActual) elegida = medir(candidatas(1)[0]);
     else {
-        if (previo) { // mantiene la candidata anterior si sigue libre
+        if (previo) { // mantiene la candidata anterior mientras no la tape nada de gravedad (un roce leve se tolera)
             const c = candidatas(previo.esc).find(x => x.id === previo.id);
-            if (c && medir(c).solape === 0) { elegida = c; c.esc = previo.esc; }
+            if (c && medir(c).solape <= ROCE_GLOBO) { elegida = c; c.esc = previo.esc; }
         }
-        for (let i = 0; !elegida && i < ESCALAS_GLOBO.length; i++) for (const c of candidatas(ESCALAS_GLOBO[i])) {
-            medir(c); c.esc = ESCALAS_GLOBO[i];
-            if (c.solape === 0) { elegida = c; break; }
-            if (!mejor || c.solape < mejor.solape - 1e-9) mejor = c;
+        // Primero solo candidatas legibles (alto mínimo); si ninguna queda libre, y no es una prueba estricta, vale cualquier tamaño
+        for (const legible of estricto ? [true] : [true, false]) {
+            for (let i = 0; !elegida && i < ESCALAS_GLOBO.length; i++) for (const c of candidatas(ESCALAS_GLOBO[i])) {
+                if (legible && c.hh < MIN_HH_GLOBO) continue;
+                medir(c); c.esc = ESCALAS_GLOBO[i];
+                if (c.solape === 0) { elegida = c; break; }
+                if (!mejor || c.solape < mejor.solape - 1e-9) mejor = c;
+            }
+            if (elegida) break;
         }
         if (!elegida) elegida = mejor;
     }
+    if (!elegida) return { c: null, P, rects, cab, k0, libre: false };
     return { c: elegida, P, rects, cab, k0, libre: elegida.solape === 0, mantenida: !!(previo && elegida.id === previo.id && elegida.esc === previo.esc) };
 }
 
@@ -342,7 +350,7 @@ export function crearGlobo(scene) {
     // Con `evitar` (función que da las zonas de cabezas y torsos de la escena) además busca un lugar que no
     // las tape (ver planearGlobo) y lo mantiene mientras siga libre; solo cambia con texto nuevo o si se ocupa.
     const v = new THREE.Vector3(), vista = new THREE.Vector3();
-    let previo = null, nuevo = true, ultimo = null, sinEvitar = false;
+    let previo = null, nuevo = true, ultimo = null, sinEvitar = false, vis = null, dtUlt = 1 / 60;
     function encajar(x, y, z, camara, renderer) {
         const padre = sp.parent;
         if (!padre) return;
@@ -351,12 +359,22 @@ export function crearGlobo(scene) {
         const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar);
         nuevo = false;
         const { c, P } = r;
-        previo = zonas && zonas.length ? { id: c.id, esc: c.esc || 1 } : null;
-        ultimo = { cuadro: renderer ? renderer.info.render.frame : 0, rect: { x0: c.rect.x0, y0: c.rect.y0, x1: c.rect.x1, y1: c.rect.y1 }, zonas: r.rects, franja, id: c.id, escala: c.k, libre: r.libre };
-        if (c.k < 1) sp.scale.set(ESCALA[0] * c.k, ESCALA[1] * c.k, 1);
-        if (P.delante && c.x === P.cx && c.y === P.cy) return; // cabe: se queda donde está
+        const conZonas = !!(zonas && zonas.length);
+        previo = conZonas ? { id: c.id, esc: c.esc || 1 } : null;
+        // Con zonas el globo se desliza (~0,25 s) hacia su lugar en vez de saltar; sin zonas va directo (como antes)
+        const hw1 = c.hw / c.k, hh1 = c.hh / c.k; // medio tamaño con escala 1
+        let px = c.x, py = c.y, pk = c.k;
+        if (conZonas) {
+            if (!vis) vis = { x: c.x, y: c.y, k: c.k };
+            const f = Math.min(1, dtUlt * 12);
+            vis.x += (c.x - vis.x) * f; vis.y += (c.y - vis.y) * f; vis.k += (c.k - vis.k) * f;
+            px = vis.x; py = vis.y; pk = vis.k;
+        } else vis = null;
+        ultimo = { cuadro: renderer ? renderer.info.render.frame : 0, rect: { x0: px - hw1 * pk, y0: py - hh1 * pk, x1: px + hw1 * pk, y1: py + hh1 * pk }, zonas: r.rects, franja, id: c.id, escala: pk, libre: r.libre, obj: { x: c.x, y: c.y } };
+        if (pk < 1) sp.scale.set(ESCALA[0] * pk, ESCALA[1] * pk, 1);
+        if (!conZonas && P.delante && c.x === P.cx && c.y === P.cy) return; // cabe: se queda donde está
         // Des-proyecta a la misma profundidad y pasa a coordenadas del grupo
-        vista.set(c.x * P.prof * P.t * P.asp, c.y * P.prof * P.t, -P.prof);
+        vista.set(px * P.prof * P.t * P.asp, py * P.prof * P.t, -P.prof);
         v.copy(vista).applyMatrix4(camara.matrixWorld);
         padre.worldToLocal(v);
         sp.position.copy(v);
@@ -418,15 +436,17 @@ export function crearGlobo(scene) {
         probar(cam, x, y, z, zonas, franja = 0.18) {
             const padre = sp.parent;
             if (!padre || !zonas || !zonas.length) return { libre: true, solape: 0 };
-            const r = planearGlobo(cam, padre, x, y, z, zonas, franja, null);
-            return { libre: r.libre, solape: r.c.solape, id: r.c.id };
+            const r = planearGlobo(cam, padre, x, y, z, zonas, franja, null, false, true);
+            // Sin ningún lugar libre con el tamaño legible el plano cuenta como sin lugar (solape 1 = pantalla entera)
+            return r.c ? { libre: r.libre, solape: r.c.solape, id: r.c.id } : { libre: false, solape: 1 };
         },
         actualizar(dt, visible, x, y, z, camara, zonasFn) {
             const objetivo = visible && texto ? 1 : 0;
             alfa += (objetivo - alfa) * Math.min(1, dt * 5);
             if (Math.abs(alfa - objetivo) < 0.01) alfa = objetivo;
             sp.visible = alfa > 0.01;
-            if (!sp.visible) { previo = null; nuevo = true; ultimo = null; return; }
+            dtUlt = Math.max(dt, 1e-3);
+            if (!sp.visible) { previo = null; nuevo = true; ultimo = null; vis = null; return; }
             sp.material.opacity = alfa;
             sp.position.set(x, y, z);
             sp.scale.set(ESCALA[0], ESCALA[1], 1);

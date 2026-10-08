@@ -287,6 +287,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             document.body.classList.remove('en-cine');
         },
         // Depuración (planos.mjs): plano actual y diagnóstico de líneas a las cabezas (null si no se pidió `visibles`)
+        get camara() { return camara; }, // la cámara real (los globos con encaje la necesitan)
         get planoActual() { return cine.activa ? cine.plano : null; },
         get planoNombre() { return cine.activa ? planos()[cine.plano]?.nombre ?? null : null; },
         get diagnostico() { return cine.visibles ? diag : null; }
