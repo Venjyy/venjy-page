@@ -85,6 +85,26 @@ function materialesDe(clave) {
     return T;
 }
 
+// Cuello naranja de Gala (bandana con vuelo y lazo): cajas en el espacio del tronco, pegadas al pecho
+// donde se une la cabeza. Oculto por defecto; `gatas.ponerCuello('gala', true)` lo muestra.
+const NARANJO_CUELLO = [226, 112, 36], PUNTO_CUELLO = [255, 178, 96];
+function construirCuello(e, caras) {
+    const tela = textura(301, (x, y, r) => ((x * 3 + y * 5) % 7 === 0 && r() < 0.8)
+        ? ajustar(PUNTO_CUELLO, 0.95 + r() * 0.08) : ajustar(NARANJO_CUELLO, 0.88 + r() * 0.2));
+    const m = caras(tela);
+    const g = new THREE.Group();
+    const pieza = (w, h, d, x, y, z, rz = 0) => { const p = caja(w, h, d, m); p.position.set(x, y, z); p.rotation.z = rz; g.add(p); };
+    const zc = e.largo - 0.03;                       // delante del cuerpo, donde se une la cabeza
+    pieza(0.74, 0.2, 0.26, 0, 0.44, zc);             // anillo alrededor del cuello
+    pieza(0.84, 0.1, 0.3, 0, 0.31, zc - 0.02);       // vuelo de abajo (más ancho, con volumen)
+    pieza(0.5, 0.07, 0.1, 0, 0.56, zc + 0.14);       // doblez de arriba
+    pieza(0.16, 0.16, 0.14, 0.36, 0.44, zc + 0.1);   // nudo del lazo, a un lado
+    pieza(0.12, 0.26, 0.04, 0.4, 0.28, zc + 0.12, -0.25); // cola 1 del lazo
+    pieza(0.12, 0.24, 0.04, 0.5, 0.25, zc + 0.12, 0.2);   // cola 2 del lazo
+    g.visible = false;
+    return g;
+}
+
 // ---------------------------------------------------------
 // Construcción del modelo (mira hacia +Z, origen en los pies)
 // ---------------------------------------------------------
@@ -140,7 +160,10 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
         cola.add(cm);
         cola.rotation.x = -0.9;
         tronco.add(cola);
-        return { g, tronco, cabeza, patas, cola, e, lw };
+        // Cuello opcional: solo Gala (oculto hasta que se entrega la misión de Lona)
+        const cuello = clave === 'gala' ? construirCuello(e, caras) : null;
+        if (cuello) tronco.add(cuello);
+        return { g, tronco, cabeza, patas, cola, e, lw, cuello };
     }
 
     // ---------------------------------------------------------
@@ -532,6 +555,9 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
             for (const g of gatas) actualizarGata(g, dt, tiempo);
             actualizarPurr();
         },
+        // Cuello naranja (solo Gala): ponerCuello('gala', true) lo muestra; cuelloDe devuelve el grupo (escenas)
+        ponerCuello(clave, valor = true) { const g = gatas.find(x => x.clave === clave); if (g && g.cuello) g.cuello.visible = !!valor; },
+        cuelloDe(clave) { const g = gatas.find(x => x.clave === clave); return (g && g.cuello) || null; },
         // silenciar(true) apaga todos los sonidos del mundo (gatas, animales y música); se recuerda
         silenciar(valor = true) { silenciarMundo(valor); },
         get silenciado() { return mundoSilenciado(); }
