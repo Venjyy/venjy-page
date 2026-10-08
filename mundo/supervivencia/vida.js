@@ -20,10 +20,11 @@ export const CAUSAS = {
     asfixia: { es: 'Se asfixió dentro de un muro', en: 'Suffocated in a wall' }
 };
 
-export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir, alDanio }) {
+export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir, alDanio, alAtascarse }) {
     const v = {
         vida: 20, vidaMax: 20, hambre: 20, saturacion: 5, agotamiento: 0,
         aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, invulnerable: 0, aturdido: 0, bloqueo: null,
+        gracia: 3, // segundos tras cargar o reaparecer: si se está dentro de un bloque, se busca un hueco
         muerto: false, dificultad, temblor: true,
         relojRegen: 0, relojHambre: 0, relojAire: 0, relojFuego: 0, relojVeneno: 0, relojLava: 0, relojAsfixia: 0,
         get defensa() { return inventario.defensa(); }
@@ -98,12 +99,13 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
     }
 
     function reaparecer() {
-        Object.assign(v, { vida: v.vidaMax, hambre: 20, saturacion: 5, agotamiento: 0, aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, aturdido: 0, invulnerable: 2, muerto: false });
+        Object.assign(v, { vida: v.vidaMax, hambre: 20, saturacion: 5, agotamiento: 0, aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, aturdido: 0, invulnerable: 2, gracia: 3, muerto: false });
     }
 
     // Daño por caída: más de 3 bloques (en el agua o en una escalera no se cuenta)
     jugador.alAterrizar = caida => {
-        if (v.muerto) return;
+        // Recién cargado o reaparecido no hay daño de caída: el suelo bajo el jugador puede estar aún cargándose
+        if (v.muerto || v.gracia > 0) return;
         const piso = mundo.bloque(jugador.pos.x, jugador.pos.y - 0.5, jugador.pos.z);
         if (piso === B.HENO) caida *= 0.2;
         if (caida > 3.4) { danar(Math.floor(caida - 3), 'caida', { ignoraArmadura: true }); sonidos.caida(); }
@@ -113,6 +115,7 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
     function actualizar(dt) {
         if (v.muerto) return;
         v.invulnerable = Math.max(0, v.invulnerable - dt);
+        v.gracia = Math.max(0, v.gracia - dt);
         const p = jugador.pos;
 
         // Agotamiento por moverse (correr, nadar) y saltar
@@ -163,10 +166,14 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
             }
         } else { v.aire = Math.min(300, v.aire + 120 * dt); v.relojAire = 0; }
 
-        // Asfixia: la cabeza dentro de un bloque sólido (p. ej. cayó grava encima)
+        // Asfixia: la cabeza dentro de un bloque sólido (p. ej. cayó grava encima).
+        // Recién cargado o reaparecido dentro de tierra, se busca un hueco en vez de morir
         if (cabeza > 0 && cabeza !== B.AGUA && jugador.solido(Math.floor(p.x), Math.floor(p.y + jugador.ojos), Math.floor(p.z))) {
-            v.relojAsfixia += dt;
-            if (v.relojAsfixia >= 0.5) { v.relojAsfixia = 0; danar(1, 'asfixia', { ignoraArmadura: true }); }
+            if (v.gracia > 0 && alAtascarse && alAtascarse()) v.relojAsfixia = 0;
+            else {
+                v.relojAsfixia += dt;
+                if (v.relojAsfixia >= 0.5) { v.relojAsfixia = 0; danar(1, 'asfixia', { ignoraArmadura: true }); }
+            }
         } else v.relojAsfixia = 0;
 
         // Lava y fuego
@@ -196,6 +203,8 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
     }
 
     function serializar() {
+        // Un muerto se guarda como reaparecido: la muerte ya soltó el inventario y la partida vuelve al spawn
+        if (v.muerto) return { vida: v.vidaMax, hambre: 20, saturacion: 5, agotamiento: 0, aire: 300, fuego: 0, veneno: 0, efectoHambre: 0 };
         const { vida, hambre, saturacion, agotamiento, aire, fuego, veneno, efectoHambre } = v;
         return { vida, hambre, saturacion, agotamiento, aire, fuego, veneno, efectoHambre };
     }
