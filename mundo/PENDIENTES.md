@@ -58,6 +58,31 @@ Solo para pasar el rato con amigos. Sin sala no se descarga nada de Supabase y e
 - **Controles**: correr con R, Ctrl o doble W (Ctrl+W cierra la pestaña en Windows; además hay aviso de confirmación al cerrar dentro de una sala); Shift agacha en el suelo (lento, baja la cámara y no te deja caer por el borde).
 - **Pendiente online**: chat; la arena no oculta el menú de teletransporte; probar con amigos reales desde la red del colegio; limpieza periódica de salas viejas (`select public.limpiar_salas_viejas()` a mano).
 
+## Modo supervivencia (`supervivencia.html`, `mundo/supervivencia/`)
+
+Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivencia`). Página aparte, enlazada desde el pie de `index.html` y el menú de `mundo.html`. Solo el mapa horizontal.
+
+**Decisiones del dueño**: el mapa del portafolio subido 48 bloques (altura total 128) con cuevas, lava y menas debajo; el creativo no cambia. Enemigos: zombi, esqueleto, araña, creeper y **Trauco**. Jefes en el mapa (sin dimensiones): **Imbunche** (mina), **Chonchon gigante** (portal en ruinas) y **Caleuche** (mar frente al naufragio/faro), con créditos al final. Crafteo «esencial fiel» (2×2, mesa 3×3, horno, cofres, herramientas y armaduras madera→diamante, sin encantamientos ni pociones). Muerte y dificultad como Minecraft (Pacífico/Fácil/Normal/Difícil). Hambre con saturación; **día de 10 min** (6 de día, 4 de noche). Cultivos, animales cazables/criables que reaparecen y pesca; agua y lava **estáticas** (el cubo toma y pone fuentes; con 2 vecinos de agua la fuente no se gasta). Sin paneles del portafolio; las construcciones se rompen. **Amigos invulnerables** con zona sin monstruos alrededor; **las gatas Mila y Gala son inmortales** (nada les hace daño). Hasta 5 mundos en IndexedDB + exportar/importar `.venjy`. Celular jugable desde el inicio.
+
+**Misiones (PR 3)**: clic derecho (o USAR) sobre un amigo abre su panel; 1 misión activa a la vez; 3 por amigo × 12 = 36; cada misión cerrada tiene **un diálogo único** (ES/EN) en el panel y en su globo. Venjy (Inicio) abre el jefe 1 a las 8 misiones, el 2 a las 18 y el final con las 36. **La misión 3 de Lona queda en espera** (el dueño la explicará): por ahora se completa sola al hablar con ella (tipo `hablar`). Borrador de misiones por amigo en el plan (pescados para Pony, lana para Salonas, troncos y zombis para Hadad…).
+
+**Cómo funciona el motor en survival**:
+- `prepararTerreno(datos, { supervivencia: true })` pone `terreno.dy = 48`; `fijarAlto(128)` cambia `ALTO` (exportación viva) y reasigna los arreglos de luz. Todo el mapa del creativo se calcula igual (coordenadas del creativo) y `llenarSupervivencia` lo desplaza con un `copyWithin` por capas; debajo, `supervivencia/subsuelo.js` pone roca madre, cuevas (túneles + cavernas con ruido 3D en rejilla gruesa de 4), lava bajo y≤10, grava, menas por capas y piedra luminosa en techos hondos. No cava cerca de estructuras, agua ni sitios nivelados.
+- Luz en survival: sin decorados ni emisores puestos cerca, cada chunk calcula su luz **solo en su ventana** (puede verse una costura tenue en la boca de una cueva en el borde de dos chunks). Los chunks con emisores puestos por el jugador (`terreno.emisores`) usan la ventana ampliada. Una edición sin emisores solo remalla su chunk y bordes (~8 ms).
+- Ediciones: clave numérica por chunk (`(y*16+lz)*16+lx`), `recorrerEdiciones`, `recalcularEmisores` al cargar.
+- Bloques nuevos 49-89 en `texturas.js` (menas, roca madre, grava, adoquín, lava tipo 5, mesa, horno, brotes, `TIERRA_LABRADA`, etapas de trigo/zanahoria/papa, bloques de almacenaje, puertas y escalera tipo 6/7 mallados como panel con `cajaPanel`, altar). Atlas de 16×16 tiles. **Ojo**: `B.LABRADA` (25) es la piedra labrada del mapa; la tierra de cultivo es `B.TIERRA_LABRADA` (66).
+- Las criaturas del creativo viven en un grupo subido 48 y ven mundo/jugador/cámara «bajados» con Proxy (`supervivencia/desplazado.js`): su lógica no se tocó.
+
+**Archivos**: `main.js` (menú, carga, bucle, pausa, muerte, ajustes, `window.__venjy` con `dar(id, n)`), `objetos.js` (registro de objetos ≥256, dureza/herramienta/drops de bloques, comida, combustible), `iconos.js` (íconos pintados con código + cubos isométricos), `recetas.js` (78 recetas, horno), `inventario.js` (datos puros), `ui-inventario.js` (inventario, mesa, horno, cofre, libro de recetas; mantener = clic derecho en celular), `hud.js`, `vida.js`, `minado.js` (romper con grietas, poner, usar, comer, cubos, azada, puertas, cama), `entidades.js` (objetos tirados), `contenedores.js` + `botin.js` (cofres del mapa con botín por lugar, hornos que funden con la ventana cerrada), `agricultura.js` (registro de lo que crece: ~6 min regado, brote ~3 min, harina de huesos), `dia.js`, `guardado.js`, `sonidos.js` (WebAudio), `desplazado.js`, `tactil-supervivencia.js`, `supervivencia.css`. Compartidos nuevos: `mundo/rayo.js` (lo usa también `online/edicion.js`). `jugador.js` ganó ganchos (escaleras, lava, puertas, `alAterrizar`, `empuje`, `lento`, `puedeCorrer`). `cielo.js`: `fijarHora(h, dia)` y `nubesLibres`.
+
+**Pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs` y la de paridad.
+
+**Estado**:
+- [x] PR 1 · Base: subsuelo, bloques y objetos, minado y puesta, inventario y crafteo con libro de recetas, horno, cofres con botín, vida/hambre/caída/ahogo/lava/fuego/veneno, armadura, día de 10 min y cama, muerte y reaparición, cultivos y árboles, ranuras + exportar/importar, controles táctiles, enlaces.
+- [ ] PR 2 · Mundo vivo: enemigos (zombi, esqueleto con flechas, araña, creeper, Trauco), combate, arco y escudo, zonas seguras, caza y cría de animales con reaparición, pesca, dormir bloqueado con monstruos cerca.
+- [ ] PR 3 · Misiones y jefes: panel de misiones, 36 misiones con diálogo único, Venjy y los 3 jefes, créditos, balance.
+- Pendiente/limitaciones de PR 1: las criaturas pisan según el mapa original (si se cava bajo ellas, flotan); antorchas de pared quedan si se rompe su muro; los bloques que caen (arena, grava) bajan al instante sin animación; sin refactor de `escena.js`/`fisica.js` (el render del survival repite el del creativo y los objetos tirados tienen su propia física simple).
+
 ## Portafolio interactivo (el mundo como portafolio)
 
 Cada lugar del mundo muestra el contenido real del portafolio: cartel flotante encima y panel al acercarse (~4,5 bloques).
@@ -179,6 +204,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-08 · **Modo supervivencia, PR 1 (base)**: página `supervivencia.html` y carpeta `mundo/supervivencia/` (ver sección «Modo supervivencia»); motor con altura 128 y desplazamiento de 48 solo en survival, subsuelo con cuevas y menas, luz local por chunk, ediciones con clave numérica, lava y paneles (puertas, escalera) en el mallado, atlas 16×16, `mundo/rayo.js` compartido, ganchos nuevos en `jugador.js` y `cielo.js`, enlaces en `index.html` y `mundo.html`. Paridad intacta; pruebas de recetas e inventario nuevas. Verificado en el navegador (crear/guardar/cargar, romper y recoger, crafteo con clics y libro de recetas, horno, comer, caída, muerte y reaparición, dormir, cueva con antorchas, emulación de celular) y el creativo sin cambios.
 
 - 2026-10-07 · **Globos completos, YIAAAAAA y Venjy retocado** (lentes 3D, barba más oscura, menos pelo) · `mundo/criaturas/{cuerpo,charla,amigos,pieles,venjy}.js`.
 

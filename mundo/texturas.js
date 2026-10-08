@@ -5,8 +5,8 @@
 import { azar } from './mundo-datos.js';
 
 export const TAM = 16;
-export const COLS = 8;
-export const FILAS = 8;
+export const COLS = 16;
+export const FILAS = 16;
 
 const hex = c => {
     const n = parseInt(c.slice(1), 16);
@@ -67,6 +67,152 @@ function florPintor(x, y, r, color, centro) {
         return ajustar(color, 0.9 + r() * 0.2);
     }
     return [0, 0, 0, 0];
+}
+
+// Piedra con motas de mineral (menas)
+const mena = (color, oscuro) => {
+    const c = hex(color), o = hex(oscuro);
+    const motas = [[3, 3], [10, 2], [6, 7], [12, 9], [2, 11], [8, 12], [13, 13]];
+    return (x, y, r) => {
+        const g = 118 * (0.82 + r() * 0.3);
+        for (const [mx, my] of motas) {
+            if (x >= mx && x <= mx + 1 && y >= my && y <= my + 1 && !(x === mx + 1 && y === my + 1 && (mx + my) % 3 === 0)) {
+                return ajustar(x === mx && y === my ? c : o, 0.9 + r() * 0.2);
+            }
+        }
+        return [g, g, g];
+    };
+};
+
+// Cultivo por etapas: n = 0 (brotes) a 3 (casi maduro); colores del tallo y del fruto
+const cultivoEtapa = (n, tallo, fruto) => (x, y, r) => {
+    const tallos = [2, 5, 8, 11, 14];
+    const alto = 3 + n * 3;
+    for (const px of tallos) {
+        if (x === px && y >= 15 - alto) {
+            if (fruto && n >= 2 && y <= 15 - alto + 2) return ajustar(fruto, 0.85 + r() * 0.3);
+            return ajustar(tallo, 0.8 + r() * 0.35);
+        }
+        if (n >= 1 && Math.abs(x - px) === 1 && y === 15 - alto + 2 && r() < 0.7) return ajustar(tallo, 0.75 + r() * 0.3);
+    }
+    return [0, 0, 0, 0];
+};
+
+const brote = (hoja, tronco) => (x, y, r) => {
+    if (x >= 7 && x <= 8 && y >= 10) return ajustar(tronco, 0.85 + r() * 0.25);
+    const d = Math.hypot(x - 7.5, y - 6);
+    if (d < 5 && r() > 0.25) return ajustar(hoja, 0.8 + r() * 0.35);
+    return [0, 0, 0, 0];
+};
+
+function pintoresSupervivencia() {
+    const piedraBase = (x, y, r) => { const g = 118 * (0.82 + r() * 0.3); return [g, g, g]; };
+    const madera = tablones('#a8834f');
+    const horno = encendido => (x, y, r) => {
+        if (x >= 3 && x <= 12 && y >= 2 && y <= 4) return ajustar([60, 60, 62], 0.9 + r() * 0.15); // ranura
+        if (x >= 4 && x <= 11 && y >= 8 && y <= 13) {
+            if (!encendido) return ajustar([24, 24, 26], 0.9 + r() * 0.2);
+            const v = r();
+            return v < 0.3 ? [255, 220, 90] : v < 0.7 ? [240, 130, 30] : [190, 60, 20];
+        }
+        if (x === 3 || x === 12 || y === 7 || y === 14) return ajustar([80, 80, 82], 0.9 + r() * 0.15);
+        return ajustar([128, 128, 130], 0.82 + r() * 0.25);
+    };
+    return {
+        roca_madre: (x, y, r) => {
+            const v = r();
+            return v < 0.3 ? ajustar([30, 30, 32], 0.8 + r() * 0.4) : v < 0.6 ? ajustar([84, 84, 86], 0.8 + r() * 0.4) : ajustar([128, 128, 130], 0.7 + r() * 0.4);
+        },
+        grava: (x, y, r) => {
+            const v = r();
+            const c = v < 0.25 ? [94, 88, 86] : v < 0.5 ? [150, 142, 140] : v < 0.75 ? [122, 116, 112] : [176, 168, 160];
+            return ajustar(c, 0.85 + r() * 0.25);
+        },
+        adoquin: (x, y, r) => {
+            const piedras = [[1, 1, 6, 5], [8, 0, 14, 4], [0, 7, 4, 12], [6, 6, 11, 10], [12, 6, 15, 11], [2, 13, 8, 15], [10, 12, 15, 15]];
+            for (const [x0, y0, x1, y1] of piedras) {
+                if (x >= x0 && x <= x1 && y >= y0 && y <= y1) {
+                    const borde = x === x0 || y === y0;
+                    return ajustar([128, 128, 130], (borde ? 1.15 : 0.95) * (0.88 + r() * 0.2));
+                }
+            }
+            return ajustar([70, 70, 72], 0.9 + r() * 0.2);
+        },
+        lava: (x, y, r) => {
+            const v = Math.sin(x * 0.9 + y * 0.4) + Math.sin(y * 0.8 - x * 0.3);
+            return v > 1.1 ? [255, 214, 90] : v > 0.2 ? ajustar([236, 120, 24], 0.92 + r() * 0.1) : ajustar([196, 64, 14], 0.9 + r() * 0.15);
+        },
+        mena_carbon: mena('#3a3a3a', '#141414'),
+        mena_hierro: mena('#e8c0a0', '#b98a66'),
+        mena_oro: mena('#ffe45a', '#d6a419'),
+        mena_redstone: mena('#ff3b2e', '#a3120b'),
+        mena_lapis: mena('#3e6be0', '#1d3a9a'),
+        mena_diamante: mena('#7ef3ea', '#2bb7ad'),
+        mena_esmeralda: mena('#46e07a', '#108a3a'),
+        mesa_top: (x, y, r) => {
+            if (x === 0 || y === 0 || x === 15 || y === 15) return ajustar([110, 76, 40], 0.9 + r() * 0.15);
+            if (x % 5 === 0 || y % 5 === 0) return ajustar([96, 66, 34], 0.9 + r() * 0.1);
+            return ajustar([176, 136, 84], 0.88 + r() * 0.2);
+        },
+        mesa_lado: (x, y, r) => {
+            if (y <= 2) return ajustar([110, 76, 40], 0.9 + r() * 0.15);
+            // herramientas colgadas: sierra y martillo
+            if (y >= 5 && y <= 10 && x >= 3 && x <= 5) return ajustar(y < 7 ? [170, 170, 176] : [120, 84, 44], 0.9 + r() * 0.15);
+            if (y >= 5 && y <= 11 && x === 11) return ajustar([120, 84, 44], 0.9);
+            if (y >= 5 && y <= 6 && x >= 9 && x <= 13) return ajustar([150, 150, 156], 0.9 + r() * 0.1);
+            return madera(x, y, r);
+        },
+        horno_frente: horno(false),
+        horno_frente_on: horno(true),
+        horno_top: piedraBase,
+        brote_roble: brote([58, 142, 44], [102, 80, 49]),
+        brote_abedul: brote([128, 172, 70], [226, 224, 214]),
+        brote_pino: brote([38, 100, 60], [68, 48, 28]),
+        labrada_top: (x, y, r) => ajustar([120, 84, 52], (y % 4 === 0 ? 0.72 : 1) * (0.88 + r() * 0.2)),
+        labrada_humeda_top: (x, y, r) => ajustar([74, 48, 28], (y % 4 === 0 ? 0.72 : 1) * (0.88 + r() * 0.2)),
+        trigo_0: cultivoEtapa(0, [80, 170, 50]),
+        trigo_1: cultivoEtapa(1, [90, 168, 52]),
+        trigo_2: cultivoEtapa(2, [120, 160, 56], [170, 176, 70]),
+        trigo_3: cultivoEtapa(3, [150, 156, 60], [206, 182, 80]),
+        zanahoria_0: cultivoEtapa(0, [70, 160, 50]),
+        zanahoria_1: cultivoEtapa(1, [70, 160, 50]),
+        zanahoria_2: cultivoEtapa(2, [60, 150, 46]),
+        zanahoria_3: cultivoEtapa(3, [60, 150, 46], [240, 130, 30]),
+        papa_0: cultivoEtapa(0, [76, 156, 60]),
+        papa_1: cultivoEtapa(1, [76, 156, 60]),
+        papa_2: cultivoEtapa(2, [66, 146, 54]),
+        papa_3: cultivoEtapa(3, [66, 146, 54], [200, 170, 100]),
+        bloque_hierro: gema('#d8d8d8', '#ffffff', '#9a9a9a'),
+        bloque_carbon: gema('#2a2a2c', '#4a4a4e', '#101012'),
+        bloque_redstone: gema('#c8160c', '#ff5a40', '#7a0a04'),
+        bloque_lapis: gema('#2a52c8', '#6a8cf0', '#13307e'),
+        puerta_abajo: (x, y, r) => {
+            if (x === 0 || x === 15 || y === 15) return ajustar([110, 76, 40], 0.9 + r() * 0.15);
+            if (x === 12 && y === 1) return [70, 70, 74];
+            return madera(x, y, r);
+        },
+        puerta_arriba: (x, y, r) => {
+            if (x === 0 || x === 15 || y === 0) return ajustar([110, 76, 40], 0.9 + r() * 0.15);
+            if (x >= 3 && x <= 12 && y >= 3 && y <= 10 && x !== 7 && x !== 8 && y !== 6) return [0, 0, 0, 0]; // ventanas
+            return madera(x, y, r);
+        },
+        escalera: (x, y, r) => {
+            if (x === 2 || x === 3 || x === 12 || x === 13) return ajustar([120, 84, 44], 0.85 + r() * 0.2);
+            if (y % 4 === 1 && x > 3 && x < 12) return ajustar([150, 108, 62], 0.85 + r() * 0.2);
+            return [0, 0, 0, 0];
+        },
+        altar_top: (x, y, r) => {
+            const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+            if (d < 2.5) return ajustar([170, 40, 200], 0.9 + r() * 0.2);
+            if (d > 6.5) return ajustar([40, 30, 50], 0.9 + r() * 0.15);
+            return ajustar([70, 56, 86], (Math.floor(d) % 2 ? 0.85 : 1) * (0.9 + r() * 0.15));
+        },
+        altar_lado: (x, y, r) => {
+            if (y <= 1 || y >= 14) return ajustar([40, 30, 50], 0.9 + r() * 0.15);
+            if ((x + y) % 6 === 0) return ajustar([170, 40, 200], 0.8 + r() * 0.2);
+            return ajustar([70, 56, 86], 0.85 + r() * 0.2);
+        }
+    };
 }
 
 const PINTORES = {
@@ -279,7 +425,9 @@ const PINTORES = {
         if (x === 0 || y === 0 || x === 15 || y === 15) return ajustar([24, 24, 26], 0.9 + r() * 0.2);
         if (y <= 3) return (x % 3 === 1 && y === 2) ? [214, 214, 210] : ajustar([40, 40, 42], 0.9 + r() * 0.1);
         return ajustar([58, 54, 50], ((x + y) % 2 ? 0.7 : 1) * (0.9 + r() * 0.15));
-    }
+    },
+    // ---------- Supervivencia ----------
+    ...pintoresSupervivencia()
 };
 
 export const NOMBRES_TILE = Object.keys(PINTORES);
@@ -340,7 +488,18 @@ export const B = {
     PASTO_ALTO: 30, FLOR_ROJA: 31, FLOR_AMARILLA: 32, FLOR_AZUL: 33,
     ANTORCHA: 34, PIEDRA_LUMINOSA: 35, // ids fijos: otros módulos los usan
     LADRILLO: 36, LIBRERO: 37, COFRE: 38, CAMA: 39, RIEL: 40,
-    VALLA: 41, HENO: 42, LANA: 43, LANA_ROJA: 44, OBSIDIANA: 45, BARRIL: 46, PIEDRA_AGRIETADA: 47, AMPLIFICADOR: 48
+    VALLA: 41, HENO: 42, LANA: 43, LANA_ROJA: 44, OBSIDIANA: 45, BARRIL: 46, PIEDRA_AGRIETADA: 47, AMPLIFICADOR: 48,
+    // Supervivencia (49 en adelante). La última etapa del trigo es TRIGO (23)
+    ROCA_MADRE: 49, GRAVA: 50, ADOQUIN: 51, LAVA: 52,
+    MENA_CARBON: 53, MENA_HIERRO: 54, MENA_ORO: 55, MENA_REDSTONE: 56, MENA_LAPIS: 57, MENA_DIAMANTE: 58, MENA_ESMERALDA: 59,
+    MESA: 60, HORNO: 61, HORNO_ENCENDIDO: 62, BROTE: 63, BROTE_ABEDUL: 64, BROTE_PINO: 65,
+    TIERRA_LABRADA: 66, TIERRA_LABRADA_HUMEDA: 67,
+    TRIGO_0: 68, TRIGO_1: 69, TRIGO_2: 70, TRIGO_3: 71,
+    ZANAHORIA_0: 72, ZANAHORIA_1: 73, ZANAHORIA_2: 74, ZANAHORIA_3: 75,
+    PAPA_0: 76, PAPA_1: 77, PAPA_2: 78, PAPA_3: 79,
+    BLOQUE_HIERRO: 80, BLOQUE_CARBON: 81, BLOQUE_REDSTONE: 82, BLOQUE_LAPIS: 83,
+    PUERTA_ABAJO: 84, PUERTA_ARRIBA: 85, PUERTA_ABIERTA_ABAJO: 86, PUERTA_ABIERTA_ARRIBA: 87,
+    ESCALERA: 88, ALTAR: 89
 };
 
 export const BLOQUES = [];
@@ -394,11 +553,54 @@ BLOQUES[B.BARRIL] = def('barril', 's', 'barril_top', 'barril_lado', 'barril_top'
 BLOQUES[B.PIEDRA_AGRIETADA] = def('piedra agrietada', 's', 'piedra_agrietada');
 BLOQUES[B.AMPLIFICADOR] = def('amplificador', 's', 'negro', 'amplificador', 'negro');
 
-// Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz
-export const TIPO = new Uint8Array(BLOQUES.length);
-BLOQUES.forEach((b, i) => { if (b) TIPO[i] = b.tipo === 's' ? 1 : b.tipo === 'h' ? 2 : b.tipo === 'p' ? 4 : 3; });
+// ---- Supervivencia ----
+BLOQUES[B.ROCA_MADRE] = def('roca madre', 's', 'roca_madre');
+BLOQUES[B.GRAVA] = def('grava', 's', 'grava');
+BLOQUES[B.ADOQUIN] = def('adoquin', 's', 'adoquin');
+BLOQUES[B.LAVA] = def('lava', 'l', 'lava');
+BLOQUES[B.MENA_CARBON] = def('mena de carbon', 's', 'mena_carbon');
+BLOQUES[B.MENA_HIERRO] = def('mena de hierro', 's', 'mena_hierro');
+BLOQUES[B.MENA_ORO] = def('mena de oro', 's', 'mena_oro');
+BLOQUES[B.MENA_REDSTONE] = def('mena de redstone', 's', 'mena_redstone');
+BLOQUES[B.MENA_LAPIS] = def('mena de lapislazuli', 's', 'mena_lapis');
+BLOQUES[B.MENA_DIAMANTE] = def('mena de diamante', 's', 'mena_diamante');
+BLOQUES[B.MENA_ESMERALDA] = def('mena de esmeralda', 's', 'mena_esmeralda');
+BLOQUES[B.MESA] = def('mesa de crafteo', 's', 'mesa_top', 'mesa_lado', 'tablones');
+BLOQUES[B.HORNO] = def('horno', 's', 'horno_top', 'horno_frente', 'horno_top');
+BLOQUES[B.HORNO_ENCENDIDO] = def('horno encendido', 's', 'horno_top', 'horno_frente_on', 'horno_top');
+BLOQUES[B.BROTE] = def('brote de roble', 'p', 'brote_roble');
+BLOQUES[B.BROTE_ABEDUL] = def('brote de abedul', 'p', 'brote_abedul');
+BLOQUES[B.BROTE_PINO] = def('brote de pino', 'p', 'brote_pino');
+BLOQUES[B.TIERRA_LABRADA] = def('tierra labrada', 's', 'labrada_top', 'tierra', 'tierra');
+BLOQUES[B.TIERRA_LABRADA_HUMEDA] = def('tierra labrada humeda', 's', 'labrada_humeda_top', 'tierra', 'tierra');
+for (let n = 0; n < 4; n++) {
+    BLOQUES[B.TRIGO_0 + n] = def('trigo', 'p', 'trigo_' + n);
+    BLOQUES[B.ZANAHORIA_0 + n] = def('zanahorias', 'p', 'zanahoria_' + n);
+    BLOQUES[B.PAPA_0 + n] = def('papas', 'p', 'papa_' + n);
+}
+BLOQUES[B.BLOQUE_HIERRO] = def('bloque de hierro', 's', 'bloque_hierro');
+BLOQUES[B.BLOQUE_CARBON] = def('bloque de carbon', 's', 'bloque_carbon');
+BLOQUES[B.BLOQUE_REDSTONE] = def('bloque de redstone', 's', 'bloque_redstone');
+BLOQUES[B.BLOQUE_LAPIS] = def('bloque de lapislazuli', 's', 'bloque_lapis');
+// Puerta: cerrada (tipo 'd') choca; abierta (tipo 'e') se atraviesa. Ambas se mallan como panel delgado
+// pegado a un lado del bloque (ver mallarBuffers en voxeles.js). La escalera de mano también es panel.
+BLOQUES[B.PUERTA_ABAJO] = def('puerta', 'd', 'puerta_abajo');
+BLOQUES[B.PUERTA_ARRIBA] = def('puerta', 'd', 'puerta_arriba');
+BLOQUES[B.PUERTA_ABIERTA_ABAJO] = def('puerta', 'e', 'puerta_abajo');
+BLOQUES[B.PUERTA_ABIERTA_ARRIBA] = def('puerta', 'e', 'puerta_arriba');
+BLOQUES[B.ESCALERA] = def('escalera de mano', 'e', 'escalera');
+BLOQUES[B.ALTAR] = def('altar', 's', 'altar_top', 'altar_lado', 'altar_lado');
+
+// Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz,
+// 5 lava (líquido opaco que se atraviesa), 6 panel que choca (puerta cerrada), 7 panel que se atraviesa
+// (puerta abierta, escalera de mano)
+export const TIPO = new Uint8Array(256);
+const TIPOS = { s: 1, h: 2, a: 3, p: 4, l: 5, d: 6, e: 7 };
+BLOQUES.forEach((b, i) => { if (b) TIPO[i] = TIPOS[b.tipo]; });
 
 // Luz que emite cada id (0-15), como en Minecraft. La lee el cálculo de luz de voxeles.js
 export const LUZ_EMISION = new Uint8Array(BLOQUES.length);
 LUZ_EMISION[B.ANTORCHA] = 14;
 LUZ_EMISION[B.PIEDRA_LUMINOSA] = 15;
+LUZ_EMISION[B.LAVA] = 15;
+LUZ_EMISION[B.HORNO_ENCENDIDO] = 13;

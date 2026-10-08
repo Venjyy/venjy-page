@@ -726,7 +726,7 @@ function cambiarIdioma(nuevo, guardar = true) {
         if (sr && !sr.hasAttribute('data-es')) sr.textContent = nombreRanura(r);
     });
     document.getElementById('idioma-texto').textContent = nuevo.toUpperCase();
-    document.querySelectorAll('a[data-mundo]').forEach(a => a.setAttribute('href', `mundo.html?lang=${nuevo}`));
+    document.querySelectorAll('a[data-mundo]').forEach(a => a.setAttribute('href', `${a.dataset.mundo || 'mundo.html'}?lang=${nuevo}`));
     actualizarCV();
     reiniciarMaquina();
     elegirSplash();

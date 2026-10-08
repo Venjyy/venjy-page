@@ -1,0 +1,337 @@
+/* =========================================================
+   VENJY · Supervivencia
+   Menús, HUD (barra rápida, corazones, hambre) y ventanas de inventario con el gris clásico
+   de Minecraft. Solo PixelCraft. Se apoya en mundo/mundo.css.
+   ========================================================= */
+
+:root {
+    --casilla: 40px;
+    --ui-gris: #c6c6c6;
+    --ui-claro: #ffffff;
+    --ui-oscuro: #555555;
+    --ui-casilla: #8b8b8b;
+    --ui-texto: #3f3f3f;
+}
+
+@media (max-width: 520px) { :root { --casilla: clamp(30px, 9.4vw, 40px); } }
+/* En las ventanas la casilla también se ajusta al alto disponible */
+.ventana { --casilla: clamp(24px, min(9.4vw, calc((100vh - 120px) / 8.6)), 40px); }
+
+/* ---------- Menú de mundos ---------- */
+.lista-mundos {
+    list-style: none;
+    margin: 12px 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+    text-align: left;
+}
+.lista-mundos .vacio { color: var(--gris); text-align: center; padding: 10px; }
+.tarjeta-mundo {
+    padding: 10px 12px;
+    background: rgb(0 0 0 / 0.35);
+    border: 2px solid #000;
+    box-shadow: inset 2px 2px 0 #3a2a1c;
+}
+.info-mundo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.info-mundo b { font-weight: normal; color: var(--blanco); font-size: 1.1rem; }
+.info-mundo span { color: var(--gris); font-size: 0.85rem; }
+.botones-mundo { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 6px; }
+.botones-mundo .boton { margin: 0; padding: 8px 4px; font-size: 0.95rem; }
+.boton.peligro:hover, .boton.peligro:focus-visible { background: #b04a42; }
+.boton:disabled { opacity: 0.5; cursor: not-allowed; }
+.fila-botones { display: flex; gap: 8px; }
+.fila-botones .boton { flex: 1; }
+
+.campo { display: block; margin: 14px 0; text-align: left; color: var(--gris); border: 0; padding: 0; }
+.campo input[type="text"] {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px;
+    font: inherit;
+    font-size: 1.1rem;
+    color: var(--blanco);
+    background: #000;
+    border: 2px solid #a0a0a0;
+}
+.campo input[type="text"]:focus { outline: none; border-color: var(--blanco); }
+.dificultades { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dificultades legend { margin-bottom: 8px; }
+.dificultades label {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    color: var(--blanco);
+    background: rgb(0 0 0 / 0.35);
+    border: 2px solid #000;
+    cursor: pointer;
+}
+.dificultades label:has(input:checked) { background: rgb(125 140 196 / 0.55); }
+.dificultades input { accent-color: #7d8cc4; }
+
+.ajustes-pausa { display: grid; gap: 8px; margin: 12px 0; text-align: left; font-size: 0.95rem; color: var(--gris); }
+.ajustes-pausa label { display: grid; grid-template-columns: 1fr 1.3fr 2.6em; align-items: center; gap: 8px; }
+.ajustes-pausa label.opcion { display: flex; color: var(--blanco); }
+.ajustes-pausa b { font-weight: normal; color: var(--amarillo); text-align: right; }
+.ajustes-pausa input[type="range"] { width: 100%; accent-color: #7d8cc4; }
+
+.panel.muerte { background: rgb(80 0 0 / 0.72); }
+.panel.muerte h1 { color: #ff5555; text-shadow: 3px 3px 0 #3f0000; }
+
+/* ---------- HUD ---------- */
+.barra-rapida {
+    position: absolute;
+    left: 50%;
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    display: flex;
+    padding: 2px;
+    background: rgb(0 0 0 / 0.45);
+    border: 2px solid #000;
+}
+.casilla-rapida {
+    position: relative;
+    width: var(--casilla);
+    height: var(--casilla);
+    display: grid;
+    place-items: center;
+    border: 2px solid rgb(110 110 110 / 0.9);
+}
+.casilla-rapida.elegida { border-color: var(--blanco); box-shadow: 0 0 0 2px #000, inset 0 0 0 2px rgb(255 255 255 / 0.25); z-index: 1; }
+.casilla-rapida canvas, .casilla canvas { width: 80%; height: 80%; image-rendering: pixelated; }
+.cantidad {
+    position: absolute;
+    right: 2px;
+    bottom: 0;
+    font-size: 0.85rem;
+    color: #fff;
+    text-shadow: 2px 2px 0 #3f3f3f;
+    pointer-events: none;
+}
+.desgaste {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 3px;
+    height: 3px;
+    background: #000;
+    pointer-events: none;
+}
+.desgaste::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: calc(var(--k, 1) * 100%);
+    background: var(--color, #3c3);
+}
+.desgaste[hidden] { display: none; }
+
+.barras {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--casilla) + 16px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    line-height: 0;
+}
+.barras canvas { image-rendering: pixelated; width: calc(var(--casilla) * 9 + 8px); height: auto; }
+
+.nombre-objeto {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--casilla) * 2.2 + 30px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    font-size: 1.05rem;
+    color: #fff;
+    text-shadow: 2px 2px 0 #3f3f3f;
+    white-space: nowrap;
+}
+.mensajes {
+    position: absolute;
+    left: 12px;
+    bottom: calc(var(--casilla) * 2.2 + 60px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: min(460px, 70vw);
+}
+.mensaje {
+    padding: 4px 8px;
+    background: rgb(0 0 0 / 0.5);
+    color: #fff;
+    text-shadow: 2px 2px 0 #3f3f3f;
+    transition: opacity 0.6s;
+}
+.mensaje.saliendo { opacity: 0; }
+
+.destello-danio {
+    position: fixed; inset: 0; pointer-events: none; z-index: 5;
+    background: radial-gradient(ellipse at center, transparent 45%, rgb(200 0 0 / 0.55));
+    opacity: 0;
+}
+.destello-danio.activo { animation: destello 0.5s ease-out; }
+@keyframes destello { 0% { opacity: 1; } 100% { opacity: 0; } }
+.en-llamas {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 32vh; pointer-events: none; z-index: 4;
+    background: repeating-linear-gradient(90deg, rgb(255 140 0 / 0.0) 0 18px, rgb(255 120 0 / 0.35) 18px 26px, rgb(255 210 60 / 0.25) 26px 34px);
+    mask-image: linear-gradient(to top, #000, transparent);
+    animation: llamas 0.35s steps(3) infinite;
+}
+@keyframes llamas { 0% { background-position: 0 0; } 100% { background-position: 34px 0; } }
+.fundido-sueno {
+    position: fixed; inset: 0; z-index: 60; pointer-events: none; background: #000;
+    animation: sueno 2.6s ease-in-out forwards;
+}
+@keyframes sueno { 0% { opacity: 0; } 45% { opacity: 1; } 60% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- Ventanas de inventario ---------- */
+.ventana {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    padding: 12px;
+    background: rgb(0 0 0 / 0.5);
+    overflow: auto;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+}
+.ventana-cuerpo { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; justify-content: center; margin: auto; }
+.ventana-panel, .libro-recetas {
+    position: relative;
+    padding: 12px;
+    color: var(--ui-texto);
+    background: var(--ui-gris);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 var(--ui-claro), inset -3px -3px 0 var(--ui-oscuro);
+}
+.ventana-panel h2, .libro-recetas h2 { margin: 2px 0 6px; font-size: 1rem; font-weight: normal; color: var(--ui-texto); }
+.cerrar-ventana {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 28px; height: 28px;
+    font: inherit; font-size: 0.9rem;
+    color: #fff; text-shadow: 1px 1px 0 #3f3f3f;
+    background: var(--boton);
+    border: 2px solid #000;
+    box-shadow: inset 2px 2px 0 var(--borde-claro), inset -2px -2px 0 var(--borde-oscuro);
+    cursor: pointer;
+}
+.ventana-arriba { display: flex; gap: 14px; align-items: flex-end; margin-bottom: 10px; min-height: calc(var(--casilla) * 2); }
+.rejilla { display: grid; grid-template-columns: repeat(var(--columnas), var(--casilla)); }
+.rejilla.barra { margin-top: 6px; }
+.casilla {
+    position: relative;
+    width: var(--casilla);
+    height: var(--casilla);
+    display: grid;
+    place-items: center;
+    background: var(--ui-casilla);
+    border: 2px solid;
+    border-color: #373737 var(--ui-claro) var(--ui-claro) #373737;
+    cursor: pointer;
+    touch-action: none;
+}
+.casilla:hover { background: #a0a0a0; }
+.casilla.grande { width: calc(var(--casilla) * 1.3); height: calc(var(--casilla) * 1.3); }
+.casilla.vacia[data-fondo]::before {
+    content: '';
+    position: absolute;
+    inset: 22%;
+    opacity: 0.35;
+    background: #555;
+    clip-path: polygon(15% 10%, 85% 10%, 85% 55%, 50% 95%, 15% 55%);
+}
+.casilla.vacia[data-fondo="casco"]::before { clip-path: polygon(10% 30%, 90% 30%, 90% 75%, 70% 75%, 70% 55%, 30% 55%, 30% 75%, 10% 75%); }
+.casilla.vacia[data-fondo="grebas"]::before { clip-path: polygon(15% 5%, 85% 5%, 85% 95%, 60% 95%, 50% 35%, 40% 95%, 15% 95%); }
+.casilla.vacia[data-fondo="botas"]::before { clip-path: polygon(10% 40%, 40% 40%, 40% 90%, 10% 90%, 10% 40%, 60% 40%, 90% 40%, 90% 90%, 60% 90%, 60% 40%); }
+.casilla .cantidad { font-size: 0.9rem; }
+.armadura { gap: 0; }
+.bloque-crafteo { margin-left: auto; }
+.crafteo { display: flex; align-items: center; gap: 10px; }
+.flecha-ui {
+    position: relative;
+    width: 34px; height: 22px;
+    background: #8b8b8b;
+    clip-path: polygon(0 30%, 60% 30%, 60% 0, 100% 50%, 60% 100%, 60% 70%, 0 70%);
+}
+.flecha-ui.progreso::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: calc(var(--k, 0) * 100%);
+    background: #fff;
+}
+.horno-ui { display: flex; align-items: center; gap: 14px; }
+.horno-izq { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.llama-ui {
+    position: relative;
+    width: 18px; height: 18px;
+    background: #8b8b8b;
+    clip-path: polygon(50% 0, 75% 35%, 100% 55%, 85% 100%, 15% 100%, 0 55%, 25% 35%);
+}
+.llama-ui::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: calc(var(--k, 0) * 100%);
+    background: linear-gradient(to top, #e45a10, #ffd040);
+}
+.bloque-cofre { width: 100%; }
+.libro-recetas { width: calc(var(--casilla) * 5 + 30px); max-height: calc(var(--casilla) * 9); display: flex; flex-direction: column; }
+.lista-recetas { display: grid; grid-template-columns: repeat(auto-fill, var(--casilla)); gap: 4px; overflow-y: auto; }
+.lista-recetas .vacio { grid-column: 1 / -1; margin: 6px 0; font-size: 0.85rem; color: #555; }
+.receta {
+    position: relative;
+    width: var(--casilla); height: var(--casilla);
+    padding: 0;
+    display: grid; place-items: center;
+    background: #8b8b8b;
+    border: 2px solid;
+    border-color: var(--ui-claro) #373737 #373737 var(--ui-claro);
+    cursor: pointer;
+}
+.receta:hover, .receta:focus-visible { background: #7d8cc4; outline: none; }
+.receta canvas { width: 80%; height: 80%; image-rendering: pixelated; }
+.receta span { position: absolute; right: 2px; bottom: 0; font: inherit; font-size: 0.8rem; color: #fff; text-shadow: 1px 1px 0 #3f3f3f; }
+
+.cursor-pila, .cursor-cantidad, .tip-objeto { position: fixed; z-index: 70; pointer-events: none; }
+.cursor-pila { width: 32px; height: 32px; image-rendering: pixelated; }
+.cursor-cantidad { font-size: 0.9rem; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; }
+.tip-objeto {
+    padding: 4px 8px;
+    color: #fff;
+    background: rgb(16 0 16 / 0.92);
+    border: 2px solid #28006a;
+    box-shadow: inset 0 0 0 1px #4b1d9e;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .libro-recetas { width: calc(var(--casilla) * 9 + 30px); max-height: calc(var(--casilla) * 3.2); }
+}
+
+/* ---------- Controles táctiles ----------
+   De abajo hacia arriba: barra rápida, barras de vida y hambre, y sobre ellas el joystick (izq.)
+   y SALTAR/AGACHAR (der.); más arriba ROMPER y USAR. INV y SOLTAR a la izquierda, bajo los datos. */
+body.con-tactil { --pie: calc(var(--casilla) + 60px + env(safe-area-inset-bottom, 0px)); }
+body.con-tactil #hud .barra-rapida { pointer-events: auto; z-index: 35; }
+body.con-tactil .tactil-joy { left: calc(14px + env(safe-area-inset-left, 0px)); bottom: var(--pie); width: 116px; height: 116px; }
+body.con-tactil .tactil-joy-palanca { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+body.con-tactil .tactil-saltar { right: calc(14px + env(safe-area-inset-right, 0px)); bottom: var(--pie); width: 76px; height: 76px; }
+body.con-tactil .tactil-bajar { right: calc(98px + env(safe-area-inset-right, 0px)); bottom: var(--pie); width: 64px; height: 64px; font-size: 0.8rem; }
+.tactil-boton.sv-romper, .tactil-boton.sv-usar { width: 76px; height: 76px; bottom: calc(var(--pie) + 88px); }
+.tactil-boton.sv-usar { right: calc(14px + env(safe-area-inset-right, 0px)); background: rgb(70 120 70 / 0.7); }
+.tactil-boton.sv-romper { right: calc(98px + env(safe-area-inset-right, 0px)); background: rgb(160 70 60 / 0.7); }
+.tactil-boton.sv-inventario, .tactil-boton.sv-soltar { width: 64px; height: 40px; font-size: 0.8rem; left: calc(12px + env(safe-area-inset-left, 0px)); }
+.tactil-boton.sv-inventario { top: calc(84px + env(safe-area-inset-top, 0px)); }
+.tactil-boton.sv-soltar { top: calc(130px + env(safe-area-inset-top, 0px)); }
+body.con-tactil .mensajes { bottom: calc(var(--pie) + 180px); }
+body.con-tactil .nombre-objeto { bottom: calc(var(--pie) + 4px); }
+/* Pantallas bajas (celular acostado): botones a los costados, más arriba */
+@media (max-height: 460px) {
+    body.con-tactil { --pie: calc(var(--casilla) + 50px); }
+    .tactil-boton.sv-romper, .tactil-boton.sv-usar { bottom: calc(var(--pie) + 82px); width: 66px; height: 66px; }
+    .tactil-boton.sv-romper { right: calc(88px + env(safe-area-inset-right, 0px)); }
+}

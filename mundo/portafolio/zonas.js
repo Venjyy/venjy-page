@@ -336,7 +336,7 @@ function siguientes({ portafolio, terreno, datos, nombres }) {
 
 // Dónde aparece el visitante al elegir una zona en «Ir a»: frente a su entrada y mirando hacia ella
 // (norte = yaw 0). Sin `y`, se usa el suelo del lugar.
-function destinos({ terreno, datos }) {
+export function destinos({ terreno, datos }) {
     const y1 = BASE_ESTRUCTURA + 1;
     const d = {};
     if (terreno.sobreMi) d.casa = { x: terreno.sobreMi.px + 0.5, z: terreno.sobreMi.iz1 + 6, y: y1, yaw: 0 };
