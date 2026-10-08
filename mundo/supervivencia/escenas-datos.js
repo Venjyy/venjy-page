@@ -83,11 +83,11 @@ export const VENJY = {
         F('¡PRIMUS SUCKS!', 'PRIMUS SUCKS!', { q: 'ambos', g: 'brazosArriba' })
     ],
     lona: [
-        F('¿Venjy? ¿Y por qué estás tan pixelado?', 'Venjy? And why are you so pixelated?', { q: 'n', g: 'sorpresa' }),
+        F('¿Venjy? ¿Y por qué estás tan pixelado?', 'Venjy? And why are you so pixelated?', { q: 'n', g: 'sorpresa', d: 3.7 }),
         F('Es que ahora vivo en el juego.', 'I live in the game now.', { q: 'j', g: 'yo' }),
         F('Las gatas te andaban buscando.', 'The cats were looking for you.', { q: 'n', g: 'habla' }),
         F('¿Mila y Gala? ¿Se han portado bien?', 'Mila and Gala? Have they behaved?', { q: 'j', g: 'habla' }),
-        F('Gala botó tres cosas y Mila se comió el pasto.', 'Gala knocked over three things and Mila ate the grass.', { q: 'n', g: 'rasca' }),
+        F('Gala botó tres cosas y Mila se comió el pasto.', 'Gala knocked over three things and Mila ate the grass.', { q: 'n', g: 'rasca', d: 4.2 }),
         F('O sea, lo normal.', 'So, the usual.', { q: 'j', g: 'risa', o: 'risa' })
     ],
     hadad: [
@@ -116,15 +116,15 @@ export const VENJY = {
     ],
     boris: [
         F('¿Venjy? Justo a tiempo, falta leña.', "Venjy? Just in time, we're short on firewood.", { q: 'n', g: 'sorpresa' }),
-        F('¿Y el hacha? Vengo con las manos vacías.', "And the axe? I came empty-handed.", { q: 'j', g: 'yo' }),
-        F('Mira la técnica: se levanta, se suelta y listo.', 'Watch the technique: lift, let go and done.', { q: 'n', g: 'hachazo' }),
+        F('¿Y el hacha? Vengo con las manos vacías.', "And the axe? I came empty-handed.", { q: 'j', g: 'yo', d: 3.8 }),
+        F('Mira la técnica: se levanta, se suelta y listo.', 'Watch the technique: lift, let go and done.', { q: 'n', g: 'hachazo', d: 4.3 }),
         F('Parece fácil cuando lo haces tú.', 'Looks easy when you do it.', { q: 'j', g: 'habla' }),
         F('¿Viste Nana? Te la recomiendo.', 'Did you watch Nana? I recommend it.', { q: 'n', g: 'habla' }),
         F('Después de esta leña, la vemos.', "After this firewood, we'll watch it.", { q: 'j', g: 'mano', o: 'mano' })
     ],
     lucho: [
         F('¿Venjy? ¿Te saliste del portafolio?', 'Venjy? Did you step out of the portfolio?', { q: 'n', g: 'sorpresa' }),
-        F('Algo así. Ahora puedo caminar por él.', 'Something like that. Now I can walk around in it.', { q: 'j', g: 'habla' }),
+        F('Algo así. Ahora puedo caminar por él.', 'Something like that. Now I can walk around in it.', { q: 'j', g: 'habla', d: 3.6 }),
         F('Buena. ¿Una ranked después?', 'Nice. One ranked later?', { q: 'n', g: 'tu' }),
         F('Una. Y me acuesto.', 'One. Then bed.', { q: 'j', g: 'habla' }),
         F('Eso dicen todos...', 'Everyone says that...', { q: 'n', g: 'rasca' }),

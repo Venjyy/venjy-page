@@ -113,7 +113,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const DURACION = 4.2;
     // visibles (opcional): actores cuyas cabezas deben verse desde la cámara; el jugador se añade solo.
     // diag: diagnóstico del último plano calculado (solo con visibles): qué cabezas tapa la posición nominal.
-    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null, visibles: null };
+    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null, visibles: null, esperarLinea: false, corte: false };
     let diag = null;
     const fundidoEl = document.createElement('div');
     fundidoEl.className = 'fundido-cine';
@@ -204,10 +204,12 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cine.t += dt;
             cine.foco += (cine.focoObj - cine.foco) * Math.min(1, dt * 1.5);
             if (cine.fijo !== null) { cine.plano = cine.fijo; cine.t = Math.min(cine.t, DURACION * 0.5); }
-            else if (cine.t >= DURACION) { cine.t = 0; cine.plano = siguientePlano(cine.plano); cine.fundido = 0.35; }
-            if (calcular(cine.plano, cine.t / DURACION)) {
+            // esperarLinea (escenas con guion): el plano que ya cumplió su tiempo cambia al empezar una línea nueva
+            else if (cine.t >= DURACION && (!cine.esperarLinea || cine.corte)) { cine.t = 0; cine.plano = siguientePlano(cine.plano); cine.fundido = 0.35; cine.corte = false; cine.buena = null; }
+            if (calcular(cine.plano, Math.min(1, cine.t / DURACION))) {
                 camara.position.copy(cam);
                 camara.lookAt(objetivo);
+                if (cine.esperarLinea) cine.buena = { p: cam.clone(), o: objetivo.clone() };
                 if (!cine.escena) {
                     // Regla de tercios: el sujeto queda arriba a la derecha y el panel ocupa abajo a la izquierda
                     derecha.set(1, 0, 0).applyQuaternion(camara.quaternion);
@@ -215,8 +217,13 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
                     mira.copy(objetivo).addScaledVector(derecha, -k).y -= k * 0.85;
                     camara.lookAt(mira);
                 }
+            } else if (cine.esperarLinea && cine.buena) {
+                // Escena con guion: si el plano se tapa a mitad de una frase, la cámara se queda en su última
+                // posición buena hasta que empiece la siguiente línea (ahí sí cambia de plano)
+                camara.position.copy(cine.buena.p);
+                camara.lookAt(cine.buena.o);
             } else {
-                cine.plano = siguientePlano(cine.plano); cine.t = 0;
+                cine.plano = siguientePlano(cine.plano); cine.t = 0; cine.corte = false; cine.buena = null;
                 if (!calcular(cine.plano, 0)) { rescate(); camara.position.copy(cam); camara.lookAt(objetivo); }
             }
             cine.fundido = Math.max(0, cine.fundido - dt);
@@ -237,6 +244,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         get cuerpo() { return cuerpo; },
         // Escenas: hacia dónde se inclina el encuadre (0 amigo, 1 jugador) y quién mueve el cuerpo
         enfocar(f) { cine.focoObj = f; },
+        // Escenas con guion: empezó una línea nueva. Si el plano ya cumplió su tiempo, cambia en este instante
+        nuevaLinea() { if (cine.activa && cine.esperarLinea && cine.t >= DURACION - 0.1) cine.corte = true; },
         fijarPlano(k = null) { cine.fijo = k; }, // depuración (capturas): deja la cámara en un plano
         set pose(f) { cine.pose = f; },
         cambiarVista() { vista = (vista + 1) % 3; },
@@ -245,12 +254,13 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cine.activa = true; cine.n = n; cine.t = 0; cine.fundido = op.fundido ?? 0.3;
             cine.escena = !!op.escena; cine.planos = op.planos || null; cine.foco = cine.focoObj = 0.5; cine.evitar = op.evitar || [];
             cine.visibles = op.visibles && op.visibles.length ? op.visibles : null;
+            cine.esperarLinea = !!op.esperarLinea; cine.corte = false; cine.buena = null;
             cine.plano = calcular(0, 0) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');
         },
         terminarCine() {
             if (!cine.activa) return;
-            cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null; cine.visibles = null; diag = null;
+            cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null; cine.visibles = null; diag = null; cine.esperarLinea = false; cine.corte = false;
             document.body.classList.remove('en-cine');
         },
         // Depuración (planos.mjs): plano actual y diagnóstico de líneas a las cabezas (null si no se pidió `visibles`)
