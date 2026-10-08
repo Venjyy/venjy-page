@@ -3,6 +3,11 @@
 // Mila: carey gordita, casi toda negra con poquito amarillo y naranjo (sin blanco).
 // Gala: toda gris, guantes blancos adelante, botas blancas atrás, pecho blanco y panza gris.
 // Caminan por la zona de la Gatera y entran y salen de su casa por la puerta.
+// Gancho de escena: si una gata tiene `gata.escena = (dt, t) => …`, su IA (caminar, elegir destino,
+// maullar) se detiene mientras dura. La función se llama DESPUÉS de aplicar la pose, así que puede
+// ajustar `gata.pose` ('pie' | 'sentada' | 'echada'), la cabeza (`gata.cabeza`), la cola
+// (`gata.cola`) y `gata.yaw`; `gata.ronroneo = true` hace sonar el ronroneo aunque esté sentada, y
+// `gata.maullar(distancia)` suena un maullido. Lo usa mundo/supervivencia/caricias.js.
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
 import { ESCALA, BASE_ESTRUCTURA } from './voxeles.js';
@@ -179,6 +184,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
             velocidad: clave === 'mila' ? 1.35 : 1.8, cargada: false,
             pose: 'pie', bs: 0, be: 0, poseElegida: false, ultimoMaullido: -99
         };
+        gata.maullar = dist => maullar(gata, dist); // para las escenas (caricias.js)
         return gata;
     });
 
@@ -348,7 +354,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
             let v = 0;
             if (sonando()) {
                 for (const g of gatas) {
-                    if (!g.g.visible || g.be < 0.8) continue;
+                    if (!g.g.visible || (g.be < 0.8 && !g.ronroneo)) continue;
                     const d = Math.hypot(g.x - jugador.pos.x, g.z - jugador.pos.z);
                     v = Math.max(v, 0.07 * Math.max(0, 1 - d / 6));
                 }
@@ -396,6 +402,15 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
         gata.colaBase = cx;
     }
 
+    // Mezcla suave entre la pose actual y gata.pose (bs = sentada, be = echada)
+    function mezclarPose(gata, dt) {
+        const objS = gata.pose === 'sentada' ? 1 : 0, objE = gata.pose === 'echada' ? 1 : 0;
+        const kp = Math.min(1, dt * 2.6);
+        gata.bs += (objS - gata.bs) * kp; gata.be += (objE - gata.be) * kp;
+        if (Math.abs(gata.bs - objS) < 0.002) gata.bs = objS;
+        if (Math.abs(gata.be - objE) < 0.002) gata.be = objE;
+    }
+
     function actualizarGata(gata, dt, t) {
         const dJ = Math.hypot(gata.x - jugador.pos.x, gata.z - jugador.pos.z);
         gata.g.visible = dJ < RADIO_VISIBLE;
@@ -406,6 +421,17 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
             const y0 = adentro ? pisoDentro : sueloFuera(gata.x, gata.z);
             if (y0 === undefined || y0 === null) { gata.g.visible = false; return; }
             gata.y = y0; gata.cargada = true;
+        }
+
+        // Escena (gancho): la IA no corre; la pose se mezcla y la escena ajusta cabeza y cola encima
+        if (gata.escena) {
+            mezclarPose(gata, dt);
+            aplicarPose(gata, t);
+            gata.escena(dt, t);
+            gata.g.position.set(gata.x, gata.y, gata.z);
+            gata.g.rotation.y = gata.yaw;
+            gata.nombre.ocultar(); // durante la escena no hay nombre flotante (taparía el globo)
+            return;
         }
 
         let moviendo = false;
@@ -470,11 +496,7 @@ export function crearGatas(scene, { datos, terreno, mundo, jugador, materiales }
         }
 
         // Animación
-        const objS = gata.pose === 'sentada' ? 1 : 0, objE = gata.pose === 'echada' ? 1 : 0;
-        const kp = Math.min(1, dt * 2.6);
-        gata.bs += (objS - gata.bs) * kp; gata.be += (objE - gata.be) * kp;
-        if (Math.abs(gata.bs - objS) < 0.002) gata.bs = objS;
-        if (Math.abs(gata.be - objE) < 0.002) gata.be = objE;
+        mezclarPose(gata, dt);
         gata.fase += moviendo ? dt * gata.velocidad * 5.5 : 0;
         const bal = moviendo ? Math.sin(gata.fase) * 0.7 : 0;
         gata.patas[0].rotation.x = bal; gata.patas[3].rotation.x = bal;

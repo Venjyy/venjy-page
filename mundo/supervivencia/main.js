@@ -46,6 +46,7 @@ import { mostrarCreditos } from './creditos.js';
 import { crearEditorSkin, cargarSkin, coloresMano, BASES } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearEscenasSkin } from './escenas-skin.js';
+import { crearCaricias } from './caricias.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { rayoCaja } from '../fisica.js';
@@ -424,15 +425,25 @@ async function arrancar(guardado) {
     ponerSkin(skinInicial);
     juego = { ponerSkin };
     // Escenas de skin: un amigo reconoce tu skin (o a Venjy) la primera vez que te acercas
+    // Bloqueo del jugador durante las escenas (skins y caricias a las gatas): el mundo sigue, sin control
+    const bloquearEscena = () => {
+        uiAbierta = true; jugador.congelado = true; jugador.teclas.clear();
+        if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
+    };
+    const liberarEscena = () => { uiAbierta = false; jugador.congelado = false; if (!vida.muerto) entrar(); };
     escenas = crearEscenasSkin({
         grupo: vista.grupo, dy: DY, mundo, jugador, camaras, misiones, npcs, amigos, venjys, idioma,
         skin: () => skinActual,
         puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
-        bloquear: () => {
-            uiAbierta = true; jugador.congelado = true; jugador.teclas.clear();
-            if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
-        },
-        liberar: () => { uiAbierta = false; jugador.congelado = false; if (!vida.muerto) entrar(); }
+        bloquear: bloquearEscena,
+        liberar: liberarEscena
+    });
+    // Caricias a las gatas: tecla G (o el botón ACARICIAR) junto a Mila o Gala
+    const caricias = crearCaricias({
+        grupo: vista.grupo, dy: DY, mundo, jugador, camaras, gatas, hud, misiones, idioma,
+        puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
+        bloquear: bloquearEscena,
+        liberar: liberarEscena
     });
     // Música de fondo y temas de los amigos
     const musica = crearMusica();
@@ -505,7 +516,7 @@ async function arrancar(guardado) {
     jugador.alCambiarActivo = alActivo;
     const tactil = iniciarTactil(jugador, { alEntrar: alActivo });
     const entrar = () => (tactil ? tactil.activar() : pedirPuntero());
-    if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma, camaras, consola });
+    if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma, camaras, consola, caricias });
 
     document.addEventListener('keydown', e => {
         if (e.code === 'KeyE' && !e.repeat) {
@@ -555,7 +566,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas, caricias,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -595,6 +606,7 @@ async function arrancar(guardado) {
             mano.actualizar(dt);
         } else jugador.actualizar(0);
         escenas.actualizar(corre ? dt : 0);
+        caricias.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);

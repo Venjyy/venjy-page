@@ -91,8 +91,16 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         { nombre: 'contrapicado', ang: -Math.PI / 2, dist: 2.6, alto: 0.8, orbita: -0.1, dolly: -0.2 },
         { nombre: 'hombro jugador, otro lado', ang: -0.38, dist: null, alto: 1.9, orbita: -0.06, dolly: -0.3 }
     ];
+    // Escena de una gata (caricias.js, opción planos: 'gata'): planos de lado a la altura de la cabeza
+    // de la gata, con el jugador a su lado; el de «hombro jugador» la tapaba, así que se evita.
+    const PLANOS_GATA = [
+        { nombre: 'de lado', ang: Math.PI / 2, dist: 3.0, alto: 1.5, orbita: 0.08, dolly: -0.3 },
+        { nombre: 'tres cuartos', ang: Math.PI / 2 - 0.6, dist: 2.7, alto: 1.7, orbita: 0.05, dolly: -0.2 },
+        { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.0, alto: 1.4, orbita: -0.08, dolly: -0.3 },
+        { nombre: 'picado', ang: Math.PI / 2 + 0.3, dist: 3.8, alto: 2.8, orbita: 0.04, dolly: -0.4 }
+    ];
     const DURACION = 4.2;
-    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null };
+    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null };
     const fundidoEl = document.createElement('div');
     fundidoEl.className = 'fundido-cine';
     document.body.appendChild(fundidoEl);
@@ -101,7 +109,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const amigo = new THREE.Vector3(), yo = new THREE.Vector3(), objetivo = new THREE.Vector3(), cam = new THREE.Vector3(), centro = new THREE.Vector3();
     const derecha = new THREE.Vector3(), mira = new THREE.Vector3();
     // Posición del plano k en el instante u (0..1); null si queda tapado
-    const planos = () => (cine.escena ? PLANOS_ESCENA : PLANOS);
+    const planos = () => (cine.escena ? (cine.planos === 'gata' ? PLANOS_GATA : PLANOS_ESCENA) : PLANOS);
     function calcular(k, u) {
         const pl = planos()[k];
         const n = cine.n, esc = n.escala || 1;
@@ -191,7 +199,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         iniciarCine(n, op = {}) {
             if (!n) return;
             cine.activa = true; cine.n = n; cine.t = 0; cine.fundido = op.fundido ?? 0.3;
-            cine.escena = !!op.escena; cine.foco = cine.focoObj = 0.5; cine.evitar = op.evitar || [];
+            cine.escena = !!op.escena; cine.planos = op.planos || null; cine.foco = cine.focoObj = 0.5; cine.evitar = op.evitar || [];
             cine.plano = calcular(0, 0) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');
         },

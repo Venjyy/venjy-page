@@ -443,6 +443,12 @@ body.en-cine .panel-mision h2 { font-size: 1.2rem; }
 /* Escenas de skin: botón «Saltar» sobre la franja de abajo (Esc también salta) */
 .saltar-escena { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-escena .saltar-escena { display: block; }
+/* Caricias a las gatas (caricias.js): su propio «Saltar»; ACARICIAR va encima de USAR y se oculta solo */
+.saltar-caricia { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-caricia .saltar-caricia { display: block; }
+.tactil-boton.sv-acariciar { width: 96px; height: 40px; font-size: 0.8rem; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--pie) + 176px); background: rgb(190 110 90 / 0.75); }
+.tactil-boton.sv-acariciar[hidden] { display: none; }
+@media (max-height: 460px) { .tactil-boton.sv-acariciar { bottom: calc(var(--pie) + 156px); } }
 .tactil-boton.sv-camara { width: 64px; height: 40px; font-size: 0.8rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(176px + env(safe-area-inset-top, 0px)); }
 body.con-tactil .mision-activa { top: 224px; }
 
