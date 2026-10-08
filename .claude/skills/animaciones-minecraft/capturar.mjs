@@ -10,6 +10,10 @@
 //     await irJunto(x, z, y, d)    lleva al jugador a d bloques (3) de (x, z) en coordenadas del
 //                                  creativo (y del suelo sin el +48, como n.y de los amigos) y
 //                                  espera a que cargue el terreno. Ej.: irJunto(n.x, n.z, n.y)
+//     mundoDe(objeto3D, x, y, z)   posición en el mundo de un punto local de un hueso (devuelve {x,y,z})
+//     manoD() / manoI()            punta de la mano derecha / izquierda del cuerpo del jugador
+// · --medir: JS que se evalúa en cada captura y se imprime (ej. "({ mano: manoD(), cabeza:
+//   mundoDe(v.gatas.gatas[1].cabeza, 0, 0.3, 0.15) })"): compara contactos con números.
 // · --paso: JS que se ejecuta antes de cada captura; `t` es el tiempo de la lista.
 // · --tiempos: segundos (se pasan a --paso). Sin --paso, espera t segundos reales desde el inicio.
 // · --plano k: deja la cámara de cine fija en el plano k (camaras.fijarPlano).
@@ -24,6 +28,7 @@ const paso = arg('paso', '');
 const tiempos = arg('tiempos', '0.5,2,4').split(',').map(Number);
 const salida = arg('salida', './capturas');
 const plano = arg('plano', null);
+const medir = arg('medir', '');
 const url = arg('url', 'http://localhost:5510/supervivencia.html');
 mkdirSync(salida, { recursive: true });
 
@@ -52,7 +57,10 @@ const AYUDAS = `
         for (let yy = (y ?? 0) + DY + 12; yy > DY - 10; yy--) if (v.mundo.bloque(x + d, yy - 0.5, z) > 0) { v.jugador.colocar(x + d, yy, z); break; }
         v.jugador.yaw = Math.atan2(x - v.jugador.pos.x, z - v.jugador.pos.z) - Math.PI;
         await esperar(1500);
-    };`;
+    };
+    const mundoDe = (o, x = 0, y = 0, z = 0) => { o.updateMatrixWorld(true); const p = o.localToWorld(new v.camara.position.constructor(x, y, z)); return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2) }; };
+    const manoD = () => mundoDe(v.camaras.cuerpo.brazoD, 0, -0.75, 0);
+    const manoI = () => mundoDe(v.camaras.cuerpo.brazoI, 0, -0.75, 0);`;
 if (preparar) await pagina.evaluate(`(async () => { const v = window.__venjy; ${AYUDAS} ${preparar} })()`);
 if (plano !== null) await pagina.evaluate(k => window.__venjy.camaras.fijarPlano(Number(k)), plano);
 
@@ -65,6 +73,7 @@ for (const t of tiempos) {
         const falta = t * 1000 - (Date.now() - inicio);
         if (falta > 0) await pagina.waitForTimeout(falta);
     }
+    if (medir) console.log('medida t=' + t, JSON.stringify(await pagina.evaluate(`(() => { const v = window.__venjy; ${AYUDAS} return (${medir}); })()`)));
     const archivo = `${salida}/t-${String(t).replace('.', '_')}.png`;
     await pagina.screenshot({ path: archivo });
     console.log('captura', archivo);

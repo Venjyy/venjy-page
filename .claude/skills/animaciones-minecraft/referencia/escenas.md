@@ -155,7 +155,7 @@ const TXT = { es: { saltar: 'Saltar' }, en: { saltar: 'Skip' } };
 const T = 5.4; // duración total (s)
 
 export function crear<Nombre>(ctx) {
-    const { grupo, dy, mundo, jugador, camaras, puede, bloquear, liberar } = ctx;
+    const { grupo, dy, mundo, jugador, camaras, misiones, puede, bloquear, liberar } = ctx;
     let idioma = ctx.idioma || 'es';
     let estado = null, pausada = false;
 
@@ -180,11 +180,14 @@ export function crear<Nombre>(ctx) {
         jugador.yaw = Math.atan2(actor.x - jugador.pos.x, actor.z - jugador.pos.z) - Math.PI;
         jugador.pitch = 0;
         // 2) Tomar el control del actor (gancho) y guardar lo que hay que restaurar
+        for (const k in cur) delete cur[k];            // el suavizado parte de cero en cada vez
         estado = { t: 0, actor, foto: { /* pose / yaw / estado del actor */ } };
         actor.escena = (dt, tiempo) => animarActor(dt);
         // 3) Cámara de cine: iniciarCine lee n.x, n.y (+ dy adentro), n.z y n.escala (alto de la cabeza = 1.55·escala)
-        camaras.iniciarCine({ x: actor.x, y: actor.y, z: actor.z, escala: 0.5 }, { escena: true, fundido: 0.4 });
+        // Con un actor bajo (gata, animal) usa planos: 'gata' (PLANOS_GATA): los de dos personas lo tapan
+        camaras.iniciarCine({ x: actor.x, y: actor.y, z: actor.z, escala: 0.6 }, { escena: true, fundido: 0.4, planos: 'gata' });
         camaras.pose = (cuerpo, dt) => poseJugador(cuerpo, dt);
+        misiones.ocultarMarcas = true;                 // sin «!» de misión en el encuadre
         document.body.classList.add('en-<nombre>');
     }
 
@@ -192,11 +195,13 @@ export function crear<Nombre>(ctx) {
         if (!estado) return;
         const e = estado; estado = null;
         delete e.actor.escena;
-        // restaurar el actor (pose, yaw, lo que tocaste) y el cuerpo del jugador:
+        // restaurar el actor (pose, yaw, lo que tocaste) y TODO el cuerpo del jugador:
         const c = camaras.cuerpo;
-        c.cuerpo.position.y = 0; c.cuerpo.rotation.z = 0; c.brazoD.rotation.z = c.brazoI.rotation.z = 0;
-        c.piernaD.rotation.x = c.piernaI.rotation.x = 0; c.cuello.rotation.y = c.cuello.rotation.z = 0;
+        c.cuerpo.position.y = 0; c.cuerpo.rotation.x = 0; c.cuerpo.rotation.z = 0;
+        for (const h of [c.brazoD, c.brazoI, c.piernaD, c.piernaI, c.cuello]) { h.rotation.x = 0; h.rotation.z = 0; }
+        c.cuello.rotation.y = 0;
         camaras.terminarCine();
+        misiones.ocultarMarcas = false;
         document.body.classList.remove('en-<nombre>');
         liberar();
     }
@@ -254,28 +259,29 @@ body.en-<nombre> .saltar-<nombre> { display: block; }
 4. En `bucle`, justo después de `escenas.actualizar(corre ? dt : 0);`: `<nombre>.actualizar(corre ? dt : 0);`
 5. Agrégalo a `window.__venjy` para depurar.
 6. Celular: en `tactil-supervivencia.js` agrega un botón (`tactil.agregarAccion('sv-<nombre>', TEXTO, () => …)`)
-   y su posición en el CSS (`.tactil-boton.sv-<nombre>`), o reutiliza USAR si tiene sentido.
+   y su posición en el CSS (`.tactil-boton.sv-<nombre>`, más `.tactil-boton.sv-<nombre>[hidden] { display: none; }`
+   si lo muestras solo a veces), o reutiliza USAR si tiene sentido.
 7. Un aviso pequeño la primera vez que el jugador está cerca («G: acariciar» / «G: pet») ayuda a
    descubrirlo: `hud.mensaje(texto, segundos)` (pásale `hud` en el contexto; una vez por cercanía,
    no cada cuadro).
 
-### 3.4 Gancho en una criatura que no lo tiene (p. ej. `gatas.js`)
+### 3.4 Gancho en una criatura que no lo tiene
 
-En la función que la actualiza cada cuadro (`actualizarGata(gata, dt, t)`), **después** de calcular
-la visibilidad y antes de la IA:
+Las gatas ya lo tienen (así quedó en `actualizarGata` de `gatas.js`, úsalo como modelo):
 
 ```js
 if (gata.escena) {
-    gata.escena(dt, t);                 // la interacción decide pose, cabeza, cola, yaw
-    aplicarPose(gata, t);               // si quieres seguir usando sus poses sentada/echada (gata.pose)
+    mezclarPose(gata, dt);              // su sistema de poses sigue (gata.pose = 'sentada' se mezcla solo)
+    aplicarPose(gata, t);               // escribe tronco, patas, cabeza.rotation.x y la base de la cola
+    gata.escena(dt, t);                 // DESPUÉS: la interacción suma lo suyo encima (cabeza, cola, yaw)
     gata.g.position.set(gata.x, gata.y, gata.z);
     gata.g.rotation.y = gata.yaw;
-    actualizarNombre(gata, dt);
+    gata.nombre.ocultar();              // sin nombre flotante durante la escena
     return;                             // sin IA: no camina ni elige destino mientras dura
 }
 ```
 
-Así la gata conserva su sistema de poses (`gata.pose = 'sentada'` y se mezcla sola con `bs`/`be`)
-y la interacción solo agrega lo propio (cabeza que se apoya en la mano, cola feliz, ojos cerrados
-si pintas una textura de ojos cerrados). Documenta el gancho en el comentario de cabecera de
-`gatas.js`. Las gatas son **inmortales** y no se deben teletransportar lejos de la gatera.
+El orden importa: si llamas a la escena **antes** de aplicar la pose, la pose pisa lo que hizo la
+escena. Para otra criatura (animales de `criaturas/animales.js`), copia el patrón en su función de
+actualización y documenta el gancho en el comentario de cabecera del archivo. Las gatas son
+**inmortales** y no se deben teletransportar lejos de la gatera.

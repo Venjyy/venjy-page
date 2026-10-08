@@ -6,6 +6,7 @@ Una sola cámara de cine sirve para dos cosas:
 |---|---|---|---|
 | **Misión** (`escena: false`) | mientras está abierto el panel de misión de un amigo (`abrirPanel(el, { enfocar: n })` en `main.js`) | `PLANOS` (6) | el amigo; **regla de tercios**: el sujeto arriba a la derecha y el panel abajo a la izquierda |
 | **Escena** (`escena: true`) | escenas de skin y cualquier animación nueva con dos actores | `PLANOS_ESCENA` (7) | gira en torno al **punto medio** amigo–jugador; `enfocar(f)` inclina hacia uno |
+| **Escena con actor bajo** (`escena: true, planos: 'gata'`) | caricias a las gatas; úsalo para cualquier animal | `PLANOS_GATA` (4: de lado, tres cuartos, el otro lado, picado) | igual, pero sin planos sobre el hombro (el jugador tapaba a la gata) |
 
 Ambos modos: franjas negras arriba y abajo (`body.en-cine`), HUD oculto, cada plano dura
 `DURACION = 4.2` s con un movimiento lento (`orbita`, `dolly`), y entre planos un fundido negro
@@ -14,7 +15,7 @@ de 0,35 s. Si un plano queda tapado por bloques, salta al siguiente; si ninguno 
 ## API
 
 ```js
-camaras.iniciarCine(n, { escena: true, fundido: 0.45, evitar: [amigo1, amigo2] });
+camaras.iniciarCine(n, { escena: true, fundido: 0.45, evitar: [amigo1, amigo2], planos: 'gata' /* opcional */ });
 // n: cualquier objeto con x, y (del creativo: adentro se le suma dy), z y escala opcional.
 //    La "cabeza" que encuadra está a y + dy + 1.55·escala. Para una gata usa escala ≈ 0.5.
 // evitar: actores con .p.cabeza y .p.torso; la cámara no se acerca a menos de 1,7 / 1,4 de ellos.
@@ -42,6 +43,9 @@ Los ángulos se miden alrededor de la línea **amigo → jugador** (`base`):
 Planos actuales de escena: `dos` (de lado, los dos), `hombro jugador`, `hombro amigo`, `general`,
 `hombro amigo, otro lado`, `contrapicado`, `hombro jugador, otro lado`. Se recorren en orden.
 
+**Reloj**: la cámara cuenta su propio tiempo real; el `pausar()` de una escena no la detiene.
+Para capturas, fija el plano (`fijarPlano(k)` o `capturar.mjs --plano k`).
+
 ## Reglas de lenguaje de cámara (síguelas al diseñar planos)
 
 1. **Regla de los 180°**: alterna planos del mismo lado de la línea amigo–jugador. Si cruzas al
@@ -59,7 +63,8 @@ Planos actuales de escena: `dos` (de lado, los dos), `hombro jugador`, `hombro a
 
 ## Agregar un plano
 
-1. Copia una entrada de `PLANOS_ESCENA` (o `PLANOS`) con un `nombre` claro y cambia `ang`, `dist`,
+1. Copia una entrada de `PLANOS_ESCENA`, `PLANOS_GATA` o `PLANOS` (o crea una lista nueva y su
+   valor de `planos` en `iniciarCine`, como hizo `'gata'`) con un `nombre` claro y cambia `ang`, `dist`,
    `alto`, `orbita`, `dolly`.
 2. Ubícala en el orden en que quieres que aparezca (se recorren en orden circular).
 3. Prueba con `capturar.mjs --plano <índice>` en una escena forzada y mira:

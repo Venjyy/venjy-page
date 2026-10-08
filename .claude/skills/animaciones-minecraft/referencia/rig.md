@@ -45,7 +45,31 @@ altura   = 1.5 - 0.75 * Math.cos(a)   // a = 0 → 0.75 (cuelga), a = -π/2 → 
 Si además el cuerpo se inclina `inc = φ`, el hombro se mueve a `(adelante 1.5·sin φ, altura 1.5·cos φ)`
 y el ángulo real del brazo respecto del suelo es `a + φ`. Para alcanzar un punto a `dz` adelante y
 `h` de alto: `a + φ = -Math.atan2(dz - 1.5*Math.sin(φ), (1.5*Math.cos(φ)) - h)` (comprueba con
-`posar.mjs` y una caja de referencia).
+`posar.mjs` y una caja de referencia, y en el juego con `--medir`).
+
+### Tabla de alcance (punta de la mano derecha, piernas compensadas, sin `bDz`)
+
+`adelante` se mide desde los pies; `altura` desde el suelo. Interpola entre filas.
+
+| `inc` \ `bDx` | −0.4 | −0.8 | −1.2 | −1.6 | −2.0 |
+|---|---|---|---|---|---|
+| 0 | 0.29 / 0.81 | 0.54 / 0.98 | 0.70 / 1.23 | 0.75 / 1.52 | 0.68 / 1.81 |
+| 0.3 | 0.52 / 0.72 | 0.80 / 0.81 | 1.03 / 1.00 | 1.17 / 1.27 | 1.19 / 1.56 |
+| 0.5 | 0.64 / 0.66 | 0.94 / 0.69 | 1.20 / 0.83 | 1.39 / 1.07 | 1.47 / 1.36 |
+| 0.7 | 0.74 / 0.61 | 1.04 / 0.58 | 1.33 / 0.67 | 1.55 / 0.86 | 1.69 / 1.12 |
+
+### Contacto: la mano se APOYA, no se mete
+
+La «mano» es el extremo de una caja de 0.25 de grosor. Para que se lea como contacto:
+
+- **Tocar encima** (acariciar, palmotear un hombro): la punta de la mano debe quedar
+  **0.10–0.15 por encima** de la superficie y sobre su centro, no a la altura de su centro.
+  Si la punta queda a la altura del centro de una cabeza, en pantalla parece un golpe a la cara.
+- **Tocar de frente** (chocar los cinco, dar la mano): las dos puntas a la misma altura y a
+  ≤ 0.15 de distancia.
+- La caricia se mueve **a lo largo** de la superficie (de la frente a la nuca: oscila `bDx`
+  ±0.08 con `t * 4`–`t * 6`), no de lado contra ella.
+- Mídelo siempre (`capturar.mjs --medir`), no a ojo.
 
 ### ⚠️ `inc` inclina también las piernas
 
@@ -80,7 +104,8 @@ Valores verificados con `posar.mjs`. Lo que no se nombra queda en neutral (0, co
 | Pasar/recibir un objeto | `bDx -1.35, bDz 0.1, cx 0.1` | `pasa` |
 | Dar la mano | `bDx -1.45, bDz 0.15` | `mano` |
 | Brazo horizontal adelante | `bDx -1.57` | mano a 1.5 de alto, 0.75 adelante |
-| **Doblarse de cintura y bajar la mano** | `inc 0.6, pDx -0.6, pIx -0.6, y 0.13, bDx -0.55, bDz 0.12, bIx 0.25, cx 0.3` | mano a ~0.75 de alto y ~1.1 adelante de los pies; sirve para tocar algo de ~0.7 de alto |
+| **Doblarse de cintura y bajar la mano** | `inc 0.6, pDx -0.6, pIx -0.6, y 0.13, bDx -0.55, bDz 0.12, bIx 0.25, cx 0.3` | punta de la mano a ~0.62 de alto y ~0.8 adelante de los pies (brazo casi vertical); sirve para tocar algo de ~0.5 de alto justo delante |
+| **Inclinado con la mano a la altura del pecho** | `inc 0.3, pDx -0.3, pIx -0.3, y 0.034, bDx -1.6` | punta a 1.27 de alto y 1.17 adelante (medido en el juego) |
 | **Sentado en el suelo** | `y -0.62, pDx -1.45, pIx -1.45, inc 0.15, bDx -1.0, bDz 0.1, cx 0.35` | piernas estiradas adelante; mano a ~0.5 de alto |
 | Sentado en silla/tronco | `pDx -1.5, pIx -1.5` y el actor puesto 0.6 más alto | lo usan los amigos del campamento |
 
@@ -105,5 +130,12 @@ poco más arriba; **echada** el lomo queda a ~`alto` (Mila 0.73, Gala 0.6). En c
 justo delante, en `z ≈ largo/2 + cabeza·0.3`. Para tocarle **el lomo** apunta a `z ≈ −largo·0.1`
 (un poco detrás del centro); para la **cabeza**, a `z ≈ largo/2 + 0.15`.
 
-Para animarla desde fuera hay que agregar un gancho (no existe aún) en `actualizarGata`:
-ver `referencia/escenas.md` §3.
+Alturas medidas en el juego (Gala sentada): centro de la cabeza ≈ 1.17 y tope ≈ 1.37 sobre su
+suelo. Mila es más grande (súmale ~0.1).
+
+**Gancho `gata.escena(dt, t)`** (ya existe en `gatas.js`): mientras está puesto, la IA se
+detiene; cada cuadro se mezcla `gata.pose` (`mezclarPose`), se aplica la pose (`aplicarPose`) y
+**después** se llama a tu función, así que puedes sumar encima rotaciones de cabeza y cola
+(usa `+=` en `cabeza.rotation.x`, que `aplicarPose` ya escribió). Extras: `gata.ronroneo = true`
+hace sonar el ronroneo aunque no esté echada; `gata.maullar(dist)` maúlla. Ejemplo completo:
+`mundo/supervivencia/caricias.js`.

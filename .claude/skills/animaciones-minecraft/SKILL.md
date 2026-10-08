@@ -14,8 +14,9 @@ con la misma calidad. Léela entera antes de escribir código. Las referencias e
 | **B. Escena avanzada** (guion con turnos, varios actores, objetos que pasan de mano en mano, partículas, sonido) | Escenas «Venjy» (conversación de 6 turnos) y el iglú (el pito y el bong vuelan a tu mano, humo, tos) | `escenas-skin.js` (`iniciar`, `aplicar`, `fumarJugador`) y `escenas-datos.js` (`VENJY`, `IGLU`) | `referencia/escenas.md` §2 y §3 |
 | **C. Cámara de cine** (planos, fundidos, encuadre) | Cámara al leer la misión de un amigo (6 planos con regla de tercios) y la de las escenas de skin (7 planos de dos personajes) | `PLANOS` y `PLANOS_ESCENA` en `mundo/supervivencia/camaras.js` | `referencia/camara.md` |
 
-Una **interacción nueva con tecla** (ej.: acariciar a una gata) es un tipo B en su propio módulo:
-plantilla completa en `referencia/escenas.md` §3.
+Una **interacción nueva con tecla** es un tipo B en su propio módulo: plantilla en
+`referencia/escenas.md` §3 y ejemplo real terminado en `mundo/supervivencia/caricias.js`
+(acariciar a Mila o Gala con G). Cópialo cuando hagas algo parecido.
 
 ---
 
@@ -44,7 +45,10 @@ plantilla completa en `referencia/escenas.md` §3.
 7. **Siempre se puede salir.** Toda escena que congela al jugador se salta con `Esc` y con un
    botón «Saltar» / «Skip», y al terminar (o saltar) **restaura** todo lo que tocó: pose, `yaw`,
    objetos de vuelta a su dueño, clases del `body`, cámara, jugador liberado.
-8. **Duraciones**: gesto 0,6–2 s; escena corta 5–8 s; escena avanzada 15–25 s. Entrada con
+8. **Contacto real.** Cuando una mano toca algo, se apoya **encima** o de frente (tabla y
+   reglas de contacto en `referencia/rig.md`) y se **mide** con `capturar.mjs --medir`. Una mano
+   que entra en una cabeza o queda a la altura de su centro se lee como un golpe.
+9. **Duraciones**: gesto 0,6–2 s; escena corta 5–8 s; escena avanzada 15–25 s. Entrada con
    rampa de 0,25–0,5 s y salida de 0,6–1 s. Una frase de globo dura `1,8 + letras * 0,045` s
    (entre 2,5 y 3,8).
 
@@ -67,8 +71,8 @@ plantilla completa en `referencia/escenas.md` §3.
 6. **Verifica con capturas** (`referencia/verificar.md`): al menos 5 tiempos clave y 2 planos de
    cámara. Mira cada imagen: ¿la pose se lee?, ¿la mano llega donde debe?, ¿algo atraviesa un
    bloque o una cabeza?, ¿la cámara ve a los actores? Corrige y vuelve a capturar.
-7. **Corre las pruebas**: `node mundo/tests/recetas.mjs` y `node mundo/tests/inventario.mjs`
-   (no deben romperse) y revisa que no haya errores de consola en las capturas.
+7. **Corre las pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs` y
+   `node mundo/tests/paridad.mjs` (no deben romperse) y revisa que no haya errores de consola en las capturas.
 8. **Documenta**: marca/añade la tarea en `mundo/PENDIENTES.md` y una entrada en su bitácora
    (fecha · qué · archivos · cómo se verificó). Pon un comentario de cabecera en el módulo nuevo
    explicando qué hace, como los demás archivos.
@@ -88,8 +92,11 @@ plantilla completa en `referencia/escenas.md` §3.
   Durante una escena la pose del jugador se escribe en el gancho `camaras.pose = (cuerpo, dt) => …`.
 - **Ganchos de animación**: amigos, NPCs y Venjys aceptan `n.escena = (dt, base) => …`, que
   reemplaza su animación (`base(0)` congela la normal; con `n.escena` se callan su globo, nombre y
-  charla). Las gatas **no** tienen gancho todavía: hay que agregarlo (plantilla en
-  `referencia/escenas.md` §3).
+  charla). Las gatas aceptan `gata.escena = (dt, t) => …` (se llama **después** de su pose; ver
+  `referencia/rig.md` §3). Otra criatura sin gancho: agrégalo igual (`referencia/escenas.md` §3.4).
+- **Mientras dura una escena**: `misiones.ocultarMarcas = true` (si no, sale un «!» de misión en
+  el encuadre) y vuelve a `false` al terminar. Los monstruos siguen activos: no hagas escenas
+  largas lejos de las zonas seguras de los amigos.
 - **Bucle** (`mundo/supervivencia/main.js`, función `bucle`): `escenas.actualizar` y
   `camaras.actualizar` corren cada cuadro; las criaturas se actualizan con `dtC` (0 en pausa). Un
   módulo nuevo se actualiza justo después de `escenas.actualizar(corre ? dt : 0)`.
@@ -136,6 +143,14 @@ Patrón de cada cuadro: `meta = lerp(neutral, poseDelGesto, envolvente(...))` �
   `irJunto(...)` (`referencia/verificar.md`).
 - Dos botones «Saltar» a la vez: `.saltar-escena` se muestra con `body.en-escena`; un módulo nuevo
   usa su propia clase de `body` y su propia regla CSS.
+- Botón táctil que no se oculta con `hidden`: `.tactil-boton` tiene `display: flex`; agrega
+  `.tactil-boton.sv-<nombre>[hidden] { display: none; }`.
+- Globo enorme en celular: `crearGlobo` mide 3 × 1,25 bloques; para un texto corto achícalo
+  (`globo.sp.scale.set(1.4, 0.58, 1)`) y ponlo un poco hacia el centro de la escena.
+- `pausar()` congela tu reloj, **no** el de la cámara (que corre en tiempo real y cambia de plano
+  cada 4,2 s): en capturas fija el plano con `--plano k`.
+- Al empezar otra vez la misma interacción, reinicia su estado suavizado (`cur`), o arranca
+  desde la pose en que quedó la vez anterior.
 
 ## 6. Entrega
 

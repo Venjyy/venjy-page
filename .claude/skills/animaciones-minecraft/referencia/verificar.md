@@ -44,7 +44,14 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
   `v.venjys.lista` (`lugar === 'inicio'`), `v.gatas.gatas` (Mila y Gala, `clave`).
 - `--paso` con `pausar()` + `irA(t)` congela el reloj en cada segundo: así ves la pose exacta.
   Por eso tu módulo **debe** exponer `pausar` e `irA`.
-- `--plano k` fija la cámara de cine en el plano `k` (prueba varios).
+- `--plano k` fija la cámara de cine en el plano `k` (prueba varios). Sin esto, como la cámara
+  usa su propio reloj, los cortes de plano no siguen a `irA(t)`.
+- **Espera antes de pausar**: las poses de las criaturas se mezclan lento (las gatas a 2,6/s). En
+  `--preparar`, después de `forzar(...)`, pon `await esperar(2500)` y recién ahí `pausar()`; si
+  no, la primera captura sale a medio camino. `--paso` espera 0,7 s por captura.
+- `--medir "<expresión>"` imprime números en cada captura. Ayudas: `manoD()`, `manoI()` (punta
+  de la mano del jugador en el mundo) y `mundoDe(hueso, x, y, z)` (un punto local de cualquier
+  hueso en el mundo). Ejemplo: `--medir "({ mano: manoD(), cabeza: mundoDe(v.gatas.gatas[1].cabeza, 0, 0.27, 0.15) })"`.
 - Imprime los errores de la página: **cualquier `ERROR DE PÁGINA` es un fallo**.
 - En el contenedor el puntero no se bloquea y el juego queda «en pausa», salvo que haya algo con
   `uiAbierta` (una escena, un panel). Para probar la tecla real, simúlala:
@@ -68,7 +75,7 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
 ## 4. Pruebas del repo
 
 ```bash
-node mundo/tests/recetas.mjs && node mundo/tests/inventario.mjs
+node mundo/tests/recetas.mjs && node mundo/tests/inventario.mjs && node mundo/tests/paridad.mjs
 ```
 
 ## 5. Si algo se ve mal
@@ -79,6 +86,9 @@ node mundo/tests/recetas.mjs && node mundo/tests/inventario.mjs
 | El personaje parece caerse | `inc` sin compensar las piernas |
 | La pose tiembla | `Math.random()` dentro de la pose, o dos sistemas escribiendo el mismo hueso |
 | La pose no cambia | la animación normal la pisa: falta el gancho (`n.escena` / `gata.escena`) |
+| La mano parece golpear | la punta queda a la altura del centro de lo que toca: súbela 0.1–0.15 sobre la superficie (`rig.md`, «Contacto») |
+| El botón táctil no se oculta | falta `.tactil-boton.sv-<nombre>[hidden] { display: none; }` |
+| Sale un «!» de misión en la escena | falta `misiones.ocultarMarcas = true` |
 | La mano no llega | distancia entre actores: ajusta dónde pones al jugador, no estires el brazo |
 | Cielo o negro en la captura | chunks sin cargar (`irJunto`) o la cámara quedó dentro de un bloque |
 | El actor queda girado después | no se restauró `yaw` en `terminar` |
