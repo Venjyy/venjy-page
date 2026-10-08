@@ -69,7 +69,7 @@ Una **interacción nueva con tecla** es un tipo B en su propio módulo: plantill
    Prueba después de cada capa.
 5. **Expón depuración** en `window.__venjy` (`forzar()`, `pausar()`, `irA(t)`, `saltar()`), igual
    que `escenas`. Sin esto no se pueden revisar poses con capturas.
-6. **Verifica con capturas** (`referencia/verificar.md`): al menos 5 tiempos clave y 2 planos de
+6. **Verifica con capturas** (y, si tocaste la cámara, con la hoja de planos `planos.mjs`) (`referencia/verificar.md`): al menos 5 tiempos clave y 2 planos de
    cámara. Mira cada imagen: ¿la pose se lee?, ¿la mano llega donde debe?, ¿algo atraviesa un
    bloque o una cabeza?, ¿la cámara ve a los actores? Corrige y vuelve a capturar.
 7. **Corre las pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs` y

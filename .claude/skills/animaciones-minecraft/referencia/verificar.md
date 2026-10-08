@@ -66,6 +66,16 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
   `v.jugador.activo = true` si tu `intentar()` lo exige, o llama `v.<modulo>.intentar()`.
 - Es lento (≈10–20 s por corrida con muchos tiempos). Junta varios tiempos en una corrida.
 
+## 2a. `planos.mjs` · hoja con todos los planos de la cámara
+
+```bash
+node .claude/skills/animaciones-minecraft/planos.mjs --planos 5 --salida $SCRATCH/planos.png \
+  --preparar "callarEscenas(); const c = v.ronda.cojin; await irJunto(c.x, c.z, c.y, 1.2); v.jugador.colocar(c.x + 0.8, c.y + v.terreno.dy, c.z); await esperar(800); v.ronda.forzar(); await esperar(2500); v.ronda.pausar()"
+```
+
+Una imagen con un cuadro rotulado por plano (0, 1, 2…). Úsala con el método de
+`referencia/camara.md` («Método para diseñar planos»).
+
 ## 2b. `grabar.mjs` · video MP4 de la animación completa (para mostrarla)
 
 Avanza el juego cuadro por cuadro con un reloj controlado (30 fps), así el video sale fluido

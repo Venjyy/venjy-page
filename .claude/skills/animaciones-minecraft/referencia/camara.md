@@ -71,6 +71,26 @@ En un espacio de radio ~3 casi cualquier plano tiene algo delante. Reglas aprend
 - `evitar` solo sabe de actores: los muebles hay que esquivarlos eligiendo `ang`/`dist` a mano.
 - Pocos planos buenos (3) valen más que 5 con dos malos.
 
+## Método para diseñar planos (síguelo en orden)
+
+1. **Mapa de planta en texto**: anota en coordenadas del mundo dónde están las paredes, muebles
+   (bloques: `mundo.bloque(x, y, z)` en la zona), los actores (cabezas) y la entrada. Escríbelo como
+   tabla o rejilla ASCII antes de elegir ángulos: así ves desde dónde hay línea limpia.
+2. **Candidatos**: propón 6–8 posiciones de cámara en ese mapa (desde la entrada, laterales,
+   contrapicado, cenital) y descarta las que tengan un mueble o pared entre la cámara y algún actor.
+3. **Comprobación automática**: para cada plano, la línea cámara → **cabeza de cada actor** debe
+   estar libre (no solo cámara → objetivo, que es lo que revisa `calcular`). Si agregas esta
+   comprobación a `camaras.js` (p. ej. una opción `visibles: [actores]` que descarte el plano si
+   alguno queda tapado) y expones `camaras.diagnostico = { nombre, tapados: [...] }`, `planos.mjs`
+   la imprime por plano.
+4. **Hoja de planos** (`planos.mjs`): mira todos los planos juntos. Para cada uno responde: ¿se ven
+   las caras de todos?, ¿algo tapa más de 1/4?, ¿es distinto de los demás (tamaño o ángulo)?, ¿la
+   franja o los botones cortan una cabeza? Corrige y repite hasta que todos pasen.
+5. **Variedad con propósito**: un plano de situación (general), uno de dos o tres (medio), un
+   primer plano de quien actúa y, si cabe, uno con ángulo distinto (contrapicado/cenital). Dos planos
+   casi iguales seguidos = un plano de más.
+6. **Video**: confirma en movimiento (`grabar.mjs`); `orbita`/`dolly` pueden meter algo en cuadro.
+
 ## Conjunto de planos nuevo
 
 Agrega una lista (`PLANOS_<NOMBRE>`) junto a las otras y su valor en `iniciarCine(n, { planos: '<nombre>' })`
