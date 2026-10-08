@@ -85,22 +85,26 @@ function materialesDe(clave) {
     return T;
 }
 
-// Cuello naranja de Gala (bandana con vuelo y lazo): cajas en el espacio del tronco, pegadas al pecho
-// donde se une la cabeza. Oculto por defecto; `gatas.ponerCuello('gala', true)` lo muestra.
-const NARANJO_CUELLO = [226, 112, 36], PUNTO_CUELLO = [255, 178, 96];
+// Cuello naranja de Gala (bandana con vuelo y lazo): un anillo de cajas que rodea el cuello, entre la
+// cabeza y el cuerpo (frente, costados y arriba; la cabeza no lo atraviesa). Vuelo de abajo al frente y
+// lazo grande hacia un lado. Oculto por defecto; `gatas.ponerCuello('gala', true)` lo muestra.
+const NARANJO_CUELLO = [224, 138, 30], PUNTO_CUELLO = [255, 190, 110];
 function construirCuello(e, caras) {
     const tela = textura(301, (x, y, r) => ((x * 3 + y * 5) % 7 === 0 && r() < 0.8)
         ? ajustar(PUNTO_CUELLO, 0.95 + r() * 0.08) : ajustar(NARANJO_CUELLO, 0.88 + r() * 0.2));
     const m = caras(tela);
     const g = new THREE.Group();
     const pieza = (w, h, d, x, y, z, rz = 0) => { const p = caja(w, h, d, m); p.position.set(x, y, z); p.rotation.z = rz; g.add(p); };
-    const zc = e.largo - 0.03;                       // delante del cuerpo, donde se une la cabeza
-    pieza(0.74, 0.2, 0.26, 0, 0.44, zc);             // anillo alrededor del cuello
-    pieza(0.84, 0.1, 0.3, 0, 0.31, zc - 0.02);       // vuelo de abajo (más ancho, con volumen)
-    pieza(0.5, 0.07, 0.1, 0, 0.56, zc + 0.14);       // doblez de arriba
-    pieza(0.16, 0.16, 0.14, 0.36, 0.44, zc + 0.1);   // nudo del lazo, a un lado
-    pieza(0.12, 0.26, 0.04, 0.4, 0.28, zc + 0.12, -0.25); // cola 1 del lazo
-    pieza(0.12, 0.24, 0.04, 0.5, 0.25, zc + 0.12, 0.2);   // cola 2 del lazo
+    // Coordenadas en el espacio del tronco (cuerpo: z 0..largo, y 0..alto; cabeza: y ≈ 0,36–0,80, |x| < 0,26)
+    const zc = e.largo;                                   // donde el cuerpo termina y empieza la cabeza
+    pieza(0.8, 0.2, 0.14, 0, 0.28, zc + 0.06);            // frente: vuelo bajo la cabeza
+    pieza(0.14, 0.36, 0.3, -0.37, 0.42, zc - 0.05);       // costado izquierdo del anillo
+    pieza(0.14, 0.36, 0.3, 0.37, 0.42, zc - 0.05);        // costado derecho del anillo
+    pieza(0.62, 0.12, 0.23, 0, 0.6, zc - 0.13);           // arriba, por detrás de la cabeza
+    pieza(0.2, 0.2, 0.16, 0.5, 0.36, zc + 0.12);          // nudo del lazo, hacia un lado
+    pieza(0.3, 0.16, 0.1, 0.56, 0.44, zc + 0.14, -0.3);   // vuelo grande del lazo
+    pieza(0.16, 0.34, 0.05, 0.5, 0.14, zc + 0.14, -0.2);  // cola 1 del lazo
+    pieza(0.16, 0.3, 0.05, 0.4, 0.15, zc + 0.14, 0.2);    // cola 2 del lazo
     g.visible = false;
     return g;
 }

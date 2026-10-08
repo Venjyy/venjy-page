@@ -162,7 +162,14 @@ export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, mi
         mostrar(globoLona, null, false, 0, 0, 0, 0);
         mostrar(globoGala, null, false, 0, 0, 0, 0);
         txtLona = txtGala = null;
-        jugador.colocar(e.orig.x, e.orig.y, e.orig.z);
+        // Al volver, el jugador no queda pegado a Lona: si estaba a menos de 2 bloques, se aleja a ~3 mirándola
+        const dL = Math.hypot(e.orig.x - n.x, e.orig.z - n.z);
+        if (dL < 2) {
+            const [dx, dz] = dirHacia(n.x, n.z, e.orig.x, e.orig.z, [0, 1]);
+            jugador.colocar(n.x + dx * 3, e.orig.y, n.z + dz * 3);
+            jugador.yaw = Math.atan2(n.x - jugador.pos.x, n.z - jugador.pos.z) - Math.PI;
+            jugador.pitch = 0;
+        } else jugador.colocar(e.orig.x, e.orig.y, e.orig.z);
         camaras.terminarCine();
         misiones.ocultarMarcas = false;
         document.body.classList.remove('en-cuello');
