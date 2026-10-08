@@ -355,3 +355,57 @@ body.con-tactil .nombre-objeto { bottom: calc(var(--pie) + 4px); }
 .vida-jefe b { font-weight: normal; display: block; margin-bottom: 4px; }
 .vida-jefe .barra-jefe { height: 10px; background: #2a0a2a; border: 2px solid #000; }
 .vida-jefe .barra-jefe i { display: block; height: 100%; width: 100%; background: linear-gradient(#e040e0, #a020a0); }
+
+/* ---------- Misiones ---------- */
+.capa-mision {
+    position: fixed; inset: 0; z-index: 55;
+    display: flex; padding: 12px; overflow: auto;
+    background: rgb(0 0 0 / 0.45);
+}
+.panel-mision {
+    margin: auto;
+    width: min(520px, 100%);
+    padding: 16px 18px;
+    color: var(--blanco);
+    background: var(--fondo-panel);
+    border: 4px solid #000;
+    box-shadow: inset 4px 4px 0 #3a2a1c, inset -4px -4px 0 #0c0704;
+}
+.panel-mision h2 { margin: 0 0 8px; font-weight: normal; font-size: 1.4rem; color: var(--amarillo); text-shadow: 2px 2px 0 #3f3f15; }
+.panel-mision p { margin: 8px 0; line-height: 1.35; }
+.panel-mision .titulo-mision { color: #7df; }
+.panel-mision .dialogo { padding: 8px 10px; background: rgb(255 255 255 / 0.08); border-left: 4px solid var(--amarillo); }
+.panel-mision .objetivo { color: var(--gris); }
+.panel-mision .aviso { color: #ff9a6a; }
+.premio-mision { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 10px 0; color: var(--gris); }
+.premio-mision b { font-weight: normal; color: var(--blanco); }
+.premio-mision span { display: inline-flex; align-items: center; gap: 4px; }
+.premio-mision canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+.botones-mision { display: flex; gap: 8px; flex-wrap: wrap; }
+.botones-mision .boton { flex: 1; margin: 6px 0 0; min-width: 140px; }
+.mision-activa {
+    position: absolute;
+    right: 12px;
+    top: 150px;
+    max-width: min(300px, 32vw);
+    padding: 6px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 0.85rem;
+    color: #fff;
+    background: rgb(0 0 0 / 0.45);
+    text-shadow: 1px 1px 0 #3f3f3f;
+}
+.mision-activa small { color: var(--gris); }
+.mision-activa b { font-weight: normal; color: var(--amarillo); }
+.mision-activa em { font-style: normal; color: #7f7; }
+body.con-tactil .mision-activa { top: 182px; left: 12px; right: auto; }
+
+/* ---------- Créditos ---------- */
+.creditos { margin: auto; width: min(560px, 100%); padding: 14px; text-align: center; color: #fff; background: rgb(0 0 0 / 0.6); border: 4px solid #000; }
+.creditos .rollo { height: min(62vh, 460px); overflow: hidden; mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+.creditos .contenido { animation: subir 15s linear forwards; }
+.creditos h1 { color: var(--amarillo); font-weight: normal; font-size: 1.8rem; text-shadow: 3px 3px 0 #3f3f15; }
+.creditos h2 { font-weight: normal; color: #7df; margin-top: 28px; }
+.creditos ul { list-style: none; padding: 0; line-height: 1.8; }
+.creditos li b { font-weight: normal; color: var(--amarillo); }
+@keyframes subir { from { transform: translateY(min(62vh, 460px)); } to { transform: translateY(0); } }

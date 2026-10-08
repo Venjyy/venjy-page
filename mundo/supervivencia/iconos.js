@@ -300,6 +300,19 @@ const PINTORES = {
         p.mascara(['....cccccccc....', '....aaaaaaab....', '....awwawwab....', '....awwawwab....', '....aaaaaaab....', '....awwawwab....', '....aaaaaaab....', '....aaaaaaab....', '....aaaaaaab....', '....aaaaakab....', '....aaaaaaab....', '....aaaaaaab....', '....aaaaaaab....', '....aaaaaaab....', '....bbbbbbbb....'], { a: [168, 131, 79], b: [110, 76, 40], c: [200, 160, 104], w: [70, 50, 30], k: [60, 60, 64] });
         p.contornear();
     },
+    amuleto(p) {
+        for (let k = 0; k < 6; k++) { p.set(4 + k, 2 + Math.round(k * 0.5), [200, 200, 200]); p.set(11 - k, 2 + Math.round(k * 0.5), [200, 200, 200]); }
+        p.mascara(['', '', '', '', '', '......cc........', '.....caab.......', '....caaaab......', '....aaaaab......', '.....aaab.......', '......ab........'].map(f => '..' + f), { a: [150, 40, 190], b: [80, 10, 110], c: [230, 150, 255] });
+        p.contornear();
+    },
+    pluma_negra(p) {
+        for (let k = 0; k < 11; k++) { p.set(3 + k, 13 - k, [40, 30, 60]); p.set(4 + k, 13 - k, [80, 50, 110]); if (k > 2) p.set(4 + k, 12 - k, [120, 70, 160]); }
+        p.contornear([20, 10, 30]);
+    },
+    farol(p) {
+        p.mascara(['', '......kk........', '.....k..k.......', '....kkkkkk......', '....kyyyyk......', '....kyooyk......', '....kyooyk......', '....kyyyyk......', '....kkkkkk......', '.....kkkk.......'].map(f => '..' + f), { k: [50, 50, 60], y: [120, 220, 200], o: [200, 255, 230] });
+        p.contornear();
+    },
     cama(p) {
         p.mascara(['', '', '', '', '', '..wwwrrrrrrrrr..', '..wwwrrrrrrrrr..', '..rrrrrrrrrrrr..', '..mmmmmmmmmmmm..', '..m..........m..'], { w: [240, 240, 236], r: [176, 44, 48], m: [137, 103, 59] });
         p.contornear();

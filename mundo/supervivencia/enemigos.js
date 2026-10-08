@@ -18,7 +18,8 @@ const mota = (c, f = 0.18) => (x, y, r) => ajustar(c, 1 - f / 2 + r() * f);
 
 export const NOMBRES_MOB = {
     zombi: { es: 'Zombi', en: 'Zombie' }, esqueleto: { es: 'Esqueleto', en: 'Skeleton' },
-    arana: { es: 'Araña', en: 'Spider' }, creeper: { es: 'Creeper', en: 'Creeper' }, trauco: { es: 'Trauco', en: 'Trauco' }
+    arana: { es: 'Araña', en: 'Spider' }, creeper: { es: 'Creeper', en: 'Creeper' }, trauco: { es: 'Trauco', en: 'Trauco' },
+    lepisma: { es: 'Lepisma', en: 'Silverfish' }
 };
 
 const DEF = {
@@ -26,7 +27,8 @@ const DEF = {
     esqueleto: { vida: 20, vel: 2.5, dano: 3, ancho: 0.6, alto: 1.9, sol: true, arquero: true },
     arana: { vida: 16, vel: 3.6, dano: 2, alcance: 1.7, ancho: 1.3, alto: 0.9, trepa: true },
     creeper: { vida: 20, vel: 2.2, ancho: 0.6, alto: 1.7 },
-    trauco: { vida: 18, vel: 3.3, dano: 4, alcance: 1.6, ancho: 0.5, alto: 1.35, aturde: true }
+    trauco: { vida: 18, vel: 3.3, dano: 4, alcance: 1.6, ancho: 0.5, alto: 1.35, aturde: true },
+    lepisma: { vida: 6, vel: 3.6, dano: 1, alcance: 1.0, ancho: 0.45, alto: 0.35 }
 };
 const azarEntre = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 function soltarDe(tipo) {
@@ -40,6 +42,7 @@ function soltarDe(tipo) {
         case 'esqueleto': return [[O.HUESO, azarEntre(0, 2)], [O.FLECHA, azarEntre(0, 2)]];
         case 'arana': return [[O.HILO, azarEntre(0, 2)], ...(Math.random() < 0.33 ? [[O.OJO_ARANA, 1]] : [])];
         case 'creeper': return [[O.POLVORA, azarEntre(0, 2)]];
+        case 'lepisma': return [];
         case 'trauco': return [[O.CUERO, azarEntre(0, 1)], [O.PALO, azarEntre(0, 2)], ...(Math.random() < 0.08 ? [[O.HACHA_PIEDRA, 1]] : [])];
         default: return [];
     }
@@ -140,6 +143,17 @@ function modeloArana(tinte, semilla) {
     return { g, cuerpo, cabeza, patas };
 }
 
+function modeloLepisma(tinte, semilla) {
+    const gris = (x, y, r) => ajustar([150, 150, 156], (y % 4 === 0 ? 0.7 : 1) * (0.85 + r() * 0.25));
+    const t = texturasDe(semilla, gris);
+    const g = new THREE.Group();
+    const cuerpo = new THREE.Group(); g.add(cuerpo);
+    const segmentos = [[0.24, 0.2, 0.2, 0.25], [0.32, 0.26, 0.24, 0.02], [0.26, 0.2, 0.2, -0.2], [0.16, 0.14, 0.16, -0.38]].map(([w, h, d, z]) => {
+        const c = caja(w, h, d, tinte.caras(t)); c.position.set(0, h / 2, z); cuerpo.add(c); return c;
+    });
+    return { g, cuerpo, patas: [], segmentos };
+}
+
 function modeloPersona(tinte, tipo, semilla) {
     const p = crearPersona(tinte, PIELES[tipo](), semilla);
     if (tipo === 'esqueleto') {
@@ -180,7 +194,7 @@ export function crearEnemigos(ctx) {
 
     function crear(tipo, x, y, z) {
         const tinte = crearTinte();
-        const m = tipo === 'creeper' ? modeloCreeper(tinte, semilla) : tipo === 'arana' ? modeloArana(tinte, semilla) : modeloPersona(tinte, tipo, semilla);
+        const m = tipo === 'creeper' ? modeloCreeper(tinte, semilla) : tipo === 'arana' ? modeloArana(tinte, semilla) : tipo === 'lepisma' ? modeloLepisma(tinte, semilla) : modeloPersona(tinte, tipo, semilla);
         semilla += 17;
         if (tipo === 'trauco') m.g.scale.setScalar(0.7);
         scene.add(m.g);
@@ -260,6 +274,7 @@ export function crearEnemigos(ctx) {
         e.vida -= dano;
         e.rojo = 0.3;
         e.persigue = true;
+        if (origen) e.porJugador = true; // para las misiones (el sol no cuenta)
         const fuerza = origen && origen.fuerza != null ? origen.fuerza : 0.45;
         if (origen) {
             const dx = e.pos.x - origen.x, dz = e.pos.z - origen.z, n = Math.hypot(dx, dz) || 1;
@@ -435,6 +450,8 @@ export function crearEnemigos(ctx) {
             m.patas[0].rotation.x = b; m.patas[3].rotation.x = b; m.patas[1].rotation.x = -b; m.patas[2].rotation.x = -b;
             const s = 1 + (e.mecha > 0 ? Math.min(0.25, e.mecha * 0.15) : 0);
             m.cuerpo.scale.set(s, 1 + (s - 1) * 0.6, s);
+        } else if (e.tipo === 'lepisma') {
+            m.segmentos.forEach((c, i) => { c.position.x = Math.sin(e.fase * 2 + i) * 0.05; });
         } else if (e.tipo === 'arana') {
             m.patas.forEach((p, i) => { p.rotation.x = Math.sin(e.fase * 1.5 + i * 1.3) * 0.3 * Math.min(1, mov); });
         } else {

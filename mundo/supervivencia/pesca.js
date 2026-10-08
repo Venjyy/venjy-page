@@ -51,10 +51,10 @@ export function crearPesca({ scene, camara, mundo, jugador, inventario, entidade
         let desgaste = 1;
         if (boya.estado === 'pica') {
             const [id, n] = botin();
-            const dirJ = new THREE.Vector3(jugador.pos.x - boya.pos.x, jugador.pos.y + 1.5 - boya.pos.y, jugador.pos.z - boya.pos.z);
-            const d = dirJ.length();
-            dirJ.normalize().multiplyScalar(Math.min(14, d * 1.6)).add(new THREE.Vector3(0, 3 + d * 0.15, 0));
-            entidades.soltar(id, n, 0, boya.pos.x, boya.pos.y + 0.3, boya.pos.z, dirJ, 0);
+            // La captura va directo al inventario (como si la tiraras hacia ti); si no cabe, cae a tus pies
+            const resto = inventario.agregar(id, n);
+            if (resto) entidades.soltar(id, resto, 0, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);
+            sonidos.recoger();
             particulas.salpicar(boya.pos.x, boya.pos.y, boya.pos.z);
             sonidos.salpicar();
             alPescar && alPescar(id);
@@ -67,6 +67,8 @@ export function crearPesca({ scene, camara, mundo, jugador, inventario, entidade
 
     return {
         get activa() { return !!boya; },
+        get estadoBoya() { return boya ? boya.estado : null; }, // depuración
+        get boya() { return boya; },
         usar() { if (boya) recoger(); else lanzar(); return true; },
         quitar,
         actualizar(dt) {
@@ -80,8 +82,12 @@ export function crearPesca({ scene, camara, mundo, jugador, inventario, entidade
                 b.vel.y -= 14 * dt;
                 const sig = b.pos.clone().addScaledVector(b.vel, dt);
                 const idSig = mundo.bloque(sig.x, sig.y, sig.z);
-                if (idSig > 0 && (TIPO[idSig] === 1 || TIPO[idSig] === 2)) { b.vel.set(0, 0, 0); b.enSuelo = true; b.estado = 'quieta'; }
-                else b.pos.copy(sig);
+                const solido = id => id > 0 && (TIPO[id] === 1 || TIPO[id] === 2);
+                if (solido(idSig)) {
+                    // Si choca de lado (una baranda, un muro), pierde el impulso y cae; si cae encima, queda quieta
+                    if (b.vel.y < 0 && solido(mundo.bloque(b.pos.x, sig.y, b.pos.z))) { b.vel.set(0, 0, 0); b.enSuelo = true; b.estado = 'quieta'; }
+                    else { b.vel.x = 0; b.vel.z = 0; }
+                } else b.pos.copy(sig);
                 if (enAgua) { b.estado = 'flota'; b.reloj = 5 + Math.random() * 15; particulas.salpicar(b.pos.x, b.pos.y, b.pos.z); sonidos.salpicar(); }
                 if (b.pos.y < 0) quitar();
             } else if (b.estado === 'flota' || b.estado === 'pica') {

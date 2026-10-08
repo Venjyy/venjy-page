@@ -40,6 +40,11 @@ import { crearProyectiles } from './proyectiles.js';
 import { crearEnemigos } from './enemigos.js';
 import { crearCombate } from './combate.js';
 import { crearPesca } from './pesca.js';
+import { crearMisiones } from './misiones.js';
+import { crearJefes } from './jefes.js';
+import { mostrarCreditos } from './creditos.js';
+import { rayoCaja } from '../fisica.js';
+import { lanzarRayo } from '../rayo.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
@@ -279,8 +284,28 @@ async function arrancar(guardado) {
         inventario, contenedores, idioma, soltar: soltarDelante,
         alCerrar: () => { uiAbierta = false; if (!vida.muerto) entrar(); }
     });
+    // Panel de diálogo (misiones): como una ventana, libera el puntero sin pausar
+    const capaPanel = document.createElement('div');
+    capaPanel.className = 'capa-mision';
+    capaPanel.hidden = true;
+    document.body.appendChild(capaPanel);
+    function abrirPanel(el) {
+        uiAbierta = true;
+        jugador.teclas.clear();
+        if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
+        capaPanel.textContent = '';
+        capaPanel.appendChild(el);
+        capaPanel.hidden = false;
+    }
+    function cerrarPanel() {
+        if (capaPanel.hidden) return;
+        capaPanel.hidden = true;
+        capaPanel.textContent = '';
+        uiAbierta = false;
+        if (!vida.muerto) entrar();
+    }
     const ventanas = {
-        get abierta() { return ventanasBase.abierta; },
+        get abierta() { return ventanasBase.abierta || !capaPanel.hidden; },
         abrir(tipo, extra) {
             uiAbierta = true;
             jugador.teclas.clear();
@@ -293,6 +318,8 @@ async function arrancar(guardado) {
     const vida = crearVida({
         jugador, mundo, inventario, dificultad: guardado.dificultad ?? 2,
         alMorir: causa => {
+            if (misiones) misiones.alMorir();
+            if (jefes) jefes.alMorirJugador();
             for (const p of inventario.vaciar()) entidades.soltar(p.id, p.n, p.d, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);
             ventanasBase.cerrar();
             $('causa-muerte').textContent = tx().muerteCausa(causa);
@@ -319,21 +346,41 @@ async function arrancar(guardado) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null;
-    const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r)];
+    let enemigos = null, misiones = null, jefes = null;
+    const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
     // Zonas seguras: alrededor de cada amigo y de Venjy no aparecen ni entran monstruos
     const zonasSeguras = () => [...npcs.lista, ...amigos.lista, ...venjys.lista].map(n => ({ x: n.x, z: n.z, radio: 16 }));
     enemigos = crearEnemigos({
         scene, mundo, jugador, vida, dia, entidades, proyectiles, terreno, datos, zonasSeguras, contenedores, particulas, objetivosTodos,
         dificultad: () => vida.dificultad, hud, tinteMundo: materiales.solido.color,
-        aturdir: s => { vida.aturdido = Math.max(vida.aturdido, s); }
+        aturdir: s => { vida.aturdido = Math.max(vida.aturdido, s); },
+        alMorirMob: (tipo, e) => { if (e.porJugador && misiones) misiones.alMatar(tipo); }
     });
     const minado = crearMinado({ scene, camara, mundo, jugador, inventario, entidades, contenedores, agricultura, vida, ventanas, hud, idioma });
     const combate = crearCombate({ camara, mundo, jugador, inventario, vida, proyectiles, particulas, hud, objetivos: objetivosTodos, idioma });
     const pesca = crearPesca({ scene, camara, mundo, jugador, inventario, entidades, particulas });
     minado.alClicIzquierdo = () => combate.atacar();
-    minado.alClicDerecho = () => { const e = combate.entidadApuntada(); return !!(e && e.animal && ganado.interactuar(e.animal)); };
+    // Misiones y jefes
+    misiones = crearMisiones({
+        grupo: vista.grupo, dy: DY, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, idioma, abrirPanel, cerrarPanel,
+        jefeEnCurso: () => jefes && jefes.enCurso
+    });
+    misiones.cargar(guardado.misiones);
+    jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
+    function final() {
+        guardado.completado = true;
+        guardarYa();
+        abrirPanel(mostrarCreditos({ idioma, alCerrar: () => cerrarPanel() }));
+    }
+    // Clic derecho: altar del jefe, luego amigos, luego animales
+    minado.alClicDerecho = () => {
+        const o = lanzarRayo(camara, mundo, 4.5);
+        if (o && o.id === B.ALTAR && jefes.usarAltar(o)) return true;
+        if (misiones.interactuar(rayoCaja)) return true;
+        const e = combate.entidadApuntada();
+        return !!(e && e.animal && ganado.interactuar(e.animal));
+    };
     minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : combate.usar(p));
     minado.usarSinNada = () => combate.bloquearConMano2();
     minado.alSoltarDerecho = () => combate.soltarDerecho();
@@ -343,6 +390,7 @@ async function arrancar(guardado) {
     minado.dormir = (x, y, z) => {
         if (!dia.puedeDormir) return tx().noDormir;
         if (enemigos.cerca(jugador.pos.x, jugador.pos.y, jugador.pos.z)) return tx().monstruos;
+        misiones.alDormir();
         spawnCama = { x: x + 0.5, y: y + 1, z: z + 0.5 };
         const negro = document.createElement('div');
         negro.className = 'fundido-sueno';
@@ -363,7 +411,7 @@ async function arrancar(guardado) {
             spawnCama, vida: vida.serializar(), inventario: inventario.serializar(),
             ediciones: serializarEdiciones(terreno.ediciones), contenedores: contenedores.serializar(),
             agricultura: agricultura.serializar(), entidades: entidades.serializar(), dia: dia.serializar(), ganado: ganado.serializar(),
-            misiones: guardado.misiones || null
+            misiones: misiones.serializar()
         };
     }
     let guardando = false;
@@ -401,6 +449,7 @@ async function arrancar(guardado) {
             if (ventanasBase.abierta) { ventanasBase.cerrar(true); e.preventDefault(); }
             else if (jugador.activo && !vida.muerto) { ventanas.abrir('inventario'); e.preventDefault(); }
         } else if (e.code === 'Escape' && ventanasBase.abierta) { ventanasBase.cerrar(true); e.preventDefault(); }
+        if ((e.code === 'Escape' || e.code === 'KeyE') && !capaPanel.hidden && !e.repeat) { cerrarPanel(); e.preventDefault(); }
     });
     lienzo.addEventListener('click', () => { if (!jugador.activo && !uiAbierta && !vida.muerto && $('inicio').hidden) entrar(); });
 
@@ -438,7 +487,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -472,6 +521,7 @@ async function arrancar(guardado) {
             pesca.actualizar(dt);
             ganado.actualizar(dt);
             enemigos.actualizar(dt);
+            jefes.actualizar(dt);
             proyectiles.actualizar(dt);
             particulas.actualizar(dt);
             mano.actualizar(dt);
@@ -484,6 +534,7 @@ async function arrancar(guardado) {
         animales.actualizar(dtC, false);
         amigos.actualizar(dtC, false);
         venjys.actualizar(dtC, false);
+        misiones.actualizar(dtC);
         ventanasBase.actualizar();
         hud.actualizar(dt, vida);
         relojAgua += dt;

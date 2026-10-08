@@ -98,5 +98,7 @@ export const sonidos = {
         else if (tipo === 'arana') ruido({ dur: 0.4, frec: 5000, q: 1.5, vol: v * 0.8, tipo: 'highpass' });
         else if (tipo === 'trauco') { tono({ f0: 220, f1: 300, dur: 0.15, vol: v, forma: 'square' }); tono({ f0: 300, f1: 200, dur: 0.15, vol: v, forma: 'square', retardo: 0.18 }); }
     },
+    // «Tue tue» del Chonchon: dos silbidos que bajan
+    tueTue() { tono({ f0: 1400, f1: 1100, dur: 0.22, vol: 0.14, forma: 'sine' }); tono({ f0: 1300, f1: 950, dur: 0.26, vol: 0.14, forma: 'sine', retardo: 0.32 }); },
     clic() { tono({ f0: 1200, f1: 900, dur: 0.04, vol: 0.05, forma: 'square' }); }
 };

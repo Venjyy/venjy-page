@@ -129,6 +129,11 @@ obj('PUERTA', 'Puerta de madera', 'Oak Door', { icono: 'puerta', apila: 64, comb
 obj('CAMA', 'Cama', 'Bed', { icono: 'cama', apila: 1 });
 obj('CUENCO', 'Cuenco', 'Bowl', { icono: 'cuenco', combustible: 5 });
 
+// ---- Objetos de los jefes (los entrega Venjy; se usan en su altar) ----
+obj('AMULETO_MINA', 'Amuleto de la mina', 'Mine Amulet', { icono: 'amuleto', apila: 1, jefe: 'imbunche' });
+obj('PLUMA_CHONCHON', 'Pluma del Chonchon', 'Chonchon Feather', { icono: 'pluma_negra', apila: 1, jefe: 'chonchon' });
+obj('FAROL_CALEUCHE', 'Farol del Caleuche', 'Caleuche Lantern', { icono: 'farol', apila: 1, jefe: 'caleuche' });
+
 // ---------------------------------------------------------
 // Bloques como objeto: nombre, dureza, herramienta y drops
 // ---------------------------------------------------------
