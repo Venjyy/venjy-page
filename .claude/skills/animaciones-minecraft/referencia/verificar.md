@@ -62,8 +62,6 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
   de la mano del jugador en el mundo) y `mundoDe(hueso, x, y, z)` (un punto local de cualquier
   hueso en el mundo). Ejemplo: `--medir "({ mano: manoD(), cabeza: mundoDe(v.gatas.gatas[1].cabeza, 0, 0.27, 0.15) })"`.
 - Imprime los errores de la página: **cualquier `ERROR DE PÁGINA` es un fallo**.
-- **Escenas con globos**: antes de entregar, corre `revisar.mjs` (SKILL.md, «Revisor automático») para
-  medir solapes, área segura, altura del globo y lectura de cada línea. No necesita capturas.
 - En el contenedor el puntero no se bloquea y el juego queda «en pausa», salvo que haya algo con
   `uiAbierta` (una escena, un panel). Para probar la tecla real, simúlala:
   `document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyG' }))` después de poner

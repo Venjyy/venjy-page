@@ -218,7 +218,7 @@ export function crearEscenasSkin(ctx) {
 
         // Los amigos dejan su animación: la escena los mueve
         for (const a of Object.values(actores)) if (a.n) a.n.escena = (dt, base) => animarAmigo(a, dt, base);
-        camaras.iniciarCine(centro, { escena: true, esperarLinea: tipo === 'venjy', fundido: 0.45, validarTexto, evitar: Object.values(actores).filter(a => a.n).map(a => a.n) });
+        camaras.iniciarCine(centro, { escena: true, esperarLinea: tipo === 'venjy', fundido: 0.45, evitar: Object.values(actores).filter(a => a.n).map(a => a.n) });
         camaras.pose = (cuerpo, dt) => poseJugador(dt);
         misiones.ocultarMarcas = true;
         document.body.classList.add('en-escena');
@@ -439,8 +439,6 @@ export function crearEscenasSkin(ctx) {
     }
     function reacciona(clave, info) { return !vistas().has(clave) && !!info.base && (info.base === 'venjy' || info.base === clave) && (clave !== 'venjy' || info.base === 'venjy'); }
 
-    // Hacia quién se inclina el encuadre en una línea (0 amigo, 1 jugador)
-    const focoDe = l => (!l ? 0.5 : l.q === 'j' ? 0.68 : l.q === 'ambos' || l.q === 'todos' ? 0.5 : 0.32);
     function actualizar(dt) {
         if (escena) {
             if (!pausada) escena.t += dt;
@@ -449,7 +447,7 @@ export function crearEscenasSkin(ctx) {
             const ls = lineasAhora(), l = ls[ls.length - 1];
             // Una línea nueva: la cámara puede cambiar de plano aquí si ya cumplió su tiempo (esperarLinea)
             if (l && l !== e.ultimaLinea) { e.ultimaLinea = l; camaras.nuevaLinea(); }
-            camaras.enfocar(focoDe(l));
+            camaras.enfocar(!l ? 0.5 : l.q === 'j' ? 0.68 : l.q === 'ambos' || l.q === 'todos' ? 0.5 : 0.32);
             if (e.t >= e.T) terminar();
             jugador.yaw = Math.atan2(e.centro.x - jugador.pos.x, e.centro.z - jugador.pos.z) - Math.PI;
         } else if ((reloj += dt) > 0.25) {
@@ -461,48 +459,6 @@ export function crearEscenasSkin(ctx) {
         }
         actualizarGlobos(dt);
     }
-    // Zonas que el globo no debe tapar (coordenadas del grupo): cabeza y pecho de cada actor
-    function zonas() {
-        const out = [];
-        if (!escena) return out;
-        for (const a of Object.values(escena.actores)) {
-            const p = pos(a), y = p.y - dy;
-            out.push({ quien: a.clave, tipo: 'cabeza', x: p.x, y: y + a.alto * 0.85, z: p.z, r: 0.35 });
-            out.push({ quien: a.clave, tipo: 'pecho', x: p.x, y: y + a.alto * 0.6, z: p.z, r: 0.32 });
-        }
-        return out;
-    }
-    // Dónde nace el globo de un actor (grupo): sobre su cabeza, corrido un poco hacia el centro de la escena
-    function anclaGlobo(a) {
-        const p = pos(a);
-        // Bajo un techo bajo (el iglú) el globo baja para quedar dentro
-        let y = p.y + a.alto + 0.6;
-        for (let k = 2; k <= 4; k++) if (opaco(p.x, p.y + k + 0.5, p.z)) { y = Math.min(y, p.y + k - 0.5); break; }
-        // Corrido un poco hacia el centro de la escena: así no tapa la cabeza en los planos sobre el hombro
-        const c = escena.centro;
-        return [lerp(p.x, c.x, 0.3), y - dy, lerp(p.z, c.z, 0.3)];
-    }
-    // Capa 2 (cámara de cine): solape mínimo que tendría el globo de la línea actual/siguiente con esta cámara
-    // de prueba; 0 = hay lugar libre. Se llama al elegir plano (camaras.js), no cada cuadro.
-    let sinEvitarDepurar = false;
-    const camPrueba = new THREE.PerspectiveCamera();
-    function validarTexto(posCam, objetivo, objetivoDe) {
-        if (!escena || sinEvitarDepurar) return 0;
-        camPrueba.fov = camara.fov; camPrueba.aspect = camara.aspect;
-        camPrueba.position.copy(posCam);
-        grupo.updateWorldMatrix(true, false);
-        const t = escena.t, ls = lineasAhora(), prox = escena.lineas.find(l => l.a > t);
-        const zs = zonas();
-        let peor = 0;
-        for (const l of prox ? [...ls, prox] : ls) for (const a of Object.values(escena.actores)) {
-            if (!a.globo || !habla(l, a)) continue;
-            // La cámara mirará hacia donde la lleve el foco de esa línea
-            camPrueba.lookAt(objetivoDe ? objetivoDe(focoDe(l)) : objetivo); camPrueba.updateMatrixWorld(true);
-            const [x, y, z] = anclaGlobo(a);
-            peor = Math.max(peor, a.globo.probar(camPrueba, x, y, z, zs).solape);
-        }
-        return peor;
-    }
     function actualizarGlobos(dt) {
         const usados = new Set();
         if (escena) {
@@ -510,9 +466,14 @@ export function crearEscenasSkin(ctx) {
             for (const a of Object.values(escena.actores)) {
                 const l = ls.find(x => habla(x, a));
                 if (!l || !a.globo) continue;
+                const p = pos(a);
                 a.globo.decir(L(l.texto));
-                const [x, y, z] = anclaGlobo(a);
-                a.globo.actualizar(dt, true, x, y, z, camara, zonas);
+                // Bajo un techo bajo (el iglú) el globo baja para quedar dentro
+                let y = p.y + a.alto + 0.6;
+                for (let k = 2; k <= 4; k++) if (opaco(p.x, p.y + k + 0.5, p.z)) { y = Math.min(y, p.y + k - 0.5); break; }
+                // Corrido un poco hacia el centro de la escena: así no tapa la cabeza en los planos sobre el hombro
+                const c = escena.centro;
+                a.globo.actualizar(dt, true, lerp(p.x, c.x, 0.3), y - dy, lerp(p.z, c.z, 0.3), camara);
                 usados.add(a.globo);
             }
         }
@@ -533,26 +494,9 @@ export function crearEscenasSkin(ctx) {
     return {
         actualizar, antesDeHablar, saltar, tipoSkin,
         get activa() { return !!escena; },
-        // Diagnóstico del último cuadro dibujado (revisor automático): globo y zonas en NDC (-1..1), línea activa y plano
-        diag() {
-            if (!escena) return null;
-            const t = escena.t, ls = lineasAhora(), l = ls[ls.length - 1] || null;
-            const gs = Object.values(escena.actores).map(a => a.globo && a.globo.ultimo && a.globo.alfa > 0.5 ? { quien: a.clave, ...a.globo.ultimo } : null).filter(Boolean);
-            const g = gs.find(x => l && habla(l, Object.values(escena.actores).find(q => q.clave === x.quien))) || gs[0] || null;
-            return {
-                t, tipo: escena.tipo, clave: escena.clave,
-                linea: l && { texto: L(l.texto), a: l.a, d: l.d },
-                globo: g && { ...g.rect, quien: g.quien, id: g.id, escala: g.escala, libre: g.libre },
-                globos: gs.map(x => ({ quien: x.quien, ...x.rect })),
-                zonas: g ? g.zonas.map(z => ({ quien: z.quien, tipo: z.tipo, x0: z.x0, y0: z.y0, x1: z.x1, y1: z.y1 })) : [],
-                franja: g ? g.franja : (document.body.classList.contains('en-cine') ? 0.18 : 0),
-                plano: camaras.planoActual, planoNombre: camaras.planoNombre
-            };
-        },
         get escena() { return escena && { tipo: escena.tipo, clave: escena.clave, t: escena.t, T: escena.T }; },
         setIdioma(l) { idioma = l; boton.textContent = TXT_ESCENA[idioma].saltar; },
         // Depuración: olvidar las escenas vistas, forzar una, detener el guion (para capturas) o saltar a un segundo
-        sinEvitar(b = true) { sinEvitarDepurar = !!b; for (const g of Object.values(globos)) g.sinEvitar = b; },
         reiniciar() { vistas().clear(); },
         pausar(v = true) { pausada = v; },
         irA(t) { if (escena) escena.t = t; },

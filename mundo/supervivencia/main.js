@@ -495,7 +495,7 @@ async function arrancar(guardado) {
         liberar: liberarEscena
     });
     // El cuello de Gala: escena al completar la misión 3 de Lona; sincroniza el cuello con las misiones cargadas
-    escenaCuello = crearEscenaCuello({ grupo: vista.grupo, dy: DY, jugador, camaras, gatas, npcs, misiones, bloquear: bloquearEscena, liberar: liberarEscena, idioma });
+    escenaCuello = crearEscenaCuello({ grupo: vista.grupo, dy: DY, jugador, camara, camaras, gatas, npcs, misiones, bloquear: bloquearEscena, liberar: liberarEscena, idioma });
     escenaCuello.sincronizar();
     // Ronda del iglú: G (o SENTARSE) junto al cojín; con ella, F5 o CAM cambian a primera persona
     const ronda = crearRondaIglu({

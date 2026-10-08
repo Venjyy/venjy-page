@@ -42,7 +42,7 @@ const texCorazon = (() => {
     return t;
 })();
 
-export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, misiones, bloquear, liberar, idioma = 'es' }) {
+export function crearEscenaCuello({ grupo, dy, jugador, camara, camaras, gatas, npcs, misiones, bloquear, liberar, idioma = 'es' }) {
     let L = idioma;
     const tx = () => TXT[L];
     const etiq = o => (o ? o[L] || o.es : '');
@@ -62,33 +62,8 @@ export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, mi
             if (globo === globoLona && txtLona !== texto) { globo.decir(texto); txtLona = texto; }
             if (globo === globoGala && txtGala !== texto) { globo.decir(texto); txtGala = texto; }
         }
-        globo.actualizar(dt, !!(visible && texto), x, y, z, camaras.camara, zonasCuello);
+        globo.actualizar(dt, !!(visible && texto), x, y, z, camara); // con la cámara se corre para no salirse de la pantalla
     }
-    // Zonas que los globos no deben tapar (coordenadas del grupo): cabeza y pecho de Lona, cabeza de Gala
-    const vZ = new THREE.Vector3();
-    const enGrupo = o => { o.updateWorldMatrix(true, false); return grupo.worldToLocal(o.getWorldPosition(vZ)).clone(); };
-    function zonasCuello() {
-        if (!estado) return [];
-        const { n, g } = estado, out = [];
-        const h = enGrupo(n.p.cabeza), t = enGrupo(n.p.torso);
-        out.push({ quien: 'lona', tipo: 'cabeza', x: h.x, y: h.y, z: h.z, r: 0.35 }, { quien: 'lona', tipo: 'pecho', x: t.x, y: t.y, z: t.z, r: 0.32 });
-        const c = g.cabeza ? enGrupo(g.cabeza) : { x: g.x, y: g.y + 0.5, z: g.z };
-        out.push({ quien: 'gala', tipo: 'cabeza', x: c.x, y: c.y, z: c.z, r: 0.3 });
-        return out;
-    }
-    // Capa 2 de la cámara: ningún plano que deje a los globos sin lugar libre (ver camaras.js, validarTexto)
-    const camPrueba = new THREE.PerspectiveCamera();
-    function validarTexto(posCam, objetivo) {
-        if (!estado) return 0;
-        const { n, g } = estado;
-        const real = camaras.camara;
-        camPrueba.fov = real.fov; camPrueba.aspect = real.aspect;
-        camPrueba.position.copy(posCam); camPrueba.lookAt(objetivo); camPrueba.updateMatrixWorld(true);
-        grupo.updateWorldMatrix(true, false);
-        const zs = zonasCuello();
-        return Math.max(globoLona.probar(camPrueba, n.x, n.y + 2.6, n.z, zs).solape, globoGala.probar(camPrueba, g.x, g.y + 1.6, g.z, zs).solape);
-    }
-
     // Botón «Saltar» (igual que caricias.js; clase propia para su CSS)
     const boton = document.createElement('button');
     boton.type = 'button'; boton.className = 'boton saltar-cuello';
@@ -128,7 +103,7 @@ export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, mi
     // los planos «de lado» muestran la caminata y la escena de perfil.
     function cortarCamara() {
         camaras.terminarCine();
-        camaras.iniciarCine(estado.ancla, { escena: true, fundido: 0.35, planos: 'gata', evitar: [], validarTexto });
+        camaras.iniciarCine(estado.ancla, { escena: true, fundido: 0.35, planos: 'gata', evitar: [] });
         camaras.enfocar(0.5);
         camaras.pose = c => { c.g.visible = false; };
     }
@@ -165,7 +140,7 @@ export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, mi
         g.pose = 'pie'; g.poseElegida = false;
         misiones.ocultarMarcas = true;
         document.body.classList.add('en-cuello');
-        camaras.iniciarCine(estado.ancla, { escena: true, fundido: 0.45, planos: 'gata', evitar: [], validarTexto });
+        camaras.iniciarCine(estado.ancla, { escena: true, fundido: 0.45, planos: 'gata', evitar: [] });
         camaras.enfocar(0.5);
         camaras.pose = c => { c.g.visible = false; };
     }
@@ -307,8 +282,6 @@ export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, mi
         gatas.ponerCuello('gala', !!misiones.estado.hechas.has('lona3'));
     }
 
-    // Depuración: rects NDC del último cuadro de cada globo (window.__cuelloDiag)
-    if (typeof window !== 'undefined') window.__cuelloDiag = () => ({ t: estado ? estado.t : null, lona: globoLona.ultimo, gala: globoGala.ultimo });
     return {
         actualizar, alCompletar, sincronizar, saltar,
         get activa() { return !!estado; },
