@@ -2,7 +2,7 @@
 // VENJY · Supervivencia · Skin del jugador
 // La skin es una descripción (la misma que usan los amigos en criaturas/pieles.js): piel,
 // pelo, ojos, barba, lentes, gorro, ropa, pantalón y zapatillas. Se puede partir de la de
-// Venjy o de cualquier amigo y cambiar lo que quieras. Se guarda en este dispositivo
+// Venjy o de cualquier amigo y cambiar lo que quieras; si nunca la elegiste, te toca una al azar. Se guarda en este dispositivo
 // (localStorage) y se ve en la mano, en tercera persona (F5) y en las escenas con amigos.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -27,14 +27,18 @@ export const BASES = [
 ];
 
 const copia = d => JSON.parse(JSON.stringify(d));
-export const skinPorDefecto = () => { const d = copia(BASES[0]); d.base = 'venjy'; return d; };
+// Sin skin guardada te toca una base al azar (Venjy o cualquier amigo), idéntica a la original
+export const skinPorDefecto = () => { const b = BASES[Math.floor(Math.random() * BASES.length)]; const d = copia(b); d.base = b.clave; return d; };
 
 export function cargarSkin() {
     try {
         const s = JSON.parse(localStorage.getItem(CLAVE) || 'null');
         if (s && s.piel && s.pelo && s.ropa) return s;
     } catch (e) { /* sin almacenamiento */ }
-    return skinPorDefecto();
+    // La que salga al azar se guarda: así es la misma en cada partida hasta que la cambies
+    const d = skinPorDefecto();
+    guardarSkin(d);
+    return d;
 }
 export function guardarSkin(d) {
     try { localStorage.setItem(CLAVE, JSON.stringify(d)); return true; } catch (e) { return false; }
