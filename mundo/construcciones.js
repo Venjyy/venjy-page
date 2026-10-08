@@ -28,7 +28,7 @@ export function aDecor(construir) {
 // Buscar sitio: rectángulo w×d de columnas naturales (ES 0), parejas, sin árboles ni camino,
 // recorriendo anillos desde (cx, cz). Devuelve { x0, z0, h } o null.
 // ---------------------------------------------------------
-export function buscarSitio(t, { cx, cz, rmin = 0, rmax = 60, w, d, desnivel = 2, hMin, hMax, materiales, permitirCamino = false, paso = 2 }) {
+export function buscarSitio(t, { cx, cz, rmin = 0, rmax = 60, w, d, desnivel = 2, hMin, hMax, materiales, permitirCamino = false, paso = 2, filtro = null }) {
     const { BW, BD, HT, ES, SUP, datos, ESCALA } = t;
     const { W, T } = datos;
     const hayArbol = (x, z) => {
@@ -59,7 +59,8 @@ export function buscarSitio(t, { cx, cz, rmin = 0, rmax = 60, w, d, desnivel = 2
         for (const [x, z] of [[x0, z0], [x0 + w - 1, z0], [x0, z0 + d - 1], [x0 + w - 1, z0 + d - 1], [x0 + (w >> 1), z0 + (d >> 1)]]) {
             if (hayArbol(x, z)) return null;
         }
-        return { x0, z0, h: Math.round((mn + mx) / 2) };
+        const s = { x0, z0, h: Math.round((mn + mx) / 2) };
+        return !filtro || filtro(s) ? s : null;
     };
     for (let r = rmin; r <= rmax; r += paso) {
         // Anillo cuadrado de radio r, en orden fijo
@@ -73,6 +74,8 @@ export function buscarSitio(t, { cx, cz, rmin = 0, rmax = 60, w, d, desnivel = 2
     return null;
 }
 
+const NATURAL = new Set([B.PASTO, B.CAMINO, B.ARENA, B.PIEDRA, B.NIEVE, B.GRIS]);
+
 // Nivela el rectángulo a la altura h y lo marca como plaza (ES 3: sin árboles ni plantas)
 export function nivelar(t, x0, z0, w, d, h, sup = null, borde = 1) {
     const { BW, HT, ES, SUP, SUB } = t;
@@ -82,7 +85,7 @@ export function nivelar(t, x0, z0, w, d, h, sup = null, borde = 1) {
             if (ES[o] === 1) continue;
             ES[o] = 3; HT[o] = h;
             if (sup !== null && x >= x0 && x < x0 + w && z >= z0 && z < z0 + d) SUP[o] = sup;
-            else if (SUP[o] === B.CAMINO || SUP[o] === B.ARENA) { /* se queda */ }
+            else if (NATURAL.has(SUP[o])) { /* se queda la superficie natural (pasto, piedra, nieve, arena…) */ }
             else SUP[o] = B.PASTO;
             if (SUB[o] !== B.PIEDRA) SUB[o] = B.TIERRA;
         }
@@ -348,3 +351,243 @@ export function colocarCorrales(t) {
     }
     return lista;
 }
+
+// ---------------------------------------------------------
+// Construcciones para explorar: seis lugares fuera del camino, cada uno con algo dentro.
+// Cada uno busca su sitio desde un punto del mapa (fracción del ancho y alto) y debe quedar
+// lejos de las zonas del portafolio, del camino y de los otros lugares.
+// Devuelve [{ clave, nombre: { es, en }, x, z, radio, decor }]
+// ---------------------------------------------------------
+export const LUGARES = [
+    { clave: 'molino', nombre: { es: 'Molino viejo', en: 'Old windmill' }, f: [0.27, 0.55], w: 9, d: 9 },
+    { clave: 'atalaya', nombre: { es: 'Atalaya del bosque', en: 'Forest watchtower' }, f: [0.62, 0.48], w: 9, d: 9, bosque: true },
+    { clave: 'campamento', nombre: { es: 'Campamento', en: 'Campsite' }, f: [0.36, 0.36], w: 13, d: 11 },
+    { clave: 'portal', nombre: { es: 'Portal en ruinas', en: 'Ruined portal' }, f: [0.75, 0.32], w: 11, d: 9, alto: true },
+    { clave: 'iglu', nombre: { es: 'Iglú', en: 'Igloo' }, f: null, w: 11, d: 11, nieve: true },
+    { clave: 'naufragio', nombre: { es: 'Naufragio', en: 'Shipwreck' }, f: [0.62, 0.97], w: 15, d: 9, playa: true }
+];
+
+export function colocarLugares(t) {
+    const { BW, BD, HT, ES, SUP, datos, ESCALA, NIVEL_AGUA } = t;
+    const { W, T, P } = datos;
+    const puntos = Object.values(P).map(([x, z]) => [x * ESCALA + 2, z * ESCALA + 2]);
+    const hechos = [];
+    const bosqueCerca = (x, z, rad) => {
+        const cx = Math.floor(x / ESCALA), cz = Math.floor(z / ESCALA);
+        let n = 0;
+        for (let dz = -rad; dz <= rad; dz++) for (let dx = -rad; dx <= rad; dx++) if (T[(cz + dz) * W + cx + dx] === 'hojas') n++;
+        return n;
+    };
+    for (const L of LUGARES) {
+        const cx = L.f ? L.f[0] * BW : P.mina[0] * ESCALA, cz = L.f ? L.f[1] * BD : P.mina[1] * ESCALA;
+        const filtro = ({ x0, z0 }) => {
+            const mx = x0 + L.w / 2, mz = z0 + L.d / 2;
+            if (puntos.some(([px, pz]) => Math.hypot(px - mx, pz - mz) < (L.nieve ? 40 : 70))) return false;
+            if (hechos.some(h => Math.hypot(h.x - mx, h.z - mz) < 90)) return false;
+            // Ni encima de la llanura de las letras del título
+            const ti = datos.titulo, M0 = 90;
+            if (mx > ti.tx0 * ESCALA - M0 && mx < (ti.tx0 + ti.anchoT) * ESCALA + M0 && mz > ti.ty0 * ESCALA - M0 && mz < (ti.ty0 + ti.altoT) * ESCALA + M0) return false;
+            // Lejos del camino y de otras construcciones: se revisa un margen de 8 bloques alrededor
+            const M = 8;
+            for (let z = z0 - M; z < z0 + L.d + M; z += 2) {
+                for (let x = x0 - M; x < x0 + L.w + M; x += 2) {
+                    if (x < 0 || z < 0 || x >= BW || z >= BD) return false;
+                    const o = z * BW + x;
+                    if (SUP[o] === B.CAMINO || SUP[o] === B.TABLONES || ES[o] === 1 || ES[o] === 3) return false;
+                }
+            }
+            if (L.bosque && bosqueCerca(mx, mz, 4) < 10) return false;
+            if (L.alto && HT[Math.floor(mz) * BW + Math.floor(mx)] < NIVEL_AGUA + 14) return false;
+            if (L.playa) { // en la orilla: parte del casco en agua poco profunda y parte en la arena
+                let agua = 0, total = 0;
+                for (let z = z0; z < z0 + L.d; z++) for (let x = x0; x < x0 + L.w; x++, total++) if (HT[z * BW + x] < NIVEL_AGUA) agua++;
+                if (agua < total * 0.25 || agua > total * 0.7) return false;
+            }
+            return true;
+        };
+        const op = { cx, cz, rmin: 0, rmax: 300, w: L.w, d: L.d, paso: 4, filtro };
+        let s;
+        if (L.nieve) s = buscarSitio(t, { ...op, desnivel: 4, materiales: [B.NIEVE, B.PIEDRA, B.GRIS], hMin: NIVEL_AGUA + 10 });
+        else if (L.playa) s = buscarSitio(t, { ...op, rmax: 800, paso: 3, desnivel: 6, materiales: [B.ARENA], hMin: NIVEL_AGUA - 3, hMax: NIVEL_AGUA + 3 });
+        else s = buscarSitio(t, { ...op, desnivel: L.alto ? 4 : 2 }) || buscarSitio(t, { ...op, desnivel: 3, rmax: 500 });
+        if (!s) continue;
+        let { x0, z0, h } = s;
+        if (L.playa) { // el naufragio no se nivela: se apoya en el fondo, con el casco a la altura del agua
+            h = NIVEL_AGUA;
+            for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) ES[z * BW + x] = 3;
+        } else {
+            const sup = L.nieve ? B.NIEVE : null;
+            nivelar(t, x0, z0, L.w, L.d, h, sup, 1);
+            if (sup !== null) for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) SUP[z * BW + x] = sup;
+        }
+        const cxL = x0 + (L.w >> 1), czL = z0 + (L.d >> 1);
+        const decor = aDecor(poner => CONSTRUIR[L.clave](poner, cxL, h + 1, czL, h, t));
+        hechos.push({ clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, radio: Math.max(L.w, L.d) + 6, decor });
+    }
+    return hechos;
+}
+
+// Constructores: (poner, cx, y, cz, h) con y = primer bloque sobre el suelo y h = altura del suelo
+const CONSTRUIR = {
+    // Molino de viento: torre de tablones con esquinas de tronco, techo de lana roja y aspas al sur
+    molino(poner, cx, y, cz) {
+        for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) poner(cx + dx, y - 1, cz + dz, B.LABRADA);
+        const ALTO = 9;
+        for (let k = 0; k < ALTO; k++) {
+            const r = k < 6 ? 2 : 1;
+            for (let dx = -r; dx <= r; dx++) {
+                for (let dz = -r; dz <= r; dz++) {
+                    const borde = Math.abs(dx) === r || Math.abs(dz) === r;
+                    const esquina = Math.abs(dx) === r && Math.abs(dz) === r;
+                    let id = B.AIRE;
+                    if (borde) id = esquina ? B.TRONCO : (k === 3 && (dx === 0 || dz === 0) ? B.VIDRIO : B.TABLONES);
+                    if (dz === r && dx === 0 && k < 2) id = B.AIRE; // puerta al sur
+                    poner(cx + dx, y + k, cz + dz, id);
+                }
+            }
+        }
+        for (let k = 0; k < 3; k++) { // techo piramidal
+            const r = 2 - k;
+            for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) poner(cx + dx, y + ALTO + k, cz + dz, B.LANA_ROJA);
+        }
+        // Aspas: cubo de tronco y cuatro brazos con velas de lana
+        const az = cz + 3, ay = y + 8; // el aspa de abajo queda sobre la puerta
+        poner(cx, ay, az, B.TRONCO);
+        for (let k = 1; k <= 5; k++) {
+            poner(cx + k, ay, az, B.TABLONES); poner(cx - k, ay, az, B.TABLONES);
+            poner(cx, ay + k, az, B.TABLONES); poner(cx, ay - k, az, B.TABLONES);
+            if (k >= 2) { poner(cx + k, ay + 1, az, B.LANA); poner(cx - k, ay - 1, az, B.LANA); poner(cx - 1, ay + k, az, B.LANA); poner(cx + 1, ay - k, az, B.LANA); }
+        }
+        // Dentro: fardos, cofre y antorcha
+        poner(cx - 1, y, cz - 1, B.HENO); poner(cx + 1, y, cz - 1, B.HENO); poner(cx + 1, y + 1, cz - 1, B.HENO);
+        poner(cx - 1, y, cz + 1, B.COFRE);
+        poner(cx, y + 2, cz - 1, B.ANTORCHA);
+        poner(cx + 1, y, cz + 3, B.ANTORCHA);
+    },
+    // Atalaya: cuatro pilares, escalera de caracol alrededor de un tronco central y mirador con baranda
+    atalaya(poner, cx, y, cz) {
+        const ALTO = 10;
+        for (const [dx, dz] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) for (let k = 0; k <= ALTO + 3; k++) poner(cx + dx, y + k, cz + dz, B.TRONCO);
+        for (let k = 0; k <= ALTO; k++) poner(cx, y + k, cz, B.TRONCO_PINO);
+        const anillo = [[1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]];
+        const huecos = new Set();
+        for (let k = 0; k < ALTO; k++) {
+            const [dx, dz] = anillo[k % 8];
+            poner(cx + dx, y + k, cz + dz, B.TABLONES);
+            if (k >= ALTO - 4) huecos.add(dx + ',' + dz);
+        }
+        // Mirador de 7×7 con hueco sobre los últimos escalones
+        for (let dx = -3; dx <= 3; dx++) {
+            for (let dz = -3; dz <= 3; dz++) {
+                if (huecos.has(dx + ',' + dz)) continue;
+                if (dx === 0 && dz === 0) continue;
+                poner(cx + dx, y + ALTO, cz + dz, B.TABLONES);
+                if (Math.abs(dx) === 3 || Math.abs(dz) === 3) poner(cx + dx, y + ALTO + 1, cz + dz, B.VALLA);
+            }
+        }
+        poner(cx, y + ALTO, cz, B.TRONCO_PINO);
+        for (const [dx, dz] of [[-3, -3], [3, -3], [-3, 3], [3, 3]]) poner(cx + dx, y + ALTO + 2, cz + dz, B.ANTORCHA);
+        // Techo
+        for (let k = 0; k < 3; k++) {
+            const r = 3 - k;
+            for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) if (Math.abs(dx) === r || Math.abs(dz) === r || k === 2) poner(cx + dx, y + ALTO + 4 + k, cz + dz, B.TABLONES);
+        }
+        poner(cx + 2, y + ALTO + 1, cz - 1, B.COFRE);
+        poner(cx - 2, y + ALTO + 1, cz + 1, B.BARRIL);
+    },
+    // Campamento: dos carpas de lana, fogata con troncos alrededor, cofre y barril
+    campamento(poner, cx, y, cz) {
+        const carpa = (x0, z0, lana) => {
+            for (let k = 0; k < 4; k++) {
+                poner(x0 - 1, y, z0 + k, lana); poner(x0 + 1, y, z0 + k, lana);
+                poner(x0, y + 1, z0 + k, lana);
+            }
+            poner(x0, y, z0, B.CAMA);
+        };
+        carpa(cx - 4, cz - 4, B.LANA);
+        carpa(cx + 4, cz - 4, B.LANA_ROJA);
+        // Fogata: piedra luminosa hundida con borde de piedra
+        poner(cx, y - 1, cz + 1, B.PIEDRA_LUMINOSA);
+        for (const [dx, dz] of [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]) poner(cx + dx, y - 1, cz + 1 + dz, B.GRIS);
+        poner(cx, y, cz + 1, B.ANTORCHA);
+        // Troncos para sentarse
+        for (const dx of [-1, 0, 1]) poner(cx + dx, y, cz + 4, B.TRONCO);
+        poner(cx - 3, y, cz + 1, B.TRONCO); poner(cx - 3, y, cz + 2, B.TRONCO);
+        poner(cx + 3, y, cz + 1, B.TRONCO); poner(cx + 3, y, cz + 2, B.TRONCO);
+        poner(cx + 5, y, cz + 3, B.COFRE); poner(cx + 5, y, cz + 2, B.BARRIL); poner(cx - 5, y, cz + 3, B.HENO);
+    },
+    // Portal en ruinas: marco de obsidiana roto, piedra agrietada, ladrillos y un poco de oro
+    portal(poner, cx, y, cz) {
+        const roto = new Set(['2,0', '3,4', '0,3']);
+        for (let k = 0; k <= 4; k++) {
+            for (let a = 0; a <= 3; a++) {
+                const borde = k === 0 || k === 4 || a === 0 || a === 3;
+                if (!borde) continue;
+                const clave = a + ',' + k;
+                poner(cx - 1 + a, y + k, cz, roto.has(clave) ? (k === 4 ? B.AIRE : B.PIEDRA_AGRIETADA) : B.OBSIDIANA);
+            }
+        }
+        // Piso irregular alrededor
+        for (let dx = -4; dx <= 4; dx++) {
+            for (let dz = -3; dz <= 3; dz++) {
+                const q = (dx * 7 + dz * 13 + 99) % 5;
+                if (Math.hypot(dx, dz * 1.3) > 4.3) continue;
+                poner(cx + dx, y - 1, cz + dz, q === 0 ? B.LADRILLO : q === 1 ? B.OBSIDIANA : q === 2 ? B.GRIS : B.PIEDRA_AGRIETADA);
+            }
+        }
+        for (const [dx, dz, id] of [[-3, 1, B.PIEDRA_AGRIETADA], [3, -1, B.LADRILLO], [-2, -2, B.OBSIDIANA], [3, 2, B.PIEDRA_AGRIETADA]]) poner(cx + dx, y, cz + dz, id);
+        poner(cx + 3, y + 1, cz + 2, B.PIEDRA_AGRIETADA);
+        poner(cx + 2, y, cz + 2, B.COFRE);
+        poner(cx - 3, y, cz - 1, B.ORO);
+        poner(cx - 1, y + 5, cz, B.PIEDRA_LUMINOSA); // brasa sobre el marco
+    },
+    // Iglú: cúpula de nieve con túnel al sur; dentro, alfombra, cama, cofre y antorcha
+    iglu(poner, cx, y, cz) {
+        const R = 4;
+        for (let dx = -R; dx <= R; dx++) {
+            for (let dz = -R; dz <= R; dz++) {
+                for (let k = 0; k <= R; k++) {
+                    const d = Math.hypot(dx, dz, k * 1.15);
+                    if (d > R + 0.5) continue;
+                    poner(cx + dx, y + k, cz + dz, d > R - 1 ? B.NIEVE : B.AIRE); // cáscara gruesa: sin huecos
+                }
+                if (Math.hypot(dx, dz) < R - 0.5) poner(cx + dx, y - 1, cz + dz, B.LANA);
+            }
+        }
+        for (let dz = R - 1; dz <= R + 2; dz++) { // túnel
+            for (const dx of [-1, 0, 1]) for (let k = 0; k <= 2; k++) {
+                const muro = Math.abs(dx) === 1 || k === 2;
+                poner(cx + dx, y + k, cz + dz, muro && dz > R - 1 ? B.NIEVE : B.AIRE);
+            }
+        }
+        poner(cx - 2, y, cz - 2, B.CAMA); poner(cx - 2, y, cz - 1, B.CAMA);
+        poner(cx + 2, y, cz - 2, B.COFRE);
+        poner(cx + 2, y, cz, B.BARRIL); poner(cx + 2, y + 1, cz, B.ANTORCHA);
+    },
+    // Naufragio: casco de tablones medio enterrado en la arena, mástil roto y vela rota
+    naufragio(poner, cx, y, cz, h, t) {
+        const L = 6, NA = t.NIVEL_AGUA;
+        const vacio = yy => (yy <= NA ? B.AGUA : B.AIRE);
+        for (let a = -L; a <= L; a++) {
+            const ancho = Math.abs(a) > L - 2 ? 1 : 2;      // proa y popa más angostas
+            const hunde = a > 2 ? 1 : 0;                      // la proa quedó más enterrada
+            for (let b = -ancho; b <= ancho; b++) {
+                for (let k = -1; k <= 2; k++) {
+                    const yy = y + k - hunde;
+                    const casco = Math.abs(b) === ancho || k === -1;
+                    const roto = (a === 1 && b === ancho && k >= 1) || (a === -3 && b === -ancho && k === 2);
+                    poner(cx + a, yy, cz + b, casco && !roto ? B.TABLONES : vacio(yy));
+                }
+                if (Math.abs(b) < ancho && (a + 99) % 3 === 0) poner(cx + a, y + 2 - hunde, cz + b, B.TABLONES); // restos de cubierta
+            }
+        }
+        // Quilla hasta el fondo (en el agua el casco no queda flotando)
+        for (let a = -L + 1; a <= L - 1; a++) for (let yy = y - 2 - (a > 2 ? 1 : 0); yy >= Math.max(1, NA - 6); yy--) poner(cx + a, yy, cz, B.TABLONES);
+        for (let k = 0; k <= 6; k++) poner(cx - 1, y + k, cz, B.TRONCO);
+        for (let k = 3; k <= 5; k++) for (const dz of [-2, -1, 1]) if (!(k === 4 && dz === 1)) poner(cx - 1, y + k, cz + dz, B.LANA);
+        poner(cx - 4, y, cz, B.COFRE);
+        poner(cx + 3, y - 1, cz + 1, B.BARRIL);
+        poner(cx + 2, y, cz - 3, B.BARRIL);
+        poner(cx - 3, y, cz + 1, B.ANTORCHA);
+    }
+};

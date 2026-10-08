@@ -7,7 +7,7 @@ import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
-import { colocarPescador, colocarEscenario, colocarCorrales } from './construcciones.js';
+import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } from './construcciones.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -268,9 +268,10 @@ export function prepararTerreno(datos) {
     const pescador = colocarPescador(tt, puentes);
     const escenario = colocarEscenario(tt);
     const corrales = colocarCorrales(tt);
+    const lugares = colocarLugares(tt); // molino, atalaya, campamento, portal, iglú y naufragio
     const decor = [
         ...puentes,
-        ...[pescador, escenario, ...corrales].filter(Boolean).map(l => l.decor).filter(Boolean),
+        ...[pescador, escenario, ...corrales, ...lugares].filter(Boolean).map(l => l.decor).filter(Boolean),
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
         { t: 'mina', x: mix * ESCALA, z: (miy - 5) * ESCALA, cx: mix * ESCALA, cz: (miy - 5) * ESCALA - 14, r: 18 }
@@ -282,7 +283,7 @@ export function prepararTerreno(datos) {
     const zonasLuz = decor.map(d => d.luz || { x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r });
     zonasLuz.push({ x0: faro.x - 12, z0: faro.z - 12, x1: faro.x + 12, z1: faro.z + 12 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, pescador, escenario, corrales, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, pescador, escenario, corrales, lugares, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -352,13 +353,14 @@ function construirPuente([ax, az], [bx, bz], HT, SUP, SUB, ES, BW, BD) {
     if (L < 2) return null;
     const ux = (bx - ax) / L, uz = (bz - az) / L, nx = -uz, nz = ux;
     const dentro = (x, z) => x >= 0 && z >= 0 && x < BW && z < BD;
-    const orilla = (x, z) => dentro(x, z) ? Math.max(NIVEL_AGUA + 2, HT[Math.floor(z) * BW + Math.floor(x)]) : NIVEL_AGUA + 2;
+    const orilla = (x, z) => dentro(x, z) ? Math.max(NIVEL_AGUA + 1, HT[Math.floor(z) * BW + Math.floor(x)]) : NIVEL_AGUA + 1;
     const hA = orilla(ax, az), hB = orilla(bx, bz);
-    const EXT = 2;  // el tablero entra un poco en tierra firme
+    // En tierra firme el tablero sigue como rampa que baja 1 bloque por bloque hasta topar con el suelo
+    const EXT = 8;
     const tablero = new Map(); // o -> { h, s }
     for (let s = -EXT; s <= L + EXT; s += 0.5) {
         const t = Math.min(1, Math.max(0, s / L));
-        const h = Math.round(hA + (hB - hA) * t);
+        const h = Math.round(hA + (hB - hA) * t) - Math.ceil(Math.max(0, -s, s - L));
         for (let w = -2; w <= 2; w += 0.5) {
             const x = Math.floor(ax + ux * s + nx * w), z = Math.floor(az + uz * s + nz * w);
             if (!dentro(x, z)) continue;
@@ -371,7 +373,7 @@ function construirPuente([ax, az], [bx, bz], HT, SUP, SUB, ES, BW, BD) {
         if (ES[o] === 1) continue;
         if (HT[o] <= NIVEL_AGUA || ES[o] === 2) {
             agua.add(o);
-            ES[o] = 2; HT[o] = h; SUP[o] = B.TABLONES; SUB[o] = B.ARENA;
+            ES[o] = 2; HT[o] = Math.max(h, NIVEL_AGUA + 1); SUP[o] = B.TABLONES; SUB[o] = B.ARENA;
         } else if (HT[o] <= h) {
             ES[o] = 3; HT[o] = h; SUP[o] = B.TABLONES;
         }
@@ -381,8 +383,10 @@ function construirPuente([ax, az], [bx, bz], HT, SUP, SUB, ES, BW, BD) {
     let x0 = BW, z0 = BD, x1 = 0, z1 = 0, maxY = 0;
     for (const o of agua) {
         const x = o % BW, z = (o - x) / BW;
-        const { h, s } = tablero.get(o);
-        const borde = [o - 1, o + 1, o - BW, o + BW].some(p => !tablero.has(p) && HT[p] <= NIVEL_AGUA && ES[p] !== 2);
+        const { s } = tablero.get(o), h = HT[o];
+        // Con las 8 vecinas: en tramos diagonales la baranda queda unida por los lados (sin rendijas en las esquinas)
+        const borde = [o - 1, o + 1, o - BW, o + BW, o - BW - 1, o - BW + 1, o + BW - 1, o + BW + 1]
+            .some(p => !tablero.has(p) && HT[p] <= NIVEL_AGUA && ES[p] !== 2);
         if (!borde) continue;
         const k = Math.round(s);
         if (k % 4 === 0) {
@@ -396,7 +400,7 @@ function construirPuente([ax, az], [bx, bz], HT, SUP, SUB, ES, BW, BD) {
     if (!bloques.length) return null;
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     return {
-        t: 'puente', bloques, cx, cz, r: Math.max(x1 - x0, z1 - z0) / 2 + 2, maxY,
+        t: 'puente', bloques, cx, cz, r: Math.max(x1 - x0, z1 - z0) / 2 + 2, maxY, a: [ax, az], b: [bx, bz],
         luz: { x0: x0 - 1, z0: z0 - 1, x1: x1 + 1, z1: z1 + 1 }
     };
 }
