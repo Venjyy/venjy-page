@@ -4,7 +4,7 @@
 //   · cuadros con globo · solape grave globo-cabeza/pecho (> 0,03) · solape globo-globo (> 0,03)
 //   · globo fuera del área segura · medio alto mínimo del globo (< 0,17 falla)
 //   · cambios de candidata dentro de una línea · duración de cada línea vs. lectura mínima
-//     (1,0 s + 0,07 s por carácter).
+//     (0,6 s + 0,04 s por carácter; criterio acordado con el dueño).
 //   node .claude/skills/animaciones-minecraft/revisar.mjs [--escenas lona,boris,...|todas] [--salida dir]
 // · Una clave elige sus escenas: la conversación venjy y la corta de ese amigo, o «iglu» y «cuello».
 // · Sale con código 1 si alguna escena FALLA o NO ARRANCA, o si hubo errores de página.
@@ -75,7 +75,7 @@ function normalizar(f, esCuello) {
         return { t: f.t, activos, pares: activos.map(a => a.rect), linea: null };
     }
     const activos = f.globo ? [{ quien: f.globo.quien, id: f.globo.id, rect: f.globo, zonas: f.zonas.filter(z => z.tipo !== 'globo'), franja: f.franja }] : [];
-    return { t: f.t, plano: f.planoNombre, activos, pares: f.globos || [], linea: f.linea };
+    return { t: f.t, plano: f.planoNombre, cam: f.cam, activos, pares: f.globos || [], linea: f.linea };
 }
 
 function evaluar(cuadros, esCuello) {
@@ -95,8 +95,10 @@ function evaluar(cuadros, esCuello) {
                 // el fundido) y con un desplazamiento brusco en un cuadro (si se desliza, no es un salto)
                 const cx = (g.rect.x0 + g.rect.x1) / 2, cy = (g.rect.y0 + g.rect.y1) / 2;
                 const p = ultimo[g.quien];
-                if (p && p.a === f.linea.a && p.id !== g.id && p.plano === f.plano && Math.hypot(cx - p.cx, cy - p.cy) > SALTO) m.cambiosCandidata++;
-                ultimo[g.quien] = { a: f.linea.a, id: g.id, plano: f.plano, cx, cy };
+                // Si la cámara misma saltó (corte o reubicación sin cambiar de nombre de plano), el globo acompaña al corte
+                const camSalto = p && p.cam && f.cam && (Math.hypot(f.cam.p[0] - p.cam.p[0], f.cam.p[1] - p.cam.p[1], f.cam.p[2] - p.cam.p[2]) > 0.5 || f.cam.d[0] * p.cam.d[0] + f.cam.d[1] * p.cam.d[1] + f.cam.d[2] * p.cam.d[2] < 0.97);
+                if (p && p.a === f.linea.a && p.id !== g.id && p.plano === f.plano && !camSalto && Math.hypot(cx - p.cx, cy - p.cy) > SALTO) m.cambiosCandidata++;
+                ultimo[g.quien] = { a: f.linea.a, id: g.id, plano: f.plano, cx, cy, cam: f.cam };
             }
         }
         for (let i = 0; i < f.pares.length; i++) for (let j = i + 1; j < f.pares.length; j++) {
@@ -106,7 +108,7 @@ function evaluar(cuadros, esCuello) {
         }
     }
     for (const l of lineas.values()) {
-        const need = 1.0 + 0.07 * [...l.texto].length;
+        const need = 0.6 + 0.04 * [...l.texto].length;
         m.lineas.push({ a: l.a, d: +l.d.toFixed(2), necesita: +need.toFixed(2), corta: l.d < need - 1e-6, texto: l.texto });
     }
     if (esCuello) m.lineas = null;
@@ -173,7 +175,9 @@ const modoManual = async () => {
 const cuadro = (esCuello) => pagina.evaluate(({ ms, esCuello }) => {
     window.__paso(ms);
     const v = window.__venjy;
-    return esCuello ? window.__cuelloDiag() : v.escenas.diag();
+    const d = esCuello ? window.__cuelloDiag() : v.escenas.diag();
+    if (d) { const dir = new v.camara.position.constructor(); v.camara.getWorldDirection(dir); d.cam = { p: v.camara.position.toArray(), d: dir.toArray() }; }
+    return d;
 }, { ms: PASO, esCuello });
 
 // Preparación de una escena de skin: persona junto al jugador, skin y globos callados

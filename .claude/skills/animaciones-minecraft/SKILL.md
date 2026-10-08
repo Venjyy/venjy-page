@@ -208,7 +208,7 @@ node .claude/skills/animaciones-minecraft/revisar.mjs --escenas todas --salida $
 Recorre cada escena cuadro a cuadro a 15 fps con el reloj manual de `grabar.mjs` (sin capturas) y mide:
 cuadros con globo; solape grave globo-cabeza/pecho (> 0,03); solape globo-globo (> 0,03); globo fuera
 del área segura; medio alto mínimo del globo (< 0,17 falla); cambios de candidata dentro de una línea
-(cualquiera falla); líneas más cortas que `1,0 s + 0,07 s por carácter`. Imprime una tabla y sale con
+(cualquiera falla); líneas más cortas que `0,6 s + 0,04 s por carácter`. Imprime una tabla y sale con
 código 1 si algo falla, no arranca o hubo errores de página. Un JSON por escena con los datos de cada
 cuadro, más `resumen.json`, queda en `--salida`.
 
