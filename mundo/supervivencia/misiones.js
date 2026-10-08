@@ -32,7 +32,9 @@ export function crearMisiones(ctx) {
     let idioma = ctx.idioma || 'es';
     const tx = () => TXT[idioma];
     const L = o => (o ? o[idioma] || o.es : '');
-    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0 };
+    // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
+    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set() };
+    let ocultarMarcas = false;
 
     // ---- Personas ----
     function personas() {
@@ -243,6 +245,8 @@ export function crearMisiones(ctx) {
     // Hablar
     // ---------------------------------------------------------
     function hablar(clave) {
+        // Si le toca la escena de skin, va antes que el panel
+        if (ctx.antesDeHablar && ctx.antesDeHablar(clave)) return;
         if (clave === 'venjy') return hablarVenjy();
         const activa = misionDe(estado.activa);
         if (activa && activa.amigo === clave) {
@@ -331,7 +335,7 @@ export function crearMisiones(ctx) {
                 else if (m && m.jefe) tex = texPregGris;
             } else if (m && m.amigo === p.clave) tex = cumplida(m) ? texPreg : texPregGris;
             else if (libre && siguienteDe(p.clave)) tex = texExcl;
-            s.visible = !!tex && n.p.g.visible;
+            s.visible = !!tex && n.p.g.visible && !ocultarMarcas;
             if (s.visible) {
                 if (s.material.map !== tex) { s.material.map = tex; s.material.needsUpdate = true; }
                 s.position.set(n.x, (n.y ?? 0) + 2.45 * escalaDe(n) + 0.35 + Math.sin(performance.now() / 300) * 0.06, n.z);
@@ -348,7 +352,7 @@ export function crearMisiones(ctx) {
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin] };
     }
     function cargar(o) {
         if (!o) return;
@@ -359,6 +363,7 @@ export function crearMisiones(ctx) {
         estado.noche = o.noche || null;
         estado.jefes = new Set(o.jefes || []);
         estado.vidaExtra = o.vidaExtra || 0;
+        estado.escenasSkin = new Set(o.escenasSkin || []);
         vida.vidaMax = 20 + estado.vidaExtra;
     }
 
@@ -366,6 +371,7 @@ export function crearMisiones(ctx) {
         estado, interactuar, hablar, actualizar, serializar, cargar, alMatar, alDormir, alMorir, jefeDerrotado, misionDe, amigasHechas,
         get activa() { return misionDe(estado.activa); },
         setIdioma(l) { idioma = l; firma = ''; },
+        set ocultarMarcas(v) { ocultarMarcas = v; },
         // Atajos de depuración
         completarActiva() { const m = misionDe(estado.activa); if (m && !m.jefe) { estado.progreso = 999; estado.noche = 'lista'; if (m.tipo === 'entregar') for (const [p, n] of m.pide) inventario.agregar([].concat(p)[0], n); hablar(m.amigo); } }
     };

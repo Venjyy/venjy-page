@@ -440,6 +440,9 @@ body.en-cine .panel-mision { margin: auto auto 10vh 3vw; width: min(430px, 94vw)
 body.en-cine .panel-mision h2 { font-size: 1.2rem; }
 @media (max-width: 600px) { body.en-cine .panel-mision { margin: auto auto 10vh; } }
 @media (prefers-reduced-motion: reduce) { .franja-cine { transition: none; } }
+/* Escenas de skin: botón «Saltar» sobre la franja de abajo (Esc también salta) */
+.saltar-escena { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-escena .saltar-escena { display: block; }
 .tactil-boton.sv-camara { width: 64px; height: 40px; font-size: 0.8rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(176px + env(safe-area-inset-top, 0px)); }
 body.con-tactil .mision-activa { top: 224px; }
 
