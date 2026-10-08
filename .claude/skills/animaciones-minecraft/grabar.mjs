@@ -53,7 +53,9 @@ const AYUDAS = `
         for (let yy = (y ?? 0) + DY + 12; yy > DY - 10; yy--) if (v.mundo.bloque(x + d, yy - 0.5, z) > 0) { v.jugador.colocar(x + d, yy, z); break; }
         v.jugador.yaw = Math.atan2(x - v.jugador.pos.x, z - v.jugador.pos.z) - Math.PI;
         await esperar(1500);
-    };`;
+    };
+    // Marca como vistas todas las escenas de skin: así no se disparan solas durante las capturas
+    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); };`;
 if (preparar) await pagina.evaluate(`(async () => { const v = window.__venjy; ${AYUDAS} ${preparar} })()`);
 // Pasa a reloj manual (desde el tiempo real actual, para que el primer dt sea normal)
 await pagina.evaluate(() => { window.__reloj = performance.now(); window.__manual = true; });

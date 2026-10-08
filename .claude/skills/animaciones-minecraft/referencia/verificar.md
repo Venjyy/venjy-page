@@ -44,6 +44,13 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
   `v.venjys.lista` (`lugar === 'inicio'`), `v.gatas.gatas` (Mila y Gala, `clave`).
 - `--paso` con `pausar()` + `irA(t)` congela el reloj en cada segundo: así ves la pose exacta.
   Por eso tu módulo **debe** exponer `pausar` e `irA`.
+- **Siempre** pon `callarEscenas()` al inicio de `--preparar` (la skin del mundo de prueba sale al
+  azar y una escena de skin puede dispararse sola y arruinar las capturas), salvo que pruebes justo eso.
+- **Interiores** (iglú, casas): `irJunto` busca el suelo desde arriba y te deja sobre el techo. Úsalo
+  para cargar el terreno y después `v.jugador.colocar(x, yDelPiso, z)` con la altura exacta.
+- **`pausar()` congela también los efectos** (humo, partículas, globos que se desvanecen): para
+  verlos en una captura, en `--paso` haz `irA(t); pausar(false)` y fija la pausa medio segundo después,
+  o captura sin `--paso` (tiempo real).
 - `--plano k` fija la cámara de cine en el plano `k` (prueba varios). Sin esto, como la cámara
   usa su propio reloj, los cortes de plano no siguen a `irA(t)`.
 - **Espera antes de pausar**: las poses de las criaturas se mezclan lento (las gatas a 2,6/s). En

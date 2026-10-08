@@ -12,6 +12,9 @@
 //                                  espera a que cargue el terreno. Ej.: irJunto(n.x, n.z, n.y)
 //     mundoDe(objeto3D, x, y, z)   posición en el mundo de un punto local de un hueso (devuelve {x,y,z})
 //     manoD() / manoI()            punta de la mano derecha / izquierda del cuerpo del jugador
+//     callarEscenas()              evita que una escena de skin se dispare sola (úsalo casi siempre)
+//   ⚠ irJunto busca el suelo de arriba hacia abajo: bajo un techo (iglú, casa) te deja ENCIMA.
+//     En interiores: await irJunto(...) para cargar chunks y luego v.jugador.colocar(x, yExacto, z).
 // · --medir: JS que se evalúa en cada captura y se imprime (ej. "({ mano: manoD(), cabeza:
 //   mundoDe(v.gatas.gatas[1].cabeza, 0, 0.3, 0.15) })"): compara contactos con números.
 // · --paso: JS que se ejecuta antes de cada captura; `t` es el tiempo de la lista.
@@ -58,6 +61,8 @@ const AYUDAS = `
         v.jugador.yaw = Math.atan2(x - v.jugador.pos.x, z - v.jugador.pos.z) - Math.PI;
         await esperar(1500);
     };
+    // Marca como vistas todas las escenas de skin: así no se disparan solas durante las capturas
+    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); };
     const mundoDe = (o, x = 0, y = 0, z = 0) => { o.updateMatrixWorld(true); const p = o.localToWorld(new v.camara.position.constructor(x, y, z)); return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2) }; };
     const manoD = () => mundoDe(v.camaras.cuerpo.brazoD, 0, -0.75, 0);
     const manoI = () => mundoDe(v.camaras.cuerpo.brazoI, 0, -0.75, 0);`;

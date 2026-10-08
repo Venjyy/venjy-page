@@ -61,6 +61,22 @@ Para capturas, fija el plano (`fijarPlano(k)` o `capturar.mjs --plano k`).
    baje, y planos más cercanos (dist 2–3.4) a la altura del pecho (alto 1.1–1.4).
 7. Nada de cámara en mano ni sacudones salvo un golpe/explosión.
 
+## Interiores estrechos (iglú, casas)
+
+En un espacio de radio ~3 casi cualquier plano tiene algo delante. Reglas aprendidas:
+- Nada en primer plano tapa más de **1/4 del cuadro**: ni un barril, ni la espalda de un actor, ni
+  una pared. Revisa cada plano con `--plano k` y descarta o mueve el que falle.
+- Prefiere planos **desde la entrada** (el túnel) y laterales a la altura del pecho (alto 1.3–1.6) a los
+  planos «sobre el hombro» (en interiores el hombro llena media pantalla).
+- `evitar` solo sabe de actores: los muebles hay que esquivarlos eligiendo `ang`/`dist` a mano.
+- Pocos planos buenos (3) valen más que 5 con dos malos.
+
+## Conjunto de planos nuevo
+
+Agrega una lista (`PLANOS_<NOMBRE>`) junto a las otras y su valor en `iniciarCine(n, { planos: '<nombre>' })`
+(mira cómo se resolvió `'gata'` y `'trio'` en la función `planos()`). El ancla `n` puede ser un punto
+cualquiera `{ x, y, z, escala }` (p. ej. el punto medio entre dos actores), no tiene que ser un actor.
+
 ## Agregar un plano
 
 1. Copia una entrada de `PLANOS_ESCENA`, `PLANOS_GATA` o `PLANOS` (o crea una lista nueva y su

@@ -108,6 +108,7 @@ Valores verificados con `posar.mjs`. Lo que no se nombra queda en neutral (0, co
 | **Inclinado con la mano a la altura del pecho** | `inc 0.3, pDx -0.3, pIx -0.3, y 0.034, bDx -1.6` | punta a 1.27 de alto y 1.17 adelante (medido en el juego) |
 | **Sentado en el suelo** | `y -0.62, pDx -1.45, pIx -1.45, inc 0.15, bDx -1.0, bDz 0.1, cx 0.35` | piernas estiradas adelante; mano a ~0.5 de alto |
 | Sentado en silla/tronco | `pDx -1.5, pIx -1.5` y el actor puesto 0.6 más alto | lo usan los amigos del campamento |
+| **Sentado sobre algo de alto `h`** (cojín, banco) | `pDx -1.5, pIx -1.5`, `y = h + 0.125 - 0.75` | la cadera (0.75) queda apoyada en la superficie; `h = 0` da el sentado en el suelo (≈ −0.62) |
 
 ## 3. Gatas (Mila y Gala, `mundo/gatas.js`)
 

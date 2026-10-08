@@ -12,6 +12,7 @@ con la misma calidad. Léela entera antes de escribir código. Las referencias e
 |---|---|---|---|
 | **A. Gesto o escena corta** (≤ 8 s, un actor, gestos fijos) | Escena «corta» cuando un amigo reconoce que tu skin parte de la suya: se gira, se sorprende, se rasca, se señala y te señala | `GESTOS` y `pista` en `mundo/supervivencia/escenas-skin.js`; frases en `escenas-datos.js` (`CORTAS`) | `referencia/rig.md`, `referencia/escenas.md` §1 |
 | **B. Escena avanzada** (guion con turnos, varios actores, objetos que pasan de mano en mano, partículas, sonido) | Escenas «Venjy» (conversación de 6 turnos) y el iglú (el pito y el bong vuelan a tu mano, humo, tos) | `escenas-skin.js` (`iniciar`, `aplicar`, `fumarJugador`) y `escenas-datos.js` (`VENJY`, `IGLU`) | `referencia/escenas.md` §2 y §3 |
+| **D. Interacción con estado** (te quedas el tiempo que quieras, guion en bucle, primera persona sin cortar) | Sentarse en el iglú con Lalo y Moisés (`G`) | `mundo/supervivencia/ronda-iglu.js` | `referencia/escenas.md` §4 |
 | **C. Cámara de cine** (planos, fundidos, encuadre) | Cámara al leer la misión de un amigo (6 planos con regla de tercios) y la de las escenas de skin (7 planos de dos personajes) | `PLANOS` y `PLANOS_ESCENA` en `mundo/supervivencia/camaras.js` | `referencia/camara.md` |
 
 Una **interacción nueva con tecla** es un tipo B en su propio módulo: plantilla en

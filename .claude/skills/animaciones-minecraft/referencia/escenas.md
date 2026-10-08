@@ -109,7 +109,10 @@ devuelve cada objeto a su dueño.
 ### Efectos que ya existen
 
 - Humo y burbujas del iglú: `amigos.iglu.emitir(x, y, z, { s, dur, vy, vx, vz })`, `iglu.burbujas`,
-  `iglu.tos(quien, fuerza)` (coordenadas de `grupo`).
+  `iglu.tos(quien, fuerza)`. **`emitir` usa coordenadas de `grupo`** (las criaturas subidas `dy`):
+  si tienes un punto del mundo (`getWorldPosition`, `localToWorld`), conviértelo con
+  `grupo.worldToLocal(v)` antes; si no, el humo sale 48 bloques abajo. `iglu.boca(n)` ya devuelve
+  coordenadas de `grupo`.
 - Corazones pixelados que suben y se desvanecen: `texCorazon` y `corazon(x, y, z)` en
   `supervivencia/ganado.js` (cópialos a tu módulo si los necesitas; son ~15 líneas).
 - Partículas de bloques: `particulas.romper(id, x, y, z)` (`supervivencia/particulas.js`).
@@ -251,6 +254,11 @@ body.en-<nombre> .saltar-<nombre> { display: block; }
 
 ### 3.3 Conectarlo en `mundo/supervivencia/main.js`
 
+**Teclas compartidas**: G es la tecla de «interactuar» y la reparte `main.js` según el contexto
+(`caricias.intentar() || ronda.intentar() || <nuevo>.intentar()`). Un módulo nuevo **no** escucha
+G por su cuenta: expone `intentar()` y se agrega a esa cadena (lo más cercano/específico primero).
+
+
 1. `import { crear<Nombre> } from './<nombre>.js';`
 2. Crearlo **después** de `escenas = crearEscenasSkin({...})`, con el mismo `bloquear` / `liberar`
    y `puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso && !escenas.activa`.
@@ -258,7 +266,9 @@ body.en-<nombre> .saltar-<nombre> { display: block; }
    (elige una tecla libre: ver SKILL.md §3).
 4. En `bucle`, justo después de `escenas.actualizar(corre ? dt : 0);`: `<nombre>.actualizar(corre ? dt : 0);`
 5. Agrégalo a `window.__venjy` para depurar.
-6. Celular: en `tactil-supervivencia.js` agrega un botón (`tactil.agregarAccion('sv-<nombre>', TEXTO, () => …)`)
+6. Celular: si el botón debe verse **durante** la escena (Pararse, CAM), no uses `tactil.agregarAccion`:
+   `tactil.desactivar()` (lo llama `bloquear`) oculta toda esa capa. Usa un botón DOM propio como
+   en `ronda-iglu.js`. Para botones fuera de la escena: en `tactil-supervivencia.js` agrega un botón (`tactil.agregarAccion('sv-<nombre>', TEXTO, () => …)`)
    y su posición en el CSS (`.tactil-boton.sv-<nombre>`, más `.tactil-boton.sv-<nombre>[hidden] { display: none; }`
    si lo muestras solo a veces), o reutiliza USAR si tiene sentido.
 7. Un aviso pequeño la primera vez que el jugador está cerca («G: acariciar» / «G: pet») ayuda a
@@ -285,3 +295,37 @@ El orden importa: si llamas a la escena **antes** de aplicar la pose, la pose pi
 escena. Para otra criatura (animales de `criaturas/animales.js`), copia el patrón en su función de
 actualización y documenta el gancho en el comentario de cabecera del archivo. Las gatas son
 **inmortales** y no se deben teletransportar lejos de la gatera.
+
+---
+
+## 4. Interacción con estado (sentarse, quedarse, pararse) · ejemplo: `ronda-iglu.js`
+
+Cuando la interacción no dura un tiempo fijo sino **mientras el jugador quiera** (sentarse, dormir
+junto a la fogata, mirar el mar), usa una máquina de estados en vez de una sola `T`:
+
+| Estado | Entra con | Dura | Sale a |
+|---|---|---|---|
+| `sentando` | `intentar()` | 1–1,5 s (fundido, el cuerpo baja) | `sentado` |
+| `sentado` | — | indefinido; el guion corre en **bucle** (`r = (t - inicio) % vuelta`) | `parando` con G, Esc, W/A/S/D o el botón |
+| `parando` | cualquiera de esas | ~1 s | nada (restaurar todo y `liberar()`) |
+
+Reglas:
+- El bucle **varía**: alterna quién tiene cada objeto, frases al azar elegidas al empezar cada vuelta,
+  un evento especial con probabilidad («¡YIAAAA!» 40 %). Nunca la misma vuelta dos veces seguidas.
+- Al pararse a la mitad de algo (un objeto volando), cada cosa vuelve a **su casa** (su dueño
+  original), no a quien la tenía en ese instante.
+- Efectos que crecen con el tiempo (p. ej. el de «volarse»): sube suave desde 0 (10 s de rampa),
+  baja en ~2 s al salir, y sin movimiento de cámara con `prefers-reduced-motion`.
+
+### Primera persona sin cortar la escena
+
+`camaras.pose` solo se llama en modo cine. Si el jugador cambia a primera persona (F5 / CAM)
+durante la escena:
+1. `camaras.terminarCine()` sin terminar tu escena (tu `actualizar` sigue corriendo).
+2. Pon la cámara en la cabeza del cuerpo (`camaras.cuerpo.cabeza.getWorldPosition`) y deja mirar
+   con `jugador.yaw`/`pitch` (el puntero se pide de nuevo).
+3. Escribe la pose del cuerpo **desde tu módulo** cada cuadro, **después** de `camaras.actualizar`
+   (que pisa la visibilidad y la pose del cuerpo), y oculta `cuello` (y `torso`) para que la cámara
+   no vea el interior de la cabeza; deja visibles brazos y objetos.
+4. Volver a F5 = `iniciarCine(...)` otra vez con los mismos planos.
+En `main.js` la tecla F5 debe ir a tu módulo mientras está activo (`if (ronda.activa) ronda.alternarVista()`).
