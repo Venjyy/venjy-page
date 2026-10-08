@@ -442,3 +442,14 @@ body.en-cine .panel-mision h2 { font-size: 1.2rem; }
 @media (prefers-reduced-motion: reduce) { .franja-cine { transition: none; } }
 .tactil-boton.sv-camara { width: 64px; height: 40px; font-size: 0.8rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(176px + env(safe-area-inset-top, 0px)); }
 body.con-tactil .mision-activa { top: 224px; }
+
+/* ---------- Consola de comandos ---------- */
+.consola { position: fixed; left: 12px; right: 12px; bottom: calc(var(--casilla) * 2.2 + 80px); z-index: 58; max-width: 640px; }
+.consola input {
+    width: 100%; padding: 8px 10px;
+    font: inherit; font-size: 1rem; color: #fff;
+    background: rgb(0 0 0 / 0.7); border: 2px solid #6a6a6a; outline: none;
+}
+.consola input:focus { border-color: #fff; }
+.tactil-boton.sv-comando { width: 64px; height: 40px; font-size: 0.9rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(222px + env(safe-area-inset-top, 0px)); }
+body.con-tactil .mision-activa { top: 270px; }
