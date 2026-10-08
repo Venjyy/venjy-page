@@ -45,8 +45,12 @@ export function iniciarTactil(jugador, { alEntrar } = {}) {
     const bSaltar = el('button', 'tactil-boton tactil-saltar', raiz);
     const bBajar = el('button', 'tactil-boton tactil-bajar', raiz);
     const bPausa = el('button', 'tactil-boton tactil-pausa', raiz);
-    for (const b of [bSaltar, bBajar, bPausa]) b.type = 'button';
+    const bPantalla = el('button', 'tactil-boton tactil-pantalla', raiz);
+    for (const b of [bSaltar, bBajar, bPausa, bPantalla]) b.type = 'button';
     el('i', 'tactil-icono-pausa', bPausa);
+    el('i', 'tactil-icono-pantalla', bPantalla);
+    const avisoPantalla = el('div', 'tactil-aviso', raiz);
+    avisoPantalla.hidden = true;
     document.body.appendChild(raiz);
 
     const api = { activo: false, activar, desactivar };
@@ -62,6 +66,8 @@ export function iniciarTactil(jugador, { alEntrar } = {}) {
         bSaltar.textContent = jugador.vuela ? t.subir : t.saltar;
         bBajar.textContent = jugador.vuela ? t.bajar : t.agachar; // en el suelo, Shift agacha
         bPausa.setAttribute('aria-label', t.pausa);
+        bPantalla.setAttribute('aria-label', t.pantalla);
+        bPantalla.hidden = enPantallaCompleta();
         bBajar.hidden = !!jugador.sinAgachar && !jugador.vuela;
     }
 
@@ -218,6 +224,32 @@ export function iniciarTactil(jugador, { alEntrar } = {}) {
     bPausa.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     bPausa.addEventListener('touchend', e => { e.preventDefault(); desactivar(); }, { passive: false });
     bPausa.addEventListener('click', e => { e.preventDefault(); if (api.activo) desactivar(); });
+
+    // ---------- Pantalla completa (celular acostado: esconde la barra de la URL) ----------
+    // iPhone no deja poner una página en pantalla completa: ahí se explica cómo agregarla al inicio.
+    const doc = document.documentElement;
+    const pedirPantalla = doc.requestFullscreen || doc.webkitRequestFullscreen;
+    const independiente = () => (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) || navigator.standalone;
+    function enPantallaCompleta() { return !!(document.fullscreenElement || document.webkitFullscreenElement || independiente()); }
+    let relojAviso = 0;
+    function pantallaCompleta() {
+        if (enPantallaCompleta()) return;
+        if (pedirPantalla) {
+            Promise.resolve(pedirPantalla.call(doc, { navigationUI: 'hide' }))
+                .then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}))
+                .catch(() => {});
+            return;
+        }
+        avisoPantalla.textContent = TEXTOS[idioma()].iphone;
+        avisoPantalla.hidden = false;
+        clearTimeout(relojAviso);
+        relojAviso = setTimeout(() => { avisoPantalla.hidden = true; }, 6000);
+    }
+    bPantalla.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    bPantalla.addEventListener('touchend', e => { e.preventDefault(); pantallaCompleta(); }, { passive: false });
+    bPantalla.addEventListener('click', e => { e.preventDefault(); pantallaCompleta(); });
+    avisoPantalla.addEventListener('touchend', () => { avisoPantalla.hidden = true; });
+    api.pantallaCompleta = pantallaCompleta;
 
     // ---------- Ciclo ----------
     function soltarTodo() {

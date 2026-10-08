@@ -124,6 +124,8 @@ html, body {
 
 /* HUD durante el juego */
 #hud { position: fixed; inset: 0; pointer-events: none; }
+/* Táctil: el HUD va sobre la capa de controles para que se pueda tocar el minimapa (el resto deja pasar el toque) */
+@media (pointer: coarse) { #hud { z-index: 31; } }
 
 .mira {
     position: absolute;
@@ -195,5 +197,11 @@ html, body {
 }
 
 /* El minimapa ocupa la esquina superior derecha: la pausa táctil baja debajo de él */
-.tactil .tactil-pausa { top: calc(env(safe-area-inset-top, 0px) + 134px) !important; }
-@media (min-width: 601px) { .tactil .tactil-pausa { top: calc(env(safe-area-inset-top, 0px) + 184px) !important; } }
+.tactil .tactil-pausa, .tactil .tactil-pantalla { top: calc(env(safe-area-inset-top, 0px) + 134px) !important; }
+@media (min-width: 601px) { .tactil .tactil-pausa, .tactil .tactil-pantalla { top: calc(env(safe-area-inset-top, 0px) + 184px) !important; } }
+/* Celular acostado: bajo el minimapa no hay espacio (quedan tapados por USAR); van a su izquierda */
+@media (min-width: 601px) and (max-height: 460px) {
+    .tactil .tactil-pausa, .tactil .tactil-pantalla { top: calc(env(safe-area-inset-top, 0px) + 12px) !important; }
+    .tactil .tactil-pausa { right: calc(env(safe-area-inset-right, 0px) + 190px); }
+    .tactil .tactil-pantalla { right: calc(env(safe-area-inset-right, 0px) + 242px); }
+}
