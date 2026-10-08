@@ -47,6 +47,7 @@ import { crearEditorSkin, cargarSkin, coloresMano, BASES } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
+import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
@@ -85,7 +86,7 @@ const TXT = {
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
         noDormir: 'Solo puedes dormir de noche', monstruos: 'No puedes dormir ahora: hay monstruos cerca', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).es, sinAlmacen: 'Este navegador no permite guardar partidas (modo privado).',
-        completado: 'Completado', jugado: m => `${m} min jugados`
+        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando'
     },
     en: {
         dificultades: ['Peaceful', 'Easy', 'Normal', 'Hard'], jugar: 'Play', exportar: 'Export', borrar: 'Delete',
@@ -94,7 +95,7 @@ const TXT = {
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
         noDormir: 'You can only sleep at night', monstruos: 'You may not rest now; there are monsters nearby', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).en, sinAlmacen: "This browser can't save games (private mode).",
-        completado: 'Completed', jugado: m => `${m} min played`
+        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing'
     }
 };
 const tx = () => TXT[idioma];
@@ -416,7 +417,7 @@ async function arrancar(guardado) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null, misiones = null, jefes = null, escenas = null;
+    let enemigos = null, misiones = null, jefes = null, escenas = null, escenaCuello = null;
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
     // Zonas seguras: alrededor de cada amigo y de Venjy no aparecen ni entran monstruos
@@ -435,7 +436,8 @@ async function arrancar(guardado) {
     misiones = crearMisiones({
         grupo: vista.grupo, dy: DY, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, idioma, abrirPanel, cerrarPanel,
         jefeEnCurso: () => jefes && jefes.enCurso,
-        antesDeHablar: clave => !!(escenas && escenas.antesDeHablar(clave))
+        antesDeHablar: clave => !!(escenas && escenas.antesDeHablar(clave)),
+        alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
     });
     misiones.cargar(guardado.misiones);
     jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
@@ -492,6 +494,9 @@ async function arrancar(guardado) {
         bloquear: bloquearEscena,
         liberar: liberarEscena
     });
+    // El cuello de Gala: escena al completar la misión 3 de Lona; sincroniza el cuello con las misiones cargadas
+    escenaCuello = crearEscenaCuello({ grupo: vista.grupo, dy: DY, jugador, camara, camaras, gatas, npcs, misiones, bloquear: bloquearEscena, liberar: liberarEscena, idioma });
+    escenaCuello.sincronizar();
     // Ronda del iglú: G (o SENTARSE) junto al cojín; con ella, F5 o CAM cambian a primera persona
     const ronda = crearRondaIglu({
         grupo: vista.grupo, dy: DY, jugador, camara, camaras, misiones, amigos, escenas, terreno, idioma, lienzo, hud,
@@ -559,14 +564,29 @@ async function arrancar(guardado) {
     document.addEventListener('visibilitychange', () => { if (document.hidden) guardarYa(); });
 
     // ---- Entrada: puntero, pausa y teclas ----
+    // Tras cerrar una ventana con Esc el navegador no deja volver a capturar el mouse al tiro: en vez de la
+    // pausa se muestra un aviso y el siguiente clic vuelve al juego (Esc otra vez sí abre la pausa)
+    const avisoClic = document.createElement('div');
+    avisoClic.className = 'clic-seguir';
+    avisoClic.hidden = true;
+    const avisoTexto = document.createElement('span');
+    avisoClic.appendChild(avisoTexto);
+    document.body.appendChild(avisoClic);
+    avisoClic.addEventListener('click', () => { avisoClic.hidden = true; pedirPuntero(); });
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Escape' && !avisoClic.hidden && !e.repeat) { avisoClic.hidden = true; alActivo(false); e.preventDefault(); }
+    });
     function pedirPuntero() {
-        // Si el navegador lo rechaza (p. ej. tras cerrar el inventario con Esc), se muestra la pausa
-        const rechazo = () => { if (!jugador.activo && !uiAbierta && !vida.muerto) alActivo(false); };
+        const rechazo = () => {
+            if (jugador.activo || uiAbierta || vida.muerto) return;
+            avisoTexto.textContent = tx().clicSeguir;
+            avisoClic.hidden = false;
+        };
         try { const r = lienzo.requestPointerLock(); if (r && r.catch) r.catch(rechazo); } catch (e) { rechazo(); }
     }
     const alActivo = activo => {
         $('hud').hidden = !activo && !uiAbierta;
-        if (activo) { mostrar(null); return; }
+        if (activo) { avisoClic.hidden = true; mostrar(null); return; }
         if (uiAbierta || vida.muerto) return;
         mostrar('pausa');
         sincronizarAjustes();
@@ -630,7 +650,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas, caricias, ronda,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas, caricias, escenaCuello, ronda,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -671,6 +691,7 @@ async function arrancar(guardado) {
         } else jugador.actualizar(0);
         escenas.actualizar(corre ? dt : 0);
         caricias.actualizar(corre ? dt : 0);
+        escenaCuello.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
         {

@@ -222,9 +222,10 @@ export function crearMisiones(ctx) {
         sonidos.nivel();
         // El agradecimiento no es un panel: el amigo lo dice en su globo, como en sus conversaciones
         cerrarPanel();
-        decirEspecial(m.amigo, L(m.completada));
+        // alCompletar puede devolver true si una escena dice el agradecimiento (p. ej. el cuello de Gala): no sale el globo suelto
+        const conEscena = !!(ctx.alCompletar && ctx.alCompletar(m));
+        if (!conEscena) decirEspecial(m.amigo, L(m.completada));
         hud.mensaje(`${tx().recibes} ${nombrePremio(m.premio)}`, 5);
-        ctx.alCompletar && ctx.alCompletar(m);
     }
 
     // Jefe derrotado (lo llama jefes.js)

@@ -446,6 +446,8 @@ body.en-escena .saltar-escena { display: block; }
 /* Caricias a las gatas (caricias.js): su propio «Saltar»; ACARICIAR va encima de USAR y se oculta solo */
 .saltar-caricia { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-caricia .saltar-caricia { display: block; }
+.saltar-cuello { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-cuello .saltar-cuello { display: block; }
 .tactil-boton.sv-acariciar { width: 96px; height: 40px; font-size: 0.8rem; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--pie) + 176px); background: rgb(190 110 90 / 0.75); }
 .tactil-boton.sv-acariciar[hidden] { display: none; }
 @media (max-height: 460px) { .tactil-boton.sv-acariciar { bottom: calc(var(--pie) + 156px); } }
@@ -468,3 +470,8 @@ body.con-tactil .mision-activa { top: 270px; }
 .ronda-botones .boton { display: none; width: auto; margin: 0; padding: 8px 14px; font-size: 0.9rem; pointer-events: auto; }
 body.en-iglu .ronda-sentar, body.en-ronda .ronda-pararse, body.en-ronda .ronda-cam { display: block; }
 body.en-ronda-fp #hud { visibility: hidden; }
+
+/* Aviso tras cerrar una ventana con Esc: un clic en cualquier parte vuelve al juego */
+.clic-seguir { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; cursor: pointer; background: rgb(0 0 0 / 0.25); font-family: 'PixelCraft', monospace; color: #fff; font-size: 1.1rem; text-shadow: 2px 2px 0 #3f3f3f; }
+.clic-seguir span { transform: translateY(70px); padding: 10px 16px; background: rgb(16 10 6 / 0.8); border: 3px solid #000; box-shadow: inset 3px 3px 0 rgb(139 139 139 / 0.55), inset -3px -3px 0 rgb(55 55 55 / 0.8); }
+.clic-seguir[hidden] { display: none !important; }
