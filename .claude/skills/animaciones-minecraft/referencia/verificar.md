@@ -59,6 +59,21 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
   `v.jugador.activo = true` si tu `intentar()` lo exige, o llama `v.<modulo>.intentar()`.
 - Es lento (≈10–20 s por corrida con muchos tiempos). Junta varios tiempos en una corrida.
 
+## 2b. `grabar.mjs` · video MP4 de la animación completa (para mostrarla)
+
+Avanza el juego cuadro por cuadro con un reloj controlado (30 fps), así el video sale fluido
+aunque el contenedor dibuje lento. Tarda ~2 min por cada 8 s de video.
+
+```bash
+node .claude/skills/animaciones-minecraft/grabar.mjs \
+  --preparar "const g = v.gatas.gatas.find(g => g.clave === 'gala'); await irJunto(g.x, g.z, g.y, 1.5)" \
+  --iniciar "v.caricias.forzar('gala')" --segundos 8.6 --salida $SCRATCH/caricia.mp4
+```
+
+Revisa unos cuadros antes de entregarlo (hoja de contacto con ffmpeg:
+`ffmpeg -i video.mp4 -vf "select='eq(n\,15)+eq(n\,150)',scale=480:-1,tile=2x1" -frames:v 1 hoja.png`).
+Al terminar una tarea de animación, **entrega el video** junto con las capturas.
+
 ## 3. Qué mirar en cada captura (lista de control)
 
 - [ ] **Se lee la pose** sin explicación (sorpresa, caricia, saludo…).

@@ -73,7 +73,9 @@ Una **interacción nueva con tecla** es un tipo B en su propio módulo: plantill
    bloque o una cabeza?, ¿la cámara ve a los actores? Corrige y vuelve a capturar.
 7. **Corre las pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs` y
    `node mundo/tests/paridad.mjs` (no deben romperse) y revisa que no haya errores de consola en las capturas.
-8. **Documenta**: marca/añade la tarea en `mundo/PENDIENTES.md` y una entrada en su bitácora
+8. **Graba un video** con `grabar.mjs` (`referencia/verificar.md` §2b) y entrégalo: es lo que
+   revisa el dueño.
+9. **Documenta**: marca/añade la tarea en `mundo/PENDIENTES.md` y una entrada en su bitácora
    (fecha · qué · archivos · cómo se verificó). Pon un comentario de cabecera en el módulo nuevo
    explicando qué hace, como los demás archivos.
 
