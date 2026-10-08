@@ -45,6 +45,8 @@ import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
 import { crearEditorSkin, cargarSkin, coloresMano } from './skin.js';
 import { crearCamaras } from './camaras.js';
+import { crearMusica } from './musica.js';
+import { crearConsola } from './consola.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 
@@ -324,7 +326,7 @@ async function arrancar(guardado) {
         if (!vida.muerto) entrar();
     }
     const ventanas = {
-        get abierta() { return ventanasBase.abierta || !capaPanel.hidden; },
+        get abierta() { return ventanasBase.abierta || !capaPanel.hidden || !!(consola && consola.abierta); },
         abrir(tipo, extra) {
             uiAbierta = true;
             jugador.teclas.clear();
@@ -412,6 +414,22 @@ async function arrancar(guardado) {
     const ponerSkin = d => { camaras.ponerSkin(d); const c = coloresMano(d); mano.ponerColores(c.piel, c.manga); };
     ponerSkin(skinInicial);
     juego = { ponerSkin };
+    // Música de fondo y temas de los amigos
+    const musica = crearMusica();
+    const personasMusica = () => {
+        const l = [];
+        for (const n of npcs.lista) l.push({ clave: n.clave, x: n.x, z: n.z });
+        for (const n of amigos.lista) l.push({ clave: n.clave, x: n.x, z: n.z });
+        const v = venjys.lista.find(n => n.lugar === 'inicio');
+        if (v) l.push({ clave: 'venjy', x: v.x, z: v.z });
+        return l;
+    };
+    // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda
+    const consola = crearConsola({
+        jugador, dia, hud, idioma,
+        alAbrir: () => { uiAbierta = true; jugador.teclas.clear(); if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock(); },
+        alCerrar: () => { uiAbierta = false; if (!vida.muerto) entrar(); }
+    });
     minado.dormir = (x, y, z) => {
         if (!dia.puedeDormir) return tx().noDormir;
         if (enemigos.cerca(jugador.pos.x, jugador.pos.y, jugador.pos.z)) return tx().monstruos;
@@ -467,7 +485,7 @@ async function arrancar(guardado) {
     jugador.alCambiarActivo = alActivo;
     const tactil = iniciarTactil(jugador, { alEntrar: alActivo });
     const entrar = () => (tactil ? tactil.activar() : pedirPuntero());
-    if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma, camaras });
+    if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma, camaras, consola });
 
     document.addEventListener('keydown', e => {
         if (e.code === 'KeyE' && !e.repeat) {
@@ -476,6 +494,7 @@ async function arrancar(guardado) {
         } else if (e.code === 'Escape' && ventanasBase.abierta) { ventanasBase.cerrar(true); e.preventDefault(); }
         if ((e.code === 'Escape' || e.code === 'KeyE') && !capaPanel.hidden && !e.repeat) { cerrarPanel(); e.preventDefault(); }
         if (e.code === 'F5' && !e.repeat && jugador.activo) { camaras.cambiarVista(); e.preventDefault(); }
+        if ((e.code === 'KeyT' || e.code === 'Slash') && !e.repeat && jugador.activo && !vida.muerto) { e.preventDefault(); consola.abrir(e.code === 'Slash' ? '/' : ''); }
     });
     lienzo.addEventListener('click', () => { if (!jugador.activo && !uiAbierta && !vida.muerto && $('inicio').hidden) entrar(); });
 
@@ -499,6 +518,7 @@ async function arrancar(guardado) {
         $('aj-fov').value = ajustes.fov; $('aj-fov-v').textContent = ajustes.fov;
         $('aj-sens').value = ajustes.sens; $('aj-sens-v').textContent = ajustes.sens;
         $('aj-sonido').checked = !mundoSilenciado();
+        $('aj-musica').checked = musica.encendida;
     }
     $('aj-distancia').addEventListener('input', e => {
         ajustes.distancia = Number(e.target.value); $('aj-distancia-v').textContent = ajustes.distancia;
@@ -509,12 +529,13 @@ async function arrancar(guardado) {
     $('aj-fov').addEventListener('input', e => { ajustes.fov = Number(e.target.value); $('aj-fov-v').textContent = ajustes.fov; camara.fov = ajustes.fov; camara.updateProjectionMatrix(); guardarAjustes(); });
     $('aj-sens').addEventListener('input', e => { ajustes.sens = Number(e.target.value); $('aj-sens-v').textContent = ajustes.sens; jugador.sensibilidad = ajustes.sens / 10000; guardarAjustes(); });
     $('aj-sonido').addEventListener('change', e => silenciarMundo(!e.target.checked));
+    $('aj-musica').addEventListener('change', e => musica.encender(e.target.checked));
 
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -554,6 +575,11 @@ async function arrancar(guardado) {
             mano.actualizar(dt);
         } else jugador.actualizar(0);
         camaras.actualizar(dt);
+        {
+            const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
+            const cueva = jugador.pos.y < DY + 8 && l >= 0 && (l >> 4) < 6;
+            musica.actualizar({ jx: jugador.pos.x, jz: jugador.pos.z, personas: personasMusica(), enJefe: jefes.enCurso, modo: cueva ? 'cueva' : dia.esNoche ? 'noche' : 'dia', pausa: !corre });
+        }
         vista.sincronizar();
         cielo.actualizar(camara, corre ? dt : 0);
         const dtC = corre ? dt : 0;
