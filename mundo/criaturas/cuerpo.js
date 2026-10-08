@@ -261,7 +261,6 @@ export function crearGlobo(scene) {
         const padre = sp.parent;
         if (!padre) return;
         padre.updateWorldMatrix(true, false);
-        camara.updateMatrixWorld();
         v.set(x, y, z).applyMatrix4(padre.matrixWorld);
         vista.copy(v).applyMatrix4(camara.matrixWorldInverse); // la cámara mira a -Z
         const t = Math.tan(THREE.MathUtils.degToRad(camara.fov) / 2), asp = camara.aspect;
@@ -288,6 +287,16 @@ export function crearGlobo(scene) {
         padre.worldToLocal(v);
         sp.position.copy(v);
     }
+    // El encaje se hace justo antes de dibujar, con la cámara de ese cuadro: la de cine se mueve después
+    // de que las escenas actualizan sus globos (antes de eso la cámara sigue en primera persona)
+    let encaje = null;
+    sp.onBeforeRender = (renderer, escena, cam) => {
+        if (!encaje || !cam.isPerspectiveCamera) return;
+        sp.position.set(encaje[0], encaje[1], encaje[2]);
+        sp.scale.set(ESCALA[0], ESCALA[1], 1);
+        encajar(encaje[0], encaje[1], encaje[2], cam);
+        sp.updateMatrixWorld();
+    };
     const dibujar = () => {
         const ctx = c.getContext('2d');
         ctx.clearRect(0, 0, c.width, c.height);
@@ -336,7 +345,8 @@ export function crearGlobo(scene) {
             sp.material.opacity = alfa;
             sp.position.set(x, y, z);
             sp.scale.set(ESCALA[0], ESCALA[1], 1);
-            if (camara) encajar(x, y, z, camara);
+            encaje = camara ? [x, y, z] : null;
+            sp.frustumCulled = !encaje; // con encaje se dibuja aunque su punto quede fuera del encuadre
         }
     };
 }
