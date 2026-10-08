@@ -31,7 +31,7 @@ const envolvente = (t, a, b, rampa) => suave(Math.min(tramo(t, a, a + rampa), 1 
 const col = c => (c ? c.map(v => Math.round(v)).join(',') : '');
 function firma(d) {
     const pelo = d.pelo || {}, ropa = d.ropa || {};
-    return [col(d.piel), col(pelo.color), pelo.estilo, col(d.ojos), !!d.barba, d.barba ? col(d.barbaColor || pelo.color) : '', !!d.lentes,
+    return [col(d.piel), col(pelo.color), pelo.estilo, col(d.ojos), !!d.barba, d.barba ? col(d.barbaColor || pelo.color) : '', d.barba ? d.barbaEstilo || 'completa' : '', !!d.lentes,
         col(d.gorro), !!d.lunar, ropa.tipo, col(ropa.color), col(ropa.estampado), col(d.pantalon), d.zapatillas || 'blancas'].join('|');
 }
 export function tipoSkin(d) {

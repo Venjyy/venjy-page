@@ -15,7 +15,7 @@ const CLAVE = 'venjy-supervivencia-skin';
 
 // Pony, Salonas y Lona están pintados a mano en npcs.js: aquí van descritos para usarlos de base
 const OTROS = {
-    pony: { nombre: 'Pony', piel: [232, 200, 176], pelo: { color: [70, 60, 54], estilo: 'muy corto' }, ojos: [70, 52, 36], barba: true, barbaColor: [90, 76, 66], lentes: true, ropa: { tipo: 'traje', color: [110, 112, 118] }, pantalon: [92, 94, 100], zapatillas: 'negras' },
+    pony: { nombre: 'Pony', piel: [232, 200, 176], pelo: { color: [70, 60, 54], estilo: 'muy corto' }, ojos: [70, 52, 36], barba: true, barbaEstilo: 'chivo', barbaColor: [90, 76, 66], lentes: true, ropa: { tipo: 'traje', color: [110, 112, 118] }, pantalon: [92, 94, 100], zapatillas: 'negras' },
     salonas: { nombre: 'Salonas', piel: [228, 196, 172], pelo: { color: [18, 16, 18], estilo: 'desordenado' }, ojos: [60, 40, 30], barba: true, lentes: true, ropa: { tipo: 'polera', color: [120, 120, 124] }, pantalon: [40, 42, 50], zapatillas: 'negras' },
     lona: { nombre: 'Lona', piel: [246, 226, 214], pelo: { color: [20, 18, 22], estilo: 'largo' }, ojos: [70, 50, 40], ropa: { tipo: 'polera', color: [24, 24, 28], estampado: [236, 236, 232] }, pantalon: [70, 100, 150], zapatillas: 'blancas' }
 };
@@ -33,7 +33,11 @@ export const skinPorDefecto = () => { const b = BASES[Math.floor(Math.random() *
 export function cargarSkin() {
     try {
         const s = JSON.parse(localStorage.getItem(CLAVE) || 'null');
-        if (s && s.piel && s.pelo && s.ropa) return s;
+        if (s && s.piel && s.pelo && s.ropa) {
+            // Antes no existía el tipo de barba y la del Pony salía completa: se le devuelve su perilla
+            if (s.base === 'pony' && s.barba && !s.barbaEstilo) { s.barbaEstilo = 'chivo'; guardarSkin(s); }
+            return s;
+        }
     } catch (e) { /* sin almacenamiento */ }
     // La que salga al azar se guarda: así es la misma en cada partida hasta que la cambies
     const d = skinPorDefecto();
@@ -68,6 +72,7 @@ const TXT = {
         titulo: 'Tu skin', base: 'Partir de', piel: 'Piel', pelo: 'Pelo', estilo: 'Peinado', ojos: 'Ojos', barba: 'Barba', lentes: 'Lentes', gorro: 'Gorro', lunar: 'Lunar',
         ropa: 'Ropa', estampado: 'Estampado', pantalon: 'Pantalón', zapatillas: 'Zapatillas', guardar: 'Guardar skin', volver: 'Volver', guardada: 'Skin guardada en este dispositivo',
         nota: 'Arrastra la vista previa para girarla. La skin se guarda solo en este navegador.',
+        barbas: { completa: 'Completa', chivo: 'Chivo (perilla)' },
         estilos: { 'muy corto': 'Muy corto', corto: 'Corto', ordenado: 'Ordenado', largo: 'Largo', desordenado: 'Desordenado', rulos: 'Rulos' },
         ropas: { polera: 'Polera', poleron: 'Polerón', 'camisa cuadros': 'Camisa a cuadros', 'polera ancha': 'Polera ancha con cadena', traje: 'Traje' },
         zapatos: { blancas: 'Blancas', negras: 'Negras', botas: 'Botas', jordan: 'Jordan rojas' }
@@ -76,6 +81,7 @@ const TXT = {
         titulo: 'Your skin', base: 'Start from', piel: 'Skin', pelo: 'Hair', estilo: 'Hairstyle', ojos: 'Eyes', barba: 'Beard', lentes: 'Glasses', gorro: 'Beanie', lunar: 'Mole',
         ropa: 'Top', estampado: 'Print', pantalon: 'Pants', zapatillas: 'Shoes', guardar: 'Save skin', volver: 'Back', guardada: 'Skin saved on this device',
         nota: 'Drag the preview to turn it. The skin is only saved in this browser.',
+        barbas: { completa: 'Full', chivo: 'Goatee' },
         estilos: { 'muy corto': 'Buzz cut', corto: 'Short', ordenado: 'Neat', largo: 'Long', desordenado: 'Messy', rulos: 'Curly' },
         ropas: { polera: 'T-shirt', poleron: 'Hoodie', 'camisa cuadros': 'Plaid shirt', 'polera ancha': 'Baggy tee with chain', traje: 'Suit' },
         zapatos: { blancas: 'White', negras: 'Black', botas: 'Boots', jordan: 'Red Jordans' }
@@ -126,6 +132,7 @@ export function crearEditorSkin({ contenedor, idioma = 'es', alGuardar, alVolver
     campo('estilo', t.estilo, selector(Object.entries(t.estilos)));
     campo('ojos', t.ojos, color());
     campo('barba', t.barba, check());
+    campo('barbaEstilo', t.barba + ' · ' + (idioma === 'en' ? 'type' : 'tipo'), selector(Object.entries(t.barbas)));
     campo('barbaColor', t.barba + ' · color', color());
     campo('lentes', t.lentes, check());
     campo('gorro', t.gorro, check());
@@ -145,6 +152,7 @@ export function crearEditorSkin({ contenedor, idioma = 'es', alGuardar, alVolver
         campos.estilo.value = d.pelo.estilo;
         campos.ojos.value = aHex(d.ojos);
         campos.barba.checked = !!d.barba;
+        campos.barbaEstilo.value = d.barbaEstilo || 'completa';
         campos.barbaColor.value = aHex(d.barbaColor || d.pelo.color);
         campos.lentes.checked = !!d.lentes;
         campos.gorro.checked = !!d.gorro;
@@ -156,7 +164,7 @@ export function crearEditorSkin({ contenedor, idioma = 'es', alGuardar, alVolver
         campos.estampadoColor.value = aHex(d.ropa.estampado || [236, 236, 232]);
         campos.pantalon.value = aHex(d.pantalon);
         campos.zapatillas.value = d.zapatillas || 'blancas';
-        campos.barbaColor.closest('label').hidden = !d.barba;
+        campos.barbaColor.closest('label').hidden = campos.barbaEstilo.closest('label').hidden = !d.barba;
         campos.gorroColor.closest('label').hidden = !d.gorro;
         campos.estampadoColor.closest('label').hidden = !d.ropa.estampado;
     }
@@ -166,12 +174,13 @@ export function crearEditorSkin({ contenedor, idioma = 'es', alGuardar, alVolver
             ...d, nombre: 'Yo',
             piel: deHex(campos.piel.value), pelo: { color: deHex(campos.pelo.value), estilo: campos.estilo.value }, ojos: deHex(campos.ojos.value),
             barba: campos.barba.checked, barbaColor: campos.barba.checked ? deHex(campos.barbaColor.value) : undefined,
+            barbaEstilo: campos.barba.checked && campos.barbaEstilo.value === 'chivo' ? 'chivo' : undefined,
             lentes: campos.lentes.checked, gorro: campos.gorro.checked ? deHex(campos.gorroColor.value) : undefined, lunar: campos.lunar.checked,
             ropa: { tipo: campos.ropa.value, color: deHex(campos.ropaColor.value), estampado: campos.estampado.checked ? deHex(campos.estampadoColor.value) : undefined },
             pantalon: deHex(campos.pantalon.value), zapatillas: campos.zapatillas.value
         };
         delete d.escala;
-        campos.barbaColor.closest('label').hidden = !d.barba;
+        campos.barbaColor.closest('label').hidden = campos.barbaEstilo.closest('label').hidden = !d.barba;
         campos.gorroColor.closest('label').hidden = !d.gorro;
         campos.estampadoColor.closest('label').hidden = !d.ropa.estampado;
         estado.textContent = '';

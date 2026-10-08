@@ -4,11 +4,11 @@
 // USAR (poner, comer, abrir, hablar), INVENTARIO y SOLTAR. La barra rápida se toca para elegir.
 // =========================================================
 const TEXTOS = {
-    es: { romper: 'ROMPER', usar: 'USAR', inventario: 'INV', soltar: 'SOLTAR' },
-    en: { romper: 'BREAK', usar: 'USE', inventario: 'INV', soltar: 'DROP' }
+    es: { romper: 'ROMPER', usar: 'USAR', inventario: 'INV', soltar: 'SOLTAR', acariciar: 'ACARICIAR' },
+    en: { romper: 'BREAK', usar: 'USE', inventario: 'INV', soltar: 'DROP', acariciar: 'PET' }
 };
 
-export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma = 'es', camaras, consola }) {
+export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma = 'es', camaras, consola, caricias }) {
     const t = TEXTOS[idioma] || TEXTOS.es;
     const botones = [
         tactil.agregarAccion('sv-romper', t.romper, () => minado.abajo(0), () => minado.arriba(0)),
@@ -19,6 +19,9 @@ export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventari
         tactil.agregarAccion('sv-comando', '/', () => consola && consola.abrir('/'))
     ];
     for (const b of botones) b.hidden = false;
+    // ACARICIAR aparece solo junto a una gata (caricias.js avisa cuando hay una al alcance)
+    const acariciar = tactil.agregarAccion('sv-acariciar', t.acariciar, () => caricias && caricias.intentar());
+    if (caricias) caricias.alCambiarCercania(cerca => { acariciar.hidden = !cerca; });
     document.body.classList.add('con-tactil');
     // Tocar una casilla de la barra rápida la elige
     const barra = document.getElementById('barra-rapida');
@@ -28,5 +31,5 @@ export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventari
         e.preventDefault();
         inventario.elegida = [...barra.children].indexOf(c);
     }, { passive: false });
-    return { botones };
+    return { botones, acariciar };
 }
