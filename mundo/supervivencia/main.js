@@ -34,6 +34,12 @@ import { crearDia } from './dia.js';
 import { vistaDesplazada } from './desplazado.js';
 import { iniciarTactilSupervivencia } from './tactil-supervivencia.js';
 import { crearMano } from './mano.js';
+import { crearParticulas } from './particulas.js';
+import { crearGanado } from './ganado.js';
+import { crearProyectiles } from './proyectiles.js';
+import { crearEnemigos } from './enemigos.js';
+import { crearCombate } from './combate.js';
+import { crearPesca } from './pesca.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
@@ -65,7 +71,7 @@ const TXT = {
         confirmarBorrar: n => `¿Borrar «${n}» para siempre? No se puede deshacer.`, vacio: 'Aún no tienes mundos.',
         dia: n => `Día ${n}`, lleno: `Tienes ${MAX_MUNDOS} mundos: borra uno para crear otro.`, mundo: 'Mi mundo',
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
-        noDormir: 'Solo puedes dormir de noche', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
+        noDormir: 'Solo puedes dormir de noche', monstruos: 'No puedes dormir ahora: hay monstruos cerca', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).es, sinAlmacen: 'Este navegador no permite guardar partidas (modo privado).',
         completado: 'Completado', jugado: m => `${m} min jugados`
     },
@@ -74,7 +80,7 @@ const TXT = {
         confirmarBorrar: n => `Delete "${n}" forever? This can't be undone.`, vacio: "You don't have any worlds yet.",
         dia: n => `Day ${n}`, lleno: `You have ${MAX_MUNDOS} worlds: delete one to create another.`, mundo: 'My world',
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
-        noDormir: 'You can only sleep at night', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
+        noDormir: 'You can only sleep at night', monstruos: 'You may not rest now; there are monsters nearby', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).en, sinAlmacen: "This browser can't save games (private mode).",
         completado: 'Completed', jugado: m => `${m} min played`
     }
@@ -298,21 +304,6 @@ async function arrancar(guardado) {
     vida.cargar(guardado.vida);
     jugador.vivo = true;
 
-    const minado = crearMinado({ scene, camara, mundo, jugador, inventario, entidades, contenedores, agricultura, vida, ventanas, hud, idioma });
-    const mano = crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, tinteMundo: materiales.solido.color });
-    minado.alGesto = () => mano.golpear();
-    minado.dormir = (x, y, z) => {
-        if (!dia.puedeDormir) return tx().noDormir;
-        spawnCama = { x: x + 0.5, y: y + 1, z: z + 0.5 };
-        const negro = document.createElement('div');
-        negro.className = 'fundido-sueno';
-        document.body.appendChild(negro);
-        hud.mensaje(tx().durmiendo, 2);
-        setTimeout(() => { dia.amanecer(); hud.mensaje(tx().spawn); }, 1300);
-        setTimeout(() => negro.remove(), 2600);
-        return null;
-    };
-
     // ---- Criaturas del creativo, en coordenadas desplazadas ----
     const vista = vistaDesplazada({ scene, mundo, jugador, camara, dy: DY });
     const ctxCriaturas = { datos, terreno, mundo: vista.mundo, jugador: vista.jugador, materiales };
@@ -324,6 +315,45 @@ async function arrancar(guardado) {
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
 
+    // ---- Mundo vivo: partículas, ganado, monstruos, proyectiles, combate y pesca ----
+    const particulas = crearParticulas({ scene, atlasLienzo });
+    const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
+    ganado.cargar(guardado.ganado);
+    let enemigos = null;
+    const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r)];
+    const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
+    // Zonas seguras: alrededor de cada amigo y de Venjy no aparecen ni entran monstruos
+    const zonasSeguras = () => [...npcs.lista, ...amigos.lista, ...venjys.lista].map(n => ({ x: n.x, z: n.z, radio: 16 }));
+    enemigos = crearEnemigos({
+        scene, mundo, jugador, vida, dia, entidades, proyectiles, terreno, datos, zonasSeguras, contenedores, particulas, objetivosTodos,
+        dificultad: () => vida.dificultad, hud, tinteMundo: materiales.solido.color,
+        aturdir: s => { vida.aturdido = Math.max(vida.aturdido, s); }
+    });
+    const minado = crearMinado({ scene, camara, mundo, jugador, inventario, entidades, contenedores, agricultura, vida, ventanas, hud, idioma });
+    const combate = crearCombate({ camara, mundo, jugador, inventario, vida, proyectiles, particulas, hud, objetivos: objetivosTodos, idioma });
+    const pesca = crearPesca({ scene, camara, mundo, jugador, inventario, entidades, particulas });
+    minado.alClicIzquierdo = () => combate.atacar();
+    minado.alClicDerecho = () => { const e = combate.entidadApuntada(); return !!(e && e.animal && ganado.interactuar(e.animal)); };
+    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : combate.usar(p));
+    minado.usarSinNada = () => combate.bloquearConMano2();
+    minado.alSoltarDerecho = () => combate.soltarDerecho();
+    minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
+    const mano = crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, combate, tinteMundo: materiales.solido.color });
+    minado.alGesto = () => mano.golpear();
+    minado.dormir = (x, y, z) => {
+        if (!dia.puedeDormir) return tx().noDormir;
+        if (enemigos.cerca(jugador.pos.x, jugador.pos.y, jugador.pos.z)) return tx().monstruos;
+        spawnCama = { x: x + 0.5, y: y + 1, z: z + 0.5 };
+        const negro = document.createElement('div');
+        negro.className = 'fundido-sueno';
+        document.body.appendChild(negro);
+        hud.mensaje(tx().durmiendo, 2);
+        setTimeout(() => { dia.amanecer(); hud.mensaje(tx().spawn); }, 1300);
+        setTimeout(() => negro.remove(), 2600);
+        return null;
+    };
+
+
     // ---- Guardado ----
     function estadoActual() {
         return {
@@ -332,7 +362,7 @@ async function arrancar(guardado) {
             jugador: { x: +jugador.pos.x.toFixed(2), y: +jugador.pos.y.toFixed(2), z: +jugador.pos.z.toFixed(2), yaw: +jugador.yaw.toFixed(3), pitch: +jugador.pitch.toFixed(3) },
             spawnCama, vida: vida.serializar(), inventario: inventario.serializar(),
             ediciones: serializarEdiciones(terreno.ediciones), contenedores: contenedores.serializar(),
-            agricultura: agricultura.serializar(), entidades: entidades.serializar(), dia: dia.serializar(),
+            agricultura: agricultura.serializar(), entidades: entidades.serializar(), dia: dia.serializar(), ganado: ganado.serializar(),
             misiones: guardado.misiones || null
         };
     }
@@ -408,6 +438,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -430,12 +461,19 @@ async function arrancar(guardado) {
         if (corre) {
             jugado += dt;
             dia.actualizar(dt);
+            jugador.lento = minado.lento * combate.lento * (vida.aturdido > 0 ? 0.45 : 1);
             jugador.actualizar(dt);
             vida.actualizar(dt);
             minado.actualizar(dt);
             entidades.actualizar(dt, camara);
             contenedores.actualizar(dt);
             agricultura.actualizar(dt);
+            combate.actualizar(dt, minado.derecho);
+            pesca.actualizar(dt);
+            ganado.actualizar(dt);
+            enemigos.actualizar(dt);
+            proyectiles.actualizar(dt);
+            particulas.actualizar(dt);
             mano.actualizar(dt);
         } else jugador.actualizar(0);
         vista.sincronizar();

@@ -11,7 +11,8 @@ import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
 import { pixelesObjeto } from './iconos.js';
 import { geometriaCubo } from './entidades.js';
-import { info } from './objetos.js';
+import { info, O } from './objetos.js';
+const O_ESCUDO = O.ESCUDO;
 
 // Geometría de un dibujo de 16×16 extruido (caras de frente, atrás y cantos donde no hay vecino)
 function extruir(px) {
@@ -53,13 +54,15 @@ function pixelesTile(atlasLienzo, tile) {
     return px;
 }
 
-export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, tinteMundo }) {
+export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, combate, tinteMundo }) {
     const escena = new THREE.Scene();
     const camara = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
     window.addEventListener('resize', () => { camara.aspect = window.innerWidth / window.innerHeight; camara.updateProjectionMatrix(); });
 
     const pivote = new THREE.Group(); // se mueve con el balanceo y el golpe
     escena.add(pivote);
+    const pivote2 = new THREE.Group(); // la otra mano (escudo, antorcha…), a la izquierda
+    escena.add(pivote2);
     const matBloque = new THREE.MeshBasicMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 });
     const matPixel = new THREE.MeshBasicMaterial({ vertexColors: true });
     const matBrazo = [new THREE.MeshBasicMaterial({ color: 0xe8c4a8 }), new THREE.MeshBasicMaterial({ color: 0x3f8a3a })];
@@ -74,8 +77,15 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
     brazo.add(mano, manga);
 
     const cache = new Map();
-    function mallaDe(id) {
-        if (cache.has(id)) return cache.get(id);
+    const cache2 = new Map(); // la otra mano necesita sus propias mallas (una malla vive en un solo padre)
+    function mallaDe(id, otra = false) {
+        const c = otra ? cache2 : cache;
+        if (c.has(id)) return c.get(id);
+        const m = crearMalla(id);
+        c.set(id, m);
+        return m;
+    }
+    function crearMalla(id) {
         let m;
         const t = id < 256 ? TIPO[id] : 0;
         if (id < 256 && BLOQUES[id] && (t === 1 || t === 2 || t === 5)) {
@@ -93,8 +103,14 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
             else m.rotation.set(0, -0.55, 0);
             m.userData.tipo = 'objeto';
         }
-        cache.set(id, m);
         return m;
+    }
+    let actual2 = -1, visible2 = null;
+    function mostrar2(id) {
+        if (visible2) pivote2.remove(visible2);
+        visible2 = id ? mallaDe(id, true) : null;
+        if (visible2) pivote2.add(visible2);
+        actual2 = id;
     }
 
     let actual = -1, visible = null;
@@ -141,9 +157,22 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
             y += -Math.abs(Math.cos(fase)) * 0.03 * balanceo + g * 0.12 - bajar * 0.6;
             z += -g * 0.22;
             if (comiendo) { x -= 0.32; y += 0.12 + Math.abs(Math.sin(minado.comiendo * 16)) * 0.05; z += 0.1; }
+            // Arco tensado: se acerca al centro y tiembla al máximo
+            const tension = combate ? Math.min(1, combate.tensando) : 0;
+            if (tension > 0) { x -= 0.25 * tension; y += 0.12 * tension; z += 0.15 * tension; if (tension >= 1) { x += (Math.random() - 0.5) * 0.008; y += (Math.random() - 0.5) * 0.008; } }
             pivote.position.set(x, y, z);
             pivote.rotation.set(-g * 0.9, (visible === brazo ? -0.15 : esBloque ? 0 : -0.25) + g * 0.4, visible === brazo ? 0.15 + g * 0.2 : g * 0.25);
             if (visible === brazo) brazo.rotation.set(0.42, 0.42, 0); // la mano (−z) sube y apunta al centro
+
+            // Otra mano: a la izquierda; el escudo sube al centro al bloquear
+            const id2 = inventario.mano2 ? inventario.mano2.id : 0;
+            if (id2 !== actual2) mostrar2(id2);
+            if (visible2) {
+                const bloquea = combate && combate.bloqueando && id2 === O_ESCUDO;
+                pivote2.position.set(bloquea ? -0.28 : -0.55, (bloquea ? -0.28 : -0.42) - bajar * 0.6 - Math.abs(Math.cos(fase)) * 0.03 * balanceo, bloquea ? -0.62 : -0.85);
+                pivote2.rotation.set(0, bloquea ? 0.25 : 0.5, 0);
+                visible2.rotation.set(0, bloquea ? 0 : 0.55, 0);
+            }
 
             // Luz del lugar: la misma del mundo (cielo según la hora y antorchas)
             const l = mundo.nivelLuz(p.x, p.y + jugador.ojos, p.z);

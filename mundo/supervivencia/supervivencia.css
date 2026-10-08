@@ -335,3 +335,23 @@ body.con-tactil .nombre-objeto { bottom: calc(var(--pie) + 4px); }
     .tactil-boton.sv-romper, .tactil-boton.sv-usar { bottom: calc(var(--pie) + 82px); width: 66px; height: 66px; }
     .tactil-boton.sv-romper { right: calc(88px + env(safe-area-inset-right, 0px)); }
 }
+
+/* ---------- Combate ---------- */
+.carga-golpe {
+    position: absolute;
+    left: 50%; top: calc(50% + 16px);
+    width: 26px; height: 4px;
+    transform: translateX(-50%);
+    background: rgb(0 0 0 / 0.5);
+}
+.carga-golpe i { display: block; height: 100%; width: 0; background: #e0e0e0; }
+.aturdido {
+    position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    background: radial-gradient(ellipse at center, transparent 30%, rgb(60 40 90 / 0.45));
+    animation: mareo 1.2s ease-in-out infinite alternate;
+}
+@keyframes mareo { from { transform: scale(1) rotate(-0.6deg); } to { transform: scale(1.04) rotate(0.6deg); } }
+.vida-jefe { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); width: min(420px, 70vw); text-align: center; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; }
+.vida-jefe b { font-weight: normal; display: block; margin-bottom: 4px; }
+.vida-jefe .barra-jefe { height: 10px; background: #2a0a2a; border: 2px solid #000; }
+.vida-jefe .barra-jefe i { display: block; height: 100%; width: 100%; background: linear-gradient(#e040e0, #a020a0); }
