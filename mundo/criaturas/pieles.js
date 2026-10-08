@@ -25,6 +25,7 @@ export function pielDe(d) {
     const buzz = (x, y, r) => ajustar(mezcla(H, P, 0.15), 0.85 + r() * 0.25); // rapado: se ve un poco la piel
     const piel = mot(P, 0.07);
     const barba = d.barba ? mot(d.barbaColor || ajustar(H, 1.05), 0.16) : null;
+    const chivo = d.barba && d.barbaEstilo === 'chivo'; // perilla de chivo: solo el mentón, sin bigote ni patillas
     const LENTE = [22, 22, 26];
     // Lentes cuadrados: marco alrededor de cada ojo (filas 6-8) y puente
 
@@ -46,8 +47,10 @@ export function pielDe(d) {
     const cabeza = {
         frente: (x, y, r) => {
             if (peloFrente(x, y)) return estilo === 'muy corto' ? buzz(x, y, r) : pelo(x, y, r);
+            // Perilla de chivo (Pony): bajo la boca, sin bigote; las esquinas de abajo quedan con piel
+            if (chivo && x >= 6 && x <= 9 && y >= 13 && !(y === 15 && (x === 6 || x === 9))) return barba(x, y, r);
             // Barba completa y arreglada: bigote, mentón y patillas, con la boca entre medio
-            if (barba) {
+            if (barba && !chivo) {
                 if (y === 12 && x >= 6 && x <= 9) return [146, 80, 70];
                 if ((y === 10 && x >= 5 && x <= 10) || (y >= 11 && x >= 1 && x <= 14 && !(y === 15 && (x <= 2 || x >= 13)))) return barba(x, y, r);
                 if ((x <= 1 || x >= 14) && y >= 7) return barba(x, y, r);
@@ -67,7 +70,7 @@ export function pielDe(d) {
             const atras = { 'muy corto': 12, corto: 10, ordenado: 9, largo: 4, desordenado: 6, rulos: 6 }[estilo] ?? 10;
             const hasta = { 'muy corto': 5, corto: 9, ordenado: 9, largo: 15, desordenado: 11, rulos: 12 }[estilo] ?? 9;
             if (y <= 2 || (x >= atras && y <= hasta) || (estilo === 'desordenado' && x <= 3 && y <= 5)) return estilo === 'muy corto' ? buzz(x, y, r) : pelo(x, y, r);
-            if (barba && ((y >= 10 && x <= 7) || (x >= 6 && x <= 7 && y >= 6))) return barba(x, y, r);
+            if (barba && !chivo && ((y >= 10 && x <= 7) || (x >= 6 && x <= 7 && y >= 6))) return barba(x, y, r);
             if (x >= 7 && x <= 8 && y >= 7 && y <= 9) return ajustar(P, 0.84);                  // oreja
             return piel(x, y, r);
         },
@@ -77,7 +80,7 @@ export function pielDe(d) {
             return piel(x, y, r);
         },
         arriba: estilo === 'muy corto' ? buzz : pelo,
-        abajo: barba || piel
+        abajo: barba && !chivo ? barba : piel
     };
 
     // ---------------------------------------------------------
