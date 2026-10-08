@@ -9,7 +9,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { ESCALA, NIVEL_AGUA } from '../voxeles.js';
 import {
-    RADIO_VISIBLE, ajustar, lerp, angulo, crearTinte, crearPersona, caminar, caja, texturaPixeles, liso,
+    seVe, RADIO_VISIBLE, ajustar, lerp, angulo, crearTinte, crearPersona, caminar, caja, texturaPixeles, liso,
     crearNombre, crearGlobo, suelo, sonando
 } from './cuerpo.js';
 import { crearBajo } from './bajo.js';
@@ -179,6 +179,7 @@ const FRASES = {
     salonas: [
         { es: '¡Bienvenido al show! Súbele.', en: 'Welcome to the show! Turn it up.' },
         { es: 'Slap, pop y un poco de locura.', en: 'Slap, pop and a bit of madness.' },
+        { es: '¡PRIMUS SUCKS!', en: 'PRIMUS SUCKS!' },
         { es: 'Cinco cuerdas, cero partituras.', en: 'Five strings, zero sheet music.' },
         { es: 'Este va con harto Primus en el alma.', en: 'This one has a lot of Primus in its soul.' }
     ],
@@ -237,7 +238,7 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         // Al acercarse dice algo; si se queda, cambia de frase cada ~7 s
         if (cerca && (!npc.cerca || (npc.cambioFrase -= dt) <= 0)) { decir(npc, grupoCerca, true); npc.cambioFrase = 7; }
         npc.cerca = cerca;
-        npc.globo.actualizar(dt, cerca, npc.x, npc.y + 2.75, npc.z);
+        npc.globo.actualizar(dt, cerca && seVe(mundo, jugador.camara, npc.x, npc.y + 1.6, npc.z), npc.x, npc.y + 2.75, npc.z);
         npc.nombre.actualizar(dt, jugador.camara, mundo, visible && !cerca, npc.x, npc.y + 2.35, npc.z, npc.x, npc.y + 1.2, npc.z);
     }
 
