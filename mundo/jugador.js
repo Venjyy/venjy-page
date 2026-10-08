@@ -44,6 +44,11 @@ export class Jugador {
         this.lento = 1;            // multiplicador de velocidad (comer, tensar el arco, telaraña…)
         this.empuje = new THREE.Vector3(); // retroceso al recibir un golpe (se disipa solo)
         this.yMaxAire = null;      // altura más alta desde que dejó el suelo (daño por caída)
+        this.vCorrer = V_CORRER;   // la supervivencia corre un poco más rápido
+        // Salto corriendo (supervivencia): cada salto suma impulso hacia adelante hasta un tope y en el
+        // aire se conserva la velocidad (como en Minecraft, saltar corriendo es más rápido que correr)
+        this.impulsoSalto = 0;     // m/s que suma cada salto corriendo (0 = desactivado)
+        this.topeSalto = 0;        // velocidad horizontal máxima con impulso
 
         document.addEventListener('pointerlockchange', () => {
             this.activo = document.pointerLockElement === this.el;
@@ -188,15 +193,23 @@ export class Jugador {
         const lava = !this.vuela && this.enLava();
         const agua = !this.vuela && (this.enAgua() || lava);
         const escalera = !this.vuela && this.enEscalera();
-        let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.agachado ? V_AGACHADO : this.corre ? V_CORRER : V_CAMINAR);
+        let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.agachado ? V_AGACHADO : this.corre ? this.vCorrer : V_CAMINAR);
         if (agua) v *= lava ? 0.35 : 0.6;
         v *= this.lento;
 
         // Suavizado de la velocidad horizontal
         const k = this.vuela || !this.enSuelo ? 6 : 14;
         const a = 1 - Math.exp(-k * dt);
-        this.vel.x += (ix * v - this.vel.x) * a;
-        this.vel.z += (iz * v - this.vel.z) * a;
+        const rapidez = Math.hypot(this.vel.x, this.vel.z);
+        if (this.impulsoSalto && !this.enSuelo && !this.vuela && !agua && n > 0 && rapidez > v) {
+            // En el aire con impulso: se conserva la rapidez (con un roce leve) y solo se dobla hacia donde se apunta
+            const r = rapidez * Math.exp(-0.35 * dt);
+            this.vel.x += (ix * r - this.vel.x) * a;
+            this.vel.z += (iz * r - this.vel.z) * a;
+        } else {
+            this.vel.x += (ix * v - this.vel.x) * a;
+            this.vel.z += (iz * v - this.vel.z) * a;
+        }
 
         if (this.vuela) {
             const vy = ((t.has('Space') ? 1 : 0) - (t.has('ShiftLeft') ? 1 : 0)) * (this.corre ? 14 : 9);
@@ -214,7 +227,14 @@ export class Jugador {
             if (this.cargadoEn(this.pos.x, this.pos.z)) this.vel.y -= GRAVEDAD * dt;
             else this.vel.y = 0; // congela la caída mientras el suelo no esté cargado
             if (this.vel.y < -60) this.vel.y = -60;
-            if (t.has('Space') && this.enSuelo) { this.vel.y = SALTO; this.enSuelo = false; }
+            if (t.has('Space') && this.enSuelo) {
+                this.vel.y = SALTO; this.enSuelo = false;
+                if (this.impulsoSalto && this.corre && adelante > 0) {
+                    const r = Math.hypot(this.vel.x, this.vel.z) + this.impulsoSalto;
+                    const tope = Math.min(r, this.topeSalto), fx = -sen, fz = -cos;
+                    this.vel.x = fx * tope; this.vel.z = fz * tope;
+                }
+            }
         }
 
         // Altura máxima en el aire (daño por caída en la supervivencia)

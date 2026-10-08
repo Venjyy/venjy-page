@@ -33,6 +33,7 @@ import { crearVida, CAUSAS } from './vida.js';
 import { crearDia } from './dia.js';
 import { vistaDesplazada } from './desplazado.js';
 import { iniciarTactilSupervivencia } from './tactil-supervivencia.js';
+import { crearMano } from './mano.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
@@ -229,6 +230,9 @@ async function arrancar(guardado) {
     const mundo = new MundoVoxel(scene, terreno, materiales, ajustes.distancia);
     const jugador = new Jugador(camara, mundo, lienzo, { x: terreno.BW, z: terreno.BD });
     jugador.sinVuelo = true;
+    jugador.vCorrer = 6.1;        // un poco más rápido que el creativo (5,6)
+    jugador.impulsoSalto = 1.6;   // saltar corriendo suma impulso…
+    jugador.topeSalto = 7.6;      // …hasta este tope (correr y saltar es más rápido que solo correr)
     jugador.sensibilidad = ajustes.sens / 10000;
 
     const [sx, sz] = datos.P.spawn;
@@ -295,6 +299,8 @@ async function arrancar(guardado) {
     jugador.vivo = true;
 
     const minado = crearMinado({ scene, camara, mundo, jugador, inventario, entidades, contenedores, agricultura, vida, ventanas, hud, idioma });
+    const mano = crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, tinteMundo: materiales.solido.color });
+    minado.alGesto = () => mano.golpear();
     minado.dormir = (x, y, z) => {
         if (!dia.puedeDormir) return tx().noDormir;
         spawnCama = { x: x + 0.5, y: y + 1, z: z + 0.5 };
@@ -430,6 +436,7 @@ async function arrancar(guardado) {
             entidades.actualizar(dt, camara);
             contenedores.actualizar(dt);
             agricultura.actualizar(dt);
+            mano.actualizar(dt);
         } else jugador.actualizar(0);
         vista.sincronizar();
         cielo.actualizar(camara, corre ? dt : 0);
@@ -447,6 +454,7 @@ async function arrancar(guardado) {
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
         renderer.render(scene, camara);
+        if (!vida.muerto && !uiAbierta) mano.dibujar();
 
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {

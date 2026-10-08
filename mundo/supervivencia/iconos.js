@@ -343,6 +343,9 @@ export function uvObjeto(id) {
     return { u0: x / W, u1: (x + 16) / W, v0: 1 - (y + 16) / H, v1: 1 - y / H };
 }
 
+// Píxeles de un objeto (256 entradas [r, g, b] o null): la mano los extruye en 3D
+export function pixelesObjeto(id) { return pintarObjeto(id).px; }
+
 function pintarObjeto(id) {
     const o = OBJETOS[id];
     const p = lienzo16();

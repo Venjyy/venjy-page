@@ -25,7 +25,7 @@ function uvTile(tile, u, v) {
 
 // Geometría de un cubito con las texturas del bloque (orden de caras de BoxGeometry: +x -x +y -y +z -z)
 const geomCubos = new Map();
-function geometriaCubo(id) {
+export function geometriaCubo(id) {
     if (geomCubos.has(id)) return geomCubos.get(id);
     const d = BLOQUES[id];
     const g = new THREE.BoxGeometry(0.25, 0.25, 0.25);

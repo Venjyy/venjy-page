@@ -63,6 +63,7 @@ export function crearMinado(ctx) {
         alRomper: null,        // (id, x, y, z)
         alPoner: null,         // (id, x, y, z)
         alComer: null,         // (idObjeto)
+        alGesto: null,         // () al golpear o usar algo (anima la mano)
         dormir: null,          // (x, y, z) => mensaje o null
         puedeRomper: null      // (x, y, z, id) => bool (zonas protegidas)
     };
@@ -335,12 +336,13 @@ export function crearMinado(ctx) {
     function abajo(boton) {
         if (!activo()) return;
         if (boton === 0) {
+            estado.alGesto && estado.alGesto();
             if (estado.alClicIzquierdo && estado.alClicIzquierdo()) return;
             estado.izquierdo = true;
         } else if (boton === 2) {
             estado.derecho = true;
             estado.relojDerecho = 0;
-            usar();
+            if (usar() && !estado.comiendo) estado.alGesto && estado.alGesto();
         }
     }
     function arriba(boton) {
@@ -411,7 +413,7 @@ export function crearMinado(ctx) {
         // Poner repetido al mantener (como Minecraft, cada 0,2 s)
         if (estado.derecho && !estado.comiendo) {
             estado.relojDerecho += dt;
-            if (estado.relojDerecho >= 0.25) { estado.relojDerecho = 0; const id = inventario.idEnMano(); if (id && id < 256 && esBloqueColocable(id)) usar(); }
+            if (estado.relojDerecho >= 0.25) { estado.relojDerecho = 0; const id = inventario.idEnMano(); if (id && id < 256 && esBloqueColocable(id) && usar()) estado.alGesto && estado.alGesto(); }
         }
     };
     estado.setIdioma = l => { idioma = l; };
