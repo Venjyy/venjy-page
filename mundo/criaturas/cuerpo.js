@@ -256,6 +256,16 @@ export function crearGlobo(scene) {
     // Encaje en pantalla (escenas, con `camara`): si el globo se sale del encuadre lo corre hacia dentro;
     // si ocuparía más de ~90% del ancho o del alto lo achica. Si cabe, no cambia nada.
     const MARGEN = 0.04, TOPE = 0.9;
+    const BAJO_CABEZA = 1.15; // del punto del globo (0,6 sobre la cabeza) al mentón de quien habla
+    // Borde inferior para el globo de abajo: sobre el botón «Saltar» visible (si hay), si no sobre la franja negra
+    const sueloGlobo = franja => {
+        for (const b of document.querySelectorAll('.saltar-escena, .saltar-cuello, .saltar-caricia')) {
+            const r = b.getBoundingClientRect();
+            if (r.height && getComputedStyle(b).display !== 'none') return 1 - 2 * r.top / innerHeight;
+        }
+        return -1 + franja;
+    };
+    let colitaArriba = false, relleno = 0; // relleno: parte transparente del lienzo bajo la caja (fracción del alto)
     const v = new THREE.Vector3(), w = new THREE.Vector3(), vista = new THREE.Vector3();
     function encajar(x, y, z, camara) {
         const padre = sp.parent;
@@ -279,7 +289,17 @@ export function crearGlobo(scene) {
         if (k < 1) sp.scale.set(ESCALA[0] * k, ESCALA[1] * k, 1);
         const loX = -1 + MARGEN + hw, hiX = 1 - MARGEN - hw, loY = -1 + franja + MARGEN + hh, hiY = 1 - franja - MARGEN - hh;
         const nx = loX > hiX ? 0 : Math.min(hiX, Math.max(loX, cx));
-        const ny = loY > hiY ? 0 : Math.min(hiY, Math.max(loY, cy));
+        let ny = loY > hiY ? 0 : Math.min(hiY, Math.max(loY, cy));
+        // No cabe arriba y al bajarlo taparía la cabeza de quien habla: va debajo de la cabeza, con la colita hacia arriba
+        let abajo = false;
+        if (delante && ny < cy - 1e-6) {
+            w.set(x, y - BAJO_CABEZA, z).applyMatrix4(padre.matrixWorld).applyMatrix4(camara.matrixWorldInverse);
+            if (-w.z > 0.2) {
+                const menton = w.y / (-w.z * t);
+                if (ny - hh < menton + 0.02) { abajo = true; ny = Math.min(hiY, sueloGlobo(franja) + 0.02 + hh - 2 * hh * relleno); } // abajo del todo, casi en la franja del botón «Saltar»
+            }
+        }
+        if (abajo !== colitaArriba) { colitaArriba = abajo; dibujar(); }
         if (delante && nx === cx && ny === cy) return; // cabe: se queda donde está
         // Des-proyecta a la misma profundidad y pasa a coordenadas del grupo
         vista.set(nx * prof * t * asp, ny * prof * t, -prof);
@@ -317,7 +337,9 @@ export function crearGlobo(scene) {
         while ((lineas.length > 4 || lineas.length * (px + 4) + 18 > c.height - 16) && px > 12) lineas = partir(px -= 2);
         const paso = px + 4;
         const alto = lineas.length * paso + 18;
-        const y0 = Math.max(0, (c.height - 14 - alto) / 2);
+        // Con la colita hacia arriba la caja baja y deja su espacio arriba
+        const y0 = colitaArriba ? Math.min(c.height - alto, (c.height + 14 - alto) / 2) : Math.max(0, (c.height - 14 - alto) / 2);
+        relleno = Math.max(0, c.height - (y0 + alto)) / c.height;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
         ctx.fillRect(6, y0, c.width - 12, alto);
         ctx.fillStyle = '#1d1d1d';
@@ -325,8 +347,8 @@ export function crearGlobo(scene) {
         ctx.fillRect(6, y0, 3, alto); ctx.fillRect(c.width - 9, y0, 3, alto);
         // Colita del globo
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
-        ctx.fillRect(c.width / 2 - 9, y0 + alto - 3, 18, 6);
-        ctx.fillRect(c.width / 2 - 3, y0 + alto + 3, 6, 6);
+        if (colitaArriba) { ctx.fillRect(c.width / 2 - 9, y0 - 3, 18, 6); ctx.fillRect(c.width / 2 - 3, y0 - 9, 6, 6); }
+        else { ctx.fillRect(c.width / 2 - 9, y0 + alto - 3, 18, 6); ctx.fillRect(c.width / 2 - 3, y0 + alto + 3, 6, 6); }
         ctx.fillStyle = '#1d1d1d';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         lineas.forEach((l, i) => ctx.fillText(l, c.width / 2, y0 + 9 + paso / 2 + i * paso));
