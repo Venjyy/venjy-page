@@ -247,54 +247,128 @@ export function crearNombre(scene, texto) {
 }
 
 // ---------------------------------------------------------
+// Lugar libre para el globo (escenas con cámara de cine). Todo en coordenadas NDC (-1..1) de la cámara.
+// `zonas` = puntos 3D { quien, tipo: 'cabeza' | 'pecho', x, y, z, r } en el sistema del padre del globo.
+// ---------------------------------------------------------
+const ESCALA_GLOBO = [3.0, 1.25];
+const MARGEN_GLOBO = 0.04, TOPE_GLOBO = 0.9, ESCALAS_GLOBO = [1, 0.85, 0.7];
+const vP = new THREE.Vector3();
+// Punto del padre → NDC de la cámara (delante = false si queda detrás; entonces se empuja al borde)
+function proyectarGlobo(camara, padre, x, y, z) {
+    vP.set(x, y, z).applyMatrix4(padre.matrixWorld).applyMatrix4(camara.matrixWorldInverse); // la cámara mira a -Z
+    const t = Math.tan(THREE.MathUtils.degToRad(camara.fov) / 2), asp = camara.aspect;
+    const delante = -vP.z > 0.2, prof = delante ? -vP.z : 2;
+    let cx, cy;
+    if (delante) { cx = vP.x / (prof * t * asp); cy = vP.y / (prof * t); }
+    else { const L = Math.hypot(vP.x, vP.y); if (L > 1e-6) { cx = -vP.x / L * 4; cy = -vP.y / L * 4; } else { cx = 0; cy = -4; } }
+    return { cx, cy, prof, t, asp, delante };
+}
+const solapeRect = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+// Elige el lugar del globo. previo = { id, esc } para mantener la candidata elegida mientras siga libre.
+// Sin zonas devuelve solo el encaje clásico (corrido hacia dentro y achicado si no cabe).
+function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActual = false) {
+    padre.updateWorldMatrix(true, false);
+    const P = proyectarGlobo(camara, padre, ax, ay, az), { prof, t, asp, delante } = P;
+    const ms = padre.matrixWorld.getMaxScaleOnAxis();
+    let hw0 = (ESCALA_GLOBO[0] * ms / 2) / (prof * t * asp), hh0 = (ESCALA_GLOBO[1] * ms / 2) / (prof * t);
+    const k0 = Math.min(1, TOPE_GLOBO / hw0, TOPE_GLOBO * (1 - franja) / hh0);
+    hw0 *= k0; hh0 *= k0;
+    // Zonas a evitar: cuadrado de lado 2r a la profundidad de cada punto
+    const rects = [];
+    let cab = null, dMin = Infinity;
+    for (const z of zonas || []) {
+        const Q = proyectarGlobo(camara, padre, z.x, z.y, z.z);
+        if (!Q.delante) continue;
+        const hx = z.r / (Q.prof * Q.t * Q.asp), hy = z.r / (Q.prof * Q.t);
+        const r = { quien: z.quien, tipo: z.tipo, x0: Q.cx - hx, x1: Q.cx + hx, y0: Q.cy - hy, y1: Q.cy + hy };
+        rects.push(r);
+        // La cabeza de quien habla = la más cercana al ancla del globo
+        const d = z.tipo === 'cabeza' ? Math.hypot(z.x - ax, z.z - az) : Infinity;
+        if (d < dMin) { dMin = d; cab = r; }
+    }
+    const clampC = (c, lo, hi) => (lo > hi ? 0 : Math.min(hi, Math.max(lo, c)));
+    // Candidatas para una escala s: (a) la actual, (b,c) a los lados de la cabeza, (d,e) esquinas de arriba, (f..h) abajo
+    function candidatas(s) {
+        const k = k0 * s, hw = hw0 / k0 * k, hh = hh0 / k0 * k;
+        const loX = -1 + MARGEN_GLOBO + hw, hiX = 1 - MARGEN_GLOBO - hw, loY = -1 + franja + MARGEN_GLOBO + hh, hiY = 1 - franja - MARGEN_GLOBO - hh;
+        const hx = cab ? (cab.x0 + cab.x1) / 2 : P.cx, hy = cab ? (cab.y0 + cab.y1) / 2 : P.cy;
+        const m = (id, x, y) => ({ id, k, hw, hh, x: clampC(x, loX, hiX), y: clampC(y, loY, hiY) });
+        // Rejilla de respaldo (de la más cercana a la cabeza a la más lejana) por si las anteriores no bastan
+        const rej = [];
+        for (let i = 0; i < 7; i++) for (let j = 0; j < 5; j++) rej.push(m('r' + i + '_' + j, loX + (hiX - loX) * i / 6, loY + (hiY - loY) * j / 4));
+        const cerca = (...l) => l.sort((p, q) => Math.hypot(p.x - hx, p.y - hy) - Math.hypot(q.x - hx, q.y - hy));
+        const g = 0.02;
+        return [
+            m('a', P.cx, P.cy),
+            ...cerca(m('b', (cab ? cab.x0 : hx) - g - hw, hy), m('c', (cab ? cab.x1 : hx) + g + hw, hy)),
+            ...cerca(m('d', loX, hiY), m('e', hiX, hiY)),
+            ...cerca(m('f', hx, loY), m('g', loX, loY), m('h', hiX, loY)),
+            ...cerca(...rej)
+        ];
+    }
+    const medir = c => {
+        const r = { x0: c.x - c.hw, x1: c.x + c.hw, y0: c.y - c.hh, y1: c.y + c.hh };
+        let o = 0;
+        for (const z of rects) o += solapeRect(r, z);
+        c.rect = r; c.solape = o;
+        return c;
+    };
+    let mejor = null, elegida = null;
+    if (!rects.length || soloActual) elegida = medir(candidatas(1)[0]);
+    else {
+        if (previo) { // mantiene la candidata anterior si sigue libre
+            const c = candidatas(previo.esc).find(x => x.id === previo.id);
+            if (c && medir(c).solape === 0) { elegida = c; c.esc = previo.esc; }
+        }
+        for (let i = 0; !elegida && i < ESCALAS_GLOBO.length; i++) for (const c of candidatas(ESCALAS_GLOBO[i])) {
+            medir(c); c.esc = ESCALAS_GLOBO[i];
+            if (c.solape === 0) { elegida = c; break; }
+            if (!mejor || c.solape < mejor.solape - 1e-9) mejor = c;
+        }
+        if (!elegida) elegida = mejor;
+    }
+    return { c: elegida, P, rects, cab, k0, libre: elegida.solape === 0, mantenida: !!(previo && elegida.id === previo.id && elegida.esc === previo.esc) };
+}
+
+// ---------------------------------------------------------
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
 export function crearGlobo(scene) {
-    const ESCALA = [3.0, 1.25];
+    const ESCALA = ESCALA_GLOBO;
     const { c, tex, sp } = spriteLienzo(scene, 384, 160, ESCALA, true);
     let texto = '', alfa = 0;
     // Encaje en pantalla (escenas, con `camara`): si el globo se sale del encuadre lo corre hacia dentro;
     // si ocuparía más de ~90% del ancho o del alto lo achica. Si cabe, no cambia nada.
-    const MARGEN = 0.04, TOPE = 0.9;
-    const v = new THREE.Vector3(), w = new THREE.Vector3(), vista = new THREE.Vector3();
-    function encajar(x, y, z, camara) {
+    // Con `evitar` (función que da las zonas de cabezas y torsos de la escena) además busca un lugar que no
+    // las tape (ver planearGlobo) y lo mantiene mientras siga libre; solo cambia con texto nuevo o si se ocupa.
+    const v = new THREE.Vector3(), vista = new THREE.Vector3();
+    let previo = null, nuevo = true, ultimo = null, sinEvitar = false;
+    function encajar(x, y, z, camara, renderer) {
         const padre = sp.parent;
         if (!padre) return;
-        padre.updateWorldMatrix(true, false);
-        v.set(x, y, z).applyMatrix4(padre.matrixWorld);
-        vista.copy(v).applyMatrix4(camara.matrixWorldInverse); // la cámara mira a -Z
-        const t = Math.tan(THREE.MathUtils.degToRad(camara.fov) / 2), asp = camara.aspect;
-        const delante = -vista.z > 0.2;
-        const prof = delante ? -vista.z : 2; // detrás de la cámara: se pega al borde con una profundidad fija
-        let cx, cy;
-        if (delante) { cx = vista.x / (prof * t * asp); cy = vista.y / (prof * t); }
-        else { const L = Math.hypot(vista.x, vista.y); if (L > 1e-6) { cx = -vista.x / L * 4; cy = -vista.y / L * 4; } else { cx = 0; cy = -4; } }
-        // Medio ancho y medio alto del sprite en pantalla (fracción del encuadre)
-        const sw = sp.getWorldScale(w);
-        let hw = (sw.x / 2) / (prof * t * asp), hh = (sw.y / 2) / (prof * t);
-        // En modo cine las franjas negras (9vh arriba y abajo) tapan 0.18 del encuadre por lado
         const franja = document.body.classList.contains('en-cine') ? 0.18 : 0;
-        const k = Math.min(1, TOPE / hw, TOPE * (1 - franja) / hh);
-        hw *= k; hh *= k;
-        if (k < 1) sp.scale.set(ESCALA[0] * k, ESCALA[1] * k, 1);
-        const loX = -1 + MARGEN + hw, hiX = 1 - MARGEN - hw, loY = -1 + franja + MARGEN + hh, hiY = 1 - franja - MARGEN - hh;
-        const nx = loX > hiX ? 0 : Math.min(hiX, Math.max(loX, cx));
-        const ny = loY > hiY ? 0 : Math.min(hiY, Math.max(loY, cy));
-        if (delante && nx === cx && ny === cy) return; // cabe: se queda donde está
+        const zonas = evitar ? evitar() : null;
+        const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar);
+        nuevo = false;
+        const { c, P } = r;
+        previo = zonas && zonas.length ? { id: c.id, esc: c.esc || 1 } : null;
+        ultimo = { cuadro: renderer ? renderer.info.render.frame : 0, rect: { x0: c.rect.x0, y0: c.rect.y0, x1: c.rect.x1, y1: c.rect.y1 }, zonas: r.rects, franja, id: c.id, escala: c.k, libre: r.libre };
+        if (c.k < 1) sp.scale.set(ESCALA[0] * c.k, ESCALA[1] * c.k, 1);
+        if (P.delante && c.x === P.cx && c.y === P.cy) return; // cabe: se queda donde está
         // Des-proyecta a la misma profundidad y pasa a coordenadas del grupo
-        vista.set(nx * prof * t * asp, ny * prof * t, -prof);
+        vista.set(c.x * P.prof * P.t * P.asp, c.y * P.prof * P.t, -P.prof);
         v.copy(vista).applyMatrix4(camara.matrixWorld);
         padre.worldToLocal(v);
         sp.position.copy(v);
     }
     // El encaje se hace justo antes de dibujar, con la cámara de ese cuadro: la de cine se mueve después
     // de que las escenas actualizan sus globos (antes de eso la cámara sigue en primera persona)
-    let encaje = null;
+    let encaje = null, evitar = null;
     sp.onBeforeRender = (renderer, escena, cam) => {
         if (!encaje || !cam.isPerspectiveCamera) return;
         sp.position.set(encaje[0], encaje[1], encaje[2]);
         sp.scale.set(ESCALA[0], ESCALA[1], 1);
-        encajar(encaje[0], encaje[1], encaje[2], cam);
+        encajar(encaje[0], encaje[1], encaje[2], cam, renderer);
         sp.updateMatrixWorld();
     };
     const dibujar = () => {
@@ -334,18 +408,30 @@ export function crearGlobo(scene) {
     };
     return {
         sp,
-        decir(t) { if (t !== texto) { texto = t; conFuente(dibujar); } },
+        decir(t) { if (t !== texto) { texto = t; nuevo = true; conFuente(dibujar); } },
         get texto() { return texto; },
-        actualizar(dt, visible, x, y, z, camara) {
+        // Último cuadro encajado: { cuadro, rect (NDC), zonas, franja, id, escala, libre } (diagnóstico)
+        get ultimo() { return ultimo; },
+        get alfa() { return alfa; },
+        set sinEvitar(b) { sinEvitar = !!b; nuevo = true; }, // depuración: el comportamiento de antes (solo mide)
+        // ¿Hay lugar libre para el globo con esta cámara? (planos de prueba de la cámara de cine; no cambia nada)
+        probar(cam, x, y, z, zonas, franja = 0.18) {
+            const padre = sp.parent;
+            if (!padre || !zonas || !zonas.length) return { libre: true, solape: 0 };
+            const r = planearGlobo(cam, padre, x, y, z, zonas, franja, null);
+            return { libre: r.libre, solape: r.c.solape, id: r.c.id };
+        },
+        actualizar(dt, visible, x, y, z, camara, zonasFn) {
             const objetivo = visible && texto ? 1 : 0;
             alfa += (objetivo - alfa) * Math.min(1, dt * 5);
             if (Math.abs(alfa - objetivo) < 0.01) alfa = objetivo;
             sp.visible = alfa > 0.01;
-            if (!sp.visible) return;
+            if (!sp.visible) { previo = null; nuevo = true; ultimo = null; return; }
             sp.material.opacity = alfa;
             sp.position.set(x, y, z);
             sp.scale.set(ESCALA[0], ESCALA[1], 1);
             encaje = camara ? [x, y, z] : null;
+            evitar = camara && zonasFn ? zonasFn : null;
             sp.frustumCulled = !encaje; // con encaje se dibuja aunque su punto quede fuera del encuadre
         }
     };
