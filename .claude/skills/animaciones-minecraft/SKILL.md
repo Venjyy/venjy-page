@@ -198,6 +198,27 @@ presenta el video al dueño. Lleva a la skill lo que el subagente diga que falt�
    (fecha · qué · archivos · cómo se verificó). Pon un comentario de cabecera en el módulo nuevo
    explicando qué hace, como los demás archivos.
 
+### Revisor automático: correrlo antes de entregar cualquier escena con globos
+
+```bash
+node .claude/skills/animaciones-minecraft/revisar.mjs --escenas lona,boris --salida $SCRATCH/revisor
+node .claude/skills/animaciones-minecraft/revisar.mjs --escenas todas --salida $SCRATCH/revisor
+```
+
+Recorre cada escena cuadro a cuadro a 15 fps con el reloj manual de `grabar.mjs` (sin capturas) y mide:
+cuadros con globo; solape grave globo-cabeza/pecho (> 0,03); solape globo-globo (> 0,03); globo fuera
+del área segura; medio alto mínimo del globo (< 0,17 falla); cambios de candidata dentro de una línea
+(cualquiera falla); líneas más cortas que `1,0 s + 0,07 s por carácter`. Imprime una tabla y sale con
+código 1 si algo falla, no arranca o hubo errores de página. Un JSON por escena con los datos de cada
+cuadro, más `resumen.json`, queda en `--salida`.
+
+- Claves: `lona`, `boris`… (la conversación venjy y la corta de ese amigo), `iglu` y `cuello`.
+- Tarda ~1 min por escena (`--escenas todas`, unos 20 min). Úsalo con claves para iterar.
+- Es un informe: **no arregla nada**. Lo que marque se corrige a mano y se vuelve a correr.
+- Lo que no mide está en `NO_CUBIERTAS` (al final de `revisar.mjs`). Ahí hay que mirar capturas.
+- Una escena nueva con globos necesita `diag()` (como `escenas-skin.js`) para que el revisor la vea.
+  Las capturas siguen siendo necesarias para la pose: el revisor no mira poses.
+
 ## 3. Lo mínimo que hay que saber del motor
 
 - **Coordenadas**: amigos, Venjys y gatas viven en `vista.grupo`, subido `dy = 48` (`DY`). Sus
