@@ -38,6 +38,12 @@ export class Jugador {
         this.sinVuelo = false;
         this.congelado = false;
         this.vacio = null; // { y, alCaer } cae al vacío bajo esa altura
+        // Ganchos de la supervivencia (en creativo quedan sin uso)
+        this.alAterrizar = null;   // fn(bloquesCaidos) al tocar suelo tras caer
+        this.puedeCorrer = true;   // con poca hambre no se corre
+        this.lento = 1;            // multiplicador de velocidad (comer, tensar el arco, telaraña…)
+        this.empuje = new THREE.Vector3(); // retroceso al recibir un golpe (se disipa solo)
+        this.yMaxAire = null;      // altura más alta desde que dejó el suelo (daño por caída)
 
         document.addEventListener('pointerlockchange', () => {
             this.activo = document.pointerLockElement === this.el;
@@ -99,7 +105,7 @@ export class Jugador {
             // para no caer a través de un suelo que aún no existe.
             return !this.vuela && !this.cargadoEn(x, z);
         }
-        return TIPO[id] === 1 || TIPO[id] === 2;
+        return TIPO[id] === 1 || TIPO[id] === 2 || TIPO[id] === 6;
     }
 
     // ¿Está cargado el chunk que contiene el bloque (x, z)?
@@ -127,15 +133,29 @@ export class Jugador {
         const borde = this.agachado && this.enSuelo && this.choca(p.x, p.y - 0.5, p.z);
         if (!this.choca(p.x + dx, p.y, p.z) && !(borde && !this.choca(p.x + dx, p.y - 0.5, p.z))) p.x += dx; else this.vel.x = 0;
         if (!this.choca(p.x, p.y, p.z + dz) && !(borde && !this.choca(p.x, p.y - 0.5, p.z + dz))) p.z += dz; else this.vel.z = 0;
+        const antes = this.enSuelo;
         this.enSuelo = false;
         if (!this.choca(p.x, p.y + dy, p.z)) p.y += dy;
         else {
             if (dy < 0) {
                 this.enSuelo = true;
                 p.y = Math.floor(p.y + dy) + 1; // apoyar sobre el bloque
+                if (!antes && this.yMaxAire !== null && this.alAterrizar) this.alAterrizar(this.yMaxAire - p.y);
+                this.yMaxAire = null;
             } else p.y = Math.floor(p.y + ALTURA + dy) - ALTURA - 0.001;
             this.vel.y = 0;
         }
+    }
+
+    // ¿Está tocando una escalera de mano? (a la altura de los pies o del cuerpo)
+    enEscalera() {
+        const p = this.pos;
+        return this.mundo.bloque(p.x, p.y + 0.2, p.z) === B.ESCALERA || this.mundo.bloque(p.x, p.y + 1.2, p.z) === B.ESCALERA;
+    }
+
+    enLava() {
+        const p = this.pos;
+        return this.mundo.bloque(p.x, p.y + 0.3, p.z) === B.LAVA || this.mundo.bloque(p.x, p.y + 1.2, p.z) === B.LAVA;
     }
 
     enAgua() {
@@ -164,9 +184,13 @@ export class Jugador {
         const n = Math.hypot(ix, iz);
         if (n > 0) { ix /= n; iz /= n; }
 
-        const agua = !this.vuela && this.enAgua();
+        if (!this.puedeCorrer) this.corre = false;
+        const lava = !this.vuela && this.enLava();
+        const agua = !this.vuela && (this.enAgua() || lava);
+        const escalera = !this.vuela && this.enEscalera();
         let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.agachado ? V_AGACHADO : this.corre ? V_CORRER : V_CAMINAR);
-        if (agua) v *= 0.6;
+        if (agua) v *= lava ? 0.35 : 0.6;
+        v *= this.lento;
 
         // Suavizado de la velocidad horizontal
         const k = this.vuela || !this.enSuelo ? 6 : 14;
@@ -177,9 +201,15 @@ export class Jugador {
         if (this.vuela) {
             const vy = ((t.has('Space') ? 1 : 0) - (t.has('ShiftLeft') ? 1 : 0)) * (this.corre ? 14 : 9);
             this.vel.y += (vy - this.vel.y) * (1 - Math.exp(-8 * dt));
+        } else if (escalera) {
+            // Escalera de mano: Espacio o avanzar contra ella sube; Shift se queda quieto; si no, baja despacio
+            const sube = t.has('Space') || (adelante > 0 && (this.choca(this.pos.x + ix * 0.3, this.pos.y, this.pos.z + iz * 0.3)));
+            this.vel.y = sube ? 2.4 : this.agachado ? 0 : -1.6;
+            this.yMaxAire = null;
         } else if (agua) {
-            this.vel.y += (-2.5 - this.vel.y) * (1 - Math.exp(-3 * dt));
-            if (t.has('Space')) this.vel.y = 4;
+            this.vel.y += ((lava ? -1.2 : -2.5) - this.vel.y) * (1 - Math.exp(-3 * dt));
+            if (t.has('Space')) this.vel.y = lava ? 2.2 : 4;
+            this.yMaxAire = null;
         } else {
             if (this.cargadoEn(this.pos.x, this.pos.z)) this.vel.y -= GRAVEDAD * dt;
             else this.vel.y = 0; // congela la caída mientras el suelo no esté cargado
@@ -187,6 +217,15 @@ export class Jugador {
             if (t.has('Space') && this.enSuelo) { this.vel.y = SALTO; this.enSuelo = false; }
         }
 
+        // Altura máxima en el aire (daño por caída en la supervivencia)
+        if (!this.vuela && !this.enSuelo && !agua && !escalera) this.yMaxAire = Math.max(this.yMaxAire ?? this.pos.y, this.pos.y);
+        if (this.vuela) this.yMaxAire = null;
+        // Retroceso por golpes: se suma al movimiento y se apaga en ~0,3 s
+        if (this.empuje.lengthSq() > 0.0001) {
+            this.vel.x += this.empuje.x; this.vel.z += this.empuje.z;
+            if (this.empuje.y > 0 && this.enSuelo) { this.vel.y = Math.max(this.vel.y, this.empuje.y); this.enSuelo = false; }
+            this.empuje.set(0, 0, 0);
+        }
         const pasos = Math.max(1, Math.ceil(Math.max(Math.abs(this.vel.x), Math.abs(this.vel.y), Math.abs(this.vel.z)) * dt / 0.4));
         for (let i = 0; i < pasos; i++) {
             if (this.vuela && this.noclipVuelo) {

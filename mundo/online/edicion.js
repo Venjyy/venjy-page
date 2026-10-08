@@ -6,6 +6,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { B, BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
 import { ALTO } from '../voxeles.js';
+import { lanzarRayo } from '../rayo.js';
 
 const ALCANCE = 6;
 const REPETIR_S = 0.2; // al mantener el botón
@@ -100,33 +101,8 @@ export function crearEdicion({ mundo, jugador, camara, scene, hud, atlasLienzo, 
         c.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); elegir(i); });
     });
 
-    // ---- Rayo por la grilla de bloques (Amanatides-Woo) ----
-    const dir = new THREE.Vector3();
-    function apuntar() {
-        camara.getWorldDirection(dir);
-        const o = camara.position;
-        let x = Math.floor(o.x), y = Math.floor(o.y), z = Math.floor(o.z);
-        const pasoX = Math.sign(dir.x), pasoY = Math.sign(dir.y), pasoZ = Math.sign(dir.z);
-        const dx = dir.x ? Math.abs(1 / dir.x) : Infinity;
-        const dy = dir.y ? Math.abs(1 / dir.y) : Infinity;
-        const dz = dir.z ? Math.abs(1 / dir.z) : Infinity;
-        let tx = dir.x ? ((pasoX > 0 ? x + 1 - o.x : o.x - x) * dx) : Infinity;
-        let ty = dir.y ? ((pasoY > 0 ? y + 1 - o.y : o.y - y) * dy) : Infinity;
-        let tz = dir.z ? ((pasoZ > 0 ? z + 1 - o.z : o.z - z) * dz) : Infinity;
-        let previo = null, dist = 0;
-        while (dist <= ALCANCE) {
-            if (y < 0) return null;
-            const id = y >= ALTO ? 0 : mundo.bloque(x, y, z);
-            if (id === -1) return null; // chunk sin cargar
-            if (id > 0 && (TIPO[id] === 1 || TIPO[id] === 2 || TIPO[id] === 4)) return { x, y, z, id, previo };
-            previo = [x, y, z];
-            if (tx < ty && tx < tz) { dist = tx; tx += dx; x += pasoX; }
-            else if (ty < tz) { dist = ty; ty += dy; y += pasoY; }
-            else { dist = tz; tz += dz; z += pasoZ; }
-            if (y >= ALTO && pasoY >= 0) return null;
-        }
-        return null;
-    }
+    // ---- Rayo por la grilla de bloques (rayo.js) ----
+    const apuntar = () => lanzarRayo(camara, mundo, ALCANCE, (id, tipo) => tipo === 1 || tipo === 2 || tipo === 4);
 
     // ¿El bloque (x,y,z) se cruzaría con el jugador? (no se pone un bloque dentro de uno mismo)
     function chocaConJugador(x, y, z) {

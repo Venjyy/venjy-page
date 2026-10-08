@@ -40,6 +40,7 @@ function aplicarIdioma() {
     });
     const volver = document.getElementById('volver');
     volver.href = `index.html?lang=${idioma}`;
+    document.getElementById('ir-supervivencia').href = `supervivencia.html?lang=${idioma}`;
 }
 aplicarIdioma();
 

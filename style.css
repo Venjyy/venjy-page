@@ -1407,8 +1407,16 @@ button.marco:hover img {
     border-top: 6px solid #000;
 }
 
-.boton-portal {
+.portales {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
     margin-bottom: 24px;
+}
+
+.boton-portal {
+    margin-bottom: 0;
     max-width: 100%;
     white-space: normal;
     text-align: left;

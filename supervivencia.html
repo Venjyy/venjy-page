@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venjy · Supervivencia</title>
+    <link rel="preload" href="font/pixelcraft.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="mundo/mundo.css">
+    <link rel="stylesheet" href="mundo/supervivencia/supervivencia.css">
+</head>
+<body class="supervivencia">
+    <canvas id="juego"></canvas>
+
+    <div id="hud" hidden>
+        <div class="mira" aria-hidden="true"></div>
+        <div class="datos">
+            <span id="coords"></span>
+            <span id="fps"></span>
+        </div>
+        <div id="mensajes" class="mensajes" aria-live="polite"></div>
+        <div id="barras" class="barras"></div>
+        <div id="barra-rapida" class="barra-rapida" role="listbox"></div>
+        <div id="nombre-objeto" class="nombre-objeto" hidden></div>
+    </div>
+
+    <!-- Pantallas de inventario, mesa, horno y cofre (las arma ui-inventario.js) -->
+    <div id="ventana" class="ventana" hidden></div>
+
+    <main id="inicio">
+        <!-- Menú de mundos -->
+        <section class="panel" id="menu-mundos">
+            <h1 data-es="Supervivencia" data-en="Survival">Supervivencia</h1>
+            <p class="sub" data-es="El mapa del portafolio, ahora para sobrevivir. Ayuda a los amigos y enfrenta a los jefes."
+               data-en="The portfolio map, now to survive in. Help your friends and face the bosses.">El mapa del portafolio, ahora para sobrevivir. Ayuda a los amigos y enfrenta a los jefes.</p>
+            <p id="carga" class="carga" data-es="Cargando…" data-en="Loading…">Cargando…</p>
+            <ul id="lista-mundos" class="lista-mundos" hidden></ul>
+            <button id="nuevo-mundo" class="boton" type="button" hidden data-es="Crear mundo nuevo" data-en="Create new world">Crear mundo nuevo</button>
+            <div class="fila-botones">
+                <button id="importar" class="boton secundario" type="button" hidden data-es="Importar partida" data-en="Import world">Importar partida</button>
+                <input id="archivo-importar" type="file" accept=".venjy,application/octet-stream,application/gzip" hidden>
+            </div>
+            <a id="ir-creativo" class="boton secundario" href="mundo.html" data-es="Modo creativo" data-en="Creative mode">Modo creativo</a>
+            <a id="volver" class="boton secundario" href="index.html" data-es="Volver al portafolio" data-en="Back to portfolio">Volver al portafolio</a>
+        </section>
+
+        <!-- Crear mundo -->
+        <section class="panel" id="crear-mundo" hidden>
+            <h1 data-es="Mundo nuevo" data-en="New world">Mundo nuevo</h1>
+            <label class="campo">
+                <span data-es="Nombre del mundo" data-en="World name">Nombre del mundo</span>
+                <input id="nombre-mundo" type="text" maxlength="24" autocomplete="off">
+            </label>
+            <fieldset class="campo dificultades">
+                <legend data-es="Dificultad" data-en="Difficulty">Dificultad</legend>
+                <label><input type="radio" name="dificultad" value="0"> <span data-es="Pacífico" data-en="Peaceful">Pacífico</span></label>
+                <label><input type="radio" name="dificultad" value="1"> <span data-es="Fácil" data-en="Easy">Fácil</span></label>
+                <label><input type="radio" name="dificultad" value="2" checked> <span data-es="Normal" data-en="Normal">Normal</span></label>
+                <label><input type="radio" name="dificultad" value="3"> <span data-es="Difícil" data-en="Hard">Difícil</span></label>
+            </fieldset>
+            <button id="crear" class="boton" type="button" data-es="Crear y jugar" data-en="Create and play">Crear y jugar</button>
+            <button id="cancelar-crear" class="boton secundario" type="button" data-es="Cancelar" data-en="Cancel">Cancelar</button>
+        </section>
+
+        <!-- Pausa -->
+        <section class="panel" id="pausa" hidden>
+            <h1 data-es="Juego en pausa" data-en="Game paused">Juego en pausa</h1>
+            <button id="continuar" class="boton" type="button" data-es="Continuar" data-en="Resume">Continuar</button>
+            <div class="ajustes-pausa">
+                <label><span data-es="Distancia" data-en="Render distance">Distancia</span> <input id="aj-distancia" type="range" min="4" max="14" step="1"> <b id="aj-distancia-v"></b></label>
+                <label><span data-es="Campo de visión" data-en="Field of view">Campo de visión</span> <input id="aj-fov" type="range" min="55" max="100" step="1"> <b id="aj-fov-v"></b></label>
+                <label><span data-es="Sensibilidad" data-en="Sensitivity">Sensibilidad</span> <input id="aj-sens" type="range" min="5" max="60" step="1"> <b id="aj-sens-v"></b></label>
+                <label class="opcion"><input id="aj-sonido" type="checkbox"> <span data-es="Sonidos del mundo" data-en="World sounds">Sonidos del mundo</span></label>
+            </div>
+            <button id="guardar" class="boton secundario" type="button" data-es="Guardar" data-en="Save">Guardar</button>
+            <button id="salir-menu" class="boton secundario" type="button" data-es="Guardar y salir al menú" data-en="Save and quit to menu">Guardar y salir al menú</button>
+            <ul class="controles">
+                <li><b>W A S D</b> <span data-es="Moverte" data-en="Move">Moverte</span></li>
+                <li><b data-es="Clic izquierdo" data-en="Left click">Clic izquierdo</b> <span data-es="Romper / atacar" data-en="Break / attack">Romper / atacar</span></li>
+                <li><b data-es="Clic derecho" data-en="Right click">Clic derecho</b> <span data-es="Poner / usar / comer / hablar" data-en="Place / use / eat / talk">Poner / usar / comer / hablar</span></li>
+                <li><b>E</b> <span data-es="Inventario" data-en="Inventory">Inventario</span></li>
+                <li><b>Q</b> <span data-es="Soltar objeto" data-en="Drop item">Soltar objeto</span></li>
+                <li><b>F</b> <span data-es="Cambiar de mano" data-en="Swap hands">Cambiar de mano</span></li>
+                <li><b data-es="1-9 / rueda" data-en="1-9 / wheel">1-9 / rueda</b> <span data-es="Elegir objeto" data-en="Pick item">Elegir objeto</span></li>
+                <li><b>R / Ctrl</b> <span data-es="Correr" data-en="Sprint">Correr</span></li>
+                <li><b>Shift</b> <span data-es="Agacharte" data-en="Sneak">Agacharte</span></li>
+            </ul>
+        </section>
+
+        <!-- Muerte -->
+        <section class="panel muerte" id="muerte" hidden>
+            <h1 data-es="¡Has muerto!" data-en="You died!">¡Has muerto!</h1>
+            <p id="causa-muerte" class="sub"></p>
+            <button id="reaparecer" class="boton" type="button" data-es="Reaparecer" data-en="Respawn">Reaparecer</button>
+            <button id="salir-muerte" class="boton secundario" type="button" data-es="Salir al menú" data-en="Quit to menu">Salir al menú</button>
+        </section>
+    </main>
+
+    <script type="module" src="mundo/supervivencia/main.js"></script>
+</body>
+</html>

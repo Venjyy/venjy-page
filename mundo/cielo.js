@@ -218,17 +218,21 @@ export function crearCielo(scene, anchoMundo, fondoMundo, materiales) {
         hora: HORA_INICIAL,
         pausado: false,
         // Fija la hora (0..1: 0 medianoche, 0.25 amanecer, 0.5 mediodía, 0.75 atardecer)
-        fijarHora(h) {
+        // `dia` (opcional): número de días transcurridos, para la fase de la luna (lo usa la supervivencia)
+        fijarHora(h, dia) {
             this.hora = ((h % 1) + 1) % 1;
+            if (dia !== undefined) diaActual = dia + this.hora;
             aplicar(this.hora);
         },
+        // nubesLibres: con el ciclo pausado (la supervivencia maneja su propio reloj) las nubes siguen andando
+        nubesLibres: false,
         actualizar(camara, dt) {
             if (!this.pausado) {
                 this.hora = (this.hora + dt / DURACION_DIA) % 1;
                 desfaseNubes = (desfaseNubes + VELOCIDAD_NUBES * dt) % nubes.userData.periodo;
                 diaActual += dt / DURACION_DIA;
                 aplicar(this.hora);
-            }
+            } else if (this.nubesLibres) desfaseNubes = (desfaseNubes + VELOCIDAD_NUBES * dt) % nubes.userData.periodo;
             const cp = camara.position;
             domo.position.copy(cp);
             estrellas.position.copy(cp);
