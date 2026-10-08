@@ -99,16 +99,17 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.0, alto: 1.4, orbita: -0.08, dolly: -0.3 },
         { nombre: 'picado', ang: Math.PI / 2 + 0.3, dist: 3.8, alto: 2.8, orbita: 0.04, dolly: -0.4 }
     ];
-    // Planos del trío (ronda-iglu.js, planos: 'trio'): el ancla es el punto medio entre Lalo y Moisés;
-    // ang es relativo a la línea jugador → amigo (como en PLANOS_ESCENA). Se eligieron con el mapa de planta del iglú (referencia/camara.md,
-    // «Método para diseñar planos»): sin bloques ni personas en la línea a cada cabeza (`visibles`) y sin
-    // que la cámara quede dentro de un bloque. Dentro del iglú no hay un punto desde donde se vean las caras
-    // de los tres durante toda la ronda: cada plano elige el lado que más caras da (Lalo y Moisés miran al
-    // jugador; el jugador mira al centro). Tres puntos distintos: sur, oeste y rincón NE (contrapicado).
+    // Planos del trío (ronda-iglu.js, planos: 'trio'). El ancla es el punto medio entre Lalo y Moisés, y el
+    // jugador queda al centro, un bloque más al norte: los tres miran al túnel (sur). `ang` es relativo a la
+    // línea ancla → jugador (la base), así que −π = hacia el sur. Solo hay planos por el eje: las paredes del
+    // túnel (1 bloque de ancho, desde z 136) tapan la línea a Lalo y a Moisés, así que la cámara queda dentro
+    // de la cúpula (dist ≤ 3,8 desde el centro del trío: unos 2 bloques libres hasta el más cercano). Los planos
+    // varían en distancia y altura. Con `visibles`, cada plano se descarta si tapa una cabeza o deja la cámara
+    // dentro de un bloque.
     const PLANOS_TRIO = [
-        { nombre: 'de frente, desde el sur', ang: -2.982, dist: 2.69, alto: 1.6, orbita: 0.04, dolly: -0.2 },
-        { nombre: 'de lado, Lalo y Moisés', ang: 0.974, dist: 2.26, alto: 1.6, orbita: -0.05, dolly: -0.2 },
-        { nombre: 'contrapicado de los tres', ang: -1.018, dist: 2.11, alto: 0.85, orbita: -0.06, dolly: -0.2 }
+        { nombre: 'general, de frente', ang: -Math.PI, dist: 3.8, alto: 1.9, orbita: 0.03, dolly: -0.15 },
+        { nombre: 'medio, de frente', ang: -Math.PI, dist: 3.4, alto: 1.6, orbita: -0.03, dolly: -0.15 },
+        { nombre: 'contrapicado de los tres', ang: -Math.PI, dist: 3.8, alto: 0.85, orbita: -0.05, dolly: -0.15 }
     ];
     const DURACION = 4.2;
     // visibles (opcional): actores cuyas cabezas deben verse desde la cámara; el jugador se añade solo.
