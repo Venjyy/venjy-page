@@ -450,7 +450,8 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
         n.primera = orientacion === 'v' ? DICHOS.inicioVertical : DICHOS.inicio[0];
     }
     // Zonas del portafolio
-    enZona('casa', A.lee, { alCrear: n => { n.libro = libro(); n.libro.position.set(0, 1.12, 0.42); n.p.cuerpo.add(n.libro); } });
+    // El libro va en las manos: con los brazos a -1,15 rad las manos quedan ~0,7 por delante del cuerpo
+    enZona('casa', A.lee, { alCrear: n => { n.libro = libro(); n.libro.position.set(0, 1.1, 0.7); n.p.cuerpo.add(n.libro); } });
     enZona('registro', A.presenta, { alCrear: n => { n.yawEdificio = Math.PI; } });
     enZona('mina', A.pica, { yawFijo: Math.PI / 2, alCrear: n => { const pc = pico(); pc.position.set(0, -0.68, 0.05); n.p.brazoD.add(pc); } });
     enZona('aldea', A.construye, { yawFijo: -Math.PI / 2, alCrear: n => { const m = martillo(); m.position.set(0, -0.7, 0.05); m.rotation.x = 1.4; n.p.brazoD.add(m); } });
