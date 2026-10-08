@@ -171,7 +171,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     const vBoca = new THREE.Vector3();
     function boca(n) {
         n.p.g.updateMatrixWorld(true);
-        return n.p.cabeza.localToWorld(vBoca.set(0, -0.08, 0.3));
+        return scene.worldToLocal(n.p.cabeza.localToWorld(vBoca.set(0, -0.08, 0.3))); // humo: coordenadas de `scene` (en supervivencia es el grupo subido)
     }
 
     // ---------------------------------------------------------
@@ -389,7 +389,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         bongO.agua.position.y = 0.07 + (aspira ? Math.sin(t * 40) * 0.01 : 0);
         if (aspira && !n.burbujeo) { n.burbujeo = true; burbujas(dJ, 2.2); }
         if (!aspira) n.burbujeo = false;
-        if (aspira && Math.random() < dt * 6) { p.g.updateMatrixWorld(true); bongO.g.localToWorld(vTmp.set(0, 0.6, 0)); emitir(vTmp.x, vTmp.y, vTmp.z, { s: 0.1, dur: 0.8, vy: 0.2 }); }
+        if (aspira && Math.random() < dt * 6) { p.g.updateMatrixWorld(true); scene.worldToLocal(bongO.g.localToWorld(vTmp.set(0, 0.6, 0))); emitir(vTmp.x, vTmp.y, vTmp.z, { s: 0.1, dur: 0.8, vy: 0.2 }); }
         return { aguanta: c >= 4.6 && c < 6, exhala: c >= 6 && c < 7.6, inicioExhala: c - dt < 6 && c >= 6 };
     }
     // Fumar el pito: 0-1 a la boca · 1-2.4 fuma · 2.4-3.2 lo baja · 3.4-5 bota el humo
@@ -427,7 +427,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             if (n.humito <= 0) {
                 n.humito = 0.45;
                 p.g.updateMatrixWorld(true);
-                pitoO.brasa.getWorldPosition(vTmp);
+                scene.worldToLocal(pitoO.brasa.getWorldPosition(vTmp));
                 emitir(vTmp.x, vTmp.y + 0.03, vTmp.z, { s: 0.07, dur: 1.6, vy: 0.3, dispersion: 0.04 });
             }
         }

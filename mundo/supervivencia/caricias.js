@@ -260,9 +260,8 @@ export function crearCaricias({ grupo, dy, mundo, jugador, camaras, gatas, hud, 
         return true;
     }
 
-    // Tecla G (no se usa en otra parte del juego) y Esc para saltar
+    // Esc para saltar. La tecla G la reparte main.js (caricias.intentar() o la ronda del iglú)
     document.addEventListener('keydown', e => {
-        if (e.code === 'KeyG' && !e.repeat && intentar()) e.preventDefault();
         if (estado && e.code === 'Escape' && !e.repeat) { e.preventDefault(); terminar(); }
     });
 

@@ -462,3 +462,9 @@ body.con-tactil .mision-activa { top: 224px; }
 .consola input:focus { border-color: #fff; }
 .tactil-boton.sv-comando { width: 64px; height: 40px; font-size: 0.9rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(222px + env(safe-area-inset-top, 0px)); }
 body.con-tactil .mision-activa { top: 270px; }
+
+/* Ronda del iglú (ronda-iglu.js): SENTARSE / PARARSE / CAM, abajo al centro */
+.ronda-botones { position: fixed; bottom: calc(11vh + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 56; display: flex; gap: 8px; pointer-events: none; }
+.ronda-botones .boton { display: none; width: auto; margin: 0; padding: 8px 14px; font-size: 0.9rem; pointer-events: auto; }
+body.en-iglu .ronda-sentar, body.en-ronda .ronda-pararse, body.en-ronda .ronda-cam { display: block; }
+body.en-ronda-fp #hud { visibility: hidden; }

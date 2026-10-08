@@ -99,6 +99,15 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.0, alto: 1.4, orbita: -0.08, dolly: -0.3 },
         { nombre: 'picado', ang: Math.PI / 2 + 0.3, dist: 3.8, alto: 2.8, orbita: 0.04, dolly: -0.4 }
     ];
+    // Ronda del iglú (ronda-iglu.js, planos: 'trio'): el ancla es el punto medio entre Lalo y Moisés;
+    // ang 0 = detrás del jugador, π = desde el túnel (el lado de los dos), ±0,7 = sobre el hombro de cada uno
+    const PLANOS_TRIO = [
+        { nombre: 'general desde el túnel', ang: Math.PI, dist: 4.4, alto: 1.9, orbita: 0.1, dolly: -0.5 },
+        { nombre: 'sobre tu hombro', ang: 0.55, dist: 3.4, alto: 2.05, orbita: 0.04, dolly: -0.2 },
+        { nombre: 'sobre el hombro de Lalo', ang: Math.PI + 1.0, dist: 2.3, alto: 1.8, orbita: 0.05, dolly: -0.2 },
+        { nombre: 'contrapicado de los tres', ang: -Math.PI / 2, dist: 3.2, alto: 0.85, orbita: -0.08, dolly: -0.2 },
+        { nombre: 'sobre el hombro de Moisés', ang: Math.PI - 1.0, dist: 2.3, alto: 1.8, orbita: -0.05, dolly: -0.2 }
+    ];
     const DURACION = 4.2;
     const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null };
     const fundidoEl = document.createElement('div');
@@ -109,7 +118,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const amigo = new THREE.Vector3(), yo = new THREE.Vector3(), objetivo = new THREE.Vector3(), cam = new THREE.Vector3(), centro = new THREE.Vector3();
     const derecha = new THREE.Vector3(), mira = new THREE.Vector3();
     // Posición del plano k en el instante u (0..1); null si queda tapado
-    const planos = () => (cine.escena ? (cine.planos === 'gata' ? PLANOS_GATA : PLANOS_ESCENA) : PLANOS);
+    const planos = () => (cine.escena ? (cine.planos === 'gata' ? PLANOS_GATA : cine.planos === 'trio' ? PLANOS_TRIO : PLANOS_ESCENA) : PLANOS);
     function calcular(k, u) {
         const pl = planos()[k];
         const n = cine.n, esc = n.escala || 1;

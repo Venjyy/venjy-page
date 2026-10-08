@@ -47,6 +47,7 @@ import { crearEditorSkin, cargarSkin, coloresMano, BASES } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
+import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { rayoCaja } from '../fisica.js';
@@ -445,6 +446,14 @@ async function arrancar(guardado) {
         bloquear: bloquearEscena,
         liberar: liberarEscena
     });
+    // Ronda del iglú: G (o SENTARSE) junto al cojín; con ella, F5 o CAM cambian a primera persona
+    const ronda = crearRondaIglu({
+        grupo: vista.grupo, dy: DY, jugador, camara, camaras, misiones, amigos, escenas, terreno, idioma, lienzo, hud,
+        skin: () => skinActual,
+        puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
+        bloquear: bloquearEscena,
+        liberar: liberarEscena
+    });
     // Música de fondo y temas de los amigos
     const musica = crearMusica();
     const personasMusica = () => {
@@ -524,7 +533,12 @@ async function arrancar(guardado) {
             else if (jugador.activo && !vida.muerto) { ventanas.abrir('inventario'); e.preventDefault(); }
         } else if (e.code === 'Escape' && ventanasBase.abierta) { ventanasBase.cerrar(true); e.preventDefault(); }
         if ((e.code === 'Escape' || e.code === 'KeyE') && !capaPanel.hidden && !e.repeat) { cerrarPanel(); e.preventDefault(); }
-        if (e.code === 'F5' && !e.repeat && jugador.activo) { camaras.cambiarVista(); e.preventDefault(); }
+        if (e.code === 'F5' && !e.repeat && (jugador.activo || ronda.activa)) {
+            if (ronda.activa) ronda.alternarVista(); else camaras.cambiarVista();
+            e.preventDefault();
+        }
+        // G reparte según el contexto: acariciar a una gata si está cerca; si no, sentarse en el iglú
+        if (e.code === 'KeyG' && !e.repeat && (caricias.intentar() || ronda.intentar())) e.preventDefault();
         if ((e.code === 'KeyT' || e.code === 'Slash') && !e.repeat && jugador.activo && !vida.muerto) { e.preventDefault(); consola.abrir(e.code === 'Slash' ? '/' : ''); }
     });
     lienzo.addEventListener('click', () => { if (!jugador.activo && !uiAbierta && !vida.muerto && $('inicio').hidden) entrar(); });
@@ -566,7 +580,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas, caricias,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas, caricias, ronda,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -608,6 +622,7 @@ async function arrancar(guardado) {
         escenas.actualizar(corre ? dt : 0);
         caricias.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
+        ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
             const cueva = jugador.pos.y < DY + 8 && l >= 0 && (l >> 4) < 6;
