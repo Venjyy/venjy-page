@@ -8,13 +8,14 @@ const TEXTOS = {
     en: { romper: 'BREAK', usar: 'USE', inventario: 'INV', soltar: 'DROP' }
 };
 
-export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma = 'es' }) {
+export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma = 'es', camaras }) {
     const t = TEXTOS[idioma] || TEXTOS.es;
     const botones = [
         tactil.agregarAccion('sv-romper', t.romper, () => minado.abajo(0), () => minado.arriba(0)),
         tactil.agregarAccion('sv-usar', t.usar, () => minado.abajo(2), () => minado.arriba(2)),
         tactil.agregarAccion('sv-inventario', t.inventario, () => ventanas.abrir('inventario')),
-        tactil.agregarAccion('sv-soltar', t.soltar, () => minado.soltarEnMano(false))
+        tactil.agregarAccion('sv-soltar', t.soltar, () => minado.soltarEnMano(false)),
+        tactil.agregarAccion('sv-camara', 'CAM', () => camaras && camaras.cambiarVista())
     ];
     for (const b of botones) b.hidden = false;
     document.body.classList.add('con-tactil');

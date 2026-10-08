@@ -104,7 +104,7 @@ export function crearMisiones(ctx) {
         let e = especiales.get(clave);
         if (!e) { e = { globo: crearGlobo(grupo), t: 0 }; especiales.set(clave, e); }
         e.globo.decir(texto);
-        e.t = 9;
+        e.t = Math.max(7, Math.min(14, texto.length / 12)); // tiempo de lectura
     }
 
     // ---- Marcadores «!» y «?» ----
@@ -168,7 +168,9 @@ export function crearMisiones(ctx) {
             fila.appendChild(b);
         }
         el.appendChild(fila);
-        abrirPanel(el);
+        // La cámara de cine encuadra al amigo mientras el panel está abierto
+        const p = personas().find(x => x.clave === clave);
+        abrirPanel(el, { enfocar: p ? p.n : null });
         const primero = fila.querySelector('button');
         if (primero) primero.focus();
     }
@@ -216,10 +218,10 @@ export function crearMisiones(ctx) {
         estado.activa = null; estado.progreso = 0; estado.noche = null;
         dar(m.premio);
         sonidos.nivel();
-        const clave = m.amigo;
-        decirEspecial(clave, L(m.completada));
-        // Panel con el diálogo único
-        panel(clave, [tituloMision(m, tx().mision), parrafo(L(m.completada), 'dialogo'), listaPremio(m.premio)], [[tx().cerrar, () => cerrarPanel()]]);
+        // El agradecimiento no es un panel: el amigo lo dice en su globo, como en sus conversaciones
+        cerrarPanel();
+        decirEspecial(m.amigo, L(m.completada));
+        hud.mensaje(`${tx().recibes} ${nombrePremio(m.premio)}`, 5);
         ctx.alCompletar && ctx.alCompletar(m);
     }
 

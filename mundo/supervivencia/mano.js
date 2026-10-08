@@ -129,6 +129,11 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
     const tinte = new THREE.Color();
     const PIEL = new THREE.Color(0xe8c4a8), MANGA = new THREE.Color(0x3f8a3a);
     return {
+        // Colores del brazo según la skin (piel y manga)
+        ponerColores(piel, manga) {
+            PIEL.setRGB(...piel.map(v => Math.pow(v / 255, 2.2)));
+            MANGA.setRGB(...manga.map(v => Math.pow(v / 255, 2.2)));
+        },
         // Golpe (romper, atacar, poner, usar)
         golpear() { if (golpe <= 0 || golpe > 0.5) golpe = 0.001; },
         actualizar(dt) {

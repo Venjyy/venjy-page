@@ -43,6 +43,8 @@ import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
+import { crearEditorSkin, cargarSkin, coloresMano } from './skin.js';
+import { crearCamaras } from './camaras.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 
@@ -129,7 +131,7 @@ const guardarAjustes = () => { try { localStorage.setItem(AJUSTES_CLAVE, JSON.st
 // Menú de mundos
 // ---------------------------------------------------------
 const $ = id => document.getElementById(id);
-const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte'];
+const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin'];
 function mostrar(id) {
     $('inicio').hidden = !id;
     for (const p of pantallas) $(p).hidden = p !== id;
@@ -205,6 +207,21 @@ $('archivo-importar').addEventListener('change', async e => {
     if (!f) return;
     try { await importarMundo(f); pintarMenu(); } catch (err) { alert(err.message); }
 });
+
+// ---------------------------------------------------------
+// Editor de skin (desde el menú o desde la pausa)
+// ---------------------------------------------------------
+let juego = null, editor = null;
+function abrirEditorSkin(volver) {
+    mostrar('pantalla-skin');
+    if (editor) editor.destruir();
+    editor = crearEditorSkin({
+        contenedor: $('pantalla-skin'), idioma,
+        alGuardar: d => { if (juego) juego.ponerSkin(d); },
+        alVolver: () => { editor.destruir(); editor = null; if (volver === 'pausa') mostrar('pausa'); else pintarMenu(); }
+    });
+}
+$('ir-skin').addEventListener('click', () => abrirEditorSkin('menu'));
 
 async function jugar(id) {
     const m = await cargarMundo(id);
@@ -289,8 +306,9 @@ async function arrancar(guardado) {
     capaPanel.className = 'capa-mision';
     capaPanel.hidden = true;
     document.body.appendChild(capaPanel);
-    function abrirPanel(el) {
+    function abrirPanel(el, op = {}) {
         uiAbierta = true;
+        if (op.enfocar && camaras) camaras.iniciarCine(op.enfocar);
         jugador.teclas.clear();
         if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
         capaPanel.textContent = '';
@@ -302,6 +320,7 @@ async function arrancar(guardado) {
         capaPanel.hidden = true;
         capaPanel.textContent = '';
         uiAbierta = false;
+        if (camaras) camaras.terminarCine();
         if (!vida.muerto) entrar();
     }
     const ventanas = {
@@ -387,6 +406,12 @@ async function arrancar(guardado) {
     minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
     const mano = crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, combate, tinteMundo: materiales.solido.color });
     minado.alGesto = () => mano.golpear();
+    // Skin, tercera persona (F5) y cámara de cine con los amigos
+    const skinInicial = cargarSkin();
+    const camaras = crearCamaras({ scene, camara, mundo, jugador, skin: skinInicial, tinteMundo: materiales.solido.color, dy: DY });
+    const ponerSkin = d => { camaras.ponerSkin(d); const c = coloresMano(d); mano.ponerColores(c.piel, c.manga); };
+    ponerSkin(skinInicial);
+    juego = { ponerSkin };
     minado.dormir = (x, y, z) => {
         if (!dia.puedeDormir) return tx().noDormir;
         if (enemigos.cerca(jugador.pos.x, jugador.pos.y, jugador.pos.z)) return tx().monstruos;
@@ -442,7 +467,7 @@ async function arrancar(guardado) {
     jugador.alCambiarActivo = alActivo;
     const tactil = iniciarTactil(jugador, { alEntrar: alActivo });
     const entrar = () => (tactil ? tactil.activar() : pedirPuntero());
-    if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma });
+    if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma, camaras });
 
     document.addEventListener('keydown', e => {
         if (e.code === 'KeyE' && !e.repeat) {
@@ -450,11 +475,13 @@ async function arrancar(guardado) {
             else if (jugador.activo && !vida.muerto) { ventanas.abrir('inventario'); e.preventDefault(); }
         } else if (e.code === 'Escape' && ventanasBase.abierta) { ventanasBase.cerrar(true); e.preventDefault(); }
         if ((e.code === 'Escape' || e.code === 'KeyE') && !capaPanel.hidden && !e.repeat) { cerrarPanel(); e.preventDefault(); }
+        if (e.code === 'F5' && !e.repeat && jugador.activo) { camaras.cambiarVista(); e.preventDefault(); }
     });
     lienzo.addEventListener('click', () => { if (!jugador.activo && !uiAbierta && !vida.muerto && $('inicio').hidden) entrar(); });
 
     $('continuar').addEventListener('click', () => entrar());
     $('guardar').addEventListener('click', () => guardarYa(true));
+    $('cambiar-skin').addEventListener('click', () => abrirEditorSkin('pausa'));
     $('salir-menu').addEventListener('click', async () => { await guardarYa(); location.reload(); });
     $('salir-muerte').addEventListener('click', async () => { vida.reaparecer(); jugador.colocar(spawnMundo.x, spawnMundo.y, spawnMundo.z); await guardarYa(); location.reload(); });
     $('reaparecer').addEventListener('click', () => {
@@ -487,7 +514,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -526,6 +553,7 @@ async function arrancar(guardado) {
             particulas.actualizar(dt);
             mano.actualizar(dt);
         } else jugador.actualizar(0);
+        camaras.actualizar(dt);
         vista.sincronizar();
         cielo.actualizar(camara, corre ? dt : 0);
         const dtC = corre ? dt : 0;
@@ -543,7 +571,7 @@ async function arrancar(guardado) {
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
         renderer.render(scene, camara);
-        if (!vida.muerto && !uiAbierta) mano.dibujar();
+        if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine) mano.dibujar();
 
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {

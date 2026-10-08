@@ -35,6 +35,7 @@
             <p id="carga" class="carga" data-es="Cargando…" data-en="Loading…">Cargando…</p>
             <ul id="lista-mundos" class="lista-mundos" hidden></ul>
             <button id="nuevo-mundo" class="boton" type="button" hidden data-es="Crear mundo nuevo" data-en="Create new world">Crear mundo nuevo</button>
+            <button id="ir-skin" class="boton secundario" type="button" data-es="Mi skin" data-en="My skin">Mi skin</button>
             <div class="fila-botones">
                 <button id="importar" class="boton secundario" type="button" hidden data-es="Importar partida" data-en="Import world">Importar partida</button>
                 <input id="archivo-importar" type="file" accept=".venjy,application/octet-stream,application/gzip" hidden>
@@ -71,6 +72,7 @@
                 <label><span data-es="Sensibilidad" data-en="Sensitivity">Sensibilidad</span> <input id="aj-sens" type="range" min="5" max="60" step="1"> <b id="aj-sens-v"></b></label>
                 <label class="opcion"><input id="aj-sonido" type="checkbox"> <span data-es="Sonidos del mundo" data-en="World sounds">Sonidos del mundo</span></label>
             </div>
+            <button id="cambiar-skin" class="boton secundario" type="button" data-es="Cambiar skin" data-en="Change skin">Cambiar skin</button>
             <button id="guardar" class="boton secundario" type="button" data-es="Guardar" data-en="Save">Guardar</button>
             <button id="salir-menu" class="boton secundario" type="button" data-es="Guardar y salir al menú" data-en="Save and quit to menu">Guardar y salir al menú</button>
             <ul class="controles">
@@ -80,11 +82,15 @@
                 <li><b>E</b> <span data-es="Inventario" data-en="Inventory">Inventario</span></li>
                 <li><b>Q</b> <span data-es="Soltar objeto" data-en="Drop item">Soltar objeto</span></li>
                 <li><b>F</b> <span data-es="Cambiar de mano" data-en="Swap hands">Cambiar de mano</span></li>
+                <li><b>F5</b> <span data-es="Cambiar de cámara (tercera persona)" data-en="Switch camera (third person)">Cambiar de cámara (tercera persona)</span></li>
                 <li><b data-es="1-9 / rueda" data-en="1-9 / wheel">1-9 / rueda</b> <span data-es="Elegir objeto" data-en="Pick item">Elegir objeto</span></li>
                 <li><b>R / Ctrl</b> <span data-es="Correr" data-en="Sprint">Correr</span></li>
                 <li><b>Shift</b> <span data-es="Agacharte" data-en="Sneak">Agacharte</span></li>
             </ul>
         </section>
+
+        <!-- Editor de skin (lo arma mundo/supervivencia/skin.js) -->
+        <section class="panel panel-skin" id="pantalla-skin" hidden></section>
 
         <!-- Muerte -->
         <section class="panel muerte" id="muerte" hidden>

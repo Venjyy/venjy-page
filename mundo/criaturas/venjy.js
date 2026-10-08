@@ -13,7 +13,7 @@ import {
 } from './cuerpo.js';
 import { pielDe, agregarExtras } from './pieles.js';
 
-const VENJY = {
+export const VENJY = {
     piel: [240, 212, 192], pelo: { color: [56, 34, 22], estilo: 'rulos' }, ojos: [74, 50, 30],
     barba: true, barbaColor: [138, 70, 40], lentes: true, // barba pelirroja, no tan encendida
     ropa: { tipo: 'poleron', color: [54, 126, 70] }, pantalon: [56, 80, 124], zapatillas: 'blancas'

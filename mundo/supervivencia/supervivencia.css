@@ -409,3 +409,36 @@ body.con-tactil .mision-activa { top: 182px; left: 12px; right: auto; }
 .creditos ul { list-style: none; padding: 0; line-height: 1.8; }
 .creditos li b { font-weight: normal; color: var(--amarillo); }
 @keyframes subir { from { transform: translateY(min(62vh, 460px)); } to { transform: translateY(0); } }
+
+/* ---------- Editor de skin ---------- */
+.panel.panel-skin { width: min(760px, 100%); }
+.editor-skin { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: center; }
+.vista-skin {
+    width: 260px; height: 340px; max-width: 100%;
+    background: radial-gradient(circle at 50% 70%, #3c5a34, #1b2618);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 #557a49, inset -3px -3px 0 #0c140a;
+    cursor: grab; touch-action: none; image-rendering: pixelated;
+}
+.campos-skin { flex: 1 1 300px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; text-align: left; }
+.campo-skin { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: rgb(0 0 0 / 0.35); border: 2px solid #000; color: var(--gris); font-size: 0.85rem; }
+.campo-skin[hidden] { display: none; }
+.campo-skin select, .campo-skin input[type="color"] { width: 100%; font: inherit; color: var(--blanco); background: #000; border: 2px solid #a0a0a0; min-height: 30px; }
+.campo-skin input[type="checkbox"] { width: 20px; height: 20px; accent-color: #7d8cc4; }
+.campo-skin:first-child { grid-column: 1 / -1; }
+.estado-skin { min-height: 1.4em; margin: 6px 0; color: #7f7; }
+
+/* ---------- Escena de cine al hablar con un amigo ---------- */
+.franja-cine { position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 54; pointer-events: none; transition: height 0.4s ease; }
+.franja-cine.arriba { top: 0; } .franja-cine.abajo { bottom: 0; }
+body.en-cine .franja-cine { height: 9vh; }
+.fundido-cine { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 54; }
+body.en-cine #hud { visibility: hidden; }
+body.en-cine .capa-mision { background: transparent; align-items: flex-end; }
+body.en-cine .capa-mision { justify-content: flex-start; }
+body.en-cine .panel-mision { margin: auto auto 10vh 3vw; width: min(430px, 94vw); padding: 12px 14px; font-size: 0.9rem; background: rgb(16 10 6 / 0.86); }
+body.en-cine .panel-mision h2 { font-size: 1.2rem; }
+@media (max-width: 600px) { body.en-cine .panel-mision { margin: auto auto 10vh; } }
+@media (prefers-reduced-motion: reduce) { .franja-cine { transition: none; } }
+.tactil-boton.sv-camara { width: 64px; height: 40px; font-size: 0.8rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(176px + env(safe-area-inset-top, 0px)); }
+body.con-tactil .mision-activa { top: 224px; }
