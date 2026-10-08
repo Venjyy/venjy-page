@@ -24,40 +24,120 @@ Una **interacción nueva con tecla** es un tipo B en su propio módulo: plantill
 ## 0. Encargar la animación a un subagente (lo normal)
 
 El dueño suele pedir: «ejecuta un subagente Haiku (o Sonnet) que haga la animación X». Quien recibe
-ese pedido **no programa la animación**: escribe el encargo, lanza el subagente con el modelo pedido,
-revisa lo que entrega (video, hojas, medidas) y lo presenta. Si no se nombra el modelo, usa la tabla:
+ese pedido (el orquestador) **no programa la animación**: escribe el encargo, lanza el subagente,
+revisa lo que entrega (video, hoja de cuadros, medidas) y lo presenta. Objetivo de la skill:
+**animaciones de alta calidad con bajo consumo**, así que **Haiku va siempre primero**.
 
-| Modelo | Costo | Úsalo para | Ejemplos probados |
-|---|---|---|---|
-| **Haiku** (por defecto) | bajo | tipos A y B simples, interacciones con tecla, gestos nuevos, escenas cortas de 1–2 actores en lugares abiertos | caricias a las gatas (bien al primer intento); ronda del iglú desde cero (buena mecánica, ~50 min). Sus pasadas de cámara empeoraron la escena (la dejó estática); la versión final la corrigió Opus |
-| **Sonnet** | medio | escenas con 3+ actores, interiores estrechos, puesta en escena y cámara difíciles, cuando Haiku falló dos veces en lo mismo | — |
-
-**Plantilla del encargo** (cópiala y llena los `<…>`):
+### 0.1 Flujo: Haiku hace la base, el dueño revisa, se retoca o se escala
 
 ```
-Trabajas en /home/user/venjy-page. Lee enteros CLAUDE.md, .claude/skills/animaciones-minecraft/SKILL.md
-y todos los archivos de su carpeta referencia/, y sigue la skill al pie de la letra.
-Lee además: <archivos del lugar/actores: p. ej. mundo/gatas.js, la sección X de mundo/criaturas/amigos.js>.
-TAREA: <qué pasa, quiénes, dónde, cómo se activa (tecla/botón/al acercarse), cuánto dura, cómo se sale>.
+Encargo ──► HAIKU ──► video ──► el dueño revisa
+                                   │
+            ┌──────────────────────┼─────────────────────────────┐
+         «está bien»       «retoca un par de cosas»       «hay varias cosas mal»
+            │                      │                             │
+         aprobada           Haiku retoca (0.4)        Haiku evalúa (0.3): ¿le queda grande?
+                                                        │ no                  │ sí
+                                                   Haiku arregla     SONNET sigue sobre la base (0.5)
+                                                                              │ se atasca
+                                                                           OPUS (orquestador)
+```
+
+| Encargo | Qué entrega Haiku |
+|---|---|
+| Pequeño o mediano: un gesto, una interacción con tecla, escena de 1–2 actores | la animación completa |
+| Grande: 3+ personas, escena larga, muchos pases de ida y vuelta, interiores | una **base** completa y jugable (guion, poses, objetos, cámara simple) que el dueño revisa antes de pulir |
+
+Un subagente **no puede cambiarse de modelo**: cuando a Haiku algo le queda grande, lo dice en su
+respuesta y el orquestador lanza a Sonnet con la plantilla de traspaso (0.5). Sonnet trabaja **sobre la
+base de Haiku**, no desde cero. Opus entra solo si Sonnet también se atasca.
+
+### 0.2 Punto de control a los ~100K tokens (no es un corte)
+
+Con Haiku 5.5 cada paso cuesta 5× más pasados los 100K de contexto, pero **cortar en seco pierde
+trabajo**. Por eso a los ~100K (aprox. **25 llamadas a herramientas**, o tras leer 6+ archivos grandes,
+o 20 min) el subagente se detiene un momento y estima cuánto le falta:
+
+- **Le falta poco** (verificar, grabar el video, un ajuste): **sigue y termina**. Entregar algo vale más.
+- **Le falta mucho** (partes sin programar, varios problemas abiertos): **se detiene en un punto
+  limpio**: el código queda funcionando (sin ediciones a medias), escribe una nota de traspaso
+  (`<scratchpad>/<carpeta>/traspaso.md`: hecho, falta, archivos y líneas, cómo verificar, capturas) y
+  responde. Nada se pierde: el código queda en disco y la nota permite seguir.
+  Seguir desde la nota con **un Haiku nuevo** (contexto limpio) sale más barato que dejar al primero
+  con 300K de contexto; si lo que falta es de criterio (0.3), sigue Sonnet.
+
+### 0.3 ¿Le queda grande a Haiku? (lo evalúa Haiku con estas señales)
+
+| Puede solo (retoque) | Le queda grande → pide Sonnet |
+|---|---|
+| tiempos, frases, un gesto, una pose | rediseñar la cámara o la puesta en escena |
+| un plano puntual que tapa algo | cambiar la estructura del guion |
+| un objeto o una mano mal ubicados | arreglos que se cruzan (arreglar un pase rompe otro) |
+| un efecto (humo, sonido, globo) | un intento ya hecho sobre lo mismo que no mejoró |
+| 1–3 comentarios del dueño, cada uno local | 4+ comentarios o comentarios de «se ve raro/estático» en general |
+
+Ante la duda, Haiku hace **un** intento acotado y, si no mejora, lo declara grande. No sigue iterando.
+
+### 0.4 Reglas para cualquier encargo
+
+- **Acotado y con aceptación**: «arregla X; está listo cuando se vea Y». Nunca «rehaz la escena».
+- **Versión aprobada protegida**: lo que el dueño aprueba queda en un commit. Una pasada nueva solo la
+  reemplaza si el dueño, viendo los dos videos, prefiere la nueva; si no, se descarta.
+- **Leer poco**: la skill entera sí; de las referencias, solo las del tipo de animación; del código,
+  `grep -n` y luego `Read` por tramos. No releer capturas viejas.
+- **Variedad de planos y guion coherente** (lecciones del iglú, `referencia/camara.md` y `escenas.md`).
+
+### 0.5 Plantillas
+
+**Encargo nuevo** (Haiku):
+```
+Trabajas en /home/user/venjy-page. Lee CLAUDE.md y .claude/skills/animaciones-minecraft/SKILL.md
+completos, y de referencia/ solo: <rig.md, escenas.md §…, camara.md si hay cámara, verificar.md>.
+Del código, busca con grep y lee por tramos: <archivos/secciones del lugar y actores>.
+TAREA: <qué pasa, quiénes, dónde, cómo se activa, cuánto dura, cómo se sale>.
+Tipo: <completa | BASE (escena grande: el dueño la revisará antes de pulir)>.
 Decisiones del dueño: <cámara, efectos, quién puede, textos especiales…>.
+Lista cuando: <criterios visibles en el video>.
+Sigue §0.2 (punto de control ~100K) y §0.3 (si te queda grande, dilo y para).
 Entrega: guion con tabla de tiempos antes del código, capturas medidas, hoja de planos si hay cámara,
 video con grabar.mjs, pruebas del repo, PENDIENTES.md actualizado.
 Temporales SOLO en <scratchpad>/<carpeta>/. NO hagas commit ni push. No edites la skill.
-Responde con: qué hace + tabla de tiempos, teclas/botones, archivos, rutas de capturas/video y qué
-viste, pruebas, y lo que de la skill fue confuso o faltó.
+Responde con: qué hace + tabla de tiempos, teclas/botones, archivos, rutas de video/capturas y qué
+viste, pruebas, si te quedó grande algo (y por qué), y lo que de la skill faltó.
 ```
 
-**Costo**: con Haiku 5.5 el precio sube 5× cuando el contexto pasa de 100K tokens ($0,10 → $0,50 de
-entrada). En las pruebas los subagentes llegaron a 300–480K porque leían archivos enteros. En el
-encargo pide **leer solo las secciones necesarias** (`grep -n` y luego `Read` con offset/limit) y no
-releer capturas viejas; así una animación cuesta varias veces menos.
+**Retoque** (Haiku, el mismo u otro con contexto limpio):
+```
+Trabajas en /home/user/venjy-page con la skill .claude/skills/animaciones-minecraft (lee SKILL.md).
+La animación <nombre> está en <archivos>. El dueño vio el video y pide SOLO esto:
+1. <comentario> → lista cuando <criterio>
+2. <comentario> → lista cuando <criterio>
+No cambies nada más. Si al intentarlo ves que es grande (§0.3), detente y explícalo.
+Entrega: video nuevo con grabar.mjs y hoja de cuadros de los momentos tocados; pruebas del repo.
+Temporales en <scratchpad>/<carpeta>/. NO hagas commit ni push. No edites la skill.
+```
 
-**Límite de una pasada**: si el subagente lleva dos pasadas sobre lo mismo sin mejorar (sobre todo
-cámara y puesta en escena), no lances una tercera con el mismo modelo: súbelo a Sonnet o corrígelo tú.
+**Traspaso a Sonnet** (cuando Haiku declaró grande o paró en el punto de control):
+```
+Trabajas en /home/user/venjy-page con la skill .claude/skills/animaciones-minecraft (lee SKILL.md y
+las referencias que necesites). Continúas una BASE hecha por otro agente: NO empieces de cero.
+Estado: <resumen de 5–10 líneas o ruta a traspaso.md>. Video de la base: <ruta>.
+Lo que el dueño aprobó de la base: <…>. Lo que pidió cambiar: <lista>.
+Por qué se escaló: <señal de §0.3>.
+Lista cuando: <criterios>. Entrega lo mismo que un encargo nuevo. NO hagas commit ni push.
+```
 
-Al recibir el resultado: mira tú mismo la hoja de cuadros del video
-(`referencia/verificar.md` §2b), corre las pruebas, y si algo se ve mal pide una pasada más al
-mismo subagente o súbelo a Sonnet. Lleva a la skill lo que el subagente diga que faltó.
+### 0.6 Al recibir el resultado
+
+El orquestador mira la hoja de cuadros del video (`referencia/verificar.md` §2b), corre las pruebas y
+presenta el video al dueño. Lleva a la skill lo que el subagente diga que faltó.
+
+| Ejemplos probados | Resultado |
+|---|---|
+| Haiku · caricias a las gatas (18 min, ≈ US$ 0,85) | bien al primer intento |
+| Haiku · ronda del iglú desde cero (37 min) | buena mecánica (base aprobable) |
+| Haiku · rehacer planos del iglú (33 min) | aprobada por el dueño |
+| Haiku · puesta en escena en media luna (49 min) | descartada: era rediseño de criterio (debió ir a Sonnet) y la idea fue del orquestador |
 
 ## 1. Reglas del estilo (no negociables)
 
