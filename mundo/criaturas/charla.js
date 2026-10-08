@@ -1,6 +1,6 @@
 // =========================================================
 // VENJY · Conversaciones de grupo entre NPCs
-// Un guion de turnos { quien, es, en, evento? }: cuando el jugador se acerca, cada turno
+// Un guion de turnos { quien, es, en, evento? } (quien: 'ambos' = lo dicen todos a la vez): cuando el jugador se acerca, cada turno
 // aparece en el globo de quien habla y avanza solo. Quien habla gesticula y los demás
 // lo miran (lo leen las animaciones con `hablando`). Al alejarse se pausa; tras un rato
 // lejos vuelve al principio.
@@ -12,7 +12,7 @@ export function crearCharla(guion, { radio = 9, alEvento = null } = {}) {
     return {
         get hablando() { return activa ? guion[i].quien : null; },
         get turno() { return activa ? guion[i] : null; },
-        texto(quien) { return activa && guion[i].quien === quien ? guion[i][idioma] : ''; },
+        texto(quien) { return activa && (guion[i].quien === quien || guion[i].quien === 'ambos') ? guion[i][idioma] : ''; },
         setIdioma(id) { idioma = id; },
         // d: distancia del jugador al centro del grupo
         actualizar(dt, d) {

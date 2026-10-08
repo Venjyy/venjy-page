@@ -70,13 +70,15 @@ const CHARLAS = {
     iglu: [
         { quien: 'lalo', es: 'Estamos en el iglú porque el frío nos recuerda a Coyhaique.', en: "We're in the igloo because the cold reminds us of Coyhaique." },
         { quien: 'moises', es: 'Coyhaique... qué tiempos, hermano.', en: 'Coyhaique... good times, bro.' },
+        { quien: 'ambos', es: '¡YIAAAAAA!', en: 'YIAAAAAA!', evento: 'yia' },
         { quien: 'lalo', es: '¿Me pasai el encendedor?', en: 'Pass me the lighter?' },
         { quien: 'moises', es: 'Espérate, que estoy cargando.', en: "Hold on, I'm loading it." },
         { quien: 'lalo', es: 'Este iglú es lo más acogedor del mapa.', en: 'This igloo is the coziest spot on the map.' },
         { quien: 'moises', es: '*cof cof*... está bueno.', en: "*cough cough*... it's good.", evento: 'tos' },
         { quien: 'lalo', es: 'Tranqui, tranqui. Respira.', en: 'Easy, easy. Breathe.' },
         { quien: 'lalo', es: '*COF COF COF*... ¡ufff! Ese estaba cargado.', en: '*COUGH COUGH COUGH*... phew! That one was strong.', evento: 'tosLalo' },
-        { quien: 'moises', es: 'Jajaja, ¿y te reías de mí?', en: 'Haha, and you were laughing at me?' }
+        { quien: 'moises', es: 'Jajaja, ¿y te reías de mí?', en: 'Haha, and you were laughing at me?' },
+        { quien: 'ambos', es: '¡YIAAAAAA!', en: 'YIAAAAAA!', evento: 'yia' }
     ]
 };
 
@@ -352,11 +354,15 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         pitoO = { g: pito, brasa: brasaPito };
         tomar(moises, 'bong'); tomar(lalo, 'pito');
         moises.ciclo = rnd(0, 6); lalo.ciclo = rnd(0, 5);
-        for (const n of [moises, lalo]) { n.tose = 0; n.humito = 0; }
+        for (const n of [moises, lalo]) { n.tose = 0; n.humito = 0; n.yia = 0; }
         // Lalo apoyado: el cuerpo un poco hacia atrás y una pierna cruzada
         lalo.p.cuerpo.rotation.x = -0.09;
         lalo.p.piernaI.rotation.z = -0.16; lalo.p.piernaD.rotation.z = 0.05;
-        charlaIglu = crearCharla(CHARLAS.iglu, { radio: 8, alEvento: ev => { if (ev === 'tos') moises.tose = 1.4; if (ev === 'tosLalo') lalo.tose = 2.2; } });
+        charlaIglu = crearCharla(CHARLAS.iglu, { radio: 8, alEvento: ev => {
+            if (ev === 'tos') moises.tose = 1.4;
+            if (ev === 'tosLalo') lalo.tose = 2.2;
+            if (ev === 'yia') moises.yia = lalo.yia = 2.2; // gritan los dos a la vez con los brazos arriba
+        } });
         moises.charla = lalo.charla = charlaIglu;
         grupos.push({ charla: charlaIglu, x: I.x, z: I.z });
     }
@@ -432,6 +438,14 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             n.tose = Math.max(0, n.tose - dt);
             p.cuerpo.rotation.x = base + Math.max(0, Math.sin(n.tose * (n === lalo ? 26 : 22))) * (n === lalo ? 0.38 : 0.22);
         } else p.cuerpo.rotation.x = base;
+        // ¡YIAAAAAA!: brazos arriba sacudiéndose, cabeza atrás (Lalo además da un saltito)
+        if (n.yia > 0) {
+            n.yia = Math.max(0, n.yia - dt);
+            const s = Math.sin(t * 18) * 0.15;
+            p.brazoD.rotation.set(-2.85 + s, 0, -0.35); p.brazoI.rotation.set(-2.85 - s, 0, 0.35);
+            p.cuello.rotation.x = -0.35;
+            if (n === lalo) p.cuerpo.position.y = Math.abs(Math.sin(n.yia * 6)) * 0.25;
+        } else if (n === lalo) p.cuerpo.position.y = 0;
     }
     // Pase: se giran el uno al otro, estiran el brazo y el bong y el pito cruzan por el aire
     function animarPase(n, dt) {

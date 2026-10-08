@@ -110,6 +110,7 @@ Plan acordado el 2026-10-07. Todo lo que va en el terreno es determinista (los w
 - [x] **Minimapa y mapa grande**: puntos claros y tenues que laten donde hay gente; los cercanos se agrupan en uno (`fijarPersonas` en `minimapa.js`).
 - [x] **Iglú**: Moisés y Lalo se pasan el bong y el pito cada 25-40 s (los objetos vuelan de una mano a la otra y cada uno usa lo que recibe); Lalo también tose, más fuerte y más grave. Pasillo de nieve nivelado frente al túnel (en el vertical la boca quedaba contra el terreno).
 - [x] **Globos y nombres**: el globo se dibuja encima de todo, solo si se ve a quien habla; baja bajo techos bajos (iglú) y admite 4 líneas. El letrero del nombre se ensancha según el largo («Conejeros» se cortaba). Conejeros con el pelo más oscuro.
+- [x] **Ajustes tras la revisión**: el globo ya no corta texto (384×160, achica la letra si no cabe en 4 líneas); Moisés y Lalo gritan «¡YIAAAAAA!» a la vez (turno `quien: 'ambos'` en `charla.js`, brazos arriba); los lentes de Venjy son 3D (marco oscuro con cristal translúcido y patillas, extra `lentes` en `pieles.js`), la barba es un pelirrojo más oscuro y los rulos tienen menos volumen.
 - Pendiente de esta tanda: probar en un teléfono real. Los escalones (atalaya, rampas del puente) son de 1 bloque y se suben saltando, como el resto del terreno: el motor no tiene medios bloques ni subida automática.
 
 ## Estado actual (Fase 1 completa)
@@ -178,6 +179,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-07 · **Globos completos, YIAAAAAA y Venjy retocado** (lentes 3D, barba más oscura, menos pelo) · `mundo/criaturas/{cuerpo,charla,amigos,pieles,venjy}.js`.
 
 - 2026-10-07 · **Venjy en persona, pistas en el mapa y arreglos**: 15 Venjys con animaciones distintas, puntos de gente en el minimapa, pase del bong y el pito, tos de Lalo, globos que no se cortan, nombres anchos, entrada del iglú en el vertical · `mundo/criaturas/{venjy,pieles,amigos,cuerpo,npcs}.js`, `mundo/minimapa.js`, `mundo/construcciones.js`, `mundo/main.js`. Verificado en ambos mapas.
 

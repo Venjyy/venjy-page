@@ -250,24 +250,29 @@ export function crearNombre(scene, texto) {
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
 export function crearGlobo(scene) {
-    const { c, tex, sp } = spriteLienzo(scene, 320, 140, [2.6, 1.14], true);
+    const { c, tex, sp } = spriteLienzo(scene, 384, 160, [3.0, 1.25], true);
     let texto = '', alfa = 0;
     const dibujar = () => {
         const ctx = c.getContext('2d');
         ctx.clearRect(0, 0, c.width, c.height);
         if (!texto) { tex.needsUpdate = true; return; }
-        ctx.font = '22px PixelCraft';
-        // Corte de líneas por palabras (máx. 4)
-        const palabras = texto.split(' '), lineas = [];
-        let linea = '';
-        for (const p of palabras) {
-            const prueba = linea ? linea + ' ' + p : p;
-            if (ctx.measureText(prueba).width > c.width - 36 && linea) { lineas.push(linea); linea = p; } else linea = prueba;
-        }
-        if (linea) lineas.push(linea);
-        lineas.length = Math.min(lineas.length, 4);
-        const alto = lineas.length * 26 + 18;
-        const y0 = (c.height - 14 - alto) / 2;
+        // Corte por palabras; si no cabe en 4 líneas se achica la letra (nunca se corta el texto)
+        const partir = px => {
+            ctx.font = px + 'px PixelCraft';
+            const lineas = [];
+            let linea = '';
+            for (const p of texto.split(' ')) {
+                const prueba = linea ? linea + ' ' + p : p;
+                if (ctx.measureText(prueba).width > c.width - 36 && linea) { lineas.push(linea); linea = p; } else linea = prueba;
+            }
+            if (linea) lineas.push(linea);
+            return lineas;
+        };
+        let px = 22, lineas = partir(px);
+        while ((lineas.length > 4 || lineas.length * (px + 4) + 18 > c.height - 16) && px > 12) lineas = partir(px -= 2);
+        const paso = px + 4;
+        const alto = lineas.length * paso + 18;
+        const y0 = Math.max(0, (c.height - 14 - alto) / 2);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
         ctx.fillRect(6, y0, c.width - 12, alto);
         ctx.fillStyle = '#1d1d1d';
@@ -279,7 +284,7 @@ export function crearGlobo(scene) {
         ctx.fillRect(c.width / 2 - 3, y0 + alto + 3, 6, 6);
         ctx.fillStyle = '#1d1d1d';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        lineas.forEach((l, i) => ctx.fillText(l, c.width / 2, y0 + 9 + 13 + i * 26));
+        lineas.forEach((l, i) => ctx.fillText(l, c.width / 2, y0 + 9 + paso / 2 + i * paso));
         tex.needsUpdate = true;
     };
     return {
