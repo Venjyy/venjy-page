@@ -537,7 +537,7 @@ export function crearEscenasSkin(ctx) {
         diag() {
             if (!escena) return null;
             const t = escena.t, ls = lineasAhora(), l = ls[ls.length - 1] || null;
-            const gs = Object.values(escena.actores).map(a => a.globo && a.globo.ultimo && a.globo.alfa > 0.01 ? { quien: a.clave, ...a.globo.ultimo } : null).filter(Boolean);
+            const gs = Object.values(escena.actores).map(a => a.globo && a.globo.ultimo && a.globo.alfa > 0.5 ? { quien: a.clave, ...a.globo.ultimo } : null).filter(Boolean);
             const g = gs.find(x => l && habla(l, Object.values(escena.actores).find(q => q.clave === x.quien))) || gs[0] || null;
             return {
                 t, tipo: escena.tipo, clave: escena.clave,

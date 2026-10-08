@@ -24,6 +24,7 @@ const pedidas = arg('escenas', 'todas');
 const salida = arg('salida', join(tmpdir(), 'revisor-animaciones'));
 const URL_JUEGO = 'http://localhost:5510/supervivencia.html';
 const FPS = 15, PASO = 1000 / FPS, TOPE_CUADROS = 900;      // tope: 60 s de escena simulada
+const SALTO = 0.25; // desplazamiento del centro del globo en un cuadro (NDC) que cuenta como salto
 const GRAVE = 0.03, MIN_MEDIO_ALTO = 0.17, MARGEN = 0.038;   // margen = 0,04 - 0,002 (como medir.mjs)
 const NO_CUBIERTAS = [
     'caricias a Mila y Gala (caricias.js): no expone diagnóstico de globos',
@@ -90,9 +91,12 @@ function evaluar(cuadros, esCuello) {
             const mh = (g.rect.y1 - g.rect.y0) / 2;
             m.minMedioAlto = m.minMedioAlto === null ? mh : Math.min(m.minMedioAlto, mh);
             if (f.linea) {
+                // Cambio de candidata = salto visible: otro lugar dentro de la misma línea, sin corte de plano (el corte va bajo
+                // el fundido) y con un desplazamiento brusco en un cuadro (si se desliza, no es un salto)
+                const cx = (g.rect.x0 + g.rect.x1) / 2, cy = (g.rect.y0 + g.rect.y1) / 2;
                 const p = ultimo[g.quien];
-                if (p && p.a === f.linea.a && p.id !== g.id) m.cambiosCandidata++;
-                ultimo[g.quien] = { a: f.linea.a, id: g.id };
+                if (p && p.a === f.linea.a && p.id !== g.id && p.plano === f.plano && Math.hypot(cx - p.cx, cy - p.cy) > SALTO) m.cambiosCandidata++;
+                ultimo[g.quien] = { a: f.linea.a, id: g.id, plano: f.plano, cx, cy };
             }
         }
         for (let i = 0; i < f.pares.length; i++) for (let j = i + 1; j < f.pares.length; j++) {

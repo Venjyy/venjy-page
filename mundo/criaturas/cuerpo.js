@@ -251,9 +251,10 @@ export function crearNombre(scene, texto) {
 // `zonas` = puntos 3D { quien, tipo: 'cabeza' | 'pecho', x, y, z, r } en el sistema del padre del globo.
 // ---------------------------------------------------------
 const ESCALA_GLOBO = [3.0, 1.25];
-const MARGEN_GLOBO = 0.04, TOPE_GLOBO = 0.9, ESCALAS_GLOBO = [1, 0.85, 0.7];
+const MARGEN_GLOBO = 0.04, TOPE_GLOBO = 0.9, ESCALAS_GLOBO = [1, 0.85, 0.7, 0.55, 0.4]; // las dos últimas solo si el globo sigue legible
 // Legibilidad: medio alto mínimo del globo en pantalla (NDC) y roce leve que se tolera sin cambiar de lugar (área NDC)
-export const MIN_HH_GLOBO = 0.17, ROCE_GLOBO = 0.03;
+export const MIN_HH_GLOBO = 0.17, ROCE_GLOBO = 0.028;
+const LEGIBLE_GLOBO = MIN_HH_GLOBO + 0.02; // con un poco de margen: la cámara se mueve dentro del plano
 const vP = new THREE.Vector3();
 // Punto del padre → NDC de la cámara (delante = false si queda detrás; entonces se empuja al borde)
 function proyectarGlobo(camara, padre, x, y, z) {
@@ -320,13 +321,17 @@ function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActu
     if (!rects.length || soloActual) elegida = medir(candidatas(1)[0]);
     else {
         if (previo) { // mantiene la candidata anterior mientras no la tape nada de gravedad (un roce leve se tolera)
-            const c = candidatas(previo.esc).find(x => x.id === previo.id);
-            if (c && medir(c).solape <= ROCE_GLOBO) { elegida = c; c.esc = previo.esc; }
+            // Primero con la misma escala; si ya no sirve, la misma candidata con otra escala (así no cambia de lugar)
+            for (const esc of [previo.esc, ...ESCALAS_GLOBO.filter(e => e !== previo.esc)]) {
+                if (elegida) break;
+                const c = candidatas(esc).find(x => x.id === previo.id);
+                if (c && c.hh >= MIN_HH_GLOBO && medir(c).solape <= ROCE_GLOBO && (esc >= 0.7 || c.hh >= LEGIBLE_GLOBO)) { elegida = c; c.esc = esc; }
+            }
         }
         // Primero solo candidatas legibles (alto mínimo); si ninguna queda libre, y no es una prueba estricta, vale cualquier tamaño
         for (const legible of estricto ? [true] : [true, false]) {
             for (let i = 0; !elegida && i < ESCALAS_GLOBO.length; i++) for (const c of candidatas(ESCALAS_GLOBO[i])) {
-                if (legible && c.hh < MIN_HH_GLOBO) continue;
+                if ((legible || ESCALAS_GLOBO[i] < 0.7) && c.hh < LEGIBLE_GLOBO) continue;
                 medir(c); c.esc = ESCALAS_GLOBO[i];
                 if (c.solape === 0) { elegida = c; break; }
                 if (!mejor || c.solape < mejor.solape - 1e-9) mejor = c;
@@ -342,11 +347,12 @@ function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActu
 // ---------------------------------------------------------
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
-// Globos con encaje: el de menor id conserva su lugar; los demás esquivan los rects ya resueltos de los anteriores
+// Globos con encaje: el más antiguo (por llegada del texto) conserva su lugar; el recién llegado esquiva los rects ya resueltos de los demás,
+// también del que se está desvaneciendo
 const globosVivos = [];
-let globoId = 0;
+let globoSeq = 0;
 export function crearGlobo(scene) {
-    const yoId = ++globoId, yo = { id: yoId, ultimo: null };
+    const yo = { seq: 0, ultimo: null };
     globosVivos.push(yo);
     const ESCALA = ESCALA_GLOBO;
     const { c, tex, sp } = spriteLienzo(scene, 384, 160, ESCALA, true);
@@ -357,13 +363,15 @@ export function crearGlobo(scene) {
     // las tape (ver planearGlobo) y lo mantiene mientras siga libre; solo cambia con texto nuevo o si se ocupa.
     const v = new THREE.Vector3(), vista = new THREE.Vector3();
     let previo = null, nuevo = true, ultimo = null, sinEvitar = false, vis = null, dtUlt = 1 / 60;
+    const camPos = new THREE.Vector3(), camDir = new THREE.Vector3(), dirAhora = new THREE.Vector3();
+    let camVista = false;
     function encajar(x, y, z, camara, renderer) {
         const padre = sp.parent;
         if (!padre) return;
         const franja = document.body.classList.contains('en-cine') ? 0.18 : 0;
         const zonas = evitar ? evitar() : null;
         const cuadro = renderer ? renderer.info.render.frame : 0;
-        const otros = zonas && zonas.length && !sinEvitar ? globosVivos.filter(o => o.id < yoId && o.ultimo && cuadro - o.ultimo.cuadro <= 1).map(o => ({ quien: o.ultimo.quien, ...o.ultimo.rect })) : null;
+        const otros = zonas && zonas.length && !sinEvitar ? globosVivos.filter(o => o !== yo && o.seq < yo.seq && o.ultimo && cuadro - o.ultimo.cuadro <= 1).map(o => ({ quien: o.ultimo.quien, ...o.ultimo.rect })) : null;
         const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar, false, otros);
         nuevo = false;
         const { c, P } = r;
@@ -372,9 +380,13 @@ export function crearGlobo(scene) {
         // Con zonas el globo se desliza (~0,25 s) hacia su lugar en vez de saltar; sin zonas va directo (como antes)
         const hw1 = c.hw / c.k, hh1 = c.hh / c.k; // medio tamaño con escala 1
         let px = c.x, py = c.y, pk = c.k;
+        // Un corte de cámara (plano nuevo) no se desliza: el globo aparece ya en su lugar
+        camara.getWorldDirection(dirAhora);
+        if (camVista && (camPos.distanceTo(camara.position) > 0.5 || camDir.dot(dirAhora) < 0.97)) vis = null;
+        camPos.copy(camara.position); camDir.copy(dirAhora); camVista = true;
         if (conZonas) {
             if (!vis) vis = { x: c.x, y: c.y, k: c.k };
-            const f = Math.min(1, dtUlt * 12);
+            const f = 1 - Math.exp(-dtUlt / 0.12); // ~95% en 0,35 s, igual a cualquier fps
             vis.x += (c.x - vis.x) * f; vis.y += (c.y - vis.y) * f; vis.k += (c.k - vis.k) * f;
             px = vis.x; py = vis.y; pk = vis.k;
         } else vis = null;
@@ -434,7 +446,7 @@ export function crearGlobo(scene) {
     };
     return {
         sp,
-        decir(t) { if (t !== texto) { texto = t; nuevo = true; conFuente(dibujar); } },
+        decir(t) { if (t !== texto) { texto = t; nuevo = true; yo.seq = ++globoSeq; if (alfa < 0.6) vis = null; conFuente(dibujar); } },
         get texto() { return texto; },
         // Último cuadro encajado: { cuadro, rect (NDC), zonas, franja, id, escala, libre } (diagnóstico)
         get ultimo() { return ultimo; },
@@ -450,12 +462,14 @@ export function crearGlobo(scene) {
         },
         actualizar(dt, visible, x, y, z, camara, zonasFn) {
             const objetivo = visible && texto ? 1 : 0;
-            alfa += (objetivo - alfa) * Math.min(1, dt * 5);
+            alfa += (objetivo - alfa) * Math.min(1, dt * (!objetivo && encaje ? 14 : 5)); // el que sale de una escena se va en ~0,15 s
             if (Math.abs(alfa - objetivo) < 0.01) alfa = objetivo;
             sp.visible = alfa > 0.01;
             dtUlt = Math.max(dt, 1e-3);
+            const saliendo = !objetivo && !!encaje && sp.visible; // se desvanece en su sitio (no salta al origen)
             if (!sp.visible) { previo = null; nuevo = true; ultimo = yo.ultimo = null; vis = null; return; }
             sp.material.opacity = alfa;
+            if (saliendo) return;
             sp.position.set(x, y, z);
             sp.scale.set(ESCALA[0], ESCALA[1], 1);
             encaje = camara ? [x, y, z] : null;
