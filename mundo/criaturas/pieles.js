@@ -106,6 +106,13 @@ export function pielDe(d) {
                 if (x === 7) return ajustar(cuadros(x, y, r), 0.8);
                 if (y <= 1 && ((x >= 4 && x <= 6) || (x >= 9 && x <= 11))) return [40, 22, 22];      // cuello
                 break;
+            case 'traje': // chaqueta con camisa blanca y corbata (Pony)
+                if (x >= 6 && x <= 9 && y <= 12 - Math.abs(x - 7.5) * 2) {
+                    if ((x === 7 || x === 8) && y >= 1 && y <= 11) return y === 1 ? [120, 30, 36] : [150, 36, 44];
+                    return [236, 236, 232];
+                }
+                if (y === 15 && (x === 7 || x === 8)) return [60, 60, 64]; // botón
+                break;
             case 'polera ancha': {
                 // Cadena dorada en V con un colgante
                 const yc = 2 + Math.round((5 - Math.abs(x - 7.5)) * 0.9);
@@ -135,7 +142,7 @@ export function pielDe(d) {
         arriba: tela
     };
     // Mangas: largas (polerón), arremangadas (camisa) o cortas
-    const manga = R.tipo === 'poleron' ? 'larga' : R.tipo === 'camisa cuadros' ? 'arremangada' : 'corta';
+    const manga = R.tipo === 'poleron' || R.tipo === 'traje' ? 'larga' : R.tipo === 'camisa cuadros' ? 'arremangada' : 'corta';
     const brazoP = (x, y, r) => {
         if (manga === 'larga') return y >= 21 ? piel(x, y, r) : y >= 19 ? ajustar(C, 0.8) : tela(x, y, r);
         if (manga === 'arremangada') return y >= 15 ? piel(x, y, r) : y === 14 ? ajustar(C, 0.7) : tela(x, y, r);

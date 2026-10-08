@@ -23,7 +23,7 @@ export const CAUSAS = {
 export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir, alDanio }) {
     const v = {
         vida: 20, vidaMax: 20, hambre: 20, saturacion: 5, agotamiento: 0,
-        aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, invulnerable: 0,
+        aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, invulnerable: 0, aturdido: 0, bloqueo: null,
         muerto: false, dificultad, temblor: true,
         relojRegen: 0, relojHambre: 0, relojAire: 0, relojFuego: 0, relojVeneno: 0, relojLava: 0, relojAsfixia: 0,
         get defensa() { return inventario.defensa(); }
@@ -33,6 +33,10 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
     const rojo = document.createElement('div');
     rojo.className = 'destello-danio';
     document.body.appendChild(rojo);
+    const aturdidoEl = document.createElement('div');
+    aturdidoEl.className = 'aturdido';
+    aturdidoEl.hidden = true;
+    document.body.appendChild(aturdidoEl);
     const fuegoEl = document.createElement('div');
     fuegoEl.className = 'en-llamas';
     fuegoEl.hidden = true;
@@ -43,6 +47,11 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
     function danar(cantidad, causa = 'golpe', { origen = null, ignoraArmadura = false, fuerza = 0.42 } = {}) {
         if (v.muerto || cantidad <= 0) return false;
         if (v.invulnerable > 0) return false;
+        // Escudo arriba y el golpe viene de frente: no hace daño
+        if (origen && (causa === 'golpe' || causa === 'flecha' || causa === 'explosion' || causa === 'fuego') && v.bloqueo && v.bloqueo(origen)) {
+            if (causa !== 'explosion') { v.invulnerable = 0.25; return false; }
+            cantidad *= 0.2;
+        }
         // Dificultad: los golpes de monstruos pegan distinto (como Minecraft)
         if (causa === 'golpe' || causa === 'flecha' || causa === 'explosion') {
             if (v.dificultad === 0) return false;
@@ -89,7 +98,7 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
     }
 
     function reaparecer() {
-        Object.assign(v, { vida: v.vidaMax, hambre: 20, saturacion: 5, agotamiento: 0, aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, invulnerable: 2, muerto: false });
+        Object.assign(v, { vida: v.vidaMax, hambre: 20, saturacion: 5, agotamiento: 0, aire: 300, fuego: 0, veneno: 0, efectoHambre: 0, aturdido: 0, invulnerable: 2, muerto: false });
     }
 
     // Daño por caída: más de 3 bloques (en el agua o en una escalera no se cuenta)
@@ -173,6 +182,10 @@ export function crearVida({ jugador, mundo, inventario, dificultad = 2, alMorir,
             if (v.relojFuego >= 1) { v.relojFuego = 0; danar(1, 'fuego', { ignoraArmadura: true }); }
         }
         fuegoEl.hidden = !(v.fuego > 0);
+
+        // Aturdido (golpe del Trauco): lento y la vista se nubla un poco
+        if (v.aturdido > 0) v.aturdido -= dt;
+        aturdidoEl.hidden = !(v.aturdido > 0);
 
         // Veneno: 1 de daño cada 1,25 s sin bajar de medio corazón
         if (v.veneno > 0) {

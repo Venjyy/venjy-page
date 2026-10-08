@@ -56,13 +56,16 @@ export function crearMinado(ctx) {
     const estado = {
         objetivo: null, progreso: 0, rompiendo: null, pausa: 0,
         izquierdo: false, derecho: false, relojDerecho: 0,
-        comiendo: 0, activo: true,
+        comiendo: 0, activo: true, lento: 1,
         // ganchos para otros sistemas (combate, misiones, jefes)
         alClicIzquierdo: null, // () => true si lo consumió (golpear una entidad)
         alClicDerecho: null,   // () => true si lo consumió (hablar con un amigo)
         alRomper: null,        // (id, x, y, z)
         alPoner: null,         // (id, x, y, z)
         alComer: null,         // (idObjeto)
+        alGesto: null,         // () al golpear o usar algo (anima la mano)
+        alSoltarDerecho: null, // () al soltar el clic derecho (disparar el arco, bajar el escudo)
+        usarSinNada: null,     // () clic derecho sin otro uso (escudo en la otra mano)
         dormir: null,          // (x, y, z) => mensaje o null
         puedeRomper: null      // (x, y, z, id) => bool (zonas protegidas)
     };
@@ -156,10 +159,11 @@ export function crearMinado(ctx) {
         // 1) Bloques con interacción (salvo agachado con un bloque en la mano)
         if (o && INTERACTIVOS.has(o.id) && !(jugador.agachado && idMano)) return interactuar(o);
         // 2) Objetos con uso
-        if (idMano >= 256) return usarObjeto(o, enMano);
+        if (idMano >= 256 && usarObjeto(o, enMano)) return true;
         // 3) Poner bloque
-        if (idMano && esBloqueColocable(idMano)) return ponerBloque(o, idMano);
-        return false;
+        if (idMano && esBloqueColocable(idMano) && ponerBloque(o, idMano)) return true;
+        // 4) Nada que hacer: escudo en la otra mano
+        return estado.usarSinNada ? estado.usarSinNada() : false;
     }
 
     function interactuar(o) {
@@ -335,17 +339,18 @@ export function crearMinado(ctx) {
     function abajo(boton) {
         if (!activo()) return;
         if (boton === 0) {
+            estado.alGesto && estado.alGesto();
             if (estado.alClicIzquierdo && estado.alClicIzquierdo()) return;
             estado.izquierdo = true;
         } else if (boton === 2) {
             estado.derecho = true;
             estado.relojDerecho = 0;
-            usar();
+            if (usar() && !estado.comiendo) estado.alGesto && estado.alGesto();
         }
     }
     function arriba(boton) {
         if (boton === 0) { estado.izquierdo = false; estado.rompiendo = null; estado.progreso = 0; }
-        if (boton === 2) { estado.derecho = false; estado.comiendo = 0; }
+        if (boton === 2) { estado.derecho = false; estado.comiendo = 0; estado.alSoltarDerecho && estado.alSoltarDerecho(); }
     }
     estado.abajo = abajo;
     estado.arriba = arriba;
@@ -368,7 +373,7 @@ export function crearMinado(ctx) {
 
     // ---- Cada cuadro ----
     estado.actualizar = dt => {
-        if (!activo()) { marco.visible = grieta.visible = false; estado.objetivo = null; estado.izquierdo = estado.derecho = false; estado.comiendo = 0; jugador.lento = 1; return; }
+        if (!activo()) { marco.visible = grieta.visible = false; estado.objetivo = null; estado.izquierdo = estado.derecho = false; estado.comiendo = 0; estado.lento = 1; return; }
         const o = apuntar();
         estado.objetivo = o;
         marco.visible = !!o;
@@ -402,16 +407,16 @@ export function crearMinado(ctx) {
             else {
                 const antes = estado.comiendo;
                 estado.comiendo += dt;
-                jugador.lento = 0.35;
+                estado.lento = 0.35;
                 if (Math.floor(antes / 0.25) !== Math.floor(estado.comiendo / 0.25)) sonidos.comer();
                 if (estado.comiendo >= TIEMPO_COMER) { terminarComer(); estado.comiendo = vida.hambre < 20 ? 0.0001 : 0; }
             }
         }
-        if (!estado.comiendo) jugador.lento = 1;
+        if (!estado.comiendo) estado.lento = 1;
         // Poner repetido al mantener (como Minecraft, cada 0,2 s)
         if (estado.derecho && !estado.comiendo) {
             estado.relojDerecho += dt;
-            if (estado.relojDerecho >= 0.25) { estado.relojDerecho = 0; const id = inventario.idEnMano(); if (id && id < 256 && esBloqueColocable(id)) usar(); }
+            if (estado.relojDerecho >= 0.25) { estado.relojDerecho = 0; const id = inventario.idEnMano(); if (id && id < 256 && esBloqueColocable(id) && usar()) estado.alGesto && estado.alGesto(); }
         }
     };
     estado.setIdioma = l => { idioma = l; };

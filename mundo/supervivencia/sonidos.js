@@ -82,5 +82,23 @@ export const sonidos = {
     fuego() { ruido({ dur: 0.25, frec: 900, q: 0.4, vol: 0.12 }); },
     muerte() { tono({ f0: 300, f1: 60, dur: 0.8, vol: 0.25, forma: 'sawtooth' }); },
     nivel() { [523, 659, 784].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.15, vol: 0.1, forma: 'triangle', retardo: i * 0.09 })); },
+    explosion() {
+        ruido({ dur: 0.9, frec: 120, q: 0.5, vol: 0.6, tipo: 'lowpass' });
+        ruido({ dur: 0.5, frec: 400, q: 0.6, vol: 0.4, tipo: 'lowpass', retardo: 0.02 });
+        tono({ f0: 90, f1: 30, dur: 0.6, vol: 0.4, forma: 'sine' });
+    },
+    mecha() { ruido({ dur: 1.4, frec: 3200, q: 0.8, vol: 0.12, tipo: 'highpass' }); },
+    arco() { tono({ f0: 520, f1: 180, dur: 0.12, vol: 0.1, forma: 'triangle' }); ruido({ dur: 0.08, frec: 2600, q: 1, vol: 0.08 }); },
+    risaTrauco() { [0, 0.12, 0.24].forEach((r, i) => tono({ f0: 330 - i * 30, f1: 260 - i * 30, dur: 0.1, vol: 0.12, forma: 'square', retardo: r })); },
+    // Voces de los monstruos (k: volumen por distancia)
+    mob(tipo, k = 1) {
+        const v = 0.16 * k;
+        if (tipo === 'zombi') { tono({ f0: 120, f1: 80, dur: 0.6, vol: v, forma: 'sawtooth' }); ruido({ dur: 0.5, frec: 300, q: 2, vol: v * 0.6 }); }
+        else if (tipo === 'esqueleto') for (let i = 0; i < 4; i++) ruido({ dur: 0.04, frec: 2400, q: 6, vol: v, retardo: i * 0.07 });
+        else if (tipo === 'arana') ruido({ dur: 0.4, frec: 5000, q: 1.5, vol: v * 0.8, tipo: 'highpass' });
+        else if (tipo === 'trauco') { tono({ f0: 220, f1: 300, dur: 0.15, vol: v, forma: 'square' }); tono({ f0: 300, f1: 200, dur: 0.15, vol: v, forma: 'square', retardo: 0.18 }); }
+    },
+    // «Tue tue» del Chonchon: dos silbidos que bajan
+    tueTue() { tono({ f0: 1400, f1: 1100, dur: 0.22, vol: 0.14, forma: 'sine' }); tono({ f0: 1300, f1: 950, dur: 0.26, vol: 0.14, forma: 'sine', retardo: 0.32 }); },
     clic() { tono({ f0: 1200, f1: 900, dur: 0.04, vol: 0.05, forma: 'square' }); }
 };

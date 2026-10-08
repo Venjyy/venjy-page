@@ -347,11 +347,14 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
         const m = construir(tinte, tipo, variante, semilla++);
         m.g.visible = false;
         scene.add(m.g);
-        lista.push({
+        const a = {
             tipo, ...m, x, z, y: 0, yaw: r() * Math.PI * 2, zona, cargado: false,
             estado: 'quieto', reloj: rnd(0.5, 4), destino: null, fase: 0, comer: 0,
-            proximoSonido: rnd(4, 25), cuadro: Math.floor(r() * 4), acum: 0
-        });
+            proximoSonido: rnd(4, 25), cuadro: Math.floor(r() * 4), acum: 0,
+            huye: 0, escala: 1 // supervivencia: huye tras un golpe; las crías son más chicas
+        };
+        lista.push(a);
+        return a;
     }
     // Granja: corrales de la aldea
     for (const c of terreno.corrales || []) {
@@ -424,7 +427,7 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
             const dx = w.x - a.x, dz = w.z - a.z, d = Math.hypot(dx, dz);
             if (d < 0.3 || a.reloj <= 0) { a.estado = 'quieto'; a.reloj = rnd(1.5, 6); }
             else {
-                const v = e.vel * (a.tipo === 'zorro' && a.corre ? 2.2 : 1);
+                const v = e.vel * ((a.tipo === 'zorro' || a.huye > 0) && a.corre ? 2.2 : 1);
                 const paso = Math.min(d, v * dt);
                 const nx = a.x + dx / d * paso, nz = a.z + dz / d * paso;
                 const ny = pisar(a, nx, nz);
@@ -438,6 +441,15 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
                 }
             }
         }
+        // Golpeado (supervivencia): corre lejos de quien le pegó mientras dure el susto
+        if (a.huye > 0) {
+            a.huye -= dt;
+            if (a.estado !== 'camina' || a.reloj < 0.3) {
+                const ang = Math.atan2(a.x - a.susto.x, a.z - a.susto.z) + (Math.random() - 0.5) * 1.2;
+                const x = a.x + Math.sin(ang) * 6, z = a.z + Math.cos(ang) * 6;
+                if (pisar(a, x, z)) { a.destino = { x, z }; a.estado = 'camina'; a.reloj = 2; a.corre = true; }
+            }
+        } else
         // Zorros y conejos se asustan si el jugador se acerca mucho: arrancan
         if ((a.tipo === 'conejo' || a.tipo === 'zorro') && dJ < 4 && a.estado !== 'camina') {
             const ang = Math.atan2(a.x - jugador.pos.x, a.z - jugador.pos.z);
@@ -472,6 +484,9 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
         const salto = e.salta && mueve ? Math.abs(Math.sin(a.fase * 0.5)) * 0.35 : 0;
         a.g.position.set(a.x, a.y + salto, a.z);
         a.g.rotation.y = a.yaw;
+        if (a.escala !== 1) a.g.scale.setScalar(a.escala);
+        // Sacudón al recibir un golpe
+        if (a.sacudon > 0) { a.sacudon -= dt; a.g.rotation.z = Math.sin(a.sacudon * 30) * 0.25 * a.sacudon * 3; } else if (a.g.rotation.z) a.g.rotation.z = 0;
 
         // Sonido de vez en cuando, solo si el jugador está cerca
         a.proximoSonido -= dt;
@@ -559,7 +574,10 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
 
     let tiempo = 0, cuadro = 0;
     return {
-        lista, pajaros,
+        lista, pajaros, agregar,
+        // Supervivencia: quitar uno (cazado) y asustarlo (golpe desde ox, oz)
+        quitar(a) { const i = lista.indexOf(a); if (i >= 0) lista.splice(i, 1); scene.remove(a.g); },
+        asustar(a, ox, oz, segundos = 5) { a.huye = segundos; a.susto = { x: ox, z: oz }; a.reloj = 0; a.sacudon = 0.3; },
         actualizar(dt, oculto = false) {
             tiempo += dt; cuadro++;
             dt = Math.min(dt, 0.05);

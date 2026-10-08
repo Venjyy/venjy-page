@@ -20,7 +20,7 @@ const tramo = (u, a, b) => Math.max(0, Math.min(1, (u - a) / (b - a)));
 // ---------------------------------------------------------
 // Cómo es cada uno
 // ---------------------------------------------------------
-const PERSONAS = {
+export const PERSONAS = {
     hadad: { nombre: 'Hadad', piel: [226, 192, 164], pelo: { color: [44, 30, 24], estilo: 'ordenado' }, ojos: [64, 150, 86], barba: true, ropa: { tipo: 'polera', color: [62, 88, 66] }, pantalon: [56, 74, 110], zapatillas: 'negras' },
     andy: { nombre: 'Andy', escala: 1.1, piel: [194, 148, 110], pelo: { color: [20, 18, 20], estilo: 'corto' }, ojos: [26, 20, 20], ropa: { tipo: 'poleron', color: [42, 92, 200] }, pantalon: [26, 26, 30], zapatillas: 'blancas' },
     nacho: { nombre: 'Nacho', piel: [244, 216, 196], pelo: { color: [88, 62, 40], estilo: 'corto' }, ojos: [84, 58, 36], ropa: { tipo: 'polera', color: [176, 48, 46] }, pantalon: [62, 92, 142], zapatillas: 'blancas' },
