@@ -67,7 +67,7 @@ const GESTOS = {
 const CAMPOS = ['cx', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y'];
 
 export function crearEscenasSkin(ctx) {
-    const { grupo, dy, mundo, jugador, camaras, misiones, npcs, amigos, venjys, skin, puede, bloquear, liberar } = ctx;
+    const { grupo, dy, mundo, jugador, camara, camaras, misiones, npcs, amigos, venjys, skin, puede, bloquear, liberar } = ctx;
     let idioma = ctx.idioma || 'es';
     const L = o => (o ? o[idioma] || o.es : '');
     const vistas = () => misiones.estado.escenasSkin;
@@ -205,7 +205,7 @@ export function crearEscenasSkin(ctx) {
             pista = [['doble', 0, 0.09], ['sorpresa', 0.07, 0.29], ['rasca', 0.27, 0.5], ['yo', 0.48, 0.7], [fin, 0.68, 0.93]].map(([g, a, b]) => ({ g, a: a * T, b: b * T }));
         } else if (tipo === 'venjy') {
             let a = 1.3;
-            lineas = VENJY[clave].map(f => { const d = lim(1.8 + f.es.length * 0.045, 2.5, 3.8); const l = { q: f.q, texto: f, g: f.g, o: f.o, a, d }; a += d; return l; });
+            lineas = VENJY[clave].map(f => { const d = f.d ?? lim(1.8 + f.es.length * 0.045, 2.5, 3.8); const l = { q: f.q, texto: f, g: f.g, o: f.o, a, d }; a += d; return l; });
             T = a + 1.1;
             pista = [{ g: 'doble', a: 0, b: 1.6 }];
         } else {
@@ -218,7 +218,7 @@ export function crearEscenasSkin(ctx) {
 
         // Los amigos dejan su animación: la escena los mueve
         for (const a of Object.values(actores)) if (a.n) a.n.escena = (dt, base) => animarAmigo(a, dt, base);
-        camaras.iniciarCine(centro, { escena: true, fundido: 0.45, evitar: Object.values(actores).filter(a => a.n).map(a => a.n) });
+        camaras.iniciarCine(centro, { escena: true, esperarLinea: tipo === 'venjy', fundido: 0.45, evitar: Object.values(actores).filter(a => a.n).map(a => a.n) });
         camaras.pose = (cuerpo, dt) => poseJugador(dt);
         misiones.ocultarMarcas = true;
         document.body.classList.add('en-escena');
@@ -445,6 +445,8 @@ export function crearEscenasSkin(ctx) {
             const e = escena;
             // Encuadre: hacia quien habla
             const ls = lineasAhora(), l = ls[ls.length - 1];
+            // Una línea nueva: la cámara puede cambiar de plano aquí si ya cumplió su tiempo (esperarLinea)
+            if (l && l !== e.ultimaLinea) { e.ultimaLinea = l; camaras.nuevaLinea(); }
             camaras.enfocar(!l ? 0.5 : l.q === 'j' ? 0.68 : l.q === 'ambos' || l.q === 'todos' ? 0.5 : 0.32);
             if (e.t >= e.T) terminar();
             jugador.yaw = Math.atan2(e.centro.x - jugador.pos.x, e.centro.z - jugador.pos.z) - Math.PI;
@@ -471,7 +473,7 @@ export function crearEscenasSkin(ctx) {
                 for (let k = 2; k <= 4; k++) if (opaco(p.x, p.y + k + 0.5, p.z)) { y = Math.min(y, p.y + k - 0.5); break; }
                 // Corrido un poco hacia el centro de la escena: así no tapa la cabeza en los planos sobre el hombro
                 const c = escena.centro;
-                a.globo.actualizar(dt, true, lerp(p.x, c.x, 0.3), y - dy, lerp(p.z, c.z, 0.3));
+                a.globo.actualizar(dt, true, lerp(p.x, c.x, 0.3), y - dy, lerp(p.z, c.z, 0.3), camara);
                 usados.add(a.globo);
             }
         }

@@ -107,6 +107,48 @@
     height: 44px;
 }
 
+/* Pantalla completa: a la izquierda de la pausa */
+.tactil-pantalla {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(64px + env(safe-area-inset-right, 0px));
+    width: 44px;
+    height: 44px;
+}
+.tactil-pantalla[hidden], .tactil-aviso[hidden] { display: none !important; }
+
+/* Icono de pantalla completa: cuatro esquinas pixeladas */
+.tactil-icono-pantalla {
+    position: relative;
+    display: block;
+    width: 22px;
+    height: 22px;
+    background:
+        linear-gradient(#fff, #fff) 0 0 / 8px 4px, linear-gradient(#fff, #fff) 0 0 / 4px 8px,
+        linear-gradient(#fff, #fff) 100% 0 / 8px 4px, linear-gradient(#fff, #fff) 100% 0 / 4px 8px,
+        linear-gradient(#fff, #fff) 0 100% / 8px 4px, linear-gradient(#fff, #fff) 0 100% / 4px 8px,
+        linear-gradient(#fff, #fff) 100% 100% / 8px 4px, linear-gradient(#fff, #fff) 100% 100% / 4px 8px;
+    background-repeat: no-repeat;
+    filter: drop-shadow(2px 2px 0 #3f3f3f);
+}
+
+/* Aviso para iPhone (sin pantalla completa): panel oscuro con bisel */
+.tactil-aviso {
+    position: absolute;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, calc(100% - 32px));
+    padding: 10px 12px;
+    background: rgb(16 10 6 / 0.85);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 rgb(139 139 139 / 0.55), inset -3px -3px 0 rgb(55 55 55 / 0.8);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    text-align: center;
+    text-shadow: 2px 2px 0 #3f3f3f;
+    pointer-events: auto;
+}
+
 /* Icono de pausa dibujado con bordes (dos barras) */
 .tactil-icono-pausa {
     display: block;

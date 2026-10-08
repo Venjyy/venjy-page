@@ -7,7 +7,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { generarDatos } from '../mundo-datos.js';
 import { crearAtlas, animarAgua, B } from '../texturas.js';
-import { prepararTerreno, MundoVoxel, ESCALA, CHUNK, fijarAlto, ALTO_SUPERVIVENCIA, DESNIVEL_SUPERVIVENCIA, recalcularEmisores } from '../voxeles.js';
+import { prepararTerreno, MundoVoxel, ESCALA, CHUNK, ALTO, fijarAlto, ALTO_SUPERVIVENCIA, DESNIVEL_SUPERVIVENCIA, recalcularEmisores, llenarChunk, mallarChunkCrudo } from '../voxeles.js';
 import { Jugador } from '../jugador.js';
 import { crearCielo, COLOR_HORIZONTE } from '../cielo.js';
 import { iniciarTactil } from '../tactil.js';
@@ -271,12 +271,51 @@ async function arrancar(guardado) {
     const [sx, sz] = datos.P.spawn;
     const spawnMundo = { x: sx * ESCALA + 2.5, z: sz * ESCALA + 2.5 };
     spawnMundo.y = terreno.HT[Math.floor(spawnMundo.z) * terreno.BW + Math.floor(spawnMundo.x)] + DY + 1;
-    const pj = guardado.jugador || { x: spawnMundo.x, y: spawnMundo.y, z: spawnMundo.z };
-    mundo.planificar(pj.x, pj.z);
-    const cercanos = mundo.cola.filter(c => c.d2 <= 4).length;
-    while (mundo.chunks.size < cercanos) mundo.construir(40);
+    let spawnCama = guardado.spawnCama || null;
+
+    // ---- Chunks y lugar seguro ----
+    // Carga un chunk ya, sin esperar al presupuesto del bucle (hace falta para elegir un hueco y para no caer)
+    function cargarChunkAhora(cx, cz) {
+        const k = cx + ',' + cz;
+        if (cx < 0 || cz < 0 || cx >= mundo.cx || cz >= mundo.cz || mundo.chunks.has(k)) return;
+        const relleno = llenarChunk(terreno, cx, cz);
+        mundo.instalar(k, mallarChunkCrudo(cx, cz, relleno), relleno.vox, relleno.luz);
+    }
+    // Carga los chunks cercanos a (x, z) antes de soltar al jugador, y deja planeados los demás
+    function cargarCerca(x, z) {
+        mundo.planificar(x, z);
+        for (const c of mundo.cola) if (c.d2 <= 4) cargarChunkAhora(c.x, c.z);
+    }
+    // Un hueco donde cabe el cuerpo del jugador cerca de (x, y, z). Si ya está libre se devuelve tal cual
+    // (si cae, el suelo lo para); si está dentro de un bloque, sube hasta aire con suelo sólido debajo.
+    // Devuelve null si no hay sitio.
+    function lugarLibre(x, y, z) {
+        for (const dx of [-0.4, 0.4]) for (const dz of [-0.4, 0.4]) cargarChunkAhora(Math.floor((x + dx) / CHUNK), Math.floor((z + dz) / CHUNK));
+        if (!jugador.choca(x, y, z)) return { x, y, z };
+        const bx = Math.floor(x), bz = Math.floor(z);
+        for (let yy = Math.floor(y) + 1; yy < ALTO - 2; yy++) {
+            if (jugador.choca(x, yy, z) || mundo.bloque(bx, yy, bz) === B.LAVA) continue;
+            if (jugador.solido(bx, yy - 1, bz)) return { x, y: yy, z };
+        }
+        return null;
+    }
+    // Punto de reaparición: la cama si sigue en pie, si no el spawn del mapa
+    function puntoReaparicion() {
+        if (spawnCama) {
+            cargarChunkAhora(Math.floor(spawnCama.x / CHUNK), Math.floor(spawnCama.z / CHUNK));
+            const c = mundo.bloque(spawnCama.x, spawnCama.y - 1, spawnCama.z) !== 0 ? lugarLibre(spawnCama.x, spawnCama.y, spawnCama.z) : null;
+            if (c) return c;
+            spawnCama = null; // la cama se rompió o no hay sitio junto a ella
+        }
+        return lugarLibre(spawnMundo.x, spawnMundo.y, spawnMundo.z) || spawnMundo;
+    }
+
+    // Una partida guardada muerta (o con vida 0 de una versión anterior) vuelve al punto de reaparición
+    const estabaMuerto = !!guardado.vida && !(guardado.vida.vida > 0);
+    const inicio = estabaMuerto || !guardado.jugador ? puntoReaparicion() : (lugarLibre(guardado.jugador.x, guardado.jugador.y, guardado.jugador.z) || spawnMundo);
+    cargarCerca(inicio.x, inicio.z);
     mundo.iniciarWorkers('h', Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 4) - 2)));
-    jugador.colocar(pj.x, pj.y, pj.z);
+    jugador.colocar(inicio.x, inicio.y, inicio.z);
     const tit = datos.titulo;
     jugador.yaw = guardado.jugador ? guardado.jugador.yaw : Math.atan2(-(tit.tx0 + tit.anchoT / 2 - sx), -(tit.ty0 + tit.altoT / 2 - sz));
     jugador.pitch = guardado.jugador ? guardado.jugador.pitch : 0;
@@ -293,7 +332,6 @@ async function arrancar(guardado) {
     entidades.cargar(guardado.entidades);
     const dia = crearDia({ cielo });
     dia.cargar(guardado.dia);
-    let spawnCama = guardado.spawnCama || null;
     let jugado = guardado.jugado || 0;
 
     // Ventanas: al abrir se libera el puntero sin mostrar la pausa; al cerrar se vuelve a jugar
@@ -341,6 +379,13 @@ async function arrancar(guardado) {
 
     const vida = crearVida({
         jugador, mundo, inventario, dificultad: guardado.dificultad ?? 2,
+        // Dentro de un bloque al cargar o reaparecer: se sube a un hueco libre
+        alAtascarse: () => {
+            const p = lugarLibre(jugador.pos.x, jugador.pos.y, jugador.pos.z);
+            if (!p) return false;
+            jugador.colocar(p.x, p.y, p.z);
+            return true;
+        },
         alMorir: causa => {
             if (misiones) misiones.alMorir();
             if (jefes) jefes.alMorirJugador();
@@ -353,6 +398,7 @@ async function arrancar(guardado) {
         }
     });
     vida.cargar(guardado.vida);
+    if (vida.muerto) vida.reaparecer(); // partida guardada con vida 0: se empieza de nuevo en el punto de reaparición
     jugador.vivo = true;
 
     // ---- Criaturas del creativo, en coordenadas desplazadas ----
@@ -433,7 +479,7 @@ async function arrancar(guardado) {
     };
     const liberarEscena = () => { uiAbierta = false; jugador.congelado = false; if (!vida.muerto) entrar(); };
     escenas = crearEscenasSkin({
-        grupo: vista.grupo, dy: DY, mundo, jugador, camaras, misiones, npcs, amigos, venjys, idioma,
+        grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, npcs, amigos, venjys, idioma,
         skin: () => skinActual,
         puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
         bloquear: bloquearEscena,
@@ -487,23 +533,27 @@ async function arrancar(guardado) {
 
     // ---- Guardado ----
     function estadoActual() {
+        // Un muerto se guarda en su punto de reaparición (vida.serializar ya lo guarda como vivo)
+        const p = vida.muerto ? puntoReaparicion() : jugador.pos;
         return {
             id: guardado.id, nombre: guardado.nombre, dificultad: vida.dificultad, creado: guardado.creado || Date.now(),
             jugado: Math.round(jugado), dias: dia.dias, completado: !!guardado.completado,
-            jugador: { x: +jugador.pos.x.toFixed(2), y: +jugador.pos.y.toFixed(2), z: +jugador.pos.z.toFixed(2), yaw: +jugador.yaw.toFixed(3), pitch: +jugador.pitch.toFixed(3) },
+            jugador: { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), yaw: +jugador.yaw.toFixed(3), pitch: +jugador.pitch.toFixed(3) },
             spawnCama, vida: vida.serializar(), inventario: inventario.serializar(),
             ediciones: serializarEdiciones(terreno.ediciones), contenedores: contenedores.serializar(),
             agricultura: agricultura.serializar(), entidades: entidades.serializar(), dia: dia.serializar(), ganado: ganado.serializar(),
             misiones: misiones.serializar()
         };
     }
-    let guardando = false;
-    async function guardarYa(aviso = false) {
-        if (guardando) return;
-        guardando = true;
-        try { await guardarMundo(estadoActual()); if (aviso) hud.mensaje(tx().guardado, 2); }
-        catch (e) { console.error(e); if (aviso) hud.mensaje(tx().errorGuardar, 3); }
-        guardando = false;
+    // Las escrituras van en cola y cada una toma el estado al ejecutarse: el guardado de una muerte
+    // nunca se descarta por otro en curso (antes se perdía y se recargaba la partida previa)
+    let escritura = Promise.resolve();
+    function guardarYa(aviso = false) {
+        escritura = escritura.then(async () => {
+            try { await guardarMundo(estadoActual()); if (aviso) hud.mensaje(tx().guardado, 2); }
+            catch (e) { console.error(e); if (aviso) hud.mensaje(tx().errorGuardar, 3); }
+        });
+        return escritura;
     }
     setInterval(() => { if (!vida.muerto) guardarYa(); }, 30000);
     document.addEventListener('visibilitychange', () => { if (document.hidden) guardarYa(); });
@@ -547,11 +597,11 @@ async function arrancar(guardado) {
     $('guardar').addEventListener('click', () => guardarYa(true));
     $('cambiar-skin').addEventListener('click', () => abrirEditorSkin('pausa'));
     $('salir-menu').addEventListener('click', async () => { await guardarYa(); location.reload(); });
-    $('salir-muerte').addEventListener('click', async () => { vida.reaparecer(); jugador.colocar(spawnMundo.x, spawnMundo.y, spawnMundo.z); await guardarYa(); location.reload(); });
+    $('salir-muerte').addEventListener('click', async () => { await guardarYa(); location.reload(); });
     $('reaparecer').addEventListener('click', () => {
         vida.reaparecer();
-        const s = spawnCama && mundo.bloque(spawnCama.x, spawnCama.y - 1, spawnCama.z) !== 0 ? spawnCama : spawnMundo;
-        if (s !== spawnCama) spawnCama = null;
+        const s = puntoReaparicion();
+        cargarCerca(s.x, s.z);
         jugador.colocar(s.x, s.y, s.z);
         mostrar(null);
         entrar();

@@ -1,0 +1,10 @@
+{
+    "name": "Venjy · Supervivencia",
+    "short_name": "Supervivencia",
+    "start_url": "../supervivencia.html",
+    "scope": "../",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#000000",
+    "theme_color": "#000000"
+}

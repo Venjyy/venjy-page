@@ -17,6 +17,8 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 ## Convenciones
 
+- **Nunca** incluir enlaces de sesión (`claude.ai/code/session…`) ni la línea «Generated with Claude Code» en commits, PRs, comentarios o archivos del repo (ni la línea `Claude-Session:` en los commits).
+
 - Todo texto visible lleva su par `data-es` / `data-en`.
 - Solo fuente `PixelCraft`; sin emojis como íconos (se dibujan en `ICONOS` de `script.js`).
 

@@ -58,6 +58,11 @@ const CSS = `
     font-size: 0.9rem; color: #aaa; text-shadow: 2px 2px 0 #3f3f3f;
 }
 .mm-pequeno[hidden], .mm-grande[hidden] { display: none !important; }
+/* En pantallas táctiles el minimapa se toca para abrir el mapa grande (sobre los controles táctiles) */
+@media (pointer: coarse) {
+    .mm-pequeno { pointer-events: auto; cursor: pointer; touch-action: manipulation; }
+    .mm-grande { z-index: 40; touch-action: manipulation; }
+}
 @media (max-width: 600px) {
     .mm-pequeno { width: 110px; height: 110px; top: 8px; right: 8px; padding: 2px; }
 }
@@ -160,6 +165,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
     contenedor.appendChild(grande);
     const ctxG = cg.getContext('2d');
     grande.addEventListener('click', () => alternarGrande());
+    pequeno.addEventListener('click', () => alternarGrande());
 
     let px = 0, pz = 0, yaw = 0;
 
@@ -256,7 +262,8 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
         grande.hidden = !grande.hidden;
         if (!grande.hidden) {
             ajustarGrande();
-            pie.textContent = idioma() === 'en' ? 'Click or press M to close' : 'Clic o M para cerrar';
+            const tactil = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+            pie.textContent = idioma() === 'en' ? (tactil ? 'Tap to close' : 'Click or press M to close') : (tactil ? 'Toca para cerrar' : 'Clic o M para cerrar');
             dibujarGrande();
         }
     }

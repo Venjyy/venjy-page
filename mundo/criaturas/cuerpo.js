@@ -250,8 +250,53 @@ export function crearNombre(scene, texto) {
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
 export function crearGlobo(scene) {
-    const { c, tex, sp } = spriteLienzo(scene, 384, 160, [3.0, 1.25], true);
+    const ESCALA = [3.0, 1.25];
+    const { c, tex, sp } = spriteLienzo(scene, 384, 160, ESCALA, true);
     let texto = '', alfa = 0;
+    // Encaje en pantalla (escenas, con `camara`): si el globo se sale del encuadre lo corre hacia dentro;
+    // si ocuparía más de ~90% del ancho o del alto lo achica. Si cabe, no cambia nada.
+    const MARGEN = 0.04, TOPE = 0.9;
+    const v = new THREE.Vector3(), w = new THREE.Vector3(), vista = new THREE.Vector3();
+    function encajar(x, y, z, camara) {
+        const padre = sp.parent;
+        if (!padre) return;
+        padre.updateWorldMatrix(true, false);
+        v.set(x, y, z).applyMatrix4(padre.matrixWorld);
+        vista.copy(v).applyMatrix4(camara.matrixWorldInverse); // la cámara mira a -Z
+        const t = Math.tan(THREE.MathUtils.degToRad(camara.fov) / 2), asp = camara.aspect;
+        const delante = -vista.z > 0.2;
+        const prof = delante ? -vista.z : 2; // detrás de la cámara: se pega al borde con una profundidad fija
+        let cx, cy;
+        if (delante) { cx = vista.x / (prof * t * asp); cy = vista.y / (prof * t); }
+        else { const L = Math.hypot(vista.x, vista.y); if (L > 1e-6) { cx = -vista.x / L * 4; cy = -vista.y / L * 4; } else { cx = 0; cy = -4; } }
+        // Medio ancho y medio alto del sprite en pantalla (fracción del encuadre)
+        const sw = sp.getWorldScale(w);
+        let hw = (sw.x / 2) / (prof * t * asp), hh = (sw.y / 2) / (prof * t);
+        // En modo cine las franjas negras (9vh arriba y abajo) tapan 0.18 del encuadre por lado
+        const franja = document.body.classList.contains('en-cine') ? 0.18 : 0;
+        const k = Math.min(1, TOPE / hw, TOPE * (1 - franja) / hh);
+        hw *= k; hh *= k;
+        if (k < 1) sp.scale.set(ESCALA[0] * k, ESCALA[1] * k, 1);
+        const loX = -1 + MARGEN + hw, hiX = 1 - MARGEN - hw, loY = -1 + franja + MARGEN + hh, hiY = 1 - franja - MARGEN - hh;
+        const nx = loX > hiX ? 0 : Math.min(hiX, Math.max(loX, cx));
+        const ny = loY > hiY ? 0 : Math.min(hiY, Math.max(loY, cy));
+        if (delante && nx === cx && ny === cy) return; // cabe: se queda donde está
+        // Des-proyecta a la misma profundidad y pasa a coordenadas del grupo
+        vista.set(nx * prof * t * asp, ny * prof * t, -prof);
+        v.copy(vista).applyMatrix4(camara.matrixWorld);
+        padre.worldToLocal(v);
+        sp.position.copy(v);
+    }
+    // El encaje se hace justo antes de dibujar, con la cámara de ese cuadro: la de cine se mueve después
+    // de que las escenas actualizan sus globos (antes de eso la cámara sigue en primera persona)
+    let encaje = null;
+    sp.onBeforeRender = (renderer, escena, cam) => {
+        if (!encaje || !cam.isPerspectiveCamera) return;
+        sp.position.set(encaje[0], encaje[1], encaje[2]);
+        sp.scale.set(ESCALA[0], ESCALA[1], 1);
+        encajar(encaje[0], encaje[1], encaje[2], cam);
+        sp.updateMatrixWorld();
+    };
     const dibujar = () => {
         const ctx = c.getContext('2d');
         ctx.clearRect(0, 0, c.width, c.height);
@@ -291,7 +336,7 @@ export function crearGlobo(scene) {
         sp,
         decir(t) { if (t !== texto) { texto = t; conFuente(dibujar); } },
         get texto() { return texto; },
-        actualizar(dt, visible, x, y, z) {
+        actualizar(dt, visible, x, y, z, camara) {
             const objetivo = visible && texto ? 1 : 0;
             alfa += (objetivo - alfa) * Math.min(1, dt * 5);
             if (Math.abs(alfa - objetivo) < 0.01) alfa = objetivo;
@@ -299,6 +344,9 @@ export function crearGlobo(scene) {
             if (!sp.visible) return;
             sp.material.opacity = alfa;
             sp.position.set(x, y, z);
+            sp.scale.set(ESCALA[0], ESCALA[1], 1);
+            encaje = camara ? [x, y, z] : null;
+            sp.frustumCulled = !encaje; // con encaje se dibuja aunque su punto quede fuera del encuadre
         }
     };
 }

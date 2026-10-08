@@ -1,0 +1,10 @@
+{
+    "name": "Venjy · Mundo",
+    "short_name": "Mundo",
+    "start_url": "../mundo.html",
+    "scope": "../",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#000000",
+    "theme_color": "#000000"
+}
