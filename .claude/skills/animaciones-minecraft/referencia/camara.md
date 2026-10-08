@@ -64,7 +64,10 @@ Para capturas, fija el plano (`fijarPlano(k)` o `capturar.mjs --plano k`).
 ## Interiores estrechos (iglú, casas)
 
 - Antes de preferir «desde la entrada», **mide la entrada**: el túnel del iglú tiene 1 bloque de
-  ancho y desde ahí solo se ve lo que queda en su eje.
+  ancho; sus paredes tapan a los de los lados. La solución que funcionó: actores en media luna
+  mirando al túnel y la cámara **dentro** de la cúpula, en el eje del túnel (ver `ronda-iglu.js`).
+- Distancia: cámara a ≥ 3 bloques de la cabeza más cercana ≈ 2 bloques libres. Si `calcular`
+  acorta la distancia por un muro, lo hace sin avisar: revisa `diagnostico.usada`.
 - Si tu módulo reorienta la cámara después de `camaras.actualizar` (p. ej. `camara.lookAt(...)` cada
   cuadro, como la ronda), la dirección real no es `objetivo`: tenlo en cuenta al medir.
 
@@ -91,7 +94,10 @@ se «hace trampa» con las posiciones: se acomoda a la gente para el plano.
 - Deja **≥ 2 bloques libres** entre la cámara y el actor más cercano: si el espacio no lo da, cambia
   la puesta en escena, no aprietes la cámara.
 - Cuando la acción mete un brazo u objeto en cuadro (pasar el pito), el plano de ese momento debe
-  ser uno donde esa acción ocurra **de perfil**, no hacia la cámara.
+  ser uno donde esa acción ocurra **de perfil**, no hacia la cámara. Con cámara de frente, el pase
+  se hace **abriendo el brazo hacia el otro** (`bDz` ±0.85, `bDx` −0.3), no estirándolo adelante.
+- Al llevarse algo a la boca de frente a la cámara, gira la cabeza ~0.35 rad hacia ese brazo para
+  que la mano no tape la cara; limita los giros de cabeza a ±0.6 para que las caras se lean.
 
 ## Método para diseñar planos (síguelo en orden)
 
@@ -108,7 +114,9 @@ se «hace trampa» con las posiciones: se acomoda a la gente para el plano.
    la imprime por plano.
    Ya existe: `iniciarCine(n, { …, visibles: [actor1, actor2] })` descarta posiciones donde un
    bloque o **otra persona** tapa la cabeza de un actor o del jugador, y donde la cámara quedaría
-   dentro de un bloque; `camaras.diagnostico` y `camaras.planoActual` lo informan.
+   dentro de un bloque; `camaras.diagnostico` y `camaras.planoActual` lo informan. En el
+   diagnóstico, `nominal` es lo que tapaba el **primer** candidato (distancia y altura máximas) y
+   `usada` es la posición que de verdad se usó.
    Para saber qué **cara** ve la cámara: la cara está en la cara +Z de la cabeza, y la cabeza gira
    hacia quien mira (`cuello.rotation.y`, hasta ±1,1 rad); una cabeza puede verse y aun así de nuca.
    Ojo: `mundo.bloque(x, y, z)` usa la **y del mundo** (creativo + `dy`).

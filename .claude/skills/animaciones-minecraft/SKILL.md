@@ -29,7 +29,7 @@ revisa lo que entrega (video, hojas, medidas) y lo presenta. Si no se nombra el 
 
 | Modelo | Costo | Úsalo para | Ejemplos probados |
 |---|---|---|---|
-| **Haiku** (por defecto) | bajo | tipos A y B simples, interacciones con tecla, gestos nuevos, escenas cortas de 1–2 actores en lugares abiertos | caricias a las gatas (bien al primer intento); ronda del iglú (buena mecánica; la cámara necesitó 2 pasadas más) |
+| **Haiku** (por defecto) | bajo | tipos A y B simples, interacciones con tecla, gestos nuevos, escenas cortas de 1–2 actores en lugares abiertos | caricias a las gatas (bien al primer intento); ronda del iglú desde cero (buena mecánica; la cámara quedó bien en la 3.ª pasada, al aplicar «puesta en escena antes que cámara») |
 | **Sonnet** | medio | escenas con 3+ actores, interiores estrechos, puesta en escena y cámara difíciles, cuando Haiku falló dos veces en lo mismo | — |
 
 **Plantilla del encargo** (cópiala y llena los `<…>`):

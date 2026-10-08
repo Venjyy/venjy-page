@@ -48,6 +48,8 @@ node .claude/skills/animaciones-minecraft/capturar.mjs \
   azar y una escena de skin puede dispararse sola y arruinar las capturas), salvo que pruebes justo eso.
 - **Interiores** (iglú, casas): `irJunto` busca el suelo desde arriba y te deja sobre el techo. Úsalo
   para cargar el terreno y después `v.jugador.colocar(x, yDelPiso, z)` con la altura exacta.
+- **`pausar()` congela también la mirada suavizada de la cámara y los globos**: antes de capturar haz
+  `pausar(false); await esperar(1500); pausar()`.
 - **`pausar()` congela también los efectos** (humo, partículas, globos que se desvanecen): para
   verlos en una captura, en `--paso` haz `irA(t); pausar(false)` y fija la pausa medio segundo después,
   o captura sin `--paso` (tiempo real).
@@ -81,7 +83,10 @@ Una imagen con un cuadro rotulado por plano (0, 1, 2…). Úsala con el método 
 ## 2b. `grabar.mjs` · video MP4 de la animación completa (para mostrarla)
 
 Avanza el juego cuadro por cuadro con un reloj controlado (30 fps), así el video sale fluido
-aunque el contenedor dibuje lento. Tarda ~2 min por cada 8 s de video.
+aunque el contenedor dibuje lento. Tarda de 2 a 6 min por cada 8 s de video según la carga.
+En `--preparar`, **espera a que el terreno del lugar esté cargado** antes de terminar (p. ej.
+`while (v.mundo.bloque(x, y - 1, z) <= 0) await esperar(500)`): con el reloj manual ya no carga y
+los primeros segundos saldrían de puro cielo.
 
 ```bash
 node .claude/skills/animaciones-minecraft/grabar.mjs \

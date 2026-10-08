@@ -3,9 +3,8 @@
 // Sirve para elegir y corregir planos (qué tapa, qué se corta, qué sobra) de un vistazo.
 //   node .claude/skills/animaciones-minecraft/planos.mjs \
 //     --preparar "callarEscenas(); await irJunto(...); v.ronda.forzar(); await esperar(2000); v.ronda.pausar()" \
-//     --planos 5 --salida /scratchpad/planos.png [--t 0.5] [--medir "<expresión>"]
+//     --planos 5 --salida /scratchpad/planos.png [--medir "<expresión>"]
 // · --planos: cuántos planos tiene la lista (k = 0 … n−1). Usa camaras.fijarPlano(k).
-// · --t: fracción del movimiento del plano (0 inicio, 1 fin; por defecto 0.5).
 // · Imprime por plano el nombre y, si existe, camaras.diagnostico (ver referencia/camara.md).
 // =========================================================
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
