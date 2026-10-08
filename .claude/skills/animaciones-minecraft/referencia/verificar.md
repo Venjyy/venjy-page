@@ -73,6 +73,8 @@ node .claude/skills/animaciones-minecraft/planos.mjs --planos 5 --salida $SCRATC
   --preparar "callarEscenas(); const c = v.ronda.cojin; await irJunto(c.x, c.z, c.y, 1.2); v.jugador.colocar(c.x + 0.8, c.y + v.terreno.dy, c.z); await esperar(800); v.ronda.forzar(); await esperar(2500); v.ronda.pausar()"
 ```
 
+Haz **2–3 hojas en distintos instantes** (`v.ronda.irA(t)` antes de `pausar()` en `--preparar`):
+el saludo, un pase de objeto y la charla meten brazos y objetos en cuadro de forma distinta.
 Una imagen con un cuadro rotulado por plano (0, 1, 2…). Úsala con el método de
 `referencia/camara.md` («Método para diseñar planos»).
 
@@ -87,7 +89,7 @@ node .claude/skills/animaciones-minecraft/grabar.mjs \
   --iniciar "v.caricias.forzar('gala')" --segundos 8.6 --salida $SCRATCH/caricia.mp4
 ```
 
-Revisa unos cuadros antes de entregarlo (hoja de contacto con ffmpeg:
+El video está listo solo cuando el comando imprime `video <ruta>` (antes el archivo puede existir incompleto). Revisa unos cuadros antes de entregarlo (hoja de contacto con ffmpeg:
 `ffmpeg -i video.mp4 -vf "select='eq(n\,15)+eq(n\,150)',scale=480:-1,tile=2x1" -frames:v 1 hoja.png`).
 Al terminar una tarea de animación, **entrega el video** junto con las capturas.
 

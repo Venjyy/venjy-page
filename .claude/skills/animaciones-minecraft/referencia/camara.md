@@ -63,6 +63,11 @@ Para capturas, fija el plano (`fijarPlano(k)` o `capturar.mjs --plano k`).
 
 ## Interiores estrechos (iglú, casas)
 
+- Antes de preferir «desde la entrada», **mide la entrada**: el túnel del iglú tiene 1 bloque de
+  ancho y desde ahí solo se ve lo que queda en su eje.
+- Si tu módulo reorienta la cámara después de `camaras.actualizar` (p. ej. `camara.lookAt(...)` cada
+  cuadro, como la ronda), la dirección real no es `objetivo`: tenlo en cuenta al medir.
+
 En un espacio de radio ~3 casi cualquier plano tiene algo delante. Reglas aprendidas:
 - Nada en primer plano tapa más de **1/4 del cuadro**: ni un barril, ni la espalda de un actor, ni
   una pared. Revisa cada plano con `--plano k` y descarta o mueve el que falle.
@@ -71,8 +76,26 @@ En un espacio de radio ~3 casi cualquier plano tiene algo delante. Reglas aprend
 - `evitar` solo sabe de actores: los muebles hay que esquivarlos eligiendo `ang`/`dist` a mano.
 - Pocos planos buenos (3) valen más que 5 con dos malos.
 
+## Primero la puesta en escena, después la cámara
+
+Lección del iglú: tras 1845 posiciones de cámara probadas, ningún punto veía las tres caras,
+porque **los actores estaban mal ubicados para la cámara**, no la cámara para los actores. En cine
+se «hace trampa» con las posiciones: se acomoda a la gente para el plano.
+
+- Antes de diseñar planos, decide **dónde se paran o sientan los actores** (y el jugador): en
+  **arco abierto** (media luna) mirando hacia el lado con más espacio libre, no en triángulo cerrado.
+  Así un plano desde ese lado ve todas las caras.
+- Puedes mover a los actores **solo durante la escena** (como `iniciar` en `escenas-skin.js` mueve al
+  jugador bajo el fundido) y devolverlos al terminar. También puedes elegir otro lugar para el
+  asiento o el objeto de la interacción.
+- Deja **≥ 2 bloques libres** entre la cámara y el actor más cercano: si el espacio no lo da, cambia
+  la puesta en escena, no aprietes la cámara.
+- Cuando la acción mete un brazo u objeto en cuadro (pasar el pito), el plano de ese momento debe
+  ser uno donde esa acción ocurra **de perfil**, no hacia la cámara.
+
 ## Método para diseñar planos (síguelo en orden)
 
+0. **Puesta en escena** (sección anterior): ¿están los actores en arco y mirando a un lado libre?
 1. **Mapa de planta en texto**: anota en coordenadas del mundo dónde están las paredes, muebles
    (bloques: `mundo.bloque(x, y, z)` en la zona), los actores (cabezas) y la entrada. Escríbelo como
    tabla o rejilla ASCII antes de elegir ángulos: así ves desde dónde hay línea limpia.
@@ -83,6 +106,12 @@ En un espacio de radio ~3 casi cualquier plano tiene algo delante. Reglas aprend
    comprobación a `camaras.js` (p. ej. una opción `visibles: [actores]` que descarte el plano si
    alguno queda tapado) y expones `camaras.diagnostico = { nombre, tapados: [...] }`, `planos.mjs`
    la imprime por plano.
+   Ya existe: `iniciarCine(n, { …, visibles: [actor1, actor2] })` descarta posiciones donde un
+   bloque o **otra persona** tapa la cabeza de un actor o del jugador, y donde la cámara quedaría
+   dentro de un bloque; `camaras.diagnostico` y `camaras.planoActual` lo informan.
+   Para saber qué **cara** ve la cámara: la cara está en la cara +Z de la cabeza, y la cabeza gira
+   hacia quien mira (`cuello.rotation.y`, hasta ±1,1 rad); una cabeza puede verse y aun así de nuca.
+   Ojo: `mundo.bloque(x, y, z)` usa la **y del mundo** (creativo + `dy`).
 4. **Hoja de planos** (`planos.mjs`): mira todos los planos juntos. Para cada uno responde: ¿se ven
    las caras de todos?, ¿algo tapa más de 1/4?, ¿es distinto de los demás (tamaño o ángulo)?, ¿la
    franja o los botones cortan una cabeza? Corrige y repite hasta que todos pasen.
