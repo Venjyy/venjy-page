@@ -460,7 +460,7 @@ export function crearRondaIglu(ctx) {
         estado = 'sentando'; t = 0; tp = 0; peso = 0; primera = false;
         plan = null; planN = -1; volarse = 0; miraViva = false; tosJ = 0;
         reaccion.lalo = reaccion.moises = 0;
-        camaras.iniciarCine(ancla(), { escena: true, fundido: 0.45, evitar: [ln, mo], planos: 'trio' });
+        camaras.iniciarCine(ancla(), { escena: true, fundido: 0.45, evitar: [ln, mo], planos: 'trio', visibles: [ln, mo] });
         misiones.ocultarMarcas = true;
         document.body.classList.remove('en-iglu');
         document.body.classList.add('en-ronda');
@@ -513,7 +513,7 @@ export function crearRondaIglu(ctx) {
         } else {
             document.body.classList.remove('en-ronda-fp');
             if (document.pointerLockElement) document.exitPointerLock();
-            camaras.iniciarCine(ancla(), { escena: true, fundido: 0.3, evitar: [ln, mo], planos: 'trio' });
+            camaras.iniciarCine(ancla(), { escena: true, fundido: 0.3, evitar: [ln, mo], planos: 'trio', visibles: [ln, mo] });
         }
         return primera;
     }

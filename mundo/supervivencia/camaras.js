@@ -99,17 +99,22 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.0, alto: 1.4, orbita: -0.08, dolly: -0.3 },
         { nombre: 'picado', ang: Math.PI / 2 + 0.3, dist: 3.8, alto: 2.8, orbita: 0.04, dolly: -0.4 }
     ];
-    // Ronda del iglú (ronda-iglu.js, planos: 'trio'): el ancla es el punto medio entre Lalo y Moisés;
-    // ang 0 = detrás del jugador, π = desde el túnel (el lado de los dos), ±0,7 = sobre el hombro de cada uno
+    // Planos del trío (ronda-iglu.js, planos: 'trio'): el ancla es el punto medio entre Lalo y Moisés;
+    // ang es relativo a la línea jugador → amigo (como en PLANOS_ESCENA). Se eligieron con el mapa de planta del iglú (referencia/camara.md,
+    // «Método para diseñar planos»): sin bloques ni personas en la línea a cada cabeza (`visibles`) y sin
+    // que la cámara quede dentro de un bloque. Dentro del iglú no hay un punto desde donde se vean las caras
+    // de los tres durante toda la ronda: cada plano elige el lado que más caras da (Lalo y Moisés miran al
+    // jugador; el jugador mira al centro). Tres puntos distintos: sur, oeste y rincón NE (contrapicado).
     const PLANOS_TRIO = [
-        { nombre: 'general desde el túnel', ang: Math.PI, dist: 4.4, alto: 1.9, orbita: 0.1, dolly: -0.5 },
-        { nombre: 'sobre tu hombro', ang: 0.55, dist: 3.4, alto: 2.05, orbita: 0.04, dolly: -0.2 },
-        { nombre: 'sobre el hombro de Lalo', ang: Math.PI + 1.0, dist: 2.3, alto: 1.8, orbita: 0.05, dolly: -0.2 },
-        { nombre: 'contrapicado de los tres', ang: -Math.PI / 2, dist: 3.2, alto: 0.85, orbita: -0.08, dolly: -0.2 },
-        { nombre: 'sobre el hombro de Moisés', ang: Math.PI - 1.0, dist: 2.3, alto: 1.8, orbita: -0.05, dolly: -0.2 }
+        { nombre: 'de frente, desde el sur', ang: -2.982, dist: 2.69, alto: 1.6, orbita: 0.04, dolly: -0.2 },
+        { nombre: 'de lado, Lalo y Moisés', ang: 0.974, dist: 2.26, alto: 1.6, orbita: -0.05, dolly: -0.2 },
+        { nombre: 'contrapicado de los tres', ang: -1.018, dist: 2.11, alto: 0.85, orbita: -0.06, dolly: -0.2 }
     ];
     const DURACION = 4.2;
-    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null };
+    // visibles (opcional): actores cuyas cabezas deben verse desde la cámara; el jugador se añade solo.
+    // diag: diagnóstico del último plano calculado (solo con visibles): qué cabezas tapa la posición nominal.
+    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null, visibles: null };
+    let diag = null;
     const fundidoEl = document.createElement('div');
     fundidoEl.className = 'fundido-cine';
     document.body.appendChild(fundidoEl);
@@ -134,16 +139,46 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         objetivo.copy(amigo).lerp(yo, cine.escena ? cine.foco : pl.mira * 0.5);
         // Bajo techo (el iglú) cada plano prueba también más abajo, hasta la altura del pecho
         const bajo = cine.escena ? Math.min(pl.alto, 1.3) : pl.alto;
+        let nominal = null; // lo que tapa la posición nominal del plano (la primera que se prueba)
         for (; dist > (cine.escena ? 1.1 : 1.4); dist -= 0.3) for (let alto = pl.alto; alto >= bajo; alto -= 0.3) {
             cam.set(centro.x + Math.sin(ang) * dist, (n.y ?? 0) + dy + alto, centro.z + Math.cos(ang) * dist);
             if (cine.escena && (cam.distanceTo(yo) < 1 || cam.distanceTo(amigo) < 1 || tapa())) continue;
-            if (libre(mundo, objetivo, cam)) return true;
+            if (cine.visibles && mundo.bloque(cam.x, cam.y, cam.z) > 0) continue; // la cámara no puede quedar dentro de un bloque
+            const tapadas = cine.visibles ? cabezasTapadas() : null;
+            if (nominal === null && tapadas) nominal = tapadas;
+            if (libre(mundo, objetivo, cam) && !(tapadas && tapadas.length)) {
+                if (tapadas) diag = { plano: k, nombre: pl.nombre, nominal, libre: true, usada: { dist: +dist.toFixed(2), alto: +alto.toFixed(2) } };
+                return true;
+            }
         }
+        if (cine.visibles) diag = { plano: k, nombre: pl.nombre, nominal: nominal || [], libre: false, usada: null };
         return false;
     }
     // ¿La cámara quedó encima de alguno de los actores (cabeza o torso)?
     const vC = new THREE.Vector3();
     const tapa = () => cine.evitar.some(e => cam.distanceTo(e.p.cabeza.getWorldPosition(vC)) < 1.7 || cam.distanceTo(e.p.torso.getWorldPosition(vC)) < 1.4);
+    // Comprobación de línea libre cámara → cabeza de cada persona (los actores de `visibles` y el jugador).
+    // Una cabeza cuenta como tapada si hay bloques en la línea o si otra persona (su torso o su cabeza)
+    // queda sobre ella. Devuelve los nombres de las cabezas tapadas (lista vacía = todas se ven).
+    function cabezasTapadas() {
+        const personas = cine.visibles.map(e => ({ nombre: e.clave || 'actor', p: e.p }));
+        personas.push({ nombre: 'jugador', p: cuerpo });
+        const pts = personas.map(a => ({ nombre: a.nombre, cabeza: a.p.cabeza.getWorldPosition(new THREE.Vector3()), torso: a.p.torso.getWorldPosition(new THREE.Vector3()) }));
+        const out = [];
+        for (const a of pts) {
+            let tapada = !libre(mundo, cam, a.cabeza);
+            for (const o of pts) if (o !== a && !tapada && (sobreSegmento(cam, a.cabeza, o.torso, 0.45) || sobreSegmento(cam, a.cabeza, o.cabeza, 0.35))) tapada = true;
+            if (tapada) out.push(a.nombre);
+        }
+        return out;
+    }
+    // ¿El punto p está a menos de r del segmento a→b?
+    function sobreSegmento(a, b, p, r) {
+        const ex = b.x - a.x, ey = b.y - a.y, ez = b.z - a.z;
+        const k = Math.max(0, Math.min(1, ((p.x - a.x) * ex + (p.y - a.y) * ey + (p.z - a.z) * ez) / ((ex * ex + ey * ey + ez * ez) || 1)));
+        const dx = a.x + ex * k - p.x, dy = a.y + ey * k - p.y, dz = a.z + ez * k - p.z;
+        return dx * dx + dy * dy + dz * dz < r * r;
+    }
     // Sin ningún plano libre: de lado, a la altura de las cabezas, lo más lejos que se pueda
     function rescate() {
         const base = Math.atan2(yo.x - amigo.x, yo.z - amigo.z);
@@ -209,13 +244,17 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             if (!n) return;
             cine.activa = true; cine.n = n; cine.t = 0; cine.fundido = op.fundido ?? 0.3;
             cine.escena = !!op.escena; cine.planos = op.planos || null; cine.foco = cine.focoObj = 0.5; cine.evitar = op.evitar || [];
+            cine.visibles = op.visibles && op.visibles.length ? op.visibles : null;
             cine.plano = calcular(0, 0) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');
         },
         terminarCine() {
             if (!cine.activa) return;
-            cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null;
+            cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null; cine.visibles = null; diag = null;
             document.body.classList.remove('en-cine');
-        }
+        },
+        // Depuración (planos.mjs): plano actual y diagnóstico de líneas a las cabezas (null si no se pidió `visibles`)
+        get planoActual() { return cine.activa ? cine.plano : null; },
+        get diagnostico() { return cine.visibles ? diag : null; }
     };
 }
