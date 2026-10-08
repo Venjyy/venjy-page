@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Posar</title>
+<style>html,body{margin:0;background:#5d8a4e}canvas{display:block}</style></head>
+<body><canvas id="c" width="900" height="420"></canvas>
+<script type="module">
+// Vista previa de poses para la skill animaciones-minecraft (la usa posar.mjs).
+// Parámetros en el hash como JSON: { skin: 'venjy', pose: {cx,…}, cajas: [{x,y,z,w,h,d,color}] }
+import * as THREE from '/vendor/three.module.js';
+import { crearModelo, BASES } from '/mundo/supervivencia/skin.js';
+const op = JSON.parse(decodeURIComponent(location.hash.slice(1) || '{}'));
+const base = BASES.find(b => b.clave === (op.skin || 'venjy')) || BASES[0];
+const lienzo = document.getElementById('c');
+const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: false });
+r.setClearColor(0x87b4e8);
+const vistas = [['frente', 0], ['tres cuartos', Math.PI / 4], ['lado (mira a la izquierda)', Math.PI / 2]];
+const ancho = lienzo.width / 3;
+const escenas = vistas.map(([nombre, giro]) => {
+    const e = new THREE.Scene();
+    const m = crearModelo(base);
+    m.tinte.aplicar(new THREE.Color(1, 1, 1));
+    const p = op.pose || {};
+    const set = (o, k, v) => { if (v !== undefined) o[k] = v; };
+    set(m.cuello.rotation, 'x', p.cx); set(m.cuello.rotation, 'y', p.cy); set(m.cuello.rotation, 'z', p.cz);
+    set(m.brazoD.rotation, 'x', p.bDx); set(m.brazoD.rotation, 'z', p.bDz);
+    set(m.brazoI.rotation, 'x', p.bIx); set(m.brazoI.rotation, 'z', p.bIz);
+    set(m.piernaD.rotation, 'x', p.pDx); set(m.piernaI.rotation, 'x', p.pIx);
+    set(m.cuerpo.rotation, 'x', p.inc); set(m.cuerpo.rotation, 'z', p.rz); set(m.cuerpo.position, 'y', p.y);
+    e.add(m.g);
+    // Suelo de referencia (rejilla de 1 bloque) y cajas extra (p. ej. una gata)
+    const suelo = new THREE.GridHelper(4, 4, 0x2c4a22, 0x2c4a22); e.add(suelo);
+    for (const c of op.cajas || []) {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(c.w, c.h, c.d), new THREE.MeshBasicMaterial({ color: c.color || '#777', transparent: true, opacity: 0.85 }));
+        b.position.set(c.x, c.y, c.z); e.add(b);
+    }
+    const cam = new THREE.PerspectiveCamera(30, ancho / lienzo.height, 0.1, 50);
+    const d = 6.2;
+    cam.position.set(Math.sin(giro) * d, 1.3, Math.cos(giro) * d);
+    cam.lookAt(0, 1.0, Math.sin(giro) > 0.9 ? 0.3 : 0);
+    return { e, cam, nombre };
+});
+r.setScissorTest(true);
+escenas.forEach(({ e, cam }, i) => { r.setViewport(i * ancho, 0, ancho, lienzo.height); r.setScissor(i * ancho, 0, ancho, lienzo.height); r.render(e, cam); });
+window.listo = true;
+</script></body></html>
