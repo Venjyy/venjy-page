@@ -347,6 +347,8 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         // Línea desde la punta de la caña hasta el corcho
         p.g.updateMatrixWorld(true);
         n.punta.getWorldPosition(vTmp);
+        // La línea vive en la escena de las criaturas (en la supervivencia, un grupo subido dy): a sus coordenadas
+        if (n.linea.parent) n.linea.parent.worldToLocal(vTmp);
         const pos = n.linea.geometry.attributes.position;
         pos.setXYZ(0, vTmp.x, vTmp.y, vTmp.z);
         pos.setXYZ(1, n.corcho.position.x, n.corcho.position.y + 0.08, n.corcho.position.z);

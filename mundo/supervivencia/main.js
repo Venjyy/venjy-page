@@ -85,7 +85,7 @@ const TXT = {
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
         noDormir: 'Solo puedes dormir de noche', monstruos: 'No puedes dormir ahora: hay monstruos cerca', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).es, sinAlmacen: 'Este navegador no permite guardar partidas (modo privado).',
-        completado: 'Completado', jugado: m => `${m} min jugados`
+        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando'
     },
     en: {
         dificultades: ['Peaceful', 'Easy', 'Normal', 'Hard'], jugar: 'Play', exportar: 'Export', borrar: 'Delete',
@@ -94,7 +94,7 @@ const TXT = {
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
         noDormir: 'You can only sleep at night', monstruos: 'You may not rest now; there are monsters nearby', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).en, sinAlmacen: "This browser can't save games (private mode).",
-        completado: 'Completed', jugado: m => `${m} min played`
+        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing'
     }
 };
 const tx = () => TXT[idioma];
@@ -559,14 +559,29 @@ async function arrancar(guardado) {
     document.addEventListener('visibilitychange', () => { if (document.hidden) guardarYa(); });
 
     // ---- Entrada: puntero, pausa y teclas ----
+    // Tras cerrar una ventana con Esc el navegador no deja volver a capturar el mouse al tiro: en vez de la
+    // pausa se muestra un aviso y el siguiente clic vuelve al juego (Esc otra vez sí abre la pausa)
+    const avisoClic = document.createElement('div');
+    avisoClic.className = 'clic-seguir';
+    avisoClic.hidden = true;
+    const avisoTexto = document.createElement('span');
+    avisoClic.appendChild(avisoTexto);
+    document.body.appendChild(avisoClic);
+    avisoClic.addEventListener('click', () => { avisoClic.hidden = true; pedirPuntero(); });
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Escape' && !avisoClic.hidden && !e.repeat) { avisoClic.hidden = true; alActivo(false); e.preventDefault(); }
+    });
     function pedirPuntero() {
-        // Si el navegador lo rechaza (p. ej. tras cerrar el inventario con Esc), se muestra la pausa
-        const rechazo = () => { if (!jugador.activo && !uiAbierta && !vida.muerto) alActivo(false); };
+        const rechazo = () => {
+            if (jugador.activo || uiAbierta || vida.muerto) return;
+            avisoTexto.textContent = tx().clicSeguir;
+            avisoClic.hidden = false;
+        };
         try { const r = lienzo.requestPointerLock(); if (r && r.catch) r.catch(rechazo); } catch (e) { rechazo(); }
     }
     const alActivo = activo => {
         $('hud').hidden = !activo && !uiAbierta;
-        if (activo) { mostrar(null); return; }
+        if (activo) { avisoClic.hidden = true; mostrar(null); return; }
         if (uiAbierta || vida.muerto) return;
         mostrar('pausa');
         sincronizarAjustes();

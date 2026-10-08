@@ -468,3 +468,8 @@ body.con-tactil .mision-activa { top: 270px; }
 .ronda-botones .boton { display: none; width: auto; margin: 0; padding: 8px 14px; font-size: 0.9rem; pointer-events: auto; }
 body.en-iglu .ronda-sentar, body.en-ronda .ronda-pararse, body.en-ronda .ronda-cam { display: block; }
 body.en-ronda-fp #hud { visibility: hidden; }
+
+/* Aviso tras cerrar una ventana con Esc: un clic en cualquier parte vuelve al juego */
+.clic-seguir { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; cursor: pointer; background: rgb(0 0 0 / 0.25); font-family: 'PixelCraft', monospace; color: #fff; font-size: 1.1rem; text-shadow: 2px 2px 0 #3f3f3f; }
+.clic-seguir span { transform: translateY(70px); padding: 10px 16px; background: rgb(16 10 6 / 0.8); border: 3px solid #000; box-shadow: inset 3px 3px 0 rgb(139 139 139 / 0.55), inset -3px -3px 0 rgb(55 55 55 / 0.8); }
+.clic-seguir[hidden] { display: none !important; }
