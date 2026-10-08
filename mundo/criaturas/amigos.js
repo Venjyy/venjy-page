@@ -460,7 +460,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         if (!moises) return;
         if (!pase) {
             proximoPase -= dt;
-            if (proximoPase > 0 || fumando(moises) || fumando(lalo) || moises.tose > 0 || lalo.tose > 0) return;
+            if (proximoPase > 0 || fumando(moises) || fumando(lalo) || moises.tose > 0 || lalo.tose > 0 || moises.escena || lalo.escena) return;
             // Empieza: los dos objetos quedan sueltos en el mundo y vuelan hacia el otro
             pase = { t: 0, dur: 1.8, de: { bong: moises.objeto === 'bong' ? moises : lalo, pito: moises.objeto === 'pito' ? moises : lalo } };
             for (const o of [bongO.g, pitoO.g]) { o.parent.updateMatrixWorld(true); scene.attach(o); }
@@ -731,7 +731,9 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             tiempo += dt;
             dt = Math.min(dt, 0.05);
             tinte.aplicar(materiales.solido.color);
-            for (const g of grupos) g.charla.actualizar(oculto ? 0 : dt, oculto ? 999 : Math.hypot(g.x - jugador.pos.x, g.z - jugador.pos.z));
+            // Si alguien del grupo está en una escena, la conversación se calla y espera
+            const calladas = new Set(lista.filter(n => n.escena && n.charla).map(n => n.charla));
+            for (const g of grupos) g.charla.actualizar(oculto || calladas.has(g.charla) ? 0 : dt, oculto ? 999 : Math.hypot(g.x - jugador.pos.x, g.z - jugador.pos.z));
             actualizarPase(dt);
             // Humo de la fogata del campamento
             const fg = grupos.find(g => g.fuego);
@@ -742,7 +744,11 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 n.t += dt;
                 const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
                 let visible = !oculto && dJ < RADIO_VISIBLE;
-                if (visible) visible = ANIMAR[n.clave](n, dt, tiempo, dJ) !== false;
+                // n.escena (escenas de la supervivencia) reemplaza la animación; recibe la normal por si quiere usarla
+                if (visible) {
+                    const base = (d = dt) => ANIMAR[n.clave](n, d, tiempo, dJ);
+                    visible = (n.escena ? n.escena(dt, base) : base()) !== false;
+                }
                 n.p.g.visible = visible;
                 if (n.clave === 'boris') { n.leno.visible = visible && !n.partido; if (!visible) for (const h of n.mitades) h.m.visible = false; }
                 if (!visible) { n.nombre.ocultar(); n.globo.actualizar(dt, false, n.x, n.y, n.z); continue; }
@@ -750,7 +756,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 n.p.g.rotation.y = n.yaw;
                 // Globo: la conversación del grupo o sus frases sueltas al acercarse
                 let texto = '';
-                if (n.charla) texto = n.charla.texto(n.clave);
+                if (n.escena || calladas.has(n.charla)) texto = '';
+                else if (n.charla) texto = n.charla.texto(n.clave);
                 else {
                     const cerca = dJ < 6;
                     if (cerca && (!n.cerca || (n.cambioFrase -= dt) <= 0)) {
@@ -768,7 +775,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 let yGlobo = n.y + alto + 0.6;
                 if (texto) for (let dy = 2; dy <= 4; dy++) { const b = mundo.bloque(n.x, n.y + dy + 0.5, n.z); if (b > 0 && b !== 6) { yGlobo = Math.min(yGlobo, n.y + dy - 0.5); break; } }
                 n.globo.actualizar(dt, !!texto && dJ < 16 && seVe(mundo, jugador.camara, n.x, n.y + alto * 0.8, n.z), n.x, yGlobo, n.z);
-                n.nombre.actualizar(dt, jugador.camara, mundo, !texto, n.x, n.y + alto + 0.2, n.z, n.x, n.y + 1.2 * n.escala, n.z);
+                n.nombre.actualizar(dt, jugador.camara, mundo, !texto && !n.escena && !calladas.has(n.charla), n.x, n.y + alto + 0.2, n.z, n.x, n.y + 1.2 * n.escala, n.z);
             }
             // Astillas
             for (const a of astillas) {
@@ -785,6 +792,19 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             idioma = i;
             for (const g of grupos) g.charla.setIdioma(i);
         },
-        forzarPase() { proximoPase = 0; } // depuración: que Moisés y Lalo se pasen el bong y el pito
+        forzarPase() { proximoPase = 0; }, // depuración: que Moisés y Lalo se pasen el bong y el pito
+        // Piezas del iglú para la escena en que el jugador fuma con ellos (supervivencia/escenas-skin.js)
+        iglu: moises ? {
+            moises, lalo, bong: bongO, pito: pitoO, POS_PITO, emitir, tos, burbujas, boca, tomar,
+            // Si estaban pasándose las cosas, el pase termina al tiro
+            terminarPase() {
+                if (!pase) return;
+                const recibeBong = pase.de.bong === moises ? lalo : moises, recibePito = pase.de.pito === moises ? lalo : moises;
+                tomar(recibeBong, 'bong'); tomar(recibePito, 'pito');
+                pase = null; proximoPase = rnd(25, 40);
+            },
+            // Después de la escena: cada uno con lo suyo y el ciclo desde cero
+            devolver(deBong, dePito) { tomar(deBong, 'bong'); tomar(dePito, 'pito'); deBong.ciclo = rnd(3, 6); dePito.ciclo = rnd(3, 5); proximoPase = rnd(25, 40); }
+        } : null
     };
 }

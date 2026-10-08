@@ -234,12 +234,12 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
     }
     function comun(npc, dt, dJ, grupoCerca) {
         const visible = npc.p.g.visible;
-        const cerca = visible && dJ < DIST_GLOBO;
+        const cerca = visible && dJ < DIST_GLOBO && !npc.escena; // en una escena habla con su propio globo
         // Al acercarse dice algo; si se queda, cambia de frase cada ~7 s
         if (cerca && (!npc.cerca || (npc.cambioFrase -= dt) <= 0)) { decir(npc, grupoCerca, true); npc.cambioFrase = 7; }
         npc.cerca = cerca;
         npc.globo.actualizar(dt, cerca && seVe(mundo, jugador.camara, npc.x, npc.y + 1.6, npc.z), npc.x, npc.y + 2.75, npc.z);
-        npc.nombre.actualizar(dt, jugador.camara, mundo, visible && !cerca, npc.x, npc.y + 2.35, npc.z, npc.x, npc.y + 1.2, npc.z);
+        npc.nombre.actualizar(dt, jugador.camara, mundo, visible && !cerca && !npc.escena, npc.x, npc.y + 2.35, npc.z, npc.x, npc.y + 1.2, npc.z);
     }
 
     // ---------------------------------------------------------
@@ -529,9 +529,14 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
                     if (n === pony) { n.linea.visible = n.corcho.visible = n.pez.visible = false; }
                     continue;
                 }
-                if (n === pony) { n.linea.visible = n.corcho.visible = true; actualizarPony(dt, dJ); }
-                else if (n === salonas) actualizarSalonas(dt, dJ, tiempo);
-                else if (n === lona) actualizarLona(dt, dJ, tiempo);
+                if (n === pony) n.linea.visible = n.corcho.visible = true;
+                // n.escena (escenas de la supervivencia) reemplaza la animación; recibe la normal por si quiere usarla
+                const base = (d = dt) => {
+                    if (n === pony) actualizarPony(d, dJ);
+                    else if (n === salonas) actualizarSalonas(d, dJ, tiempo);
+                    else if (n === lona) actualizarLona(d, dJ, tiempo);
+                };
+                if (n.escena) n.escena(dt, base); else base();
                 if (!n.p.g.visible) continue;
                 n.p.g.position.set(n.x, n.y, n.z);
                 n.p.g.rotation.y = n.yaw;

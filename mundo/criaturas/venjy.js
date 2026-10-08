@@ -543,11 +543,13 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
                 n.p.g.visible = visible;
                 for (const o of [n.roca, n.mesa]) if (o) o.visible = visible;
                 if (!visible) { n.nombre.ocultar(); n.globo.actualizar(dt, false, n.x, n.y, n.z); continue; }
-                n.anim(n, dt, tiempo + n.t * 0.1, dJ);
+                // n.escena (escenas de la supervivencia) reemplaza la animación; recibe la normal por si quiere usarla
+                const base = (d = dt) => n.anim(n, d, tiempo + n.t * 0.1, dJ);
+                if (n.escena) n.escena(dt, base); else base();
                 n.p.g.position.set(n.x, n.y, n.z);
                 n.p.g.rotation.y = n.yaw;
                 // Frases al acercarse (la primera del inicio siempre es el saludo)
-                const cerca = dJ < 6.5;
+                const cerca = dJ < 6.5 && !n.escena;
                 if (cerca && (!n.cerca || (n.cambioFrase -= dt) <= 0)) {
                     let nueva = !n.cerca && n.primera && !n.saludo ? n.primera : null;
                     if (nueva) n.saludo = true;
@@ -565,7 +567,7 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
                 let yGlobo = n.y + alto + 0.6;
                 if (texto) for (let dy = 2; dy <= 4; dy++) { const b = mundo.bloque(n.x, n.y + dy + 0.5, n.z); if (b > 0 && b !== 6) { yGlobo = Math.min(yGlobo, n.y + dy - 0.5); break; } }
                 n.globo.actualizar(dt, !!texto && seVe(mundo, jugador.camara, n.x, n.y + (tumbado ? 0.4 : 1.6), n.z), n.x, yGlobo, n.z);
-                n.nombre.actualizar(dt, jugador.camara, mundo, !texto, n.x, n.y + alto + 0.2, n.z, n.x, n.y + (tumbado ? 0.3 : 1.2), n.z);
+                n.nombre.actualizar(dt, jugador.camara, mundo, !texto && !n.escena, n.x, n.y + alto + 0.2, n.z, n.x, n.y + (tumbado ? 0.3 : 1.2), n.z);
             }
             for (const c of chispas) {
                 if (!c.m.visible) continue;

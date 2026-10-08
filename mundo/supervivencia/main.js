@@ -43,8 +43,9 @@ import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
-import { crearEditorSkin, cargarSkin, coloresMano } from './skin.js';
+import { crearEditorSkin, cargarSkin, coloresMano, BASES } from './skin.js';
 import { crearCamaras } from './camaras.js';
+import { crearEscenasSkin } from './escenas-skin.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { rayoCaja } from '../fisica.js';
@@ -367,7 +368,7 @@ async function arrancar(guardado) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null, misiones = null, jefes = null;
+    let enemigos = null, misiones = null, jefes = null, escenas = null;
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
     // Zonas seguras: alrededor de cada amigo y de Venjy no aparecen ni entran monstruos
@@ -385,7 +386,8 @@ async function arrancar(guardado) {
     // Misiones y jefes
     misiones = crearMisiones({
         grupo: vista.grupo, dy: DY, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, idioma, abrirPanel, cerrarPanel,
-        jefeEnCurso: () => jefes && jefes.enCurso
+        jefeEnCurso: () => jefes && jefes.enCurso,
+        antesDeHablar: clave => !!(escenas && escenas.antesDeHablar(clave))
     });
     misiones.cargar(guardado.misiones);
     jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
@@ -411,9 +413,27 @@ async function arrancar(guardado) {
     // Skin, tercera persona (F5) y cámara de cine con los amigos
     const skinInicial = cargarSkin();
     const camaras = crearCamaras({ scene, camara, mundo, jugador, skin: skinInicial, tinteMundo: materiales.solido.color, dy: DY });
-    const ponerSkin = d => { camaras.ponerSkin(d); const c = coloresMano(d); mano.ponerColores(c.piel, c.manga); };
+    // ponerSkin acepta la descripción o la clave de una base ('pony', 'venjy'…) para probar
+    let skinActual = skinInicial;
+    const ponerSkin = d => {
+        if (typeof d === 'string') { const b = BASES.find(x => x.clave === d); if (!b) return null; d = { ...JSON.parse(JSON.stringify(b)), base: b.clave }; }
+        skinActual = d;
+        camaras.ponerSkin(d); const c = coloresMano(d); mano.ponerColores(c.piel, c.manga);
+        return d;
+    };
     ponerSkin(skinInicial);
     juego = { ponerSkin };
+    // Escenas de skin: un amigo reconoce tu skin (o a Venjy) la primera vez que te acercas
+    escenas = crearEscenasSkin({
+        grupo: vista.grupo, dy: DY, mundo, jugador, camaras, misiones, npcs, amigos, venjys, idioma,
+        skin: () => skinActual,
+        puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
+        bloquear: () => {
+            uiAbierta = true; jugador.congelado = true; jugador.teclas.clear();
+            if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
+        },
+        liberar: () => { uiAbierta = false; jugador.congelado = false; if (!vida.muerto) entrar(); }
+    });
     // Música de fondo y temas de los amigos
     const musica = crearMusica();
     const personasMusica = () => {
@@ -535,7 +555,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -574,6 +594,7 @@ async function arrancar(guardado) {
             particulas.actualizar(dt);
             mano.actualizar(dt);
         } else jugador.actualizar(0);
+        escenas.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
