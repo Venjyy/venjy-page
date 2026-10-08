@@ -15,6 +15,7 @@ import { crearGatas } from './gatas.js';
 import { crearNPCs } from './criaturas/npcs.js';
 import { crearAnimales } from './criaturas/animales.js';
 import { crearAmigos } from './criaturas/amigos.js';
+import { crearVenjys } from './criaturas/venjy.js';
 import { crearBrujula } from './brujula.js';
 import { iniciarOnline } from './online/online.js';
 import { cargarContenido } from './portafolio/contenido.js';
@@ -142,6 +143,8 @@ async function iniciar() {
     const npcs = crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, carteles: portafolio.carteles, idioma });
     // Más amigos en los lugares para explorar (campamento, iglú, atalaya, naufragio y escenario)
     const amigos = crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, idioma });
+    // Venjy en persona: saluda en el inicio y explica cada lugar del portafolio
+    const venjys = crearVenjys(scene, { terreno, mundo, jugador, materiales, destinos: destinosZona, orientacion, idioma });
     // L cambia el idioma de los paneles, carteles y textos de la página
     document.addEventListener('keydown', e => {
         if (e.code !== 'KeyL' || e.repeat || !jugador.activo) return;
@@ -151,12 +154,15 @@ async function iniciar() {
         portafolio.setIdioma(idioma);
         npcs.setIdioma(idioma);
         amigos.setIdioma(idioma);
+        venjys.setIdioma(idioma);
     });
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
+    // Pistas en el minimapa y el mapa grande: dónde hay gente (puntos tenues, agrupados)
+    minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
     const brujula = crearBrujula(hudEl, idioma);
     const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma });
     const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
-    window.__venjy = { amigos, animales, npcs, portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
+    window.__venjy = { venjys, amigos, animales, npcs, portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 
     cargaEl.hidden = true;
     botonJugar.hidden = false;
@@ -224,6 +230,7 @@ async function iniciar() {
         npcs.actualizar(dt, !!(online && online.enArena));
         animales.actualizar(dt, !!(online && online.enArena));
         amigos.actualizar(dt, !!(online && online.enArena));
+        venjys.actualizar(dt, !!(online && online.enArena));
         if (online) online.actualizar(dt);
         portafolio.actualizar(dt);
         relojAgua += dt;

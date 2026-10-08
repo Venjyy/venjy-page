@@ -6,7 +6,7 @@
 // Lienzos: cabeza 16×16 por cara, torso 16×24 (lados 8×24), brazos y piernas 8×24.
 // En las caras laterales la columna 0 es el frente (cuerpo.js espeja la otra).
 // =========================================================
-import { ajustar } from './cuerpo.js';
+import { ajustar, caja, texturaPixeles, liso } from './cuerpo.js';
 
 const mot = (c, f = 0.14) => (x, y, r) => ajustar(c, 1 - f / 2 + r() * f);
 const mezcla = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -17,10 +17,15 @@ const OJO = { 3: 'blanco', 4: 'iris', 11: 'iris', 12: 'blanco' };
 
 export function pielDe(d) {
     const P = d.piel, H = d.pelo.color, estilo = d.pelo.estilo;
-    const pelo = mot(H, 0.22);
-    const buzz = (x, y, r) => ajustar(mezcla(H, P, 0.35), 0.85 + r() * 0.25);
+    // Rulos: rizos claros y oscuros alternados; el resto, pelo con motas
+    const pelo = estilo === 'rulos'
+        ? (x, y, r) => ajustar(H, ((x + y * 2) % 4 === 0 ? 1.45 : (x * 3 + y) % 5 === 0 ? 0.6 : 1) * (0.85 + r() * 0.25))
+        : mot(H, 0.22);
+    const buzz = (x, y, r) => ajustar(mezcla(H, P, 0.15), 0.85 + r() * 0.25); // rapado: se ve un poco la piel
     const piel = mot(P, 0.07);
-    const barba = d.barba ? mot(ajustar(H, 1.05), 0.12) : null;
+    const barba = d.barba ? mot(d.barbaColor || ajustar(H, 1.05), 0.16) : null;
+    const LENTE = [22, 22, 26];
+    // Lentes cuadrados: marco alrededor de cada ojo (filas 6-8) y puente
 
     // ¿Hay pelo en la cara frontal en (x, y)?
     function peloFrente(x, y) {
@@ -29,6 +34,7 @@ export function pielDe(d) {
             case 'corto': return y <= 2 || (y === 3 && (x <= 1 || x >= 14)) || ((x === 0 || x === 15) && y <= 5);
             case 'ordenado': return y <= 2 || (y === 3 && (x >= 9 || x <= 1)) || ((x <= 1 || x >= 14) && y <= 5);
             case 'largo': return y <= 2 || (y === 3 && (x <= 5 || x >= 10)) || x <= 1 || x >= 14;
+            case 'rulos': return y <= 3 || (y === 4 && x % 3 !== 1) || ((x <= 1 || x >= 14) && y <= 8);
             case 'desordenado': {
                 const ojo = y >= 6 && y <= 8 && ((x >= 2 && x <= 5) || (x >= 10 && x <= 13));
                 return y <= 2 || ((x === 0 || x === 15) && y <= 9) || (!ojo && y < MECHONES[x]);
@@ -45,6 +51,9 @@ export function pielDe(d) {
                 if ((y === 10 && x >= 5 && x <= 10) || (y >= 11 && x >= 1 && x <= 14 && !(y === 15 && (x <= 2 || x >= 13)))) return barba(x, y, r);
                 if ((x <= 1 || x >= 14) && y >= 7) return barba(x, y, r);
             }
+            if (d.lentes && y >= 6 && y <= 8 && ((x >= 2 && x <= 5) || (x >= 10 && x <= 13))
+                && (y !== 7 || x === 2 || x === 5 || x === 10 || x === 13)) return LENTE;           // marco de los lentes
+            if (d.lentes && y === 7 && (x === 6 || x === 9 || x === 1 || x === 14)) return LENTE;
             if (y === 5 && ((x >= 3 && x <= 5) || (x >= 10 && x <= 12))) return ajustar(H, 0.9);  // cejas
             if (d.ojosRojos && y === 6 && ((x >= 3 && x <= 4) || (x >= 11 && x <= 12))) return ajustar(P, 0.82); // párpados caídos
             if (y === 7 && OJO[x]) {
@@ -57,15 +66,16 @@ export function pielDe(d) {
             return piel(x, y, r);
         },
         lado: (x, y, r) => {
-            const atras = { 'muy corto': 12, corto: 10, ordenado: 9, largo: 4, desordenado: 6 }[estilo] ?? 10;
-            const hasta = { 'muy corto': 5, corto: 9, ordenado: 9, largo: 15, desordenado: 11 }[estilo] ?? 9;
+            const atras = { 'muy corto': 12, corto: 10, ordenado: 9, largo: 4, desordenado: 6, rulos: 6 }[estilo] ?? 10;
+            const hasta = { 'muy corto': 5, corto: 9, ordenado: 9, largo: 15, desordenado: 11, rulos: 12 }[estilo] ?? 9;
+            if (d.lentes && y === 7 && x <= 7) return LENTE;                                       // patilla de los lentes
             if (y <= 2 || (x >= atras && y <= hasta) || (estilo === 'desordenado' && x <= 3 && y <= 5)) return estilo === 'muy corto' ? buzz(x, y, r) : pelo(x, y, r);
             if (barba && ((y >= 10 && x <= 7) || (x >= 6 && x <= 7 && y >= 6))) return barba(x, y, r);
             if (x >= 7 && x <= 8 && y >= 7 && y <= 9) return ajustar(P, 0.84);                  // oreja
             return piel(x, y, r);
         },
         atras: (x, y, r) => {
-            const hasta = { 'muy corto': 6, corto: 11, ordenado: 11, largo: 15, desordenado: 13 }[estilo] ?? 11;
+            const hasta = { 'muy corto': 6, corto: 11, ordenado: 11, largo: 15, desordenado: 13, rulos: 13 }[estilo] ?? 11;
             if (y <= hasta) return estilo === 'muy corto' ? buzz(x, y, r) : pelo(x, y, r);
             return piel(x, y, r);
         },
@@ -158,7 +168,31 @@ export function pielDe(d) {
     const extras = [];
     if (estilo === 'largo') extras.push({ tipo: 'melena', color: H });
     if (estilo === 'desordenado') extras.push({ tipo: 'mechones', color: H });
+    if (estilo === 'rulos') extras.push({ tipo: 'rulos', color: H, pintor: pelo });
     if (R.tipo === 'poleron') extras.push({ tipo: 'capucha', color: ajustar(C, 0.82) });
     if (d.gorro) extras.push({ tipo: 'gorro', color: d.gorro });
     return { cabeza, cuerpo, brazo, pierna, extras };
+}
+
+// Accesorios con volumen sobre la persona de crearPersona (melena, gorro, capucha, mechones, rulos)
+export function agregarExtras(p, extras, tinte, semilla) {
+    for (const e of extras) {
+        const m = tinte.caras(e.pintor ? texturaPixeles(8, 8, semilla + 50, e.pintor) : texturaPixeles(8, 8, semilla + 50, liso(e.color, 0.22)));
+        if (e.tipo === 'melena') { const b = caja(0.54, 0.52, 0.08, m); b.position.set(0, 0.02, -0.27); p.cuello.add(b); }
+        else if (e.tipo === 'gorro') {
+            const b = caja(0.55, 0.2, 0.55, m); b.position.set(0, 0.58, 0); p.cuello.add(b);
+            const borde = caja(0.56, 0.07, 0.56, tinte.caras(texturaPixeles(8, 8, semilla + 51, liso(ajustar(e.color, 0.7), 0.18))));
+            borde.position.set(0, 0.48, 0); p.cuello.add(borde);
+        } else if (e.tipo === 'capucha') { const b = caja(0.42, 0.2, 0.1, m); b.position.set(0, 1.42, -0.17); p.cuerpo.add(b); }
+        else if (e.tipo === 'mechones') { // pelo desordenado con volumen
+            for (const [mx, my, mz, rz, rx] of [[-0.17, 0.52, 0.12, 0.4, 0.3], [0.06, 0.55, 0.2, -0.2, 0.5], [0.2, 0.51, -0.02, -0.5, 0], [-0.06, 0.54, -0.18, 0.2, -0.4], [0.16, 0.53, 0.16, -0.6, 0.4]]) {
+                const b = caja(0.16, 0.1, 0.16, m); b.position.set(mx, my, mz); b.rotation.set(rx, 0, rz); p.cuello.add(b);
+            }
+        } else if (e.tipo === 'rulos') { // melena de rulos con mucho volumen: capa sobre la cabeza y rizos alrededor
+            const capa = caja(0.6, 0.16, 0.6, m); capa.position.set(0, 0.56, -0.02); p.cuello.add(capa);
+            const rizos = [[-0.24, 0.62, 0.2], [0, 0.66, 0.22], [0.24, 0.62, 0.18], [-0.28, 0.6, -0.1], [0.28, 0.61, -0.12], [-0.12, 0.68, -0.05], [0.12, 0.69, 0.04],
+                [0, 0.62, -0.28], [-0.3, 0.42, 0.02], [0.3, 0.44, -0.04], [-0.3, 0.36, -0.2], [0.3, 0.38, -0.22], [-0.2, 0.4, -0.3], [0.18, 0.42, -0.31]];
+            rizos.forEach(([x, y, z], i) => { const b = caja(0.17, 0.17, 0.17, m); b.position.set(x, y, z); b.rotation.set(i * 0.7, i * 1.3, i * 0.4); p.cuello.add(b); });
+        }
+    }
 }

@@ -163,6 +163,37 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
 
     let px = 0, pz = 0, yaw = 0;
 
+    // Gente del mundo (NPCs): pistas discretas. Los que están juntos se agrupan en un solo punto
+    // tenue que late despacio, así ayudan a encontrarlos sin delatar a cada uno.
+    let fuentePersonas = () => [];
+    let grupos = [], ultimoGrupo = 0;
+    function agrupar() {
+        const ahora = performance.now();
+        if (ahora - ultimoGrupo < 1000) return grupos; // se mueven poco: basta recalcular 1 vez por segundo
+        ultimoGrupo = ahora;
+        grupos = [];
+        for (const p of fuentePersonas()) {
+            const cx = p.x / escala, cz = p.z / escala;
+            const g = grupos.find(q => Math.hypot(q.x - cx, q.z - cz) < 4);
+            if (g) { g.x = (g.x * g.n + cx) / (g.n + 1); g.z = (g.z * g.n + cz) / (g.n + 1); g.n++; }
+            else grupos.push({ x: cx, z: cz, n: 1 });
+        }
+        return grupos;
+    }
+    function dibujarPersonas(ctx, k, ox, oz, tam) {
+        const t = performance.now() / 1000;
+        for (const g of agrupar()) {
+            const x = (g.x - ox) * k, y = (g.z - oz) * k;
+            if (x < -4 || y < -4 || x > ctx.canvas.width + 4 || y > ctx.canvas.height + 4) continue;
+            const alfa = 0.6 + 0.35 * Math.sin(t * 2 + g.x * 0.37 + g.z * 0.11);
+            const s = Math.max(2, Math.round(tam));
+            ctx.fillStyle = `rgba(20, 14, 6, ${(alfa * 0.8).toFixed(2)})`;
+            ctx.fillRect(Math.round(x - s / 2) - 1, Math.round(y - s / 2) - 1, s + 2, s + 2);
+            ctx.fillStyle = `rgba(255, 232, 160, ${alfa.toFixed(2)})`;
+            ctx.fillRect(Math.round(x - s / 2), Math.round(y - s / 2), s, s);
+        }
+    }
+
     function dibujarPequeno() {
         const cx = px / escala, cz = pz / escala;
         const tam = cp.width;
@@ -177,6 +208,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
         if (bx > ax && bz > az) {
             ctxP.drawImage(base, ax, az, bx - ax, bz - az, (ax - sx0) * k, (az - sz0) * k, (bx - ax) * k, (bz - az) * k);
         }
+        dibujarPersonas(ctxP, k, sx0, sz0, k * 1.7);
         ctxP.save();
         ctxP.translate(tam / 2, tam / 2);
         ctxP.rotate(-yaw);
@@ -211,6 +243,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
             ctxG.fillStyle = '#fff';
             ctxG.fillText(t, tx, ty);
         }
+        dibujarPersonas(ctxG, k, 0, 0, Math.max(3, k * 2.4));
         ctxG.save();
         ctxG.translate(px / escala * k, pz / escala * k);
         ctxG.rotate(-yaw);
@@ -245,5 +278,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
     });
 
     dibujarPequeno();
-    return { actualizar, alternarGrande };
+    // fn() → [{ x, z }] en bloques
+    function fijarPersonas(fn) { fuentePersonas = fn; ultimoGrupo = 0; }
+    return { actualizar, alternarGrande, fijarPersonas };
 }

@@ -103,6 +103,13 @@ Plan acordado el 2026-10-07. Todo lo que va en el terreno es determinista (los w
 - [x] **Pieles por descripción** (`criaturas/pieles.js`, `pielDe`): piel, pelo (muy corto, corto, ordenado, largo, desordenado), ojos (rojos), barba, lunar, ropa (polera, polerón con capucha, camisa a cuadros, polera ancha con cadena), pantalón y zapatillas (blancas, negras, botas, Jordan); accesorios con volumen (melena, mechones, gorro, capucha).
 - [x] **Conversaciones** (`criaturas/charla.js`): guiones por turnos que avanzan solos cerca del grupo, con eventos (baile, risa, tos). Cambian con `L`.
 - [x] `crearPersona` espeja la cara lateral −X (antes repetía la +X: el pelo de la nuca salía adelante en ese lado).
+- [x] **Venjy en persona** (`mundo/criaturas/venjy.js`, `window.__venjy.venjys`): blanco, rulos oscuros con volumen (`estilo: 'rulos'` + extra `rulos`), barba pelirroja completa (`barbaColor`), lentes cuadrados (`lentes`) y polerón verde. 15 apariciones (14 en el mapa vertical, sin corrales), cada una con su animación y frases ES/EN:
+  - **Inicio**: saluda y salta; la primera frase es el saludo y, en el mapa vertical, avisa que el estable es el horizontal (la recomendación también está en el horizontal).
+  - **Zonas del portafolio** (al lado del punto de llegada de «Ir a»): Sobre mí lee un libro y pasa páginas, Experiencia presenta el edificio y explica, Habilidades pica una roca con pico de diamante (chispas y golpe), Proyectos martilla en una mesa de trabajo, Mis gatas sentado haciendo cariño, Contacto escribe una carta y la muestra, ProcedimientoSeguro usa el celular y te lo muestra.
+  - **Rincones**: pasea por el puente, baila en el escenario, posa sobre la «E» del título, mira con binoculares desde la atalaya, duerme en el molino, se rasca la cabeza frente al portal y se apoya en la valla de la granja.
+- [x] **Minimapa y mapa grande**: puntos claros y tenues que laten donde hay gente; los cercanos se agrupan en uno (`fijarPersonas` en `minimapa.js`).
+- [x] **Iglú**: Moisés y Lalo se pasan el bong y el pito cada 25-40 s (los objetos vuelan de una mano a la otra y cada uno usa lo que recibe); Lalo también tose, más fuerte y más grave. Pasillo de nieve nivelado frente al túnel (en el vertical la boca quedaba contra el terreno).
+- [x] **Globos y nombres**: el globo se dibuja encima de todo, solo si se ve a quien habla; baja bajo techos bajos (iglú) y admite 4 líneas. El letrero del nombre se ensancha según el largo («Conejeros» se cortaba). Conejeros con el pelo más oscuro.
 - Pendiente de esta tanda: probar en un teléfono real. Los escalones (atalaya, rampas del puente) son de 1 bloque y se suben saltando, como el resto del terreno: el motor no tiene medios bloques ni subida automática.
 
 ## Estado actual (Fase 1 completa)
@@ -171,6 +178,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-07 · **Venjy en persona, pistas en el mapa y arreglos**: 15 Venjys con animaciones distintas, puntos de gente en el minimapa, pase del bong y el pito, tos de Lalo, globos que no se cortan, nombres anchos, entrada del iglú en el vertical · `mundo/criaturas/{venjy,pieles,amigos,cuerpo,npcs}.js`, `mundo/minimapa.js`, `mundo/construcciones.js`, `mundo/main.js`. Verificado en ambos mapas.
 
 - 2026-10-07 · **Nueve amigos más**: Hadad, Andy y Nacho (campamento), Moisés y Lalo (iglú), Boris y Lucho (leñera de la atalaya), Braulio (naufragio) y Conejeros (escenario), con animaciones propias, humo, astillas, hachazo y conversaciones · `mundo/criaturas/{amigos,pieles,charla}.js` (nuevos), `mundo/criaturas/{cuerpo,npcs}.js`, `mundo/construcciones.js`, `mundo/main.js`. Verificado en ambos mapas sin errores de consola.
 

@@ -419,6 +419,16 @@ export function colocarLugares(t) {
             const sup = L.nieve ? B.NIEVE : null;
             nivelar(t, x0, z0, L.w, L.d, h, sup, 1);
             if (sup !== null) for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) SUP[z * BW + x] = sup;
+            if (L.nieve) { // pasillo plano frente al túnel del iglú (al sur), para entrar caminando
+                const cxL = x0 + (L.w >> 1);
+                for (let z = z0 + L.d; z < z0 + L.d + 7; z++) {
+                    for (let x = cxL - 2; x <= cxL + 2; x++) {
+                        const o = z * BW + x;
+                        if (ES[o] === 1) continue;
+                        ES[o] = 3; HT[o] = h; SUP[o] = B.NIEVE;
+                    }
+                }
+            }
         }
         const cxL = x0 + (L.w >> 1), czL = z0 + (L.d >> 1);
         const decor = aDecor(poner => CONSTRUIR[L.clave](poner, cxL, h + 1, czL, h, t));

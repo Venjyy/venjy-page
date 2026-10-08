@@ -8,10 +8,10 @@
 import * as THREE from '../../vendor/three.module.js';
 import { NIVEL_AGUA } from '../voxeles.js';
 import {
-    RADIO_VISIBLE, ajustar, lerp, angulo, crearTinte, crearPersona, caminar, caja, texturaPixeles, liso,
+    seVe, RADIO_VISIBLE, ajustar, lerp, angulo, crearTinte, crearPersona, caminar, caja, texturaPixeles, liso,
     crearNombre, crearGlobo, suelo, audioMundo, sonando, bufferRuido
 } from './cuerpo.js';
-import { pielDe } from './pieles.js';
+import { pielDe, agregarExtras } from './pieles.js';
 import { crearCharla } from './charla.js';
 
 const suave = u => u * u * (3 - 2 * u);
@@ -29,7 +29,7 @@ const PERSONAS = {
     lalo: { nombre: 'Lalo', piel: [110, 72, 48], pelo: { color: [18, 16, 18], estilo: 'corto' }, ojos: [30, 22, 20], ojosRojos: true, gorro: [30, 30, 36], ropa: { tipo: 'polera ancha', color: [236, 236, 232] }, pantalon: [76, 106, 162], zapatillas: 'jordan' },
     boris: { nombre: 'Boris', piel: [162, 110, 72], pelo: { color: [24, 20, 20], estilo: 'corto' }, ojos: [40, 28, 22], ropa: { tipo: 'camisa cuadros', color: [176, 40, 36] }, pantalon: [58, 66, 92], zapatillas: 'botas' },
     lucho: { nombre: 'Lucho', piel: [242, 216, 198], pelo: { color: [16, 14, 16], estilo: 'desordenado' }, ojos: [96, 62, 34], ropa: { tipo: 'polera', color: [30, 30, 34] }, pantalon: [48, 52, 66], zapatillas: 'negras' },
-    conejeros: { nombre: 'Conejeros', piel: [242, 212, 190], pelo: { color: [62, 46, 32], estilo: 'muy corto' }, ojos: [80, 56, 36], ropa: { tipo: 'polera', color: [24, 24, 26], estampado: [226, 226, 220] }, pantalon: [62, 92, 142], zapatillas: 'blancas' }
+    conejeros: { nombre: 'Conejeros', piel: [242, 212, 190], pelo: { color: [30, 22, 18], estilo: 'muy corto' }, ojos: [80, 56, 36], ropa: { tipo: 'polera', color: [24, 24, 26], estampado: [226, 226, 220] }, pantalon: [62, 92, 142], zapatillas: 'blancas' }
 };
 
 // Frases sueltas (los que hablan solos) y conversaciones de grupo
@@ -74,7 +74,9 @@ const CHARLAS = {
         { quien: 'moises', es: 'Espérate, que estoy cargando.', en: "Hold on, I'm loading it." },
         { quien: 'lalo', es: 'Este iglú es lo más acogedor del mapa.', en: 'This igloo is the coziest spot on the map.' },
         { quien: 'moises', es: '*cof cof*... está bueno.', en: "*cough cough*... it's good.", evento: 'tos' },
-        { quien: 'lalo', es: 'Tranqui, tranqui. Respira.', en: 'Easy, easy. Breathe.' }
+        { quien: 'lalo', es: 'Tranqui, tranqui. Respira.', en: 'Easy, easy. Breathe.' },
+        { quien: 'lalo', es: '*COF COF COF*... ¡ufff! Ese estaba cargado.', en: '*COUGH COUGH COUGH*... phew! That one was strong.', evento: 'tosLalo' },
+        { quien: 'moises', es: 'Jajaja, ¿y te reías de mí?', en: 'Haha, and you were laughing at me?' }
     ]
 };
 
@@ -95,19 +97,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const p = crearPersona(tinte, piel, semilla);
         const escala = d.escala || 1;
         p.g.scale.setScalar(escala);
-        for (const e of piel.extras) {
-            const m = tinte.caras(tex(8, 8, semilla + 50, e.color, 0.22));
-            if (e.tipo === 'melena') { const b = caja(0.54, 0.52, 0.08, m); b.position.set(0, 0.02, -0.27); p.cuello.add(b); }
-            else if (e.tipo === 'gorro') {
-                const b = caja(0.55, 0.2, 0.55, m); b.position.set(0, 0.58, 0); p.cuello.add(b);
-                const borde = caja(0.56, 0.07, 0.56, tinte.caras(tex(8, 8, semilla + 51, ajustar(e.color, 0.7)))); borde.position.set(0, 0.48, 0); p.cuello.add(borde);
-            } else if (e.tipo === 'capucha') { const b = caja(0.42, 0.2, 0.1, m); b.position.set(0, 1.42, -0.17); p.cuerpo.add(b); }
-            else if (e.tipo === 'mechones') { // pelo desordenado con volumen
-                for (const [mx, my, mz, rz, rx] of [[-0.17, 0.52, 0.12, 0.4, 0.3], [0.06, 0.55, 0.2, -0.2, 0.5], [0.2, 0.51, -0.02, -0.5, 0], [-0.06, 0.54, -0.18, 0.2, -0.4], [0.16, 0.53, 0.16, -0.6, 0.4]]) {
-                    const b = caja(0.16, 0.1, 0.16, m); b.position.set(mx, my, mz); b.rotation.set(rx, 0, rz); p.cuello.add(b);
-                }
-            }
-        }
+        agregarExtras(p, piel.extras, tinte, semilla);
         scene.add(p.g);
         const n = {
             clave, p, escala, x, y, z, yaw, t: Math.random() * 10, fase: 0,
@@ -221,16 +211,17 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             }
         } catch (e) { /* sin sonido */ }
     }
-    function tos(d) {
+    // fuerza 2: la tos de Lalo, más fuerte, más grave y con más golpes
+    function tos(d, fuerza = 1) {
         try {
             if (!sonando()) return;
-            const vol = 0.12 * Math.max(0, 1 - d / 12);
+            const vol = 0.12 * fuerza * Math.max(0, 1 - d / (12 * fuerza));
             if (vol < 0.003) return;
             const { ctx, master } = audioMundo();
             const t0 = ctx.currentTime;
-            [0, 0.28, 0.5].forEach(ret => {
+            (fuerza > 1 ? [0, 0.22, 0.42, 0.66, 0.95] : [0, 0.28, 0.5]).forEach(ret => {
                 const n = ctx.createBufferSource(); n.buffer = bufferRuido(ctx);
-                const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 650; f.Q.value = 1.5;
+                const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fuerza > 1 ? 470 : 650; f.Q.value = 1.5;
                 const e = ctx.createGain(); const t = t0 + ret;
                 e.gain.setValueAtTime(0.0001, t); e.gain.linearRampToValueAtTime(vol, t + 0.02); e.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
                 n.connect(f); f.connect(e); e.connect(master); n.start(t, Math.random()); n.stop(t + 0.2);
@@ -325,16 +316,21 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     }
 
     // ---------------------------------------------------------
-    // Iglú: Moisés con el bong y Lalo con el pito
+    // Iglú: Moisés (sentado) y Lalo (apoyado) fuman; de vez en cuando se pasan el bong y el pito
     // ---------------------------------------------------------
     const I = lugar('iglu');
-    let moises, lalo, charlaIglu;
+    let moises, lalo, charlaIglu, bongO, pitoO, pase = null, proximoPase = rnd(18, 30);
+    const POS_PITO = [0.02, -0.76, 0.1];
     if (I) {
         moises = nuevo('moises', I.bx - 0.6, I.y, I.bz + 1.4, 0, 4400);
         lalo = nuevo('lalo', I.bx + 1.6, I.y, I.bz + 0.6, 0, 4500);
         moises.yaw = Math.atan2(lalo.x - moises.x, lalo.z - moises.z) + 0.35;
         lalo.yaw = Math.atan2(moises.x - lalo.x, moises.z - lalo.z) - 0.35;
+        moises.yawBase = moises.yaw; lalo.yawBase = lalo.yaw;
         sentadoEnSuelo(moises.p);
+        // Dónde queda el bong cuando no lo usa: en el suelo (sentado) o en la mano izquierda (de pie)
+        moises.reposoBong = [0.36, 0.6, 0.5];
+        lalo.reposoBong = [0.3, 0.8, 0.3];
         // Bong de vidrio celeste con agua, cazoleta y boquilla
         const vidrio = tinte.caras(tex(4, 4, 4601, [170, 220, 236], 0.1), {}, { transparent: true, opacity: 0.5, depthWrite: false });
         const bong = new THREE.Group();
@@ -346,82 +342,137 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const brasaBong = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.04, 0.07), new THREE.MeshBasicMaterial({ color: 0x552200 }));
         brasaBong.position.set(0, 0.23, 0.2);
         bong.add(base, agua, tubo, boquilla, tallo, brasaBong);
-        moises.p.cuerpo.add(bong);
-        moises.bong = bong; moises.brasa = brasaBong; moises.agua = agua; moises.ciclo = rnd(0, 6); moises.tose = 0;
-        // Pito armado en la mano derecha de Lalo, con brasa que se enciende al fumar
+        bongO = { g: bong, brasa: brasaBong, agua };
+        // Pito armado, con brasa que se enciende al fumar
         const pito = new THREE.Group();
         const papel = caja(0.035, 0.035, 0.17, tinte.caras(tex(2, 4, 4701, [240, 236, 226], 0.06)));
         const brasaPito = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.03), new THREE.MeshBasicMaterial({ color: 0x993300 }));
         brasaPito.position.z = 0.1;
         pito.add(papel, brasaPito);
-        pito.position.set(0.02, -0.76, 0.1);
-        pito.rotation.x = -0.6;
-        lalo.p.brazoD.add(pito);
-        lalo.pito = pito; lalo.brasa = brasaPito; lalo.ciclo = rnd(0, 5); lalo.humito = 0;
+        pitoO = { g: pito, brasa: brasaPito };
+        tomar(moises, 'bong'); tomar(lalo, 'pito');
+        moises.ciclo = rnd(0, 6); lalo.ciclo = rnd(0, 5);
+        for (const n of [moises, lalo]) { n.tose = 0; n.humito = 0; }
         // Lalo apoyado: el cuerpo un poco hacia atrás y una pierna cruzada
         lalo.p.cuerpo.rotation.x = -0.09;
         lalo.p.piernaI.rotation.z = -0.16; lalo.p.piernaD.rotation.z = 0.05;
-        charlaIglu = crearCharla(CHARLAS.iglu, { radio: 8, alEvento: ev => { if (ev === 'tos') moises.tose = 1.4; } });
+        charlaIglu = crearCharla(CHARLAS.iglu, { radio: 8, alEvento: ev => { if (ev === 'tos') moises.tose = 1.4; if (ev === 'tosLalo') lalo.tose = 2.2; } });
         moises.charla = lalo.charla = charlaIglu;
         grupos.push({ charla: charlaIglu, x: I.x, z: I.z });
     }
-    const vTmp = new THREE.Vector3();
-    function animarMoises(n, dt, t, dJ) {
-        const { p } = n;
-        n.ciclo = (n.ciclo + dt) % 14;
-        const c = n.ciclo;
-        // 0-1.2 sube el bong · 1.2-3.6 aspira (burbujas) · 3.6-4.6 lo baja · 4.6-6 aguanta · 6-7.6 exhala
+    // Deja el objeto en las manos (o junto) de n
+    function tomar(n, objeto) {
+        n.objeto = objeto;
+        if (objeto === 'bong') { n.p.cuerpo.add(bongO.g); bongO.g.position.set(...n.reposoBong); bongO.g.rotation.set(0, 0, 0); }
+        else { n.p.brazoD.add(pitoO.g); pitoO.g.position.set(...POS_PITO); pitoO.g.rotation.set(-0.6, 0, 0); }
+    }
+    const vTmp = new THREE.Vector3(), vA = new THREE.Vector3(), vB = new THREE.Vector3();
+    const fumando = n => (n.objeto === 'bong' ? n.ciclo < 8 : n.ciclo < 5.2); // en plena fumada: no se puede pasar
+
+    // Fumar el bong: 0-1.2 lo sube · 1.2-3.6 aspira (burbujas) · 3.6-4.6 lo baja · 4.6-6 aguanta · 6-7.6 bota el humo
+    function usarBong(n, dt, t, dJ) {
+        const { p } = n, c = n.ciclo, r = n.reposoBong;
         const arriba = c < 1.2 ? suave(c / 1.2) : c < 3.6 ? 1 : c < 4.6 ? 1 - suave((c - 3.6) / 1) : 0;
-        n.bong.position.set(lerp(0.36, 0, arriba), lerp(0.6, 1.03, arriba), lerp(0.5, 0.36, arriba));
-        n.bong.rotation.x = lerp(0, -0.15, arriba);
-        p.brazoD.rotation.x = lerp(-0.6, -1.15, arriba); p.brazoD.rotation.z = lerp(0.05, 0.42, arriba);
-        p.brazoI.rotation.x = lerp(-0.6, -1.0, arriba); p.brazoI.rotation.z = lerp(-0.05, -0.4, arriba);
+        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], 1.03, arriba), lerp(r[2], 0.36, arriba));
+        bongO.g.rotation.x = lerp(0, -0.15, arriba);
+        const reposo = n === moises ? -0.6 : -0.75;
+        p.brazoD.rotation.x = lerp(reposo, -1.15, arriba); p.brazoD.rotation.z = lerp(0.05, 0.42, arriba);
+        p.brazoI.rotation.x = lerp(reposo, -1.0, arriba); p.brazoI.rotation.z = lerp(-0.05, -0.4, arriba);
         const aspira = c >= 1.2 && c < 3.6;
-        n.brasa.material.color.setHex(aspira && Math.sin(t * 20) > -0.5 ? 0xff7a1a : 0x552200);
-        n.agua.position.y = 0.07 + (aspira ? Math.sin(t * 40) * 0.01 : 0);
+        bongO.brasa.material.color.setHex(aspira && Math.sin(t * 20) > -0.5 ? 0xff7a1a : 0x552200);
+        bongO.agua.position.y = 0.07 + (aspira ? Math.sin(t * 40) * 0.01 : 0);
         if (aspira && !n.burbujeo) { n.burbujeo = true; burbujas(dJ, 2.2); }
         if (!aspira) n.burbujeo = false;
-        if (aspira && Math.random() < dt * 6) { n.p.g.updateMatrixWorld(true); n.bong.localToWorld(vTmp.set(0, 0.6, 0)); emitir(vTmp.x, vTmp.y, vTmp.z, { s: 0.1, dur: 0.8, vy: 0.2 }); }
-        // Cabeza: aguanta mirando arriba, exhala largo, a veces tose
-        if (c >= 4.6 && c < 6) ir(p.cuello.rotation, 'x', -0.25, k(dt, 4));
-        else if (c >= 6 && c < 7.6) {
+        if (aspira && Math.random() < dt * 6) { p.g.updateMatrixWorld(true); bongO.g.localToWorld(vTmp.set(0, 0.6, 0)); emitir(vTmp.x, vTmp.y, vTmp.z, { s: 0.1, dur: 0.8, vy: 0.2 }); }
+        return { aguanta: c >= 4.6 && c < 6, exhala: c >= 6 && c < 7.6, inicioExhala: c - dt < 6 && c >= 6 };
+    }
+    // Fumar el pito: 0-1 a la boca · 1-2.4 fuma · 2.4-3.2 lo baja · 3.4-5 bota el humo
+    function usarPito(n, dt, t) {
+        const { p } = n, c = n.ciclo;
+        const sube = c < 1 ? suave(c) : c < 2.4 ? 1 : c < 3.2 ? 1 - suave((c - 2.4) / 0.8) : 0;
+        p.brazoD.rotation.x = lerp(n === moises ? -0.6 : -0.4, -1.95, sube);
+        p.brazoD.rotation.z = lerp(0.12, 0.62, sube);
+        p.brazoI.rotation.x = n === moises ? -0.6 : -0.2; p.brazoI.rotation.z = -0.08;
+        const fuma = c >= 1 && c < 2.4;
+        pitoO.brasa.material.color.setHex(fuma ? 0xff5a10 : (Math.sin(t * 3) > 0 ? 0xaa3300 : 0x882200));
+        return { aguanta: false, exhala: c >= 3.4 && c < 5, inicioExhala: c - dt < 3.4 && c >= 3.4 };
+    }
+    function animarFumador(n, dt, t, dJ) {
+        const { p } = n, otro = n === moises ? lalo : moises;
+        if (pase) return animarPase(n, dt, t);
+        const T = n.objeto === 'bong' ? 14 : 9;
+        n.ciclo = (n.ciclo + dt) % T;
+        const e = n.objeto === 'bong' ? usarBong(n, dt, t, dJ) : usarPito(n, dt, t);
+        n.yaw += angulo(n.yawBase - n.yaw) * k(dt, 3);
+        // Cabeza: aguanta mirando arriba, bota el humo, mira al otro cuando habla o cabecea relajado
+        if (e.aguanta) ir(p.cuello.rotation, 'x', -0.25, k(dt, 4));
+        else if (e.exhala) {
             ir(p.cuello.rotation, 'x', -0.4, k(dt, 4));
             if (Math.random() < dt * 14) { const b = boca(n); emitir(b.x, b.y, b.z, { s: 0.22, dur: 2.6, vy: 0.35, vx: Math.sin(n.yaw) * 0.5, vz: Math.cos(n.yaw) * 0.5 }); }
-            if (c - dt < 6 && Math.random() < 0.4) n.tose = 1.4;
-        } else if (n.charla.hablando === 'lalo') mirarA(n, lalo.x, lalo.z, dt, 1);
+            // Después de fumar a veces tosen; Lalo tose más fuerte y más seguido
+            if (e.inicioExhala && Math.random() < (n === lalo ? 0.55 : 0.4)) n.tose = n === lalo ? 2.2 : 1.4;
+        } else if (n.charla.hablando === otro.clave) mirarA(n, otro.x, otro.z, dt, 1, 0.08);
+        else if (n === lalo) { ir(p.cuello.rotation, 'y', 0.2, k(dt, 3)); p.cuello.rotation.x = 0.08 + Math.sin(t * 2.2) * 0.07; }
         else ir(p.cuello.rotation, 'x', Math.sin(t * 0.9) * 0.1, k(dt, 3));
-        // Tos: sacudones del torso
-        if (n.tose > 0) {
-            if (n.tose === 1.4) tos(dJ);
-            n.tose = Math.max(0, n.tose - dt);
-            p.cuerpo.rotation.x = Math.max(0, Math.sin(n.tose * 22)) * 0.22;
-        } else p.cuerpo.rotation.x = 0;
-    }
-    function animarLalo(n, dt, t) {
-        const { p } = n;
-        n.ciclo = (n.ciclo + dt) % 9;
-        const c = n.ciclo;
-        // 0-1 lleva el pito a la boca · 1-2.4 fuma · 2.4-3.2 lo baja · 3.4-5 bota el humo
-        const sube = c < 1 ? suave(c) : c < 2.4 ? 1 : c < 3.2 ? 1 - suave((c - 2.4) / 0.8) : 0;
-        p.brazoD.rotation.x = lerp(-0.4, -1.95, sube);
-        p.brazoD.rotation.z = lerp(0.12, 0.62, sube);
-        const fuma = c >= 1 && c < 2.4;
-        n.brasa.material.color.setHex(fuma ? 0xff5a10 : (Math.sin(t * 3) > 0 ? 0xaa3300 : 0x882200));
-        p.brazoI.rotation.x = -0.2; p.brazoI.rotation.z = -0.08;
-        // Cabeceo relajado (todo el rato) y un balanceo suave
-        if (n.charla.hablando === 'moises') mirarA(n, moises.x, moises.z, dt, 1, 0.08 + Math.sin(t * 2.2) * 0.06);
-        else { ir(p.cuello.rotation, 'y', 0.2, k(dt, 3)); p.cuello.rotation.x = 0.08 + Math.sin(t * 2.2) * 0.07; }
-        p.cuerpo.rotation.z = Math.sin(t * 1.1) * 0.03;
-        // Humo: hilo desde la punta y bocanadas al exhalar
-        n.humito -= dt;
-        if (n.humito <= 0) {
-            n.humito = 0.45;
-            p.g.updateMatrixWorld(true);
-            n.brasa.getWorldPosition(vTmp);
-            emitir(vTmp.x, vTmp.y + 0.03, vTmp.z, { s: 0.07, dur: 1.6, vy: 0.3, dispersion: 0.04 });
+        if (n === lalo) p.cuerpo.rotation.z = Math.sin(t * 1.1) * 0.03;
+        // Hilo de humo desde la brasa del pito
+        if (n.objeto === 'pito') {
+            n.humito -= dt;
+            if (n.humito <= 0) {
+                n.humito = 0.45;
+                p.g.updateMatrixWorld(true);
+                pitoO.brasa.getWorldPosition(vTmp);
+                emitir(vTmp.x, vTmp.y + 0.03, vTmp.z, { s: 0.07, dur: 1.6, vy: 0.3, dispersion: 0.04 });
+            }
         }
-        if (c >= 3.4 && c < 5 && Math.random() < dt * 12) { const b = boca(n); emitir(b.x, b.y, b.z, { s: 0.2, dur: 2.4, vy: 0.3, vx: Math.sin(n.yaw) * 0.45, vz: Math.cos(n.yaw) * 0.45 }); }
+        // Tos: sacudones del torso (Lalo: más fuertes)
+        const base = n === lalo ? -0.09 : 0;
+        if (n.tose > 0) {
+            if (n.tose === 1.4 || n.tose === 2.2) tos(dJ, n === lalo ? 2 : 1);
+            n.tose = Math.max(0, n.tose - dt);
+            p.cuerpo.rotation.x = base + Math.max(0, Math.sin(n.tose * (n === lalo ? 26 : 22))) * (n === lalo ? 0.38 : 0.22);
+        } else p.cuerpo.rotation.x = base;
     }
+    // Pase: se giran el uno al otro, estiran el brazo y el bong y el pito cruzan por el aire
+    function animarPase(n, dt) {
+        const { p } = n, otro = n === moises ? lalo : moises;
+        const u = Math.min(1, pase.t / pase.dur);
+        n.yaw += angulo(Math.atan2(otro.x - n.x, otro.z - n.z) - n.yaw) * k(dt, 5);
+        const estira = Math.sin(Math.min(1, u * 1.3) * Math.PI);
+        ir(p.brazoD.rotation, 'x', -1.35 * Math.max(0.35, estira), k(dt, 10)); ir(p.brazoD.rotation, 'z', 0.1, k(dt, 10));
+        ir(p.cuello.rotation, 'x', 0.15, k(dt, 5)); ir(p.cuello.rotation, 'y', 0, k(dt, 5));
+    }
+    function actualizarPase(dt) {
+        if (!moises) return;
+        if (!pase) {
+            proximoPase -= dt;
+            if (proximoPase > 0 || fumando(moises) || fumando(lalo) || moises.tose > 0 || lalo.tose > 0) return;
+            // Empieza: los dos objetos quedan sueltos en el mundo y vuelan hacia el otro
+            pase = { t: 0, dur: 1.8, de: { bong: moises.objeto === 'bong' ? moises : lalo, pito: moises.objeto === 'pito' ? moises : lalo } };
+            for (const o of [bongO.g, pitoO.g]) { o.parent.updateMatrixWorld(true); scene.attach(o); }
+            pase.desde = { bong: bongO.g.position.clone(), pito: pitoO.g.position.clone() };
+            return;
+        }
+        pase.t += dt;
+        const u = Math.min(1, Math.max(0, (pase.t - 0.45) / 0.9)); // primero estiran el brazo, después cruza
+        for (const clave of ['bong', 'pito']) {
+            const recibe = pase.de[clave] === moises ? lalo : moises;
+            recibe.p.g.updateMatrixWorld(true);
+            if (clave === 'bong') recibe.p.cuerpo.localToWorld(vA.set(...recibe.reposoBong));
+            else recibe.p.brazoD.localToWorld(vA.set(...POS_PITO));
+            const g = clave === 'bong' ? bongO.g : pitoO.g;
+            vB.copy(pase.desde[clave]).lerp(vA, suave(u));
+            g.position.copy(vB);
+            g.position.y += Math.sin(u * Math.PI) * 0.35;
+        }
+        if (pase.t >= pase.dur) {
+            const recibeBong = pase.de.bong === moises ? lalo : moises, recibePito = pase.de.pito === moises ? lalo : moises;
+            tomar(recibeBong, 'bong'); tomar(recibePito, 'pito');
+            recibeBong.ciclo = 0; recibePito.ciclo = 0; // el que recibe lo usa al tiro
+            pase = null; proximoPase = rnd(25, 40);
+        }
+    }
+    const animarMoises = animarFumador, animarLalo = animarFumador;
 
     // ---------------------------------------------------------
     // Atalaya: Boris corta leña y Lucho conversa a su lado
@@ -667,6 +718,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             dt = Math.min(dt, 0.05);
             tinte.aplicar(materiales.solido.color);
             for (const g of grupos) g.charla.actualizar(oculto ? 0 : dt, oculto ? 999 : Math.hypot(g.x - jugador.pos.x, g.z - jugador.pos.z));
+            actualizarPase(dt);
             // Humo de la fogata del campamento
             const fg = grupos.find(g => g.fuego);
             if (fg && !oculto && Math.hypot(fg.x - jugador.pos.x, fg.z - jugador.pos.z) < 80 && Math.random() < dt * 4) {
@@ -698,7 +750,10 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 }
                 if (texto) n.globo.decir(texto);
                 const alto = 2.15 * n.escala;
-                n.globo.actualizar(dt, !!texto && dJ < 16, n.x, n.y + alto + 0.6, n.z);
+                // Bajo un techo bajo (el iglú) el globo baja para quedar dentro de la pieza
+                let yGlobo = n.y + alto + 0.6;
+                if (texto) for (let dy = 2; dy <= 4; dy++) { const b = mundo.bloque(n.x, n.y + dy + 0.5, n.z); if (b > 0 && b !== 6) { yGlobo = Math.min(yGlobo, n.y + dy - 0.5); break; } }
+                n.globo.actualizar(dt, !!texto && dJ < 16 && seVe(mundo, jugador.camara, n.x, n.y + alto * 0.8, n.z), n.x, yGlobo, n.z);
                 n.nombre.actualizar(dt, jugador.camara, mundo, !texto, n.x, n.y + alto + 0.2, n.z, n.x, n.y + 1.2 * n.escala, n.z);
             }
             // Astillas
@@ -715,6 +770,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         setIdioma(i) {
             idioma = i;
             for (const g of grupos) g.charla.setIdioma(i);
-        }
+        },
+        forzarPase() { proximoPase = 0; } // depuración: que Moisés y Lalo se pasen el bong y el pito
     };
 }

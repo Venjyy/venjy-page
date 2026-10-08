@@ -149,6 +149,12 @@ export function suelo(terreno, mundo, x, z, opciones = {}) {
     return y;
 }
 
+// ¿Ve la cámara el punto (x, y, z)? (el globo se dibuja encima de todo: solo se muestra si se ve a quien habla)
+export function seVe(mundo, camara, x, y, z) {
+    const o = camara.position;
+    return lineaLibre(mundo, o.x, o.y, o.z, x, y, z);
+}
+
 // Rayo simple contra los bloques (para no ver nombres a través de paredes)
 export function lineaLibre(mundo, ox, oy, oz, px, py, pz) {
     const d = Math.hypot(px - ox, py - oy, pz - oz);
@@ -161,16 +167,17 @@ export function lineaLibre(mundo, ox, oy, oz, px, py, pz) {
     return true;
 }
 
-function spriteLienzo(scene, w, h, escala) {
+function spriteLienzo(scene, w, h, escala, encima = false) {
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const tex = new THREE.CanvasTexture(c);
     tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
     tex.generateMipmaps = false; tex.colorSpace = THREE.SRGBColorSpace;
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: true, depthWrite: false, fog: false }));
+    // encima: se dibuja sobre todo (el globo no se corta contra un techo bajo, como el del iglú)
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: !encima, depthWrite: false, fog: false }));
     sp.scale.set(escala[0], escala[1], 1);
     sp.visible = false;
-    sp.renderOrder = 10;
+    sp.renderOrder = encima ? 20 : 10;
     scene.add(sp);
     return { c, tex, sp };
 }
@@ -187,7 +194,9 @@ function conFuente(dibujar) {
 const DIST_NOMBRE = 12, COS_NOMBRE = Math.cos(12 * Math.PI / 180);
 const dir = new THREE.Vector3();
 export function crearNombre(scene, texto) {
-    const { c, tex, sp } = spriteLienzo(scene, 128, 40, [1.2, 0.375]);
+    // El ancho del letrero depende del largo del nombre (antes «Conejeros» se cortaba)
+    const ancho = Math.max(128, Math.ceil((texto.length * 16 + 28) / 8) * 8), kx = ancho / 128;
+    const { c, tex, sp } = spriteLienzo(scene, ancho, 40, [1.2 * kx, 0.375]);
     const dibujar = () => {
         const ctx = c.getContext('2d');
         ctx.clearRect(0, 0, c.width, c.height);
@@ -198,10 +207,16 @@ export function crearNombre(scene, texto) {
         ctx.strokeRect(2, 2, c.width - 4, c.height - 4);
         ctx.font = '24px PixelCraft';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        // Si aun así no cabe (otra fuente mientras carga PixelCraft), se angosta el texto
+        const w = ctx.measureText(texto).width, cabe = c.width - 16;
+        ctx.save();
+        ctx.translate(c.width / 2, 0);
+        if (w > cabe) ctx.scale(cabe / w, 1);
         ctx.fillStyle = '#2a2a2a';
-        ctx.fillText(texto, c.width / 2 + 2, c.height / 2 + 3);
+        ctx.fillText(texto, 2, c.height / 2 + 3);
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(texto, c.width / 2, c.height / 2 + 1);
+        ctx.fillText(texto, 0, c.height / 2 + 1);
+        ctx.restore();
         tex.needsUpdate = true;
     };
     conFuente(dibujar);
@@ -225,7 +240,7 @@ export function crearNombre(scene, texto) {
             sp.material.opacity = alfa;
             sp.position.set(x, y, z);
             const f = Math.max(0.8, Math.min(1.5, d / 6));
-            sp.scale.set(1.2 * f, 0.375 * f, 1);
+            sp.scale.set(1.2 * kx * f, 0.375 * f, 1);
         },
         ocultar() { sp.visible = false; alfa = 0; }
     };
@@ -235,14 +250,14 @@ export function crearNombre(scene, texto) {
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
 export function crearGlobo(scene) {
-    const { c, tex, sp } = spriteLienzo(scene, 320, 112, [2.6, 0.91]);
+    const { c, tex, sp } = spriteLienzo(scene, 320, 140, [2.6, 1.14], true);
     let texto = '', alfa = 0;
     const dibujar = () => {
         const ctx = c.getContext('2d');
         ctx.clearRect(0, 0, c.width, c.height);
         if (!texto) { tex.needsUpdate = true; return; }
         ctx.font = '22px PixelCraft';
-        // Corte de líneas por palabras (máx. 3)
+        // Corte de líneas por palabras (máx. 4)
         const palabras = texto.split(' '), lineas = [];
         let linea = '';
         for (const p of palabras) {
@@ -250,7 +265,7 @@ export function crearGlobo(scene) {
             if (ctx.measureText(prueba).width > c.width - 36 && linea) { lineas.push(linea); linea = p; } else linea = prueba;
         }
         if (linea) lineas.push(linea);
-        lineas.length = Math.min(lineas.length, 3);
+        lineas.length = Math.min(lineas.length, 4);
         const alto = lineas.length * 26 + 18;
         const y0 = (c.height - 14 - alto) / 2;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
