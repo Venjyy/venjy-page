@@ -79,12 +79,22 @@ En un espacio de radio ~3 casi cualquier plano tiene algo delante. Reglas aprend
 - `evitar` solo sabe de actores: los muebles hay que esquivarlos eligiendo `ang`/`dist` a mano.
 - Pocos planos buenos (3) valen más que 5 con dos malos.
 
+## Variedad de planos antes que el encuadre perfecto (opinión del dueño)
+
+Una escena con **cortes entre 3+ ángulos distintos** se ve viva aunque a veces alguien quede
+cortado; una cámara fija o con planos casi iguales se ve **estática y poco pulida**, aunque cada
+cuadro esté «bien». En la ronda del iglú el dueño prefirió la versión con cortes (a veces se
+perdía a uno de los tres) a la versión en media luna con todos de frente pero sin variedad.
+Regla: nunca sacrifiques la variedad de ángulos para ganar encuadre; si un plano tapa, cámbialo
+por otro **distinto**, no por una variante del mismo.
+
 ## Primero la puesta en escena, después la cámara
 
 Lección del iglú: tras 1845 posiciones de cámara probadas, ningún punto veía las tres caras,
 porque **los actores estaban mal ubicados para la cámara**, no la cámara para los actores. En cine
 se «hace trampa» con las posiciones: se acomoda a la gente para el plano.
 
+- Reacomodar actores es el **último recurso** y nunca debe dejar la escena con un solo eje de cámara.
 - Antes de diseñar planos, decide **dónde se paran o sientan los actores** (y el jugador): en
   **arco abierto** (media luna) mirando hacia el lado con más espacio libre, no en triángulo cerrado.
   Así un plano desde ese lado ve todas las caras.

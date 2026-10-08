@@ -88,6 +88,23 @@ en segundos y la escena tiene su `DURACION_*`. Escribe primero la tabla:
 | 4.6–5.8 | pasa | — | recibe | el pito vuela de su mano a la tuya |
 | 6.0–10.8 | mira | mira | fuma: sube la mano 1 s, aspira 1,4 s, baja, bota humo | brasa encendida, humo, tos |
 
+### Coherencia del guion con lo que se ve
+
+Lo que dicen los globos tiene que calzar con el estado del cuerpo **en ese momento**: si alguien
+dice «siéntate», el jugador todavía está de pie y se sienta **después** (y puede responder con un
+gesto). Revisa cada frase contra la captura de su segundo.
+
+### Pases coordinados (anticipación)
+
+Un pase se lee bien solo si los dos se miran y se apuntan:
+1. **Anticipación** (0,3–0,4 s): el que da se gira hacia el que recibe y estira el brazo; el objeto
+   sigue en su mano.
+2. **Vuelo**: recién ahí el objeto sale, en arco, desde la mano (posición viva) hasta la mano del otro.
+3. **Atrapar**: el que recibe ya tiene el brazo estirado **hacia el que da** y lo baja con el objeto.
+El brazo apunta con `bDz` = ángulo local hacia el otro (`atan2(dx, dz) − yaw`, + hacia su
+izquierda, límite ±1,1); a los de pie además se les gira el cuerpo (`n.yaw`) y se restaura al
+final. Ejemplo: `pesoPase`, `haciaLocal` y `segObjeto` en `ronda-iglu.js`.
+
 ### Objeto que pasa de mano en mano (patrón de `fumarJugador`)
 
 ```js

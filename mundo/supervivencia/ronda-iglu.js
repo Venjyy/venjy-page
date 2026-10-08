@@ -1,10 +1,8 @@
 // =========================================================
 // VENJY · Supervivencia · Ronda del iglú (sentarte con Lalo y Moisés)
-// Dentro del iglú, junto al cojín rojo de lana aparece el aviso y la tecla G (o los botones SENTARSE /
-// SIT). Te sientas en ~1,5 s con fundido a cámara de cine y ellos te saludan con globos. Al sentarte
-// los tres se acomodan en una media luna abierta hacia el túnel (tú en el centro, Moisés sentado a la
-// izquierda, Lalo de pie a la derecha; todos miran al túnel), para que la cámara vea las tres caras.
-// Al pararte caminan de vuelta a su sitio y postura originales. Mientras sigas sentado la
+// Dentro del iglú, junto al cojín rojo de lana (que cierra un triángulo con Moisés, sentado en el
+// suelo, y Lalo, de pie) aparece el aviso y la tecla G (o los botones SENTARSE / SIT). Te sientas
+// en ~1,5 s con fundido a cámara de cine y ellos te saludan con globos. Mientras sigas sentado la
 // ronda se repite (~20 s por vuelta): pito, bong, charla con globos dirigidos a ti y a veces YIA.
 // Los objetos rotan: en la vuelta siguiente terminan en otras manos. Después de 2 vueltas la
 // cámara se mece apenas y los colores se saturan poco a poco (se va al pararte).
@@ -14,9 +12,12 @@
 // Usa los ganchos n.escena de amigos.js y la API amigos.iglu (no reescribe su lógica).
 // Si tu skin parte de Venjy, primero va la escena de skin del iglú (escenas-skin.js).
 //
-// GUION (t = s desde que te sientas; la ronda empieza en t = 4,2; una vuelta = 20 s)
-//   t 0,0–1,5   te sientas (cuerpo baja al cojín), fundido, planos de cine de los tres desde el túnel
-//   t 0,4–2,3   Lalo saluda con la mano y globo · t 2,4–4,2 Moisés saluda con globo
+// GUION (t = s desde que llegas al cojín; la ronda empieza en t = 5,2; una vuelta = 20 s)
+//   t 0,0–0,45  fundido a cine; estás de pie junto al cojín
+//   t 0,4–2,4   Lalo te invita («¡Oye, llegaste! Siéntate…») · 1,3–2,3 le respondes con la mano
+//   t 2,2–3,7   te sientas · 3,2–5,2 Moisés te da la bienvenida (ya sentado)
+//   Cada pase tiene anticipación: el que da se gira hacia el otro y estira el brazo 0,35 s antes de que
+//   el objeto vuele; el que recibe estira el suyo hacia él y lo «atrapa». Lalo gira el cuerpo, Moisés un poco.
 //   r 0,0–1,2   pito: quien lo tiene extiende el brazo; vuela a tu mano
 //   r 1,2–2,0   subes el pito a la boca · 2,0–3,4 aspiras (brasa) · 3,4–4,1 bajas
 //   r 4,1–5,6   botas el humo; tos a veces (50 %)
@@ -44,9 +45,10 @@ const tramo = (u, a, b) => lim((u - a) / (b - a), 0, 1);
 const envolvente = (t, a, b, rampa) => suave(Math.min(tramo(t, a, a + rampa), 1 - tramo(t, b - rampa, b)));
 const F = (es, en) => ({ es, en });
 
-const ENTRADA = 4.2;          // saludos antes de la primera vuelta (s desde que te sientas)
+const ENTRADA = 5.2;          // saludos antes de la primera vuelta (s desde que llegas al cojín)
 const VUELTA = 20;            // duración de una vuelta (s)
-const SENTAR = 1.5;           // tiempo de sentarse (s)
+const SENTAR = [2.2, 3.7];    // te sientas DESPUÉS de que Lalo te invita (s)
+const SALUDO_L = [0.4, 2.4], SALUDO_J = [1.3, 2.3], SALUDO_M = [3.2, 5.2]; // Lalo invita · tú respondes · Moisés
 const PARAR = 1.0;            // tiempo de levantarse (s)
 const ALTO_COJIN = 0.28;      // tope del cojín sobre el suelo
 const Y_SENTADO = ALTO_COJIN + 0.125 - 0.75; // cuerpo.y en el cojín (cadera a la altura del tope + medio muslo)
@@ -54,9 +56,6 @@ const PIERNAS_SENT = -Math.PI / 2;           // piernas estiradas hacia delante 
 const REPOSO_BONG_J = [0.3, 0.8, 0.3];       // bong en la mano del jugador (mismo que escenas-skin.js)
 const BONG_ARRIBA = [0, 1.03, 0.36];         // bong a la boca
 const DOS_VUELTAS = ENTRADA + 2 * VUELTA;    // desde aquí la cámara empieza a volarse
-const apuntaA = (de, a) => Math.atan2(a.x - de.x, a.z - de.z); // yaw (rotation.y) para mirar de `de` a `a`
-// Pases de lado (el brazo se abre hacia la otra persona): de frente a la cámara, que está al sur, se leen de perfil
-const ladoHacia = (de, a) => (a.x >= de.x ? 0.85 : -0.85);
 
 // Momentos de la vuelta (s desde su inicio)
 const TL = {
@@ -120,32 +119,6 @@ export function crearRondaIglu(ctx) {
     if (pz > 0) { px = -px; pz = -pz; }               // hacia el fondo (−z)
     const COJIN = { x: mitad.x + px * 1.8, z: mitad.z + pz * 1.8 };
     const personas = { lalo: ln, moises: mo };
-
-    // Puesta en escena (solo mientras estás sentado): media luna abierta hacia el túnel, el lado con más
-    // espacio libre (el iglú mide 6×6 y el túnel es lo único que deja ver el interior). Tú en el centro de
-    // la cúpula, un bloque al norte del centro; Moisés (sentado) a 1,25 a la izquierda y Lalo (de pie) a 1,25 a
-    // la derecha, a la altura del centro. Con la cámara dentro de la cúpula (en el eje del túnel) quedan unos
-    // 2 bloques libres entre ella y el más cercano (medido en el juego: 3,4 de distancia a la cabeza).
-    // Los tres miran al túnel: así el plano de frente ve sus caras. Al pararte vuelven a su sitio.
-    const frente = { x: CX, z: CZ + 4 };
-    const PUESTA = {
-        jugador: { x: CX, z: CZ - 1, yaw: apuntaA({ x: CX, z: CZ - 1 }, frente) },
-        moises: { x: CX - 1.25, z: CZ },
-        lalo: { x: CX + 1.25, z: CZ }
-    };
-    PUESTA.moises.yaw = apuntaA(PUESTA.moises, frente);
-    PUESTA.lalo.yaw = apuntaA(PUESTA.lalo, frente);
-    const ORIGEN = { moises: { x: mo.x, z: mo.z, yaw: mo.yaw }, lalo: { x: ln.x, z: ln.z, yaw: ln.yaw } };
-    // u = 0: sitios originales · u = 1: puesta en escena (el cojín lo mueve sentarse/terminar)
-    function situar(u) {
-        for (const [n, k] of [[mo, 'moises'], [ln, 'lalo']]) {
-            const a = ORIGEN[k], b = PUESTA[k];
-            n.x = lerp(a.x, b.x, u); n.z = lerp(a.z, b.z, u);
-            n.yaw = a.yaw + angulo(b.yaw - a.yaw) * u;
-        }
-    }
-    // Punto medio entre Moisés y Lalo (ahora, no el de la cúpula): ancla de la cámara y mirada
-    const medio = () => ({ x: (mo.x + ln.x) / 2, z: (mo.z + ln.z) / 2 });
 
     // Cojín: dos cajas de lana (no es un bloque del mapa)
     const tinte = crearTinte();
@@ -237,20 +210,29 @@ export function crearRondaIglu(ctx) {
         } else iglu.tomar(personas[quien], nombre);
         estadoMano[nombre] = quien;
     }
-    // Segmento de la vuelta en el que está cada objeto
+    // Segmento de la vuelta en el que está cada objeto. Cada pase tiene ANTICIPACIÓN: los primeros
+    // ESTIRA s el que pasa estira el brazo hacia el otro (el objeto sigue en su mano) y recién después vuela.
+    const ESTIRA = 0.35;
+    const vuelo = ([a, b]) => [a + ESTIRA, b];
     function segObjeto(nombre, r, p) {
         if (nombre === 'pito') {
-            if (r < TL.pitoIda[1]) return { vuelo: true, de: p.pitoH, a: 'j', u: r / TL.pitoIda[1] };
-            if (r < TL.pitoPasa[0]) return { quien: 'j' };
-            if (r < TL.pitoPasa[1]) return { vuelo: true, de: 'j', a: p.pitoR, u: tramo(r, TL.pitoPasa[0], TL.pitoPasa[1]) };
+            if (r < vuelo(TL.pitoIda)[0]) return { quien: p.pitoH };
+            if (r < TL.pitoIda[1]) return { vuelo: true, de: p.pitoH, a: 'j', u: tramo(r, ...vuelo(TL.pitoIda)) };
+            if (r < vuelo(TL.pitoPasa)[0]) return { quien: 'j' };
+            if (r < TL.pitoPasa[1]) return { vuelo: true, de: 'j', a: p.pitoR, u: tramo(r, ...vuelo(TL.pitoPasa)) };
             return { quien: p.pitoR };
         }
-        if (r < TL.bongIda[0]) return { quien: p.bongH };
-        if (r < TL.bongIda[1]) return { vuelo: true, de: p.bongH, a: 'j', u: tramo(r, TL.bongIda[0], TL.bongIda[1]) };
-        if (r < TL.bongPasa[0]) return { quien: 'j' };
-        if (r < TL.bongPasa[1]) return { vuelo: true, de: 'j', a: p.bongR, u: tramo(r, TL.bongPasa[0], TL.bongPasa[1]) };
+        if (r < vuelo(TL.bongIda)[0]) return { quien: p.bongH };
+        if (r < TL.bongIda[1]) return { vuelo: true, de: p.bongH, a: 'j', u: tramo(r, ...vuelo(TL.bongIda)) };
+        if (r < vuelo(TL.bongPasa)[0]) return { quien: 'j' };
+        if (r < TL.bongPasa[1]) return { vuelo: true, de: 'j', a: p.bongR, u: tramo(r, ...vuelo(TL.bongPasa)) };
         return { quien: p.bongR };
     }
+    // Peso del brazo de quien da o recibe en un pase [a, b]: sube antes de que salga el objeto y baja
+    // cuando ya llegó (el que recibe «atrapa» y se lo lleva)
+    const pesoPase = (r, [a, b]) => envolvente(r, a - 0.1, b + 0.25, 0.3);
+    // Ángulo (local, + hacia su izquierda) desde quien mira con yaw `ya` hacia el punto (x, z)
+    const haciaLocal = (de, ya, x, z) => lim(angulo(Math.atan2(x - de.x, z - de.z) - ya), -1.1, 1.1);
     function aplicarObjetos(r) {
         for (const nombre of ['pito', 'bong']) {
             const s = segObjeto(nombre, r, plan);
@@ -270,8 +252,9 @@ export function crearRondaIglu(ctx) {
     // Quién habla ahora: 'lalo' | 'moises' | null
     function hablante() {
         if (estado === 'parando' || estado === 'fuera') return null;
-        if (t < 0.4) return null;
-        if (t < 2.3) return 'lalo';
+        if (t < SALUDO_L[0]) return null;
+        if (t < SALUDO_L[1]) return 'lalo';
+        if (t < SALUDO_M[0]) return null;
         if (t < ENTRADA) return 'moises';
         if (!plan) return null;
         const r = relRonda();
@@ -287,23 +270,23 @@ export function crearRondaIglu(ctx) {
         const r = enRonda ? relRonda() : -1;
         // Brazos en reposo (las manos en los bolsillos del polerón de Lalo; Moisés, con las manos sueltas)
         let bD = -0.3, bDz = esL ? 0.32 : 0.12, bI = -0.3, bIz = esL ? -0.32 : -0.12, cX = 0, subida = 0;
-        // Saludo: Lalo 0,4–2,3 · Moisés 2,4–4,2
+        // Saludo: Lalo te invita a sentarte (tú aún de pie) · Moisés cuando ya te sentaste
         if ((estado === 'sentando' || estado === 'sentado') && t < ENTRADA) {
-            // Saludo con el brazo de fuera (el que no apunta al jugador): se abre hacia afuera, de perfil a la
-            // cámara, y no le tapa la cara (antes subía hacia la cámara). Lalo, izquierdo; Moisés, derecho.
-            const [a, b] = esL ? [0.4, 2.3] : [2.4, 4.2];
-            const w = envolvente(t, a, b, 0.35), ola = Math.sin(t * 9) * 0.25;
-            if (esL) { bI = lerp(bI, -2.5, w); bIz = lerp(bIz, 0.75 + ola, w); }
-            else { bD = lerp(bD, -2.5, w); bDz = lerp(bDz, -0.75 + ola, w); }
+            const [a, b] = esL ? SALUDO_L : SALUDO_M;
+            const w = envolvente(t, a, b, 0.35);
+            bD = lerp(bD, -2.6, w); bDz = lerp(bDz, -0.3 + Math.sin(t * 9) * 0.35, w);
         }
         if (r >= 0) {
-            // Pasar o recibir el pito y el bong: el brazo se estira hacia el objeto
-            // Los pases son de lado (el brazo se abre hacia el jugador): de frente a la cámara se leen de perfil
-            const haciaJ = ladoHacia(n, jugador.pos);
-            if (plan.pitoH === nombre) { const w = envolvente(r, 0, 1.4, 0.3); bD = lerp(bD, -0.3, w); bDz = lerp(bDz, haciaJ, w); }
-            if (plan.pitoR === nombre) { const w = envolvente(r, 5.4, 6.9, 0.3); bD = lerp(bD, -0.3, w); bDz = lerp(bDz, haciaJ, w); }
-            if (plan.bongH === nombre) { const w = envolvente(r, 6.6, 8.0, 0.3); bD = lerp(bD, -0.3, w); bDz = lerp(bDz, haciaJ, w); }
-            if (plan.bongR === nombre) { const w = envolvente(r, 13.2, 14.8, 0.3); bD = lerp(bD, -0.3, w); bDz = lerp(bDz, haciaJ, w); }
+            // Pasar o recibir el pito y el bong: se gira hacia ti y el brazo te apunta (la anticipación la da pesoPase)
+            let wP = 0;
+            if (plan.pitoH === nombre) { const w = pesoPase(r, TL.pitoIda); wP = Math.max(wP, w); bD = lerp(bD, -1.4, w); }
+            if (plan.pitoR === nombre) { const w = pesoPase(r, TL.pitoPasa); wP = Math.max(wP, w); bD = lerp(bD, -1.3, w); }
+            if (plan.bongH === nombre) { const w = pesoPase(r, TL.bongIda); wP = Math.max(wP, w); bD = lerp(bD, -1.05, w); }
+            if (plan.bongR === nombre) { const w = pesoPase(r, TL.bongPasa); wP = Math.max(wP, w); bD = lerp(bD, -1.05, w); }
+            // El cuerpo gira hacia ti (Moisés, sentado, menos) y el resto lo pone el brazo
+            const yawTi = Math.atan2(jugador.pos.x - n.x, jugador.pos.z - n.z);
+            n.yaw = base0.yaw + angulo(yawTi - base0.yaw) * (esL ? 0.75 : 0.45) * wP;
+            if (wP > 0) bDz = lerp(bDz, haciaLocal(n, n.yaw, jugador.pos.x, jugador.pos.z), wP);
             // Hablar con la mano (gesto de charla)
             const hablaYo = (nombre === 'lalo' && r >= TL.charlaL[0] && r < TL.charlaL[1]) || (nombre === 'moises' && !plan.yia && r >= TL.charlaM[0] && r < TL.charlaM[1]);
             if (hablaYo) {
@@ -322,7 +305,7 @@ export function crearRondaIglu(ctx) {
         // Mirada: al otro si es quien habla; si no, a ti
         const h = hablante();
         const tx = h && h !== nombre ? otroN.x : jugador.pos.x, tz = h && h !== nombre ? otroN.z : jugador.pos.z;
-        const giro = lim(angulo(Math.atan2(tx - n.x, tz - n.z) - n.yaw), -0.6, 0.6); // ±35°: la cara se lee hacia la cámara
+        const giro = lim(angulo(Math.atan2(tx - n.x, tz - n.z) - n.yaw), -1.1, 1.1);
         p.cuello.rotation.y += (giro - p.cuello.rotation.y) * Math.min(1, dt * 5);
         p.cuello.rotation.x += (cX - p.cuello.rotation.x) * Math.min(1, dt * 6);
         // Tos (después de fumar)
@@ -350,27 +333,30 @@ export function crearRondaIglu(ctx) {
     }
     function poseJugador(r, dt) {
         const c = camaras.cuerpo, k = peso;
-        let bD = -0.5, bDz = 0.12, bI = -0.5, bIz = -0.12, cX = 0, subeBong = 0, cY = 0, rostro = 0;
+        let bD = -0.5, bDz = 0.12, bI = -0.5, bIz = -0.12, cX = 0, subeBong = 0, cY = 0;
+        // Aún de pie: le respondes el saludo a Lalo con la mano
+        if (r < 0 && t < SENTAR[0]) { const w = envolvente(t, SALUDO_J[0], SALUDO_J[1], 0.3); bD = lerp(bD, -2.6, w); bDz = lerp(bDz, -0.3 + Math.sin(t * 9) * 0.3, w); }
         if (r >= 0) {
+            // En cada pase tu brazo apunta a quien te da o a quien recibe
+            const yawJ = bodyYaw + Math.PI, P = personas;
+            const apunta = q => haciaLocal(jugador.pos, yawJ, P[q].x, P[q].z);
             // Recibir el pito (brazo estirado) y subirlo a la boca: 1,2–2,0; aspiras 2,0–3,4; bajas 3,4–4,1
-            // Pases de lado (el brazo se abre hacia quien pasa o recibe): de perfil a la cámara que está al sur
-            const w1 = envolvente(r, 0, TL.pitoIda[1] + 0.05, 0.25);
-            bD = lerp(bD, -0.3, w1); bDz = lerp(bDz, ladoHacia(jugador.pos, personas[plan.pitoH]), w1);
+            const w1 = pesoPase(r, TL.pitoIda);
+            bD = lerp(bD, -1.35, w1); bDz = lerp(bDz, apunta(plan.pitoH), w1);
             const subePito = suave(tramo(r, TL.pitoSube[0], TL.pitoSube[1])) * (1 - suave(tramo(r, TL.pitoBaja[0], TL.pitoBaja[1])));
             bD = lerp(bD, -1.95, subePito); bDz = lerp(bDz, 0.62, subePito);
             cX = lerp(cX, -0.35, envolvente(r, TL.pitoExhala[0] - 0.1, TL.pitoExhala[1] + 0.1, 0.4));
-            // Pasar el pito 5,4–6,9
-            const w2 = envolvente(r, 5.4, 6.9, 0.3); bD = lerp(bD, -0.3, w2); bDz = lerp(bDz, ladoHacia(jugador.pos, personas[plan.pitoR]), w2);
-            // Recibir el bong 6,6–8,0
-            const w3 = envolvente(r, 6.6, 8.0, 0.3); bD = lerp(bD, -0.3, w3); bDz = lerp(bDz, ladoHacia(jugador.pos, personas[plan.bongH]), w3);
+            // Pasar el pito
+            const w2 = pesoPase(r, TL.pitoPasa); bD = lerp(bD, -1.35, w2); bDz = lerp(bDz, apunta(plan.pitoR), w2);
+            // Recibir el bong
+            const w3 = pesoPase(r, TL.bongIda); bD = lerp(bD, -1.05, w3); bDz = lerp(bDz, apunta(plan.bongH), w3);
             // Fumar el bong: sube 7,9–8,6 · aspira · baja 10,6–11,1 (los dos brazos sostienen el bong)
             subeBong = suave(tramo(r, TL.bongSube[0], TL.bongSube[1])) * (1 - suave(tramo(r, TL.bongBaja[0], TL.bongBaja[1])));
             bD = lerp(bD, -1.15, subeBong); bDz = lerp(bDz, 0.42, subeBong);
             bI = lerp(bI, -1.0, subeBong); bIz = lerp(bIz, -0.4, subeBong);
-            rostro = Math.max(subePito, subeBong); // al subir el pito o el bong, la cara se gira hacia ese brazo
             cX = lerp(cX, -0.3, envolvente(r, TL.bongBaja[0], TL.bongExhala[1] + 0.1, 0.4));
-            // Pasar el bong 13,2–14,8
-            const w4 = envolvente(r, 13.2, 14.8, 0.3); bD = lerp(bD, -0.3, w4); bDz = lerp(bDz, ladoHacia(jugador.pos, personas[plan.bongR]), w4);
+            // Pasar el bong
+            const w4 = pesoPase(r, TL.bongPasa); bD = lerp(bD, -1.05, w4); bDz = lerp(bDz, apunta(plan.bongR), w4);
             // ¡YIAAAAAA!: brazos arriba
             if (plan.yia) {
                 const w = envolvente(r, TL.charlaM[0], TL.charlaM[1], 0.3), s = Math.sin(r * 18) * 0.15;
@@ -384,10 +370,9 @@ export function crearRondaIglu(ctx) {
         if (tosJ > 0) { tosJ = Math.max(0, tosJ - dt); inc = Math.max(0, Math.sin(tosJ * 24)) * 0.3; }
         // Cabeza hacia quien habla (o al centro del triángulo)
         const h = hablante();
-        const m = medio();
-        const tx = h === 'lalo' ? ln.x : h === 'moises' ? mo.x : m.x, tz = h === 'lalo' ? ln.z : h === 'moises' ? mo.z : m.z;
-        const giro = lim(angulo(Math.atan2(tx - jugador.pos.x, tz - jugador.pos.z) - (bodyYaw + Math.PI)), -0.6, 0.6);
-        cY = giro - 0.35 * rostro;
+        const tx = h === 'lalo' ? ln.x : h === 'moises' ? mo.x : mitad.x, tz = h === 'lalo' ? ln.z : h === 'moises' ? mo.z : mitad.z;
+        const giro = lim(angulo(Math.atan2(tx - jugador.pos.x, tz - jugador.pos.z) - (bodyYaw + Math.PI)), -1, 1);
+        cY = giro;
         c.cuerpo.position.y = lerp(0, Y_SENTADO, k);
         c.cuerpo.rotation.x = inc; c.cuerpo.rotation.z = 0;
         c.piernaD.rotation.x = lerp(0, PIERNAS_SENT, k); c.piernaI.rotation.x = lerp(0, PIERNAS_SENT + 0.1, k);
@@ -450,7 +435,7 @@ export function crearRondaIglu(ctx) {
     function actualizarGlobos(dt) {
         const txt = textosAhora();
         const pos = {
-            lalo: [ln.x, ln.y + 2.5, ln.z], // bajo el techo del iglú y dentro del encuadre (antes 2,75: la franja lo cortaba)
+            lalo: [ln.x, ln.y + 2.5, ln.z],
             moises: [mo.x, mo.y + 2.1, mo.z],
             j: [jugador.pos.x, jugador.pos.y - dy + 2.0, jugador.pos.z]
         };
@@ -465,17 +450,13 @@ export function crearRondaIglu(ctx) {
     // ---------------------------------------------------------
     // Cámara: cine de tres (planos 'trio') o primera persona sobre tu cuerpo sentado
     // ---------------------------------------------------------
-    const ancla = () => { const m = medio(); return { x: m.x, y: piso, z: m.z, escala: 0.8 }; };
+    const ancla = () => ({ x: mitad.x, y: piso, z: mitad.z, escala: 0.8 });
     function focoCamara(r) {
         const h = hablante();
         if (r >= TL.pitoExhala[0] && r < TL.pitoExhala[1] || r >= TL.bongSube[0] && r < TL.bongExhala[1]) return vC.set(jugador.pos.x, jugador.pos.y + 1.3, jugador.pos.z);
-        // Mira al centro de los tres (para que el plano de frente los encuadre) y se inclina un poco hacia quien habla
-        const m = medio();
-        const cx = (2 * m.x + jugador.pos.x) / 3, cz = (2 * m.z + jugador.pos.z) / 3, cy = piso + dy + 1.4;
-        const k = 0.35;
-        if (h === 'lalo') return vC.set(lerp(cx, ln.x, k), lerp(cy, ln.y + dy + 1.9, k), lerp(cz, ln.z, k));
-        if (h === 'moises') return vC.set(lerp(cx, mo.x, k), lerp(cy, mo.y + dy + 1.3, k), lerp(cz, mo.z, k));
-        return vC.set(cx, cy, cz);
+        if (h === 'lalo') return vC.set(ln.x, ln.y + dy + 1.9, ln.z);
+        if (h === 'moises') return vC.set(mo.x, mo.y + dy + 1.3, mo.z);
+        return vC.set((jugador.pos.x + mitad.x) / 2, jugador.pos.y + 1.2, (jugador.pos.z + mitad.z) / 2);
     }
 
     // ---------------------------------------------------------
@@ -496,10 +477,8 @@ export function crearRondaIglu(ctx) {
         estadoMano.pito = 'lalo'; estadoMano.bong = 'moises';
         ln.escena = (dt) => poseIglu(ln, dt);
         mo.escena = (dt) => poseIglu(mo, dt);
-        situar(1);                                  // la puesta en escena (bajo el fundido de entrada)
-        cojinG.position.set(CX, piso, CZ);
-        jugador.colocar(PUESTA.jugador.x, piso + dy, PUESTA.jugador.z);
-        bodyYaw = PUESTA.jugador.yaw - Math.PI;     // el cuerpo mira al túnel (rotation.y = bodyYaw + π = 0)
+        jugador.colocar(COJIN.x, piso + dy, COJIN.z);
+        bodyYaw = Math.atan2(mitad.x - COJIN.x, mitad.z - COJIN.z) - Math.PI;
         jugador.yaw = bodyYaw; jugador.pitch = 0;
         banco = esVenjy() ? 'venjy' : 'general';
         estado = 'sentando'; t = 0; tp = 0; peso = 0; primera = false;
@@ -525,8 +504,6 @@ export function crearRondaIglu(ctx) {
     function terminar() {
         iglu.terminarPase();
         iglu.devolver(mo, ln);
-        situar(0);
-        cojinG.position.set(COJIN.x, piso, COJIN.z);
         for (const n of [mo, ln]) {
             delete n.escena;
             const r = reposo.get(n), p = n.p;
@@ -635,7 +612,6 @@ export function crearRondaIglu(ctx) {
             tp += dt;
             peso = 1 - suave(tramo(tp, 0, PARAR));
             const u = suave(tramo(tp, 0, PARAR));
-            situar(1 - u);                           // Lalo y Moisés caminan de vuelta a su sitio mientras te paras
             for (const nombre of ['pito', 'bong']) {
                 const g = iglu[nombre].g, quien = nombre === 'pito' ? 'lalo' : 'moises';
                 const a = origen[nombre], b = manoDe(quien, nombre, vB);
@@ -646,7 +622,7 @@ export function crearRondaIglu(ctx) {
             if (tp >= PARAR) { terminar(); return; }
         } else {
             if (!pausada) t += dt;
-            peso = suave(lim(t / SENTAR, 0, 1));
+            peso = suave(tramo(t, SENTAR[0], SENTAR[1]));
             if (t >= ENTRADA) {
                 const n = Math.floor((t - ENTRADA) / VUELTA);
                 if (n !== planN) { plan = planVuelta(n); planN = n; }

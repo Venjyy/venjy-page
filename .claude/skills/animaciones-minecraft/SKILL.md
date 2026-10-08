@@ -29,7 +29,7 @@ revisa lo que entrega (video, hojas, medidas) y lo presenta. Si no se nombra el 
 
 | Modelo | Costo | Úsalo para | Ejemplos probados |
 |---|---|---|---|
-| **Haiku** (por defecto) | bajo | tipos A y B simples, interacciones con tecla, gestos nuevos, escenas cortas de 1–2 actores en lugares abiertos | caricias a las gatas (bien al primer intento); ronda del iglú desde cero (buena mecánica; la cámara quedó bien en la 3.ª pasada, al aplicar «puesta en escena antes que cámara») |
+| **Haiku** (por defecto) | bajo | tipos A y B simples, interacciones con tecla, gestos nuevos, escenas cortas de 1–2 actores en lugares abiertos | caricias a las gatas (bien al primer intento); ronda del iglú desde cero (buena mecánica, ~50 min). Sus pasadas de cámara empeoraron la escena (la dejó estática); la versión final la corrigió Opus |
 | **Sonnet** | medio | escenas con 3+ actores, interiores estrechos, puesta en escena y cámara difíciles, cuando Haiku falló dos veces en lo mismo | — |
 
 **Plantilla del encargo** (cópiala y llena los `<…>`):
@@ -46,6 +46,14 @@ Temporales SOLO en <scratchpad>/<carpeta>/. NO hagas commit ni push. No edites l
 Responde con: qué hace + tabla de tiempos, teclas/botones, archivos, rutas de capturas/video y qué
 viste, pruebas, y lo que de la skill fue confuso o faltó.
 ```
+
+**Costo**: con Haiku 5.5 el precio sube 5× cuando el contexto pasa de 100K tokens ($0,10 → $0,50 de
+entrada). En las pruebas los subagentes llegaron a 300–480K porque leían archivos enteros. En el
+encargo pide **leer solo las secciones necesarias** (`grep -n` y luego `Read` con offset/limit) y no
+releer capturas viejas; así una animación cuesta varias veces menos.
+
+**Límite de una pasada**: si el subagente lleva dos pasadas sobre lo mismo sin mejorar (sobre todo
+cámara y puesta en escena), no lances una tercera con el mismo modelo: súbelo a Sonnet o corrígelo tú.
 
 Al recibir el resultado: mira tú mismo la hoja de cuadros del video
 (`referencia/verificar.md` §2b), corre las pruebas, y si algo se ve mal pide una pasada más al
