@@ -92,7 +92,9 @@ export function crearPersona(tinte, piel, semilla) {
         const f = tex(w, h, partes.frente);
         const a = partes.atras ? tex(w, h, partes.atras) : f;
         const l = partes.lado ? tex(d, h, partes.lado) : tex(d, h, partes.frente);
-        const ld = partes.ladoD ? tex(d, h, partes.ladoD) : l;
+        // En la cara +X la columna 0 del lienzo es el frente; en la -X es la espalda: se espeja
+        const pl = partes.lado || partes.frente;
+        const ld = tex(d, h, partes.ladoD || ((x, y, r) => pl(d - 1 - x, y, r)));
         const ar = partes.arriba ? tex(w, d, partes.arriba) : l;
         const ab = partes.abajo ? tex(w, d, partes.abajo) : ar;
         return tinte.caras(f, { 0: l, 1: ld, 2: ar, 3: ab, 4: f, 5: a });

@@ -179,6 +179,7 @@ const FRASES = {
     salonas: [
         { es: '¡Bienvenido al show! Súbele.', en: 'Welcome to the show! Turn it up.' },
         { es: 'Slap, pop y un poco de locura.', en: 'Slap, pop and a bit of madness.' },
+        { es: '¡PRIMUS SUCKS!', en: 'PRIMUS SUCKS!' },
         { es: 'Cinco cuerdas, cero partituras.', en: 'Five strings, zero sheet music.' },
         { es: 'Este va con harto Primus en el alma.', en: 'This one has a lot of Primus in its soul.' }
     ],

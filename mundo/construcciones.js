@@ -360,7 +360,7 @@ export function colocarCorrales(t) {
 // ---------------------------------------------------------
 export const LUGARES = [
     { clave: 'molino', nombre: { es: 'Molino viejo', en: 'Old windmill' }, f: [0.27, 0.55], w: 9, d: 9 },
-    { clave: 'atalaya', nombre: { es: 'Atalaya del bosque', en: 'Forest watchtower' }, f: [0.62, 0.48], w: 9, d: 9, bosque: true },
+    { clave: 'atalaya', nombre: { es: 'Atalaya del bosque', en: 'Forest watchtower' }, f: [0.62, 0.48], w: 9, d: 13, bosque: true }, // 13 de fondo: la leñera de Boris va al sur
     { clave: 'campamento', nombre: { es: 'Campamento', en: 'Campsite' }, f: [0.36, 0.36], w: 13, d: 11 },
     { clave: 'portal', nombre: { es: 'Portal en ruinas', en: 'Ruined portal' }, f: [0.75, 0.32], w: 11, d: 9, alto: true },
     { clave: 'iglu', nombre: { es: 'Iglú', en: 'Igloo' }, f: null, w: 11, d: 11, nieve: true },
@@ -422,7 +422,8 @@ export function colocarLugares(t) {
         }
         const cxL = x0 + (L.w >> 1), czL = z0 + (L.d >> 1);
         const decor = aDecor(poner => CONSTRUIR[L.clave](poner, cxL, h + 1, czL, h, t));
-        hechos.push({ clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, radio: Math.max(L.w, L.d) + 6, decor });
+        // bx, bz, y: bloque central y primer bloque sobre el suelo (para ubicar a los NPCs)
+        hechos.push({ clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, bx: cxL, bz: czL, y: h + 1, radio: Math.max(L.w, L.d) + 6, decor });
     }
     return hechos;
 }
@@ -494,6 +495,9 @@ const CONSTRUIR = {
         }
         poner(cx + 2, y + ALTO + 1, cz - 1, B.COFRE);
         poner(cx - 2, y + ALTO + 1, cz + 1, B.BARRIL);
+        // Leñera de Boris al sur: tocón para cortar y leña apilada
+        poner(cx - 1, y, cz + 5, B.TRONCO);
+        for (const [dx, dz, k] of [[3, 5, 2], [4, 5, 2], [3, 6, 1], [4, 6, 1], [4, 4, 1]]) for (let j = 0; j < k; j++) poner(cx + dx, y + j, cz + dz, B.TRONCO);
     },
     // Campamento: dos carpas de lana, fogata con troncos alrededor, cofre y barril
     campamento(poner, cx, y, cz) {
