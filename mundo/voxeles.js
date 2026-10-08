@@ -7,6 +7,7 @@ import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
 import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
+import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } from './construcciones.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -44,12 +45,13 @@ export function prepararTerreno(datos) {
     const SUB = new Uint8Array(BW * BD);  // bloques bajo la superficie (3 capas)
     const ES = new Uint8Array(BW * BD);   // 0 natural · 1 estructura · 2 puente
 
+    const AV = aguaDeCamino(datos);
     // Campo de alturas suave por celda
     const G = new Float32Array(W * H);
     for (let i = 0; i < G.length; i++) {
         if (F[i]) G[i] = BASE_ESTRUCTURA;
         else if (T[i] === 'hojas') G[i] = vh(E[i] - 3);
-        else if (T[i] === 'madera') G[i] = vh(10);
+        else if (AV[i]) G[i] = vh(10);
         else G[i] = vh(E[i]);
     }
     const g = (cx, cz) => G[Math.min(H - 1, Math.max(0, cz)) * W + Math.min(W - 1, Math.max(0, cx))];
@@ -69,13 +71,8 @@ export function prepararTerreno(datos) {
                 SUB[o] = B.TIERRA;
                 continue;
             }
-            if (tipo === 'madera') { // puente sobre el agua
-                ES[o] = 2;
-                HT[o] = NIVEL_AGUA + 1;
-                SUP[o] = B.TABLONES;
-                SUB[o] = B.ARENA;
-                continue;
-            }
+            // Las celdas 'madera' sin F (puente del mapa 2D) quedan como agua: trazarPuentes pone
+            // después un tablero recto y continuo entre las dos orillas
 
             // Altura: interpolación bilineal entre centros de celda
             const u = (bx + 0.5) / ESCALA - 0.5, v = (bz + 0.5) / ESCALA - 0.5;
@@ -90,8 +87,8 @@ export function prepararTerreno(datos) {
             const jx = (hs % 3) - 1, jz = ((hs >>> 4) % 3) - 1;
             let ti = Math.min(H - 1, Math.max(0, Math.floor((bz + jz) / ESCALA))) * W
                 + Math.min(W - 1, Math.max(0, Math.floor((bx + jx) / ESCALA)));
-            if (F[ti] || T[ti] === 'madera') ti = ci;
-            const tj = T[ti];
+            if (F[ti] || AV[ti]) ti = ci;
+            const tj = AV[ti] ? 'agua' : T[ti];
 
             if (h < NIVEL_AGUA) {
                 const f = h >= NIVEL_AGUA - 4 ? B.ARENA : B.TIERRA;
@@ -104,6 +101,7 @@ export function prepararTerreno(datos) {
             else { SUP[o] = B.PASTO; SUB[o] = B.TIERRA; }
         }
     }
+    const puentes = trazarPuentes(datos, AV, HT, SUP, SUB, ES, BW, BD);
     // Segunda pasada: volumen de casas, puertas, letras altas y pedestal del faro
     const HUECO = new Uint8Array(BW * BD); // 1 interior hueco · 2 pared · 3 pared con puerta
     const { tx0, ty0, anchoT, altoT } = datos.titulo;
@@ -265,7 +263,15 @@ export function prepararTerreno(datos) {
             correo = geometriaCorreo(c, BASE_ESTRUCTURA);
         }
     }
+    // Lugares nuevos (construcciones.js): caseta del pescador y escenario de Salonas
+    const tt = { BW, BD, HT, SUP, SUB, ES, datos, ESCALA, NIVEL_AGUA };
+    const pescador = colocarPescador(tt, puentes);
+    const escenario = colocarEscenario(tt);
+    const corrales = colocarCorrales(tt);
+    const lugares = colocarLugares(tt); // molino, atalaya, campamento, portal, iglú y naufragio
     const decor = [
+        ...puentes,
+        ...[pescador, escenario, ...corrales, ...lugares].filter(Boolean).map(l => l.decor).filter(Boolean),
         { t: 'pozo', x: (pax - 1) * ESCALA, z: (pay - 5) * ESCALA, cx: (pax - 1) * ESCALA + 4, cz: (pay - 5) * ESCALA + 4, r: 6 },
         { t: 'buzon', x: (pcx - 3) * ESCALA, z: (pcy - 5) * ESCALA, cx: (pcx - 3) * ESCALA + 2, cz: (pcy - 5) * ESCALA + 2, r: 6 },
         { t: 'mina', x: mix * ESCALA, z: (miy - 5) * ESCALA, cx: mix * ESCALA, cz: (miy - 5) * ESCALA - 14, r: 18 }
@@ -274,10 +280,129 @@ export function prepararTerreno(datos) {
     // Zonas donde puede haber emisores de luz (antorchas, piedra luminosa): los chunks a menos
     // de RADIO_LUZ bloques de una zona calculan la luz con la ventana ampliada (ver calcularLuz).
     // Quien coloque emisores fuera del decorado o del faro debe agregar aquí su rectángulo.
-    const zonasLuz = decor.map(d => ({ x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r }));
+    const zonasLuz = decor.map(d => d.luz || { x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r });
     zonasLuz.push({ x0: faro.x - 12, z0: faro.z - 12, x1: faro.x + 12, z1: faro.z + 12 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, pescador, escenario, corrales, lugares, ediciones: new Map() };
+}
+
+// ---------------------------------------------------------
+// Puentes: en el mapa 2D el camino cruza el agua como una línea ondulada de celdas 'madera',
+// que en bloques quedaban como parches de 4×4 apenas unidos en diagonal. Aquí cada cruce se
+// reemplaza por un tablero recto de orilla a orilla (~3 bloques útiles), con barandas de valla,
+// postes de tronco con pilotes hasta el fondo y antorchas. Determinista: lo recalculan los workers.
+// Devuelve decorados { t: 'puente', bloques: [x, y, z, id, …] } para colocarDecor.
+// ---------------------------------------------------------
+// Celdas del camino que en realidad cruzan agua. En el 2D los píxeles del camino se pisan: una celda
+// que ya era 'madera' vuelve a pasar como 'tierra' de altura 15, así que la mayoría del cruce queda
+// como tierra a ras del agua. Se reconocen por estar a nivel de playa con 3 o más vecinos de agua.
+function aguaDeCamino(datos) {
+    const { W, H, T, E, F, NIVEL_MAR } = datos;
+    const AV = new Uint8Array(W * H);
+    // Se repite para que el agua se propague por la cinta del camino (sus vecinas también son camino)
+    for (let pasada = 0, cambio = true; pasada < 6 && cambio; pasada++) {
+        cambio = false;
+        for (let y = 1; y < H - 1; y++) {
+            for (let x = 1; x < W - 1; x++) {
+                const i = y * W + x;
+                if (F[i] || AV[i]) continue;
+                if (T[i] === 'madera') { AV[i] = 1; cambio = true; continue; }
+                if (T[i] !== 'tierra' || E[i] > NIVEL_MAR + 1) continue;
+                let n = 0;
+                for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (T[i + dy * W + dx] === 'agua' || AV[i + dy * W + dx]) n++;
+                if (n >= 3) { AV[i] = 1; cambio = true; }
+            }
+        }
+    }
+    return AV;
+}
+
+function trazarPuentes(datos, AV, HT, SUP, SUB, ES, BW, BD) {
+    const { W, H, tramos, orient } = datos;
+    const anchoCamino = orient === 'h' ? 1 : 0;
+    const esMadera = (x, y) => {
+        for (let oy = 0; oy <= 1; oy++) {
+            for (let ox = 0; ox <= anchoCamino; ox++) {
+                const xx = x + ox, yy = y + oy;
+                if (xx >= 0 && yy >= 0 && xx < W && yy < H && AV[yy * W + xx]) return true;
+            }
+        }
+        return false;
+    };
+    const centro = ([x, y]) => [x * ESCALA + (anchoCamino ? ESCALA : ESCALA / 2), y * ESCALA + ESCALA];
+    const lista = [];
+    for (const px of tramos) {
+        let i = 0;
+        while (i < px.length) {
+            if (!esMadera(px[i][0], px[i][1])) { i++; continue; }
+            // Tramo sobre el agua; se unen los cortes de hasta 2 píxeles de tierra
+            let j = i, k = i + 1;
+            while (k < px.length && k - j <= 3) { if (esMadera(px[k][0], px[k][1])) j = k; k++; }
+            if (i > 0 && j < px.length - 1) {
+                const p = construirPuente(centro(px[i - 1]), centro(px[j + 1]), HT, SUP, SUB, ES, BW, BD);
+                if (p) lista.push(p);
+            }
+            i = j + 1;
+        }
+    }
+    return lista;
+}
+
+function construirPuente([ax, az], [bx, bz], HT, SUP, SUB, ES, BW, BD) {
+    const L = Math.hypot(bx - ax, bz - az);
+    if (L < 2) return null;
+    const ux = (bx - ax) / L, uz = (bz - az) / L, nx = -uz, nz = ux;
+    const dentro = (x, z) => x >= 0 && z >= 0 && x < BW && z < BD;
+    const orilla = (x, z) => dentro(x, z) ? Math.max(NIVEL_AGUA + 1, HT[Math.floor(z) * BW + Math.floor(x)]) : NIVEL_AGUA + 1;
+    const hA = orilla(ax, az), hB = orilla(bx, bz);
+    // En tierra firme el tablero sigue como rampa que baja 1 bloque por bloque hasta topar con el suelo
+    const EXT = 8;
+    const tablero = new Map(); // o -> { h, s }
+    for (let s = -EXT; s <= L + EXT; s += 0.5) {
+        const t = Math.min(1, Math.max(0, s / L));
+        const h = Math.round(hA + (hB - hA) * t) - Math.ceil(Math.max(0, -s, s - L));
+        for (let w = -2; w <= 2; w += 0.5) {
+            const x = Math.floor(ax + ux * s + nx * w), z = Math.floor(az + uz * s + nz * w);
+            if (!dentro(x, z)) continue;
+            const o = z * BW + x;
+            if (!tablero.has(o)) tablero.set(o, { h, s });
+        }
+    }
+    const agua = new Set();
+    for (const [o, { h }] of tablero) {
+        if (ES[o] === 1) continue;
+        if (HT[o] <= NIVEL_AGUA || ES[o] === 2) {
+            agua.add(o);
+            ES[o] = 2; HT[o] = Math.max(h, NIVEL_AGUA + 1); SUP[o] = B.TABLONES; SUB[o] = B.ARENA;
+        } else if (HT[o] <= h) {
+            ES[o] = 3; HT[o] = h; SUP[o] = B.TABLONES;
+        }
+    }
+    // Barandas: bordes del tablero que dan al agua. Cada 4 bloques, poste con pilote; cada 12, antorcha
+    const bloques = [];
+    let x0 = BW, z0 = BD, x1 = 0, z1 = 0, maxY = 0;
+    for (const o of agua) {
+        const x = o % BW, z = (o - x) / BW;
+        const { s } = tablero.get(o), h = HT[o];
+        // Con las 8 vecinas: en tramos diagonales la baranda queda unida por los lados (sin rendijas en las esquinas)
+        const borde = [o - 1, o + 1, o - BW, o + BW, o - BW - 1, o - BW + 1, o + BW - 1, o + BW + 1]
+            .some(p => !tablero.has(p) && HT[p] <= NIVEL_AGUA && ES[p] !== 2);
+        if (!borde) continue;
+        const k = Math.round(s);
+        if (k % 4 === 0) {
+            for (let y = NIVEL_AGUA - 4; y < h; y++) bloques.push(x, y, z, B.TRONCO);
+            bloques.push(x, h + 1, z, B.TRONCO);
+            if (k % 12 === 0) bloques.push(x, h + 2, z, B.ANTORCHA);
+        } else bloques.push(x, h + 1, z, B.VALLA);
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+        maxY = Math.max(maxY, h + 2);
+    }
+    if (!bloques.length) return null;
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    return {
+        t: 'puente', bloques, cx, cz, r: Math.max(x1 - x0, z1 - z0) / 2 + 2, maxY, a: [ax, az], b: [bx, bz],
+        luz: { x0: x0 - 1, z0: z0 - 1, x1: x1 + 1, z1: z1 + 1 }
+    };
 }
 
 // ---------------------------------------------------------
@@ -352,7 +477,7 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
             const pared = sup === B.CUARZO ? B.CUARZO : B.TABLONES;
             for (let y = 0; y <= tope; y++) {
                 let id;
-                if (es === 2) id = y === tope ? sup : y > NIVEL_AGUA - 4 ? B.AGUA : B.ARENA;
+                if (es === 2) id = y === tope ? sup : y > NIVEL_AGUA ? B.AIRE : y > NIVEL_AGUA - 4 ? B.AGUA : B.ARENA;
                 else if (y === tope) id = hueco === 6 ? B.AIRE : sup;
                 else if (hueco && hueco <= 3 && y >= BASE_ESTRUCTURA) {
                     if (y === BASE_ESTRUCTURA) id = B.TABLONES; // piso a ras del suelo
@@ -400,8 +525,8 @@ function llenarVentana(terreno, wx0, wz0, ancho, destino = null) {
     // Decorados: pozo de la aldea y buzón del correo
     for (const d of terreno.decor) {
         if (Math.abs(d.cx - (wx0 + VENT / 2)) < d.r + VENT / 2 && Math.abs(d.cz - (wz0 + VENT / 2)) < d.r + VENT / 2) {
-            colocarDecor(vox, wx0, wz0, VENT, d, BASE_ESTRUCTURA + 1);
-            maxY = Math.max(maxY, BASE_ESTRUCTURA + 8);
+            colocarDecor(vox, wx0, wz0, VENT, d, d.y ?? BASE_ESTRUCTURA + 1);
+            maxY = Math.max(maxY, d.maxY ?? BASE_ESTRUCTURA + 8);
         }
     }
     // Casas: chimenea, cama, librero, mesa con antorcha y cofre
@@ -536,7 +661,10 @@ function colocarDecor(vox, wx0, wz0, ancho, d, y0) {
         if (lx < 0 || lz < 0 || lx >= ancho || lz >= ancho || y < 0 || y >= ALTO) return;
         vox[(y * ancho + lz) * ancho + lx] = id;
     };
-    if (d.t === 'pozo') {
+    if (d.t === 'puente' || d.t === 'bloques') {
+        const b = d.bloques;
+        for (let i = 0; i < b.length; i += 4) poner(b[i], b[i + 1], b[i + 2], b[i + 3]);
+    } else if (d.t === 'pozo') {
         for (let dz = 0; dz < 8; dz++) {
             for (let dx = 0; dx < 8; dx++) {
                 const borde = dx === 0 || dx === 7 || dz === 0 || dz === 7;

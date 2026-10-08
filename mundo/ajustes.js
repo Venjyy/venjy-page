@@ -10,8 +10,8 @@ export const NOMBRES_ZONA = {
 };
 
 const TXT = {
-    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonido de las gatas', brujula: 'Mostrar brújula', mapa: 'Mapa', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Ir a', chunks: 'chunks' },
-    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'Cat sounds', brujula: 'Show compass', mapa: 'Map', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Go to', chunks: 'chunks' }
+    es: { ajustes: 'Ajustes', distancia: 'Distancia de render', fov: 'Campo de visión', sens: 'Sensibilidad', hora: 'Hora del día', ciclo: 'Ciclo día/noche', auto: 'Distancia automática', fps: 'Mostrar FPS', sonido: 'Sonidos del mundo', brujula: 'Mostrar brújula', mapa: 'Mapa', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Ir a', chunks: 'chunks' },
+    en: { ajustes: 'Settings', distancia: 'Render distance', fov: 'Field of view', sens: 'Sensitivity', hora: 'Time of day', ciclo: 'Day/night cycle', auto: 'Auto render distance', fps: 'Show FPS', sonido: 'World sounds', brujula: 'Show compass', mapa: 'Map', horizontal: 'Horizontal', vertical: 'Vertical', ir: 'Go to', chunks: 'chunks' }
 };
 
 const CLAVE = 'venjy-mundo-ajustes';
@@ -32,6 +32,8 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         const n = nombresZona && nombresZona[k];
         return n ? (n[getIdioma()] || n.es) : nombres[k];
     };
+    let descubiertos = new Set();
+    try { descubiertos = new Set(JSON.parse(localStorage.getItem('venjy-mundo-descubiertos')) || []); } catch (e) { /* sin almacenamiento */ }
     const guardado = leer();
     const cfg = { distancia: 10, fov: 70, sens: 1, ciclo: true, auto: true, fps: true, brujula: true, ...guardado };
 
@@ -219,6 +221,17 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
         get distanciaEfectiva() { return efectiva; },
         // Nombre de la zona cercana, o '' si estás lejos de todas
         zonaEn(x, z) {
+            // Construcciones para explorar: nombre y cuántas lleva descubiertas (se recuerda)
+            const lugares = terreno.lugares || [];
+            for (const l of lugares) {
+                if (Math.hypot(l.x - x, l.z - z) > l.radio) continue;
+                if (!descubiertos.has(l.clave)) {
+                    descubiertos.add(l.clave);
+                    try { localStorage.setItem('venjy-mundo-descubiertos', JSON.stringify([...descubiertos])); } catch (e) { /* sin almacenamiento */ }
+                }
+                const n = lugares.filter(q => descubiertos.has(q.clave)).length;
+                return `${l.nombre[getIdioma()] || l.nombre.es} · ${n}/${lugares.length}`;
+            }
             const cx = x / ESCALA, cz = z / ESCALA;
             let mejor = '', d2m = RADIO_ZONA * RADIO_ZONA;
             for (const k of Object.keys(datos.P)) {
