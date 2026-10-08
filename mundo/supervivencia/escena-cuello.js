@@ -307,6 +307,8 @@ export function crearEscenaCuello({ grupo, dy, jugador, camaras, gatas, npcs, mi
         gatas.ponerCuello('gala', !!misiones.estado.hechas.has('lona3'));
     }
 
+    // Depuración: rects NDC del último cuadro de cada globo (window.__cuelloDiag)
+    if (typeof window !== 'undefined') window.__cuelloDiag = () => ({ t: estado ? estado.t : null, lona: globoLona.ultimo, gala: globoGala.ultimo });
     return {
         actualizar, alCompletar, sincronizar, saltar,
         get activa() { return !!estado; },

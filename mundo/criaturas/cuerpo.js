@@ -268,7 +268,7 @@ function proyectarGlobo(camara, padre, x, y, z) {
 const solapeRect = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
 // Elige el lugar del globo. previo = { id, esc } para mantener la candidata elegida mientras siga libre.
 // Sin zonas devuelve solo el encaje clásico (corrido hacia dentro y achicado si no cabe).
-function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActual = false, estricto = false) {
+function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActual = false, estricto = false, extra = null) {
     padre.updateWorldMatrix(true, false);
     const P = proyectarGlobo(camara, padre, ax, ay, az), { prof, t, asp, delante } = P;
     const ms = padre.matrixWorld.getMaxScaleOnAxis();
@@ -288,6 +288,7 @@ function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActu
         const d = z.tipo === 'cabeza' ? Math.hypot(z.x - ax, z.z - az) : Infinity;
         if (d < dMin) { dMin = d; cab = r; }
     }
+    if (extra) for (const e of extra) rects.push({ quien: e.quien, tipo: 'globo', x0: e.x0, x1: e.x1, y0: e.y0, y1: e.y1 }); // otros globos ya resueltos
     const clampC = (c, lo, hi) => (lo > hi ? 0 : Math.min(hi, Math.max(lo, c)));
     // Candidatas para una escala s: (a) la actual, (b,c) a los lados de la cabeza, (d,e) esquinas de arriba, (f..h) abajo
     function candidatas(s) {
@@ -341,7 +342,12 @@ function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActu
 // ---------------------------------------------------------
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
+// Globos con encaje: el de menor id conserva su lugar; los demás esquivan los rects ya resueltos de los anteriores
+const globosVivos = [];
+let globoId = 0;
 export function crearGlobo(scene) {
+    const yoId = ++globoId, yo = { id: yoId, ultimo: null };
+    globosVivos.push(yo);
     const ESCALA = ESCALA_GLOBO;
     const { c, tex, sp } = spriteLienzo(scene, 384, 160, ESCALA, true);
     let texto = '', alfa = 0;
@@ -356,7 +362,9 @@ export function crearGlobo(scene) {
         if (!padre) return;
         const franja = document.body.classList.contains('en-cine') ? 0.18 : 0;
         const zonas = evitar ? evitar() : null;
-        const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar);
+        const cuadro = renderer ? renderer.info.render.frame : 0;
+        const otros = zonas && zonas.length && !sinEvitar ? globosVivos.filter(o => o.id < yoId && o.ultimo && cuadro - o.ultimo.cuadro <= 1).map(o => ({ quien: o.ultimo.quien, ...o.ultimo.rect })) : null;
+        const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar, false, otros);
         nuevo = false;
         const { c, P } = r;
         const conZonas = !!(zonas && zonas.length);
@@ -370,7 +378,7 @@ export function crearGlobo(scene) {
             vis.x += (c.x - vis.x) * f; vis.y += (c.y - vis.y) * f; vis.k += (c.k - vis.k) * f;
             px = vis.x; py = vis.y; pk = vis.k;
         } else vis = null;
-        ultimo = { cuadro: renderer ? renderer.info.render.frame : 0, rect: { x0: px - hw1 * pk, y0: py - hh1 * pk, x1: px + hw1 * pk, y1: py + hh1 * pk }, zonas: r.rects, franja, id: c.id, escala: pk, libre: r.libre, obj: { x: c.x, y: c.y } };
+        ultimo = yo.ultimo = { cuadro, rect: { x0: px - hw1 * pk, y0: py - hh1 * pk, x1: px + hw1 * pk, y1: py + hh1 * pk }, zonas: r.rects, franja, id: c.id, escala: pk, libre: r.libre, obj: { x: c.x, y: c.y } };
         if (pk < 1) sp.scale.set(ESCALA[0] * pk, ESCALA[1] * pk, 1);
         if (!conZonas && P.delante && c.x === P.cx && c.y === P.cy) return; // cabe: se queda donde está
         // Des-proyecta a la misma profundidad y pasa a coordenadas del grupo
@@ -446,7 +454,7 @@ export function crearGlobo(scene) {
             if (Math.abs(alfa - objetivo) < 0.01) alfa = objetivo;
             sp.visible = alfa > 0.01;
             dtUlt = Math.max(dt, 1e-3);
-            if (!sp.visible) { previo = null; nuevo = true; ultimo = null; vis = null; return; }
+            if (!sp.visible) { previo = null; nuevo = true; ultimo = yo.ultimo = null; vis = null; return; }
             sp.material.opacity = alfa;
             sp.position.set(x, y, z);
             sp.scale.set(ESCALA[0], ESCALA[1], 1);
