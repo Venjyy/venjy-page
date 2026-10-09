@@ -10,6 +10,7 @@ import { crearTinte, crearPersona, caminar } from '../criaturas/cuerpo.js';
 import { pielDe, agregarExtras } from '../criaturas/pieles.js';
 import { PERSONAS } from '../criaturas/amigos.js';
 import { VENJY } from '../criaturas/venjy.js';
+import { azar } from '../mundo-datos.js';
 
 const CLAVE = 'venjy-supervivencia-skin';
 
@@ -56,6 +57,22 @@ export function crearModelo(d, semilla = 8800) {
     agregarExtras(p, piel.extras, tinte, semilla);
     if (d.escala) p.g.scale.setScalar(d.escala);
     return { ...p, tinte };
+}
+
+// Cara de la skin (frente de la cabeza, 16×16) en un lienzo: va al centro del QR para jugar sin internet
+export function caraDeSkin(d) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 16;
+    const x = c.getContext('2d');
+    const img = x.createImageData(16, 16);
+    const frente = pielDe(d).cabeza.frente, r = azar(8800);
+    for (let y = 0; y < 16; y++) for (let k = 0; k < 16; k++) {
+        const [cr, cg, cb] = frente(k, y, r);
+        const i = (y * 16 + k) * 4;
+        img.data[i] = cr; img.data[i + 1] = cg; img.data[i + 2] = cb; img.data[i + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    return c;
 }
 
 // Colores de la mano en primera persona: piel y manga según la ropa

@@ -13,13 +13,13 @@ export const CODIGO_VALIDO = /^[A-Z0-9]{3,12}$/;
 export function normalizarCodigo(t) { return String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12); }
 export function normalizarNombre(t) { return String(t || '').replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 14); }
 
-function idAleatorio() {
+export function idAleatorio() {
     const a = new Uint8Array(6);
     crypto.getRandomValues(a);
     return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function fallo(codigo, mensaje) { return Object.assign(new Error(mensaje), { codigo }); }
+export function fallo(codigo, mensaje) { return Object.assign(new Error(mensaje), { codigo }); }
 
 export class Sala {
     constructor() {
@@ -128,6 +128,10 @@ export class Sala {
             if (id === this.id || !metas.length) continue;
             nuevos.set(id, metas[metas.length - 1]);
         }
+        this.ponerJugadores(nuevos);
+    }
+    // Reemplaza la lista de jugadores y avisa quién entró, cambió o salió (SalaLocal la usa sin Presence)
+    ponerJugadores(nuevos) {
         const antes = this.jugadores;
         this.jugadores = nuevos;
         for (const [id, m] of nuevos) {
@@ -246,8 +250,8 @@ export class Sala {
 //   invitados de respaldo; el anfitrión les reenvía lo que llega directo y viceversa. Los invitados
 //   directos no lo escuchan, así no pagan mensajes que no usan. Si el canal directo se corta en
 //   medio de la partida se sigue por respaldo y se reintenta (3 s, 10 s, 30 s y luego cada 60 s).
-// - Para el QR sin internet (PR C): crearOferta / aceptarOferta / aceptarRespuesta devuelven SDP
-//   completos; enviarSenal y Presence (sincronizarPresencia) son lo que habría que reemplazar.
+// - Sin internet (QR): SalaLocal en online/sala-local.js reemplaza la señalización por el QR y
+//   Presence por una lista que reparte el anfitrión.
 // - Pruebas: `?directo=0` fuerza el respaldo (ICE sin servidores y solo relay: nunca conecta);
 //   `cortarDirecto()` corta el canal como si fallara la red.
 // =========================================================
@@ -273,6 +277,7 @@ export class SalaDirecta extends Sala {
         this.intentos = 0;
         this.reintento = null;
         this.forzarRespaldo = new URLSearchParams(location.search).get('directo') === '0';
+        this.configIce = null;      // SalaLocal: sin STUN (solo la red local)
         this.cuenta = cuentaNueva();
         this.en('sale', ({ id }) => { this.respaldo.delete(id); this.cerrarPar(id); });
     }
@@ -341,7 +346,7 @@ export class SalaDirecta extends Sala {
     // ---------- Conexiones ----------
     nuevoPar(id, iniciador) {
         this.cerrarPar(id);
-        const pc = new RTCPeerConnection(this.forzarRespaldo ? { iceServers: [], iceTransportPolicy: 'relay' } : { iceServers: STUN });
+        const pc = new RTCPeerConnection(this.configIce || (this.forzarRespaldo ? { iceServers: [], iceTransportPolicy: 'relay' } : { iceServers: STUN }));
         const par = { id, pc, f: null, r: null, abierto: false, caido: false, binario: null };
         this.pares.set(id, par);
         const preparar = canal => {

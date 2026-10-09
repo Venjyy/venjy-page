@@ -43,7 +43,7 @@ import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
-import { crearEditorSkin, cargarSkin, coloresMano, BASES } from './skin.js';
+import { crearEditorSkin, cargarSkin, coloresMano, BASES, caraDeSkin } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
@@ -58,7 +58,8 @@ import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { crearCofresCompaneros } from './cofres-companeros.js';
 import { crearEscenaGuardian } from './escena-guardian.js';
-import { hospedar, unirse, guardadoDeInvitado, crearCoop, idDispositivo, MAX_COOP, MAX_RESPALDO } from './coop.js';
+import { hospedar, unirse, hospedarLocal, unirseLocal, guardadoDeInvitado, crearCoop, idDispositivo, MAX_COOP, MAX_RESPALDO } from './coop.js';
+import { crearPanelQR } from './ui-qr.js';
 import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
 
@@ -100,7 +101,20 @@ const TXT = {
         errores: { 'sin-anfitrion': 'No hay nadie hospedando esa sala.', llena: `La sala está llena (máximo ${MAX_COOP}).`, 'llena-respaldo': `Tu red no permite conexión directa y la sala ya tiene ${MAX_RESPALDO} o más jugadores.`, foto: 'El anfitrión no mandó el mundo. Prueba de nuevo.', codigo: 'No se pudo abrir la sala. Prueba de nuevo.', 'sin-config': 'El modo online no está configurado.' },
         errorRed: 'No se pudo conectar', sala: (c, n) => `Sala ${c} · ${n}/${MAX_COOP}`, copiado: 'Código copiado',
         copiaGuardada: 'Copia guardada en este dispositivo', copiaLlena: `Ya tienes ${MAX_MUNDOS} mundos: borra uno para guardar la copia.`,
-        finAnfitrion: 'El anfitrión cerró la partida.', finConexion: 'Se cortó la conexión con la sala.', copia: n => `${n} (copia)`
+        finAnfitrion: 'El anfitrión cerró la partida.', finConexion: 'Se cortó la conexión con la sala.', copia: n => `${n} (copia)`,
+        finLocal: 'Se cortó la conexión con el anfitrión. Para volver, pídele una invitación nueva («Invitar jugador» en su pausa).',
+        salaLocal: n => `Sala sin internet · ${n}/${MAX_COOP}`, invitarTitulo: 'Invitar jugador', unirseTitulo: 'Unirse con QR',
+        pasoInvitar1: '1. Tu amigo elige «Unirse con QR (sin internet)» en el menú y escanea este código.',
+        pasoInvitar2: '2. Después escanea el código de respuesta que aparece en su pantalla.',
+        pasoUnirse1: '1. Escanea la invitación que muestra el anfitrión («Invitar jugador» en su pausa).',
+        pasoUnirse2: '2. Muestra este código al anfitrión para que lo escanee.',
+        preparando: 'Preparando la respuesta…', esperandoAnfitrion: 'Esperando a que el anfitrión lea tu código…', conectandoQR: 'Conectando…',
+        entroQR: n => `${n} entró a la sala`, avisoLocal: 'Sala sin internet: invita a cada amigo desde la pausa («Invitar jugador»).', solos: 'Solo tú',
+        erroresQR: {
+            'qr-ilegible': 'Ese código no es de Venjy o está incompleto.', 'qr-tipo': 'Ese código no corresponde a este paso.',
+            'qr-otra': 'Esa respuesta es de otra invitación. Usa la última.', 'qr-conexion': 'No se pudo conectar. ¿Están en la misma red? Prueba con una invitación nueva.',
+            'sin-camara': 'No hay cámara disponible: usa el texto.'
+        }
     },
     en: {
         dificultades: ['Peaceful', 'Easy', 'Normal', 'Hard'], jugar: 'Play', exportar: 'Export', borrar: 'Delete',
@@ -115,7 +129,20 @@ const TXT = {
         errores: { 'sin-anfitrion': 'Nobody is hosting that room.', llena: `The room is full (max ${MAX_COOP}).`, 'llena-respaldo': `Your network doesn't allow a direct connection and the room already has ${MAX_RESPALDO} or more players.`, foto: "The host didn't send the world. Try again.", codigo: "Couldn't open the room. Try again.", 'sin-config': 'Online mode is not configured.' },
         errorRed: "Couldn't connect", sala: (c, n) => `Room ${c} · ${n}/${MAX_COOP}`, copiado: 'Code copied',
         copiaGuardada: 'Copy saved on this device', copiaLlena: `You already have ${MAX_MUNDOS} worlds: delete one to save the copy.`,
-        finAnfitrion: 'The host closed the game.', finConexion: 'The connection to the room was lost.', copia: n => `${n} (copy)`
+        finAnfitrion: 'The host closed the game.', finConexion: 'The connection to the room was lost.', copia: n => `${n} (copy)`,
+        finLocal: 'The connection to the host was lost. To come back, ask for a new invite («Invite player» in their pause menu).',
+        salaLocal: n => `Offline room · ${n}/${MAX_COOP}`, invitarTitulo: 'Invite player', unirseTitulo: 'Join with QR',
+        pasoInvitar1: '1. Your friend picks «Join with QR (offline)» in the menu and scans this code.',
+        pasoInvitar2: '2. Then scan the reply code shown on their screen.',
+        pasoUnirse1: '1. Scan the invite shown by the host («Invite player» in their pause menu).',
+        pasoUnirse2: '2. Show this code to the host so they can scan it.',
+        preparando: 'Preparing the reply…', esperandoAnfitrion: 'Waiting for the host to read your code…', conectandoQR: 'Connecting…',
+        entroQR: n => `${n} joined`, avisoLocal: 'Offline room: invite each friend from the pause menu («Invite player»).', solos: 'Just you',
+        erroresQR: {
+            'qr-ilegible': "That code isn't from Venjy or is incomplete.", 'qr-tipo': "That code doesn't belong to this step.",
+            'qr-otra': 'That reply belongs to another invite. Use the latest one.', 'qr-conexion': "Couldn't connect. Are you on the same network? Try a new invite.",
+            'sin-camara': 'No camera available: use the text.'
+        }
     }
 };
 const tx = () => TXT[idioma];
@@ -157,7 +184,7 @@ const guardarAjustes = () => { try { localStorage.setItem(AJUSTES_CLAVE, JSON.st
 // Menú de mundos
 // ---------------------------------------------------------
 const $ = id => document.getElementById(id);
-const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin'];
+const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin', 'hospedar-modo', 'panel-qr'];
 function mostrar(id) {
     $('inicio').hidden = !id;
     for (const p of pantallas) $(p).hidden = p !== id;
@@ -191,8 +218,7 @@ async function pintarMenu() {
         const botones = document.createElement('div');
         botones.className = 'botones-mundo';
         const bj = boton(tx().jugar, () => jugar(m.id));
-        const bh = boton(tx().hospedar, () => hospedarMundo(m.id), 'secundario');
-        bh.hidden = !ONLINE_ACTIVO;
+        const bh = boton(tx().hospedar, () => elegirHospedar(m.id), 'secundario');
         const be = boton(tx().exportar, () => exportarMundo(m.id).catch(err => alert(err.message)), 'secundario');
         const bb = boton(tx().borrar, async () => { if (confirm(tx().confirmarBorrar(m.nombre))) { await borrarMundo(m.id); pintarMenu(); } }, 'secundario peligro');
         botones.append(bj, bh, be, bb);
@@ -203,7 +229,8 @@ async function pintarMenu() {
     $('nuevo-mundo').disabled = lista.length >= MAX_MUNDOS;
     $('nuevo-mundo').title = lista.length >= MAX_MUNDOS ? tx().lleno : '';
     $('importar').hidden = false;
-    $('coop-menu').hidden = !ONLINE_ACTIVO;
+    $('coop-menu').hidden = false; // sin internet también se juega (QR)
+    $('coop-fila-codigo').hidden = !ONLINE_ACTIVO;
 }
 
 // ---------------------------------------------------------
@@ -225,9 +252,20 @@ function leerNombre() {
     guardarNombre(nombre);
     return nombre;
 }
-const mensajeError = e => tx().errores[e.codigo] || `${tx().errorRed}: ${e.message}`;
+const mensajeError = e => tx().errores[e.codigo] || tx().erroresQR[e.codigo] || `${tx().errorRed}: ${e.message}`;
 let ocupadoCoop = false;
-async function hospedarMundo(id) {
+// «Hospedar»: con internet (código de sala) o sin internet (QR); sin Supabase configurado, directo al QR
+let mundoPorHospedar = null;
+function elegirHospedar(id) {
+    if (ocupadoCoop || !leerNombre()) return;
+    if (!ONLINE_ACTIVO) { hospedarMundo(id, true); return; }
+    mundoPorHospedar = id;
+    mostrar('hospedar-modo');
+}
+$('hospedar-internet').addEventListener('click', () => { pintarMenu(); hospedarMundo(mundoPorHospedar, false); });
+$('hospedar-local').addEventListener('click', () => { pintarMenu(); hospedarMundo(mundoPorHospedar, true); });
+$('hospedar-cancelar').addEventListener('click', () => pintarMenu());
+async function hospedarMundo(id, local) {
     if (ocupadoCoop) return;
     const nombre = leerNombre();
     if (!nombre) return;
@@ -236,7 +274,7 @@ async function hospedarMundo(id) {
     try {
         const m = await cargarMundo(id);
         if (!m) throw new Error('No existe el mundo');
-        const cx = await hospedar({ nombre, skin: cargarSkin() });
+        const cx = await (local ? hospedarLocal : hospedar)({ nombre, skin: cargarSkin() });
         estadoCoop('');
         iniciarJuego(m, cx);
     } catch (e) { console.error(e); estadoCoop(mensajeError(e), true); }
@@ -256,6 +294,44 @@ $('coop-unirse').addEventListener('click', async () => {
         iniciarJuego(guardadoDeInvitado(cx), cx);
     } catch (e) { console.error(e); estadoCoop(mensajeError(e), true); }
     ocupadoCoop = false;
+});
+// Unirse sin internet: leer la invitación del anfitrión, mostrarle la respuesta y esperar
+const panelQR = crearPanelQR({ idioma });
+$('coop-qr').addEventListener('click', async () => {
+    if (ocupadoCoop) return;
+    const nombre = leerNombre();
+    if (!nombre) return;
+    ocupadoCoop = true;
+    estadoCoop('');
+    let cancelado = false;
+    panelQR.abrir({ titulo: tx().unirseTitulo, cancelar: () => { cancelado = true; pintarMenu(); } });
+    mostrar('panel-qr');
+    try {
+        for (;;) {
+            const invitacion = await panelQR.pedir(tx().pasoUnirse1);
+            if (invitacion == null || cancelado) break;
+            panelQR.estado(tx().preparando);
+            try {
+                const cx = await unirseLocal({
+                    nombre, skin: cargarSkin(), invitacion, cancelado: () => cancelado,
+                    alRespuesta: r => {
+                        panelQR.ocultarPedir();
+                        panelQR.mostrarCodigo(r, caraDeSkin(cargarSkin()), tx().pasoUnirse2);
+                        panelQR.estado(tx().esperandoAnfitrion);
+                    },
+                    alAvance: () => panelQR.estado(tx().bajandoMundo)
+                });
+                panelQR.cerrar();
+                iniciarJuego(guardadoDeInvitado(cx), cx);
+                break;
+            } catch (e) {
+                if (cancelado || e.codigo === 'cancelada') break;
+                console.warn(e);
+                panelQR.ocultarCodigo();
+                panelQR.estado(mensajeError(e), true);
+            }
+        }
+    } finally { ocupadoCoop = false; }
 });
 $('coop-codigo').addEventListener('input', e => { e.target.value = normalizarCodigo(e.target.value).slice(0, 12); });
 
@@ -682,14 +758,48 @@ async function arrancar(guardado, cx = null) {
     }
     function pintarCoop() {
         if (!coop) return;
-        const texto = tx().sala(coop.codigo, coop.total);
+        const texto = coop.local ? tx().salaLocal(coop.total) : tx().sala(coop.codigo, coop.total);
         $('coop-hud').textContent = texto;
         $('coop-sala').textContent = texto;
         $('coop-pausa').hidden = false;
         $('coop-copia').hidden = coop.esAnfitrion;
         $('coop-compartir').checked = coop.compartido;
+        // Sin internet no hay código: el anfitrión invita con un QR a cada uno
+        $('coop-copiar').hidden = coop.local;
+        $('coop-invitar').hidden = !(coop.local && coop.esAnfitrion);
+        $('coop-invitar').disabled = coop.total >= MAX_COOP;
+        $('coop-lista').textContent = [...coop.remotos.values()].map(r => r.nombre).join(' · ') || tx().solos;
     }
     pintarCoop();
+    if (coop && coop.local && coop.esAnfitrion) setTimeout(() => hud.mensaje(tx().avisoLocal, 6), 1500);
+    // Anfitrión sin internet: invitación (QR) → respuesta del invitado (QR o texto). Una a la vez.
+    async function invitarQR() {
+        panelQR.abrir({ titulo: tx().invitarTitulo, cancelar: () => { coop.cancelarInvitacion(); mostrar('pausa'); } });
+        mostrar('panel-qr');
+        try {
+            for (;;) {
+                const inv = await coop.invitar();
+                await panelQR.mostrarCodigo(inv, caraDeSkin(skinActual), tx().pasoInvitar1);
+                let id = null, otra = false;
+                while (!id && !otra) {
+                    const texto = await panelQR.pedir(tx().pasoInvitar2);
+                    if (texto == null) return; // cancelado
+                    panelQR.estado(tx().conectandoQR);
+                    try { id = await coop.recibirRespuesta(texto); }
+                    catch (e) {
+                        panelQR.estado(mensajeError(e), true);
+                        otra = e.codigo === 'qr-conexion'; // esa oferta ya no sirve: se hace otra
+                    }
+                }
+                if (!id) continue;
+                const r = coop.remotos.get(id);
+                panelQR.cerrar();
+                mostrar('pausa');
+                hud.mensaje(tx().entroQR(r ? r.nombre : '?'), 3);
+                return;
+            }
+        } catch (e) { console.warn(e); panelQR.estado(mensajeError(e), true); }
+    }
     // Cofres de compañero: las cosas de quienes jugaron aquí y ahora no están
     const escenaGuardian = crearEscenaGuardian({
         scene, grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, hud, particulas, idioma, vida, misiones, cofres: () => cofresComp,
@@ -707,7 +817,7 @@ async function arrancar(guardado, cx = null) {
     function terminarCoop(motivo) {
         if (coopTerminado) return;
         coopTerminado = true;
-        $('coop-fin-motivo').textContent = motivo === 'anfitrion' ? tx().finAnfitrion : tx().finConexion;
+        $('coop-fin-motivo').textContent = motivo === 'anfitrion' ? tx().finAnfitrion : coop && coop.local ? tx().finLocal : tx().finConexion;
         ventanasBase.cerrar();
         cerrarPanel();
         if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
@@ -815,6 +925,7 @@ async function arrancar(guardado, cx = null) {
     $('salir-menu').addEventListener('click', salirAlMenu);
     $('salir-muerte').addEventListener('click', salirAlMenu);
     $('coop-copiar').addEventListener('click', () => { try { navigator.clipboard.writeText(coop.codigo); hud.mensaje(tx().copiado, 2); } catch (e) { /* sin portapapeles */ } });
+    $('coop-invitar').addEventListener('click', () => { if (coop && coop.local && coop.esAnfitrion) invitarQR(); });
     $('coop-compartir').addEventListener('change', e => { if (coop) coop.compartido = e.target.checked; });
     $('coop-copia').addEventListener('click', () => guardarCopia());
     $('coop-fin-copia').addEventListener('click', async () => { if (await guardarCopia()) $('coop-fin-copia').disabled = true; });

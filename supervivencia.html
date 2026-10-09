@@ -49,19 +49,20 @@
             <!-- Jugar con amigos: hospedar un mundo (botón en cada tarjeta) o entrar con un código -->
             <div id="coop-menu" class="coop-menu" hidden>
                 <h2 data-es="Jugar con amigos" data-en="Play with friends">Jugar con amigos</h2>
-                <p class="nota" data-es="Para invitar, pulsa «Hospedar» en uno de tus mundos y pasa el código. Hasta 8 jugadores."
-                   data-en="To invite, press «Host» on one of your worlds and share the code. Up to 8 players.">Para invitar, pulsa «Hospedar» en uno de tus mundos y pasa el código. Hasta 8 jugadores.</p>
+                <p class="nota" data-es="Para invitar, pulsa «Hospedar» en uno de tus mundos. Con internet pasas un código; sin internet (misma red), cada amigo entra con un QR. Hasta 8 jugadores."
+                   data-en="To invite, press «Host» on one of your worlds. Online you share a code; offline (same network) each friend joins with a QR. Up to 8 players.">Para invitar, pulsa «Hospedar» en uno de tus mundos. Con internet pasas un código; sin internet (misma red), cada amigo entra con un QR. Hasta 8 jugadores.</p>
                 <label class="campo">
                     <span data-es="Tu nombre" data-en="Your name">Tu nombre</span>
                     <input id="coop-nombre" type="text" maxlength="14" autocomplete="off" spellcheck="false">
                 </label>
-                <div class="fila-coop">
+                <div id="coop-fila-codigo" class="fila-coop">
                     <label class="campo">
                         <span data-es="Código de sala" data-en="Room code">Código de sala</span>
                         <input id="coop-codigo" type="text" maxlength="12" autocomplete="off" spellcheck="false" autocapitalize="characters">
                     </label>
                     <button id="coop-unirse" class="boton" type="button" data-es="Unirse" data-en="Join">Unirse</button>
                 </div>
+                <button id="coop-qr" class="boton secundario" type="button" data-es="Unirse con QR (sin internet)" data-en="Join with QR (offline)">Unirse con QR (sin internet)</button>
                 <p id="coop-estado" class="coop-estado" hidden></p>
             </div>
             <a id="ir-creativo" class="boton secundario" href="mundo.html" data-es="Modo creativo" data-en="Creative mode">Modo creativo</a>
@@ -97,6 +98,8 @@
                     <b id="coop-sala" class="coop-sala"></b>
                     <button id="coop-copiar" class="boton secundario" type="button" data-es="Copiar código" data-en="Copy code">Copiar código</button>
                 </div>
+                <p id="coop-lista" class="nota coop-lista"></p>
+                <button id="coop-invitar" class="boton" type="button" hidden data-es="Invitar jugador" data-en="Invite player">Invitar jugador</button>
                 <label class="opcion"><input id="coop-compartir" type="checkbox"> <span data-es="Al irme, mis cosas quedan compartidas en mi cofre" data-en="When I leave, my things stay shared in my chest">Al irme, mis cosas quedan compartidas en mi cofre</span></label>
                 <button id="coop-copia" class="boton secundario" type="button" data-es="Guardar copia en este dispositivo" data-en="Save a copy on this device">Guardar copia en este dispositivo</button>
             </div>
@@ -127,6 +130,44 @@
 
         <!-- Editor de skin (lo arma mundo/supervivencia/skin.js) -->
         <section class="panel panel-skin" id="pantalla-skin" hidden></section>
+
+        <!-- Hospedar: con internet (código) o sin internet (QR) -->
+        <section class="panel" id="hospedar-modo" hidden>
+            <h1 data-es="Hospedar" data-en="Host">Hospedar</h1>
+            <p class="sub" data-es="¿Cómo van a entrar tus amigos?" data-en="How will your friends join?">¿Cómo van a entrar tus amigos?</p>
+            <button id="hospedar-internet" class="boton" type="button" data-es="Con internet (código de sala)" data-en="Online (room code)">Con internet (código de sala)</button>
+            <button id="hospedar-local" class="boton" type="button" data-es="Sin internet (QR, misma red)" data-en="Offline (QR, same network)">Sin internet (QR, misma red)</button>
+            <p class="nota" data-es="Sin internet: todos en la misma red (Wi-Fi o cable) y con la página ya abierta. Cada amigo entra con un QR de ida y vuelta, hasta 8 jugadores. Si se corta la conexión de alguien, vuelve con una invitación nueva."
+               data-en="Offline: everyone on the same network (Wi-Fi or cable) with the page already open. Each friend joins with a QR there and back, up to 8 players. If someone's connection drops, they come back with a new invite.">Sin internet: todos en la misma red (Wi-Fi o cable) y con la página ya abierta. Cada amigo entra con un QR de ida y vuelta, hasta 8 jugadores. Si se corta la conexión de alguien, vuelve con una invitación nueva.</p>
+            <button id="hospedar-cancelar" class="boton secundario" type="button" data-es="Cancelar" data-en="Cancel">Cancelar</button>
+        </section>
+
+        <!-- QR para jugar sin internet (lo maneja mundo/supervivencia/ui-qr.js) -->
+        <section class="panel panel-qr" id="panel-qr" hidden>
+            <h1 id="qr-titulo"></h1>
+            <div id="qr-codigo" hidden>
+                <p id="qr-paso-mostrar" class="sub"></p>
+                <canvas id="qr-lienzo" class="qr-lienzo"></canvas>
+                <p id="qr-medida" class="nota qr-medida"></p>
+                <label class="campo">
+                    <span data-es="Sin cámara: copia este texto y pásalo" data-en="No camera: copy this text and pass it on">Sin cámara: copia este texto y pásalo</span>
+                    <textarea id="qr-mio" rows="3" readonly spellcheck="false"></textarea>
+                </label>
+                <button id="qr-copiar" class="boton secundario" type="button" data-es="Copiar texto" data-en="Copy text">Copiar texto</button>
+            </div>
+            <div id="qr-leer" hidden>
+                <p id="qr-paso-leer" class="sub"></p>
+                <video id="qr-video" class="qr-video" hidden></video>
+                <button id="qr-escanear" class="boton" type="button" data-es="Escanear con la cámara" data-en="Scan with the camera">Escanear con la cámara</button>
+                <label class="campo">
+                    <span data-es="O pega aquí el texto" data-en="Or paste the text here">O pega aquí el texto</span>
+                    <textarea id="qr-entrada" rows="3" spellcheck="false" autocomplete="off"></textarea>
+                </label>
+                <button id="qr-conectar" class="boton secundario" type="button" data-es="Usar el texto pegado" data-en="Use the pasted text">Usar el texto pegado</button>
+            </div>
+            <p id="qr-estado" class="coop-estado" hidden></p>
+            <button id="qr-cancelar" class="boton secundario" type="button" data-es="Cancelar" data-en="Cancel">Cancelar</button>
+        </section>
 
         <!-- Fin de la sala cooperativa -->
         <section class="panel" id="coop-fin" hidden>
