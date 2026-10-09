@@ -10,7 +10,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO } from './misiones-datos.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
-import { crearGlobo } from '../criaturas/cuerpo.js';
+import { crearGlobo, zonasPantalla } from '../criaturas/cuerpo.js';
 import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
 import { crearTienda } from './tienda.js';
@@ -412,6 +412,19 @@ export function crearMisiones(ctx) {
         // Marcadores y globos especiales
         const libre = !estado.activa;
         const jefe = jefeSiguiente();
+        // Panel lateral abierto (Hablar o la tienda sin cine): el globo del amigo con quien hablas se encaja en
+        // pantalla, sin tapar su cabeza ni el panel, y se achica si hace falta
+        zonasPantalla.length = 0;
+        const conPanel = document.body.classList.contains('panel-lado') ? (hablarUI && hablarUI.charla && hablarUI.charla.clave) : null;
+        if (conPanel) {
+            // El panel y el minimapa (arriba a la derecha)
+            const W = window.innerWidth || 1, H = window.innerHeight || 1;
+            for (const el of [document.querySelector('.capa-hablar .panel-mision'), document.querySelector('.mm-pequeno')]) {
+                if (!el || !el.offsetParent) continue;
+                const r = el.getBoundingClientRect();
+                zonasPantalla.push({ x0: r.left / W * 2 - 1 - 0.02, x1: r.right / W * 2 - 1 + 0.02, y0: 1 - r.bottom / H * 2 - 0.02, y1: 1 - r.top / H * 2 + 0.02 });
+            }
+        }
         for (const p of personas()) {
             const s = marcaDe(p.clave);
             const n = p.n;
@@ -431,7 +444,10 @@ export function crearMisiones(ctx) {
                 e.t -= dt;
                 n.globo && n.globo.sp && (n.globo.sp.visible = false);
                 const d = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
-                e.globo.actualizar(dt, e.t > 0 && d < 14, n.x, (n.y ?? 0) + 2.75 * escalaDe(n), n.z);
+                if (conPanel === p.clave) {
+                    const s = escalaDe(n), cabeza = [{ x: n.x, y: (n.y ?? 0) + 1.55 * s, z: n.z, r: 0.45 * s, tipo: 'cabeza', quien: p.clave }];
+                    e.globo.actualizar(dt, e.t > 0 && d < 14, n.x, (n.y ?? 0) + 2.75 * s, n.z, camara, () => cabeza);
+                } else e.globo.actualizar(dt, e.t > 0 && d < 14, n.x, (n.y ?? 0) + 2.75 * escalaDe(n), n.z);
             } else if (e) e.globo.actualizar(dt, false, n.x, 0, n.z);
         }
         pintarSeguimiento();

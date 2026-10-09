@@ -510,10 +510,11 @@ body.en-ronda-fp #hud { visibility: hidden; }
 
 /* ---------- Pestaña «Hablar» (bloque 6a): sin cine ni velo, el panel a un costado para ver al amigo ---------- */
 .capa-mision.capa-hablar { background: transparent; align-items: flex-end; justify-content: flex-start; }
-.capa-hablar .panel-mision { margin: auto auto 3vh 3vw; width: min(440px, 94vw); max-height: 86vh; overflow: auto; padding: 12px 14px; font-size: 0.9rem; background: rgb(16 10 6 / 0.88); }
+.capa-hablar .panel-mision { margin: auto auto 3vh 2vw; width: clamp(300px, 38vw, 430px); max-height: 86vh; overflow: auto; padding: 12px 14px; font-size: 0.9rem; background: rgb(16 10 6 / 0.88); }
 .capa-hablar .panel-mision h2 { font-size: 1.2rem; }
+.capa-hablar .pestanas-mision .boton { font-size: 0.85rem; padding-inline: 4px; }
 body.panel-lado .mision-activa { display: none; } /* el globo del amigo queda arriba a la derecha */
-@media (max-width: 600px) { .capa-hablar .panel-mision { margin: auto auto 2vh; } }
+@media (max-width: 600px) { .capa-hablar .panel-mision { margin: auto auto 2vh; width: 94vw; } }
 .amistad { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
 .amistad b { font-weight: normal; color: #ff9fcf; }
 .amistad small { color: var(--gris); }

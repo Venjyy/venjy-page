@@ -264,19 +264,18 @@ export function crearHablar(ctx) {
         gesticular([{ g: GESTO_REGALO[clave] || 'risa', dur: 2 }, { g: 'asiente', dur: 1.2 }]);
     }
 
-    // Encuadre (sin cámara de cine): muy cerca del amigo su globo queda sobre la vista, así que la cámara
-    // sube sola hasta que se lee (solo sube, con la cara todavía en pantalla), y gira para dejar al amigo
-    // en el centro de la zona libre a la derecha del panel (en pantallas angostas, al centro)
+    // Encuadre (sin cámara de cine): la cámara apunta sola un poco sobre la cabeza del amigo y gira para dejarlo en el centro de la zona libre a la derecha del panel (en pantallas
+    // angostas, al centro). Su globo se encaja aparte (misiones.js): esquiva su cabeza, el panel y el minimapa.
     function encuadrar(c, dt) {
         const cam = ctx.camara;
         if (!cam || !dt || document.body.classList.contains('en-cine')) return;
         const n = c.n, esc = n.escala || 1;
         const d = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z) || 1;
-        const yGlobo = (n.y ?? 0) + dy + 2.75 * esc + 0.6; // centro aproximado del globo (misiones.js lo pone a 2,75)
+        const yCabeza = (n.y ?? 0) + dy + 1.6 * esc;
         const medio = (cam.fov * Math.PI / 180) / 2;
         const k = Math.min(1, dt * 4);
-        const objetivo = Math.min(1.2, Math.atan2(yGlobo - cam.position.y, d) - medio * 0.45);
-        if (jugador.pitch < objetivo - 0.005) jugador.pitch += (objetivo - jugador.pitch) * k;
+        const objetivo = Math.min(1.2, Math.atan2(yCabeza - cam.position.y, d) + medio * 0.1);
+        if (Math.abs(jugador.pitch - objetivo) > 0.005) jugador.pitch += (objetivo - jugador.pitch) * k;
         // Horizontal: ángulo del amigo en pantalla contra el centro de la zona libre
         const ancho = window.innerWidth || 1, r = c.el.getBoundingClientRect();
         const derechaPanel = r.right / ancho * 2 - 1;

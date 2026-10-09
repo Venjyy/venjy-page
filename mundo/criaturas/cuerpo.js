@@ -352,6 +352,9 @@ function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActu
 // también del que se está desvaneciendo
 const globosVivos = [];
 let globoSeq = 0;
+// Rectángulos de la pantalla (NDC: { x0, x1, y0, y1 }) que los globos con zonas también esquivan, como el panel
+// lateral de «Hablar» (lo llena misiones.js mientras está abierto; vacío el resto del tiempo)
+export const zonasPantalla = [];
 // Color de la pestaña y del marco del globo por personaje (tintes de lana de Minecraft): con el nombre
 // en la pestaña se sabe quién habla aunque el globo quede lejos. `j` es el jugador, distinto del Venjy del mundo.
 export const COLOR_GLOBO = {
@@ -394,7 +397,8 @@ export function crearGlobo(scene, etiqueta = null) {
         const franja = document.body.classList.contains('en-cine') ? 0.18 : 0;
         const zonas = evitar ? evitar() : null;
         const cuadro = renderer ? renderer.info.render.frame : 0;
-        const otros = zonas && zonas.length && !sinEvitar ? globosVivos.filter(o => o !== yo && o.seq < yo.seq && o.ultimo && cuadro - o.ultimo.cuadro <= 1).map(o => ({ quien: o.ultimo.quien, ...o.ultimo.rect })) : null;
+        let otros = zonas && zonas.length && !sinEvitar ? globosVivos.filter(o => o !== yo && o.seq < yo.seq && o.ultimo && cuadro - o.ultimo.cuadro <= 1).map(o => ({ quien: o.ultimo.quien, ...o.ultimo.rect })) : null;
+        if (otros && zonasPantalla.length) otros = otros.concat(zonasPantalla.map(r => ({ quien: 'pantalla', ...r })));
         const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar, false, otros);
         nuevo = false;
         const { c, P } = r;
