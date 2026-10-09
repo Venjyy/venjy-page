@@ -77,8 +77,8 @@ const CHARLA = {
         moises: [F('Venjy, cuidado con el bong, pega fuerte.', 'Venjy, careful with the bong, it hits hard.'), F('Esa tos fue de Venjy de verdad, jaja.', 'That cough was pure Venjy, haha.'), F('Oye Venjy, ¿y el Inicio quién lo cuida?', 'Hey Venjy, who is watching the Start?'), F('Dale, Venjy, la próxima te toca cantar.', "Come on Venjy, next time you're singing.")]
     },
     general: {
-        lalo: [F('Compa, aspiras como profesional, eh.', 'Buddy, you hit it like a pro, huh.'), F('Oye, la brasa te quedó bonita, hermano.', 'Hey, your ember looks great, bro.'), F('Cachai que acá no entra nadie sin pasar el pito.', 'Know what? Nobody gets in without the joint.'), F('Tú sí que sabes llegar justo, hermano.', 'You really know how to show up on time, bro.')],
-        moises: [F('Esa tos fue de campeón, hermano.', 'That cough was championship level, bro.'), F('La próxima traes tú la leña, ¿ya?', 'Next time you bring the firewood, deal?'), F('Quédate otro rato, compa. Aquí se está bien.', 'Stay a while, buddy. It is nice here.'), F('Ya, pero no se lo digas a la polola de Lalo.', "Okay, but don't tell Lalo's girlfriend.")]
+        lalo: [F('Compa, aspiras como profesional, ahya.', 'Buddy, you hit it like a pro, ahya.'), F('Oye, la brasa te quedó bonita, hermano.', 'Hey, your ember looks great, bro.'), F('Cachai que acá no entra nadie sin pasar el pito.', 'Know what? Nobody gets in without the joint.'), F('Tú sí que sabes llegar justo, hermano.', 'You really know how to show up on time, bro.')],
+        moises: [F('Esa tos fue de campeón, hermano, ahya.', 'That cough was championship level, bro, ahya.'), F('La próxima traes tú la leña, ¿ya?', 'Next time you bring the firewood, deal?'), F('Quédate otro rato, compa. Aquí se está bien.', 'Stay a while, buddy. It is nice here.'), F('Ya, pero esto queda entre nosotros, ahya.', "Okay, but this stays between us, ahya.")]
     }
 };
 const YIA = F('¡YIAAAAAA!', 'YIAAAAAA!');
