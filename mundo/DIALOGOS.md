@@ -48,17 +48,17 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | (al abrir, Amigo o más) | Amistad: Amigo |  | ¡Llegaste! Siéntate, que hoy los peces andan conversadores. | You made it! Sit down, the fish are chatty today. |
 | ¿Quién eres? | Libre |  | Soy el Pony. Pescador de muelle y, según todos, el más chico del grupo. Mentira, el Braulio es más chico. | I'm Pony. Dock fisherman and, according to everyone, the shortest of the group. Lies, Braulio is shorter. |
 | ¿Quién eres? | Libre | Salonas | ¿Me estás preguntando quién soy, waton klo? Anda a tocar tu bajo. | Are you asking who I am, you big goof? Go play your bass. |
-| ¿Quién eres? | Libre | Hadad | Hadad, si me vas a contar el de las papas fritas otra vez, me tiro al mar. | Hadad, if you're telling the french fries one again, I'm jumping into the sea. |
+| ¿Quién eres? | Libre | Hadad | Hadad, si vienes a venderme papas fritas de bolsa como en tu comercial, me tiro al mar. | Hadad, if you came to sell me bagged potato chips like in your ad, I'm jumping into the sea. |
 | ¿Quién eres? | Libre | Andy | Andy, soy yo, tu ex compañero de trabajos. Ya sé, ya sé, te webiaba demasiado. | Andy, it's me, your old project partner. I know, I know, I goofed around too much. |
 | ¿Quién eres? | Libre | Nacho | Nacho, me conoces de sobra. Ríete primero y después pregunto yo. | Nacho, you know me well enough. Laugh first and then I ask. |
 | ¿Quién eres? | Libre | Braulio | Braulio, antes de preguntar ponte espalda con espalda conmigo. A ver quién es más chico. | Braulio, before asking, stand back to back with me. Let's see who's shorter. |
 | ¿Quién eres? | Libre | Conejeros | Mira quién llegó, mi enemigo favorito. Ya sabes quién soy, no te hagai. | Look who showed up, my favorite enemy. You know who I am, don't play dumb. |
 | ¿Qué haces aquí? | Libre |  | Pesco. Bueno, espero que piquen, que es casi lo mismo pero con más paciencia. | I fish. Well, I wait for bites, which is almost the same but with more patience. |
-| ¿Cómo conociste a Venjy? | Libre |  | Ni me acuerdo cómo partió. Un día estaba Venjy diciéndome que soy chico y ya éramos amigos. | I don't even remember how it started. One day Venjy was telling me I'm short and we were already friends. |
-| ¿Cómo conociste a Venjy? | Libre | Venjy | ¿Me preguntai cómo te conocí? Me ves y lo primero que dices es que soy chico. Así, siempre. | You're asking how I met you? You see me and the first thing you say is that I'm short. Always. |
+| ¿Cómo conociste a Venjy? | Libre |  | En la U, estudiando Informática. Somos del grupo Tomatitos, y desde el primer día Venjy me dice que soy chico. | At uni, studying Computer Engineering. We're in the Tomatitos group, and since day one Venjy has called me short. |
+| ¿Cómo conociste a Venjy? | Libre | Venjy | ¿Me preguntai cómo te conocí? En la U, y al toque me dijiste chico. Tomatitos hasta el final. | You're asking how I met you? At uni, and right away you called me short. Tomatitos till the end. |
 | ¿Qué opinas de Venjy? | Amistad: Conocido |  | El Venjy dice que soy weón y que soy chico. Lo segundo lo discuto; lo primero... también. | Venjy says I'm a goof and that I'm short. I dispute the second; the first... too. |
 | ¿Qué opinas de Salonas? | Amistad: Conocido |  | El Salonas es un waton klo. Y él dice que yo también. Empate técnico. | Salonas is a big goof. And he says I am too. A technical draw. |
-| ¿Qué opinas de Hadad? | Amistad: Conocido |  | Hadad tira unos chistes de papas fritas que no sé si reírme o tirarme al agua. | Hadad tells french fry jokes that make me unsure whether to laugh or jump into the water. |
+| ¿Qué opinas de Hadad? | Amistad: Conocido |  | Hadad es la cara de las papas fritas de bolsa, gracias a una imagen de IA. Cada vez que abro una bolsa, me mira. | Hadad is the face of bagged potato chips, thanks to an AI image. Every time I open a bag, he's staring at me. |
 | ¿Qué opinas de Andy? | Amistad: Conocido |  | El Andy es mi yunta. Hacíamos los trabajos juntos hasta que me echó por webiar. Ahora los hace con el Nacho. | Andy is my best bud. We did projects together until he kicked me out for goofing off. Now he does them with Nacho. |
 | ¿Qué opinas de Nacho? | Amistad: Conocido |  | El Nacho es buena onda. Se ríe de todo, hasta de cuando no pica nada. | Nacho is cool. He laughs at everything, even when nothing's biting. |
 | ¿Qué opinas de Braulio? | Amistad: Conocido |  | El Braulio dice que es más alto que yo. Falso. Hay que medirnos con una regla de verdad. | Braulio says he's taller than me. False. We need to measure with a real ruler. |
@@ -178,23 +178,23 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | (al abrir, nivel < Amigo) | Libre |  | Buenas. Siéntate si quieres, el fuego es de todos. | Hey there. Sit if you want, the fire belongs to everyone. |
 | (al abrir, Amigo o más) | Amistad: Amigo |  | ¡Compa! Justo íbamos a armar partida. ¿Te prendes? | Buddy! We were just about to start a match. You in? |
 | ¿Quién eres? | Libre |  | Hadad. El de la barba, el que trae la leña y los chistes malos. | Hadad. The bearded one, who brings the firewood and the bad jokes. |
-| ¿Quién eres? | Libre | Pony | Pony, ¿sabes qué le dijo una papa frita a otra? Nada, porque estaban fritas. | Pony, know what one french fry said to the other? Nothing, they were both fried. |
+| ¿Quién eres? | Libre | Pony | Pony, soy el de las papas fritas de bolsa. La imagen era de IA, pero la fama fue real. | Pony, I'm the bagged chips guy. The picture was AI, but the fame was real. |
 | ¿Quién eres? | Libre | Andy | Andy, si no sabes quién soy, sal del Discord y vuelve a entrar. | Andy, if you don't know who I am, leave the Discord and join again. |
 | ¿Quién eres? | Libre | Nacho | Nacho, soy el que te revive cuando caes en Tilted. O sea, siempre. | Nacho, I'm the one who revives you when you drop at Tilted. So, always. |
 | ¿Qué haces aquí? | Libre |  | Cuido la fogata y el lobby. Cuando esté todo listo, partimos la partida. | I watch the fire and the lobby. When everything's ready, we start the match. |
-| ¿Cómo conociste a Venjy? | Libre |  | Con Venjy somos conocidos. Cada vez que nos topamos hay buena conversa. | Venjy and I are acquaintances. Every time we run into each other, the talk is good. |
-| ¿Cómo conociste a Venjy? | Libre | Venjy | Venjy, nos conocemos poco, pero siempre que pasas por la fogata hay conversa. Eso cuenta. | Venjy, we don't know each other much, but every time you pass by the fire we talk. That counts. |
+| ¿Cómo conociste a Venjy? | Libre |  | En la U, estudiando Ingeniería Informática. Somos del grupo Tomatitos, aunque con él hablo menos que con Andy y Nacho. | At uni, studying Computer Engineering. We're in the Tomatitos group, though I talk to him less than to Andy and Nacho. |
+| ¿Cómo conociste a Venjy? | Libre | Venjy | Venjy, de la U. No hablamos tanto, pero en el grupo Tomatitos siempre estás. Eso cuenta. | Venjy, from uni. We don't talk that much, but you're always there in the Tomatitos group. That counts. |
 | ¿Qué opinas de Venjy? | Amistad: Conocido |  | Venjy es buena onda. No lo veo tanto, pero cuando aparece trae algo nuevo que mostrar. | Venjy is cool. I don't see him much, but when he shows up he has something new to show. |
-| ¿Qué opinas de Pony? | Amistad: Conocido |  | El Pony se ríe de mis chistes de papas fritas. Bueno, se ríe de mí, pero cuenta igual. | Pony laughs at my french fry jokes. Well, he laughs at me, but it still counts. |
+| ¿Qué opinas de Pony? | Amistad: Conocido |  | El Pony todavía me manda la imagen de IA de las papas fritas. Cada semana, sin falta. | Pony still sends me the AI potato chips picture. Every week, without fail. |
 | ¿Qué opinas de Salonas? | Amistad: Conocido |  | Salonas, cordial. Nos saludamos y cada uno vuelve a lo suyo. | Salonas, friendly. We say hi and each goes back to his own thing. |
 | ¿Qué opinas de Andy? | Amistad: Conocido |  | Andy es de mis mejores amigos. Fortnite, Discord hasta tarde y cero rencor cuando perdemos. | Andy is one of my best friends. Fortnite, Discord until late and zero grudges when we lose. |
 | ¿Qué opinas de Nacho? | Amistad: Conocido |  | El Nacho es familia. Si estamos en el Discord, él es el que se ríe más fuerte. | Nacho is family. If we're on Discord, he's the one laughing the loudest. |
 | ¿Qué opinas de Braulio? | Amistad: Conocido |  | Braulio es cordial, nos llevamos bien. Algún día me muestra el dedo doble. | Braulio is friendly, we get along. Someday he will show me the double finger. |
 | ¿Qué opinas de Conejeros? | Amistad: Conocido |  | Conejeros, cordial también. Humor raro, pero buena gente. | Conejeros, friendly too. Weird humor, but good people. |
-| Cuéntame un chiste | Amistad: Amigo |  | ¿Por qué las papas fritas no van al gimnasio? Porque ya están bien doraditas. Ya, me retiro. | Why don't french fries go to the gym? Because they're already golden. Okay, I'm leaving. |
+| ¿Qué pasó con lo de las papas fritas? | Amistad: Amigo |  | Alguien hizo una imagen con IA donde salgo promocionando papas fritas de bolsa. Desde entonces soy la cara de la marca. | Someone made an AI image of me advertising bagged potato chips. Since then I'm the face of the brand. |
 | ¿Qué tal el asado? | Minijuego: Hacer un asado en la fogata |  | Cuando sale bien, se nota. Cuando sale quemado, también, pero de otra forma. | When it turns out well, you can tell. When it burns, you can tell too, just differently. |
 | Cuéntame algo que nadie sepa | Amistad: Buen amigo |  | A veces pierdo a propósito en Fortnite para que los chiquillos se rían. Bueno, a veces no es a propósito. | Sometimes I lose in Fortnite on purpose so the guys laugh. Well, sometimes it is not on purpose. |
-| (al regalar Papa asada) | Libre |  | Una papa asada. ¿Sabes qué es mejor que una papa? Dos papas. Gracias. | A baked potato. Know what is better than one potato? Two potatoes. Thanks. |
+| (al regalar Papa asada) | Libre |  | Una papa asada. No viene en bolsa, pero igual le haría un comercial. Gracias. | A baked potato. It doesn't come in a bag, but I'd still do an ad for it. Thanks. |
 
 ## Andy
 
@@ -209,8 +209,8 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | ¿Quién eres? | Libre | Nacho | Nacho, soy tu compañero de trabajos. Y de desvelos. Y de Fortnite. | Nacho, I'm your project partner. And all-nighter partner. And Fortnite partner. |
 | ¿Quién eres? | Libre | Braulio | Braulio, soy Andy, ¡el de siempre! Pasa a la fogata, que hay espacio. | Braulio, it's Andy, same as always! Come to the fire, there's room. |
 | ¿Qué haces aquí? | Libre |  | Defiendo la base. O sea, estoy sentado junto al fuego, pero en modo alerta. | I defend the base. I mean, I'm sitting by the fire, but on alert. |
-| ¿Cómo conociste a Venjy? | Libre |  | Con Venjy somos conocidos. Me cae bien, pregunta harto y siempre trae alguna idea nueva. | Venjy and I are acquaintances. I like him, he asks a lot and always brings a new idea. |
-| ¿Cómo conociste a Venjy? | Libre | Venjy | Venjy, nos conocemos poco, pero me gusta tu mapa. Bailé en cada zona, para que sepas. | Venjy, we don't know each other much, but I like your map. I danced in every zone, just so you know. |
+| ¿Cómo conociste a Venjy? | Libre |  | De la U, estudiando Informática. Estamos en el grupo Tomatitos; él pregunta harto y siempre trae alguna idea nueva. | From uni, studying Computer Engineering. We're in the Tomatitos group; he asks a lot and always brings a new idea. |
+| ¿Cómo conociste a Venjy? | Libre | Venjy | Venjy, compañero de la U y de los Tomatitos. Me gusta tu mapa: bailé en cada zona, para que sepas. | Venjy, my uni and Tomatitos buddy. I like your map: I danced in every zone, just so you know. |
 | ¿Qué opinas de Venjy? | Amistad: Conocido |  | Venjy es buena onda. Si alguna vez juega Fortnite con nosotros, le enseño el baile. | Venjy is cool. If he ever plays Fortnite with us, I will teach him the dance. |
 | ¿Qué opinas de Pony? | Amistad: Conocido |  | El Pony es mi amigo del alma. Lo saqué del grupo de trabajos porque webiaba mucho, pero lo sigo queriendo. | Pony is my soul friend. I took him out of the project group because he goofed around too much, but I still love him. |
 | ¿Qué opinas de Salonas? | Amistad: Conocido |  | Salonas es cordial y toca bacán. Le aplaudo aunque no entienda los compases. | Salonas is friendly and plays great. I clap even though I don't get the time signatures. |
@@ -234,8 +234,8 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | ¿Quién eres? | Libre | Hadad | Hadad, jajaja, soy el que se ríe de tus chistes. El único, ojo. | Hadad, haha, I'm the one who laughs at your jokes. The only one, mind you. |
 | ¿Quién eres? | Libre | Andy | Andy, soy tu compañero de trabajos. Entrega el viernes, por si se te olvidó. | Andy, I'm your project partner. Due Friday, in case you forgot. |
 | ¿Qué haces aquí? | Libre |  | Cuido la fogata y el asado. Bueno, más el asado que la fogata. | I watch the fire and the barbecue. Well, the barbecue more than the fire. |
-| ¿Cómo conociste a Venjy? | Libre |  | A Venjy lo conozco, nos llevamos bien. Cada vez que pasa me pregunta por Tilted, jajaja. | I know Venjy, we get along. Every time he comes by he asks me about Tilted, haha. |
-| ¿Cómo conociste a Venjy? | Libre | Venjy | Jajaja, ¿cómo te conocí? Me preguntaste si había vuelto a caer en Tilted. Así, de una. | Haha, how did I meet you? You asked if I had dropped at Tilted again. Just like that. |
+| ¿Cómo conociste a Venjy? | Libre |  | De la U, jajaja. Estamos en el grupo Tomatitos y cada vez que me ve me pregunta por Tilted. | From uni, haha. We're in the Tomatitos group and every time he sees me he asks about Tilted. |
+| ¿Cómo conociste a Venjy? | Libre | Venjy | Jajaja, ¿cómo te conocí? En la U. Y en los Tomatitos me preguntaste altiro si había caído en Tilted. | Haha, how did I meet you? At uni. And in the Tomatitos group you asked right away if I had dropped at Tilted. |
 | ¿Qué opinas de Venjy? | Amistad: Conocido |  | Venjy es simpático. Se ríe conmigo, que es lo único que pido. | Venjy is nice. He laughs with me, which is all I ask. |
 | ¿Qué opinas de Pony? | Amistad: Conocido |  | El Pony es buena onda, jajaja. Chico, pero buena onda. | Pony is cool, haha. Short, but cool. |
 | ¿Qué opinas de Salonas? | Amistad: Conocido |  | Salonas toca bien. Lo conozco poco, pero cada riff me deja moviendo la pata. | Salonas plays well. I don't know him much, but every riff gets my foot tapping. |
@@ -260,8 +260,8 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | ¿Quién eres? | Libre | Andy | Andy, soy Braulio, el de las curiosidades. Te guardé una concha bonita. | Andy, I'm Braulio, the curiosities guy. I saved you a pretty shell. |
 | ¿Quién eres? | Libre | Conejeros | Conejeros, ¿quién soy yo? El único que entiende tus chistes. Bueno, casi. | Conejeros, who am I? The only one who gets your jokes. Well, almost. |
 | ¿Qué haces aquí? | Libre |  | Vigilo el naufragio y junto lo que trae el mar. Huesos, botellas, de todo. | I keep watch over the shipwreck and collect what the sea brings. Bones, bottles, everything. |
-| ¿Cómo conociste a Venjy? | Libre |  | A Venjy lo conozco, nos llevamos bien. Siempre me pide que le muestre el dedo doble. | I know Venjy, we get along. He always asks me to show him the double finger. |
-| ¿Cómo conociste a Venjy? | Libre | Venjy | ¿Cómo te conocí? Fácil: lo primero que miraste fue mi dedo. Lo segundo, que soy blanco para ser de Arica. | How did I meet you? Easy: the first thing you looked at was my finger. The second, how pale I am for someone from Arica. |
+| ¿Cómo conociste a Venjy? | Libre |  | De la U, estudiando Informática. Somos del grupo Tomatitos, y siempre me pide que le muestre el dedo doble. | From uni, studying Computer Engineering. We're in the Tomatitos group, and he always asks me to show him the double finger. |
+| ¿Cómo conociste a Venjy? | Libre | Venjy | En la U, eh. Lo primero que miraste fue mi dedo; lo segundo, que soy blanco para ser de Arica. | At uni, okay? The first thing you looked at was my finger; the second, how pale I am for someone from Arica. |
 | ¿Qué opinas de Venjy? | Amistad: Conocido |  | Venjy me cae bien. Se sorprende con el dedo doble como si fuera la primera vez, cada vez. | I like Venjy. He is amazed by the double finger like it is the first time, every time. |
 | ¿Qué opinas de Pony? | Amistad: Conocido |  | El Pony dice que es más alto que yo. Mentira, eh. Tráiganme una huincha. | Pony says he is taller than me. Lies, okay? Bring me a tape measure. |
 | ¿Qué opinas de Salonas? | Amistad: Conocido |  | Salonas es amigo. Toca bien y presta los lentes para la foto. | Salonas is a friend. He plays well and lends his shades for the photo. |
@@ -303,8 +303,8 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | ¿Quién eres? | Libre | Salonas | Salonas, soy tu compañero de dibujos. Me debes la mitad del cuaderno. | Salonas, I'm your drawing buddy. You owe me half the notebook. |
 | ¿Quién eres? | Libre | Braulio | Braulio, soy yo. El que se ríe de tus chistes aunque no sean tan .exe como los míos. | Braulio, it's me. The one who laughs at your jokes even if they're not as .exe as mine. |
 | ¿Qué haces aquí? | Libre |  | Cabeceo en primera fila. Es un trabajo duro, pero alguien tiene que hacerlo. | I headbang in the front row. It's hard work, but someone has to do it. |
-| ¿Cómo conociste a Venjy? | Libre |  | A Venjy lo conozco, nos llevamos bien. Siempre que viene pregunta por el Pony, igual que yo. | I know Venjy, we get along. Whenever he comes he asks about Pony, same as me. |
-| ¿Cómo conociste a Venjy? | Libre | Venjy | Venjy, nos conocemos de pasada, pero siempre es buena onda. ¿Vamos a molestar al Pony? | Venjy, we only know each other in passing, but it's always good vibes. Shall we go bug Pony? |
+| ¿Cómo conociste a Venjy? | Libre |  | De la U, de Informática. Estamos en el grupo Tomatitos y siempre pregunta por el Pony, igual que yo. | From uni, Computer Engineering. We're in the Tomatitos group and he always asks about Pony, same as me. |
+| ¿Cómo conociste a Venjy? | Libre | Venjy | Venjy, compañero Tomatito. Nos conocemos de la U; ¿vamos a molestar al Pony? | Venjy, fellow Tomatito. We know each other from uni; shall we go bug Pony? |
 | ¿Qué opinas de Venjy? | Amistad: Conocido |  | Venjy es simpático. Le gusta el pixel art, así que somos del mismo club. | Venjy is nice. He likes pixel art, so we are in the same club. |
 | ¿Qué opinas de Pony? | Amistad: Conocido |  | El Pony es mi enemigo oficial. Lo molesto, me molesta, y después compartimos el queque. | Pony is my official enemy. I bug him, he bugs me, and then we share the cake. |
 | ¿Qué opinas de Salonas? | Amistad: Conocido |  | El Salonas es mi compañero de tonteras. Mismo humor, mismos dibujos ridículos. El mejor. | Salonas is my partner in nonsense. Same humor, same ridiculous drawings. The best. |
