@@ -44,8 +44,10 @@ export function tipoSkin(d) {
 // Gestos: metas para los huesos según u (0..1 en su tramo), t (reloj), s (sentado) y j (es el jugador)
 // cx/cy/cz cuello (cy se suma a la mirada) · bDx/bDz, bIx/bIz brazos · inc torso adelante · rz torso de lado · salto
 // ---------------------------------------------------------
-const GESTOS = {
-    habla: (u, t) => ({ bDx: -0.9 + Math.sin(t * 5) * 0.3, bDz: 0.2 + Math.sin(t * 3.1) * 0.15, bIx: -0.55 + Math.sin(t * 4 + 1) * 0.2, bIz: -0.15, cx: Math.sin(t * 6) * 0.06 }),
+export const GESTOS = {
+    // asiente: cabeza que sube y baja con calma (lo usa la pestaña «Hablar», hablar.js)
+    asiente: (u, t) => ({ cx: 0.08 + Math.max(0, Math.sin(t * 7)) * 0.3 }),
+    habla:(u, t) => ({ bDx: -0.9 + Math.sin(t * 5) * 0.3, bDz: 0.2 + Math.sin(t * 3.1) * 0.15, bIx: -0.55 + Math.sin(t * 4 + 1) * 0.2, bIz: -0.15, cx: Math.sin(t * 6) * 0.06 }),
     sorpresa: (u, t, s) => ({ bDx: -2.8, bDz: -0.3, bIx: -2.8, bIz: 0.3, cx: -0.3, inc: s ? -0.15 : -0.05, salto: s ? 0 : Math.sin(tramo(u, 0, 0.4) * Math.PI) * 0.55 }),
     rasca: (u, t) => ({ bDx: -2.85 + Math.sin(t * 14) * 0.08, bDz: 0.42, bIx: -0.15, bIz: -0.05, cx: 0.12, cz: 0.15 }),
     yo: (u, t) => ({ bDx: -1.25, bDz: 0.85 + Math.sin(t * 10) * 0.06, bIx: -0.1, cx: 0.3 }),

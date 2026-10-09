@@ -140,7 +140,7 @@ export const VENJY = {
     ],
     conejeros: [
         F('¡Venjy, compadre! ¿Viniste a ver a Salonas?', 'Venjy, mate! Did you come to see Salonas?', { q: 'n', g: 'sorpresa' }),
-        F('Obvio. Me dijeron que tocaba hoy.', "Of course. They told me she's playing today.", { q: 'j', g: 'habla' }),
+        F('Obvio. Me dijeron que tocaba hoy.', "Of course. They told me he's playing today.", { q: 'j', g: 'habla' }),
         F('¿Viste al Pony? Es más chico que el pez.', "Did you see Pony? He's smaller than the fish.", { q: 'n', g: 'risa' }),
         F('Lo vi pescando en el muelle.', 'I saw him fishing on the pier.', { q: 'j', g: 'habla' }),
         F('¡El terrible weón el Pony!', "That Pony's a legend!", { q: 'n', g: 'brazosArriba' }),

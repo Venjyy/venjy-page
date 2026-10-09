@@ -509,6 +509,11 @@ async function arrancar(guardado, cx = null) {
     function abrirPanel(el, op = {}) {
         uiAbierta = true;
         if (op.enfocar && camaras) camaras.iniciarCine(op.enfocar);
+        // «Hablar» (bloque 6a) no corta el juego: sin cámara de cine y con el panel a un costado
+        if (op.hablar && camaras && camaras.enCine) camaras.terminarCine();
+        capaPanel.classList.toggle('capa-hablar', !!op.hablar);
+        const aviso = document.querySelector('.clic-seguir'); // sin cine queda a la vista: con un panel abierto no hace falta
+        if (aviso) aviso.hidden = true;
         jugador.teclas.clear();
         if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
         capaPanel.textContent = '';
@@ -583,7 +588,7 @@ async function arrancar(guardado, cx = null) {
         scene, mundo, jugador, vida, dia, entidades, proyectiles, terreno, datos, zonasSeguras, contenedores, particulas, objetivosTodos,
         dificultad: () => vida.dificultad, hud, tinteMundo: materiales.solido.color,
         aturdir: s => { vida.aturdido = Math.max(vida.aturdido, s); },
-        alMorirMob: (tipo, e) => { if (e.porJugador && misiones) misiones.alMatar(tipo); }
+        alMorirMob: (tipo, e) => { if (e.porJugador && misiones) misiones.alMatar(tipo, e.pos.x, e.pos.z); }
     });
     const minado = crearMinado({ scene, camara, mundo, jugador, inventario, entidades, contenedores, agricultura, vida, ventanas, hud, idioma });
     const combate = crearCombate({ camara, mundo, jugador, inventario, vida, proyectiles, particulas, hud, objetivos: objetivosTodos, idioma });
@@ -593,6 +598,7 @@ async function arrancar(guardado, cx = null) {
     misiones = crearMisiones({
         grupo: vista.grupo, dy: DY, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, idioma, abrirPanel, cerrarPanel,
         jefeEnCurso: () => jefes && jefes.enCurso,
+        skin: () => skinActual, // amistad inicial según tu skin (se lee ya en el bucle, cuando skinActual existe)
         antesDeHablar: clave => !!(escenas && escenas.antesDeHablar(clave)),
         alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
     });

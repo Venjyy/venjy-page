@@ -15,7 +15,11 @@ export const TXT_MJ = {
 
 // Requisitos de la tienda que se cumplen con un minijuego (tienda-datos.js usa la clave como `req`)
 export const REQ_MINIJUEGOS = {
-    'mj-boris': { titulo: t('Ganarle a Boris cortando leña', 'Beat Boris at chopping wood') }
+    'mj-boris': { titulo: t('Ganarle a Boris cortando leña', 'Beat Boris at chopping wood') },
+    // Haber jugado cada minijuego (temas de «Hablar», dialogos-datos.js)
+    lena: { titulo: t('Jugar el duelo de hachas con Boris', 'Play the axe duel with Boris') },
+    pesca: { titulo: t('Salir a pescar con Pony', 'Go fishing with Pony') },
+    asado: { titulo: t('Hacer un asado en la fogata', 'Have a barbecue at the campfire') }
 };
 
 // ---------------------------------------------------------
