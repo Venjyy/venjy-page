@@ -54,9 +54,9 @@ export function crearAsado(api) {
     // ---- Parrilla, pieza en el fuego y presas en las manos ----
     const texParrilla = texturaPixeles(8, 8, 7301, (x, y) => (x % 2 === 0 ? [60, 60, 64] : [24, 24, 26]));
     const parrilla = new THREE.Group();
-    const rejilla = caja(0.9, 0.04, 0.6, tinte.caras(texParrilla));
+    const rejilla = caja(1.2, 0.04, 0.8, tinte.caras(texParrilla));
     parrilla.add(rejilla);
-    for (const [a, b] of [[-0.4, -0.25], [0.4, -0.25], [-0.4, 0.25], [0.4, 0.25]]) {
+    for (const [a, b] of [[-0.56, -0.36], [0.56, -0.36], [-0.56, 0.36], [0.56, 0.36]]) { // por fuera de los troncos de la fogata
         const pata = caja(0.05, 0.76, 0.05, tinte.caras(texturaPixeles(1, 4, 7302, () => [50, 50, 54])));
         pata.position.set(a, -0.38, b); parrilla.add(pata);
     }

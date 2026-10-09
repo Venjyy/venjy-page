@@ -29,7 +29,7 @@ const envolvente = (t, a, b, rampa) => suave(Math.min(tramo(t, a, a + rampa), 1 
 const tri = u => { const f = u - Math.floor(u); return f < 0.5 ? f * 2 : 2 - f * 2; }; // 0→1→0, lineal
 
 const LENOS = 3, GOLPES = 3;      // leños para ganar y golpes por leño
-const VEL_BORIS = 2.45;           // Boris hacha 2,45 veces más rápido que cuando corta solo (~1,06 s por golpe)
+const VEL_BORIS = 2.15;           // Boris hacha 2,45 veces más rápido que cuando corta solo (~1,06 s por golpe)
 const SWING = 0.42, IMPACTO = 0.23, REBOTE = 0.6;
 const T_INTRO = 11, T_FINAL = 9;
 

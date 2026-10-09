@@ -81,7 +81,7 @@ export const PESCA = {
     introOtra: [
         [0.6, 3.0, 'pony', t('Volviste. Esa caña ya te reconoce.', 'You came back. That rod recognizes you now.')],
         [3.0, 5.0, 'j', t('Y yo ya sé dónde pican.', 'And I already know where they bite.')],
-        [5.0, 7.0, 'pony', t('Tira cuando quieras. Hoy va la segunda parte.', 'Cast whenever you want. Today, part two.')]
+        [5.0, 7.0, 'pony', t('Tira cuando quieras. Hoy tengo otra historia.', 'Cast whenever you want. I have another story today.')]
     ],
     // Historia 1: cómo se echó el ramo por culpa de la Profe Karly (corre durante el juego, ~62 s)
     historia: [
@@ -118,6 +118,23 @@ export const PESCA = {
         [43.2, 46.2, 'j', t('Esa profe te tiene más paciencia que los peces.', 'That teacher is more patient with you than the fish.')],
         [46.8, 50.4, 'pony', t('Y al año siguiente pasé el ramo. Con un cinco cero, pero pasé.', 'And the next year I passed. With a bare pass, but I passed.')],
         [51.0, 55.0, 'pony', t('Le regalé un pejerrey para celebrar. Lo devolvió al lago, como yo.', 'I gave her a silverside to celebrate. She put it back in the lake, like me.')]
+    ],
+    // Historia 3: Pony juega Pokémon TCG (después de las dos de la Profe Karly, ~55 s)
+    historia3: [
+        [1.0, 4.6, 'pony', t('¿Sabías que juego Pokémon TCG? Tengo un mazo entero de tipo agua.', 'Did you know I play the Pokémon TCG? I have a whole Water-type deck.')],
+        [5.2, 8.0, 'j', t('Obvio que de agua. ¿Qué otro tipo ibas a jugar?', 'Water, of course. What other type would you play?')],
+        [8.6, 12.2, 'pony', t('Mi carta favorita es Magikarp. Todos se ríen hasta que evoluciona.', 'My favorite card is Magikarp. Everyone laughs until it evolves.')],
+        [12.8, 16.2, 'pony', t('En el torneo de la tienda lo bajé en el primer turno, solito.', 'At the store tournament I played it on turn one, all alone.')],
+        [16.8, 19.4, 'j', t('¿Y no te lo noquearon al tiro?', "And they didn't knock it out right away?")],
+        [20.0, 23.6, 'pony', t('Lo intentaron. Pero robé la energía justa y apareció Gyarados.', 'They tried. But I drew the exact energy and Gyarados showed up.')],
+        [24.2, 27.8, 'pony', t('El rival tenía un Pikachu brillante. Casi lloró cuando se lo barrí.', 'My rival had a shiny Pikachu. He almost cried when I swept it.')],
+        [28.4, 31.2, 'j', t('Pony, eso suena a que lo disfrutaste demasiado.', 'Pony, that sounds like you enjoyed it way too much.')],
+        [31.8, 35.4, 'pony', t('Un poquito. Después perdí la final contra un niño de once años.', 'A little. Then I lost the final to an eleven-year-old.')],
+        [36.0, 39.2, 'pony', t('Se me olvidó barajar. Robé seis energías seguidas.', 'I forgot to shuffle. I drew six energies in a row.')],
+        [39.8, 42.8, 'j', t('Eso te pasa por barajar como quien prepara carnada.', 'That is what you get for shuffling like you are prepping bait.')],
+        [43.4, 47.0, 'pony', t('El niño me regaló un sobre de consuelo. Salió otro Magikarp.', 'The kid gave me a consolation pack. Another Magikarp came out.')],
+        [47.6, 51.0, 'pony', t('Ahora tengo cuatro. Uno para cada día que vengo al muelle.', 'Now I have four. One for each day I come to the dock.')],
+        [51.6, 54.6, 'j', t('Y yo que pensaba que lo tuyo era solo pescar.', 'And here I thought fishing was your only thing.')]
     ],
     // Finales según cuántos peces sacaste (8 s)
     cero: [

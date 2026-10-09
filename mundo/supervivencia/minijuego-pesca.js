@@ -2,7 +2,7 @@
 // VENJY · Supervivencia · Minijuego: pesca en el muelle con Pony (sin competir)
 // Te sientas junto a Pony en la punta del muelle, cada uno con su caña. Mientras Pony pesca a su
 // ritmo te cuenta una historia (la primera vez, cómo se echó un ramo por culpa de la Profe Karly;
-// después, el examen de repetición). Un solo botón según el momento:
+// después, el examen de repetición; después, su mazo de agua de Pokémon TCG). Un solo botón según el momento:
 //   LANZAR → el corcho vuela al agua · ESPERA → a los 2,5–5,5 s pica (se hunde y salpica)
 //   ¡RECOGER! (1,2 s para reaccionar; si no, se va) → ¡TIRA!: dos pulsaciones con la marca en la zona
 //   verde (un fallo o 4 s sin lograrlo y se escapa) → el pez sale en arco y coletea en tu mano.
@@ -86,10 +86,13 @@ export function crearPescaPony(api) {
         nombre: PESCA.nombre, boton: PESCA.boton,
         disponible: () => null,
         empezar(e) {
-            // Qué historia toca: la de la Profe Karly la primera vez, después la del examen de repetición
+            // Qué historia toca: la Profe Karly la primera vez, después el examen de repetición, después
+            // Pokémon TCG; cuando ya las oíste todas, una al azar
             const primera = !api.hecho('pesca');
-            const hist = primera ? PESCA.historia : !api.hecho('pesca-2') || Math.random() < 0.5 ? PESCA.historia2 : PESCA.historia;
+            const todas = [PESCA.historia, PESCA.historia2, PESCA.historia3];
+            const hist = primera ? PESCA.historia : !api.hecho('pesca-2') ? PESCA.historia2 : !api.hecho('pesca-3') ? PESCA.historia3 : todas[Math.floor(Math.random() * 3)];
             if (hist === PESCA.historia2) api.marcar('pesca-2');
+            if (hist === PESCA.historia3) api.marcar('pesca-3');
             const d = e.datos = { intro: primera ? PESCA.intro : PESCA.introOtra, hist, est: 'listo', reloj: 0, r0: 1, peces: 0, botin: [], cursor: 0, fase: 0, buenos: 0, blanco: null, pony0: { x: pony.x, z: pony.z } };
             // Pony se corre medio bloque a un lado y tú te sientas en el otro
             pony.x = P.x - px * 0.5; pony.z = P.z - pz * 0.5;

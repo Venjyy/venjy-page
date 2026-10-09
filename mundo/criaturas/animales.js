@@ -332,6 +332,28 @@ function elegirManadas(terreno) {
     return manadas;
 }
 
+// Pasto parejo a 15–25 bloques de un lugar (fuera de sus construcciones), el más cercano que sirva
+function praderaJunto(terreno, L) {
+    const { BW, BD, HT, ES, SUP } = terreno;
+    for (let d = 15; d <= 25; d += 2) {
+        for (let k = 0; k < 12; k++) {
+            const a = k / 12 * Math.PI * 2;
+            const x = Math.floor(L.bx + Math.cos(a) * d), z = Math.floor(L.bz + Math.sin(a) * d);
+            if (x < 8 || z < 8 || x >= BW - 8 || z >= BD - 8) continue;
+            const o = z * BW + x;
+            if (ES[o] || SUP[o] !== B.PASTO || HT[o] < NIVEL_AGUA + 3) continue;
+            let mn = HT[o], mx = HT[o], libre = true;
+            for (const [dx, dz] of [[-4, 0], [4, 0], [0, -4], [0, 4], [-3, -3], [3, 3], [-3, 3], [3, -3]]) {
+                const q = (z + dz) * BW + x + dx;
+                if (ES[q]) libre = false;
+                mn = Math.min(mn, HT[q]); mx = Math.max(mx, HT[q]);
+            }
+            if (libre && mx - mn <= 2) return { x: x + 0.5, z: z + 0.5 };
+        }
+    }
+    return null;
+}
+
 // ---------------------------------------------------------
 // Crear todos los animales
 // ---------------------------------------------------------
@@ -373,6 +395,14 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
             const a = r() * Math.PI * 2, d = r() * m.radio * 0.5;
             agregar(m.tipo, m.x + Math.cos(a) * d, m.z + Math.sin(a) * d, { x: m.x, z: m.z, radio: m.radio });
         }
+    }
+    // Pradera junto al campamento: vacas, cerdos y gallinas cerca de la fogata (carne para el asado del
+    // modo supervivencia). Van al final de la lista: el guardado del ganado usa el índice de cada animal.
+    const camp = (terreno.lugares || []).find(l => l.clave === 'campamento');
+    const prado = camp && praderaJunto(terreno, camp);
+    if (prado) {
+        const zona = { x: prado.x, z: prado.z, radio: 9 };
+        for (const tipo of ['vaca', 'vaca', 'cerdo', 'cerdo', 'gallina', 'gallina', 'gallina']) agregar(tipo, prado.x + (r() - 0.5) * 8, prado.z + (r() - 0.5) * 8, zona);
     }
 
     // ¿Puede pisar (x, z)? Devuelve la y, null o undefined (chunk sin cargar)

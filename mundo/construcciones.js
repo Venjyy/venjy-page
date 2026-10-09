@@ -520,10 +520,10 @@ const CONSTRUIR = {
         };
         carpa(cx - 4, cz - 4, B.LANA);
         carpa(cx + 4, cz - 4, B.LANA_ROJA);
-        // Fogata: piedra luminosa hundida con borde de piedra
+        // Fogata: piedra luminosa hundida (brasas y luz) con borde de piedra; los troncos cruzados y las
+        // llamas son un modelo animado de criaturas/amigos.js (antes era una antorcha)
         poner(cx, y - 1, cz + 1, B.PIEDRA_LUMINOSA);
         for (const [dx, dz] of [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]) poner(cx + dx, y - 1, cz + 1 + dz, B.GRIS);
-        poner(cx, y, cz + 1, B.ANTORCHA);
         // Troncos para sentarse
         for (const dx of [-1, 0, 1]) poner(cx + dx, y, cz + 4, B.TRONCO);
         poner(cx - 3, y, cz + 1, B.TRONCO); poner(cx - 3, y, cz + 2, B.TRONCO);
