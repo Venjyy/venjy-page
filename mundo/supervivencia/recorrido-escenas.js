@@ -14,7 +14,7 @@ const TXT = {
         paso: (i, n, quien) => `Escena ${i} de ${n}: ${quien}`,
         fin: 'Recorrido de escenas terminado',
         parar: 'Terminar recorrido',
-        cuello: 'Lona y el cuello de Gala', caricia: g => `Caricias a ${g}`
+        cuello: 'Lona y el cuello de Gala', caricia: g => `Caricias a ${g}`, especial: g => `Venjy y ${g}`
     },
     en: {
         soloVenjy: 'This command only works with the Venjy skin',
@@ -23,13 +23,13 @@ const TXT = {
         paso: (i, n, quien) => `Scene ${i} of ${n}: ${quien}`,
         fin: 'Scene tour finished',
         parar: 'End tour',
-        cuello: "Lona and Gala's collar", caricia: g => `Petting ${g}`
+        cuello: "Lona and Gala's collar", caricia: g => `Petting ${g}`, especial: g => `Venjy and ${g}`
     }
 };
 const sinTildes = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const esperar = ms => new Promise(r => setTimeout(r, ms));
 
-export function crearRecorridoEscenas({ dy, jugador, mundo, gatas, escenas, escenaCuello, caricias, misiones, hud, skin, bloquear, idioma = 'es' }) {
+export function crearRecorridoEscenas({ dy, jugador, mundo, gatas, escenas, escenaCuello, caricias, escenasGatas = null, misiones, hud, skin, bloquear, idioma = 'es' }) {
     let L = idioma;
     const tx = () => TXT[L] || TXT.es;
     let activo = false, cortar = false;
@@ -50,9 +50,14 @@ export function crearRecorridoEscenas({ dy, jugador, mundo, gatas, escenas, esce
             const nombre = g.clave === 'mila' ? 'Mila' : 'Gala';
             l.push({ clave: g.clave, nombre: tx().caricia(nombre), x: g.x, y: g.y ?? 0, z: g.z, iniciar: () => caricias.forzar(g.clave), sigue: () => caricias.activa });
         }
+        // Escenas especiales de Venjy con cada gata (escenas-gatas.js)
+        if (escenasGatas) for (const g of gatas.gatas) {
+            const nombre = g.clave === 'mila' ? 'Mila' : 'Gala', clave = `venjy-${g.clave}`;
+            l.push({ clave, nombre: tx().especial(nombre), x: g.x, y: g.y ?? 0, z: g.z, iniciar: () => escenasGatas.forzar(clave), sigue: () => escenasGatas.activa });
+        }
         return l;
     }
-    const ocupado = () => activo || escenas.activa || escenaCuello.activa || caricias.activa;
+    const ocupado = () => activo || escenas.activa || escenaCuello.activa || caricias.activa || (escenasGatas && escenasGatas.activa);
 
     // Lleva al jugador a 3 bloques del punto (coordenadas del creativo) y espera a que haya suelo
     async function irJunto(x, y, z) {
@@ -101,6 +106,7 @@ export function crearRecorridoEscenas({ dy, jugador, mundo, gatas, escenas, esce
         if (escenas.activa) escenas.saltar();
         if (escenaCuello.activa) escenaCuello.saltar();
         if (caricias.activa) caricias.saltar();
+        if (escenasGatas && escenasGatas.activa) escenasGatas.saltar();
     }
 
     // Comando de la consola: sin nombre recorre todas; con nombre (clave o nombre, sin tildes) solo esa

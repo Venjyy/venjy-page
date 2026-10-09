@@ -192,6 +192,31 @@ const FRASES = {
     lonaCariño: [
         { es: '¿Quién es la gatita más linda?', en: "Who's the prettiest kitty?" },
         { es: 'Ronronea igual que un motorcito.', en: 'She purrs like a little engine.' }
+    ],
+    // Repertorio de Lona con las gatas (una pareja de frases propia por interacción)
+    lonaMecer: [
+        { es: 'Shhh, a mecerse un ratito.', en: 'Shhh, a little rocking time.' },
+        { es: 'Pesas como un saco de papas, pero te quiero igual.', en: 'You weigh like a sack of potatoes, but I love you anyway.' }
+    ],
+    lonaPluma: [
+        { es: '¿La pillas? ¡A ver, a ver!', en: 'Can you catch it? Come on, come on!' },
+        { es: 'Uy, casi. Tienes garras de cazadora.', en: "Ooh, almost. You've got hunter claws." }
+    ],
+    lonaCepillo: [
+        { es: 'Quieta, que te saco los nudos.', en: "Hold still, I'm getting the knots out." },
+        { es: 'Con tanto pelo me armo otra gata.', en: 'With all this fur I could make another cat.' }
+    ],
+    lonaSiesta: [
+        { es: 'Cinco minutitos nomás…', en: 'Just five more minutes…' },
+        { es: 'Zzz… pásame la frazada… zzz', en: 'Zzz… pass me the blanket… zzz' }
+    ],
+    lonaPlato: [
+        { es: 'Pollito con arroz, como te gusta.', en: 'Chicken and rice, just how you like it.' },
+        { es: 'Despacio, que nadie te lo va a quitar.', en: "Slow down, nobody's taking it from you." }
+    ],
+    lonaPanza: [
+        { es: 'Esa nube parece un pescado. ¿La ves?', en: 'That cloud looks like a fish. See it?' },
+        { es: 'Así se pasa la tarde: panza arriba.', en: "That's how you spend the afternoon: belly up." }
     ]
 };
 
@@ -444,6 +469,253 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
     const casaGatera = { x0: (gx - 4) * ESCALA, x1: (gx + 3) * ESCALA, z0: (gz - 10) * ESCALA, z1: (gz - 5) * ESCALA + 1 };
     const enCasa = (x, z) => x > casaGatera.x0 - 1.5 && x < casaGatera.x1 + 1.5 && z > casaGatera.z0 - 1.5 && z < casaGatera.z1 + 1.5;
     const sueloLona = (x, z) => enCasa(x, z) ? null : suelo(terreno, mundo, x, z, { estructuras: true });
+
+    // ---------------------------------------------------------
+    // Repertorio de Lona con Mila y Gala
+    // Al llegar junto a una gata elige al azar (sin repetir la anterior) una interacción. Cada una tiene
+    // una pose de Lona (metas que se mezclan con su pose sentada, con rampas de entrada y salida), una
+    // reacción de la gata por el gancho `gata.escena` de gatas.js y su pareja de frases (FRASES.lona*).
+    //   cariño   la de siempre: sentada, le hace cariño (la gata sigue con su IA)
+    //   mecer    la carga en el regazo y la mece (la gata vuelve a su sitio al final)        11 s
+    //   pluma    juega con una varita con pluma; la gata la sigue con la cabeza y manotea    10 s
+    //   cepillo  la cepilla echada de lado, la gata ronronea                                 11 s
+    //   siesta   las dos sentadas lado a lado cabecean y se quedan dormidas                  12 s
+    //   plato    le deja un plato de comida; la gata baja el pecho y come                    10 s
+    //   panza    Lona se echa de espaldas con las manos tras la nuca y la gata a su lado     12 s
+    // Si una escena de la supervivencia toma a Lona (n.escena) o a la gata (otro gata.escena), la
+    // interacción se corta y se restaura lo que tocó.
+    // ---------------------------------------------------------
+    const suave = u => u * u * (3 - 2 * u);
+    const tramo = (u, a, b) => Math.max(0, Math.min(1, (u - a) / (b - a)));
+    const envolvente = (t, a, b, rampa) => suave(Math.min(tramo(t, a, a + rampa), 1 - tramo(t, b - rampa, b)));
+    const SENT = -Math.PI / 2; // piernas de Lona sentada (las compensaciones de inclinación parten de aquí)
+    const vL = new THREE.Vector3();
+
+    // Objetos (cajas pixeladas, se crean al primer uso)
+    const tex = (c, s) => tinte.caras(texturaPixeles(4, 4, s, liso(c, 0.2)));
+    let objs = null;
+    function objetos() {
+        if (objs) return objs;
+        const pluma = new THREE.Group();
+        const palo = caja(0.04, 0.5, 0.04, tex([120, 82, 44], 9301)); palo.position.y = -0.25;
+        const hilo = caja(0.015, 0.22, 0.015, tex([226, 222, 210], 9302)); hilo.position.y = -0.61;
+        const plumas = caja(0.12, 0.18, 0.03, tex([236, 120, 160], 9303)); plumas.position.y = -0.8;
+        pluma.add(palo, hilo, plumas);
+        pluma.position.set(0, -0.68, 0.04);
+        pluma.punta = plumas;
+        const cepillo = new THREE.Group();
+        const mango = caja(0.05, 0.24, 0.05, tex([150, 96, 54], 9304)); mango.position.y = -0.1;
+        const cerdas = caja(0.16, 0.07, 0.11, tex([210, 210, 204], 9305)); cerdas.position.set(0, -0.24, 0.03);
+        cepillo.add(mango, cerdas);
+        cepillo.position.set(0, -0.66, 0.06);
+        const plato = new THREE.Group();
+        const loza = caja(0.34, 0.1, 0.34, tex([196, 52, 52], 9306)); loza.position.y = 0.05;
+        const comida = caja(0.26, 0.03, 0.26, tex([196, 150, 96], 9307)); comida.position.y = 0.11;
+        plato.add(loza, comida);
+        plato.comida = comida;
+        objs = { pluma, cepillo, plato };
+        return objs;
+    }
+
+    // Metas de Lona: y, inc (torso), rz, pD/pI (piernas, se suman a SENT menos inc), bDx/bDz/bIx/bIz, cx/cy/cz
+    const INTER = {
+        mecer: {
+            dur: 11, radio: 1.2, frases: 'lonaMecer', mueve: true,
+            pose(t, I) {
+                const a = this.dur;
+                const alc = Math.max(envolvente(t, 0.4, 2.0, 0.45), envolvente(t, a - 2.5, a - 1.0, 0.45)); // tomarla y dejarla
+                const abr = suave(tramo(t, 1.7, 2.3)) * (1 - suave(tramo(t, a - 2.5, a - 2.0)));             // abrazo
+                const mece = Math.sin(t * 1.6) * abr;
+                const hug = -1.85 + (0.7 - I.g.e.alto) * 2; // Mila (alta) -1,85, Gala -1,57: manos ~0,1 sobre el lomo
+                return {
+                    // Abrazo: la gata en el regazo llega a la altura de los hombros, así que las manos la rodean por encima
+                    inc: 0.28 * alc - 0.05 * abr, rz: 0.07 * mece,
+                    bDx: lerp(lerp(-0.9, -1.4, alc), hug, abr), bDz: lerp(0.05, 0.35, abr),
+                    bIx: lerp(lerp(-0.3, -1.4, alc), hug, abr), bIz: lerp(-0.05, -0.35, abr),
+                    cx: 0.4, cz: -0.1 * mece
+                };
+            },
+            gata(I, g, dt) {
+                const t = I.t, a = this.dur, n = lona;
+                const k = suave(tramo(t, 0.9, 1.9)) * (1 - suave(tramo(t, a - 2.1, a - 1.1)));
+                // En el regazo: delante de la cadera, cruzada sobre las piernas, a la altura de los muslos
+                const rx = n.x + Math.sin(n.yaw) * 0.42, rz = n.z + Math.cos(n.yaw) * 0.42;
+                g.x = lerp(I.g0.x, rx, k); g.z = lerp(I.g0.z, rz, k);
+                g.y = lerp(I.g0.y, n.y + 0.22, k) + Math.sin(k * Math.PI) * 0.35;
+                g.pose = t > 0.6 && t < a - 1.1 ? 'echada' : 'pie';
+                g.yaw += angulo((k > 0.5 ? n.yaw + Math.PI / 2 : I.aL) - g.yaw) * Math.min(1, dt * 4);
+                g.cabeza.rotation.z = Math.sin(t * 1.6) * 0.12 * k;
+                g.cola.rotation.y = Math.sin(t * 1.6) * 0.25 * k;
+                g.ronroneo = t > 2.2 && t < a - 1.3;
+            }
+        },
+        pluma: {
+            dur: 10, radio: 2.0, frases: 'lonaPluma', objeto: 'pluma',
+            pose(t) {
+                // La pluma baila delante y por encima de la cara de la gata (que mira hacia arriba)
+                const s = Math.sin(t * 3.2);
+                return { inc: 0.05, bDx: -2.0 + Math.sin(t * 1.3) * 0.12, bDz: s * 0.45, bIx: -0.45, bIz: -0.12, cx: 0.15, cy: s * 0.18 };
+            },
+            gata(I, g, dt) {
+                const t = I.t;
+                g.pose = 'sentada';
+                g.yaw += angulo(I.aL - g.yaw) * Math.min(1, dt * 4);
+                // La cabeza sigue a la pluma
+                objetos().pluma.punta.getWorldPosition(vL); g.g.parent.worldToLocal(vL);
+                const rel = Math.max(-0.9, Math.min(0.9, angulo(Math.atan2(vL.x - g.x, vL.z - g.z) - g.yaw)));
+                g.cabeza.rotation.y += (rel - g.cabeza.rotation.y) * Math.min(1, dt * 8);
+                g.cabeza.rotation.x -= 0.2;
+                // Manotazos alternados con las patas delanteras
+                const c = t / 1.4, u = c % 1;
+                const golpe = t > 1.6 && t < this.dur - 1 && u < 0.4 ? Math.sin(u / 0.4 * Math.PI) : 0;
+                g.patas[Math.floor(c) % 2].rotation.x -= 1.1 * golpe;
+                g.cola.rotation.y = Math.sin(t * 9) * 0.3;
+                if (!I.maullo && t > 1.2) { I.maullo = true; g.maullar(1.0); }
+            }
+        },
+        cepillo: {
+            dur: 11, radio: 1.05, frases: 'lonaCepillo', objeto: 'cepillo',
+            pose(t) {
+                // La mano pasa sobre el lomo (0,1 encima) y va y viene a lo largo de la gata, que está de lado
+                const s = Math.sin(t * 2.2);
+                return { inc: 0.22, bDx: -1.55 + Math.abs(s) * 0.06, bDz: 0.25 + s * 0.3, bIx: -0.5, bIz: -0.1, cx: 0.45, cy: s * 0.08 };
+            },
+            gata(I, g, dt) {
+                const t = I.t;
+                g.pose = 'echada';
+                g.yaw += angulo(I.aL + Math.PI / 2 - g.yaw) * Math.min(1, dt * 4); // de lado: el lomo hacia Lona
+                g.cabeza.rotation.x -= 0.08;
+                g.cabeza.rotation.z = 0.12 + 0.05 * Math.sin(t * 2.2);
+                g.cola.rotation.y = Math.sin(t * 1.5) * 0.2;
+                g.ronroneo = t > 1.5 && t < this.dur - 0.8;
+            }
+        },
+        siesta: {
+            dur: 12, radio: 1.0, frases: 'lonaSiesta', giro: -1.2, // la gata queda a su izquierda
+            pose(t) {
+                const f = (t % 3.4) / 3.4, cab = t > 6.5 ? 1 : (f < 0.85 ? suave(f / 0.85) : 1 - (f - 0.85) / 0.15);
+                return { inc: 0.06 + Math.sin(t * 1.3) * 0.025, bDx: -0.55, bDz: 0.2, bIx: -0.55, bIz: -0.2, cx: 0.12 + 0.36 * cab, cz: 0.14 * cab };
+            },
+            gata(I, g, dt) {
+                const t = I.t, f = ((t + 1.7) % 3.4) / 3.4;
+                const cab = t > 7 ? 1 : (f < 0.85 ? suave(f / 0.85) : 1 - (f - 0.85) / 0.15);
+                g.pose = t < 7 ? 'sentada' : 'echada';
+                g.yaw += angulo(lona.yaw - g.yaw) * Math.min(1, dt * 3); // mira para el mismo lado que Lona
+                g.cabeza.rotation.x += 0.3 * cab;
+                g.cola.rotation.y = Math.sin(t * 0.8) * 0.08;
+                g.ronroneo = t > 3.5 && t < this.dur - 0.8;
+            }
+        },
+        plato: {
+            // Lejos (1,9) para que el plato (a ~1,05 de Lona) quede más allá de sus pies y la gata no se le eche encima
+            dur: 10, radio: 1.9, frases: 'lonaPlato', objeto: 'plato',
+            pose(t) {
+                const alc = envolvente(t, 0.5, 2.0, 0.45);
+                return { inc: 0.08 + 0.37 * alc, bDx: lerp(-0.6, -0.95, alc), bDz: 0.1, bIx: -0.55, bIz: -0.15, cx: 0.35 + 0.1 * alc };
+            },
+            gata(I, g, dt) {
+                const t = I.t, a = this.dur, pl = objetos().plato;
+                // El plato aparece en el suelo, delante de su cara, cuando la mano de Lona llega abajo
+                const sc = suave(tramo(t, 1.2, 1.45)) * (1 - suave(tramo(t, a - 0.7, a - 0.2)));
+                pl.visible = sc > 0.01; pl.scale.setScalar(Math.max(0.01, sc));
+                const q = 1 - 0.95 * suave(tramo(t, 2.2, 7.4));
+                pl.comida.scale.set(q, 1, q);
+                // Come echada como un pan (así la boca llega al plato); después se sienta y se relame
+                g.pose = t < 1.7 ? 'pie' : t < 7.6 ? 'echada' : 'sentada';
+                g.yaw += angulo(I.aL - g.yaw) * Math.min(1, dt * 4);
+                const comer = envolvente(t, 2.0, 7.6, 0.5);
+                g.cabeza.rotation.x += 0.45 * comer + Math.sin(t * 10) * 0.07 * comer;
+                g.cabeza.rotation.y = Math.sin(t * 5) * 0.15 * tramo(t, 7.8, 8.2); // se relame
+                g.ronroneo = t > 7.8 && t < a - 0.5;
+            }
+        },
+        panza: {
+            dur: 12, radio: 1.33, frases: 'lonaPanza', rampa: 1.0, echada: true,
+            giro: -Math.atan2(0.75, -1.1), // la gata queda a su izquierda, a la altura del pecho cuando se echa
+            pose(t) {
+                // De espaldas: el cuerpo gira en los pies (y 0,12 apoya la espalda y la nuca en el suelo)
+                return { y: 0.12, inc: -1.5, pD: 0, pI: 0.08, bDx: -3.0, bDz: 0.4, bIx: -3.0, bIz: -0.4, cx: -0.1, cy: 0.6 * envolvente(t, 3, 8.5, 0.8) };
+            },
+            gata(I, g, dt) {
+                const t = I.t;
+                g.pose = 'echada';
+                g.yaw += angulo(lona.yaw + Math.PI - g.yaw) * Math.min(1, dt * 3); // cabeza junto a la de Lona
+                g.cabeza.rotation.y += (0.6 - g.cabeza.rotation.y) * Math.min(1, dt * 3);
+                g.cola.rotation.y = Math.sin(t * 1.2) * 0.15;
+                g.ronroneo = t > 2 && t < this.dur - 0.8;
+            }
+        }
+    };
+    const TIPOS = Object.keys(INTER);
+
+    function empezarInter(n, g, tipo) {
+        const def = INTER[tipo];
+        const aG = Math.atan2(g.x - n.x, g.z - n.z);
+        const I = { tipo, def, g, n, t: 0, frase: 0, g0: { x: g.x, y: g.y, z: g.z }, aL: aG + Math.PI, yawLona: aG + (def.giro || 0), obj: null };
+        n.inter = I; n.gata = g; n.pose = 'sentada'; n.espera = def.dur;
+        g.escena = (d) => def.gata(I, g, d);
+        I.fn = g.escena;
+        g.poseElegida = false;
+        if (def.objeto) {
+            const o = objetos()[def.objeto];
+            if (def.objeto === 'plato') {
+                // En el suelo, delante de la cara de la gata (que mira a Lona)
+                const r = g.e.largo / 2 + 0.3;
+                o.position.set(g.x + Math.sin(I.aL) * r, g.y, g.z + Math.cos(I.aL) * r);
+                o.visible = false;
+                g.g.parent.add(o); // mismo grupo que la gata (en la supervivencia, subido dy)
+            } else n.p.brazoD.add(o);
+            I.obj = o;
+        }
+    }
+    function terminarInter(n) {
+        const I = n.inter;
+        if (!I) return;
+        n.inter = null; n.gata = null;
+        if (I.obj && I.obj.parent) I.obj.parent.remove(I.obj);
+        const g = I.g;
+        if (g.escena === I.fn) {
+            delete g.escena;
+            g.ronroneo = false; g.pose = 'pie'; g.poseElegida = false; g.espera = rnd(1, 3);
+            g.cabeza.rotation.y = 0; g.cabeza.rotation.z = 0;
+            if (I.def.mueve) { g.x = I.g0.x; g.y = I.g0.y; g.z = I.g0.z; }
+        }
+        const p = n.p;
+        p.cuerpo.rotation.x = 0; p.cuerpo.rotation.z = 0;
+        p.cuello.rotation.y = 0; p.cuello.rotation.z = 0;
+        p.brazoD.rotation.z = 0; p.brazoI.rotation.z = 0;
+        n.cambioFrase = 2;
+    }
+    // Mezcla la pose de la interacción sobre la pose sentada que ya escribió actualizarLona
+    function aplicarInter(n) {
+        const I = n.inter, p = n.p, m = I.def.pose(I.t, I);
+        const w = envolvente(I.t, 0, I.def.dur, I.def.rampa || 0.7);
+        const inc = m.inc || 0;
+        p.cuerpo.position.y = lerp(p.cuerpo.position.y, m.y ?? p.cuerpo.position.y, w);
+        p.cuerpo.rotation.x = inc * w;
+        p.cuerpo.rotation.z = (m.rz || 0) * w;
+        // Piernas: estiradas adelante y compensadas para que la inclinación no las hunda en el suelo
+        p.piernaD.rotation.x = lerp(p.piernaD.rotation.x, (m.pD ?? SENT) - inc, w);
+        p.piernaI.rotation.x = lerp(p.piernaI.rotation.x, (m.pI ?? SENT + 0.1) - inc, w);
+        if (m.bDx !== undefined) p.brazoD.rotation.x = lerp(p.brazoD.rotation.x, m.bDx, w);
+        if (m.bIx !== undefined) p.brazoI.rotation.x = lerp(p.brazoI.rotation.x, m.bIx, w);
+        p.brazoD.rotation.z = (m.bDz || 0) * w;
+        p.brazoI.rotation.z = (m.bIz || 0) * w;
+        if (m.cx !== undefined) p.cuello.rotation.x = lerp(p.cuello.rotation.x, m.cx, w);
+        p.cuello.rotation.y = (m.cy || 0) * w;
+        p.cuello.rotation.z = (m.cz || 0) * w;
+    }
+    // Frases: la primera al empezar y la segunda a la mitad (solo se ven si el jugador está cerca)
+    function frasesInter(n) {
+        const I = n.inter, f = FRASES[I.def.frases];
+        const k = I.t >= 0.4 ? (I.t >= I.def.dur * 0.5 ? 2 : 1) : 0;
+        if (k > I.frase) {
+            I.frase = k;
+            n.frase = f[k - 1]; n.globo.decir(n.frase[idioma]);
+            n.cambioFrase = 99;
+        }
+    }
+
     function actualizarLona(dt, dJ, t) {
         const n = lona, { p } = n;
         if (!n.cargada) {
@@ -455,22 +727,32 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         if (n.pose === 'sentada') {
             // Sentada acariciando a una gata (o descansando); mira hacia ella
             n.espera -= dt;
-            const g = n.gata;
-            if (g) {
+            const g = n.gata, I = n.inter;
+            if (I) {
+                // Repertorio: Lona gira hacia su sitio (fijado al empezar); si otra escena tomó a la gata, corta
+                I.t += dt;
+                n.espera = I.def.dur - I.t; // termina por su reloj (depuración: npcs.lona.inter.t = s)
+                n.yaw += angulo(I.yawLona - n.yaw) * Math.min(1, dt * 3);
+                if (g.escena !== I.fn) n.espera = 0;
+            } else if (g) {
                 const objetivo = Math.atan2(g.x - n.x, g.z - n.z);
                 n.yaw += angulo(objetivo - n.yaw) * Math.min(1, dt * 3);
-                if (Math.hypot(g.x - n.x, g.z - n.z) > 3.2) n.espera = Math.min(n.espera, 0.5);
+                if (Math.hypot(g.x - n.x, g.z - n.z) > 3.2 || g.escena) n.espera = Math.min(n.espera, 0.5);
             }
-            if (n.espera <= 0) { n.pose = 'pie'; n.gata = null; n.espera = rnd(1, 3); }
+            if (n.espera <= 0) { terminarInter(n); n.pose = 'pie'; n.gata = null; n.espera = rnd(1, 3); }
         } else if (n.espera > 0) {
             n.espera -= dt;
         } else if (!n.ruta) {
             // ¿Hay una gata afuera y cerca? Va a hacerle cariño. Si no, pasea por la gatera
-            const libres = gatas.gatas.filter(g => g.g.visible && !g.cajaEst && !enCasa(g.x, g.z) && Math.hypot(g.x - n.x, g.z - n.z) < 22);
+            const libres = gatas.gatas.filter(g => g.g.visible && !g.cajaEst && !g.escena && !enCasa(g.x, g.z) && Math.hypot(g.x - n.x, g.z - n.z) < 22);
             if (libres.length && Math.random() < 0.55) {
                 const g = libres[Math.floor(Math.random() * libres.length)];
                 const a = Math.random() * Math.PI * 2;
-                n.ruta = { x: g.x + Math.sin(a) * 1.4, z: g.z + Math.cos(a) * 1.4, gata: g };
+                // Elige qué hará con ella (sin repetir la anterior); cada interacción pide su distancia
+                const op = ['cariño', ...TIPOS].filter(k => k !== n.ultimaInter);
+                const tipo = op[Math.floor(Math.random() * op.length)];
+                const r = INTER[tipo] ? INTER[tipo].radio : 1.4;
+                n.ruta = { x: g.x + Math.sin(a) * r, z: g.z + Math.cos(a) * r, gata: g, a, r, tipo };
             } else {
                 for (let k = 0; k < 12; k++) {
                     const x = rnd((gx - 9) * ESCALA, (gx + 9) * ESCALA), z = rnd((gz - 4) * ESCALA, (gz + 7) * ESCALA);
@@ -479,9 +761,16 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
                 if (!n.ruta) n.espera = 1;
             }
         } else {
-            const w = n.ruta, dx = w.x - n.x, dz = w.z - n.z, d = Math.hypot(dx, dz);
+            const w = n.ruta;
+            // Si la gata entró en una escena (caricia del jugador o escena especial), Lona la deja tranquila
+            if (w.gata && w.gata.escena) { n.ruta = null; n.espera = rnd(2, 4); return; }
+            if (w.gata) { w.x = w.gata.x + Math.sin(w.a) * w.r; w.z = w.gata.z + Math.cos(w.a) * w.r; } // la gata se mueve: la sigue
+            const dx = w.x - n.x, dz = w.z - n.z, d = Math.hypot(dx, dz);
             if (d < 0.3) {
-                if (w.gata && Math.hypot(w.gata.x - n.x, w.gata.z - n.z) < 2.6) { n.pose = 'sentada'; n.gata = w.gata; n.espera = rnd(6, 11); if (n.cerca) { decir(n, 'lonaCariño', true); n.cambioFrase = 6; } }
+                const g = w.gata;
+                const libre = g && g.g.visible && g.cargada && !g.escena && !g.cajaEst;
+                if (g && Math.hypot(g.x - n.x, g.z - n.z) < 2.6 && libre && INTER[w.tipo]) { empezarInter(n, g, w.tipo); n.ultimaInter = w.tipo; }
+                else if (g && Math.hypot(g.x - n.x, g.z - n.z) < 2.6) { n.ultimaInter = 'cariño'; n.pose = 'sentada'; n.gata = g; n.espera = rnd(6, 11); if (n.cerca) { decir(n, 'lonaCariño', true); n.cambioFrase = 6; } }
                 else if (Math.random() < 0.25) { n.pose = 'sentada'; n.espera = rnd(5, 9); }
                 else n.espera = rnd(2, 6);
                 n.ruta = null;
@@ -512,11 +801,25 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         p.brazoI.rotation.x = lerp(p.brazoI.rotation.x, -0.3, n.bs);
         if (!cariño) mirarJugador(n, dt, dJ);
         else p.cuello.rotation.x += (0.45 - p.cuello.rotation.x) * Math.min(1, dt * 4);
+        if (n.inter) { aplicarInter(n); frasesInter(n); }
     }
 
     let tiempo = 0;
     return {
         lista, pony, salonas, lona, bajo,
+        // Depuración del repertorio de Lona: forzarLona('pluma', 'mila') la pone junto a la gata y empieza;
+        // npcs.lona.inter.t = s salta a un segundo
+        forzarLona(tipo, clave) {
+            const g = gatas && gatas.gatas.find(x => x.clave === clave);
+            if (!lona || !g || !INTER[tipo] || g.escena || !g.cargada || !lona.cargada) return false;
+            terminarInter(lona);
+            const a = Math.atan2(lona.x - g.x, lona.z - g.z), r = INTER[tipo].radio;
+            lona.x = g.x + Math.sin(a) * r; lona.z = g.z + Math.cos(a) * r;
+            const y = sueloLona(lona.x, lona.z); if (y) lona.y = y;
+            lona.ruta = null; lona.yaw = Math.atan2(g.x - lona.x, g.z - lona.z);
+            empezarInter(lona, g, tipo); lona.ultimaInter = tipo;
+            return true;
+        },
         actualizar(dt, oculto = false) {
             tiempo += dt;
             dt = Math.min(dt, 0.05);
@@ -538,11 +841,12 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
                     else if (n === salonas) actualizarSalonas(d, dJ, tiempo);
                     else if (n === lona) actualizarLona(d, dJ, tiempo);
                 };
+                if (n.escena && n.inter) terminarInter(n); // una escena de la supervivencia manda sobre el repertorio
                 if (n.escena) n.escena(dt, base); else base();
                 if (!n.p.g.visible) continue;
                 n.p.g.position.set(n.x, n.y, n.z);
                 n.p.g.rotation.y = n.yaw;
-                comun(n, dt, dJ, n.clave);
+                comun(n, dt, dJ, n.inter ? n.inter.def.frases : n.clave);
             }
         },
         setIdioma(i) {

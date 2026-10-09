@@ -47,6 +47,7 @@ import { crearEditorSkin, cargarSkin, coloresMano, BASES } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
+import { crearEscenasGatas } from './escenas-gatas.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMusica } from './musica.js';
@@ -488,12 +489,18 @@ async function arrancar(guardado) {
         bloquear: bloquearEscena,
         liberar: liberarEscena
     });
+    // Escenas especiales con Mila y Gala: la primera caricia con skin de base Lona o Venjy
+    const escenasGatas = crearEscenasGatas({
+        grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, gatas, misiones, idioma,
+        skin: () => skinActual, bloquear: bloquearEscena, liberar: liberarEscena
+    });
     // Caricias a las gatas: tecla G (o el botón ACARICIAR) junto a Mila o Gala
     const caricias = crearCaricias({
         grupo: vista.grupo, dy: DY, mundo, jugador, camaras, gatas, hud, misiones, idioma,
         puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
         bloquear: bloquearEscena,
-        liberar: liberarEscena
+        liberar: liberarEscena,
+        especial: g => escenasGatas.especial(g)
     });
     // El cuello de Gala: escena al completar la misión 3 de Lona; sincroniza el cuello con las misiones cargadas
     escenaCuello = crearEscenaCuello({ grupo: vista.grupo, dy: DY, jugador, camara, camaras, gatas, npcs, misiones, bloquear: bloquearEscena, liberar: liberarEscena, idioma });
@@ -517,7 +524,7 @@ async function arrancar(guardado) {
         return l;
     };
     // /escenas y /escena <nombre>: recorre las escenas para revisarlas (solo con la skin de Venjy)
-    const recorrido = crearRecorridoEscenas({ dy: DY, jugador, mundo, gatas, escenas, escenaCuello, caricias, misiones, hud, skin: () => skinActual, bloquear: bloquearEscena, idioma });
+    const recorrido = crearRecorridoEscenas({ dy: DY, jugador, mundo, gatas, escenas, escenaCuello, caricias, escenasGatas, misiones, hud, skin: () => skinActual, bloquear: bloquearEscena, idioma });
     // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>
     const consola = crearConsola({
         jugador, dia, hud, idioma,
@@ -657,7 +664,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenaCuello, ronda,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -698,6 +705,7 @@ async function arrancar(guardado) {
         } else jugador.actualizar(0);
         escenas.actualizar(corre ? dt : 0);
         caricias.actualizar(corre ? dt : 0);
+        escenasGatas.actualizar(corre ? dt : 0);
         escenaCuello.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
