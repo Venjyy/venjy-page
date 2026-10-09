@@ -242,20 +242,138 @@ export function crearNombre(scene, texto) {
             const f = Math.max(0.8, Math.min(1.5, d / 6));
             sp.scale.set(1.2 * kx * f, 0.375 * f, 1);
         },
-        ocultar() { sp.visible = false; alfa = 0; }
+        ocultar() { sp.visible = false; alfa = 0; },
+        get texto() { return texto; }
     };
+}
+
+// ---------------------------------------------------------
+// Lugar libre para el globo (escenas con cámara de cine). Todo en coordenadas NDC (-1..1) de la cámara.
+// `zonas` = puntos 3D { quien, tipo: 'cabeza' | 'pecho', x, y, z, r } en el sistema del padre del globo.
+// ---------------------------------------------------------
+const ESCALA_GLOBO = [3.0, 1.25];
+const MARGEN_GLOBO = 0.04, TOPE_GLOBO = 0.9, ESCALAS_GLOBO = [1, 0.85, 0.7, 0.55, 0.4]; // las dos últimas solo si el globo sigue legible
+// Legibilidad: medio alto mínimo del globo en pantalla (NDC) y roce leve que se tolera sin cambiar de lugar (área NDC)
+export const MIN_HH_GLOBO = 0.17, ROCE_GLOBO = 0.028;
+const LEGIBLE_GLOBO = MIN_HH_GLOBO + 0.02; // con un poco de margen: la cámara se mueve dentro del plano
+const vP = new THREE.Vector3();
+// Punto del padre → NDC de la cámara (delante = false si queda detrás; entonces se empuja al borde)
+function proyectarGlobo(camara, padre, x, y, z) {
+    vP.set(x, y, z).applyMatrix4(padre.matrixWorld).applyMatrix4(camara.matrixWorldInverse); // la cámara mira a -Z
+    const t = Math.tan(THREE.MathUtils.degToRad(camara.fov) / 2), asp = camara.aspect;
+    const delante = -vP.z > 0.2, prof = delante ? -vP.z : 2;
+    let cx, cy;
+    if (delante) { cx = vP.x / (prof * t * asp); cy = vP.y / (prof * t); }
+    else { const L = Math.hypot(vP.x, vP.y); if (L > 1e-6) { cx = -vP.x / L * 4; cy = -vP.y / L * 4; } else { cx = 0; cy = -4; } }
+    return { cx, cy, prof, t, asp, delante };
+}
+const solapeRect = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+// Elige el lugar del globo. previo = { id, esc } para mantener la candidata elegida mientras siga libre.
+// Sin zonas devuelve solo el encaje clásico (corrido hacia dentro y achicado si no cabe).
+function planearGlobo(camara, padre, ax, ay, az, zonas, franja, previo, soloActual = false, estricto = false, extra = null) {
+    padre.updateWorldMatrix(true, false);
+    const P = proyectarGlobo(camara, padre, ax, ay, az), { prof, t, asp, delante } = P;
+    const ms = padre.matrixWorld.getMaxScaleOnAxis();
+    let hw0 = (ESCALA_GLOBO[0] * ms / 2) / (prof * t * asp), hh0 = (ESCALA_GLOBO[1] * ms / 2) / (prof * t);
+    const k0 = Math.min(1, TOPE_GLOBO / hw0, TOPE_GLOBO * (1 - franja) / hh0);
+    hw0 *= k0; hh0 *= k0;
+    // Zonas a evitar: cuadrado de lado 2r a la profundidad de cada punto
+    const rects = [];
+    let cab = null, dMin = Infinity;
+    for (const z of zonas || []) {
+        const Q = proyectarGlobo(camara, padre, z.x, z.y, z.z);
+        if (!Q.delante) continue;
+        const hx = z.r / (Q.prof * Q.t * Q.asp), hy = z.r / (Q.prof * Q.t);
+        const r = { quien: z.quien, tipo: z.tipo, x0: Q.cx - hx, x1: Q.cx + hx, y0: Q.cy - hy, y1: Q.cy + hy };
+        rects.push(r);
+        // La cabeza de quien habla = la más cercana al ancla del globo
+        const d = z.tipo === 'cabeza' ? Math.hypot(z.x - ax, z.z - az) : Infinity;
+        if (d < dMin) { dMin = d; cab = r; }
+    }
+    if (extra) for (const e of extra) rects.push({ quien: e.quien, tipo: 'globo', x0: e.x0, x1: e.x1, y0: e.y0, y1: e.y1 }); // otros globos ya resueltos
+    const clampC = (c, lo, hi) => (lo > hi ? 0 : Math.min(hi, Math.max(lo, c)));
+    // Candidatas para una escala s: (a) la actual, (b,c) a los lados de la cabeza, (d,e) esquinas de arriba, (f..h) abajo
+    function candidatas(s) {
+        const k = k0 * s, hw = hw0 / k0 * k, hh = hh0 / k0 * k;
+        const loX = -1 + MARGEN_GLOBO + hw, hiX = 1 - MARGEN_GLOBO - hw, loY = -1 + franja + MARGEN_GLOBO + hh, hiY = 1 - franja - MARGEN_GLOBO - hh;
+        const hx = cab ? (cab.x0 + cab.x1) / 2 : P.cx, hy = cab ? (cab.y0 + cab.y1) / 2 : P.cy;
+        const m = (id, x, y) => ({ id, k, hw, hh, x: clampC(x, loX, hiX), y: clampC(y, loY, hiY) });
+        // Rejilla de respaldo (de la más cercana a la cabeza a la más lejana) por si las anteriores no bastan
+        const rej = [];
+        for (let i = 0; i < 7; i++) for (let j = 0; j < 5; j++) rej.push(m('r' + i + '_' + j, loX + (hiX - loX) * i / 6, loY + (hiY - loY) * j / 4));
+        const cerca = (...l) => l.sort((p, q) => Math.hypot(p.x - hx, p.y - hy) - Math.hypot(q.x - hx, q.y - hy));
+        const g = 0.02;
+        return [
+            m('a', P.cx, P.cy),
+            ...cerca(m('b', (cab ? cab.x0 : hx) - g - hw, hy), m('c', (cab ? cab.x1 : hx) + g + hw, hy)),
+            ...cerca(m('d', loX, hiY), m('e', hiX, hiY)),
+            ...cerca(m('f', hx, loY), m('g', loX, loY), m('h', hiX, loY)),
+            ...cerca(...rej)
+        ];
+    }
+    const medir = c => {
+        const r = { x0: c.x - c.hw, x1: c.x + c.hw, y0: c.y - c.hh, y1: c.y + c.hh };
+        let o = 0;
+        for (const z of rects) o += solapeRect(r, z);
+        c.rect = r; c.solape = o;
+        return c;
+    };
+    let mejor = null, elegida = null;
+    if (!rects.length || soloActual) elegida = medir(candidatas(1)[0]);
+    else {
+        if (previo) { // mantiene la candidata anterior mientras no la tape nada de gravedad (un roce leve se tolera)
+            // Primero con la misma escala; si ya no sirve, la misma candidata con otra escala (así no cambia de lugar)
+            for (const esc of [previo.esc, ...ESCALAS_GLOBO.filter(e => e !== previo.esc)]) {
+                if (elegida) break;
+                const c = candidatas(esc).find(x => x.id === previo.id);
+                if (c && c.hh >= MIN_HH_GLOBO && medir(c).solape <= ROCE_GLOBO && (esc >= 0.7 || c.hh >= LEGIBLE_GLOBO)) { elegida = c; c.esc = esc; }
+            }
+        }
+        // Primero solo candidatas legibles (alto mínimo); si ninguna queda libre, y no es una prueba estricta, vale cualquier tamaño
+        for (const legible of estricto ? [true] : [true, false]) {
+            for (let i = 0; !elegida && i < ESCALAS_GLOBO.length; i++) for (const c of candidatas(ESCALAS_GLOBO[i])) {
+                if ((legible || ESCALAS_GLOBO[i] < 0.7) && c.hh < LEGIBLE_GLOBO) continue;
+                medir(c); c.esc = ESCALAS_GLOBO[i];
+                if (c.solape === 0) { elegida = c; break; }
+                if (!mejor || c.solape < mejor.solape - 1e-9) mejor = c;
+            }
+            if (elegida) break;
+        }
+        if (!elegida) elegida = mejor;
+    }
+    if (!elegida) return { c: null, P, rects, cab, k0, libre: false };
+    return { c: elegida, P, rects, cab, k0, libre: elegida.solape === 0, mantenida: !!(previo && elegida.id === previo.id && elegida.esc === previo.esc) };
 }
 
 // ---------------------------------------------------------
 // Globo de diálogo: aparece al acercarse; las frases vienen en { es, en }
 // ---------------------------------------------------------
-export function crearGlobo(scene) {
-    const ESCALA = [3.0, 1.25];
+// Globos con encaje: el más antiguo (por llegada del texto) conserva su lugar; el recién llegado esquiva los rects ya resueltos de los demás,
+// también del que se está desvaneciendo
+const globosVivos = [];
+let globoSeq = 0;
+// Color de la pestaña y del marco del globo por personaje (tintes de lana de Minecraft): con el nombre
+// en la pestaña se sabe quién habla aunque el globo quede lejos. `j` es el jugador, distinto del Venjy del mundo.
+export const COLOR_GLOBO = {
+    lona: '#d55f9a', boris: '#b02e26', lucho: '#474f52', pony: '#9d9d97', salonas: '#c74ebd',
+    hadad: '#f9801d', andy: '#80c71f', nacho: '#169c9c', braulio: '#835432', moises: '#8932b8',
+    lalo: '#5e7c16', conejeros: '#3c44aa', venjy: '#3ab3da', j: '#fcc419'
+};
+// etiqueta (opcional) = { nombre, color }: pestaña con el nombre arriba a la izquierda y marco de color; sin colita
+export function crearGlobo(scene, etiqueta = null) {
+    const yo = { seq: 0, ultimo: null };
+    globosVivos.push(yo);
+    const ESCALA = ESCALA_GLOBO;
     const { c, tex, sp } = spriteLienzo(scene, 384, 160, ESCALA, true);
     let texto = '', alfa = 0;
     // Encaje en pantalla (escenas, con `camara`): si el globo se sale del encuadre lo corre hacia dentro;
     // si ocuparía más de ~90% del ancho o del alto lo achica. Si cabe, no cambia nada.
-    const MARGEN = 0.04, TOPE = 0.9;
+    // Con `evitar` (función que da las zonas de cabezas y torsos de la escena) además busca un lugar que no
+    // las tape (ver planearGlobo) y lo mantiene mientras siga libre; solo cambia con texto nuevo o si se ocupa.
+    const v = new THREE.Vector3(), vista = new THREE.Vector3();
+    let previo = null, nuevo = true, ultimo = null, sinEvitar = false, vis = null, dtUlt = 1 / 60;
+    const camPos = new THREE.Vector3(), camDir = new THREE.Vector3(), dirAhora = new THREE.Vector3();
+    let camVista = false;
     const BAJO_CABEZA = 1.15; // del punto del globo (0,6 sobre la cabeza) al mentón de quien habla
     // Borde inferior para el globo de abajo: sobre el botón «Saltar» visible (si hay), si no sobre la franja negra
     const sueloGlobo = franja => {
@@ -266,55 +384,59 @@ export function crearGlobo(scene) {
         return -1 + franja;
     };
     let colitaArriba = false, relleno = 0; // relleno: parte transparente del lienzo bajo la caja (fracción del alto)
-    const v = new THREE.Vector3(), w = new THREE.Vector3(), vista = new THREE.Vector3();
-    function encajar(x, y, z, camara) {
+    const w = new THREE.Vector3();
+    function encajar(x, y, z, camara, renderer) {
         const padre = sp.parent;
         if (!padre) return;
-        padre.updateWorldMatrix(true, false);
-        v.set(x, y, z).applyMatrix4(padre.matrixWorld);
-        vista.copy(v).applyMatrix4(camara.matrixWorldInverse); // la cámara mira a -Z
-        const t = Math.tan(THREE.MathUtils.degToRad(camara.fov) / 2), asp = camara.aspect;
-        const delante = -vista.z > 0.2;
-        const prof = delante ? -vista.z : 2; // detrás de la cámara: se pega al borde con una profundidad fija
-        let cx, cy;
-        if (delante) { cx = vista.x / (prof * t * asp); cy = vista.y / (prof * t); }
-        else { const L = Math.hypot(vista.x, vista.y); if (L > 1e-6) { cx = -vista.x / L * 4; cy = -vista.y / L * 4; } else { cx = 0; cy = -4; } }
-        // Medio ancho y medio alto del sprite en pantalla (fracción del encuadre)
-        const sw = sp.getWorldScale(w);
-        let hw = (sw.x / 2) / (prof * t * asp), hh = (sw.y / 2) / (prof * t);
-        // En modo cine las franjas negras (9vh arriba y abajo) tapan 0.18 del encuadre por lado
         const franja = document.body.classList.contains('en-cine') ? 0.18 : 0;
-        const k = Math.min(1, TOPE / hw, TOPE * (1 - franja) / hh);
-        hw *= k; hh *= k;
-        if (k < 1) sp.scale.set(ESCALA[0] * k, ESCALA[1] * k, 1);
-        const loX = -1 + MARGEN + hw, hiX = 1 - MARGEN - hw, loY = -1 + franja + MARGEN + hh, hiY = 1 - franja - MARGEN - hh;
-        const nx = loX > hiX ? 0 : Math.min(hiX, Math.max(loX, cx));
-        let ny = loY > hiY ? 0 : Math.min(hiY, Math.max(loY, cy));
-        // No cabe arriba y al bajarlo taparía la cabeza de quien habla: va debajo de la cabeza, con la colita hacia arriba
+        const zonas = evitar ? evitar() : null;
+        const cuadro = renderer ? renderer.info.render.frame : 0;
+        const otros = zonas && zonas.length && !sinEvitar ? globosVivos.filter(o => o !== yo && o.seq < yo.seq && o.ultimo && cuadro - o.ultimo.cuadro <= 1).map(o => ({ quien: o.ultimo.quien, ...o.ultimo.rect })) : null;
+        const r = planearGlobo(camara, padre, x, y, z, zonas, franja, nuevo ? null : previo, sinEvitar, false, otros);
+        nuevo = false;
+        const { c, P } = r;
+        const conZonas = !!(zonas && zonas.length);
         let abajo = false;
-        if (delante && ny < cy - 1e-6) {
+        if (!conZonas && P.delante && c.y < P.cy - 1e-6) {
+            // No cabe arriba y al bajarlo taparía la cabeza de quien habla: va debajo de la cabeza, con la colita hacia arriba
             w.set(x, y - BAJO_CABEZA, z).applyMatrix4(padre.matrixWorld).applyMatrix4(camara.matrixWorldInverse);
             if (-w.z > 0.2) {
-                const menton = w.y / (-w.z * t);
-                if (ny - hh < menton + 0.02) { abajo = true; ny = Math.min(hiY, sueloGlobo(franja) + 0.02 + hh - 2 * hh * relleno); } // abajo del todo, casi en la franja del botón «Saltar»
+                const menton = w.y / (-w.z * P.t), hiY = 1 - franja - 0.04 - c.hh;
+                if (c.y - c.hh < menton + 0.02) { abajo = true; c.y = Math.min(hiY, sueloGlobo(franja) + 0.02 + c.hh - 2 * c.hh * relleno); } // abajo del todo, casi en la franja del botón «Saltar»
             }
         }
-        if (abajo !== colitaArriba) { colitaArriba = abajo; dibujar(); }
-        if (delante && nx === cx && ny === cy) return; // cabe: se queda donde está
+        if (abajo !== colitaArriba && !etiqueta) { colitaArriba = abajo; dibujar(); }
+        previo = conZonas ? { id: c.id, esc: c.esc || 1 } : null;
+        // Con zonas el globo se desliza (~0,25 s) hacia su lugar en vez de saltar; sin zonas va directo (como antes)
+        const hw1 = c.hw / c.k, hh1 = c.hh / c.k; // medio tamaño con escala 1
+        let px = c.x, py = c.y, pk = c.k;
+        // Un corte de cámara (plano nuevo) no se desliza: el globo aparece ya en su lugar
+        camara.getWorldDirection(dirAhora);
+        if (camVista && (camPos.distanceTo(camara.position) > 0.5 || camDir.dot(dirAhora) < 0.97)) vis = null;
+        camPos.copy(camara.position); camDir.copy(dirAhora); camVista = true;
+        if (conZonas) {
+            if (!vis) vis = { x: c.x, y: c.y, k: c.k };
+            const f = 1 - Math.exp(-dtUlt / 0.12); // ~95% en 0,35 s, igual a cualquier fps
+            vis.x += (c.x - vis.x) * f; vis.y += (c.y - vis.y) * f; vis.k += (c.k - vis.k) * f;
+            px = vis.x; py = vis.y; pk = vis.k;
+        } else vis = null;
+        ultimo = yo.ultimo = { cuadro, rect: { x0: px - hw1 * pk, y0: py - hh1 * pk, x1: px + hw1 * pk, y1: py + hh1 * pk }, zonas: r.rects, franja, id: c.id, escala: pk, libre: r.libre, obj: { x: c.x, y: c.y } };
+        if (pk < 1) sp.scale.set(ESCALA[0] * pk, ESCALA[1] * pk, 1);
+        if (!conZonas && P.delante && c.x === P.cx && c.y === P.cy) return; // cabe: se queda donde está
         // Des-proyecta a la misma profundidad y pasa a coordenadas del grupo
-        vista.set(nx * prof * t * asp, ny * prof * t, -prof);
+        vista.set(px * P.prof * P.t * P.asp, py * P.prof * P.t, -P.prof);
         v.copy(vista).applyMatrix4(camara.matrixWorld);
         padre.worldToLocal(v);
         sp.position.copy(v);
     }
     // El encaje se hace justo antes de dibujar, con la cámara de ese cuadro: la de cine se mueve después
     // de que las escenas actualizan sus globos (antes de eso la cámara sigue en primera persona)
-    let encaje = null;
+    let encaje = null, evitar = null;
     sp.onBeforeRender = (renderer, escena, cam) => {
         if (!encaje || !cam.isPerspectiveCamera) return;
         sp.position.set(encaje[0], encaje[1], encaje[2]);
         sp.scale.set(ESCALA[0], ESCALA[1], 1);
-        encajar(encaje[0], encaje[1], encaje[2], cam);
+        encajar(encaje[0], encaje[1], encaje[2], cam, renderer);
         sp.updateMatrixWorld();
     };
     const dibujar = () => {
@@ -334,21 +456,44 @@ export function crearGlobo(scene) {
             return lineas;
         };
         let px = 22, lineas = partir(px);
-        while ((lineas.length > 4 || lineas.length * (px + 4) + 18 > c.height - 16) && px > 12) lineas = partir(px -= 2);
+        const TAB = etiqueta ? 24 : 0; // alto de la pestaña del nombre (asoma sobre la caja)
+        while ((lineas.length > 4 || lineas.length * (px + 4) + 18 > c.height - 16 - TAB) && px > 12) lineas = partir(px -= 2);
         const paso = px + 4;
         const alto = lineas.length * paso + 18;
-        // Con la colita hacia arriba la caja baja y deja su espacio arriba
-        const y0 = colitaArriba ? Math.min(c.height - alto, (c.height + 14 - alto) / 2) : Math.max(0, (c.height - 14 - alto) / 2);
+        // Con la colita hacia arriba la caja baja y deja su espacio arriba; con pestaña no hay colita
+        const y0 = etiqueta ? Math.max(TAB, (c.height + TAB - alto) / 2)
+            : colitaArriba ? Math.min(c.height - alto, (c.height + 14 - alto) / 2) : Math.max(0, (c.height - 14 - alto) / 2);
         relleno = Math.max(0, c.height - (y0 + alto)) / c.height;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
         ctx.fillRect(6, y0, c.width - 12, alto);
         ctx.fillStyle = '#1d1d1d';
         ctx.fillRect(6, y0, c.width - 12, 3); ctx.fillRect(6, y0 + alto - 3, c.width - 12, 3);
         ctx.fillRect(6, y0, 3, alto); ctx.fillRect(c.width - 9, y0, 3, alto);
+        if (etiqueta) {
+            // Marco de color de quien habla, por dentro del borde negro (el fondo sigue blanco)
+            ctx.fillStyle = etiqueta.color;
+            ctx.fillRect(9, y0 + 3, c.width - 18, 4); ctx.fillRect(9, y0 + alto - 7, c.width - 18, 4);
+            ctx.fillRect(9, y0 + 3, 4, alto - 6); ctx.fillRect(c.width - 13, y0 + 3, 4, alto - 6);
+            // Pestaña con el nombre, arriba a la izquierda, pegada al borde de la caja
+            ctx.font = '18px PixelCraft';
+            const tw = Math.min(c.width - 40, Math.ceil(ctx.measureText(etiqueta.nombre).width) + 20), ty = y0 - TAB + 3;
+            ctx.fillStyle = '#1d1d1d';
+            ctx.fillRect(14, ty, tw, TAB);
+            ctx.fillStyle = etiqueta.color;
+            ctx.fillRect(17, ty + 3, tw - 6, TAB - 3);
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            // Sobre colores claros (dorado, gris claro, lima) la letra va oscura; sobre los demás, blanca con sombra
+            const n = parseInt(etiqueta.color.slice(1), 16), claro = 0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255) > 150;
+            if (!claro) { ctx.fillStyle = '#2a2a2a'; ctx.fillText(etiqueta.nombre, 26, ty + TAB / 2 + 3, tw - 18); }
+            ctx.fillStyle = claro ? '#1d1d1d' : '#ffffff';
+            ctx.fillText(etiqueta.nombre, 24, ty + TAB / 2 + 1, tw - 18);
+            ctx.font = px + 'px PixelCraft';
+        } else {
         // Colita del globo
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
         if (colitaArriba) { ctx.fillRect(c.width / 2 - 9, y0 - 3, 18, 6); ctx.fillRect(c.width / 2 - 3, y0 - 9, 6, 6); }
         else { ctx.fillRect(c.width / 2 - 9, y0 + alto - 3, 18, 6); ctx.fillRect(c.width / 2 - 3, y0 + alto + 3, 6, 6); }
+        }
         ctx.fillStyle = '#1d1d1d';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         lineas.forEach((l, i) => ctx.fillText(l, c.width / 2, y0 + 9 + paso / 2 + i * paso));
@@ -356,18 +501,36 @@ export function crearGlobo(scene) {
     };
     return {
         sp,
-        decir(t) { if (t !== texto) { texto = t; conFuente(dibujar); } },
+        decir(t) { if (t !== texto) { texto = t; nuevo = true; yo.seq = ++globoSeq; if (alfa < 0.6) vis = null; conFuente(dibujar); } },
         get texto() { return texto; },
-        actualizar(dt, visible, x, y, z, camara) {
+        // Pestaña { nombre, color } o null (globos compartidos de las escenas: cambia según quién lo usa)
+        set etiqueta(e) { if (e?.nombre !== etiqueta?.nombre || e?.color !== etiqueta?.color) { etiqueta = e || null; if (texto) conFuente(dibujar); } },
+        // Último cuadro encajado: { cuadro, rect (NDC), zonas, franja, id, escala, libre } (diagnóstico)
+        get ultimo() { return ultimo; },
+        get alfa() { return alfa; },
+        set sinEvitar(b) { sinEvitar = !!b; nuevo = true; }, // depuración: el comportamiento de antes (solo mide)
+        // ¿Hay lugar libre para el globo con esta cámara? (planos de prueba de la cámara de cine; no cambia nada)
+        probar(cam, x, y, z, zonas, franja = 0.18) {
+            const padre = sp.parent;
+            if (!padre || !zonas || !zonas.length) return { libre: true, solape: 0 };
+            const r = planearGlobo(cam, padre, x, y, z, zonas, franja, null, false, true);
+            // Sin ningún lugar libre con el tamaño legible el plano cuenta como sin lugar (solape 1 = pantalla entera)
+            return r.c ? { libre: r.libre, solape: r.c.solape, id: r.c.id } : { libre: false, solape: 1 };
+        },
+        actualizar(dt, visible, x, y, z, camara, zonasFn) {
             const objetivo = visible && texto ? 1 : 0;
-            alfa += (objetivo - alfa) * Math.min(1, dt * 5);
+            alfa += (objetivo - alfa) * Math.min(1, dt * (!objetivo && encaje ? 14 : 5)); // el que sale de una escena se va en ~0,15 s
             if (Math.abs(alfa - objetivo) < 0.01) alfa = objetivo;
             sp.visible = alfa > 0.01;
-            if (!sp.visible) return;
+            dtUlt = Math.max(dt, 1e-3);
+            const saliendo = !objetivo && !!encaje && sp.visible; // se desvanece en su sitio (no salta al origen)
+            if (!sp.visible) { previo = null; nuevo = true; ultimo = yo.ultimo = null; vis = null; return; }
             sp.material.opacity = alfa;
+            if (saliendo) return;
             sp.position.set(x, y, z);
             sp.scale.set(ESCALA[0], ESCALA[1], 1);
             encaje = camara ? [x, y, z] : null;
+            evitar = camara && zonasFn ? zonasFn : null;
             sp.frustumCulled = !encaje; // con encaje se dibuja aunque su punto quede fuera del encuadre
         }
     };
