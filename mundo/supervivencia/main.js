@@ -692,7 +692,7 @@ async function arrancar(guardado, cx = null) {
     pintarCoop();
     // Cofres de compañero: las cosas de quienes jugaron aquí y ahora no están
     const escenaGuardian = crearEscenaGuardian({
-        scene, grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, hud, particulas, idioma, cofres: () => cofresComp,
+        scene, grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, hud, particulas, idioma, vida, misiones, cofres: () => cofresComp,
         bloquear: bloquearEscena, liberar: liberarEscena
     });
     const cofresComp = crearCofresCompaneros({

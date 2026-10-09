@@ -33,3 +33,5 @@ Minecraft 3D jugable con Three.js (carpeta `mundo/`, `vendor/`). Antes de tocarl
 **Modo supervivencia** (`supervivencia.html`, `mundo/supervivencia/`): página aparte sobre el mismo mapa (subido 48 bloques, altura 128, cuevas y menas). Arquitectura, decisiones y estado en la sección «Modo supervivencia» de `mundo/PENDIENTES.md`. Pruebas: `node mundo/tests/recetas.mjs` y `node mundo/tests/inventario.mjs`.
 
 **Modo online** (`mundo/online/`): usa Supabase (clave publishable en `mundo/online/config.js`; nunca la service role key). El esquema está en `mundo/online/schema.sql`; el detalle, en la sección «Modo online» de `mundo/PENDIENTES.md`.
+
+**Supervivencia cooperativa** (`mundo/supervivencia/coop.js`): hasta 4 jugadores por Supabase (un anfitrión hospeda su mundo). Arquitectura, mensajes medidos y plan del transporte WebRTC en «Bloque 5» de `mundo/PENDIENTES.md`. Para probar con dos pestañas: `supervivencia.html?disp=2`.

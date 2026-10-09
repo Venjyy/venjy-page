@@ -12,17 +12,19 @@
 //    quien lo invocó.
 //  · Cada uno: su vida, su inventario, sus misiones, sus escenas y minijuegos (todo local).
 //
-// Mensajes (evento `m` del canal, campo `e`): p posición · b bloques · c contenedor · o objeto
-// soltado · ot pedir objeto · ok objeto concedido · m monstruos y jefe · mf monstruo fuera ·
+// Mensajes (evento `m` del canal, campo `e`): p posición (y, si hay, monstruos y jefe) · b bloques · c contenedor · o objeto
+// soltado · ot pedir objeto · ok objeto concedido · m monstruos y jefe sueltos (sin uso: van dentro de p) · mf monstruo fuera ·
 // g golpe a monstruo · gj golpe a jefe · d daño a jugador · x explosión · pr proyectil · mk muerte
 // para misiones · jv jefe vencido · ry rayo · h hora · z en cama · am amanecer · pf perfil ·
 // pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado.
 //
 // Gasto (plan gratis ~100 mensajes/s por proyecto; Supabase cobra 1 por enviar + 1 por cada
 // cliente que lo recibe): posición a 5 Hz con interpolación (1 latido/s si estás quieto);
-// monstruos en un solo mensaje cada 200 ms, a 5 Hz los que están a menos de 10 bloques de algún
-// jugador y a 2 Hz los demás, sin repetir lo que no cambió (salvo un refresco cada 2 s); jefe a
-// 5 Hz; si no hay nada cerca de otro jugador, no se manda nada. Los eventos van cuando ocurren.
+// monstruos dentro del mismo mensaje de posición (un solo mensaje por tick de 200 ms y jugador,
+// así cada uno manda como mucho 5 por segundo más los eventos): los que están a menos de 10 bloques de algún
+// jugador en cada tick (5 Hz) y los demás juntos cada 3 ticks (≈1,7 Hz: alineados con los de 5 Hz
+// para no sumar mensajes aparte), sin repetir lo que no cambió (salvo un refresco cada 2 s); jefe
+// a 5 Hz; si no hay nada cerca de otro jugador, no se manda nada. Los eventos van cuando ocurren.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { Sala } from '../online/red.js';
@@ -94,6 +96,7 @@ function conexionBase(sala, rol, extra) {
     const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc'];
     for (const t of TIPOS) sala.en(t, m => (cx.manejar ? cx.manejar(t, m) : cx.cola.push([t, m])));
     sala.en('entra', m => { cx.presentes.set(m.id, m); cx.alEntrar && cx.alEntrar(m); });
+    sala.en('actualiza', m => { cx.presentes.set(m.id, m); cx.alActualizar && cx.alActualizar(m); });
     sala.en('sale', m => { const p = cx.presentes.get(m.id); cx.presentes.delete(m.id); cx.alSalir && cx.alSalir(m.id, p); });
     sala.en('estado', m => cx.alEstado && cx.alEstado(m.estado));
     return cx;
@@ -225,6 +228,7 @@ export function crearCoop(cx, ctx) {
         enviarPerfil();
         ctx.alCambiarJugadores && ctx.alCambiarJugadores();
     };
+    cx.alActualizar = m => agregarRemoto(m.id, m); // cambió su skin: se rehace el modelo
     cx.alSalir = (id, p) => {
         const r = remotos.get(id);
         if (r) hud.mensaje(L(`${r.nombre} salió de la sala`, `${r.nombre} left`), 3);
@@ -239,16 +243,19 @@ export function crearCoop(cx, ctx) {
 
     const remotoPorId = id => remotos.get(id) || null;
 
-    // ---------- Posición propia ----------
-    let ultimoPos = 0, ultimaPos = null;
+    // ---------- Posición propia (y monstruos y jefe propios en el mismo mensaje) ----------
+    let ultimoTick = 0, ultimoPos = 0, ultimaPos = null;
     function enviarPosicion() {
         const t = ahora();
-        if (t - ultimoPos < 1000 / HZ_POS) return;
+        if (t - ultimoTick < 1000 / HZ_POS) return;
+        ultimoTick = t;
         const r = n => Math.round(n * 100) / 100;
         const m = { t: Math.round(t), x: r(jugador.pos.x), y: r(jugador.pos.y), z: r(jugador.pos.z), a: r(jugador.yaw), b: r(jugador.pitch), f: (jugador.agachado ? 1 : 0) | (vida.muerto ? 2 : 0) };
         const u = ultimaPos;
         const igual = u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02 && Math.abs(u.a - m.a) < 0.02 && Math.abs(u.b - m.b) < 0.02 && u.f === m.f;
-        if (igual && t - ultimoPos < 1000) return;
+        const mobs = mobsDelTick(t);
+        if (igual && !mobs && t - ultimoPos < 1000) return;
+        if (mobs) Object.assign(m, mobs);
         ultimoPos = t; ultimaPos = m;
         sala.enviar('p', m);
     }
@@ -329,7 +336,7 @@ export function crearCoop(cx, ctx) {
 
     // ---------- Monstruos ----------
     const finPend = new Set();
-    let relojMobs = 0;
+    let tickMobs = 0;
     enemigos.api.red = {
         jugadores: () => [...remotos.values()].map(r => r.objetivo),
         danar(id, n, causa, op = {}, aturde = 0) {
@@ -350,21 +357,23 @@ export function crearCoop(cx, ctx) {
     };
 
     // Distancia del punto al jugador remoto más cercano (los monstruos lejos de todos no se mandan)
-    function distRemotos(x, z) {
+    function distRemotos(x, z, y = null) {
         let dm = Infinity;
-        for (const r of remotos.values()) { const u = r.bufer.ultimo; if (u) dm = Math.min(dm, Math.hypot(u.x - x, u.z - z)); }
+        for (const r of remotos.values()) { const u = r.bufer.ultimo; if (u) dm = Math.min(dm, Math.hypot(u.x - x, u.z - z, y == null ? 0 : u.y - y)); }
         return dm;
     }
-    function distTodos(x, z) { return Math.min(distRemotos(x, z), Math.hypot(jugador.pos.x - x, jugador.pos.z - z)); }
+    // Distancia al jugador más cercano (con y: en 3D, para que un monstruo en la cueva de abajo no cuente como cerca)
+    function distTodos(x, z, y = null) { return Math.min(distRemotos(x, z, y), Math.hypot(jugador.pos.x - x, jugador.pos.z - z, y == null ? 0 : jugador.pos.y - y)); }
 
-    function enviarMobs() {
-        const t = ahora();
+    // Monstruos y jefe propios de este tick: { l, j } o null si no hay nada que mandar
+    function mobsDelTick(t) {
+        const tocaLejos = tickMobs++ % 3 === 0;
         const l = [];
         for (const e of enemigos.lista) {
             if (distRemotos(e.pos.x, e.pos.z) > 72) continue;
-            const cerca = distTodos(e.pos.x, e.pos.z) < 10;
+            const cerca = distTodos(e.pos.x, e.pos.z, e.pos.y) < 10;
             const ult = e.red || null;
-            if (ult && t - ult.t < (cerca ? 190 : 490)) continue;
+            if (!cerca && !tocaLejos) continue;
             const f = (e.persigue ? 1 : 0) | (e.rojo > 0 ? 2 : 0) | (e.mecha > 0 ? 4 : 0) | (e.fuego > 0 ? 8 : 0) | (e.golpeAnim > 0 ? 16 : 0);
             const x = r2(e.pos.x), y = r2(e.pos.y), z = r2(e.pos.z), w = r2(e.yaw);
             const refresco = !ult || t - ult.k >= 2000;
@@ -377,10 +386,11 @@ export function crearCoop(cx, ctx) {
         }
         const j = jefes.estadoRed();
         const jefeCerca = j && distRemotos(j.x, j.z) < 100;
-        if (!l.length && !jefeCerca) return;
-        const m = { t: Math.round(t), l };
+        if (!l.length && !jefeCerca) return null;
+        const m = {};
+        if (l.length) m.l = l;
         if (jefeCerca) m.j = { ...j, x: r2(j.x), y: r2(j.y), z: r2(j.z), w: r2(j.w) };
-        sala.enviar('m', m);
+        return m;
     }
     // Historial del jefe propio (para validar golpes)
     const histJefe = [];
@@ -483,6 +493,7 @@ export function crearCoop(cx, ctx) {
             r.bufer.agregar(m.t, { x: m.x, y: m.y, z: m.z, yaw: m.a, pit: m.b, f: m.f });
             r.vivo = !(m.f & 2);
             r.objetivo.pos.set(m.x, m.y, m.z);
+            if (m.l || m.j) manejadores.m(m);
         },
         b(m) { aplicarBloques(m.l || []); },
         c(m) {
@@ -647,9 +658,6 @@ export function crearCoop(cx, ctx) {
             bloquesPend = [];
         }
         if (finPend.size) { sala.enviar('mf', { l: [...finPend] }); finPend.clear(); }
-        // Monstruos y jefe propios cada 200 ms
-        relojMobs += dt;
-        if (relojMobs >= 0.2) { relojMobs = 0; enviarMobs(); }
         const pj = jefes.posJefe();
         if (pj && (!histJefe.length || ahora() - histJefe[histJefe.length - 1].t >= 50)) { histJefe.push({ t: ahora(), x: pj.pos.x, y: pj.pos.y, z: pj.pos.z }); if (histJefe.length > 30) histJefe.shift(); }
         // Contenedor abierto: si cambió, se manda

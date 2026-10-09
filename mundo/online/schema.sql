@@ -2,8 +2,9 @@
 -- VENJY · Mundo 3D online · esquema de Supabase
 -- Pegar completo en el SQL Editor (o aplicar como migracion).
 -- Es idempotente: se puede ejecutar mas de una vez.
--- Solo se guardan salas y cambios de bloques. Jugadores, posiciones y
--- combate viajan por Realtime (Presence + Broadcast) y no tocan la base.
+-- Solo se guardan salas y cambios de bloques (y, para la supervivencia cooperativa, la foto
+-- del mundo en salas_coop). Jugadores, posiciones y combate viajan por Realtime (Presence +
+-- Broadcast) y no tocan la base. Desde el paso 1 de seguridad (más abajo) el cliente usa funciones.
 -- =========================================================
 
 -- Salas ---------------------------------------------------

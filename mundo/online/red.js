@@ -128,7 +128,10 @@ export class Sala {
         }
         const antes = this.jugadores;
         this.jugadores = nuevos;
-        for (const [id, m] of nuevos) if (!antes.has(id)) this.emitir('entra', { id, ...m });
+        for (const [id, m] of nuevos) {
+            if (!antes.has(id)) this.emitir('entra', { id, ...m });
+            else if (JSON.stringify(antes.get(id)) !== JSON.stringify(m)) this.emitir('actualiza', { id, ...m }); // p. ej. cambió su skin
+        }
         for (const id of antes.keys()) if (!nuevos.has(id)) this.emitir('sale', { id });
         this.emitir('jugadores', { total: nuevos.size + 1 });
     }

@@ -449,6 +449,9 @@ body.en-recorrido .parar-recorrido { display: block; }
 /* Caricias a las gatas (caricias.js): su propio «Saltar»; ACARICIAR va encima de USAR y se oculta solo */
 .saltar-caricia { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-caricia .saltar-caricia { display: block; }
+/* Escena del guardián del cofre de compañero (escena-guardian.js): su propio «Saltar» */
+.saltar-guardian { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-guardian .saltar-guardian { display: block; }
 .saltar-cuello { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-cuello .saltar-cuello { display: block; }
 /* Escenas especiales con las gatas (escenas-gatas.js) */
