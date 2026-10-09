@@ -286,6 +286,7 @@ Principios:
   - Una sola frase por personaje y animación (la del amigo; el jugador no habla). Las frases evitan detalles que solo valen con la skin de Venjy (primo, socio), salvo las de pareja, que solo salen con esa skin.
   - Los que están cerca (Lucho junto a Boris, la fogata, el iglú) siguen con su animación pero callados (sin globo ni charla) mientras dura la escena, y la cámara los cuenta en `visibles` para no dejarlos tapando a los dos.
   - En el cooperativo la escena es local (cada uno en su pantalla), como «Hablar».
+  - Un globo por persona (clave del amigo o el jugador), no por papel en la escena: así la pestaña lleva el nombre y el color de quien habla. Mientras dura la escena el botón «Saltar» entra en `zonasPantalla` (lo pone `misiones.js` junto al panel y el minimapa) y el globo no lo tapa.
   - Modelos: Haiku hizo la primera versión de las poses (puños, abrazo y secreto de pie, medidos con Boris). Se detuvo porque el servidor local rechazaba conexiones (cola de 5 con ~90 módulos; se reinició con cola de 256) y declaró grande el ajuste con amigos sentados. No se escaló a Sonnet: era un problema de puesta en escena (los sentados) y se resolvió en el orquestador haciendo que se paren.
 - **Medidas** (navegador del panel, reloj de 16 ms en lugar de `requestAnimationFrame`, 1280×720, servidor local sin caché, worktree de main contra la rama, de día junto a la fogata, mundo nuevo):
 

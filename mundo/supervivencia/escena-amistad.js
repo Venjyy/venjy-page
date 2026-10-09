@@ -56,9 +56,11 @@ export function crearEscenaAmistad(ctx) {
     document.body.appendChild(boton);
     document.addEventListener('keydown', ev => { if (e && ev.code === 'Escape' && !ev.repeat) { ev.preventDefault(); saltar(); } });
 
-    // ---- Globos con pestaña de nombre y color, sin colita (uno por quien habla) ----
+    // ---- Globos con pestaña de nombre y color, sin colita (uno por persona: la clave del amigo o 'j') ----
     const globos = new Map();
-    function globoDe(quien) {
+    const claveDe = q => (q === 'j' ? 'j' : (e && e.actores[q] ? e.actores[q].clave : q));
+    function globoDe(q) {
+        const quien = claveDe(q);
         if (!globos.has(quien)) globos.set(quien, crearGlobo(grupo, { nombre: quien === 'j' ? tx().tu : NOMBRES_AMIGO[quien] || quien, color: COLOR_GLOBO[quien] || COLOR_GLOBO.j }));
         return globos.get(quien);
     }
@@ -307,14 +309,13 @@ export function crearEscenaAmistad(ctx) {
         return peor;
     }
     function actualizarGlobos(dt) {
-        const activos = new Map();
-        if (e) for (const l of lineasAhora()) activos.set(l.q, l);
-        for (const q of activos.keys()) globoDe(q);
-        for (const [q, g] of globos) {
-            const l = activos.get(q);
+        const activos = new Map(); // clave de la persona -> línea
+        if (e) for (const l of lineasAhora()) { globoDe(l.q); activos.set(claveDe(l.q), l); }
+        for (const [quien, g] of globos) {
+            const l = activos.get(quien);
             if (!l) { g.actualizar(dt, false, 0, 0, 0); continue; }
             g.decir(L(l.texto));
-            const [x, y, z] = anclaGlobo(q);
+            const [x, y, z] = anclaGlobo(l.q);
             g.actualizar(dt, true, x, y, z, camara, zonas);
         }
     }
