@@ -23,7 +23,8 @@ ok(relacion('venjy', 'lona') === 4 && relacion('lona', 'venjy') === 4, 'Venjy-Lo
 ok(relacion('pony', 'boris') === 0 && relacion('pony', 'pony') === 0, 'sin relación: 0');
 ok(nivelDe(inicialDe('venjy', 'lona')) === 4, 'con skin de Venjy, Lona parte en Íntimo (nivel 4)');
 ok(nivelDe(inicialDe('venjy', 'boris')) === 3, 'con skin de Venjy, Boris (3) parte en Buen amigo');
-ok(nivelDe(inicialDe('venjy', 'hadad')) === 2, 'con skin de Venjy nadie parte bajo Amigo (Hadad es 1 en la tabla)');
+ok(nivelDe(inicialDe('venjy', 'hadad')) === 1, 'con skin de Venjy vale la tabla: Hadad (1) parte en Conocido');
+ok(nivelDe(inicialDe('venjy', 'pony')) === 2, 'con skin de Venjy, Pony (2) parte en Amigo');
 ok(nivelDe(inicialDe('salonas', 'conejeros')) === 3, 'Salonas-Conejeros (3): Buen amigo');
 ok(nivelDe(inicialDe('salonas', 'pony')) === 2, 'Salonas-Pony (2): Amigo');
 ok(nivelDe(inicialDe('moises', 'lona')) === 1, 'Moisés-Lona (1): Conocido');

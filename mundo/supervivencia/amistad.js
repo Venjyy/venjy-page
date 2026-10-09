@@ -55,14 +55,13 @@ export function relacion(a, b) {
 }
 // Puntos de partida por nivel de relación: cada relación cae justo en el nivel de amistad del mismo número
 const INICIAL = [0, 15, 35, 60, 85];
-// Decisiones (a revisar por el dueño): con skin de Venjy nadie parte bajo «Amigo» (el plan dice «partes alto
-// con todos»); con la skin del mismo personaje (tu clon) partes en «Amigo».
-export const PISO_VENJY = 35, CLON = 35;
+// Decisiones del dueño (2026-10-09): la amistad inicial es la de la tabla también con skin de Venjy (sin piso);
+// con la skin del mismo personaje (tu clon) partes en «Amigo».
+export const CLON = 35;
 export function inicialDe(base, clave) {
     if (!base) return 0;
     if (base === clave) return CLON;
-    const v = INICIAL[relacion(base, clave)];
-    return base === 'venjy' ? Math.max(PISO_VENJY, v) : v;
+    return INICIAL[relacion(base, clave)];
 }
 export function nivelDe(puntos) {
     let n = 0;
