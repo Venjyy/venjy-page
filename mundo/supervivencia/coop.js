@@ -20,6 +20,9 @@
 // para misiones · jv jefe vencido · ry rayo · h hora · z en cama · am amanecer · pf perfil ·
 // pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado.
 //
+// Sin internet (misma red): SalaLocal (online/sala-local.js) con un QR de ida y vuelta por invitado y
+// sin Supabase; hospedarLocal / unirseLocal. Mismo juego y mismos mensajes; sin respaldo.
+//
 // Gasto: con conexión directa, Supabase solo ve Presence y 2 mensajes de señalización por invitado.
 // Por el respaldo (plan gratis ~100 mensajes/s por proyecto; Supabase cobra 1 por enviar + 1 por cada
 // cliente que lo recibe) vale lo que sigue, por eso el tope baja a 4. Posición a 5 Hz con interpolación (1 latido/s si estás quieto);
@@ -31,6 +34,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { SalaDirecta } from '../online/red.js';
+import { SalaLocal } from '../online/sala-local.js';
 import { B } from '../texturas.js';
 import { crearModelo } from './skin.js';
 import { caminar } from '../criaturas/cuerpo.js';
@@ -42,6 +46,7 @@ import { sonidos } from './sonidos.js';
 export const MAX_COOP = 8;      // todos con conexión directa
 export const MAX_RESPALDO = 4;  // si alguien entra por el respaldo de Supabase (presupuesto medido en el PR A)
 export const HZ_POS = 5;
+const ESPERA_QR = 5 * 60 * 1000;   // ms que el invitado espera a que el anfitrión lea su respuesta
 const TOLERANCIA = 250;            // ms de margen al validar un golpe…
 const VENTANA_GOLPE = RETRASO + 150 + TOLERANCIA; // …sobre lo que el atacante ve (200 ms en el pasado) y la red
 const ALCANCE_GOLPE = 3.6 + 1.2;   // alcance del combate (3,6) + medio cuerpo + margen
@@ -137,7 +142,12 @@ export async function unirse({ codigo, nombre, skin, alAvance }) {
     cx.anfitrion = a[0];
     for (const [id, m] of sala.jugadores) cx.presentes.set(id, { id, ...m });
     alAvance && alAvance('foto');
-    // La foto la pide el invitado; la respuesta llega como 'fl' (se busca en la cola)
+    await pedirFoto(sala, cx);
+    return cx;
+}
+
+// La foto la pide el invitado; la respuesta llega como 'fl' (se busca en la cola)
+async function pedirFoto(sala, cx) {
     sala.enviar('pf?', { para: cx.anfitrion });
     let lista = false;
     for (let t = 0; t < 120 && !lista; t++) {
@@ -149,10 +159,38 @@ export async function unirse({ codigo, nombre, skin, alAvance }) {
     // Por el canal directo los bytes llegan antes que 'fl' (mismo canal, en orden)
     const fl = cx.cola.find(([tipo, m]) => tipo === 'fl' && m.para === sala.id)[1];
     const bytes = fl.dc ? sala.tomarBytes() : null;
-    if (bytes) { cx.foto = await descomprimir(bytes); return cx; }
-    const r = await sala.cliente.rpc('bajar_foto', { p_codigo: codigo });
+    if (bytes) { cx.foto = await descomprimir(bytes); return; }
+    const r = sala.cliente ? await sala.cliente.rpc('bajar_foto', { p_codigo: cx.codigo }) : { error: { message: 'sin foto' } };
     if (r.error || !r.data) { await sala.salir(); throw fallo('foto', r.error ? r.error.message : 'sin foto'); }
     cx.foto = await descomprimir(deBase64(r.data));
+}
+
+// Sin internet: el anfitrión abre la sala en su equipo y luego invita a cada uno con un QR
+export async function hospedarLocal({ nombre, skin }) {
+    const disp = idDispositivo();
+    const sala = new SalaLocal();
+    const codigo = codigoAzar();
+    const cx = conexionBase(sala, 'anfitrion', { codigo, clave: null, disp, nombre, local: true });
+    await sala.entrar({ codigo, nombre, max: MAX_COOP, meta: { disp, skin, anf: 1 } });
+    return cx;
+}
+
+// Sin internet: el invitado lee la invitación (QR o texto), muestra su respuesta (alRespuesta) y
+// espera a que el anfitrión la lea; después baja la foto por el canal, como con internet
+export async function unirseLocal({ nombre, skin, invitacion, alRespuesta, alAvance, cancelado }) {
+    const disp = idDispositivo();
+    const sala = new SalaLocal();
+    const cx = conexionBase(sala, 'invitado', { codigo: '', disp, nombre, local: true });
+    await sala.entrar({ nombre, max: MAX_COOP, meta: { disp, skin } });
+    try {
+        alRespuesta(await sala.aceptarInvitacion(invitacion));
+        await sala.esperarAnfitrion(ESPERA_QR, cancelado);
+    } catch (e) { await sala.salir(); throw e; }
+    cx.codigo = sala.codigo;
+    cx.anfitrion = sala.idAnfitrion;
+    for (const [id, m] of sala.jugadores) cx.presentes.set(id, { id, ...m });
+    alAvance && alAvance('foto');
+    await pedirFoto(sala, cx);
     return cx;
 }
 
@@ -492,6 +530,7 @@ export function crearCoop(cx, ctx) {
                 estado.idDueno = cx.disp;
                 const bytes = await comprimir(estado);
                 if (await sala.enviarBytes(para, bytes)) { sala.enviar('fl', { para, kb: Math.round(bytes.length / 1024), dc: 1 }); return; }
+                if (!sala.cliente) throw new Error('sin canal directo');
                 const foto = aBase64(bytes);
                 const r = await sala.cliente.rpc('subir_foto', { p_codigo: cx.codigo, p_clave: cx.clave, p_foto: foto });
                 if (r.error || r.data !== true) throw new Error(r.error ? r.error.message : 'rechazada');
@@ -697,14 +736,14 @@ export function crearCoop(cx, ctx) {
             if (esAnfitrion) {
                 sala.enviar('fin', {});
                 await esperar(150);
-                await sala.cliente.rpc('cerrar_sala_coop', { p_codigo: cx.codigo, p_clave: cx.clave });
+                if (sala.cliente) await sala.cliente.rpc('cerrar_sala_coop', { p_codigo: cx.codigo, p_clave: cx.clave });
             } else await esperar(150);
         } catch (e) { /* sin red */ }
         await sala.salir();
     }
 
     return {
-        esAnfitrion, codigo: cx.codigo, perfiles, actualizar, salir, acostarse, jugadoresParaGuardar, conectados, enviarPerfil,
+        esAnfitrion, codigo: cx.codigo, local: !!cx.local, perfiles, actualizar, salir, acostarse, jugadoresParaGuardar, conectados, enviarPerfil,
         get total() { return 1 + remotos.size; },
         get remotos() { return remotos; },
         get compartido() { return compartido; },
@@ -715,6 +754,10 @@ export function crearCoop(cx, ctx) {
         estadisticas: (reiniciar = false) => sala.estadisticas(reiniciar),
         get directo() { return sala.directo; },   // invitado: ¿juega por el canal directo?
         cortarDirecto() { sala.cortarDirecto(); }, // prueba: corta el canal directo (pasa al respaldo y reintenta)
-        set medirBytes(v) { sala.medirBytes = v; }
+        set medirBytes(v) { sala.medirBytes = v; },
+        // Sin internet (anfitrión): invitar con un QR y leer la respuesta
+        invitar: () => sala.invitar(),
+        cancelarInvitacion: () => sala.cancelarInvitacion(),
+        recibirRespuesta: texto => sala.recibirRespuesta(texto)
     };
 }
