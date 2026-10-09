@@ -451,6 +451,9 @@ body.en-recorrido .parar-recorrido { display: block; }
 body.en-caricia .saltar-caricia { display: block; }
 .saltar-cuello { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-cuello .saltar-cuello { display: block; }
+/* Escenas especiales con las gatas (escenas-gatas.js) */
+.saltar-gata { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-escena-gata .saltar-gata { display: block; }
 .tactil-boton.sv-acariciar { width: 96px; height: 40px; font-size: 0.8rem; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--pie) + 176px); background: rgb(190 110 90 / 0.75); }
 .tactil-boton.sv-acariciar[hidden] { display: none; }
 @media (max-height: 460px) { .tactil-boton.sv-acariciar { bottom: calc(var(--pie) + 156px); } }

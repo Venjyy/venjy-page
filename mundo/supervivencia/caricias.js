@@ -42,7 +42,9 @@ const texCorazon = (() => {
     return t;
 })();
 
-export function crearCaricias({ grupo, dy, mundo, jugador, camaras, gatas, hud, misiones, puede, bloquear, liberar, idioma = 'es' }) {
+// especial(g) (opcional): se consulta antes de la caricia; si devuelve true, otra escena tomó el lugar
+// (las escenas especiales de escenas-gatas.js la primera vez con skin de Lona o Venjy).
+export function crearCaricias({ grupo, dy, mundo, jugador, camaras, gatas, hud, misiones, puede, bloquear, liberar, especial = null, idioma = 'es' }) {
     let L = idioma;
     const tx = () => TXT[L];
 
@@ -257,6 +259,7 @@ export function crearCaricias({ grupo, dy, mundo, jugador, camaras, gatas, hud, 
         if (estado || !puede()) return false;
         const g = cercana();
         if (!g) return false;
+        if (especial && especial(g)) return true;
         iniciar(g);
         return true;
     }
