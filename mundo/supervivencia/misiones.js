@@ -13,6 +13,7 @@ import { icono } from './iconos.js';
 import { crearGlobo } from '../criaturas/cuerpo.js';
 import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
+import { crearTienda } from './tienda.js';
 
 const TXT = {
     es: { aceptar: 'Aceptar', entregar: 'Entregar', cerrar: 'Cerrar', abandonar: 'Abandonar misión', premio: 'Premio', progreso: 'Progreso',
@@ -35,6 +36,13 @@ export function crearMisiones(ctx) {
     // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
     const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set() };
     let ocultarMarcas = false;
+
+    // ---- Tienda (pestaña del panel de cada amigo) ----
+    const tienda = crearTienda({
+        inventario, hud, hechas: () => estado.hechas, idioma, nombres: NOMBRES_AMIGO, abrirPanel, cerrarPanel,
+        tituloDe: id => (misionDe(id) || {}).titulo, dar: lista => dar(lista),
+        decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave)
+    });
 
     // ---- Personas ----
     function personas() {
@@ -160,6 +168,7 @@ export function crearMisiones(ctx) {
         const h = document.createElement('h2');
         h.textContent = NOMBRES_AMIGO[clave];
         el.appendChild(h);
+        if (tienda.tiene(clave)) el.appendChild(tienda.pestanas(clave, false));
         for (const parte of cuerpo) if (parte) el.appendChild(parte);
         const fila = document.createElement('div');
         fila.className = 'botones-mision';
@@ -371,7 +380,7 @@ export function crearMisiones(ctx) {
     return {
         estado, interactuar, hablar, actualizar, serializar, cargar, alMatar, alDormir, alMorir, jefeDerrotado, misionDe, amigasHechas,
         get activa() { return misionDe(estado.activa); },
-        setIdioma(l) { idioma = l; firma = ''; },
+        setIdioma(l) { idioma = l; firma = ''; tienda.setIdioma(l); },
         set ocultarMarcas(v) { ocultarMarcas = v; },
         // Atajos de depuración
         completarActiva() { const m = misionDe(estado.activa); if (m && !m.jefe) { estado.progreso = 999; estado.noche = 'lista'; if (m.tipo === 'entregar') for (const [p, n] of m.pide) inventario.agregar([].concat(p)[0], n); hablar(m.amigo); } }
