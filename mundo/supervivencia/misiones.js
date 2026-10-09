@@ -10,7 +10,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO } from './misiones-datos.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
-import { crearGlobo, zonasPantalla } from '../criaturas/cuerpo.js';
+import { crearGlobo, zonasPantalla, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
 import { crearTienda } from './tienda.js';
@@ -157,7 +157,8 @@ export function crearMisiones(ctx) {
     const especiales = new Map(); // clave -> { globo, t }
     function decirEspecial(clave, texto) {
         let e = especiales.get(clave);
-        if (!e) { e = { globo: crearGlobo(grupo), t: 0 }; especiales.set(clave, e); }
+        // Pestaña con el nombre y marco de color, sin colita: con el encaje el globo puede quedar lejos de quien habla
+        if (!e) { e = { globo: crearGlobo(grupo, { nombre: NOMBRES_AMIGO[clave], color: COLOR_GLOBO[clave] }), t: 0 }; especiales.set(clave, e); }
         e.globo.decir(texto);
         e.t = Math.max(7, Math.min(14, texto.length / 12)); // tiempo de lectura
     }

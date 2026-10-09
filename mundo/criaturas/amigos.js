@@ -103,7 +103,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         scene.add(p.g);
         const n = {
             clave, p, escala, x, y, z, yaw, t: Math.random() * 10, fase: 0,
-            nombre: crearNombre(scene, d.nombre), globo: crearGlobo(scene, { color: COLOR_GLOBO[clave] }),
+            nombre: crearNombre(scene, d.nombre), globo: crearGlobo(scene, { nombre: d.nombre, color: COLOR_GLOBO[clave] }),
             frase: null, cerca: false, cambioFrase: 0, charla: null, visible: false
         };
         lista.push(n);
