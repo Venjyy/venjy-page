@@ -51,6 +51,7 @@ import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
+import { crearRecorridoEscenas } from './recorrido-escenas.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 
@@ -515,9 +516,15 @@ async function arrancar(guardado) {
         if (v) l.push({ clave: 'venjy', x: v.x, z: v.z });
         return l;
     };
-    // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda
+    // /escenas y /escena <nombre>: recorre las escenas para revisarlas (solo con la skin de Venjy)
+    const recorrido = crearRecorridoEscenas({ dy: DY, jugador, mundo, gatas, escenas, escenaCuello, caricias, misiones, hud, skin: () => skinActual, bloquear: bloquearEscena, idioma });
+    // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>
     const consola = crearConsola({
         jugador, dia, hud, idioma,
+        extra: {
+            '/escenas': { fn: () => recorrido.comando(''), ayuda: { es: '/escenas (todas, con skin de Venjy)', en: '/escenas (all, with the Venjy skin)' } },
+            '/escena': { fn: n => recorrido.comando(n), ayuda: { es: '/escena <nombre> (una)', en: '/escena <name> (one)' } }
+        },
         alAbrir: () => { uiAbierta = true; jugador.teclas.clear(); if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock(); },
         alCerrar: () => { uiAbierta = false; if (!vida.muerto) entrar(); }
     });
@@ -650,7 +657,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, escenas, caricias, escenaCuello, ronda,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenaCuello, ronda,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };

@@ -538,6 +538,8 @@ export function crearEscenasSkin(ctx) {
     return {
         actualizar, antesDeHablar, saltar, tipoSkin,
         get activa() { return !!escena; },
+        // Personas con escena (recorrido de /escenas): clave, nombre y posición en coordenadas del creativo
+        personas: () => personas().map(p => ({ clave: p.clave, nombre: p.n.nombre?.texto || p.clave, x: p.n.x, y: p.n.y ?? 0, z: p.n.z })),
         // Diagnóstico del último cuadro dibujado (revisor automático): globo y zonas en NDC (-1..1), línea activa y plano
         diag() {
             if (!escena) return null;

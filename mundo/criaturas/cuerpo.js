@@ -357,9 +357,10 @@ let globoSeq = 0;
 export const COLOR_GLOBO = {
     lona: '#d55f9a', boris: '#b02e26', lucho: '#474f52', pony: '#9d9d97', salonas: '#c74ebd',
     hadad: '#f9801d', andy: '#80c71f', nacho: '#169c9c', braulio: '#835432', moises: '#8932b8',
-    lalo: '#5e7c16', conejeros: '#3c44aa', venjy: '#3ab3da', j: '#fcc419'
+    lalo: '#5e7c16', conejeros: '#3c44aa', venjy: '#3ab3da', j: '#fcc419', gala: '#f9801d', mila: '#474f52'
 };
-// etiqueta (opcional) = { nombre, color }: pestaña con el nombre arriba a la izquierda y marco de color; sin colita
+// etiqueta (opcional): { nombre, color } = pestaña con el nombre arriba a la izquierda y marco de color, sin colita
+// (escenas de skin); { color } = marco y colita de color, sin nombre (globos sueltos de amigos y escenas con colita)
 export function crearGlobo(scene, etiqueta = null) {
     const yo = { seq: 0, ultimo: null };
     globosVivos.push(yo);
@@ -405,7 +406,7 @@ export function crearGlobo(scene, etiqueta = null) {
                 if (c.y - c.hh < menton + 0.02) { abajo = true; c.y = Math.min(hiY, sueloGlobo(franja) + 0.02 + c.hh - 2 * c.hh * relleno); } // abajo del todo, casi en la franja del botón «Saltar»
             }
         }
-        if (abajo !== colitaArriba && !etiqueta) { colitaArriba = abajo; dibujar(); }
+        if (abajo !== colitaArriba && !etiqueta?.nombre) { colitaArriba = abajo; dibujar(); }
         previo = conZonas ? { id: c.id, esc: c.esc || 1 } : null;
         // Con zonas el globo se desliza (~0,25 s) hacia su lugar en vez de saltar; sin zonas va directo (como antes)
         const hw1 = c.hw / c.k, hh1 = c.hh / c.k; // medio tamaño con escala 1
@@ -456,12 +457,12 @@ export function crearGlobo(scene, etiqueta = null) {
             return lineas;
         };
         let px = 22, lineas = partir(px);
-        const TAB = etiqueta ? 24 : 0; // alto de la pestaña del nombre (asoma sobre la caja)
+        const conNombre = !!etiqueta?.nombre, TAB = conNombre ? 24 : 0; // alto de la pestaña del nombre (asoma sobre la caja)
         while ((lineas.length > 4 || lineas.length * (px + 4) + 18 > c.height - 16 - TAB) && px > 12) lineas = partir(px -= 2);
         const paso = px + 4;
         const alto = lineas.length * paso + 18;
         // Con la colita hacia arriba la caja baja y deja su espacio arriba; con pestaña no hay colita
-        const y0 = etiqueta ? Math.max(TAB, (c.height + TAB - alto) / 2)
+        const y0 = conNombre ? Math.max(TAB, (c.height + TAB - alto) / 2)
             : colitaArriba ? Math.min(c.height - alto, (c.height + 14 - alto) / 2) : Math.max(0, (c.height - 14 - alto) / 2);
         relleno = Math.max(0, c.height - (y0 + alto)) / c.height;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
@@ -469,11 +470,13 @@ export function crearGlobo(scene, etiqueta = null) {
         ctx.fillStyle = '#1d1d1d';
         ctx.fillRect(6, y0, c.width - 12, 3); ctx.fillRect(6, y0 + alto - 3, c.width - 12, 3);
         ctx.fillRect(6, y0, 3, alto); ctx.fillRect(c.width - 9, y0, 3, alto);
-        if (etiqueta) {
+        if (etiqueta?.color) {
             // Marco de color de quien habla, por dentro del borde negro (el fondo sigue blanco)
             ctx.fillStyle = etiqueta.color;
             ctx.fillRect(9, y0 + 3, c.width - 18, 4); ctx.fillRect(9, y0 + alto - 7, c.width - 18, 4);
             ctx.fillRect(9, y0 + 3, 4, alto - 6); ctx.fillRect(c.width - 13, y0 + 3, 4, alto - 6);
+        }
+        if (conNombre) {
             // Pestaña con el nombre, arriba a la izquierda, pegada al borde de la caja
             ctx.font = '18px PixelCraft';
             const tw = Math.min(c.width - 40, Math.ceil(ctx.measureText(etiqueta.nombre).width) + 20), ty = y0 - TAB + 3;
@@ -489,8 +492,8 @@ export function crearGlobo(scene, etiqueta = null) {
             ctx.fillText(etiqueta.nombre, 24, ty + TAB / 2 + 1, tw - 18);
             ctx.font = px + 'px PixelCraft';
         } else {
-        // Colita del globo
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+        // Colita del globo (del color de quien habla, si tiene)
+        ctx.fillStyle = etiqueta?.color || 'rgba(255, 255, 255, 0.94)';
         if (colitaArriba) { ctx.fillRect(c.width / 2 - 9, y0 - 3, 18, 6); ctx.fillRect(c.width / 2 - 3, y0 - 9, 6, 6); }
         else { ctx.fillRect(c.width / 2 - 9, y0 + alto - 3, 18, 6); ctx.fillRect(c.width / 2 - 3, y0 + alto + 3, 6, 6); }
         }

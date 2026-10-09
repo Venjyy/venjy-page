@@ -33,7 +33,7 @@
 // saltar() (levantarse de golpe), pararse() (animado), alternarVista(v), estado.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
-import { crearGlobo, crearTinte, caja, texturaPixeles } from '../criaturas/cuerpo.js';
+import { crearGlobo, COLOR_GLOBO, crearTinte, caja, texturaPixeles } from '../criaturas/cuerpo.js';
 import { tipoSkin } from './escenas-skin.js';
 
 const suave = u => u * u * (3 - 2 * u);
@@ -162,7 +162,7 @@ export function crearRondaIglu(ctx) {
     const reducirMovimiento = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
     // Globos propios (los de Lalo y Moisés se callan con n.escena)
-    const globos = { lalo: crearGlobo(grupo), moises: crearGlobo(grupo), j: crearGlobo(grupo) };
+    const globos = { lalo: crearGlobo(grupo, { color: COLOR_GLOBO.lalo }), moises: crearGlobo(grupo, { color: COLOR_GLOBO.moises }), j: crearGlobo(grupo, { color: COLOR_GLOBO.j }) };
     const ultimoTexto = { lalo: '', moises: '', j: '' };
 
     const esVenjy = () => tipoSkin(skin()).base === 'venjy';

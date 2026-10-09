@@ -5,6 +5,7 @@
 //   /fly     activa o desactiva el vuelo (doble Espacio para subir, como en creativo)
 //   /dia     pone la mañana · /noche pone la noche
 //   /ayuda   lista los comandos
+// `extra` agrega comandos de otros módulos: { '/nombre': { fn(args), ayuda: { es, en } } }
 // =========================================================
 const TXT = {
     es: {
@@ -25,7 +26,7 @@ const TXT = {
     }
 };
 
-export function crearConsola({ jugador, dia, hud, idioma = 'es', alAbrir, alCerrar }) {
+export function crearConsola({ jugador, dia, hud, idioma = 'es', alAbrir, alCerrar, extra = {} }) {
     const t = TXT[idioma] || TXT.es;
     const caja = document.createElement('form');
     caja.className = 'consola';
@@ -43,7 +44,7 @@ export function crearConsola({ jugador, dia, hud, idioma = 'es', alAbrir, alCerr
     let vuelo = false;
 
     function ejecutar(texto) {
-        const c = texto.trim().toLowerCase().replace(/^\/?/, '/').split(/\s+/)[0];
+        const partes = texto.trim().replace(/^\/?/, '/').split(/\s+/), c = partes[0].toLowerCase();
         if (c === '/' || !texto.trim()) return;
         if (c === '/fly' || c === '/volar') {
             vuelo = !vuelo;
@@ -53,7 +54,8 @@ export function crearConsola({ jugador, dia, hud, idioma = 'es', alAbrir, alCerr
             hud.mensaje(vuelo ? t.flyOn : t.flyOff, 4);
         } else if (c === '/dia' || c === '/day') { dia.amanecer(); hud.mensaje(t.dia); }
         else if (c === '/noche' || c === '/night') { dia.t = 370; hud.mensaje(t.noche); }
-        else if (c === '/ayuda' || c === '/help') hud.mensaje(t.ayuda, 6);
+        else if (c === '/ayuda' || c === '/help') hud.mensaje([t.ayuda, ...Object.values(extra).map(x => x.ayuda[idioma] || x.ayuda.es)].join(' · '), 8);
+        else if (extra[c]) extra[c].fn(partes.slice(1).join(' '));
         else hud.mensaje(t.desconocido(c));
     }
 
