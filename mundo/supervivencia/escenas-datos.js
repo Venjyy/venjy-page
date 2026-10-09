@@ -38,12 +38,12 @@ export const CORTAS = {
         finIdentica: 'risa'
     },
     moises: {
-        identica: [F('Hermano... ¿estoy viendo doble?', 'Bro... am I seeing double?'), F('Debe ser el humo.', 'Must be the smoke.'), F('No, en serio: tienes mi pelo.', 'No, seriously: you have my hair.')],
+        identica: [F('Hermano... ¿estoy viendo doble, ahya?', 'Bro... am I seeing double, ahya?'), F('Debe ser el humo.', 'Must be the smoke.'), F('No, en serio: tienes mi pelo.', 'No, seriously: you have my hair.')],
         basada: [F('Ese pelo largo... ¿te inspiraste en mí?', 'That long hair... was I your inspiration?'), F('Se nota, hermano.', 'It shows, bro.'), F('Bienvenido al iglú.', 'Welcome to the igloo.')]
     },
     lalo: {
-        identica: [F('¿Ese gorro? ¿Esas Jordan? Ese soy yo.', "That beanie? Those Jordans? That's me."), F('Te queda bacán, hermano.', 'Looks dope on you, bro.'), F('Pero el pito no te lo copias, ¿ah?', "But you can't copy the joint, huh?")],
-        basada: [F('Mira ese estilo, hermano.', 'Look at that style, bro.'), F('Otros colores, pero tiene flow.', 'Other colors, but it has flow.'), F('¡YIAAAAAA!', 'YIAAAAAA!')],
+        identica: [F('¿Ese sombrero de paja? ¿Esas Jordan? Ese soy yo, ahya.', "That straw hat? Those Jordans? That's me, ahya."), F('Te queda bacán, hermano.', 'Looks dope on you, bro.'), F('Pero el pito no te lo copias, ¿ah?', "But you can't copy the joint, huh?")],
+        basada: [F('Mira ese estilo, hermano, ahya.', 'Look at that style, bro, ahya.'), F('Otros colores, pero tiene flow.', 'Other colors, but it has flow.'), F('¡YIAAAAAA!', 'YIAAAAAA!')],
         finBasada: 'brazosArriba'
     },
     boris: {
@@ -119,8 +119,8 @@ export const VENJY = {
         F('¿Y el hacha? Vengo con las manos vacías.', "And the axe? I came empty-handed.", { q: 'j', g: 'yo', d: 3.8 }),
         F('Mira la técnica: se levanta, se suelta y listo.', 'Watch the technique: lift, let go and done.', { q: 'n', g: 'hachazo', d: 4.3 }),
         F('Parece fácil cuando lo haces tú.', 'Looks easy when you do it.', { q: 'j', g: 'habla' }),
-        F('¿Viste Nana? Te la recomiendo.', 'Did you watch Nana? I recommend it.', { q: 'n', g: 'habla' }),
-        F('Después de esta leña, la vemos.', "After this firewood, we'll watch it.", { q: 'j', g: 'mano', o: 'mano' })
+        F('Yo encuentro que Nana es muy tonta, la verdad.', 'I think Nana is really dumb, honestly.', { q: 'n', g: 'habla' }),
+        F('Ya, pero primero la leña.', 'Okay, but firewood first.', { q: 'j', g: 'mano', o: 'mano' })
     ],
     lucho: [
         F('¿Venjy? ¿Te saliste del portafolio?', 'Venjy? Did you step out of the portfolio?', { q: 'n', g: 'sorpresa' }),

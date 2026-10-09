@@ -26,7 +26,7 @@ export const PERSONAS = {
     nacho: { nombre: 'Nacho', piel: [244, 216, 196], pelo: { color: [88, 62, 40], estilo: 'corto' }, ojos: [84, 58, 36], ropa: { tipo: 'polera', color: [176, 48, 46] }, pantalon: [62, 92, 142], zapatillas: 'blancas' },
     braulio: { nombre: 'Braulio', escala: 0.9, piel: [240, 210, 188], pelo: { color: [112, 76, 44], estilo: 'corto' }, ojos: [90, 60, 36], lunar: true, ropa: { tipo: 'poleron', color: [40, 70, 150] }, pantalon: [62, 92, 142], zapatillas: 'negras' },
     moises: { nombre: 'Moisés', escala: 1.05, piel: [242, 214, 196], pelo: { color: [178, 134, 72], estilo: 'largo' }, ojos: [90, 60, 36], ojosRojos: true, ropa: { tipo: 'poleron', color: [92, 104, 62] }, pantalon: [62, 92, 142], zapatillas: 'blancas' },
-    lalo: { nombre: 'Lalo', piel: [110, 72, 48], pelo: { color: [18, 16, 18], estilo: 'corto' }, ojos: [30, 22, 20], ojosRojos: true, gorro: [30, 30, 36], ropa: { tipo: 'polera ancha', color: [236, 236, 232] }, pantalon: [76, 106, 162], zapatillas: 'jordan' },
+    lalo: { nombre: 'Lalo', piel: [110, 72, 48], pelo: { color: [18, 16, 18], estilo: 'corto' }, ojos: [30, 22, 20], ojosRojos: true, sombrero: 'paja', ropa: { tipo: 'polera ancha', color: [236, 236, 232] }, pantalon: [76, 106, 162], zapatillas: 'jordan' },
     boris: { nombre: 'Boris', piel: [162, 110, 72], pelo: { color: [24, 20, 20], estilo: 'corto' }, ojos: [40, 28, 22], ropa: { tipo: 'camisa cuadros', color: [176, 40, 36] }, pantalon: [58, 66, 92], zapatillas: 'botas' },
     lucho: { nombre: 'Lucho', piel: [242, 216, 198], pelo: { color: [16, 14, 16], estilo: 'desordenado' }, ojos: [96, 62, 34], ropa: { tipo: 'polera', color: [30, 30, 34] }, pantalon: [48, 52, 66], zapatillas: 'negras' },
     conejeros: { nombre: 'Conejeros', piel: [242, 212, 190], pelo: { color: [30, 22, 18], estilo: 'muy corto' }, ojos: [80, 56, 36], ropa: { tipo: 'polera', color: [24, 24, 26], estampado: [226, 226, 220] }, pantalon: [62, 92, 142], zapatillas: 'blancas' }
@@ -58,8 +58,8 @@ const CHARLAS = {
         { quien: 'andy', es: 'No prometo nada.', en: 'No promises.', evento: 'baile' }
     ],
     lenera: [
-        { quien: 'boris', es: '¿Viste Nana? Quedé destruido con el final.', en: 'Did you watch Nana? The ending wrecked me.' },
-        { quien: 'lucho', es: 'Nana es tremendo. La música es lo mejor.', en: 'Nana is amazing. The music is the best part.' },
+        { quien: 'boris', es: 'Yo encuentro que Nana es muy tonta, la verdad.', en: 'I think Nana is really dumb, honestly.' },
+        { quien: 'lucho', es: 'Sí, es cierto.', en: "Yeah, that's true." },
         { quien: 'boris', es: 'Ahora estoy pegado con Deadlock.', en: "Now I'm hooked on Deadlock." },
         { quien: 'lucho', es: 'Yo sigo en el LoL. Una ranked y me acuesto.', en: "I'm still on LoL. One ranked and then bed." },
         { quien: 'boris', es: 'Eso dijiste ayer y jugaste hasta las 4.', en: 'You said that yesterday and played until 4.' },
@@ -69,11 +69,11 @@ const CHARLAS = {
     ],
     iglu: [
         { quien: 'lalo', es: 'Estamos en el iglú porque el frío nos recuerda a Coyhaique.', en: "We're in the igloo because the cold reminds us of Coyhaique." },
-        { quien: 'moises', es: 'Coyhaique... qué tiempos, hermano.', en: 'Coyhaique... good times, bro.' },
+        { quien: 'moises', es: 'Coyhaique... qué tiempos, hermano, ahya.', en: 'Coyhaique... good times, bro, ahya.' },
         { quien: 'ambos', es: '¡YIAAAAAA!', en: 'YIAAAAAA!', evento: 'yia' },
         { quien: 'lalo', es: '¿Me pasai el encendedor?', en: 'Pass me the lighter?' },
         { quien: 'moises', es: 'Espérate, que estoy cargando.', en: "Hold on, I'm loading it." },
-        { quien: 'lalo', es: 'Este iglú es lo más acogedor del mapa.', en: 'This igloo is the coziest spot on the map.' },
+        { quien: 'lalo', es: 'Este iglú es lo más acogedor del mapa, ahya.', en: 'This igloo is the coziest spot on the map, ahya.' },
         { quien: 'moises', es: '*cof cof*... está bueno.', en: "*cough cough*... it's good.", evento: 'tos' },
         { quien: 'lalo', es: 'Tranqui, tranqui. Respira.', en: 'Easy, easy. Breathe.' },
         { quien: 'lalo', es: '*COF COF COF*... ¡ufff! Ese estaba cargado.', en: '*COUGH COUGH COUGH*... phew! That one was strong.', evento: 'tosLalo' },

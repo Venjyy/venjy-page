@@ -179,6 +179,7 @@ export function pielDe(d) {
     if (d.lentes) extras.push({ tipo: 'lentes', color: LENTE }); // en 3D, delante de la cara (pintados parecían delineador)
     if (R.tipo === 'poleron') extras.push({ tipo: 'capucha', color: ajustar(C, 0.82) });
     if (d.gorro) extras.push({ tipo: 'gorro', color: d.gorro });
+    if (d.sombrero === 'paja') extras.push({ tipo: 'paja', color: [226, 188, 96] });
     return { cabeza, cuerpo, brazo, pierna, extras };
 }
 
@@ -191,6 +192,13 @@ export function agregarExtras(p, extras, tinte, semilla) {
             const b = caja(0.55, 0.2, 0.55, m); b.position.set(0, 0.58, 0); p.cuello.add(b);
             const borde = caja(0.56, 0.07, 0.56, tinte.caras(texturaPixeles(8, 8, semilla + 51, liso(ajustar(e.color, 0.7), 0.18))));
             borde.position.set(0, 0.48, 0); p.cuello.add(borde);
+        } else if (e.tipo === 'paja') { // sombrero de paja estilo Luffy: ala ancha, copa baja y cinta roja
+            const trenzado = (x, y, r) => { const f = (x + y) % 2 ? 0.88 : 1; return ajustar(e.color, f * (0.94 + r() * 0.12)); };
+            const matPaja = tinte.caras(texturaPixeles(8, 8, semilla + 52, trenzado));
+            const ala = caja(0.96, 0.05, 0.96, matPaja); ala.position.set(0, 0.5, 0); p.cuello.add(ala);
+            const copa = caja(0.58, 0.2, 0.58, matPaja); copa.position.set(0, 0.62, 0); p.cuello.add(copa);
+            const cinta = caja(0.6, 0.07, 0.6, tinte.caras(texturaPixeles(8, 8, semilla + 53, liso([190, 36, 34], 0.12))));
+            cinta.position.set(0, 0.56, 0); p.cuello.add(cinta);
         } else if (e.tipo === 'capucha') { const b = caja(0.42, 0.2, 0.1, m); b.position.set(0, 1.42, -0.17); p.cuerpo.add(b); }
         else if (e.tipo === 'mechones') { // pelo desordenado con volumen
             for (const [mx, my, mz, rz, rx] of [[-0.17, 0.52, 0.12, 0.4, 0.3], [0.06, 0.55, 0.2, -0.2, 0.5], [0.2, 0.51, -0.02, -0.5, 0], [-0.06, 0.54, -0.18, 0.2, -0.4], [0.16, 0.53, 0.16, -0.6, 0.4]]) {
