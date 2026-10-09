@@ -1,11 +1,13 @@
 // =========================================================
-// VENJY · Supervivencia online cooperativa (Supabase Realtime)
-// Un jugador hospeda uno de sus mundos y hasta 3 amigos entran con el código de sala.
+// VENJY · Supervivencia online cooperativa (WebRTC, con Supabase para conectar y de respaldo)
+// Un jugador hospeda uno de sus mundos y hasta 7 amigos entran con el código de sala (3 si alguno
+// no logra conexión directa y entra por el respaldo de Supabase; ver SalaDirecta en online/red.js).
 //
 // Quién manda en qué:
 //  · Anfitrión: el mundo guardado (su IndexedDB), la hora, los cultivos, los hornos y quién se lleva
-//    cada objeto tirado (el primero que lo pide). Al entrar alguien, sube una «foto» del mundo
-//    (el mismo formato del guardado, con gzip) a la tabla `salas_coop` y el invitado la baja.
+//    cada objeto tirado (el primero que lo pide). Al entrar alguien, le manda una «foto» del mundo
+//    (el mismo formato del guardado, con gzip) por el canal directo; si no hay, la sube a la tabla
+//    `salas_coop` y el invitado la baja.
 //  · Cada jugador: los monstruos que aparecen junto a él (cada equipo solo tiene cargados los chunks
 //    que lo rodean). Persiguen al jugador más cercano de la sala y su dueño valida los golpes que le
 //    llegan con tolerancia (acepta si el monstruo estuvo al alcance hace poco). El jefe lo simula
@@ -18,8 +20,9 @@
 // para misiones · jv jefe vencido · ry rayo · h hora · z en cama · am amanecer · pf perfil ·
 // pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado.
 //
-// Gasto (plan gratis ~100 mensajes/s por proyecto; Supabase cobra 1 por enviar + 1 por cada
-// cliente que lo recibe): posición a 5 Hz con interpolación (1 latido/s si estás quieto);
+// Gasto: con conexión directa, Supabase solo ve Presence y 2 mensajes de señalización por invitado.
+// Por el respaldo (plan gratis ~100 mensajes/s por proyecto; Supabase cobra 1 por enviar + 1 por cada
+// cliente que lo recibe) vale lo que sigue, por eso el tope baja a 4. Posición a 5 Hz con interpolación (1 latido/s si estás quieto);
 // monstruos dentro del mismo mensaje de posición (un solo mensaje por tick de 200 ms y jugador,
 // así cada uno manda como mucho 5 por segundo más los eventos): los que están a menos de 10 bloques de algún
 // jugador en cada tick (5 Hz) y los demás juntos cada 3 ticks (≈1,7 Hz: alineados con los de 5 Hz
@@ -27,7 +30,7 @@
 // a 5 Hz; si no hay nada cerca de otro jugador, no se manda nada. Los eventos van cuando ocurren.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
-import { Sala } from '../online/red.js';
+import { SalaDirecta } from '../online/red.js';
 import { B } from '../texturas.js';
 import { crearModelo } from './skin.js';
 import { caminar } from '../criaturas/cuerpo.js';
@@ -36,7 +39,8 @@ import { etapasDe } from './agricultura.js';
 import { Bufer, RETRASO, mezclar, mezclarAngulo } from './interpolacion.js';
 import { sonidos } from './sonidos.js';
 
-export const MAX_COOP = 4;
+export const MAX_COOP = 8;      // todos con conexión directa
+export const MAX_RESPALDO = 4;  // si alguien entra por el respaldo de Supabase (presupuesto medido en el PR A)
 export const HZ_POS = 5;
 const TOLERANCIA = 250;            // ms de margen al validar un golpe…
 const VENTANA_GOLPE = RETRASO + 150 + TOLERANCIA; // …sobre lo que el atacante ve (200 ms en el pasado) y la red
@@ -63,23 +67,26 @@ function codigoAzar() { return Array.from(crypto.getRandomValues(new Uint8Array(
 function claveAzar() { return Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''); }
 
 // ---------------------------------------------------------
-// Foto del mundo: JSON + gzip + base64
+// Foto del mundo: JSON + gzip (por el canal directo) y base64 (por salas_coop)
 // ---------------------------------------------------------
-async function aBase64(obj) {
+async function comprimir(obj) {
     const texto = JSON.stringify(obj);
-    let bytes;
-    if (typeof CompressionStream !== 'undefined') {
-        const flujo = new Blob([texto]).stream().pipeThrough(new CompressionStream('gzip'));
-        bytes = new Uint8Array(await new Response(flujo).arrayBuffer());
-    } else bytes = new TextEncoder().encode(texto);
+    if (typeof CompressionStream === 'undefined') return new TextEncoder().encode(texto);
+    const flujo = new Blob([texto]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Uint8Array(await new Response(flujo).arrayBuffer());
+}
+function aBase64(bytes) {
     let s = '';
     for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     return btoa(s);
 }
-async function deBase64(b64) {
+function deBase64(b64) {
     const bin = atob(b64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+async function descomprimir(bytes) {
     if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
         const flujo = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
         return JSON.parse(await new Response(flujo).text());
@@ -106,10 +113,10 @@ function conexionBase(sala, rol, extra) {
 export async function hospedar({ nombre, skin }) {
     const disp = idDispositivo();
     for (let intento = 0; intento < 4; intento++) {
-        const sala = new Sala();
+        const sala = new SalaDirecta();
         const codigo = codigoAzar(), clave = claveAzar();
         const cx = conexionBase(sala, 'anfitrion', { codigo, clave, disp, nombre });
-        await sala.entrar({ codigo, nombre, coop: true, max: MAX_COOP, meta: { disp, skin, anf: 1 } });
+        await sala.entrar({ codigo, nombre, coop: true, max: MAX_COOP, maxRespaldo: MAX_RESPALDO, meta: { disp, skin, anf: 1 } });
         const r = await sala.cliente.rpc('crear_sala_coop', { p_codigo: codigo, p_clave: clave });
         if (!r.error && r.data === true && !sala.jugadores.size) return cx;
         await sala.salir();
@@ -120,9 +127,9 @@ export async function hospedar({ nombre, skin }) {
 // Un invitado entra: espera al anfitrión, le pide la foto del mundo y la baja
 export async function unirse({ codigo, nombre, skin, alAvance }) {
     const disp = idDispositivo();
-    const sala = new Sala();
+    const sala = new SalaDirecta();
     const cx = conexionBase(sala, 'invitado', { codigo, disp, nombre });
-    await sala.entrar({ codigo, nombre, coop: true, max: MAX_COOP, meta: { disp, skin } });
+    await sala.entrar({ codigo, nombre, coop: true, max: MAX_COOP, maxRespaldo: MAX_RESPALDO, meta: { disp, skin } });
     const anfitrion = () => [...sala.jugadores.entries()].find(([, m]) => m.anf);
     for (let t = 0; t < 40 && !anfitrion(); t++) await esperar(250);
     const a = anfitrion();
@@ -139,9 +146,13 @@ export async function unirse({ codigo, nombre, skin, alAvance }) {
         if (sala.estado === 'error') break;
     }
     if (!lista) { await sala.salir(); throw fallo('foto', 'el anfitrión no respondió'); }
+    // Por el canal directo los bytes llegan antes que 'fl' (mismo canal, en orden)
+    const fl = cx.cola.find(([tipo, m]) => tipo === 'fl' && m.para === sala.id)[1];
+    const bytes = fl.dc ? sala.tomarBytes() : null;
+    if (bytes) { cx.foto = await descomprimir(bytes); return cx; }
     const r = await sala.cliente.rpc('bajar_foto', { p_codigo: codigo });
     if (r.error || !r.data) { await sala.salir(); throw fallo('foto', r.error ? r.error.message : 'sin foto'); }
-    cx.foto = await deBase64(r.data);
+    cx.foto = await descomprimir(deBase64(r.data));
     return cx;
 }
 
@@ -240,6 +251,8 @@ export function crearCoop(cx, ctx) {
         ctx.alCambiarJugadores && ctx.alCambiarJugadores();
     };
     cx.alEstado = estado => { if (estado === 'error') ctx.alCerrar && ctx.alCerrar('conexion'); };
+    // Invitado: avisa si la conexión directa se corta (sigue por Supabase) o vuelve
+    if (!esAnfitrion) sala.en('via', m => hud.mensaje(m.directo ? L('Conexión directa recuperada', 'Direct connection restored') : L('Conexión directa perdida: sigues por el servidor', 'Direct connection lost: playing through the server'), 3));
 
     const remotoPorId = id => remotos.get(id) || null;
 
@@ -477,7 +490,9 @@ export function crearCoop(cx, ctx) {
                 const estado = ctx.estadoActual();
                 estado.jugadores = jugadoresParaGuardar(true);
                 estado.idDueno = cx.disp;
-                const foto = await aBase64(estado);
+                const bytes = await comprimir(estado);
+                if (await sala.enviarBytes(para, bytes)) { sala.enviar('fl', { para, kb: Math.round(bytes.length / 1024), dc: 1 }); return; }
+                const foto = aBase64(bytes);
                 const r = await sala.cliente.rpc('subir_foto', { p_codigo: cx.codigo, p_clave: cx.clave, p_foto: foto });
                 if (r.error || r.data !== true) throw new Error(r.error ? r.error.message : 'rechazada');
                 sala.enviar('fl', { para, kb: Math.round(foto.length / 1024) });
@@ -698,6 +713,8 @@ export function crearCoop(cx, ctx) {
         cofreEditado(disp, inv) { const p = perfiles.get(disp); if (p) p.inv = inv; sala.enviar('pc', { disp, inv }); },
         anunciarSkin(skin) { sala.anunciar({ skin }); },
         estadisticas: (reiniciar = false) => sala.estadisticas(reiniciar),
+        get directo() { return sala.directo; },   // invitado: ¿juega por el canal directo?
+        cortarDirecto() { sala.cortarDirecto(); }, // prueba: corta el canal directo (pasa al respaldo y reintenta)
         set medirBytes(v) { sala.medirBytes = v; }
     };
 }
