@@ -56,6 +56,11 @@ import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
+import { crearCofresCompaneros } from './cofres-companeros.js';
+import { crearEscenaGuardian } from './escena-guardian.js';
+import { hospedar, unirse, guardadoDeInvitado, crearCoop, idDispositivo, MAX_COOP } from './coop.js';
+import { normalizarNombre, normalizarCodigo } from '../online/red.js';
+import { ONLINE_ACTIVO } from '../online/config.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
@@ -89,7 +94,13 @@ const TXT = {
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
         noDormir: 'Solo puedes dormir de noche', monstruos: 'No puedes dormir ahora: hay monstruos cerca', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).es, sinAlmacen: 'Este navegador no permite guardar partidas (modo privado).',
-        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando'
+        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando',
+        hospedar: 'Hospedar', conectando: 'Conectando…', creandoSala: 'Abriendo la sala…', bajandoMundo: 'Bajando el mundo del anfitrión…',
+        faltaNombre: 'Escribe tu nombre.', faltaCodigo: 'Escribe el código de la sala (6 letras o números).',
+        errores: { 'sin-anfitrion': 'No hay nadie hospedando esa sala.', llena: `La sala está llena (máximo ${MAX_COOP}).`, foto: 'El anfitrión no mandó el mundo. Prueba de nuevo.', codigo: 'No se pudo abrir la sala. Prueba de nuevo.', 'sin-config': 'El modo online no está configurado.' },
+        errorRed: 'No se pudo conectar', sala: (c, n) => `Sala ${c} · ${n}/${MAX_COOP}`, copiado: 'Código copiado',
+        copiaGuardada: 'Copia guardada en este dispositivo', copiaLlena: `Ya tienes ${MAX_MUNDOS} mundos: borra uno para guardar la copia.`,
+        finAnfitrion: 'El anfitrión cerró la partida.', finConexion: 'Se cortó la conexión con la sala.', copia: n => `${n} (copia)`
     },
     en: {
         dificultades: ['Peaceful', 'Easy', 'Normal', 'Hard'], jugar: 'Play', exportar: 'Export', borrar: 'Delete',
@@ -98,7 +109,13 @@ const TXT = {
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
         noDormir: 'You can only sleep at night', monstruos: 'You may not rest now; there are monsters nearby', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).en, sinAlmacen: "This browser can't save games (private mode).",
-        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing'
+        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing',
+        hospedar: 'Host', conectando: 'Connecting…', creandoSala: 'Opening the room…', bajandoMundo: "Downloading the host's world…",
+        faltaNombre: 'Enter your name.', faltaCodigo: 'Enter the room code (6 letters or numbers).',
+        errores: { 'sin-anfitrion': 'Nobody is hosting that room.', llena: `The room is full (max ${MAX_COOP}).`, foto: "The host didn't send the world. Try again.", codigo: "Couldn't open the room. Try again.", 'sin-config': 'Online mode is not configured.' },
+        errorRed: "Couldn't connect", sala: (c, n) => `Room ${c} · ${n}/${MAX_COOP}`, copiado: 'Code copied',
+        copiaGuardada: 'Copy saved on this device', copiaLlena: `You already have ${MAX_MUNDOS} worlds: delete one to save the copy.`,
+        finAnfitrion: 'The host closed the game.', finConexion: 'The connection to the room was lost.', copia: n => `${n} (copy)`
     }
 };
 const tx = () => TXT[idioma];
@@ -140,7 +157,7 @@ const guardarAjustes = () => { try { localStorage.setItem(AJUSTES_CLAVE, JSON.st
 // Menú de mundos
 // ---------------------------------------------------------
 const $ = id => document.getElementById(id);
-const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin'];
+const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin'];
 function mostrar(id) {
     $('inicio').hidden = !id;
     for (const p of pantallas) $(p).hidden = p !== id;
@@ -174,9 +191,11 @@ async function pintarMenu() {
         const botones = document.createElement('div');
         botones.className = 'botones-mundo';
         const bj = boton(tx().jugar, () => jugar(m.id));
+        const bh = boton(tx().hospedar, () => hospedarMundo(m.id), 'secundario');
+        bh.hidden = !ONLINE_ACTIVO;
         const be = boton(tx().exportar, () => exportarMundo(m.id).catch(err => alert(err.message)), 'secundario');
         const bb = boton(tx().borrar, async () => { if (confirm(tx().confirmarBorrar(m.nombre))) { await borrarMundo(m.id); pintarMenu(); } }, 'secundario peligro');
-        botones.append(bj, be, bb);
+        botones.append(bj, bh, be, bb);
         li.append(info, botones);
         ul.appendChild(li);
     }
@@ -184,7 +203,61 @@ async function pintarMenu() {
     $('nuevo-mundo').disabled = lista.length >= MAX_MUNDOS;
     $('nuevo-mundo').title = lista.length >= MAX_MUNDOS ? tx().lleno : '';
     $('importar').hidden = false;
+    $('coop-menu').hidden = !ONLINE_ACTIVO;
 }
+
+// ---------------------------------------------------------
+// Jugar con amigos (supervivencia cooperativa)
+// ---------------------------------------------------------
+const NOMBRE_CLAVE = 'venjy-mundo-online'; // el mismo nombre que el modo online del creativo
+function nombreGuardado() { try { return (JSON.parse(localStorage.getItem(NOMBRE_CLAVE)) || {}).nombre || ''; } catch (e) { return ''; } }
+function guardarNombre(nombre) {
+    try { const v = JSON.parse(localStorage.getItem(NOMBRE_CLAVE)) || {}; v.nombre = nombre; localStorage.setItem(NOMBRE_CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
+}
+$('coop-nombre').value = normalizarNombre(nombreGuardado());
+function estadoCoop(texto, error = false) {
+    const p = $('coop-estado');
+    p.hidden = !texto; p.textContent = texto || ''; p.classList.toggle('error', error);
+}
+function leerNombre() {
+    const nombre = normalizarNombre($('coop-nombre').value);
+    if (!nombre) { estadoCoop(tx().faltaNombre, true); $('coop-nombre').focus(); return null; }
+    guardarNombre(nombre);
+    return nombre;
+}
+const mensajeError = e => tx().errores[e.codigo] || `${tx().errorRed}: ${e.message}`;
+let ocupadoCoop = false;
+async function hospedarMundo(id) {
+    if (ocupadoCoop) return;
+    const nombre = leerNombre();
+    if (!nombre) return;
+    ocupadoCoop = true;
+    estadoCoop(tx().creandoSala);
+    try {
+        const m = await cargarMundo(id);
+        if (!m) throw new Error('No existe el mundo');
+        const cx = await hospedar({ nombre, skin: cargarSkin() });
+        estadoCoop('');
+        iniciarJuego(m, cx);
+    } catch (e) { console.error(e); estadoCoop(mensajeError(e), true); }
+    ocupadoCoop = false;
+}
+$('coop-unirse').addEventListener('click', async () => {
+    if (ocupadoCoop) return;
+    const nombre = leerNombre();
+    if (!nombre) return;
+    const codigo = normalizarCodigo($('coop-codigo').value);
+    if (codigo.length < 4) { estadoCoop(tx().faltaCodigo, true); $('coop-codigo').focus(); return; }
+    ocupadoCoop = true;
+    estadoCoop(tx().conectando);
+    try {
+        const cx = await unirse({ codigo, nombre, skin: cargarSkin(), alAvance: () => estadoCoop(tx().bajandoMundo) });
+        estadoCoop('');
+        iniciarJuego(guardadoDeInvitado(cx), cx);
+    } catch (e) { console.error(e); estadoCoop(mensajeError(e), true); }
+    ocupadoCoop = false;
+});
+$('coop-codigo').addEventListener('input', e => { e.target.value = normalizarCodigo(e.target.value).slice(0, 12); });
 
 function boton(texto, f, clase = '') {
     const b = document.createElement('button');
@@ -241,18 +314,21 @@ async function jugar(id) {
 // Juego
 // ---------------------------------------------------------
 let enJuego = false;
-function iniciarJuego(guardado) {
+// cx: conexión de la sala cooperativa (null = un jugador)
+function iniciarJuego(guardado, cx = null) {
     if (enJuego) return;
     enJuego = true;
     mostrar('menu-mundos');
     $('lista-mundos').hidden = true;
-    for (const id of ['nuevo-mundo', 'importar']) $(id).hidden = true;
+    for (const id of ['nuevo-mundo', 'importar', 'coop-menu']) $(id).hidden = true;
     $('carga').hidden = false;
     $('carga').textContent = tx().generando;
-    setTimeout(() => arrancar(guardado).catch(err => { console.error(err); $('carga').textContent = 'Error: ' + err.message; }), 30);
+    setTimeout(() => arrancar(guardado, cx).catch(err => { console.error(err); $('carga').textContent = 'Error: ' + err.message; }), 30);
 }
 
-async function arrancar(guardado) {
+async function arrancar(guardado, cx = null) {
+    const miDisp = idDispositivo();
+    const invitado = !!(cx && cx.rol === 'invitado');
     // Ediciones del mundo antes de crear el gestor de chunks (los workers las reciben al iniciar)
     cargarEdiciones(guardado.ediciones, terreno.ediciones);
     recalcularEmisores(terreno);
@@ -421,6 +497,7 @@ async function arrancar(guardado) {
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
     let enemigos = null, misiones = null, jefes = null, escenas = null, escenaCuello = null;
+    let coop = null; // sala cooperativa (se crea más abajo, cuando ya existen todos los sistemas)
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
     // Zonas seguras: alrededor de cada amigo y de Venjy no aparecen ni entran monstruos
@@ -453,6 +530,7 @@ async function arrancar(guardado) {
     minado.alClicDerecho = () => {
         const o = lanzarRayo(camara, mundo, 4.5);
         if (o && o.id === B.ALTAR && jefes.usarAltar(o)) return true;
+        if (cofresComp.interactuar()) return true;
         if (misiones.interactuar(rayoCaja)) return true;
         const e = combate.entidadApuntada();
         return !!(e && e.animal && ganado.interactuar(e.animal));
@@ -472,6 +550,7 @@ async function arrancar(guardado) {
         if (typeof d === 'string') { const b = BASES.find(x => x.clave === d); if (!b) return null; d = { ...JSON.parse(JSON.stringify(b)), base: b.clave }; }
         skinActual = d;
         camaras.ponerSkin(d); const c = coloresMano(d); mano.ponerColores(c.piel, c.manga);
+        if (coop) coop.anunciarSkin(d);
         return d;
     };
     ponerSkin(skinInicial);
@@ -555,19 +634,97 @@ async function arrancar(guardado) {
         alAbrir: () => { uiAbierta = true; jugador.teclas.clear(); if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock(); },
         alCerrar: () => { uiAbierta = false; if (!vida.muerto) entrar(); }
     });
-    minado.dormir = (x, y, z) => {
-        if (!dia.puedeDormir) return tx().noDormir;
-        if (enemigos.cerca(jugador.pos.x, jugador.pos.y, jugador.pos.z)) return tx().monstruos;
-        misiones.alDormir();
-        spawnCama = { x: x + 0.5, y: y + 1, z: z + 0.5 };
+    // Fundido de dormir y salto a la mañana (online lo dispara el anfitrión cuando todos están en cama)
+    function amanecerLocal() {
         const negro = document.createElement('div');
         negro.className = 'fundido-sueno';
         document.body.appendChild(negro);
         hud.mensaje(tx().durmiendo, 2);
         setTimeout(() => { dia.amanecer(); hud.mensaje(tx().spawn); }, 1300);
         setTimeout(() => negro.remove(), 2600);
+    }
+    minado.dormir = (x, y, z) => {
+        if (!dia.puedeDormir) return tx().noDormir;
+        if (enemigos.cerca(jugador.pos.x, jugador.pos.y, jugador.pos.z)) return tx().monstruos;
+        misiones.alDormir();
+        spawnCama = { x: x + 0.5, y: y + 1, z: z + 0.5 };
+        if (coop) coop.acostarse(); else amanecerLocal();
         return null;
     };
+
+    // Luz del lugar sobre un modelo de cajas (jugadores remotos, cofres de compañero)
+    const luzCaja = new THREE.Color();
+    function iluminarCaja(tinte, x, y, z) {
+        const l = mundo.nivelLuz(x, y + 1, z);
+        const c = Math.pow(l >= 0 ? (l >> 4) / 15 : 1, 1.6), b = Math.pow(l >= 0 ? (l & 15) / 15 : 0, 1.6);
+        luzCaja.copy(materiales.solido.color).multiplyScalar(c);
+        luzCaja.setRGB(Math.max(luzCaja.r, b, 0.08), Math.max(luzCaja.g, b * 0.85, 0.08), Math.max(luzCaja.b, b * 0.6, 0.08));
+        tinte.aplicar(luzCaja);
+    }
+
+    // ---- Sala cooperativa ----
+    if (cx) {
+        coop = crearCoop(cx, {
+            scene, mundo, jugador, vida, dia, inventario, entidades, contenedores, agricultura, enemigos, jefes, proyectiles, misiones, hud, particulas, idioma,
+            ventanasBase, jugadoresGuardados: guardado.jugadores || {},
+            skin: () => skinActual,
+            estadoActual: () => estadoActual(),
+            amanecerLocal, iluminar: iluminarCaja,
+            alCambiarJugadores: () => pintarCoop(),
+            alCerrar: motivo => terminarCoop(motivo)
+        });
+        // Pestaña en segundo plano: el navegador detiene el bucle, pero la red sigue (bloques, latidos)
+        setInterval(() => { if (document.hidden) coop.actualizar(0.25); }, 250);
+        const hudSala = document.createElement('div');
+        hudSala.className = 'coop-hud';
+        hudSala.id = 'coop-hud';
+        $('hud').appendChild(hudSala);
+    }
+    function pintarCoop() {
+        if (!coop) return;
+        const texto = tx().sala(coop.codigo, coop.total);
+        $('coop-hud').textContent = texto;
+        $('coop-sala').textContent = texto;
+        $('coop-pausa').hidden = false;
+        $('coop-copia').hidden = coop.esAnfitrion;
+        $('coop-compartir').checked = coop.compartido;
+    }
+    pintarCoop();
+    // Cofres de compañero: las cosas de quienes jugaron aquí y ahora no están
+    const escenaGuardian = crearEscenaGuardian({
+        scene, grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, hud, particulas, idioma, vida, misiones, cofres: () => cofresComp,
+        bloquear: bloquearEscena, liberar: liberarEscena
+    });
+    const cofresComp = crearCofresCompaneros({
+        scene, mundo, jugador, camara, ventanas, ventanasBase, hud, rayoCaja, idioma, miDisp, iluminar: iluminarCaja,
+        jugadores: () => (coop ? Object.fromEntries(coop.perfiles) : (guardado.jugadores || {})),
+        conectados: () => (coop ? coop.conectados() : new Set()),
+        alEditar: (disp, inv) => { if (coop) coop.cofreEditado(disp, inv); },
+        escena: () => escenaGuardian
+    });
+    // El anfitrión se fue o se cortó la red: se puede guardar una copia del mundo y salir
+    let coopTerminado = false;
+    function terminarCoop(motivo) {
+        if (coopTerminado) return;
+        coopTerminado = true;
+        $('coop-fin-motivo').textContent = motivo === 'anfitrion' ? tx().finAnfitrion : tx().finConexion;
+        ventanasBase.cerrar();
+        cerrarPanel();
+        if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
+        mostrar('coop-fin');
+    }
+    // Copia local del mundo de la sala: queda como un mundo tuyo (tus cosas y tus misiones; las de los
+    // demás, en sus cofres de compañero)
+    async function guardarCopia() {
+        try {
+            const lista = await listarMundos();
+            if (lista.length >= MAX_MUNDOS) { alert(tx().copiaLlena); return false; }
+            const e = estadoActual();
+            await guardarMundo({ ...e, id: nuevoId(), nombre: tx().copia(guardado.nombre || tx().mundo).slice(0, 24), creado: Date.now(), idDueno: miDisp });
+            hud.mensaje(tx().copiaGuardada, 3);
+            return true;
+        } catch (err) { console.error(err); alert(tx().errorGuardar); return false; }
+    }
 
 
     // ---- Guardado ----
@@ -581,13 +738,17 @@ async function arrancar(guardado) {
             spawnCama, vida: vida.serializar(), inventario: inventario.serializar(),
             ediciones: serializarEdiciones(terreno.ediciones), contenedores: contenedores.serializar(),
             agricultura: agricultura.serializar(), entidades: entidades.serializar(), dia: dia.serializar(), ganado: ganado.serializar(),
-            misiones: misiones.serializar()
+            misiones: misiones.serializar(),
+            // Los demás jugadores que pasaron por este mundo (inventario, misiones, skin): sus cofres de compañero
+            jugadores: coop ? coop.jugadoresParaGuardar() : (guardado.jugadores || {}), idDueno: miDisp
         };
     }
     // Las escrituras van en cola y cada una toma el estado al ejecutarse: el guardado de una muerte
     // nunca se descarta por otro en curso (antes se perdía y se recargaba la partida previa)
     let escritura = Promise.resolve();
     function guardarYa(aviso = false) {
+        // El invitado no guarda el mundo del anfitrión: manda su perfil (el anfitrión lo guarda con el mundo)
+        if (invitado) { if (coop) coop.enviarPerfil(); if (aviso) hud.mensaje(tx().guardado, 2); return Promise.resolve(); }
         escritura = escritura.then(async () => {
             try { await guardarMundo(estadoActual()); if (aviso) hud.mensaje(tx().guardado, 2); }
             catch (e) { console.error(e); if (aviso) hud.mensaje(tx().errorGuardar, 3); }
@@ -650,8 +811,15 @@ async function arrancar(guardado) {
     $('continuar').addEventListener('click', () => entrar());
     $('guardar').addEventListener('click', () => guardarYa(true));
     $('cambiar-skin').addEventListener('click', () => abrirEditorSkin('pausa'));
-    $('salir-menu').addEventListener('click', async () => { await guardarYa(); location.reload(); });
-    $('salir-muerte').addEventListener('click', async () => { await guardarYa(); location.reload(); });
+    const salirAlMenu = async () => { await guardarYa(); if (coop) await coop.salir(); location.reload(); };
+    $('salir-menu').addEventListener('click', salirAlMenu);
+    $('salir-muerte').addEventListener('click', salirAlMenu);
+    $('coop-copiar').addEventListener('click', () => { try { navigator.clipboard.writeText(coop.codigo); hud.mensaje(tx().copiado, 2); } catch (e) { /* sin portapapeles */ } });
+    $('coop-compartir').addEventListener('change', e => { if (coop) coop.compartido = e.target.checked; });
+    $('coop-copia').addEventListener('click', () => guardarCopia());
+    $('coop-fin-copia').addEventListener('click', async () => { if (await guardarCopia()) $('coop-fin-copia').disabled = true; });
+    $('coop-fin-salir').addEventListener('click', async () => { if (coop) await coop.salir().catch(() => {}); location.reload(); });
+    if (coop) window.addEventListener('beforeunload', () => { coop.salir(); });
     $('reaparecer').addEventListener('click', () => {
         vida.reaparecer();
         const s = puntoReaparicion();
@@ -685,6 +853,7 @@ async function arrancar(guardado) {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
+        get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -702,27 +871,33 @@ async function arrancar(guardado) {
         requestAnimationFrame(bucle);
         const dt = Math.min(0.1, (ahora - anterior) / 1000);
         anterior = ahora;
-        // En pausa (Esc) el mundo se detiene, como en Minecraft de un jugador; con el inventario abierto sigue
-        const corre = (jugador.activo || uiAbierta) && !vida.muerto;
-        if (corre) {
+        // En pausa (Esc) el mundo se detiene, como en Minecraft de un jugador; con el inventario abierto sigue.
+        // Online el mundo nunca se detiene (ni en la pausa ni muerto): los demás siguen jugando
+        const corre = (jugador.activo || uiAbierta || !!coop) && !vida.muerto;
+        const mundoCorre = corre || !!coop;
+        if (mundoCorre) {
             jugado += dt;
             dia.actualizar(dt);
-            jugador.lento = minado.lento * combate.lento * (vida.aturdido > 0 ? 0.45 : 1);
-            jugador.actualizar(dt);
-            vida.actualizar(dt);
-            minado.actualizar(dt);
+            if (corre) {
+                jugador.lento = minado.lento * combate.lento * (vida.aturdido > 0 ? 0.45 : 1);
+                jugador.actualizar(dt);
+                vida.actualizar(dt);
+                minado.actualizar(dt);
+            } else jugador.actualizar(0);
             entidades.actualizar(dt, camara);
-            contenedores.actualizar(dt);
-            agricultura.actualizar(dt);
-            combate.actualizar(dt, minado.derecho);
-            pesca.actualizar(dt);
+            // Hornos y cultivos: online solo los lleva el anfitrión (los demás reciben los cambios)
+            if (!invitado) { contenedores.actualizar(dt); agricultura.actualizar(dt); }
+            if (corre) { combate.actualizar(dt, minado.derecho); pesca.actualizar(dt); }
             ganado.actualizar(dt);
             enemigos.actualizar(dt);
             jefes.actualizar(dt);
             proyectiles.actualizar(dt);
             particulas.actualizar(dt);
-            mano.actualizar(dt);
+            if (corre) mano.actualizar(dt);
         } else jugador.actualizar(0);
+        if (coop) coop.actualizar(dt);
+        cofresComp.actualizar(dt);
+        escenaGuardian.actualizar(corre ? dt : 0);
         escenas.actualizar(corre ? dt : 0);
         caricias.actualizar(corre ? dt : 0);
         escenasGatas.actualizar(corre ? dt : 0);

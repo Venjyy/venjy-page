@@ -4,6 +4,8 @@
 // ven como cubitos con su textura y los objetos como un plano que gira hacia la cámara.
 // Física simple contra los bloques, se juntan los iguales cercanos, el jugador los recoge
 // al pasar y desaparecen a los 5 minutos (como en Minecraft).
+// Online (api.red): cada objeto tiene un uid que viaja por la red; todos lo simulan, pero recogerlo
+// lo decide el anfitrión (el primero que lo pide se lo lleva) y no se juntan pilas.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TIPO, TAM, COLS, FILAS } from '../texturas.js';
@@ -69,7 +71,8 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     texObjetos.magFilter = THREE.NearestFilter; texObjetos.minFilter = THREE.NearestFilter;
     texObjetos.generateMipmaps = false; texObjetos.colorSpace = THREE.SRGBColorSpace;
     const lista = [];
-    let relojJuntar = 0;
+    const api = { red: null, prefijo: 'o' };
+    let relojJuntar = 0, contador = 0;
     const tinte = new THREE.Color();
 
     const esCubo = id => id < 256 && BLOQUES[id] && (TIPO[id] === 1 || TIPO[id] === 2 || TIPO[id] === 5);
@@ -82,11 +85,13 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
         return m;
     }
 
-    // Suelta una pila en (x, y, z). vel opcional; `demora` antes de poder recogerla (s)
-    function soltar(id, n, d, x, y, z, vel = null, demora = 0.5) {
+    // Suelta una pila en (x, y, z). vel opcional; `demora` antes de poder recogerla (s).
+    // `uid`: solo para objetos que llegan por la red (no se vuelven a difundir)
+    function soltar(id, n, d, x, y, z, vel = null, demora = 0.5, uid = null) {
         if (!id || n <= 0) return null;
         if (lista.length >= MAX_OBJETOS) quitar(lista[0]);
         const e = {
+            uid: uid || api.prefijo + (contador++).toString(36),
             id, n, d: d || 0,
             pos: new THREE.Vector3(x, y, z),
             vel: vel ? vel.clone() : new THREE.Vector3((Math.random() - 0.5) * 2, 3 + Math.random(), (Math.random() - 0.5) * 2),
@@ -95,8 +100,10 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
         };
         e.malla.position.copy(e.pos);
         lista.push(e);
+        if (api.red && !uid) api.red.soltado(e);
         return e;
     }
+    const porUid = u => lista.find(e => e.uid === u) || null;
 
     function quitar(e) {
         const i = lista.indexOf(e);
@@ -148,7 +155,7 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     function actualizar(dt, camara) {
         const ox = jugador.pos.x, oy = jugador.pos.y + 0.8, oz = jugador.pos.z;
         relojJuntar += dt;
-        if (relojJuntar > 0.5) { relojJuntar = 0; juntar(); }
+        if (relojJuntar > 0.5) { relojJuntar = 0; if (!api.red) juntar(); }
         const tCielo = tinteMundo || null; // color de luz del cielo según la hora (el mismo de los chunks)
         for (let i = lista.length - 1; i >= 0; i--) {
             const e = lista[i];
@@ -159,13 +166,15 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
             if (d2 > 80 * 80) continue; // lejos: no se simula ni se dibuja
             fisica(e, dt);
             // Recoger
-            if (e.edad > e.demora && d2 < RADIO_RECOGER * RADIO_RECOGER && jugador.vivo !== false) {
+            // Online, el invitado pide el objeto al anfitrión y lo recibe al confirmarse (coop.js)
+            if (e.edad > e.demora && d2 < RADIO_RECOGER * RADIO_RECOGER && jugador.vivo !== false && (!api.red || api.red.puedeTomar(e))) {
                 const resto = inventario.agregar(e.id, e.n, e.d);
                 if (resto < e.n) {
                     sonidos.recoger();
                     alRecoger && alRecoger(e.id, e.n - resto);
-                    if (resto === 0) { quitar(e); continue; }
+                    if (resto === 0) { quitar(e); api.red && api.red.tomado(e, 0); continue; }
                     e.n = resto;
+                    api.red && api.red.tomado(e, resto);
                 }
             }
             // Dibujo: flota y gira; brillo según la luz del lugar
@@ -183,15 +192,15 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     }
 
     function serializar() {
-        return lista.filter(e => e.edad < VIDA_OBJETO - 5).map(e => [e.id, e.n, e.d, +e.pos.x.toFixed(2), +e.pos.y.toFixed(2), +e.pos.z.toFixed(2), Math.round(e.edad)]);
+        return lista.filter(e => e.edad < VIDA_OBJETO - 5).map(e => [e.id, e.n, e.d, +e.pos.x.toFixed(2), +e.pos.y.toFixed(2), +e.pos.z.toFixed(2), Math.round(e.edad), e.uid]);
     }
     function cargar(arr) {
         for (const e of lista.slice()) quitar(e);
-        for (const [id, n, d, x, y, z, edad] of arr || []) {
-            const e = soltar(id, n, d, x, y, z, new THREE.Vector3(), 0);
+        for (const [id, n, d, x, y, z, edad, uid] of arr || []) {
+            const e = soltar(id, n, d, x, y, z, new THREE.Vector3(), 0, uid || null);
             if (e) e.edad = edad || 0;
         }
     }
 
-    return { lista, soltar, quitar, actualizar, serializar, cargar };
+    return { lista, soltar, quitar, actualizar, serializar, cargar, porUid, api };
 }

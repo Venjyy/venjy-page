@@ -403,7 +403,7 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
             abierta.casillas.push(...cas);
             const bloque = document.createElement('div');
             bloque.className = 'bloque-cofre';
-            bloque.append(titulo(extra.barril ? t().barril : t().cofre), rejillaHTML(cas, 9));
+            bloque.append(titulo(extra.titulo || (extra.barril ? t().barril : t().cofre)), rejillaHTML(cas, 9));
             arriba.append(bloque);
         }
         panel.appendChild(arriba);

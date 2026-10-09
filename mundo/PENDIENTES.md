@@ -47,6 +47,7 @@ Cómo se arma una columna: la altura sale de interpolar `E` (suavizado bilineal 
 Solo para pasar el rato con amigos. Sin sala no se descarga nada de Supabase y el mundo funciona exactamente igual que offline.
 
 - **Proyecto Supabase**: `venjy-mundo-online` (plan gratis, región São Paulo). Tablas `salas` y `cambios_bloques` con RLS: el rol `anon` solo puede leer, insertar y actualizar (con restricciones `check` de rango); no hay DELETE directo, solo la función `reiniciar_sala` (security definer). La clave del cliente es la *publishable* (pública por diseño); la service role key nunca va en el repo.
+- **Seguridad, paso 1 (aplicado el 2026-10-09)**: el cliente ya no toca las tablas directo, entra por funciones `security definer` (`entrar_sala`, `leer_cambios`, `guardar_cambios` con tope de 500 filas por llamada y 60 000 por sala, `guardar_ronda`, `reiniciar_sala`), solo ejecutables por `anon` (no por `authenticated`). Tabla `salas_coop` sin políticas (solo funciones) para la supervivencia cooperativa. **Paso 2 PENDIENTE** (después del merge y con el sitio publicado): quitar las políticas y el acceso directo de `anon` a `salas` y `cambios_bloques` (bloque comentado al final de `schema.sql`); con eso nadie puede listar salas y el código pasa a ser la llave. Queda abierto: mensajes falsos por el canal Realtime (sin login no se arregla) y un límite de frecuencia.
 - **Cómo se juega**: en el panel de pausa, «Jugar con amigos»: nombre + código de sala (3-12 letras o números, máx. 8 jugadores). Todos generan el mismo mapa; solo viajan jugadores y cambios.
 - **Realtime**: un canal `venjy:CODIGO` con Presence (nombre y aspecto) y Broadcast (evento `m` con `e` = pos, bloque, hola, inicio, golpe, muerte, situacion). Posición a 10 Hz, solo 1 Hz si el jugador está quieto.
 - **Bloques**: clic izquierdo rompe, derecho pone, hotbar 1-9 o rueda. Se aplican al instante, se difunden y se guardan en `cambios_bloques` (una fila por posición, gana el último). Quien entra tarde los lee al entrar. El motor aplica las ediciones en `llenarVentana` (`guardarEdicion`/`aplicarEdiciones` en `voxeles.js`), también en los workers.
@@ -86,7 +87,7 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 - [x] **Caricias a las gatas** (`supervivencia/caricias.js`): junto a Mila o Gala (≤ 2,2 bloques, con línea de vista) aparece el aviso y la tecla **G** (la reparte `main.js`: primero `caricias.intentar()`, luego `ronda.intentar()`; `caricias.js` ya no escucha G); en celular, el botón ACARICIAR solo aparece cerca de una gata. Dura ~8 s en cámara de cine (`PLANOS_GATA`): te ves con tu skin acariciándole la cabeza; ella se sienta, empuja la cabeza, ronronea, sale un corazón y un globo «Prrrr…». Esc o «Saltar» la cortan y restauran todo. Usa el gancho `gata.escena` de `gatas.js` (la IA de la gata se pausa; `gata.ronroneo` y `gata.maullar` para el sonido). Pendiente: como en las escenas de skin, los monstruos no se detienen durante la caricia; las gatas siguen inmortales.
   - Depuración: `__venjy.caricias.forzar('mila')` (o `'gala'`), `pausar()`, `irA(seg)`, `saltar()`, `cercana()`.
 - [x] **Escenas especiales con las gatas** (`supervivencia/escenas-gatas.js`, bloque 1 del plan): la primera G con cada gata y skin de base Lona o Venjy corre una escena de ~13 s en vez de la caricia (`caricias.js` consulta `especial(g)`): «Trampa de panza» (Lona·Mila), «Inspección oficial» (Lona·Gala, Gala da la vuelta a tu alrededor y te da un cabezazo), «Galletita clandestina» (Venjy·Mila, la galletita pasa de tu mano al suelo) y «Caricia con cita previa» (Venjy·Gala, te da la espalda y luego se echa en tu pierna). La gata no habla: sus globos son sonidos. Se guardan en `misiones.estado.escenasSkin` (`lona-mila`, `lona-gala`, `venjy-mila`, `venjy-gala`). Esc o «Saltar» restauran todo; si la gata se movió y no quedó en suelo válido vuelve a su sitio. Las dos de Venjy están en `/escenas`. Depuración: `__venjy.escenasGatas` (`forzar(clave)`, `pausar()`, `irA(s)`, `saltar()`).
-- [x] **Tienda y trueque con los amigos** (`supervivencia/tienda-datos.js`, `tienda.js`, bloque 2 del plan): pestaña «Misión | Tienda» en el panel de los 13 personajes (clic derecho). Moneda: esmeraldas (`O.ESMERALDA`) o trueque; `compra` = lo que el amigo te recibe a cambio de esmeraldas. Ofertas con `req` (id de misión del mismo amigo) aparecen bloqueadas hasta completarla. Diálogo `saludo`/`compraOk`/`ventaOk`/`noAlcanza` único por amigo (ES/EN, también en su globo). Lo comprado que no cabe se suelta a tus pies. Precios calibrados: `node mundo/tests/tienda.mjs` valora todo con las recetas y la fundición (el valor de lo que da una oferta no puede superar al de lo que pide; lo que paga un amigo no supera al valor de lo recibido; la esmeralda vale 10 unidades-tronco). Ideas: descuento con Boris tras ganarle en el minijuego de leña (bloque 3), ofertas de criaturas folclóricas (bloque 4).
+- [x] **Tienda y trueque con los amigos** (`supervivencia/tienda-datos.js`, `tienda.js`, bloque 2 del plan): pestaña «Misión | Tienda» en el panel de los 13 personajes (clic derecho). Moneda: esmeraldas (`O.ESMERALDA`) o trueque; `compra` = lo que el amigo te recibe a cambio de esmeraldas. Ofertas con `req` (id de misión del mismo amigo) aparecen bloqueadas hasta completarla. Diálogo `saludo`/`compraOk`/`ventaOk`/`noAlcanza` único por amigo (ES/EN, también en su globo). Lo comprado que no cabe se suelta a tus pies. Precios calibrados: `node mundo/tests/tienda.mjs` valora todo con las recetas y la fundición (el valor de lo que da una oferta no puede superar al de lo que pide; lo que paga un amigo no supera al valor de lo recibido; la esmeralda vale 10 unidades-tronco). Ideas: descuento con Boris tras ganarle en el minijuego de leña (bloque 3).
 - [x] **Minijuegos con escenas** (bloque 3 del plan): marco común `supervivencia/minijuego.js` (fases intro → juego → final, cámara de cine con planos propios de cada juego, pose suavizada de tu cuerpo, globos por actor, tablero abajo a la izquierda con barras, barra de ritmo con zona verde/amarilla y botón grande; ESPACIO, el botón o un toque; «Saltar» en la intro pasa al juego, en el juego es «Rendirse» sin premio y en el final termina; Esc igual; restaura todo). Se lanzan con el botón verde del panel del amigo (clic derecho): si falta algo, el botón sale desactivado con el motivo. Textos y guiones únicos ES/EN en `minijuegos-datos.js`. Lo jugado se guarda en `misiones.estado.minijuegos` (se serializa).
   - **Duelo de hachas con Boris** (`minijuego-lena.js`): tu tocón aparece a su lado (prefiere el oeste: al este está Lucho, que arbitra y cuenta 3-2-1). Gana quien parte primero 3 leños (3 golpes buenos cada uno); fuera de la zona verde el hacha rebota 0,6 s. Boris hacha a ritmo fijo (su animación ×2,45 ≈ 9 s); jugando perfecto se gana en ~6,4 s. Ganar: 6 troncos (+1 esmeralda la primera vez y la marca `mj-boris`, que desbloquea en su tienda 32 tablones por 1 esmeralda); perder: 2 troncos por leño partido.
   - **Pesca con Pony** (`minijuego-pesca.js`): Pony se corre medio bloque y te sientas a su lado en la punta del muelle, cada uno con su caña. LANZAR → espera → pica (1,2 s para RECOGER) → ¡TIRA! (2 pulsaciones en la zona verde; un fallo o 4 s y se escapa). Mientras, Pony cuenta la historia de la Profe Karly (~62 s; la segunda vez, la del examen de repetición, marca `pesca-2`; la tercera, su mazo de agua de Pokémon TCG con Magikarp y Gyarados, marca `pesca-3`; después, una al azar). Final según los peces: 0, 1–3 o 4+ (con un tesoro del fondo). Premio: los peces sacados (bacalao o salmón).
@@ -108,40 +109,190 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 - [x] PR 3 · Misiones y jefes: `misiones-datos.js` (36 misiones + 3 de jefe, cada una con pedido/aceptar/completada ES-EN), `misiones.js` (clic derecho sobre el amigo, panel, marcadores «!»/«?», seguimiento en el HUD, globo especial con el diálogo único, tipos entregar/matar/visitar/noche/hablar; la 3 de Lona es `hablar` y queda en espera), `jefes.js` (altares en la mina, el portal y la orilla del naufragio; Imbunche, Chonchon gigante y Caleuche con barco, oleadas y capitán brujo; barra de vida; se reinicia si mueres o te alejas 70 bloques y devuelve el objeto; +1 corazón por jefe 1 y 2), `creditos.js`. Atajos: `__venjy.misiones.completarActiva()`, `__venjy.jefes.invocar('imbunche')`, `__venjy.final()`.
 - Pendiente/limitaciones de PR 1: las criaturas pisan según el mapa original (si se cava bajo ellas, flotan); antorchas de pared quedan si se rompe su muro; los bloques que caen (arena, grava) bajan al instante sin animación; sin refactor de `escena.js` (el render del survival repite el del creativo); los objetos tirados siguen con su física simple (los monstruos y jefes usan `mundo/fisica.js`); la misión 3 de Lona espera la explicación del dueño; los monstruos persiguen en línea recta (sin buscador de rutas) y no se guardan al salir (vuelven a aparecer); probar en un teléfono real.
 
-### Bloque 5 · Supervivencia online cooperativa (solo planificación, no implementado)
+### Bloque 5 · Supervivencia online cooperativa
 
-Idea base (plan del 2026-10-09): reutilizar `mundo/online/` (Supabase Realtime: Presence + Broadcast, `red.js`, `avatares.js`) para una sala cooperativa de supervivencia. Hoy los monstruos y jefes (`enemigos.js`, `jefes.js`) corren 100 % en el cliente: se prefiere que un jugador **anfitrión** simule monstruos y jefes y difunda su estado a ~10 Hz (más justo para pelear un jefe juntos) antes que cada cliente simule los suyos y solo se sincronice el daño. Sincronizar posiciones, vida, daño y fase de los jefes, drops compartidos y misiones por jugador. Respetar los límites del plan gratis (~100 msg/s, máx. 8 jugadores por sala, ver «Modo online»). Cada parte en su propio chat y PR, con Opus.
+**PR A (hecho, rama `online-supervivencia`)**: sala cooperativa por Supabase para la supervivencia, hasta 4 jugadores (el creativo sigue en 8). Archivos: `supervivencia/coop.js` (red y sincronización), `supervivencia/interpolacion.js` (búfer), `supervivencia/cofres-companeros.js`, `supervivencia/escena-guardian.js`; cambios en `enemigos.js`, `jefes.js`, `entidades.js`, `contenedores.js`, `proyectiles.js`, `ui-inventario.js` (título propio del cofre), `main.js`, `supervivencia.html` y `.css`, `online/red.js`, `online/schema.sql`.
 
-1. **Seguridad de Supabase (estado actual y mejoras pendientes)**
-   - Bien: solo está la clave publishable en el repo, RLS activo, sin DELETE para `anon`, checks de rango, `limpiar_salas_viejas` no la ejecuta `anon`.
-   - Débil: cualquiera con la clave puede leer todo, editar o vaciar salas ajenas (UPDATE con `using(true)` y `reiniciar_sala` sin verificación), llenar la base con INSERT sin límite y mandar mensajes falsos por el canal Realtime.
-   - Peor caso: vandalismo en salas o caída del online por cuotas; no hay datos personales ni riesgo para el proyecto ni cobros.
-   - Mejoras: secreto de sala para `reiniciar_sala` y UPDATE, trigger con tope de filas por sala, límite de frecuencia.
-2. **Formato común del mundo**
-   - La supervivencia online usa el mismo formato que `estadoActual()` (ediciones, cofres, cultivos, día, jefes).
-   - Botón «Guardar copia en este dispositivo» para jugar después solo (ranura IndexedDB o `.venjy`).
-   - Al guardar la copia, cada jugador se lleva su inventario.
-   - Misiones por jugador: cada uno conserva su progreso.
-   - Jefes: quedan derrotados o vivos según el estado del mundo.
-   - Cualquiera puede ser anfitrión desde su copia después.
-3. **Cofre del compañero (con animación)**
-   - Las cosas de cada compañero quedan en un «Cofre de <nombre>» que guarda el id del dueño (id aleatorio por dispositivo en `localStorage`, también enviado por red) y una copia de su skin.
-   - Si eres el dueño, se abre normal.
-   - Si no, escena corta: tu personaje intenta abrirlo, la tapa tiembla, sale el «guardián» (tu amigo con su skin, medio translúcido), mueve el dedo, te da un manotazo suave en la mano, dice una frase única ES/EN y cierra la tapa con humito.
-   - No se borra nada: si el amigo entra después a esa copia, recupera sus cosas.
-   - Opción: el dueño puede marcar el cofre como «compartido» antes de irse; entonces se abre y el guardián aparece contento con otra frase.
-   - La protección se puede saltar editando el `.venjy` a mano; basta para un juego entre amigos.
-4. **Modo local por WebRTC (misma red, sin Supabase)**
-   - `RTCPeerConnection` + canales de datos, en estrella: el anfitrión reparte los mensajes, máximo 8 jugadores.
-   - Nuevo transporte en `red.js` con la misma interfaz que Supabase (Presence + Broadcast).
-   - Emparejamiento sin servidor: el anfitrión muestra un QR con la oferta; el invitado lo escanea y muestra un QR de respuesta; el anfitrión lo escanea.
-   - La oferta se comprime (quitar lo innecesario + `CompressionStream`) a unos 300-500 bytes.
-   - Lector: `BarcodeDetector` donde exista; si no, jsQR en `vendor/`, cargado solo al usarlo.
-   - Sin cámara: copiar y pegar el código (es largo, ~500 caracteres; no sirve escribirlo a mano). Un código corto no se puede sin servidor.
-   - QR personalizado dibujado en canvas: módulos como bloques Minecraft, borde pixelado y la cara de la skin al centro (corrección de errores H).
-   - Riesgo: el Wi-Fi del colegio puede aislar a los equipos entre sí; probarlo.
+- **Cómo se juega**: en el menú, «Hospedar» en la tarjeta de un mundo abre una sala con un código de 6 caracteres (sin 0/O ni 1/I) que se ve arriba a la izquierda y en la pausa («Copiar código»). Los demás escriben su nombre y el código en «Jugar con amigos» → «Unirse». El nombre se comparte con el creativo (`venjy-mundo-online` en `localStorage`).
+- **Quién manda en qué** (decisión del chat: cada equipo solo tiene cargados los chunks que lo rodean, así que el anfitrión no puede simular monstruos junto a un invitado lejano):
+  - Anfitrión: el mundo guardado (su IndexedDB), la hora (la manda cada 10 s), los cultivos y los hornos (solo él los hace avanzar), quién se lleva cada objeto tirado (el primero que lo pide; el invitado lo pide con `ot` y lo recibe con `ok`) y la foto del mundo para quien entra.
+  - Cada jugador: los monstruos que aparecen junto a él (`enemigos.js` con `api.red`): persiguen al jugador más cercano de la sala; para los demás son fantasmas que se dibujan con lo que llega por la red. Su dueño valida los golpes que le llegan (cuerpo a cuerpo: el atacante estuvo a menos de 4,8 bloques del monstruo en los últimos ~600 ms = 200 de retraso de dibujo + 150 de red + 250 de tolerancia; flecha: el monstruo estuvo a menos de 2,5 del punto donde el atacante lo vio, con 600 ms extra por los monstruos lejanos). Probado: un golpe desde 40 bloques se rechaza, uno a 2 bloques se acepta.
+  - El jefe lo simula quien lo invocó (ataca al jugador más cercano); los demás ven un fantasma con barra de vida y sus golpes se validan igual. Al vencerlo, todos a menos de 90 bloques lo cuentan para sus misiones (corazón extra incluido) y con el Caleuche ven los créditos.
+  - Flechas y bolas de fuego viajan como evento al dispararse (origen + velocidad) y cada cliente simula el vuelo; la copia remota solo hiere al jugador local. Las explosiones también: cada uno se aplica su daño; los bloques rotos llegan como ediciones.
+  - Cada uno: su vida, inventario, misiones, escenas y minijuegos (todo local). Los amigos, las gatas y los animales de la granja son locales (no se sincronizan: cazar una vaca no la quita en los demás).
+- **Mundo**: toda edición (romper, poner, explosiones, cultivos, el barco del Caleuche) pasa por `mundo.editarLote` y sale en un mensaje por cuadro (`b`). Cofres y hornos: mientras la ventana está abierta se manda el contenedor si cambió (cada 250 ms) y al cerrarla; el anfitrión avisa el progreso de los hornos (máx. cada 0,5 s por horno). Si dos abren el mismo cofre a la vez, gana el último que escribe.
+- **Entrar a una sala**: el invitado se conecta, pide la foto (`pf?`), el anfitrión sube su `estadoActual()` + `jugadores` con gzip y base64 a `salas_coop` (`subir_foto`, máx. 8 MB) y avisa (`fl`); el invitado la baja (`bajar_foto`) y arranca con el mundo del anfitrión y sus propios datos (`guardadoDeInvitado`). Lo que llega mientras se carga queda en cola y se aplica al terminar. Probado: ~1,7 s en entrar.
+- **Formato común**: el guardado ganó `jugadores` (perfil por id de dispositivo: nombre, skin, inventario, misiones, vida, posición, `comp`) e `idDueno`. Cada jugador manda su perfil cada 30 s y al salir; el anfitrión lo guarda con el mundo. **Guardar copia en este dispositivo** (pausa del invitado, o al terminar la sala): crea un mundo local donde tú eres el principal; los demás quedan en sus cofres. Cualquiera puede hospedar después desde su copia.
+- **Cofre de compañero** (`cofres-companeros.js`): las cosas de quien ya no está quedan en un «Cofre de <nombre>» en su última posición (modelo de cajas con tapa articulada y letrero). Compartido (en la pausa: «Al irme, mis cosas quedan compartidas en mi cofre») se abre con sus 36 casillas + 4 de armadura + la otra mano y lo que saques sale de su perfil; si no, escena del guardián (`escena-guardian.js`, base de Haiku: tu cuerpo estira la mano, la tapa tiembla, sale tu amigo translúcido con su skin, niega con el dedo, manotazo suave, una de 4 frases ES/EN, se hunde y la tapa se cierra con humo, 8,2 s; compartido: sale contento, una de 3 frases, 3,2 s y se abre la ventana). Retoques posibles: en algunos planos el globo tapa el cofre o al guardián. Las herramientas de la skill (`capturar.mjs`, `grabar.mjs`, `planos.mjs`) tienen rutas de Linux (playwright en `/opt/node22`, puerto 5510): en Windows hubo que copiarlas y cambiar la ruta de playwright, el Chromium y el puerto. Si vuelve a entrar, recupera lo que quede y el cofre desaparece.
+- **Cama**: online la noche se salta cuando todos están acostados (el anfitrión junta los `z` de los últimos 8 s y manda `am`).
+- **Pausa**: online el mundo no se detiene (ni en la pausa ni muerto). Con la pestaña en segundo plano el navegador detiene el bucle: la red sigue con un respaldo cada 250 ms (bloques pendientes, latidos), pero los monstruos propios se quedan quietos.
+- **Fin de la sala**: si el anfitrión sale (`fin` o se va de Presence) o se corta la red, aparece «Fin de la partida online» con «Guardar copia» y «Salir al menú».
+- **Interpolación**: los estados llegan con la hora del emisor; se dibujan en el pasado e interpolando en línea recta entre los dos que rodean ese momento. El retraso se adapta al ritmo: 200 ms a 5 Hz, ~600 ms a 1,7-2 Hz (con 200 ms fijos un monstruo a 2 Hz daba saltos). Medido: jugador a 5 Hz con velocidad media 3,22 para 3,2 real y 1 de 288 cuadros desviado (un cuadro de 4,7 ms); monstruo a 2 Hz sin saltos ni cuadros quietos (velocidad máx. 3 = la real). **5 Hz se ve bien: no hizo falta subir a 8.**
+- **Mensajes medidos (2 pestañas, 2026-10-09)**: Supabase cobra cada broadcast como 1 enviado + 1 por cada cliente que lo recibe (doc «Realtime Messages»: «if you broadcast a message and 4 clients listen to it, it counts as 5»). Los monstruos y el jefe van dentro del mensaje de posición (cada jugador manda como máximo 5 por segundo + eventos); antes iban aparte y un jugador llegaba a 7,8/s.
 
-Orden sugerido: (1) formato común del mundo, (2) supervivencia online por Supabase con «guardar copia» y cofres, (3) transporte WebRTC local. Cada parte en su propio chat y PR, con Opus.
+  | Situación (por jugador) | enviados/s | cobrados/s con 2 jugadores |
+  |---|---|---|
+  | Quietos de día (monstruos en cuevas cercanas) | 1,7–2,6 | 3,4–5,2 |
+  | Caminando | 3,4–4,9 | 6,8–9,8 |
+  | Caminando de noche con monstruos (7-15) y flechas | 3,6–5,0 (+0,9 de flechas) | 7,2–10,1 |
+
+  Total de la sala = Σ enviados × jugadores. Con 4 jugadores, peor caso ≈ 4 × 6 × 4 ≈ **96/s** (justo en el tope de ~100/s del plan gratis) y lo normal ≈ 80/s; con 2 jugadores ≈ 20/s. **Se deja el tope en 4**, pero 4 jugadores de noche peleando pueden rozar el límite. El tope mensual (~2 M) da para ≈ 7 h de partida de 4 jugadores (≈ 28 h de 2): otra razón para el PR B.
+- **Depuración**: `__venjy.coop` (`estadisticas(reiniciar)`, `remotos`, `perfiles`, `medirBytes = true`), `__venjy.cofresComp` (`cofre()`, `abrir()`), `__venjy.guardian` (`forzar(compartido)`, `pausar`, `irA`, `saltar`). Para probar con dos pestañas del mismo navegador: `supervivencia.html?disp=2` usa otra identidad. Una pestaña oculta no dibuja: para medir en segundo plano se reemplazó `requestAnimationFrame` por un reloj con `MessageChannel` desde la consola.
+- **Pendiente / límites**: paso 2 de seguridad (ver «Modo online»); probar con amigos reales (red del colegio) y en celular; animales, amigos y gatas no se sincronizan; si el dueño de un jefe muere, el jefe se reinicia (como antes); si el anfitrión se va, la sala termina (no hay traspaso de anfitrión); minijuegos y escenas no se ven en los demás (el cuerpo queda donde estaba).
+
+**PR B (otro chat, con Opus) · WebRTC como transporte principal** (decisión del dueño, 2026-10-09):
+- Supabase se usa solo para conectar a los jugadores al entrar (señalización: ofertas, respuestas y candidatos ICE por el mismo canal Realtime) y después el juego viaja directo entre ellos (`RTCPeerConnection` + canales de datos, en estrella con el anfitrión que reparte), para llegar a 8 jugadores sin gastar la cuota de mensajes. Si la red bloquea la conexión directa (NAT simétrico, Wi-Fi del colegio que aísla equipos), se vuelve a Supabase Realtime como hoy.
+- Nuevo transporte en `red.js` con la misma interfaz que `Sala` (`enviar`, `en`, Presence): `coop.js` no debería cambiar.
+- El QR queda para jugar sin internet (misma red, sin Supabase): el anfitrión muestra un QR con la oferta comprimida (~300-500 bytes con `CompressionStream`), el invitado lo escanea (`BarcodeDetector` o jsQR en `vendor/`, cargado solo al usarlo) y muestra el QR de respuesta; sin cámara, copiar y pegar (~500 caracteres). QR dibujado en canvas con módulos como bloques, borde pixelado y la cara de la skin al centro (corrección H).
+- Con WebRTC, revisar el tope de jugadores (8) y la foto del mundo (puede ir por el canal de datos en vez de `salas_coop`).
+
+### Bloque 6 · Diálogos, amistad y vida entre amigos (solo planificación, no implementado)
+
+Va después del bloque 5 (online). Cada parte en su propio chat y PR.
+
+Motivo: si tu skin no es Venjy te pierdes buena parte de los personajes (las escenas largas con conversación son de la skin Venjy). Se suma una forma de hablar con todos, un sistema de amistad y escenas entre amigos según quién conoce a quién.
+
+Principios:
+- Las animaciones van por nivel de amistad y por tipo de relación, NO una por personaje: pocas animaciones reutilizables; lo que crece es el texto.
+- Hablar no corta el juego: sin cámara de cine ni pausa.
+- Toda frase es única (regla de diálogos únicos), con par ES/EN, solo PixelCraft y sin emojis.
+- Escenas cargadas con `import()` dinámico solo al usarse (no aumentan la carga inicial; solo corre una escena a la vez).
+- Son personas reales: el dueño revisa los textos antes del merge.
+- Funciona en el cooperativo: cada jugador conversa en su pantalla y la amistad se guarda por jugador.
+- Animaciones con la skill `animaciones-minecraft` (Haiku primero, Sonnet si queda grande, §0).
+
+**6a · Pestaña «Hablar» y amistad jugador ↔ personaje**
+- Panel de clic derecho (hoy «Misión | Tienda») gana la pestaña «Hablar».
+- El amigo te mira y usa gestos que ya existen (hablar, asentir, reír, rascarse) mezclados sobre su animación normal; la respuesta sale en el panel y en su globo.
+- Temas como botones: «¿Quién eres?», «¿Qué haces aquí?», «¿Cómo conociste a Venjy?», «¿Qué opinas de <otro amigo>?», «Algo más», etc. (5-8 por personaje).
+- Temas que se desbloquean al completar misiones, ganar minijuegos, vencer jefes o subir de nivel de amistad.
+- Variantes según tu skin (`tipoSkin`): si juegas como un amigo, algunas respuestas cambian.
+- Datos en un módulo nuevo `dialogos-datos.js` (forma de `misiones-datos.js`). Volumen estimado: 13 personajes × 5-8 temas × 2 idiomas ≈ 130-200 respuestas.
+- Amistad: 0-100 puntos, 5 niveles: Desconocido, Conocido, Amigo, Buen amigo, Íntimo.
+- Cómo sube: hablar (poco y con tope diario, no se farmea), completar sus misiones, regalarle su objeto favorito (Pony pescado, Lona lana, etc.; definir uno o dos por amigo), jugar o ganar su minijuego, comprarle en la tienda, pelear juntos cerca de su zona.
+- Qué desbloquea: temas nuevos en «Hablar», descuentos en la tienda y las animaciones de amistad (6b).
+- Se guarda en `misiones.estado`, por jugador (compatible con el formato del mundo y el cooperativo del bloque 5).
+
+**6b · Animaciones por nivel de amistad (genéricas, para todos)**
+- Amigo: choque de puños.
+- Buen amigo: abrazo.
+- Íntimo: saludo secreto + frase especial.
+- Unas 3-4 animaciones en total, reutilizadas por los 13 personajes; cada uno las acompaña con su frase única.
+
+**6c · Mapa de relaciones y escenas de pareja (como las de Venjy, para cualquier skin)**
+- Tabla de relaciones entre los 13 personajes (Venjy, Pony, Boris, Moisés, Lalo, Salonas, Lona, Hadad, Andy, Nacho, Braulio, Lucho, Conejeros): 0 = no se conocen, 1 = conocidos, 2 = amigos, 3 = mejores amigos. La llenó el dueño (2026-10-09, abajo), con anécdotas o chistes internos para los diálogos.
+- Amistad inicial según tu skin: el nivel de partida con cada personaje sale de la tabla (con skin de Salonas, Conejeros parte en «Amigo»; con Venjy partes alto con todos, coherente con sus escenas actuales).
+- Escenas de pareja: si tu skin tiene relación 2 o 3 con un personaje, al encontrarlo hay una escena especial (motor de `escenas-skin.js`). Animaciones por tipo de relación, no por pareja: amigos = reencuentro corto + choque de puños + broma; mejores amigos = escena larga con saludo secreto + abrazo + un recuerdo. Diálogos únicos por pareja. Unas 4-6 animaciones reutilizables en total.
+
+Tabla de relaciones (nivel | nota del dueño para los diálogos; «webear» = molestar o andar tonteando):
+
+| Pareja | Nivel | Nota del dueño |
+|---|---|---|
+| **Venjy** - Pony | 2 | siempre le decimos al Pony que es weon y que es chico |
+| Venjy - Boris | 3 | me va a buscar en auto cuando viajo a Linares, fumamos, tomamos chela (cerveza) y jugamos LoL en su PC |
+| Venjy - Moisés | 2 | amigos que fumamos, nos conocemos de cuando vivíamos en Coyhaique (13-14 años) |
+| Venjy - Lalo | 3 | lo mismo que Moisés |
+| Venjy - Salonas | 3 | socio con quien desarrolló ProcedimientoSeguro.cl |
+| Venjy - Lona | 4 (pareja) | su pareja, literalmente, su novia |
+| Venjy - Hadad | 1 | conocidos, se llevan bien |
+| Venjy - Andy | 1 | lo mismo que Hadad |
+| Venjy - Nacho | 1 | lo mismo que Hadad |
+| Venjy - Braulio | 2 | se llevan bien; siempre le llama la atención su dedo doble y que es de Arica pero es blanco |
+| Venjy - Lucho | 3 | es su primo (no literalmente: es primo de su mamá, pero como tienen edades parecidas los presentaron como primos); juegan Apex Legends |
+| Venjy - Conejeros | 1 | conocidos, se llevan bien |
+| **Pony** - Boris | 0 | |
+| Pony - Moisés | 0 | |
+| Pony - Lalo | 0 | |
+| Pony - Salonas | 2 | se webean mutuamente: el Pony le dice «waton klo» y el Salonas se lo devuelve |
+| Pony - Lona | 0 | |
+| Pony - Hadad | 2 | Hadad hace bromas como de papas fritas |
+| Pony - Andy | 3 | muy amigos; solían hacer trabajos juntos, pero el Pony webiaba mucho, así que ahora los trabajos los hace el Andy con el Nacho |
+| Pony - Nacho | 2 | se llevan bien |
+| Pony - Braulio | 2 | se molestan, pelean por ver quién mide menos |
+| Pony - Lucho | 0 | |
+| Pony - Conejeros | 2 | enemigos (pero amigos, obvio): ellos sí que se webean |
+| **Boris** - Moisés | 0 | |
+| Boris - Lalo | 0 | |
+| Boris - Salonas | 0 | |
+| Boris - Lona | 0 | |
+| Boris - Hadad | 0 | |
+| Boris - Andy | 0 | |
+| Boris - Nacho | 0 | |
+| Boris - Braulio | 0 | |
+| Boris - Lucho | 3 | amigos desde la media; el Lucho siempre le dice «negro» al Boris (de cariño, obvio); se llevan muy bien |
+| Boris - Conejeros | 0 | |
+| **Moisés** - Lalo | 3 | mejores amigos, se quieren mucho y viven juntos |
+| Moisés - Salonas | 0 | |
+| Moisés - Lona | 1 | se conocen por Venjy, conocidos sin más |
+| Moisés - Hadad | 0 | |
+| Moisés - Andy | 0 | |
+| Moisés - Nacho | 0 | |
+| Moisés - Braulio | 0 | |
+| Moisés - Lucho | 0 | |
+| Moisés - Conejeros | 0 | |
+| **Lalo** - Salonas | 0 | |
+| Lalo - Lona | 1 | lo mismo que Moisés: se conocen por Venjy |
+| Lalo - Hadad | 0 | |
+| Lalo - Andy | 0 | |
+| Lalo - Nacho | 0 | |
+| Lalo - Braulio | 0 | |
+| Lalo - Lucho | 0 | |
+| Lalo - Conejeros | 0 | |
+| **Salonas** - Lona | 0 | |
+| Salonas - Hadad | 1 | conocidos, ni fu ni fa |
+| Salonas - Andy | 2 | amigos, cordiales |
+| Salonas - Nacho | 1 | |
+| Salonas - Braulio | 2 | amigos |
+| Salonas - Lucho | 0 | |
+| Salonas - Conejeros | 3 | sí son buenos amigos, tienen un humor muy parecido, les gusta dibujar tonteras |
+| **Lona** - Hadad | 0 | |
+| Lona - Andy | 0 | |
+| Lona - Nacho | 0 | |
+| Lona - Braulio | 0 | |
+| Lona - Lucho | 0 | |
+| Lona - Conejeros | 0 | |
+| **Hadad** - Andy | 3 | juegan Fortnite junto a Nacho, pasan horas en el Discord |
+| Hadad - Nacho | 3 | lo mismo que con Andy |
+| Hadad - Braulio | 1 | conocidos, cordiales |
+| Hadad - Lucho | 0 | |
+| Hadad - Conejeros | 1 | lo mismo que Braulio |
+| **Andy** - Nacho | 3 | juegan Fortnite juntos, se quedan hasta tarde en el Discord, hacen los trabajos de la U juntos |
+| Andy - Braulio | 2 | amigos, cordiales |
+| Andy - Lucho | 0 | |
+| Andy - Conejeros | 1 | cordiales |
+| **Nacho** - Braulio | 1 | cordiales |
+| Nacho - Lucho | 0 | |
+| Nacho - Conejeros | 1 | cordiales |
+| **Braulio** - Lucho | 0 | |
+| Braulio - Conejeros | 2 | sí son amigos, tienen un humor parecido, solo que el Braulio no es tan .exe |
+| **Lucho** - Conejeros | 0 | |
+
+Notas para usar la tabla: Venjy - Lona es nivel 4 (pareja), fuera de la escala 0-3: su escena de pareja es aparte (no el reencuentro genérico). Pony - Conejeros está en 2 aunque la nota dice «enemigos»: es broma, se tratan como amigos que se webean. Son personas reales: tono de amigos y en buena onda; el dueño revisa los textos.
+
+**6d · Vida entre amigos sin el jugador (al dueño le encanta: le da vida al mundo)**
+- Los personajes que se conocen interactúan entre ellos sin que intervenga el jugador, según la tabla de 6c.
+- Primera etapa (sin riesgo): entre los que ya están juntos: fogata (Hadad, Andy, Nacho) e iglú (Lalo, Moisés). Charlas, bromas y gestos de amistad entre ellos con globos únicos.
+- Segunda etapa: visitas. De vez en cuando un personaje camina a ver a un amigo (según la tabla), interactúan con las animaciones de 6b/6c y vuelve a su lugar. Limitación actual: los amigos están fijos en su lugar y no hay buscador de rutas (los monstruos persiguen en línea recta), así que requiere rutas (por ejemplo, seguir el camino del mapa `RUTA` o caminos predefinidos entre lugares) y cuidar zonas seguras, escenas activas (`n.escena`), misiones y tienda (si un amigo está de visita, su panel debe seguir funcionando o avisar dónde está).
+- Si el jugador está cerca, puede ver la interacción; con la amistad alta, los amigos lo incluyen (lo saludan o le hablan).
+
+**Rendimiento de la vida entre amigos (obligatorio)**
+- Las interacciones entre personajes solo se reproducen con detalle (gestos, animaciones, globos con diálogo, sonidos) si el jugador está cerca: a menos de ~24 bloques y con el personaje dentro de la distancia de dibujo. Más lejos no se crea ningún globo, no se dibuja texto en canvas y no se anima nada.
+- Lejos, la interacción es solo un temporizador: «Hadad y Andy están charlando» dura X segundos y termina, sin animación. Si el jugador se acerca a mitad de la charla, se retoma desde el punto en que va (no desde el inicio).
+- Visitas lejanas: el personaje no camina cuadro a cuadro; su posición avanza a saltos por la ruta (por ejemplo una vez por segundo) o queda oculto en el trayecto, y solo camina con animación cuando entra en el radio cercano.
+- Lejos se actualizan 1 de cada 4 cuadros o menos, igual que los animales (`animales.js` ya lo hace a más de 60 bloques).
+- Los textos de diálogo (`dialogos-datos.js`) y las escenas se cargan con `import()` dinámico la primera vez que hacen falta, no al iniciar el juego.
+- Máximo 1 o 2 interacciones entre personajes con detalle a la vez; si hay más cerca, el resto espera su turno.
+- Medir el costo con y sin interacciones (cuadro mediano) y anotarlo; no debe subir el cuadro mediano de forma notoria (referencia: 6,9 ms con 16 monstruos de noche).
+
+Orden: 6a → 6b → 6c → 6d (primero la etapa sin visitas). Cada parte en su propio chat y PR.
+
+| Parte | Modelo | Por qué |
+|---|---|---|
+| 6a · Hablar, amistad, temas, regalos | Sonnet solo | Sigue patrones que ya existen (`misiones-datos.js`, la pestaña Tienda). Son datos, una pestaña y puntos con instrucciones claras. |
+| 6b · Animaciones por nivel | Opus + subagente Haiku | Es la regla de la skill: Haiku hace la primera versión de cada gesto y Opus revisa poses y capturas. Si Haiku falla, Sonnet. |
+| 6c · Relaciones y escenas de pareja | Opus + subagente Haiku (Sonnet en las escenas largas) | Opus diseña el guion, la cámara y los diálogos de cada pareja con las anécdotas del dueño, donde el criterio importa. Haiku arma la base de cada escena. Las de mejores amigos (larga, 2 actores y cámara) suben a Sonnet según la §0. |
+| 6d · Vida entre amigos, etapa 1 (fogata e iglú) | Opus + subagente Haiku | Las animaciones van a Haiku. Opus diseña la lógica de cercanía, los temporizadores y los turnos. |
+| 6d · Etapa 2 (visitas) | Opus solo | Es arquitectura: rutas, estados, rendimiento y choques con misiones, tienda y escenas. Es el bug difícil que toca varios archivos. |
 
 ## Portafolio interactivo (el mundo como portafolio)
 
@@ -265,6 +416,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-09 · **Plan del bloque 6 (diálogos, amistad y vida entre amigos)** anotado en «Modo supervivencia»: pestaña «Hablar» con temas y amistad por jugador (6a), animaciones por nivel de amistad (6b), tabla de relaciones entre los 13 personajes llenada por el dueño y escenas de pareja para cualquier skin (6c), vida entre amigos sin el jugador con reglas de rendimiento obligatorias (6d) y modelo recomendado por parte · solo planificación · `mundo/PENDIENTES.md`.
+- 2026-10-09 · **Bloque 5, PR A · supervivencia online cooperativa**: sala por Supabase para hasta 4 jugadores (hospedar un mundo o unirse con código), jugadores remotos con su skin e interpolación por búfer, bloques, cofres, hornos, objetos con arbitraje del anfitrión, monstruos por dueño con validación de golpes, jefe fantasma y victoria compartida, proyectiles y explosiones como eventos, hora y camas, perfiles por dispositivo, «Guardar copia en este dispositivo», cofres de compañero (compartidos o con escena del guardián) y paso 1 de seguridad de Supabase (el juego entra por funciones; tabla `salas_coop`). Se quitó el bloque 4 (criaturas folclóricas) del plan · `supervivencia/coop.js`, `interpolacion.js`, `cofres-companeros.js`, `escena-guardian.js`, `enemigos.js`, `jefes.js`, `entidades.js`, `contenedores.js`, `proyectiles.js`, `ui-inventario.js`, `main.js`, `supervivencia.html`, `supervivencia.css`, `online/red.js`, `online/schema.sql` · verificado con dos pestañas contra el Supabase real (entrar, bloques, objetos, daño, golpes válidos y truchos, jefe, cama, cofre, copia, fin de sala, mensajes por segundo) y las pruebas `recetas`, `inventario`, `paridad` y `tienda`.
 - 2026-10-09 · **Plan del bloque 5 (online cooperativo)** anotado en «Modo supervivencia»: seguridad de Supabase, formato común del mundo, cofre del compañero y modo local por WebRTC · solo planificación · `mundo/PENDIENTES.md`.
 - 2026-10-09 · **Revisión del dueño a los minijuegos**: fogata real (troncos cruzados y llamas animadas en vez de la antorcha), pradera con vacas, cerdos y gallinas junto al campamento y tercera historia de Pony (Pokémon TCG) · `construcciones.js`, `criaturas/amigos.js`, `criaturas/animales.js`, `supervivencia/minijuegos-datos.js`, `minijuego-pesca.js`, `minijuego-asado.js` (parrilla más ancha, patas por fuera de los troncos) · Verificado en el navegador: fogata y parrilla con capturas, 7 animales a 12–17 bloques del fuego, historia 3 al tener `pesca-2`; frases sin choques; pruebas OK; sin errores de consola.
 - 2026-10-09 · **Minijuegos con escenas (bloque 3 del plan de survival, rama `minijuegos`)**: marco común y tres minijuegos con intro, juego de un botón y finales con diálogos únicos: duelo de hachas con Boris, pesca con Pony (historia de la Profe Karly) y asado en la fogata · `mundo/supervivencia/minijuego.js`, `minijuego-lena.js`, `minijuego-pesca.js`, `minijuego-asado.js`, `minijuegos-datos.js` (nuevos); `main.js` (crea los minijuegos, botón del panel, bucle y `__venjy.minijuegos`), `misiones.js` (botón del minijuego en el panel, `estado.minijuegos` serializado, requisitos de tienda por minijuego), `tienda-datos.js` (oferta rebajada de Boris con `mj-boris`), `camaras.js` (listas de planos propias), `supervivencia.css` (tablero), `criaturas/amigos.js` (`lena`, `campamento`, astillas sueltas), `criaturas/cuerpo.js` (piso de los globos), `tests/tienda.mjs` (acepta `mj-<amigo>`) · Verificado en el navegador: botón en el panel (desactivado sin carne), planos de cada juego revisados con capturas y corregidos (tocones y jugador tapando), jugador automático: Boris perfecto gana en 6,4 s, pesca ~8 peces en 63 s, asado perfecto (3 filetes + papas + esmeralda), quemado (3 carbones), rendirse devuelve la carne; tablero en celular; frases sin choques con el resto del juego; `tienda.mjs`, `recetas.mjs`, `inventario.mjs` y `paridad.mjs` OK, sin errores de consola.

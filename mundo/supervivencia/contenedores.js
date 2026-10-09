@@ -113,31 +113,40 @@ export function crearContenedores({ mundo, terreno }) {
         return [e.entrada, e.combustible, e.salida].filter(Boolean);
     }
 
-    function serializar() {
-        const s = p => (p ? [p.id, p.n, p.d] : 0);
-        const lista = [];
-        for (const [k, e] of estados) {
-            if (e.tipo === 'cofre') lista.push([k, 'c', e.casillas.map(s)]);
-            else lista.push([k, 'h', [s(e.entrada), s(e.combustible), s(e.salida)], +e.quema.toFixed(2), e.quemaMax, +e.progreso.toFixed(2)]);
+    const s = p => (p ? [p.id, p.n, p.d] : 0);
+    const l = v => (v ? pila(v[0], v[1], v[2] || 0) : null);
+    function serializarUno(k, e = estados.get(k)) {
+        if (!e) return null;
+        if (e.tipo === 'cofre') return [k, 'c', e.casillas.map(s)];
+        return [k, 'h', [s(e.entrada), s(e.combustible), s(e.salida)], +e.quema.toFixed(2), e.quemaMax, +e.progreso.toFixed(2)];
+    }
+    // Carga un contenedor. Si ya existe, cambia el mismo objeto (la ventana abierta sigue apuntando a él)
+    function cargarUno([k, t, datos, quema, quemaMax, progreso]) {
+        let nuevo;
+        if (t === 'c') nuevo = { tipo: 'cofre', casillas: datos.map(l).concat(new Array(CASILLAS_COFRE).fill(null)).slice(0, CASILLAS_COFRE) };
+        else {
+            const [entrada, combustible, salida] = datos.map(l);
+            nuevo = { tipo: 'horno', entrada, combustible, salida, quema: quema || 0, quemaMax: quemaMax || 0, progreso: progreso || 0, encendido: (quema || 0) > 0 };
         }
+        const e = estados.get(k);
+        if (e && e.tipo === nuevo.tipo) Object.assign(e, nuevo); else estados.set(k, nuevo);
+    }
+    function serializar() {
+        const lista = [];
+        for (const k of estados.keys()) lista.push(serializarUno(k));
         return { estados: lista, puestos: [...puestos] };
     }
     function cargar(o) {
         estados.clear(); puestos.clear();
         if (!o) return;
-        const l = v => (v ? pila(v[0], v[1], v[2] || 0) : null);
-        for (const [k, t, datos, quema, quemaMax, progreso] of o.estados || []) {
-            if (t === 'c') estados.set(k, { tipo: 'cofre', casillas: datos.map(l).concat(new Array(CASILLAS_COFRE).fill(null)).slice(0, CASILLAS_COFRE) });
-            else {
-                const [entrada, combustible, salida] = datos.map(l);
-                estados.set(k, { tipo: 'horno', entrada, combustible, salida, quema: quema || 0, quemaMax: quemaMax || 0, progreso: progreso || 0, encendido: (quema || 0) > 0 });
-            }
-        }
+        for (const f of o.estados || []) cargarUno(f);
         for (const k of o.puestos || []) puestos.add(k);
     }
 
     return {
-        obtener, quitar, marcarPuesto, actualizar, serializar, cargar, estados,
+        obtener, quitar, marcarPuesto, actualizar, serializar, cargar, estados, serializarUno, cargarUno,
+        // Online: se rompió en otro equipo (lo suyo ya lo soltó quien lo rompió)
+        olvidar(k) { estados.delete(k); puestos.delete(k); },
         set alCambiar(f) { alCambiar = f; }
     };
 }

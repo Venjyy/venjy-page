@@ -46,6 +46,24 @@
                 <button id="importar" class="boton secundario" type="button" hidden data-es="Importar partida" data-en="Import world">Importar partida</button>
                 <input id="archivo-importar" type="file" accept=".venjy,application/octet-stream,application/gzip" hidden>
             </div>
+            <!-- Jugar con amigos: hospedar un mundo (botón en cada tarjeta) o entrar con un código -->
+            <div id="coop-menu" class="coop-menu" hidden>
+                <h2 data-es="Jugar con amigos" data-en="Play with friends">Jugar con amigos</h2>
+                <p class="nota" data-es="Para invitar, pulsa «Hospedar» en uno de tus mundos y pasa el código. Hasta 4 jugadores."
+                   data-en="To invite, press «Host» on one of your worlds and share the code. Up to 4 players.">Para invitar, pulsa «Hospedar» en uno de tus mundos y pasa el código. Hasta 4 jugadores.</p>
+                <label class="campo">
+                    <span data-es="Tu nombre" data-en="Your name">Tu nombre</span>
+                    <input id="coop-nombre" type="text" maxlength="14" autocomplete="off" spellcheck="false">
+                </label>
+                <div class="fila-coop">
+                    <label class="campo">
+                        <span data-es="Código de sala" data-en="Room code">Código de sala</span>
+                        <input id="coop-codigo" type="text" maxlength="12" autocomplete="off" spellcheck="false" autocapitalize="characters">
+                    </label>
+                    <button id="coop-unirse" class="boton" type="button" data-es="Unirse" data-en="Join">Unirse</button>
+                </div>
+                <p id="coop-estado" class="coop-estado" hidden></p>
+            </div>
             <a id="ir-creativo" class="boton secundario" href="mundo.html" data-es="Modo creativo" data-en="Creative mode">Modo creativo</a>
             <a id="volver" class="boton secundario" href="index.html" data-es="Volver al portafolio" data-en="Back to portfolio">Volver al portafolio</a>
         </section>
@@ -72,6 +90,16 @@
         <section class="panel" id="pausa" hidden>
             <h1 data-es="Juego en pausa" data-en="Game paused">Juego en pausa</h1>
             <button id="continuar" class="boton" type="button" data-es="Continuar" data-en="Resume">Continuar</button>
+            <!-- Sala cooperativa (solo online) -->
+            <div id="coop-pausa" class="coop-pausa" hidden>
+                <p class="nota" data-es="Online el mundo no se detiene en la pausa." data-en="Online, the world keeps going while paused.">Online el mundo no se detiene en la pausa.</p>
+                <div class="fila-coop">
+                    <b id="coop-sala" class="coop-sala"></b>
+                    <button id="coop-copiar" class="boton secundario" type="button" data-es="Copiar código" data-en="Copy code">Copiar código</button>
+                </div>
+                <label class="opcion"><input id="coop-compartir" type="checkbox"> <span data-es="Al irme, mis cosas quedan compartidas en mi cofre" data-en="When I leave, my things stay shared in my chest">Al irme, mis cosas quedan compartidas en mi cofre</span></label>
+                <button id="coop-copia" class="boton secundario" type="button" data-es="Guardar copia en este dispositivo" data-en="Save a copy on this device">Guardar copia en este dispositivo</button>
+            </div>
             <div class="ajustes-pausa">
                 <label><span data-es="Distancia" data-en="Render distance">Distancia</span> <input id="aj-distancia" type="range" min="4" max="14" step="1"> <b id="aj-distancia-v"></b></label>
                 <label><span data-es="Campo de visión" data-en="Field of view">Campo de visión</span> <input id="aj-fov" type="range" min="55" max="100" step="1"> <b id="aj-fov-v"></b></label>
@@ -99,6 +127,16 @@
 
         <!-- Editor de skin (lo arma mundo/supervivencia/skin.js) -->
         <section class="panel panel-skin" id="pantalla-skin" hidden></section>
+
+        <!-- Fin de la sala cooperativa -->
+        <section class="panel" id="coop-fin" hidden>
+            <h1 data-es="Fin de la partida online" data-en="Online game over">Fin de la partida online</h1>
+            <p id="coop-fin-motivo" class="sub"></p>
+            <p class="nota" data-es="Puedes guardar una copia del mundo para seguir jugando solo. Las cosas de los demás quedan en sus cofres."
+               data-en="You can save a copy of the world to keep playing alone. Everyone else's things stay in their chests.">Puedes guardar una copia del mundo para seguir jugando solo. Las cosas de los demás quedan en sus cofres.</p>
+            <button id="coop-fin-copia" class="boton" type="button" data-es="Guardar copia en este dispositivo" data-en="Save a copy on this device">Guardar copia en este dispositivo</button>
+            <button id="coop-fin-salir" class="boton secundario" type="button" data-es="Salir al menú" data-en="Quit to menu">Salir al menú</button>
+        </section>
 
         <!-- Muerte -->
         <section class="panel muerte" id="muerte" hidden>

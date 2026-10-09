@@ -2,7 +2,8 @@
 // VENJY · Red del modo online (Supabase Realtime)
 // - Presence: quién está en la sala (nombre, aspecto).
 // - Broadcast: posiciones, bloques, golpes y estado de la partida.
-// - Postgres: salas y cambios de bloques, para quien entra tarde.
+// - Postgres: salas y cambios de bloques, para quien entra tarde (solo por funciones, ver schema.sql).
+// - Sala cooperativa de supervivencia (`coop`): solo el canal; la foto del mundo va por coop.js.
 // Supabase se carga solo al entrar a una sala: sin ella, nada de esto se descarga.
 // =========================================================
 import { CONFIG_ONLINE, ONLINE_ACTIVO, HZ_POSICION, MAX_JUGADORES } from './config.js';
@@ -35,10 +36,13 @@ export class Sala {
         this.ultimoEnvio = 0;
         this.modoSala = 'libre';
         this.ronda = 0;
+        this.max = MAX_JUGADORES;
+        // Contadores para medir el gasto de mensajes (ver estadisticas())
+        this.cuenta = { enviados: 0, recibidos: 0, bytesEnviados: 0, desde: performance.now() };
     }
 
     get activa() { return this.estado === 'conectado'; }
-    get llena() { return this.jugadores.size + 1 > MAX_JUGADORES; }
+    get llena() { return this.jugadores.size + 1 > this.max; }
 
     en(evento, fn) {
         if (!this.escuchas.has(evento)) this.escuchas.set(evento, []);
@@ -47,14 +51,16 @@ export class Sala {
     emitir(evento, dato) { for (const fn of this.escuchas.get(evento) || []) fn(dato); }
 
     // Entra a una sala. Devuelve { cambios } con los bloques ya editados; lanza Error con .codigo
-    async entrar({ codigo, nombre, aspecto, modo = 'libre', publica = false }) {
+    // coop: sala de supervivencia (canal propio, sin tablas del creativo); meta: datos extra de Presence
+    async entrar({ codigo, nombre, aspecto, modo = 'libre', publica = false, coop = false, max = MAX_JUGADORES, meta = {} }) {
         if (!ONLINE_ACTIVO) throw fallo('sin-config', 'sin configurar');
         codigo = normalizarCodigo(codigo);
         nombre = normalizarNombre(nombre);
         if (!CODIGO_VALIDO.test(codigo)) throw fallo('codigo', 'código inválido');
         if (!nombre) throw fallo('nombre', 'nombre vacío');
         this.codigo = codigo; this.nombre = nombre; this.aspecto = aspecto;
-        this.publica = publica; // sala pública: solo Realtime, no se guarda nada
+        this.publica = publica || coop; // sala pública: solo Realtime, no se guarda nada
+        this.coop = coop; this.max = max; this.meta = meta;
         this.estado = 'conectando';
         try {
             const { createClient } = await import('../../vendor/supabase.js');
@@ -64,9 +70,9 @@ export class Sala {
             });
             if (!publica) {
                 // La sala se crea si no existe (sin pisar una existente)
-                const r = await this.cliente.from('salas').upsert({ codigo, modo }, { onConflict: 'codigo', ignoreDuplicates: true });
+                const r = await this.cliente.rpc('entrar_sala', { p_codigo: codigo, p_modo: modo });
                 if (r.error) throw fallo('base', r.error.message);
-                const { data: sala } = await this.cliente.from('salas').select('modo, ronda').eq('codigo', codigo).single();
+                const sala = r.data && r.data[0];
                 this.modoSala = sala ? sala.modo : modo;
                 this.ronda = sala ? sala.ronda : 0;
             }
@@ -85,20 +91,21 @@ export class Sala {
 
     conectarCanal() {
         return new Promise((ok, mal) => {
-            const canal = this.cliente.channel('venjy:' + this.codigo, {
+            const canal = this.cliente.channel((this.coop ? 'venjy-sv:' : 'venjy:') + this.codigo, {
                 config: { broadcast: { self: false }, presence: { key: this.id } }
             });
             this.canal = canal;
             canal.on('presence', { event: 'sync' }, () => this.sincronizarPresencia());
             canal.on('broadcast', { event: 'm' }, ({ payload }) => {
                 if (!payload || payload.de === this.id) return;
+                this.cuenta.recibidos++;
                 this.emitir(payload.e, payload);
             });
             const plazo = setTimeout(() => mal(fallo('tiempo', 'tiempo agotado conectando')), 10000);
             canal.subscribe(async estado => {
                 if (estado === 'SUBSCRIBED') {
                     clearTimeout(plazo);
-                    await canal.track({ nombre: this.nombre, aspecto: this.aspecto, entro: Date.now() });
+                    await canal.track({ nombre: this.nombre, aspecto: this.aspecto, entro: Date.now(), ...this.meta });
                     ok();
                 } else if (estado === 'CHANNEL_ERROR' || estado === 'TIMED_OUT') {
                     clearTimeout(plazo);
@@ -121,7 +128,10 @@ export class Sala {
         }
         const antes = this.jugadores;
         this.jugadores = nuevos;
-        for (const [id, m] of nuevos) if (!antes.has(id)) this.emitir('entra', { id, ...m });
+        for (const [id, m] of nuevos) {
+            if (!antes.has(id)) this.emitir('entra', { id, ...m });
+            else if (JSON.stringify(antes.get(id)) !== JSON.stringify(m)) this.emitir('actualiza', { id, ...m }); // p. ej. cambió su skin
+        }
         for (const id of antes.keys()) if (!nuevos.has(id)) this.emitir('sale', { id });
         this.emitir('jugadores', { total: nuevos.size + 1 });
     }
@@ -129,7 +139,28 @@ export class Sala {
     // Envía un evento a todos los demás. Los datos deben ser pequeños.
     enviar(evento, dato = {}) {
         if (!this.activa || !this.canal) return;
-        this.canal.send({ type: 'broadcast', event: 'm', payload: { e: evento, de: this.id, ...dato } });
+        const payload = { e: evento, de: this.id, ...dato };
+        this.cuenta.enviados++;
+        if (this.medirBytes) this.cuenta.bytesEnviados += JSON.stringify(payload).length;
+        this.canal.send({ type: 'broadcast', event: 'm', payload });
+    }
+
+    // Mensajes por segundo desde el último reinicio. Supabase cobra cada broadcast como 1 enviado
+    // + 1 por cada cliente que lo recibe: el gasto de la sala es la suma de `cobrados` de todos.
+    estadisticas(reiniciar = false) {
+        const c = this.cuenta, s = Math.max(0.001, (performance.now() - c.desde) / 1000);
+        const r = {
+            segundos: +s.toFixed(1), enviadosPorSeg: +(c.enviados / s).toFixed(2), recibidosPorSeg: +(c.recibidos / s).toFixed(2),
+            cobradosPorSeg: +((c.enviados * (1 + this.jugadores.size)) / s).toFixed(2), bytesPorMensaje: c.enviados ? Math.round(c.bytesEnviados / c.enviados) : 0
+        };
+        if (reiniciar) this.cuenta = { enviados: 0, recibidos: 0, bytesEnviados: 0, desde: performance.now() };
+        return r;
+    }
+
+    // Actualiza los datos extra de Presence (p. ej. la skin)
+    async anunciar(meta) {
+        this.meta = { ...this.meta, ...meta };
+        if (this.canal) await this.canal.track({ nombre: this.nombre, aspecto: this.aspecto, entro: Date.now(), ...this.meta });
     }
 
     // Posición a ~HZ_POSICION: se llama cada cuadro y se limita sola
@@ -152,9 +183,7 @@ export class Sala {
     async leerCambios(mundo) {
         const todos = [];
         for (let desde = 0; ; desde += 1000) {
-            const { data, error } = await this.cliente.from('cambios_bloques')
-                .select('x,y,z,bloque').eq('sala', this.codigo).eq('mundo', mundo)
-                .order('x').order('z').order('y').range(desde, desde + 999);
+            const { data, error } = await this.cliente.rpc('leer_cambios', { p_codigo: this.codigo, p_mundo: mundo, p_desde: desde });
             if (error) throw fallo('base', error.message);
             for (const f of data) todos.push([f.x, f.y, f.z, f.bloque]);
             if (data.length < 1000) break;
@@ -166,7 +195,7 @@ export class Sala {
     cambiarBloque(x, y, z, id, mundo = 'libre') {
         this.enviar('bloque', { x, y, z, b: id, mu: mundo });
         if (this.publica) return;
-        this.pendientes.set(mundo + '|' + x + ',' + y + ',' + z, { sala: this.codigo, mundo, x, y, z, bloque: id });
+        this.pendientes.set(mundo + '|' + x + ',' + y + ',' + z, [mundo, x, y, z, id]);
         if (!this.temporizador) this.temporizador = setTimeout(() => this.guardarPendientes(), 400);
     }
 
@@ -176,7 +205,7 @@ export class Sala {
         const filas = Array.from(this.pendientes.values());
         this.pendientes.clear();
         for (let i = 0; i < filas.length; i += 500) {
-            const r = await this.cliente.from('cambios_bloques').upsert(filas.slice(i, i + 500), { onConflict: 'sala,mundo,x,y,z' });
+            const r = await this.cliente.rpc('guardar_cambios', { p_codigo: this.codigo, p_filas: filas.slice(i, i + 500) });
             if (r.error) console.warn('no se guardaron bloques:', r.error.message);
         }
     }
@@ -187,7 +216,7 @@ export class Sala {
     }
 
     async guardarRonda(ronda, modo) {
-        if (this.cliente && !this.publica) await this.cliente.from('salas').update({ ronda, modo, actualizada: new Date().toISOString() }).eq('codigo', this.codigo);
+        if (this.cliente && !this.publica) await this.cliente.rpc('guardar_ronda', { p_codigo: this.codigo, p_ronda: ronda, p_modo: modo });
     }
 
     async salir() {
