@@ -377,12 +377,14 @@ export function crearGlobo(scene, etiqueta = null) {
     let camVista = false;
     const BAJO_CABEZA = 1.15; // del punto del globo (0,6 sobre la cabeza) al mentón de quien habla
     // Borde inferior para el globo de abajo: sobre el botón «Saltar» visible (si hay), si no sobre la franja negra
+    // (con un minijuego, el tablero también cuenta: se toma el borde más alto de lo que esté visible)
     const sueloGlobo = franja => {
-        for (const b of document.querySelectorAll('.saltar-escena, .saltar-cuello, .saltar-caricia')) {
+        let suelo = null;
+        for (const b of document.querySelectorAll('.saltar-escena, .saltar-cuello, .saltar-caricia, .saltar-minijuego, .mj-tablero')) {
             const r = b.getBoundingClientRect();
-            if (r.height && getComputedStyle(b).display !== 'none') return 1 - 2 * r.top / innerHeight;
+            if (r.height && getComputedStyle(b).display !== 'none') suelo = Math.max(suelo ?? -1, 1 - 2 * r.top / innerHeight);
         }
-        return -1 + franja;
+        return suelo ?? -1 + franja;
     };
     let colitaArriba = false, relleno = 0; // relleno: parte transparente del lienzo bajo la caja (fracción del alto)
     const w = new THREE.Vector3();

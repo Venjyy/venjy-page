@@ -249,6 +249,48 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         for (const n of [hadad, nacho, andy]) n.charla = charlaCamp;
         grupos.push({ charla: charlaCamp, x: C.bx + 0.5, z: C.bz + 1.5, fuego: { x: C.bx + 0.5, y: C.y + 0.7, z: C.bz + 1.5 } });
     }
+    // Fogata: cuatro troncos cruzados (dos abajo, dos encima) y llamas de píxeles que titilan
+    let fogata = null;
+    if (C) {
+        const g = new THREE.Group();
+        const rodaja = texturaPixeles(8, 8, 4151, (x, y) => Math.hypot(x - 3.5, y - 3.5) % 2 < 1 ? [176, 140, 92] : [148, 112, 70]);
+        const corteza = texturaPixeles(8, 8, 4150, (x, y, r) => ajustar([96, 70, 42], 0.75 + r() * 0.35));
+        const quemada = texturaPixeles(8, 8, 4152, (x, y, r) => y < 3 ? ajustar([40, 32, 26], 0.8 + r() * 0.4) : ajustar([96, 70, 42], 0.75 + r() * 0.35));
+        for (const k of [-1, 1]) {
+            const a = caja(1.0, 0.2, 0.2, tinte.caras(quemada, { 0: rodaja, 1: rodaja }));
+            a.position.set(0, 0.1, k * 0.28); g.add(a);
+            const b = caja(0.2, 0.2, 1.0, tinte.caras(corteza, { 4: rodaja, 5: rodaja }));
+            b.position.set(k * 0.28, 0.3, 0); g.add(b);
+        }
+        // Llamas: dos planos cruzados con 3 cuadros pintados píxel a píxel (sin teñir: el fuego alumbra)
+        const cuadros = [0, 1, 2].map(f => {
+            const c = document.createElement('canvas'); c.width = 8; c.height = 12;
+            const x = c.getContext('2d');
+            let sem = 4160 + f * 17;
+            const rr = () => { sem = (sem * 9301 + 49297) % 233280; return sem / 233280; };
+            for (let j = 0; j < 12; j++) {
+                const ancho = 4 * (1 - j / 13) + (rr() - 0.5) * 1.6; // se angosta hacia arriba
+                for (let i = 0; i < 8; i++) {
+                    const d = Math.abs(i - 3.5);
+                    if (d > ancho || (j > 8 && rr() < 0.45)) continue;
+                    const core = d < ancho * 0.45 && j < 8;
+                    x.fillStyle = core ? (j < 4 ? '#fff3a0' : '#ffd23a') : d < ancho * 0.75 ? '#ff9a1a' : '#e0461a';
+                    x.fillRect(i, 11 - j, 1, 1);
+                }
+            }
+            const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+            return t;
+        });
+        const matLlama = new THREE.MeshBasicMaterial({ map: cuadros[0], transparent: true, alphaTest: 0.1, side: THREE.DoubleSide, depthWrite: false });
+        const llamas = [0, Math.PI / 2].map(r => {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.93), matLlama);
+            m.position.y = 0.5; m.rotation.y = r + Math.PI / 4; g.add(m);
+            return m;
+        });
+        g.position.set(C.bx + 0.5, C.y, C.bz + 1.5);
+        scene.add(g);
+        fogata = { g, llamas, cuadros, matLlama, cuadro: 0, reloj: 0 };
+    }
     function animarHadad(n, dt, t) {
         const { p } = n, habla = n.charla.hablando;
         if (habla === 'hadad') { // gesticula con la derecha
@@ -514,13 +556,23 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         leno.position.set(toconX, A.y + 1.21, toconZ);
         scene.add(leno);
         const mitades = [-1, 1].map(l => { const m = caja(0.18, 0.42, 0.36, lenaTex); m.visible = false; scene.add(m); return { m, l }; });
-        for (let j = 0; j < 6; j++) { const m = caja(0.08, 0.05, 0.12, lenaTex); m.visible = false; scene.add(m); astillas.push({ m, vida: 0, v: new THREE.Vector3() }); }
+        for (let j = 0; j < 12; j++) { const m = caja(0.08, 0.05, 0.12, lenaTex); m.visible = false; scene.add(m); astillas.push({ m, vida: 0, v: new THREE.Vector3() }); }
         boris.leno = leno; boris.mitades = mitades; boris.tocon = { x: toconX, y: A.y + 1, z: toconZ };
         boris.ciclo = 0; boris.golpes = 0; boris.partido = 0;
         lucho.rasca = rnd(4, 8);
         charlaLena = crearCharla(CHARLAS.lenera, { radio: 10 });
         boris.charla = lucho.charla = charlaLena;
         grupos.push({ charla: charlaLena, x: toconX + 1, z: toconZ + 1 });
+    }
+    // Astillas sueltas en un punto (las usa también el duelo de hachas de la supervivencia)
+    let astillaSig = 6;
+    function astillar(x, y, z, n = 3) {
+        for (let j = 0; j < n; j++) {
+            const a = astillas[6 + (astillaSig++ % (astillas.length - 6))]; // las 6 primeras son las de Boris
+            a.vida = 0.8; a.m.visible = true;
+            a.m.position.set(x, y, z);
+            a.v.set(rnd(-1.6, 1.6), rnd(1.5, 3), rnd(-1.6, 1.6));
+        }
     }
     function animarBoris(n, dt, t, dJ) {
         const { p } = n;
@@ -544,7 +596,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             hachazo(dJ);
             n.golpes++;
             for (let j = 0; j < 3; j++) { // astillas
-                const a = astillas[(n.golpes * 3 + j) % astillas.length];
+                const a = astillas[(n.golpes * 3 + j) % 6];
                 a.vida = 0.8; a.m.visible = true;
                 a.m.position.set(n.tocon.x, n.tocon.y + 0.45, n.tocon.z);
                 a.v.set(rnd(-1.6, 1.6), rnd(1.5, 3), rnd(-1.6, 1.6));
@@ -735,6 +787,12 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             const calladas = new Set(lista.filter(n => n.escena && n.charla).map(n => n.charla));
             for (const g of grupos) g.charla.actualizar(oculto || calladas.has(g.charla) ? 0 : dt, oculto ? 999 : Math.hypot(g.x - jugador.pos.x, g.z - jugador.pos.z));
             actualizarPase(dt);
+            // Llamas de la fogata: cambian de cuadro y titilan
+            if (fogata) {
+                fogata.g.visible = !oculto && Math.hypot(fogata.g.position.x - jugador.pos.x, fogata.g.position.z - jugador.pos.z) < RADIO_VISIBLE;
+                if ((fogata.reloj -= dt) <= 0) { fogata.reloj = 0.11; fogata.cuadro = (fogata.cuadro + 1) % 3; fogata.matLlama.map = fogata.cuadros[fogata.cuadro]; }
+                fogata.llamas.forEach((m, i) => { m.scale.y = 0.9 + Math.sin(tiempo * 11 + i * 2) * 0.12; m.position.y = 0.5 * m.scale.y + 0.05; });
+            }
             // Humo de la fogata del campamento
             const fg = grupos.find(g => g.fuego);
             if (fg && !oculto && Math.hypot(fg.x - jugador.pos.x, fg.z - jugador.pos.z) < 80 && Math.random() < dt * 4) {
@@ -792,7 +850,10 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             idioma = i;
             for (const g of grupos) g.charla.setIdioma(i);
         },
-        forzarPase() { proximoPase = 0; }, // depuración: que Moisés y Lalo se pasen el bong y el pito
+        forzarPase() { proximoPase = 0; },
+        // Piezas de la leñera y de la fogata para los minijuegos de la supervivencia (minijuego-lena.js, minijuego-asado.js)
+        lena: boris ? { boris, lucho, hachazo, astillar } : null,
+        campamento: hadad ? { hadad, andy, nacho, fuego: grupos.find(g => g.fuego).fuego, emitir, tos } : null, // depuración: que Moisés y Lalo se pasen el bong y el pito
         // Piezas del iglú para la escena en que el jugador fuma con ellos (supervivencia/escenas-skin.js)
         iglu: moises ? {
             moises, lalo, bong: bongO, pito: pitoO, POS_PITO, emitir, tos, burbujas, boca, tomar,

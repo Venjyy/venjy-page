@@ -140,7 +140,10 @@ se «hace trampa» con las posiciones: se acomoda a la gente para el plano.
 
 ## Conjunto de planos nuevo
 
-Agrega una lista (`PLANOS_<NOMBRE>`) junto a las otras y su valor en `iniciarCine(n, { planos: '<nombre>' })`
+Si los planos dependen de dónde quedan los actores (de qué lado está el jugador), pasa la lista directo:
+`iniciarCine(n, { escena: true, planos: [ {nombre, ang, dist, alto, orbita, dolly}, … ] })` (así lo hacen los
+minijuegos: `minijuego-lena.js` calcula el signo `s` del lado y arma `ang: s * π/2` para el frente).
+Si no, agrega una lista (`PLANOS_<NOMBRE>`) junto a las otras y su valor en `iniciarCine(n, { planos: '<nombre>' })`
 (mira cómo se resolvió `'gata'` y `'trio'` en la función `planos()`). El ancla `n` puede ser un punto
 cualquiera `{ x, y, z, escala }` (p. ej. el punto medio entre dos actores), no tiene que ser un actor.
 
