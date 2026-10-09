@@ -108,6 +108,41 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 - [x] PR 3 · Misiones y jefes: `misiones-datos.js` (36 misiones + 3 de jefe, cada una con pedido/aceptar/completada ES-EN), `misiones.js` (clic derecho sobre el amigo, panel, marcadores «!»/«?», seguimiento en el HUD, globo especial con el diálogo único, tipos entregar/matar/visitar/noche/hablar; la 3 de Lona es `hablar` y queda en espera), `jefes.js` (altares en la mina, el portal y la orilla del naufragio; Imbunche, Chonchon gigante y Caleuche con barco, oleadas y capitán brujo; barra de vida; se reinicia si mueres o te alejas 70 bloques y devuelve el objeto; +1 corazón por jefe 1 y 2), `creditos.js`. Atajos: `__venjy.misiones.completarActiva()`, `__venjy.jefes.invocar('imbunche')`, `__venjy.final()`.
 - Pendiente/limitaciones de PR 1: las criaturas pisan según el mapa original (si se cava bajo ellas, flotan); antorchas de pared quedan si se rompe su muro; los bloques que caen (arena, grava) bajan al instante sin animación; sin refactor de `escena.js` (el render del survival repite el del creativo); los objetos tirados siguen con su física simple (los monstruos y jefes usan `mundo/fisica.js`); la misión 3 de Lona espera la explicación del dueño; los monstruos persiguen en línea recta (sin buscador de rutas) y no se guardan al salir (vuelven a aparecer); probar en un teléfono real.
 
+### Bloque 5 · Supervivencia online cooperativa (solo planificación, no implementado)
+
+Idea base (plan del 2026-10-09): reutilizar `mundo/online/` (Supabase Realtime: Presence + Broadcast, `red.js`, `avatares.js`) para una sala cooperativa de supervivencia. Hoy los monstruos y jefes (`enemigos.js`, `jefes.js`) corren 100 % en el cliente: se prefiere que un jugador **anfitrión** simule monstruos y jefes y difunda su estado a ~10 Hz (más justo para pelear un jefe juntos) antes que cada cliente simule los suyos y solo se sincronice el daño. Sincronizar posiciones, vida, daño y fase de los jefes, drops compartidos y misiones por jugador. Respetar los límites del plan gratis (~100 msg/s, máx. 8 jugadores por sala, ver «Modo online»). Cada parte en su propio chat y PR, con Opus.
+
+1. **Seguridad de Supabase (estado actual y mejoras pendientes)**
+   - Bien: solo está la clave publishable en el repo, RLS activo, sin DELETE para `anon`, checks de rango, `limpiar_salas_viejas` no la ejecuta `anon`.
+   - Débil: cualquiera con la clave puede leer todo, editar o vaciar salas ajenas (UPDATE con `using(true)` y `reiniciar_sala` sin verificación), llenar la base con INSERT sin límite y mandar mensajes falsos por el canal Realtime.
+   - Peor caso: vandalismo en salas o caída del online por cuotas; no hay datos personales ni riesgo para el proyecto ni cobros.
+   - Mejoras: secreto de sala para `reiniciar_sala` y UPDATE, trigger con tope de filas por sala, límite de frecuencia.
+2. **Formato común del mundo**
+   - La supervivencia online usa el mismo formato que `estadoActual()` (ediciones, cofres, cultivos, día, jefes).
+   - Botón «Guardar copia en este dispositivo» para jugar después solo (ranura IndexedDB o `.venjy`).
+   - Al guardar la copia, cada jugador se lleva su inventario.
+   - Misiones por jugador: cada uno conserva su progreso.
+   - Jefes: quedan derrotados o vivos según el estado del mundo.
+   - Cualquiera puede ser anfitrión desde su copia después.
+3. **Cofre del compañero (con animación)**
+   - Las cosas de cada compañero quedan en un «Cofre de <nombre>» que guarda el id del dueño (id aleatorio por dispositivo en `localStorage`, también enviado por red) y una copia de su skin.
+   - Si eres el dueño, se abre normal.
+   - Si no, escena corta: tu personaje intenta abrirlo, la tapa tiembla, sale el «guardián» (tu amigo con su skin, medio translúcido), mueve el dedo, te da un manotazo suave en la mano, dice una frase única ES/EN y cierra la tapa con humito.
+   - No se borra nada: si el amigo entra después a esa copia, recupera sus cosas.
+   - Opción: el dueño puede marcar el cofre como «compartido» antes de irse; entonces se abre y el guardián aparece contento con otra frase.
+   - La protección se puede saltar editando el `.venjy` a mano; basta para un juego entre amigos.
+4. **Modo local por WebRTC (misma red, sin Supabase)**
+   - `RTCPeerConnection` + canales de datos, en estrella: el anfitrión reparte los mensajes, máximo 8 jugadores.
+   - Nuevo transporte en `red.js` con la misma interfaz que Supabase (Presence + Broadcast).
+   - Emparejamiento sin servidor: el anfitrión muestra un QR con la oferta; el invitado lo escanea y muestra un QR de respuesta; el anfitrión lo escanea.
+   - La oferta se comprime (quitar lo innecesario + `CompressionStream`) a unos 300-500 bytes.
+   - Lector: `BarcodeDetector` donde exista; si no, jsQR en `vendor/`, cargado solo al usarlo.
+   - Sin cámara: copiar y pegar el código (es largo, ~500 caracteres; no sirve escribirlo a mano). Un código corto no se puede sin servidor.
+   - QR personalizado dibujado en canvas: módulos como bloques Minecraft, borde pixelado y la cara de la skin al centro (corrección de errores H).
+   - Riesgo: el Wi-Fi del colegio puede aislar a los equipos entre sí; probarlo.
+
+Orden sugerido: (1) formato común del mundo, (2) supervivencia online por Supabase con «guardar copia» y cofres, (3) transporte WebRTC local. Cada parte en su propio chat y PR, con Opus.
+
 ## Portafolio interactivo (el mundo como portafolio)
 
 Cada lugar del mundo muestra el contenido real del portafolio: cartel flotante encima y panel al acercarse (~4,5 bloques).
@@ -230,6 +265,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-09 · **Plan del bloque 5 (online cooperativo)** anotado en «Modo supervivencia»: seguridad de Supabase, formato común del mundo, cofre del compañero y modo local por WebRTC · solo planificación · `mundo/PENDIENTES.md`.
 - 2026-10-09 · **Revisión del dueño a los minijuegos**: fogata real (troncos cruzados y llamas animadas en vez de la antorcha), pradera con vacas, cerdos y gallinas junto al campamento y tercera historia de Pony (Pokémon TCG) · `construcciones.js`, `criaturas/amigos.js`, `criaturas/animales.js`, `supervivencia/minijuegos-datos.js`, `minijuego-pesca.js`, `minijuego-asado.js` (parrilla más ancha, patas por fuera de los troncos) · Verificado en el navegador: fogata y parrilla con capturas, 7 animales a 12–17 bloques del fuego, historia 3 al tener `pesca-2`; frases sin choques; pruebas OK; sin errores de consola.
 - 2026-10-09 · **Minijuegos con escenas (bloque 3 del plan de survival, rama `minijuegos`)**: marco común y tres minijuegos con intro, juego de un botón y finales con diálogos únicos: duelo de hachas con Boris, pesca con Pony (historia de la Profe Karly) y asado en la fogata · `mundo/supervivencia/minijuego.js`, `minijuego-lena.js`, `minijuego-pesca.js`, `minijuego-asado.js`, `minijuegos-datos.js` (nuevos); `main.js` (crea los minijuegos, botón del panel, bucle y `__venjy.minijuegos`), `misiones.js` (botón del minijuego en el panel, `estado.minijuegos` serializado, requisitos de tienda por minijuego), `tienda-datos.js` (oferta rebajada de Boris con `mj-boris`), `camaras.js` (listas de planos propias), `supervivencia.css` (tablero), `criaturas/amigos.js` (`lena`, `campamento`, astillas sueltas), `criaturas/cuerpo.js` (piso de los globos), `tests/tienda.mjs` (acepta `mj-<amigo>`) · Verificado en el navegador: botón en el panel (desactivado sin carne), planos de cada juego revisados con capturas y corregidos (tocones y jugador tapando), jugador automático: Boris perfecto gana en 6,4 s, pesca ~8 peces en 63 s, asado perfecto (3 filetes + papas + esmeralda), quemado (3 carbones), rendirse devuelve la carne; tablero en celular; frases sin choques con el resto del juego; `tienda.mjs`, `recetas.mjs`, `inventario.mjs` y `paridad.mjs` OK, sin errores de consola.
 - 2026-10-09 · **Tienda y trueque (bloque 2 del plan de survival, rama `tienda`)**: pestaña Tienda en el panel de cada amigo, 79 ofertas en 13 tiendas con ventas a cambio de esmeraldas · `mundo/supervivencia/tienda-datos.js` y `tienda.js` (nuevos), `misiones.js` (crea la tienda y agrega las pestañas en `panel()`), `supervivencia.css` (`.pestanas-mision`, `.tienda-*`), `mundo/tests/tienda.mjs` (ids, misiones `req`, diálogos únicos, calibración contra recetas). Verificado en el navegador: comprar, vender, «no te alcanza», oferta bloqueada y volver a la misión; sin errores en consola; `recetas`, `inventario`, `paridad` y `tienda` OK.
