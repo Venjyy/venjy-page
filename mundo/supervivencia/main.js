@@ -511,7 +511,9 @@ async function arrancar(guardado, cx = null) {
         if (op.enfocar && camaras) camaras.iniciarCine(op.enfocar);
         // «Hablar» (bloque 6a) no corta el juego: sin cámara de cine y con el panel a un costado
         if (op.hablar && camaras && camaras.enCine) camaras.terminarCine();
-        capaPanel.classList.toggle('capa-hablar', !!op.hablar);
+        // La tienda abierta desde «Hablar» (sin cine) también va al costado, para ver al amigo y su globo
+        capaPanel.classList.toggle('capa-hablar', !!op.hablar || (!!op.lado && camaras && !camaras.enCine));
+        document.body.classList.toggle('panel-lado', capaPanel.classList.contains('capa-hablar')); // supervivencia.css oculta el seguimiento de misión
         const aviso = document.querySelector('.clic-seguir'); // sin cine queda a la vista: con un panel abierto no hace falta
         if (aviso) aviso.hidden = true;
         jugador.teclas.clear();
@@ -524,6 +526,7 @@ async function arrancar(guardado, cx = null) {
         if (capaPanel.hidden) return;
         capaPanel.hidden = true;
         capaPanel.textContent = '';
+        document.body.classList.remove('panel-lado');
         uiAbierta = false;
         if (camaras) camaras.terminarCine();
         if (!vida.muerto) entrar();
@@ -900,8 +903,8 @@ async function arrancar(guardado, cx = null) {
     document.addEventListener('visibilitychange', () => { if (document.hidden) guardarYa(); });
 
     // ---- Entrada: puntero, pausa y teclas ----
-    // Tras cerrar una ventana con Esc el navegador no deja volver a capturar el mouse al tiro: en vez de la
-    // pausa se muestra un aviso y el siguiente clic vuelve al juego (Esc otra vez sí abre la pausa)
+    // Si el navegador no deja volver a capturar el mouse (sin un clic reciente), en vez de la pausa se
+    // muestra un aviso y el siguiente clic vuelve al juego (Esc otra vez sí abre la pausa)
     const avisoClic = document.createElement('div');
     avisoClic.className = 'clic-seguir';
     avisoClic.hidden = true;
@@ -912,9 +915,28 @@ async function arrancar(guardado, cx = null) {
     document.addEventListener('keydown', e => {
         if (e.code === 'Escape' && !avisoClic.hidden && !e.repeat) { avisoClic.hidden = true; alActivo(false); e.preventDefault(); }
     });
-    function pedirPuntero() {
+    // Esc cierra ventanas como en Minecraft. Si se pide el puntero mientras Esc está abajo, el navegador lo
+    // concede y el mismo Esc lo suelta al tiro (se abría la pausa): se espera a soltar la tecla.
+    // (si el navegador se traga el keyup, a los 1,5 s se deja de esperar)
+    let escAbajo = false, escT = 0, entrarAlSoltarEsc = false;
+    document.addEventListener('keydown', e => { if (e.code === 'Escape') { escAbajo = true; escT = performance.now(); } }, true);
+    document.addEventListener('keyup', e => {
+        if (e.code !== 'Escape') return;
+        escAbajo = false;
+        if (entrarAlSoltarEsc) { entrarAlSoltarEsc = false; if (!uiAbierta && !vida.muerto && !jugador.activo) entrar(); }
+    }, true);
+    window.addEventListener('blur', () => { escAbajo = false; });
+    function pedirPuntero(reintento = false) {
+        if (escAbajo && performance.now() - escT < 1500) {
+            entrarAlSoltarEsc = true;
+            setTimeout(() => { if (entrarAlSoltarEsc) { entrarAlSoltarEsc = false; escAbajo = false; if (!uiAbierta && !vida.muerto && !jugador.activo) pedirPuntero(); } }, 1600);
+            return;
+        }
         const rechazo = () => {
             if (jugador.activo || uiAbierta || vida.muerto) return;
+            // Justo después de salir con Esc el navegador rechaza el puntero ~1 s aunque haya un clic
+            // (por ejemplo «Continuar» en la pausa): se reintenta una vez mientras el clic siga vigente
+            if (!reintento && navigator.userActivation && navigator.userActivation.isActive) { setTimeout(() => { if (!jugador.activo && !uiAbierta) pedirPuntero(true); }, 1100); return; }
             avisoTexto.textContent = tx().clicSeguir;
             avisoClic.hidden = false;
         };

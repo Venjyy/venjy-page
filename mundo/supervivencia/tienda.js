@@ -17,7 +17,7 @@ const TXT = {
 
 // ctx: inventario, hud, hechas() -> Set de ids, tituloDe(id) -> {es,en}, nombres (NOMBRES_AMIGO), dar(lista),
 // decir(clave, texto), abrirPanel, volver(clave) (vuelve al panel de misión), conversar(clave) (pestaña «Hablar»),
-// precio(clave, oferta) -> { da, pide, rebaja } (descuento por amistad), alComprar(clave), cerrarPanel
+// precio(clave, oferta) -> { da, pide, rebaja } (descuento por amistad), alComprar(clave), alAbrir(clave, el), cerrarPanel
 export function crearTienda(ctx) {
     const { inventario, hud, hechas, tituloDe, nombres, dar, decir, abrirPanel, volver, cerrarPanel } = ctx;
     const precio = (clave, o) => (ctx.precio ? ctx.precio(clave, o) : { da: o.da, pide: o.pide, rebaja: false });
@@ -103,7 +103,8 @@ export function crearTienda(ctx) {
         const b = document.createElement('button'); b.type = 'button'; b.className = 'boton secundario'; b.textContent = tx().cerrar;
         b.addEventListener('click', () => cerrarPanel());
         cerrar.appendChild(b); el.appendChild(cerrar);
-        abrirPanel(el, {});
+        abrirPanel(el, { lado: true });
+        if (ctx.alAbrir) ctx.alAbrir(clave, el); // el amigo se queda quieto mientras compras
     }
 
     function comprar(clave, o) {

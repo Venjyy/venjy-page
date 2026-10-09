@@ -57,16 +57,25 @@ export function crearMisiones(ctx) {
         inventario, hud, hechas: () => ({ has: id => estado.hechas.has(id) || estado.minijuegos.has(id) }), idioma, nombres: NOMBRES_AMIGO, abrirPanel, cerrarPanel,
         tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo, dar: lista => dar(lista),
         decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave), conversar: clave => conversar(clave),
-        precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda')
+        precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda'),
+        alAbrir: (clave, el) => retenerAmigo(clave, el)
     });
 
     // ---- Pestaña «Hablar»: hablar.js y dialogos-datos.js se cargan la primera vez que se abre ----
+    // (también al abrir Misión o Tienda: el amigo queda quieto y te mira mientras su panel esté abierto)
     let hablarUI = null, cargandoHablar = null;
     function conversar(clave) {
         if (hablarUI) return hablarUI.abrir(clave);
+        cargarHablar().then(h => { if (h) h.abrir(clave); });
+    }
+    function retenerAmigo(clave, el) {
+        if (hablarUI) return hablarUI.retener(clave, el);
+        cargarHablar().then(h => { if (h && el.isConnected) h.retener(clave, el); });
+    }
+    function cargarHablar() {
         if (!cargandoHablar) cargandoHablar = import('./hablar.js').then(m => {
             hablarUI = m.crearHablar({
-                amistad, jugador, dy, inventario, hud, sonidos, nombreDe, abrirPanel, cerrarPanel, idioma, nombres: NOMBRES_AMIGO, base: baseSkin,
+                amistad, jugador, camara, dy, inventario, hud, sonidos, nombreDe, abrirPanel, cerrarPanel, idioma, nombres: NOMBRES_AMIGO, base: baseSkin,
                 hechos: () => ({ hechas: estado.hechas, minijuegos: estado.minijuegos, jefes: estado.jefes }),
                 personaDe: c => (personas().find(p => p.clave === c) || {}).n || null,
                 pestanas: c => tienda.pestanas(c, 'hablar'),
@@ -75,7 +84,7 @@ export function crearMisiones(ctx) {
             });
             return hablarUI;
         }).catch(e => { cargandoHablar = null; console.error('No se pudo cargar «Hablar»', e); });
-        cargandoHablar.then(h => { if (h) h.abrir(clave); });
+        return cargandoHablar;
     }
 
     // ---- Personas ----
@@ -221,13 +230,14 @@ export function crearMisiones(ctx) {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'boton boton-minijuego'; b.textContent = mj.texto;
             if (mj.motivo) { b.disabled = true; b.title = mj.motivo; }
-            else b.addEventListener('click', () => botonMinijuego.jugar(clave));
+            else b.addEventListener('click', () => { if (hablarUI) hablarUI.soltar(); botonMinijuego.jugar(clave); }); // suelta al amigo antes de que el minijuego lo tome
             el.appendChild(b);
             if (mj.motivo) el.appendChild(parrafo(mj.motivo, 'motivo-minijuego'));
         }
         // La cámara de cine encuadra al amigo mientras el panel está abierto
         const p = personas().find(x => x.clave === clave);
         abrirPanel(el, { enfocar: p ? p.n : null });
+        retenerAmigo(clave, el);
         const primero = fila.querySelector('button');
         if (primero) primero.focus();
     }
@@ -278,6 +288,7 @@ export function crearMisiones(ctx) {
         sonidos.nivel();
         // El agradecimiento no es un panel: el amigo lo dice en su globo, como en sus conversaciones
         cerrarPanel();
+        if (hablarUI) hablarUI.soltar(); // por si una escena (el cuello de Gala) toma al amigo ahora
         // alCompletar puede devolver true si una escena dice el agradecimiento (p. ej. el cuello de Gala): no sale el globo suelto
         const conEscena = !!(ctx.alCompletar && ctx.alCompletar(m));
         if (!conEscena) decirEspecial(m.amigo, L(m.completada));

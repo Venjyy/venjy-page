@@ -28,7 +28,7 @@ const angulo = a => Math.atan2(Math.sin(a), Math.cos(a));
 const CAMPOS = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'inc', 'rz'];
 const MAX_DIST = 7; // más lejos, el panel se cierra solo
 
-// ctx: amistad, hechos() -> { hechas, minijuegos, jefes }, personaDe(clave) -> n, jugador, dy, nombres, base() (clave de tu skin),
+// ctx: amistad, hechos() -> { hechas, minijuegos, jefes }, personaDe(clave) -> n, jugador, camara, dy, nombres, base() (clave de tu skin),
 // pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en}
 export function crearHablar(ctx) {
     const { amistad, jugador, dy, nombres, inventario, sonidos } = ctx;
@@ -39,9 +39,10 @@ export function crearHablar(ctx) {
     // ---------------------------------------------------------
     // Gestos sobre la animación normal
     // ---------------------------------------------------------
-    let charla = null; // { clave, n, hook, w, t, cola, g, yawLibre, off, cur, ultimo }
-    let elActual = null, claveActual = null;
-    const vivo = c => !!(elActual && elActual.isConnected && claveActual === c.clave);
+    // El amigo queda retenido (quieto y mirándote) mientras su panel esté abierto en cualquier pestaña
+    // (Hablar, Misión o Tienda: misiones.js llama a `retener` con el elemento del panel); los gestos son de «Hablar»
+    let charla = null; // { clave, n, el, hook, w, t, cola, g, yawLibre, off, cur, ultimo }
+    const vivo = c => !!(c.el && c.el.isConnected);
     function leer(p) {
         return { cx: p.cuello.rotation.x, cy: p.cuello.rotation.y, cz: p.cuello.rotation.z, bDx: p.brazoD.rotation.x, bDz: p.brazoD.rotation.z,
             bIx: p.brazoI.rotation.x, bIz: p.brazoI.rotation.z, inc: p.cuerpo.rotation.x, rz: p.cuerpo.rotation.z };
@@ -57,15 +58,15 @@ export function crearHablar(ctx) {
         charla.cola = lista.map(x => ({ ...x }));
         charla.g = null;
     }
-    function enganchar(clave) {
+    function retener(clave, el) {
         const n = ctx.personaDe(clave);
         if (!n) return;
-        if (charla && charla.n === n && n.escena === charla.hook) { charla.clave = clave; return; }
+        if (charla && charla.n === n && n.escena === charla.hook) { charla.clave = clave; charla.el = el; return; }
         soltar();
         if (n.escena) return; // otra escena (skin, minijuego) lo tiene: no se toca
         // Sentado (piernas adelante, como en escenas-skin.js): gira poco el cuerpo; de pie, casi de frente
         const sentado = n.p.piernaD.rotation.x < -0.4;
-        const c = { clave, n, w: 0, t: 0, cola: [], g: null, yawLibre: n.yaw, off: 0, cur: null, ultimo: performance.now(), giro: sentado ? 0.4 : 0.85, topeGiro: sentado ? 0.6 : 1.6 };
+        const c = { clave, n, el, w: 0, t: 0, cola: [], g: null, yawLibre: n.yaw, off: 0, cur: null, ultimo: performance.now(), giro: sentado ? 0.4 : 0.85, topeGiro: sentado ? 0.6 : 1.6 };
         c.hook = (dt, base) => {
             c.ultimo = performance.now();
             c.t += dt;
@@ -234,9 +235,8 @@ export function crearHablar(ctx) {
         fila.appendChild(boton(tx().cerrar, () => ctx.cerrarPanel(), 'secundario'));
         el.appendChild(fila);
 
-        elActual = el; claveActual = clave;
         ctx.abrirPanel(el, { hablar: true });
-        enganchar(clave);
+        retener(clave, el);
         if (saludo) gesticular([{ g: 'asiente', dur: 1.4 }]);
         const primero = lista.querySelector('button:not(:disabled)');
         if (primero) primero.focus({ preventScroll: true });
@@ -264,18 +264,43 @@ export function crearHablar(ctx) {
         gesticular([{ g: GESTO_REGALO[clave] || 'risa', dur: 2 }, { g: 'asiente', dur: 1.2 }]);
     }
 
-    function actualizar() {
+    // Encuadre (sin cámara de cine): muy cerca del amigo su globo queda sobre la vista, así que la cámara
+    // sube sola hasta que se lee (solo sube, con la cara todavía en pantalla), y gira para dejar al amigo
+    // en el centro de la zona libre a la derecha del panel (en pantallas angostas, al centro)
+    function encuadrar(c, dt) {
+        const cam = ctx.camara;
+        if (!cam || !dt || document.body.classList.contains('en-cine')) return;
+        const n = c.n, esc = n.escala || 1;
+        const d = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z) || 1;
+        const yGlobo = (n.y ?? 0) + dy + 2.75 * esc + 0.6; // centro aproximado del globo (misiones.js lo pone a 2,75)
+        const medio = (cam.fov * Math.PI / 180) / 2;
+        const k = Math.min(1, dt * 4);
+        const objetivo = Math.min(1.2, Math.atan2(yGlobo - cam.position.y, d) - medio * 0.45);
+        if (jugador.pitch < objetivo - 0.005) jugador.pitch += (objetivo - jugador.pitch) * k;
+        // Horizontal: ángulo del amigo en pantalla contra el centro de la zona libre
+        const ancho = window.innerWidth || 1, r = c.el.getBoundingClientRect();
+        const derechaPanel = r.right / ancho * 2 - 1;
+        const meta = derechaPanel < 0.4 ? (derechaPanel + 1) / 2 : 0;
+        const p = cam.position.clone().set(n.x, (n.y ?? 0) + dy + 1.6 * esc, n.z).project(cam);
+        if (p.z > 1) return; // detrás de la cámara
+        const tanH = Math.tan(medio) * cam.aspect;
+        const delta = Math.atan(meta * tanH) - Math.atan(p.x * tanH); // girar a la izquierda (yaw +) lo corre a la derecha
+        if (Math.abs(delta) > 0.01) jugador.yaw += delta * k;
+    }
+
+    function actualizar(dt = 0) {
         if (!charla) return;
         const c = charla;
         // Otra escena le quitó el gancho, o ya no se dibuja (lejos): se suelta
         if (c.n.escena !== c.hook) { charla = null; return; }
+        if (vivo(c)) encuadrar(c, dt);
         if (!vivo(c) && performance.now() - c.ultimo > 600) cerrarCharla(c);
         // Si el jugador se alejó (empujado, teletransporte), el panel se cierra
         if (vivo(c) && Math.hypot(c.n.x - jugador.pos.x, c.n.z - jugador.pos.z) > MAX_DIST) ctx.cerrarPanel();
     }
 
     return {
-        abrir, actualizar, soltar,
+        abrir, actualizar, soltar, retener,
         get charla() { return charla; },
         setIdioma(l) { idioma = l; }
     };
