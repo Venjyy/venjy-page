@@ -7,6 +7,8 @@
 //    encuadra al amigo y al jugador y va cambiando de plano (contraplano, plano general, picado,
 //    contrapicado, primer plano), con un movimiento lento dentro de cada plano y un fundido corto
 //    entre planos. Evita los planos que quedarían detrás de un bloque.
+//  · Con `validarTexto(pos, objetivo)` (escenas con globos) al elegir plano se descartan los que no dejan
+//    lugar libre para el globo de la línea actual/siguiente (con el foco que tendrá la cámara en cada una); si ninguno sirve, queda el de menor solape.
 //  · Escenas de skin (escenas-skin.js): la misma cámara sin panel; encuadra a los dos al centro,
 //    se inclina hacia quien habla (`enfocar`) y deja que la escena mueva el cuerpo (`pose`).
 // =========================================================
@@ -113,7 +115,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const DURACION = 4.2;
     // visibles (opcional): actores cuyas cabezas deben verse desde la cámara; el jugador se añade solo.
     // diag: diagnóstico del último plano calculado (solo con visibles): qué cabezas tapa la posición nominal.
-    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null, visibles: null, esperarLinea: false, corte: false };
+    const cine = { activa: false, n: null, plano: 0, t: 0, fundido: 0, escena: false, foco: 0.5, focoObj: 0.5, pose: null, evitar: [], fijo: null, planos: null, visibles: null, esperarLinea: false, corte: false, validarTexto: null, peor: null, usado: null };
     let diag = null;
     const fundidoEl = document.createElement('div');
     fundidoEl.className = 'fundido-cine';
@@ -124,7 +126,11 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const derecha = new THREE.Vector3(), mira = new THREE.Vector3();
     // Posición del plano k en el instante u (0..1); null si queda tapado
     const planos = () => (cine.escena ? (cine.planos === 'gata' ? PLANOS_GATA : cine.planos === 'trio' ? PLANOS_TRIO : PLANOS_ESCENA) : PLANOS);
-    function calcular(k, u) {
+    // validar (solo al elegir plano, no cada cuadro): exige además lugar libre para el globo; si el plano
+    // es válido salvo por eso, guarda en cine.peor el menor solape (para escoger el menos malo)
+    const tmpObj = new THREE.Vector3(), cam2 = new THREE.Vector3();
+    const objetivoDe = f => tmpObj.copy(amigo).lerp(yo, f); // hacia dónde mirará la cámara con el foco f (0 amigo, 1 jugador)
+    function calcular(k, u, validar = false) {
         const pl = planos()[k];
         const n = cine.n, esc = n.escala || 1;
         amigo.set(n.x, (n.y ?? 0) + dy + 1.55 * esc, n.z);
@@ -140,14 +146,27 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         // Bajo techo (el iglú) cada plano prueba también más abajo, hasta la altura del pecho
         const bajo = cine.escena ? Math.min(pl.alto, 1.3) : pl.alto;
         let nominal = null; // lo que tapa la posición nominal del plano (la primera que se prueba)
-        for (; dist > (cine.escena ? 1.1 : 1.4); dist -= 0.3) for (let alto = pl.alto; alto >= bajo; alto -= 0.3) {
+        cine.peor = null;
+        // Pares (recorte de distancia, recorte de altura); primero el que se validó al elegir el plano (sin saltos)
+        const d0 = dist, minD = cine.escena ? 1.1 : 1.4, pares = [];
+        if (!validar && cine.usado && cine.usado.k === k) pares.push([cine.usado.di, cine.usado.ai]);
+        for (let di = 0; d0 - 0.3 * di > minD; di++) for (let ai = 0; pl.alto - 0.3 * ai >= bajo - 1e-9; ai++) pares.push([di, ai]);
+        for (const [di, ai] of pares) {
+            const dist = d0 - 0.3 * di, alto = pl.alto - 0.3 * ai;
             cam.set(centro.x + Math.sin(ang) * dist, (n.y ?? 0) + dy + alto, centro.z + Math.cos(ang) * dist);
             if (cine.escena && (cam.distanceTo(yo) < 1 || cam.distanceTo(amigo) < 1 || tapa())) continue;
             if (cine.visibles && mundo.bloque(cam.x, cam.y, cam.z) > 0) continue; // la cámara no puede quedar dentro de un bloque
             const tapadas = cine.visibles ? cabezasTapadas() : null;
             if (nominal === null && tapadas) nominal = tapadas;
             if (libre(mundo, objetivo, cam) && !(tapadas && tapadas.length)) {
+                if (validar && cine.validarTexto) {
+                    // Se prueba al empezar el plano y al final (más cerca por el dolly y girado por la órbita)
+                    const fin = cam2.set(centro.x + Math.sin(ang + pl.orbita * (1 - u)) * (dist + pl.dolly * (1 - u)), cam.y, centro.z + Math.cos(ang + pl.orbita * (1 - u)) * (dist + pl.dolly * (1 - u)));
+                    const sol = Math.max(cine.validarTexto(cam, objetivo, objetivoDe), cine.validarTexto(fin, objetivo, objetivoDe));
+                    if (sol > 0) { if (!cine.peor || sol < cine.peor.s) cine.peor = { s: sol, di, ai }; continue; }
+                }
                 if (tapadas) diag = { plano: k, nombre: pl.nombre, nominal, libre: true, usada: { dist: +dist.toFixed(2), alto: +alto.toFixed(2) } };
+                cine.usado = { k, di, ai };
                 return true;
             }
         }
@@ -192,10 +211,13 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     }
     function siguientePlano(desde) {
         const n = planos().length;
+        let menos = null, solape = Infinity;
         for (let i = 1; i <= n; i++) {
             const k = (desde + i) % n;
-            if (calcular(k, 0)) return k;
+            if (calcular(k, 0, true)) return k;
+            if (cine.peor && cine.peor.s < solape) { solape = cine.peor.s; menos = { k, di: cine.peor.di, ai: cine.peor.ai }; } // válido pero sin lugar para el globo
         }
+        if (menos) { cine.usado = { k: menos.k, di: menos.di, ai: menos.ai }; return menos.k; }
         return desde;
     }
 
@@ -254,17 +276,20 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cine.activa = true; cine.n = n; cine.t = 0; cine.fundido = op.fundido ?? 0.3;
             cine.escena = !!op.escena; cine.planos = op.planos || null; cine.foco = cine.focoObj = 0.5; cine.evitar = op.evitar || [];
             cine.visibles = op.visibles && op.visibles.length ? op.visibles : null;
-            cine.esperarLinea = !!op.esperarLinea; cine.corte = false; cine.buena = null;
-            cine.plano = calcular(0, 0) ? 0 : siguientePlano(0);
+            cine.esperarLinea = !!op.esperarLinea; cine.corte = false; cine.buena = null; cine.usado = null;
+            cine.validarTexto = op.validarTexto || null;
+            cine.plano = calcular(0, 0, true) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');
         },
         terminarCine() {
             if (!cine.activa) return;
-            cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null; cine.visibles = null; diag = null; cine.esperarLinea = false; cine.corte = false;
+            cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null; cine.visibles = null; diag = null; cine.esperarLinea = false; cine.corte = false; cine.validarTexto = null;
             document.body.classList.remove('en-cine');
         },
         // Depuración (planos.mjs): plano actual y diagnóstico de líneas a las cabezas (null si no se pidió `visibles`)
+        get camara() { return camara; }, // la cámara real (los globos con encaje la necesitan)
         get planoActual() { return cine.activa ? cine.plano : null; },
+        get planoNombre() { return cine.activa ? planos()[cine.plano]?.nombre ?? null : null; },
         get diagnostico() { return cine.visibles ? diag : null; }
     };
 }

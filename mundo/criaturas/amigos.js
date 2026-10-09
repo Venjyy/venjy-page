@@ -9,7 +9,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { NIVEL_AGUA } from '../voxeles.js';
 import {
     seVe, RADIO_VISIBLE, ajustar, lerp, angulo, crearTinte, crearPersona, caminar, caja, texturaPixeles, liso,
-    crearNombre, crearGlobo, suelo, audioMundo, sonando, bufferRuido
+    crearNombre, crearGlobo, COLOR_GLOBO, suelo, audioMundo, sonando, bufferRuido
 } from './cuerpo.js';
 import { pielDe, agregarExtras } from './pieles.js';
 import { crearCharla } from './charla.js';
@@ -103,7 +103,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         scene.add(p.g);
         const n = {
             clave, p, escala, x, y, z, yaw, t: Math.random() * 10, fase: 0,
-            nombre: crearNombre(scene, d.nombre), globo: crearGlobo(scene),
+            nombre: crearNombre(scene, d.nombre), globo: crearGlobo(scene, { color: COLOR_GLOBO[clave] }),
             frase: null, cerca: false, cambioFrase: 0, charla: null, visible: false
         };
         lista.push(n);

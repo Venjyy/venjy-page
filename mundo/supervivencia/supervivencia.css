@@ -443,6 +443,9 @@ body.en-cine .panel-mision h2 { font-size: 1.2rem; }
 /* Escenas de skin: botón «Saltar» sobre la franja de abajo (Esc también salta) */
 .saltar-escena { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-escena .saltar-escena { display: block; }
+/* Recorrido de escenas (/escenas): «Terminar recorrido» abajo a la izquierda, frente a «Saltar» */
+.parar-recorrido { display: none; position: fixed; left: calc(3vw + env(safe-area-inset-left, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-recorrido .parar-recorrido { display: block; }
 /* Caricias a las gatas (caricias.js): su propio «Saltar»; ACARICIAR va encima de USAR y se oculta solo */
 .saltar-caricia { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-caricia .saltar-caricia { display: block; }

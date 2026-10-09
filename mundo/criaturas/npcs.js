@@ -10,7 +10,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { ESCALA, NIVEL_AGUA } from '../voxeles.js';
 import {
     seVe, RADIO_VISIBLE, ajustar, lerp, angulo, crearTinte, crearPersona, caminar, caja, texturaPixeles, liso,
-    crearNombre, crearGlobo, suelo, sonando
+    crearNombre, crearGlobo, COLOR_GLOBO, suelo, sonando
 } from './cuerpo.js';
 import { crearBajo } from './bajo.js';
 
@@ -208,7 +208,7 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         scene.add(p.g);
         const npc = {
             clave, p, x: 0, y: 0, z: 0, yaw: 0, fase: 0, t: Math.random() * 10,
-            nombre: crearNombre(scene, piel.nombre), globo: crearGlobo(scene),
+            nombre: crearNombre(scene, piel.nombre), globo: crearGlobo(scene, { color: COLOR_GLOBO[clave] }),
             frase: null, cambioFrase: 0, cerca: false
         };
         lista.push(npc);

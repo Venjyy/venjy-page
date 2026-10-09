@@ -13,7 +13,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { TIPO } from '../texturas.js';
-import { crearGlobo } from '../criaturas/cuerpo.js';
+import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -110,6 +110,7 @@ export function crearCaricias({ grupo, dy, mundo, jugador, camaras, gatas, hud, 
 
     function iniciar(g) {
         bloquear();
+        globo.etiqueta = { color: COLOR_GLOBO[g.clave] }; // el ronroneo lleva el color de la gata
         const sitio = lugarJunto(g);
         if (sitio) jugador.colocar(sitio.x, sitio.y, sitio.z);
         // La gata mira hacia el jugador; el jugador, hacia la gata (el cuerpo gira con yaw + PI)
@@ -270,6 +271,7 @@ export function crearCaricias({ grupo, dy, mundo, jugador, camaras, gatas, hud, 
         // Para el botón táctil: avisa cuando hay una gata al alcance (true/false)
         alCambiarCercania(f) { listeners.push(f); },
         get activa() { return !!estado; },
+        saltar: () => { if (estado) terminar(); },
         setIdioma(l) { L = l; boton.textContent = tx().saltar; },
         // Depuración (capturas): forzar una caricia con una gata, detener el reloj, ir a un segundo
         forzar(clave) {
