@@ -7,6 +7,7 @@ import { O, nombreDe } from '../supervivencia/objetos.js';
 import { RECETAS, FUNDICION, ingredientes } from '../supervivencia/recetas.js';
 import { TIENDAS } from '../supervivencia/tienda-datos.js';
 import { MISIONES, NOMBRES_AMIGO } from '../supervivencia/misiones-datos.js';
+import { REQ_MINIJUEGOS } from '../supervivencia/minijuegos-datos.js';
 
 let fallos = 0;
 const ok = (cond, msg) => { if (!cond) { fallos++; console.log('FALLA:', msg); } };
@@ -59,7 +60,7 @@ for (const [clave, def] of Object.entries(TIENDAS)) {
         ofertas++;
         const e = `${clave} ${o.da.map(([id]) => nombreDe(id))}`;
         for (const [id, n] of [...o.da, ...o.pide]) { ok(id && nombreDe(id) !== '?', `${e}: id inválido`); ok(Number.isInteger(n) && n > 0, `${e}: cantidad inválida`); }
-        if (o.req) ok(ids.has(o.req) && o.req.startsWith(clave), `${e}: req «${o.req}» no es misión de ${clave}`);
+        if (o.req) ok((ids.has(o.req) && o.req.startsWith(clave)) || (REQ_MINIJUEGOS[o.req] && o.req === `mj-${clave}`), `${e}: req «${o.req}» no es misión ni minijuego de ${clave}`);
         const da = suma(o.da), pide = suma(o.pide);
         ok(isFinite(da) && isFinite(pide), `${e}: sin valor calculable`);
         ok(pide >= da, `${e}: la tienda regala (da ${da.toFixed(1)} > pide ${pide.toFixed(1)})`);

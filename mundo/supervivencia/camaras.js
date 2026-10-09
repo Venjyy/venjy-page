@@ -125,7 +125,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const amigo = new THREE.Vector3(), yo = new THREE.Vector3(), objetivo = new THREE.Vector3(), cam = new THREE.Vector3(), centro = new THREE.Vector3();
     const derecha = new THREE.Vector3(), mira = new THREE.Vector3();
     // Posición del plano k en el instante u (0..1); null si queda tapado
-    const planos = () => (cine.escena ? (cine.planos === 'gata' ? PLANOS_GATA : cine.planos === 'trio' ? PLANOS_TRIO : PLANOS_ESCENA) : PLANOS);
+    // `planos` también puede ser una lista propia (minijuegos: la arma cada juego según dónde quedan los actores)
+    const planos = () => (cine.escena ? (Array.isArray(cine.planos) ? cine.planos : cine.planos === 'gata' ? PLANOS_GATA : cine.planos === 'trio' ? PLANOS_TRIO : PLANOS_ESCENA) : PLANOS);
     // validar (solo al elegir plano, no cada cuadro): exige además lugar libre para el globo; si el plano
     // es válido salvo por eso, guarda en cine.peor el menor solape (para escoger el menos malo)
     const tmpObj = new THREE.Vector3(), cam2 = new THREE.Vector3();

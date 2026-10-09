@@ -14,6 +14,7 @@ import { crearGlobo } from '../criaturas/cuerpo.js';
 import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
 import { crearTienda } from './tienda.js';
+import { REQ_MINIJUEGOS } from './minijuegos-datos.js';
 
 const TXT = {
     es: { aceptar: 'Aceptar', entregar: 'Entregar', cerrar: 'Cerrar', abandonar: 'Abandonar misión', premio: 'Premio', progreso: 'Progreso',
@@ -34,13 +35,16 @@ export function crearMisiones(ctx) {
     const tx = () => TXT[idioma];
     const L = o => (o ? o[idioma] || o.es : '');
     // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
-    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set() };
+    // minijuegos: juegos jugados y marcas como 'mj-boris' (minijuego.js)
+    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set() };
     let ocultarMarcas = false;
+    let botonMinijuego = null; // clave -> { texto, motivo } o null (lo pone minijuego.js con `misiones.minijuego`)
 
     // ---- Tienda (pestaña del panel de cada amigo) ----
     const tienda = crearTienda({
-        inventario, hud, hechas: () => estado.hechas, idioma, nombres: NOMBRES_AMIGO, abrirPanel, cerrarPanel,
-        tituloDe: id => (misionDe(id) || {}).titulo, dar: lista => dar(lista),
+        // Una oferta se desbloquea con una misión o con una marca de minijuego ('mj-boris')
+        inventario, hud, hechas: () => ({ has: id => estado.hechas.has(id) || estado.minijuegos.has(id) }), idioma, nombres: NOMBRES_AMIGO, abrirPanel, cerrarPanel,
+        tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo, dar: lista => dar(lista),
         decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave)
     });
 
@@ -179,6 +183,16 @@ export function crearMisiones(ctx) {
             fila.appendChild(b);
         }
         el.appendChild(fila);
+        // Minijuego del amigo (Boris, Pony, la fogata): botón aparte; si falta algo, desactivado y con el motivo
+        const mj = botonMinijuego && botonMinijuego.texto(clave);
+        if (mj) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'boton boton-minijuego'; b.textContent = mj.texto;
+            if (mj.motivo) { b.disabled = true; b.title = mj.motivo; }
+            else b.addEventListener('click', () => botonMinijuego.jugar(clave));
+            el.appendChild(b);
+            if (mj.motivo) el.appendChild(parrafo(mj.motivo, 'motivo-minijuego'));
+        }
         // La cámara de cine encuadra al amigo mientras el panel está abierto
         const p = personas().find(x => x.clave === clave);
         abrirPanel(el, { enfocar: p ? p.n : null });
@@ -362,7 +376,7 @@ export function crearMisiones(ctx) {
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin] };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos] };
     }
     function cargar(o) {
         if (!o) return;
@@ -374,6 +388,7 @@ export function crearMisiones(ctx) {
         estado.jefes = new Set(o.jefes || []);
         estado.vidaExtra = o.vidaExtra || 0;
         estado.escenasSkin = new Set(o.escenasSkin || []);
+        estado.minijuegos = new Set(o.minijuegos || []);
         vida.vidaMax = 20 + estado.vidaExtra;
     }
 
@@ -382,6 +397,8 @@ export function crearMisiones(ctx) {
         get activa() { return misionDe(estado.activa); },
         setIdioma(l) { idioma = l; firma = ''; tienda.setIdioma(l); },
         set ocultarMarcas(v) { ocultarMarcas = v; },
+        // { texto(clave) -> { texto, motivo } | null, jugar(clave) } (main.js lo conecta con minijuego.js)
+        set minijuego(o) { botonMinijuego = o; },
         // Atajos de depuración
         completarActiva() { const m = misionDe(estado.activa); if (m && !m.jefe) { estado.progreso = 999; estado.noche = 'lista'; if (m.tipo === 'entregar') for (const [p, n] of m.pide) inventario.agregar([].concat(p)[0], n); hablar(m.amigo); } }
     };

@@ -144,7 +144,8 @@ export const TIENDAS = {
             of([[O.HACHA_HIERRO, 1]], E(2)),
             of([[B.TABLONES, 16]], E(1)),
             of([[B.TRONCO, 8]], [[O.CARBON, 4]]),
-            of([[O.HACHA_DIAMANTE, 1]], E(8), 'boris3')
+            of([[O.HACHA_DIAMANTE, 1]], E(8), 'boris3'),
+            of([[B.TABLONES, 32]], E(1), 'mj-boris') // rebaja por ganarle el duelo de hachas (minijuego-lena.js)
         ],
         compra: [vende(B.TRONCO, 16, 1)],
         saludo: t('Leña, hachas y tablones. Lo que no corto, lo cambio.', 'Firewood, axes and planks. What I do not chop, I trade.'),

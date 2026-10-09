@@ -50,6 +50,7 @@ import { crearCaricias } from './caricias.js';
 import { crearEscenasGatas } from './escenas-gatas.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
+import { crearMinijuegos } from './minijuego.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
@@ -513,6 +514,25 @@ async function arrancar(guardado) {
         bloquear: bloquearEscena,
         liberar: liberarEscena
     });
+    // Minijuegos (duelo de hachas con Boris, pesca con Pony, asado en la fogata): botón en el panel del amigo
+    const minijuegos = crearMinijuegos({
+        grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, amigos, npcs, terreno, inventario, entidades, hud, particulas, idioma,
+        tinteMundo: materiales.solido.color,
+        puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa,
+        bloquear: bloquearEscena,
+        liberar: liberarEscena
+    });
+    misiones.minijuego = {
+        texto: clave => minijuegos.botonPara(clave),
+        // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
+        jugar: clave => {
+            const b = minijuegos.botonPara(clave);
+            if (!b || b.motivo) return;
+            capaPanel.hidden = true; capaPanel.textContent = '';
+            camaras.terminarCine();
+            if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
+        }
+    };
     // Música de fondo y temas de los amigos
     const musica = crearMusica();
     const personasMusica = () => {
@@ -664,7 +684,7 @@ async function arrancar(guardado) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -707,6 +727,7 @@ async function arrancar(guardado) {
         caricias.actualizar(corre ? dt : 0);
         escenasGatas.actualizar(corre ? dt : 0);
         escenaCuello.actualizar(corre ? dt : 0);
+        minijuegos.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
         {

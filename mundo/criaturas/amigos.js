@@ -514,13 +514,23 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         leno.position.set(toconX, A.y + 1.21, toconZ);
         scene.add(leno);
         const mitades = [-1, 1].map(l => { const m = caja(0.18, 0.42, 0.36, lenaTex); m.visible = false; scene.add(m); return { m, l }; });
-        for (let j = 0; j < 6; j++) { const m = caja(0.08, 0.05, 0.12, lenaTex); m.visible = false; scene.add(m); astillas.push({ m, vida: 0, v: new THREE.Vector3() }); }
+        for (let j = 0; j < 12; j++) { const m = caja(0.08, 0.05, 0.12, lenaTex); m.visible = false; scene.add(m); astillas.push({ m, vida: 0, v: new THREE.Vector3() }); }
         boris.leno = leno; boris.mitades = mitades; boris.tocon = { x: toconX, y: A.y + 1, z: toconZ };
         boris.ciclo = 0; boris.golpes = 0; boris.partido = 0;
         lucho.rasca = rnd(4, 8);
         charlaLena = crearCharla(CHARLAS.lenera, { radio: 10 });
         boris.charla = lucho.charla = charlaLena;
         grupos.push({ charla: charlaLena, x: toconX + 1, z: toconZ + 1 });
+    }
+    // Astillas sueltas en un punto (las usa también el duelo de hachas de la supervivencia)
+    let astillaSig = 6;
+    function astillar(x, y, z, n = 3) {
+        for (let j = 0; j < n; j++) {
+            const a = astillas[6 + (astillaSig++ % (astillas.length - 6))]; // las 6 primeras son las de Boris
+            a.vida = 0.8; a.m.visible = true;
+            a.m.position.set(x, y, z);
+            a.v.set(rnd(-1.6, 1.6), rnd(1.5, 3), rnd(-1.6, 1.6));
+        }
     }
     function animarBoris(n, dt, t, dJ) {
         const { p } = n;
@@ -544,7 +554,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             hachazo(dJ);
             n.golpes++;
             for (let j = 0; j < 3; j++) { // astillas
-                const a = astillas[(n.golpes * 3 + j) % astillas.length];
+                const a = astillas[(n.golpes * 3 + j) % 6];
                 a.vida = 0.8; a.m.visible = true;
                 a.m.position.set(n.tocon.x, n.tocon.y + 0.45, n.tocon.z);
                 a.v.set(rnd(-1.6, 1.6), rnd(1.5, 3), rnd(-1.6, 1.6));
@@ -792,7 +802,10 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             idioma = i;
             for (const g of grupos) g.charla.setIdioma(i);
         },
-        forzarPase() { proximoPase = 0; }, // depuración: que Moisés y Lalo se pasen el bong y el pito
+        forzarPase() { proximoPase = 0; },
+        // Piezas de la leñera y de la fogata para los minijuegos de la supervivencia (minijuego-lena.js, minijuego-asado.js)
+        lena: boris ? { boris, lucho, hachazo, astillar } : null,
+        campamento: hadad ? { hadad, andy, nacho, fuego: grupos.find(g => g.fuego).fuego, emitir, tos } : null, // depuración: que Moisés y Lalo se pasen el bong y el pito
         // Piezas del iglú para la escena en que el jugador fuma con ellos (supervivencia/escenas-skin.js)
         iglu: moises ? {
             moises, lalo, bong: bongO, pito: pitoO, POS_PITO, emitir, tos, burbujas, boca, tomar,
