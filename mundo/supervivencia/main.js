@@ -54,6 +54,7 @@ import { crearMinijuegos } from './minijuego.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
+import { crearComandosDev } from './comandos-dev.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { crearCofresCompaneros } from './cofres-companeros.js';
@@ -700,9 +701,33 @@ async function arrancar(guardado, cx = null) {
     };
     // /escenas y /escena <nombre>: recorre las escenas para revisarlas (solo con la skin de Venjy)
     const recorrido = crearRecorridoEscenas({ dy: DY, jugador, mundo, gatas, escenas, escenaCuello, caricias, escenasGatas, misiones, hud, skin: () => skinActual, bloquear: bloquearEscena, idioma });
-    // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>
+    // Teletransporte de /tp: carga el terreno, busca suelo (si no se da y, desde la altura de la pista) y coloca al jugador
+    function irA(x, y, z, pista) {
+        cargarCerca(x, z);
+        const bx = Math.floor(x), bz = Math.floor(z);
+        if (y === undefined) {
+            for (let yy = pista !== undefined ? pista + DY + 12 : ALTO - 3; yy > 1 && y === undefined; yy--) {
+                if (jugador.solido(bx, yy - 1, bz) && !jugador.choca(x, yy, z)) y = yy;
+            }
+            if (y === undefined) y = terreno.HT[Math.min(terreno.BD - 1, Math.max(0, bz)) * terreno.BW + Math.min(terreno.BW - 1, Math.max(0, bx))] + DY + 1;
+        }
+        const p = lugarLibre(x, y, z) || { x, y, z };
+        jugador.colocar(p.x, p.y, p.z);
+        jugador.yaw = Math.PI; // mira al norte
+    }
+    // Destinos de zonas del portafolio en coordenadas del mundo (y del creativo + desnivel)
+    const destinosDev = {};
+    for (const [k, d] of Object.entries(destinosZonas({ terreno, datos }))) destinosDev[k] = { x: d.x, z: d.z, y: d.y === undefined ? undefined : d.y + DY };
+    const comandosDev = crearComandosDev({
+        jugador, vida, inventario, enemigos, jefes, gatas, escenas, hud, O, B, nombreDe, idioma,
+        destinos: destinosDev,
+        spawn: () => ({ x: spawnMundo.x, y: spawnMundo.y, z: spawnMundo.z }),
+        spawnCama: () => spawnCama,
+        irA
+    });
+    // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>, /gamemode devenjy (+ comandos de desarrollo)
     const consola = crearConsola({
-        jugador, dia, hud, idioma,
+        jugador, dia, hud, idioma, dev: comandosDev,
         extra: {
             '/escenas': { fn: () => recorrido.comando(''), ayuda: { es: '/escenas (todas, con skin de Venjy)', en: '/escenas (all, with the Venjy skin)' } },
             '/escena': { fn: n => recorrido.comando(n), ayuda: { es: '/escena <nombre> (una)', en: '/escena <name> (one)' } }
