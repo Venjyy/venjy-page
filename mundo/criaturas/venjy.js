@@ -194,7 +194,7 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
         scene.add(p.g);
         const n = {
             lugar, p, x, z, y, yaw, yawBase: yaw, anim, frases, t: Math.random() * 10, fase: 0, ciclo: Math.random() * 3,
-            nombre: crearNombre(scene, 'Venjy'), globo: crearGlobo(scene, { color: COLOR_GLOBO.venjy }), frase: null, cerca: false, cambioFrase: 0,
+            nombre: crearNombre(scene, 'Venjy'), globo: crearGlobo(scene, { nombre: 'Venjy', color: COLOR_GLOBO.venjy }), frase: null, cerca: false, cambioFrase: 0,
             cargado: false, candidatos: candidatos || [[x, z]], ...extra
         };
         if (n.alCrear) n.alCrear(n);

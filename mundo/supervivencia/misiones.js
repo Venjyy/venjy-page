@@ -10,7 +10,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO } from './misiones-datos.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
-import { crearGlobo } from '../criaturas/cuerpo.js';
+import { crearGlobo, zonasPantalla, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
 import { crearTienda } from './tienda.js';
@@ -57,16 +57,25 @@ export function crearMisiones(ctx) {
         inventario, hud, hechas: () => ({ has: id => estado.hechas.has(id) || estado.minijuegos.has(id) }), idioma, nombres: NOMBRES_AMIGO, abrirPanel, cerrarPanel,
         tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo, dar: lista => dar(lista),
         decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave), conversar: clave => conversar(clave),
-        precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda')
+        precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda'),
+        alAbrir: (clave, el) => retenerAmigo(clave, el)
     });
 
     // ---- Pestaña «Hablar»: hablar.js y dialogos-datos.js se cargan la primera vez que se abre ----
+    // (también al abrir Misión o Tienda: el amigo queda quieto y te mira mientras su panel esté abierto)
     let hablarUI = null, cargandoHablar = null;
     function conversar(clave) {
         if (hablarUI) return hablarUI.abrir(clave);
+        cargarHablar().then(h => { if (h) h.abrir(clave); });
+    }
+    function retenerAmigo(clave, el) {
+        if (hablarUI) return hablarUI.retener(clave, el);
+        cargarHablar().then(h => { if (h && el.isConnected) h.retener(clave, el); });
+    }
+    function cargarHablar() {
         if (!cargandoHablar) cargandoHablar = import('./hablar.js').then(m => {
             hablarUI = m.crearHablar({
-                amistad, jugador, dy, inventario, hud, sonidos, nombreDe, abrirPanel, cerrarPanel, idioma, nombres: NOMBRES_AMIGO, base: baseSkin,
+                amistad, jugador, camara, dy, inventario, hud, sonidos, nombreDe, abrirPanel, cerrarPanel, idioma, nombres: NOMBRES_AMIGO, base: baseSkin,
                 hechos: () => ({ hechas: estado.hechas, minijuegos: estado.minijuegos, jefes: estado.jefes }),
                 personaDe: c => (personas().find(p => p.clave === c) || {}).n || null,
                 pestanas: c => tienda.pestanas(c, 'hablar'),
@@ -75,7 +84,7 @@ export function crearMisiones(ctx) {
             });
             return hablarUI;
         }).catch(e => { cargandoHablar = null; console.error('No se pudo cargar «Hablar»', e); });
-        cargandoHablar.then(h => { if (h) h.abrir(clave); });
+        return cargandoHablar;
     }
 
     // ---- Personas ----
@@ -148,7 +157,8 @@ export function crearMisiones(ctx) {
     const especiales = new Map(); // clave -> { globo, t }
     function decirEspecial(clave, texto) {
         let e = especiales.get(clave);
-        if (!e) { e = { globo: crearGlobo(grupo), t: 0 }; especiales.set(clave, e); }
+        // Pestaña con el nombre y marco de color, sin colita: con el encaje el globo puede quedar lejos de quien habla
+        if (!e) { e = { globo: crearGlobo(grupo, { nombre: NOMBRES_AMIGO[clave], color: COLOR_GLOBO[clave] }), t: 0 }; especiales.set(clave, e); }
         e.globo.decir(texto);
         e.t = Math.max(7, Math.min(14, texto.length / 12)); // tiempo de lectura
     }
@@ -221,13 +231,14 @@ export function crearMisiones(ctx) {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'boton boton-minijuego'; b.textContent = mj.texto;
             if (mj.motivo) { b.disabled = true; b.title = mj.motivo; }
-            else b.addEventListener('click', () => botonMinijuego.jugar(clave));
+            else b.addEventListener('click', () => { if (hablarUI) hablarUI.soltar(); botonMinijuego.jugar(clave); }); // suelta al amigo antes de que el minijuego lo tome
             el.appendChild(b);
             if (mj.motivo) el.appendChild(parrafo(mj.motivo, 'motivo-minijuego'));
         }
         // La cámara de cine encuadra al amigo mientras el panel está abierto
         const p = personas().find(x => x.clave === clave);
         abrirPanel(el, { enfocar: p ? p.n : null });
+        retenerAmigo(clave, el);
         const primero = fila.querySelector('button');
         if (primero) primero.focus();
     }
@@ -278,6 +289,7 @@ export function crearMisiones(ctx) {
         sonidos.nivel();
         // El agradecimiento no es un panel: el amigo lo dice en su globo, como en sus conversaciones
         cerrarPanel();
+        if (hablarUI) hablarUI.soltar(); // por si una escena (el cuello de Gala) toma al amigo ahora
         // alCompletar puede devolver true si una escena dice el agradecimiento (p. ej. el cuello de Gala): no sale el globo suelto
         const conEscena = !!(ctx.alCompletar && ctx.alCompletar(m));
         if (!conEscena) decirEspecial(m.amigo, L(m.completada));
@@ -401,6 +413,19 @@ export function crearMisiones(ctx) {
         // Marcadores y globos especiales
         const libre = !estado.activa;
         const jefe = jefeSiguiente();
+        // Panel lateral abierto (Hablar o la tienda sin cine): el globo del amigo con quien hablas se encaja en
+        // pantalla, sin tapar su cabeza ni el panel, y se achica si hace falta
+        zonasPantalla.length = 0;
+        const conPanel = document.body.classList.contains('panel-lado') ? (hablarUI && hablarUI.charla && hablarUI.charla.clave) : null;
+        if (conPanel) {
+            // El panel y el minimapa (arriba a la derecha)
+            const W = window.innerWidth || 1, H = window.innerHeight || 1;
+            for (const el of [document.querySelector('.capa-hablar .panel-mision'), document.querySelector('.mm-pequeno')]) {
+                if (!el || !el.offsetParent) continue;
+                const r = el.getBoundingClientRect();
+                zonasPantalla.push({ x0: r.left / W * 2 - 1 - 0.02, x1: r.right / W * 2 - 1 + 0.02, y0: 1 - r.bottom / H * 2 - 0.02, y1: 1 - r.top / H * 2 + 0.02 });
+            }
+        }
         for (const p of personas()) {
             const s = marcaDe(p.clave);
             const n = p.n;
@@ -420,7 +445,10 @@ export function crearMisiones(ctx) {
                 e.t -= dt;
                 n.globo && n.globo.sp && (n.globo.sp.visible = false);
                 const d = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
-                e.globo.actualizar(dt, e.t > 0 && d < 14, n.x, (n.y ?? 0) + 2.75 * escalaDe(n), n.z);
+                if (conPanel === p.clave) {
+                    const s = escalaDe(n), cabeza = [{ x: n.x, y: (n.y ?? 0) + 1.55 * s, z: n.z, r: 0.45 * s, tipo: 'cabeza', quien: p.clave }];
+                    e.globo.actualizar(dt, e.t > 0 && d < 14, n.x, (n.y ?? 0) + 2.75 * s, n.z, camara, () => cabeza);
+                } else e.globo.actualizar(dt, e.t > 0 && d < 14, n.x, (n.y ?? 0) + 2.75 * escalaDe(n), n.z);
             } else if (e) e.globo.actualizar(dt, false, n.x, 0, n.z);
         }
         pintarSeguimiento();

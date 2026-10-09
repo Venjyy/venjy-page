@@ -16,6 +16,7 @@ import { crearGlobo, COLOR_GLOBO, crearTinte } from '../criaturas/cuerpo.js';
 import { nombreDe } from './objetos.js';
 import { sonidos } from './sonidos.js';
 import { TXT_MJ } from './minijuegos-datos.js';
+import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { crearLena } from './minijuego-lena.js';
 import { crearPescaPony } from './minijuego-pesca.js';
 import { crearAsado } from './minijuego-asado.js';
@@ -55,7 +56,8 @@ export function crearMinijuegos(ctx) {
     const globos = new Map(); // quien -> { globo, texto }
     function globoDe(quien) {
         if (!globos.has(quien)) {
-            const g = crearGlobo(grupo, { color: COLOR_GLOBO[quien] || COLOR_GLOBO.j });
+            // Pestaña con el nombre y marco de color, sin colita (como las escenas de skin); el jugador es «Tú»
+            const g = crearGlobo(grupo, { nombre: quien === 'j' ? (L === 'en' ? 'You' : 'Tú') : NOMBRES_AMIGO[quien] || quien, color: COLOR_GLOBO[quien] || COLOR_GLOBO.j });
             g.sp.scale.set(1.5, 0.62, 1);
             globos.set(quien, { globo: g, texto: null });
         }

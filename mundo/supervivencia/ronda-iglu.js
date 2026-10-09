@@ -162,7 +162,8 @@ export function crearRondaIglu(ctx) {
     const reducirMovimiento = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
     // Globos propios (los de Lalo y Moisés se callan con n.escena)
-    const globos = { lalo: crearGlobo(grupo, { color: COLOR_GLOBO.lalo }), moises: crearGlobo(grupo, { color: COLOR_GLOBO.moises }), j: crearGlobo(grupo, { color: COLOR_GLOBO.j }) };
+    // Con pestaña de nombre y marco de color, sin colita (como las escenas de skin); el jugador es «Tú»
+    const globos = { lalo: crearGlobo(grupo, { nombre: 'Lalo', color: COLOR_GLOBO.lalo }), moises: crearGlobo(grupo, { nombre: 'Moisés', color: COLOR_GLOBO.moises }), j: crearGlobo(grupo, { nombre: idioma === 'en' ? 'You' : 'Tú', color: COLOR_GLOBO.j }) };
     const ultimoTexto = { lalo: '', moises: '', j: '' };
 
     const esVenjy = () => tipoSkin(skin()).base === 'venjy';
@@ -672,6 +673,7 @@ export function crearRondaIglu(ctx) {
         get estado() { return estado; },
         setIdioma(l) {
             idioma = l;
+            globos.j.etiqueta = { nombre: idioma === 'en' ? 'You' : 'Tú', color: COLOR_GLOBO.j };
             bSentar.textContent = TXT[idioma].sentar; bPararse.textContent = TXT[idioma].pararse; bCam.textContent = TXT[idioma].cam;
         },
         // Depuración (capturas): sentarse ya, pausar el reloj, ir a un segundo de la sesión

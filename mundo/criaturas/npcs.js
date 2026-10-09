@@ -233,7 +233,7 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         scene.add(p.g);
         const npc = {
             clave, p, x: 0, y: 0, z: 0, yaw: 0, fase: 0, t: Math.random() * 10,
-            nombre: crearNombre(scene, piel.nombre), globo: crearGlobo(scene, { color: COLOR_GLOBO[clave] }),
+            nombre: crearNombre(scene, piel.nombre), globo: crearGlobo(scene, { nombre: piel.nombre, color: COLOR_GLOBO[clave] }),
             frase: null, cambioFrase: 0, cerca: false
         };
         lista.push(npc);

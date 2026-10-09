@@ -54,8 +54,8 @@ export function crearEscenaCuello({ grupo, dy, jugador, camara, camaras, gatas, 
     const vC = new THREE.Vector3(), vT = new THREE.Vector3(), qT = new THREE.Quaternion(), qG = new THREE.Quaternion(), qC = new THREE.Quaternion();
 
     // Globos (crearGlobo, como en caricias.js): uno para Lona y otro para Gala
-    const globoLona = crearGlobo(grupo, { color: COLOR_GLOBO.lona }); globoLona.sp.scale.set(1.5, 0.62, 1);
-    const globoGala = crearGlobo(grupo, { color: COLOR_GLOBO.gala }); globoGala.sp.scale.set(1.3, 0.56, 1);
+    const globoLona = crearGlobo(grupo, { nombre: 'Lona', color: COLOR_GLOBO.lona }); globoLona.sp.scale.set(1.5, 0.62, 1);
+    const globoGala = crearGlobo(grupo, { nombre: 'Gala', color: COLOR_GLOBO.gala }); globoGala.sp.scale.set(1.3, 0.56, 1);
     let txtLona = null, txtGala = null;
     function mostrar(globo, texto, visible, dt, x, y, z) {
         if (visible && texto) {

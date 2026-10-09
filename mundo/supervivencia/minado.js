@@ -356,7 +356,12 @@ export function crearMinado(ctx) {
     estado.arriba = arriba;
     document.addEventListener('mousedown', e => abajo(e.button));
     document.addEventListener('mouseup', e => arriba(e.button));
-    document.addEventListener('contextmenu', e => { if (jugador.activo) e.preventDefault(); });
+    // Sin el menú del navegador al jugar ni cuando el clic derecho abre una ventana o el panel de un amigo
+    // (el puntero ya se soltó al llegar el evento); en campos de texto se deja
+    document.addEventListener('contextmenu', e => {
+        if (e.target.closest && e.target.closest('input, textarea')) return;
+        if (jugador.activo || ventanas.abierta) e.preventDefault();
+    });
     document.addEventListener('wheel', e => {
         if (!activo()) return;
         inventario.elegida = (inventario.elegida + (e.deltaY > 0 ? 1 : -1) + 9) % 9;
