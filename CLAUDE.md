@@ -17,9 +17,7 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 ## Convenciones
 
-- **Antes de implementar un cambio pedido, mostrar primero una simulación barata** (una captura, un boceto o una prueba mínima) y esperar el visto bueno del dueño. Los informes (artifacts) van al final, cuando el resultado ya está aprobado.
-
-- **Si un pedido es grande, avisarlo y proponer hacerlo en un chat dedicado**, empezando ahí con una simulación barata.
+- **Si un pedido es grande, avisarlo y proponer hacerlo en un chat dedicado.**
 
 - **Nunca** incluir enlaces de sesión (`claude.ai/code/session…`) ni la línea «Generated with Claude Code» en commits, PRs, comentarios o archivos del repo (ni la línea `Claude-Session:` en los commits).
 
