@@ -5,6 +5,9 @@
 // aturde). Aparecen en la oscuridad (de noche a cielo abierto o en cuevas) según la
 // dificultad, nunca cerca de los amigos (zona segura), y los zombis y esqueletos se queman
 // con el sol (el Trauco se esfuma al amanecer). Modelos de cajas pintados con código.
+// Online (api.red = coop.js): cada cliente simula los monstruos que aparecen junto a él y persiguen
+// al jugador más cercano de la sala; los de los demás son «fantasmas» que solo se dibujan con lo que
+// llega por la red y, al golpearlos, avisan a su dueño.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { B, TIPO } from '../texturas.js';
@@ -189,17 +192,53 @@ function modeloPersona(tinte, tipo, semilla) {
 export function crearEnemigos(ctx) {
     const { scene, mundo, jugador, vida, dia, entidades, proyectiles, terreno, datos, zonasSeguras, dificultad = () => 2, hud } = ctx;
     const lista = [];
-    let semilla = 5000, relojAparecer = 0;
+    const fantasmas = new Map(); // uid -> monstruo de otro jugador (solo dibujo)
+    let semilla = 5000, relojAparecer = 0, contador = 0;
     const MAX = [0, 8, 12, 16];
+    const api = { red: null, prefijo: '' };
 
-    function crear(tipo, x, y, z) {
+    // Jugadores a los que se puede perseguir: el local y, online, los de la sala
+    const yo = { id: null, get pos() { return jugador.pos; }, get vivo() { return !vida.muerto; } };
+    const jugadores = () => (api.red ? [yo, ...api.red.jugadores()] : [yo]);
+    function masCercano(x, y, z) {
+        let mejor = null, dm = Infinity;
+        for (const j of jugadores()) {
+            if (!j.vivo) continue;
+            const d = Math.hypot(j.pos.x - x, j.pos.z - z) + Math.abs(j.pos.y - y) * 0.5;
+            if (d < dm) { dm = d; mejor = j; }
+        }
+        return mejor || yo;
+    }
+    function distJugadores(x, z) {
+        let dm = Infinity;
+        for (const j of jugadores()) dm = Math.min(dm, Math.hypot(j.pos.x - x, j.pos.z - z));
+        return dm;
+    }
+    // Daño a un jugador: el local recibe el golpe; a uno remoto se le avisa por la red
+    function danarA(obj, dano, causa, op = {}, aturde = 0) {
+        if (!obj.id) {
+            const hizo = vida.danar(dano, causa, op);
+            if (hizo && aturde) ctx.aturdir && ctx.aturdir(aturde);
+            return hizo;
+        }
+        api.red.danar(obj.id, dano, causa, op, aturde);
+        return true;
+    }
+
+    function modelo(tipo) {
         const tinte = crearTinte();
         const m = tipo === 'creeper' ? modeloCreeper(tinte, semilla) : tipo === 'arana' ? modeloArana(tinte, semilla) : tipo === 'lepisma' ? modeloLepisma(tinte, semilla) : modeloPersona(tinte, tipo, semilla);
         semilla += 17;
         if (tipo === 'trauco') m.g.scale.setScalar(0.7);
         scene.add(m.g);
+        return { m, tinte };
+    }
+
+    function crear(tipo, x, y, z) {
+        const { m, tinte } = modelo(tipo);
         const d = DEF[tipo];
         const e = {
+            uid: api.prefijo + (contador++).toString(36), hist: [],
             tipo, d, m, tinte, pos: new THREE.Vector3(x, y, z), vel: new THREE.Vector3(), ancho: d.ancho, alto: d.alto,
             enSuelo: false, vida: d.vida, invul: 0, yaw: Math.random() * Math.PI * 2, fase: 0, reloj: 0, ataque: 0,
             mecha: 0, fuego: 0, edad: 0, rojo: 0, sonido: 2 + Math.random() * 8, persigue: false, destino: null, lejos: 0
@@ -212,6 +251,7 @@ export function crearEnemigos(ctx) {
         const i = lista.indexOf(e);
         if (i >= 0) lista.splice(i, 1);
         scene.remove(e.m.g);
+        if (api.red) api.red.mobFin(e.uid);
     }
 
     function enZonaSegura(x, z, margen = 0) {
@@ -240,7 +280,8 @@ export function crearEnemigos(ctx) {
     function intentarAparecer() {
         const dif = dificultad();
         if (!dif) return;
-        const cercanos = lista.filter(e => e.pos.distanceTo(jugador.pos) < 72).length;
+        let cercanos = lista.filter(e => e.pos.distanceTo(jugador.pos) < 72).length;
+        for (const g of fantasmas.values()) if (g.pos.distanceTo(jugador.pos) < 72) cercanos++;
         if (cercanos >= MAX[dif]) return;
         const ang = Math.random() * Math.PI * 2, dist = 22 + Math.random() * 34;
         const x = Math.floor(jugador.pos.x + Math.cos(ang) * dist) + 0.5, z = Math.floor(jugador.pos.z + Math.sin(ang) * dist) + 0.5;
@@ -275,6 +316,7 @@ export function crearEnemigos(ctx) {
         e.rojo = 0.3;
         e.persigue = true;
         if (origen) e.porJugador = true; // para las misiones (el sol no cuenta)
+        if (origen) e.por = origen.por || null; // online: quién pegó (null = el jugador local)
         const fuerza = origen && origen.fuerza != null ? origen.fuerza : 0.45;
         if (origen) {
             const dx = e.pos.x - origen.x, dz = e.pos.z - origen.z, n = Math.hypot(dx, dz) || 1;
@@ -291,7 +333,9 @@ export function crearEnemigos(ctx) {
         for (const [id, n] of soltarDe(e.tipo)) if (n > 0) entidades.soltar(id, n, 0, e.pos.x, e.pos.y + 0.5, e.pos.z);
         quitar(e);
         sonidos.caida();
-        ctx.alMorirMob && ctx.alMorirMob(e.tipo, e);
+        // Lo mató otro jugador: la misión de matar cuenta para él, no para el local
+        if (e.por && api.red) api.red.creditoMuerte(e.por, e.tipo);
+        else ctx.alMorirMob && ctx.alMorirMob(e.tipo, e);
     }
 
     // Objetivos para el combate y los proyectiles
@@ -301,13 +345,31 @@ export function crearEnemigos(ctx) {
             if (Math.abs(e.pos.x - cx) > radio || Math.abs(e.pos.z - cz) > radio) continue;
             l.push({ tipo: e.tipo, mob: e, x: e.pos.x, y: e.pos.y, z: e.pos.z, ancho: e.ancho, alto: e.alto, golpear: (dano, origen) => golpear(e, dano, origen) });
         }
+        // Fantasmas: el golpe se le avisa a su dueño (que lo valida); aquí solo el destello
+        for (const g of fantasmas.values()) {
+            if (Math.abs(g.pos.x - cx) > radio || Math.abs(g.pos.z - cz) > radio) continue;
+            l.push({
+                tipo: g.tipo, fantasma: g, x: g.pos.x, y: g.pos.y, z: g.pos.z, ancho: g.ancho, alto: g.alto,
+                golpear: (dano, origen) => {
+                    if (g.invul > 0 || !api.red) return false;
+                    g.invul = 0.5; g.rojoLocal = 0.3;
+                    sonidos.golpe();
+                    api.red.golpearMob(g.uid, dano, origen);
+                    return true;
+                }
+            });
+        }
         return l;
     }
 
     // ---------- Explosión (creeper y jefes) ----------
-    function explotar(x, y, z, potencia = 3, origenTipo = 'explosion') {
+    // remoto: la explosión es de otro jugador; aquí solo el daño al jugador local y las partículas
+    // (los bloques rotos llegan como ediciones)
+    function explotar(x, y, z, potencia = 3, origenTipo = 'explosion', remoto = false) {
         sonidos.explosion();
+        if (!remoto && api.red) api.red.explosion(x, y, z, potencia, origenTipo);
         const lote = [];
+        if (!remoto) {
         const r = potencia;
         for (let dz = -r; dz <= r; dz++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
             const d = Math.hypot(dx, dy, dz);
@@ -323,6 +385,7 @@ export function crearEnemigos(ctx) {
             if (info.contenedor && ctx.contenedores) for (const p of ctx.contenedores.quitar(bx, by, bz)) entidades.soltar(p.id, p.n, p.d, bx + 0.5, by + 0.5, bz + 0.5);
         }
         if (lote.length) { mundo.editarLote(lote); mundo.procesarRemallado(12); }
+        }
         // Daño al jugador y a lo que esté cerca (fórmula de Minecraft, con tope)
         const alcance = potencia * 2;
         const dj = Math.hypot(jugador.pos.x - x, jugador.pos.y + 0.9 - y, jugador.pos.z - z);
@@ -331,8 +394,9 @@ export function crearEnemigos(ctx) {
             // Fórmula de Minecraft × 0,75 (más amable para partidas cortas)
             vida.danar(Math.min(24, Math.round((((k * k + k) / 2) * 7 * alcance + 1) * 0.75)), origenTipo, { origen: { x, z }, fuerza: 0.9 * k + 0.2 });
         }
-        for (const o of ctx.objetivosTodos(x, z, alcance)) {
+        for (const o of remoto ? [] : ctx.objetivosTodos(x, z, alcance)) {
             if (o.mob && o.mob.vida <= 0) continue;
+            if (o.fantasma) continue; // su dueño recibe la explosión por la red
             const d = Math.hypot(o.x - x, o.y + o.alto / 2 - y, o.z - z);
             if (d >= alcance) continue;
             const k = 1 - d / alcance;
@@ -349,9 +413,10 @@ export function crearEnemigos(ctx) {
         e.invul = Math.max(0, e.invul - dt);
         e.rojo = Math.max(0, e.rojo - dt);
         e.ataque = Math.max(0, e.ataque - dt);
-        const dx = jugador.pos.x - e.pos.x, dz = jugador.pos.z - e.pos.z, dy = jugador.pos.y - e.pos.y;
+        const obj = masCercano(e.pos.x, e.pos.y, e.pos.z);
+        const dx = obj.pos.x - e.pos.x, dz = obj.pos.z - e.pos.z, dy = obj.pos.y - e.pos.y;
         const dist = Math.hypot(dx, dz);
-        const vivo = !vida.muerto;
+        const vivo = obj.vivo;
 
         // Luz y sol
         const l = mundo.nivelLuz(e.pos.x, e.pos.y + e.alto * 0.8, e.pos.z);
@@ -383,7 +448,7 @@ export function crearEnemigos(ctx) {
                 e.reloj -= dt;
                 if (e.reloj <= 0 && dist < 18) {
                     e.reloj = 1.8 + Math.random() * 0.8;
-                    disparar(e);
+                    disparar(e, obj);
                 }
             } else { ix = dx / (dist || 1); iz = dz / (dist || 1); }
             e.yaw = Math.atan2(dx, dz);
@@ -413,8 +478,8 @@ export function crearEnemigos(ctx) {
         if (d.dano && !d.arquero && e.persigue && dist < d.alcance && Math.abs(dy + 0.5) < 1.6 && e.ataque <= 0) {
             e.ataque = 1;
             e.golpeAnim = 0.35;
-            const hizo = vida.danar(d.dano, 'golpe', { origen: e.pos });
-            if (hizo && d.aturde) { ctx.aturdir && ctx.aturdir(2.5); sonidos.risaTrauco(); }
+            const hizo = danarA(obj, d.dano, 'golpe', { origen: e.pos }, d.aturde ? 2.5 : 0);
+            if (hizo && d.aturde) sonidos.risaTrauco();
             if (hizo && e.tipo === 'arana' && e.enSuelo) e.vel.y = 6;
         }
         // Araña: salta hacia el jugador
@@ -430,6 +495,8 @@ export function crearEnemigos(ctx) {
             else if (e.enSuelo) e.vel.y = 8.4; // salta un escalón
         }
         if (e.pos.y < -5) { quitar(e); return; }
+        // Historial corto de posiciones: el dueño valida con él los golpes que llegan por la red
+        if (api.red) { const t = performance.now(), u = e.hist[e.hist.length - 1]; if (!u || t - u.t >= 50) { e.hist.push({ t, x: e.pos.x, y: e.pos.y, z: e.pos.z }); if (e.hist.length > 30) e.hist.shift(); } } // 1,5 s a 20 Hz
 
         // Sonidos ocasionales
         e.sonido -= dt;
@@ -439,8 +506,11 @@ export function crearEnemigos(ctx) {
             if (k > 0) sonidos.mob(e.tipo, k);
         }
 
-        // Dibujo
-        const mov = Math.hypot(e.vel.x, e.vel.z);
+        dibujar(e, dt, Math.hypot(e.vel.x, e.vel.z), dy, dist, l);
+    }
+
+    // Dibujo (también de los fantasmas): pose según el movimiento, luz del lugar y destellos
+    function dibujar(e, dt, mov, dy, dist, l) {
         e.fase += mov * dt * 3.2;
         const m = e.m;
         m.g.position.copy(e.pos);
@@ -466,15 +536,15 @@ export function crearEnemigos(ctx) {
         const c = Math.pow(cieloL, 1.6), b = Math.pow(bloqueL, 1.6);
         tinte.copy(ctx.tinteMundo).multiplyScalar(c);
         tinte.setRGB(Math.max(tinte.r, b, 0.06), Math.max(tinte.g, b * 0.85, 0.06), Math.max(tinte.b, b * 0.6, 0.06));
-        if (e.rojo > 0) tinte.setRGB(Math.min(1, tinte.r * 1.6 + 0.3), tinte.g * 0.4, tinte.b * 0.4);
+        if (e.rojo > 0 || e.rojoLocal > 0) tinte.setRGB(Math.min(1, tinte.r * 1.6 + 0.3), tinte.g * 0.4, tinte.b * 0.4);
         if (e.mecha > 0 && Math.floor(e.mecha * 8) % 2) tinte.setRGB(1, 1, 1);
         if (e.fuego > 0 && Math.random() < 0.5) tinte.setRGB(Math.min(1, tinte.r + 0.4), tinte.g * 0.8 + 0.1, tinte.b * 0.5);
         e.tinte.aplicar(tinte);
     }
 
-    function disparar(e) {
+    function disparar(e, obj = yo) {
         const origen = new THREE.Vector3(e.pos.x, e.pos.y + 1.5, e.pos.z);
-        const objetivo = new THREE.Vector3(jugador.pos.x, jugador.pos.y + 1.2, jugador.pos.z);
+        const objetivo = new THREE.Vector3(obj.pos.x, obj.pos.y + 1.2, obj.pos.z);
         const dir = objetivo.sub(origen);
         const d = dir.length();
         dir.y += 0.5 * 20 * (d / 22) * (d / 22); // compensa la caída de la flecha (gravedad 20, 22 m/s)
@@ -486,15 +556,58 @@ export function crearEnemigos(ctx) {
         sonidos.arco();
     }
 
+    // ---------- Fantasmas (online) ----------
+    function fantasma(uid, tipo) {
+        let g = fantasmas.get(uid);
+        if (g) return g;
+        if (!DEF[tipo]) return null;
+        const { m, tinte } = modelo(tipo);
+        const d = DEF[tipo];
+        g = { uid, tipo, d, m, tinte, pos: new THREE.Vector3(), yaw: 0, ancho: d.ancho, alto: d.alto, fase: 0, rojo: 0, rojoLocal: 0, invul: 0, mecha: 0, fuego: 0, persigue: false, golpeAnim: 0, fantasma: true, previo: null };
+        m.g.visible = false;
+        fantasmas.set(uid, g);
+        return g;
+    }
+    function quitarFantasma(uid) {
+        const g = fantasmas.get(uid);
+        if (!g) return;
+        scene.remove(g.m.g);
+        fantasmas.delete(uid);
+    }
+    // Pone el fantasma en el estado interpolado { x, y, z, yaw, f } (f: banderas, ver coop.js)
+    function moverFantasma(g, s, dt) {
+        const antes = g.previo || { x: s.x, z: s.z };
+        g.pos.set(s.x, s.y, s.z);
+        g.yaw = s.yaw;
+        const f = s.f | 0;
+        g.persigue = !!(f & 1); g.rojo = f & 2 ? 0.1 : 0; g.mecha = f & 4 ? g.mecha + dt : 0; g.fuego = f & 8 ? 1 : 0;
+        if (f & 16) g.golpeAnim = Math.max(g.golpeAnim, 0.3);
+        g.invul = Math.max(0, g.invul - dt);
+        g.rojoLocal = Math.max(0, g.rojoLocal - dt);
+        const mov = Math.hypot(s.x - antes.x, s.z - antes.z) / Math.max(dt, 1e-3);
+        g.previo = { x: s.x, z: s.z };
+        const m = g.m;
+        m.g.visible = mundo.chunks.has(Math.floor(g.pos.x / 16) + ',' + Math.floor(g.pos.z / 16));
+        if (!m.g.visible) return;
+        m.g.position.copy(g.pos);
+        m.g.rotation.y = g.yaw;
+        const dx = jugador.pos.x - g.pos.x, dz = jugador.pos.z - g.pos.z;
+        dibujar(g, dt, Math.min(6, mov), jugador.pos.y - g.pos.y, Math.hypot(dx, dz), mundo.nivelLuz(g.pos.x, g.pos.y + g.alto * 0.8, g.pos.z));
+    }
+
     return {
-        lista, crear, quitar, golpear, objetivos, explotar,
+        lista, fantasmas, crear, quitar, golpear, objetivos, explotar, fantasma, quitarFantasma, moverFantasma, api,
+        masCercano, distJugadores, danarA,
         // ¿Hay monstruos cerca? (no se puede dormir)
-        cerca(x, y, z, r = 8) { return lista.some(e => Math.abs(e.pos.x - x) < r && Math.abs(e.pos.z - z) < r && Math.abs(e.pos.y - y) < 5); },
+        cerca(x, y, z, r = 8) {
+            const cerca = e => Math.abs(e.pos.x - x) < r && Math.abs(e.pos.z - z) < r && Math.abs(e.pos.y - y) < 5;
+            return lista.some(cerca) || [...fantasmas.values()].some(cerca);
+        },
         actualizar(dt) {
             relojAparecer += dt;
             if (relojAparecer >= 1) { relojAparecer = 0; for (let k = 0; k < 3; k++) intentarAparecer(); }
             for (const e of lista.slice()) {
-                const dist = e.pos.distanceTo(jugador.pos);
+                const dist = api.red ? distJugadores(e.pos.x, e.pos.z) : e.pos.distanceTo(jugador.pos);
                 // Lejos: desaparece (muy lejos al tiro; a media distancia de a poco)
                 if (dist > 96 || (dist > 48 && Math.random() < dt / 30)) { quitar(e); continue; }
                 if (!mundo.chunks.has(Math.floor(e.pos.x / 16) + ',' + Math.floor(e.pos.z / 16))) { e.m.g.visible = false; continue; }
@@ -502,6 +615,6 @@ export function crearEnemigos(ctx) {
                 actualizarMob(e, Math.min(dt, 0.05));
             }
         },
-        limpiar() { for (const e of lista.slice()) quitar(e); }
+        limpiar() { for (const e of lista.slice()) quitar(e); for (const uid of [...fantasmas.keys()]) quitarFantasma(uid); }
     };
 }

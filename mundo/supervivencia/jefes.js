@@ -9,6 +9,9 @@
 //     orilla; dos oleadas de tripulación y luego el capitán brujo (se teletransporta, lanza
 //     fuego, invoca esqueletos y rayos). Al ganar, el barco se hunde y aparecen los créditos.
 // Si mueres o te alejas, el jefe se va y te devuelve el objeto para reintentar.
+// Online: el jefe lo simula quien lo invocó y ataca al jugador más cercano; los demás ven un
+// fantasma (modelo y barra de vida con lo que llega por la red) y sus golpes se le avisan al dueño.
+// Al vencerlo, todos los que estén cerca lo cuentan para sus misiones.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { B, TIPO } from '../texturas.js';
@@ -33,6 +36,10 @@ export function crearJefes(ctx) {
     let idioma = ctx.idioma || 'es';
     const L = o => o[idioma] || o.es;
     let actual = null; // { tipo, ... }
+    let fantasma = null; // online: el jefe de otro jugador { tipo, j (modelo), k, nombre, centro, edad }
+    const api = { red: null };
+    const cercano = (x, y, z) => enemigos.masCercano(x, y, z);
+    const danarA = (obj, n, causa, op) => enemigos.danarA(obj, n, causa, op);
 
     // ---------- Altares ----------
     const sup = (x, z) => terreno.HT[Math.floor(z) * terreno.BW + Math.floor(x)] + dy + 1;
@@ -106,7 +113,8 @@ export function crearJefes(ctx) {
         };
     }
     function tickImbunche(j, dt) {
-        const dx = jugador.pos.x - j.pos.x, dz = jugador.pos.z - j.pos.z, d = Math.hypot(dx, dz) || 1;
+        const obj = j.obj = cercano(j.pos.x, j.pos.y, j.pos.z);
+        const dx = obj.pos.x - j.pos.x, dz = obj.pos.z - j.pos.z, d = Math.hypot(dx, dz) || 1;
         j.yaw = Math.atan2(dx, dz);
         j.relojEmb -= dt; j.relojInv -= dt; j.relojDer -= dt;
         let vel = 2.2;
@@ -117,9 +125,9 @@ export function crearJefes(ctx) {
         // Avanza a saltos en una pierna
         if (j.enSuelo && Math.hypot(j.vel.x, j.vel.z) > 0.5) j.vel.y = j.embiste > 0 ? 3 : 6;
         moverCuerpo(mundo, j, dt);
-        if (d < 2.2 && Math.abs(jugador.pos.y - j.pos.y) < 2.5 && j.ataque <= 0) {
+        if (d < 2.2 && Math.abs(obj.pos.y - j.pos.y) < 2.5 && j.ataque <= 0) {
             j.ataque = 1.2;
-            vida.danar(j.embiste > 0 ? 9 : 6, 'golpe', { origen: j.pos, fuerza: j.embiste > 0 ? 1.2 : 0.6 });
+            danarA(obj, j.embiste > 0 ? 9 : 6, 'golpe', { origen: j.pos, fuerza: j.embiste > 0 ? 1.2 : 0.6 });
         }
         j.ataque -= dt;
         // Invoca lepismas
@@ -142,9 +150,10 @@ export function crearJefes(ctx) {
     function derrumbe() {
         if (!actual) return;
         const lote = [];
+        const blanco = (actual.obj || { pos: jugador.pos }).pos;
         for (let k = 0; k < 7; k++) {
-            const x = Math.floor(jugador.pos.x + (k === 0 ? 0 : (Math.random() - 0.5) * 7)), z = Math.floor(jugador.pos.z + (k === 0 ? 0 : (Math.random() - 0.5) * 7));
-            let y = Math.floor(jugador.pos.y) + 3;
+            const x = Math.floor(blanco.x + (k === 0 ? 0 : (Math.random() - 0.5) * 7)), z = Math.floor(blanco.z + (k === 0 ? 0 : (Math.random() - 0.5) * 7));
+            let y = Math.floor(blanco.y) + 3;
             while (y > 1 && !solidoEn(mundo, x, y - 1, z)) y--;
             if (mundo.bloque(x, y, z) !== 0) continue;
             lote.push([x, y, z, B.GRAVA]);
@@ -184,15 +193,16 @@ export function crearJefes(ctx) {
         j.ang += dt * 0.5;
         j.relojFuego -= dt; j.relojBaja -= dt; j.relojGrito -= dt;
         const furioso = j.vida < j.max / 2;
+        const obj = cercano(j.pos.x, j.pos.y, j.pos.z), jp = obj.pos;
         let objetivo;
         if (j.baja > 0) {
             j.baja -= dt;
-            objetivo = new THREE.Vector3(jugador.pos.x, jugador.pos.y + 1.2, jugador.pos.z);
+            objetivo = new THREE.Vector3(jp.x, jp.y + 1.2, jp.z);
             const d = j.pos.distanceTo(objetivo);
-            if (d < 2.2 && j.ataque <= 0) { j.ataque = 1.5; vida.danar(7, 'golpe', { origen: j.pos, fuerza: 1 }); j.baja = 0; }
+            if (d < 2.2 && j.ataque <= 0) { j.ataque = 1.5; danarA(obj, 7, 'golpe', { origen: j.pos, fuerza: 1 }); j.baja = 0; }
         } else {
             const r = 9;
-            objetivo = new THREE.Vector3(jugador.pos.x + Math.cos(j.ang) * r, Math.max(jugador.pos.y + 6, j.centro.y + 5), jugador.pos.z + Math.sin(j.ang) * r);
+            objetivo = new THREE.Vector3(jp.x + Math.cos(j.ang) * r, Math.max(jp.y + 6, j.centro.y + 5), jp.z + Math.sin(j.ang) * r);
             if (j.relojBaja <= 0) { j.relojBaja = furioso ? 7 : 11; j.baja = 3; }
         }
         j.ataque -= dt;
@@ -202,7 +212,7 @@ export function crearJefes(ctx) {
         j.pos.addScaledVector(j.vel, dt);
         if (j.relojFuego <= 0 && j.baja <= 0) {
             j.relojFuego = furioso ? 1.6 : 2.6;
-            const dir = new THREE.Vector3(jugador.pos.x - j.pos.x, jugador.pos.y + 1.2 - j.pos.y, jugador.pos.z - j.pos.z).normalize();
+            const dir = new THREE.Vector3(jp.x - j.pos.x, jp.y + 1.2 - j.pos.y, jp.z - j.pos.z).normalize();
             proyectiles.disparar({ tipo: 'bola', pos: j.pos.clone().addScaledVector(dir, 1.6), vel: dir.multiplyScalar(13), dano: 5, deJugador: false, alImpactar: p => enemigos.explotar(p.x, p.y, p.z, 1.6, 'fuego') });
             sonidos.fuego();
         }
@@ -211,7 +221,7 @@ export function crearJefes(ctx) {
         const a = Math.sin(performance.now() / 90) * 0.6;
         j.orejas[0].rotation.z = a; j.orejas[1].rotation.z = -a;
         j.g.position.copy(j.pos);
-        j.g.rotation.y = Math.atan2(jugador.pos.x - j.pos.x, jugador.pos.z - j.pos.z);
+        j.yaw = j.g.rotation.y = Math.atan2(jp.x - j.pos.x, jp.z - j.pos.z);
     }
 
     // ---------- 3 · Caleuche ----------
@@ -321,7 +331,8 @@ export function crearJefes(ctx) {
             return;
         }
         const k = j.capitan;
-        const dx = jugador.pos.x - k.pos.x, dz = jugador.pos.z - k.pos.z, d = Math.hypot(dx, dz) || 1;
+        const obj = cercano(k.pos.x, k.pos.y, k.pos.z), jp = obj.pos;
+        const dx = jp.x - k.pos.x, dz = jp.z - k.pos.z, d = Math.hypot(dx, dz) || 1;
         const furioso = k.vida < k.max / 2;
         k.relojTp -= dt; k.relojFuego -= dt; k.relojInv -= dt; k.relojRayo -= dt;
         k.yaw = Math.atan2(dx, dz);
@@ -333,25 +344,22 @@ export function crearJefes(ctx) {
         }
         if (k.relojFuego <= 0) {
             k.relojFuego = furioso ? 1.8 : 3;
-            const dir = new THREE.Vector3(dx, jugador.pos.y + 1.2 - (k.pos.y + 2), dz).normalize();
+            const dir = new THREE.Vector3(dx, jp.y + 1.2 - (k.pos.y + 2), dz).normalize();
             proyectiles.disparar({ tipo: 'bola', pos: new THREE.Vector3(k.pos.x, k.pos.y + 2, k.pos.z).addScaledVector(dir, 1), vel: dir.multiplyScalar(14), dano: 5, deJugador: false, alImpactar: p => enemigos.explotar(p.x, p.y, p.z, 1.2, 'fuego') });
             sonidos.fuego();
         }
         if (k.relojInv <= 0) { k.relojInv = 14; for (let n = 0; n < 2; n++) { const e = enemigos.crear('esqueleto', k.pos.x + (Math.random() - 0.5) * 4, j.deck, k.pos.z + (Math.random() - 0.5) * 2); e.persigue = true; } }
         if (furioso && k.relojRayo <= 0) {
             k.relojRayo = 7;
-            const x = jugador.pos.x, z = jugador.pos.z, y = jugador.pos.y;
+            const x = jp.x, z = jp.z, y = jp.y;
             for (let n = 0; n < 12; n++) particulas.critico(x, y + n * 0.6, z);
-            setTimeout(() => {
-                for (let n = 0; n < 24; n++) particulas.fuego(x, y + n * 0.5, z);
-                sonidos.explosion();
-                if (Math.hypot(jugador.pos.x - x, jugador.pos.z - z) < 1.6) { vida.danar(6, 'fuego', { ignoraArmadura: false }); vida.fuego = 4; }
-            }, 1000);
+            if (api.red) api.red.rayo(x, y, z);
+            setTimeout(() => rayoCae(x, y, z), 1000);
         }
         k.vel.x += ((d > 5 ? dx / d * 2 : 0) - k.vel.x) * Math.min(1, dt * 6);
         k.vel.z += ((d > 5 ? dz / d * 2 : 0) - k.vel.z) * Math.min(1, dt * 6);
         moverCuerpo(mundo, k, dt);
-        if (d < 2 && Math.abs(jugador.pos.y - k.pos.y) < 2 && (k.ataque = (k.ataque || 0) - dt) <= 0) { k.ataque = 1; vida.danar(5, 'golpe', { origen: k.pos }); }
+        if (d < 2 && Math.abs(jp.y - k.pos.y) < 2 && (k.ataque = (k.ataque || 0) - dt) <= 0) { k.ataque = 1; danarA(obj, 5, 'golpe', { origen: k.pos }); }
         k.fase += Math.hypot(k.vel.x, k.vel.z) * dt * 3;
         caminar(k.m, k.fase, 0.5);
         k.m.brazoD.rotation.x = -1.4; k.m.brazoI.rotation.x = -0.4 + Math.sin(performance.now() / 300) * 0.3;
@@ -360,6 +368,12 @@ export function crearJefes(ctx) {
         k.rojo = Math.max(0, k.rojo - dt); k.invul = Math.max(0, k.invul - dt);
         iluminar(k.tinte, k.pos, k.rojo);
         pintarBarra(NOMBRES.capitan, k.vida / k.max);
+    }
+    // Rayo del capitán: cae 1 s después del aviso; solo quema al jugador local (online, cada uno el suyo)
+    function rayoCae(x, y, z) {
+        for (let n = 0; n < 24; n++) particulas.fuego(x, y + n * 0.5, z);
+        sonidos.explosion();
+        if (Math.hypot(jugador.pos.x - x, jugador.pos.z - z) < 1.6) { vida.danar(6, 'fuego', { ignoraArmadura: false }); vida.fuego = 4; }
     }
 
     // ---------- Invocar, golpear, terminar ----------
@@ -385,7 +399,7 @@ export function crearJefes(ctx) {
         if (!tipo) return false;
         const idObj = { imbunche: O.AMULETO_MINA, chonchon: O.PLUMA_CHONCHON, caleuche: O.FAROL_CALEUCHE }[tipo];
         if (!p || p.id !== idObj) { hud.mensaje(idioma === 'en' ? 'The altar waits for an offering…' : 'El altar espera una ofrenda…', 3); return true; }
-        if (actual) return true;
+        if (actual || fantasma) return true; // online: ya hay un jefe de otro jugador
         if (invocar(tipo)) inventario.gastarMano(1);
         return true;
     }
@@ -401,6 +415,21 @@ export function crearJefes(ctx) {
     }
 
     function objetivos(cx, cz, radio) {
+        if (fantasma && fantasma.j) {
+            const j = fantasma.j;
+            if (Math.abs(j.pos.x - cx) > radio + 3 || Math.abs(j.pos.z - cz) > radio + 3) return [];
+            const y = fantasma.tipo === 'chonchon' ? j.pos.y - j.alto / 2 : j.pos.y;
+            return [{
+                tipo: 'jefe', fantasma: true, x: j.pos.x, y, z: j.pos.z, ancho: j.ancho, alto: j.alto,
+                golpear: (dano, origen) => {
+                    if (j.invul > 0 || !api.red) return false;
+                    j.invul = 0.4; j.rojo = 0.3;
+                    sonidos.golpe();
+                    api.red.golpearJefe(dano, origen);
+                    return true;
+                }
+            }];
+        }
         if (!actual) return [];
         const j = actual.tipo === 'caleuche' ? actual.capitan : actual;
         if (!j || Math.abs(j.pos.x - cx) > radio + 3 || Math.abs(j.pos.z - cz) > radio + 3) return [];
@@ -423,15 +452,88 @@ export function crearJefes(ctx) {
         quitarModelos(j);
         barra.hidden = true;
         actual = null;
-        const id = { imbunche: 'jefe1', chonchon: 'jefe2', caleuche: 'jefe3' }[j.tipo];
         for (const e of enemigos.lista.slice()) if (e.tipo === 'lepisma' || e.jefe) enemigos.quitar(e);
-        misiones.jefeDerrotado(id);
+        const centro = j.tipo === 'caleuche' ? { x: j.c.x, z: j.c.z } : j.altar;
+        if (api.red) api.red.jefeVencido(j.tipo, centro);
         if (j.tipo === 'caleuche') {
             // El barco se hunde por capas, de arriba abajo
             const capas = [...new Set(j.barco.map(b => b[1]))].sort((a, b) => b - a);
             capas.forEach((y, i) => setTimeout(() => { quitarBarco(j.barco.filter(b => b[1] === y)); particulas.salpicar(j.c.x, NIVEL_AGUA + dy + 1, j.c.z); }, 400 + i * 350));
-            setTimeout(() => ctx.alFinal && ctx.alFinal(), 1200 + capas.length * 350);
         }
+        premiar(j.tipo, j.tipo === 'caleuche' ? 1200 + new Set(j.barco.map(b => b[1])).size * 350 : 0);
+    }
+    // Misión del jefe y, con el Caleuche, los créditos (también para quien lo vio vencer por la red)
+    function premiar(tipo, retrasoFinal = 8000) {
+        const id = { imbunche: 'jefe1', chonchon: 'jefe2', caleuche: 'jefe3' }[tipo];
+        misiones.jefeDerrotado(id);
+        if (tipo === 'caleuche') setTimeout(() => ctx.alFinal && ctx.alFinal(), retrasoFinal);
+    }
+
+    // ---------- Fantasma del jefe de otro jugador (online) ----------
+    // s: { t: tipo, x, y, z, w: yaw, k: fracción de vida (0-1), n: clave del nombre, r: 1 si recibió un golpe }
+    function recibirFantasma(s, dt) {
+        if (!s) { quitarFantasma(); return; }
+        if (!fantasma || fantasma.tipo !== s.t || (fantasma.n !== s.n)) {
+            quitarFantasma();
+            const a = ALTARES[s.t === 'capitan' ? 'caleuche' : s.t] || { x: s.x, y: s.y, z: s.z };
+            let j = null;
+            if (s.t === 'imbunche') j = crearImbunche(a);
+            else if (s.t === 'chonchon') j = crearChonchon(a);
+            else if (s.t === 'capitan') j = crearCapitan({ c: { x: s.x, z: s.z }, deck: s.y });
+            fantasma = { tipo: s.t, n: s.n, j, k: 1, fase: 0 };
+        }
+        fantasma.k = s.k; fantasma.edad = 0;
+        const j = fantasma.j;
+        pintarBarra(NOMBRES[s.n] || NOMBRES.caleuche, s.k);
+        if (!j) return;
+        const antes = j.pos.clone();
+        j.pos.set(s.x, s.y, s.z);
+        j.yaw = s.w;
+        if (s.r) j.rojo = 0.15;
+        j.rojo = Math.max(0, j.rojo - dt); j.invul = Math.max(0, j.invul - dt);
+        const mov = Math.hypot(j.pos.x - antes.x, j.pos.z - antes.z) / Math.max(dt, 1e-3);
+        fantasma.fase += Math.min(8, mov) * dt * 2;
+        if (s.t === 'chonchon') {
+            const a = Math.sin(performance.now() / 90) * 0.6;
+            j.orejas[0].rotation.z = a; j.orejas[1].rotation.z = -a;
+            j.g.position.copy(j.pos); j.g.rotation.y = j.yaw;
+        } else {
+            caminar(j.m, fantasma.fase, s.t === 'capitan' ? 0.5 : 0.4);
+            if (s.t === 'imbunche') { j.m.piernaI.rotation.x = -2.6; j.m.brazoD.rotation.x = -1.2 + Math.sin(fantasma.fase * 2) * 0.4; }
+            else { j.m.brazoD.rotation.x = -1.4; j.m.brazoI.rotation.x = -0.4 + Math.sin(performance.now() / 300) * 0.3; }
+            j.m.g.position.copy(j.pos); j.m.g.rotation.y = j.yaw;
+        }
+        iluminar(j.tinte, j.pos, j.rojo);
+    }
+    function quitarFantasma() {
+        if (!fantasma) return;
+        if (fantasma.j) quitarModelos(fantasma.j);
+        fantasma = null;
+        if (!actual) barra.hidden = true;
+    }
+    // Estado compacto del jefe propio para la red (null si no hay)
+    function estadoRed() {
+        if (!actual) return null;
+        const j = actual;
+        if (j.tipo === 'caleuche') {
+            const vencidas = Math.max(0, j.ola - (j.oleadas.length ? 1 : 0));
+            if (!j.capitan) return { t: 'caleuche', n: 'caleuche', x: j.c.x, y: j.deck, z: j.c.z, w: 0, k: +(1 - vencidas / 3).toFixed(3) };
+            const k = j.capitan;
+            return { t: 'capitan', n: 'capitan', x: k.pos.x, y: k.pos.y, z: k.pos.z, w: k.yaw || 0, k: +(k.vida / k.max).toFixed(3), r: k.rojo > 0 ? 1 : 0 };
+        }
+        return { t: j.tipo, n: j.tipo, x: j.pos.x, y: j.pos.y, z: j.pos.z, w: j.yaw || 0, k: +(j.vida / j.max).toFixed(3), r: j.rojo > 0 ? 1 : 0 };
+    }
+    // Golpe de otro jugador al jefe propio (ya validado por coop.js)
+    function golpeRemoto(dano, origen) {
+        if (!actual) return false;
+        const j = actual.tipo === 'caleuche' ? actual.capitan : actual;
+        return j ? golpear(j, dano, origen) : false;
+    }
+    // Posiciones recientes del jefe propio (para validar golpes)
+    function posJefe() {
+        if (!actual) return null;
+        const j = actual.tipo === 'caleuche' ? actual.capitan : actual;
+        return j ? { pos: j.pos, ancho: j.ancho, alto: j.alto, chonchon: j.tipo === 'chonchon' } : null;
     }
 
     // Reinicio: el jefe se va y devuelve el objeto
@@ -455,7 +557,7 @@ export function crearJefes(ctx) {
         if (!actual) return;
         const j = actual;
         const centro = j.tipo === 'caleuche' ? { x: j.c.x, z: j.c.z } : j.altar;
-        if (Math.hypot(jugador.pos.x - centro.x, jugador.pos.z - centro.z) > 70) { reiniciar('lejos'); return; }
+        if (enemigos.distJugadores(centro.x, centro.z) > 70) { reiniciar('lejos'); return; }
         dt = Math.min(dt, 0.05);
         if (j.tipo === 'imbunche') tickImbunche(j, dt);
         else if (j.tipo === 'chonchon') tickChonchon(j, dt);
@@ -467,8 +569,10 @@ export function crearJefes(ctx) {
     }
 
     return {
-        ALTARES, actualizar, usarAltar, objetivos, reiniciar, invocar,
-        get enCurso() { return !!actual; },
+        ALTARES, actualizar, usarAltar, objetivos, reiniciar, invocar, api,
+        recibirFantasma, quitarFantasma, estadoRed, golpeRemoto, posJefe, premiar, rayoCae,
+        get propio() { return !!actual; },
+        get enCurso() { return !!actual || !!(fantasma && fantasma.j && Math.hypot(fantasma.j.pos.x - jugador.pos.x, fantasma.j.pos.z - jugador.pos.z) < 70); },
         alMorirJugador() { if (actual) reiniciar('muerte'); },
         setIdioma(l) { idioma = l; }
     };

@@ -532,3 +532,20 @@ body.en-minijuego .mj-tablero.visible { display: flex; }
 .boton-minijuego:hover:not(:disabled), .boton-minijuego:focus-visible { background: #4f8a36; }
 .panel-mision .motivo-minijuego { margin: 4px 0 0; color: #ff9a6a; font-size: 0.85em; }
 @media (max-width: 600px) { .mj-tablero { font-size: 0.75rem; padding: 6px 8px; } .mj-pista { display: none; } .mj-accion { padding: 12px 6px; } }
+
+/* ---------- Jugar con amigos (supervivencia cooperativa) ---------- */
+.coop-menu { margin: 18px 0 10px; padding: 12px 14px; background: rgb(0 0 0 / 0.35); border: 2px solid #000; box-shadow: inset 2px 2px 0 rgb(255 255 255 / 0.12), inset -2px -2px 0 rgb(0 0 0 / 0.35); text-align: left; }
+.coop-menu h2 { margin: 0 0 6px; font-size: 1.1rem; color: var(--blanco); text-shadow: 2px 2px 0 #3f3f3f; }
+.coop-menu .nota, .coop-pausa .nota { margin: 0 0 8px; color: var(--gris); font-size: 0.85rem; line-height: 1.4; }
+.coop-menu .campo { margin: 8px 0; }
+.fila-coop { display: flex; gap: 8px; align-items: flex-end; }
+.fila-coop .campo { flex: 1; min-width: 0; }
+.fila-coop .boton { flex: 0 0 auto; margin: 8px 0; }
+#coop-codigo { text-transform: uppercase; letter-spacing: 0.15em; }
+.coop-estado { margin: 6px 0 0; color: var(--blanco); font-size: 0.9rem; }
+.coop-estado.error { color: #ff8a80; }
+.coop-pausa { margin: 10px 0; padding: 8px 10px; background: rgb(0 0 0 / 0.3); border: 2px solid #000; text-align: left; }
+.coop-pausa .fila-coop { align-items: center; }
+.coop-sala { flex: 1; color: #8ce07a; letter-spacing: 0.08em; }
+.coop-pausa .opcion { display: flex; gap: 8px; align-items: center; margin: 6px 0; color: var(--gris); font-size: 0.85rem; }
+.coop-hud { position: absolute; top: 60px; left: 12px; padding: 2px 8px; background: rgb(0 0 0 / 0.45); color: #8ce07a; font-size: 0.9rem; text-shadow: 2px 2px 0 #1f1f1f; pointer-events: none; }

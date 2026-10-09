@@ -3,6 +3,8 @@
 // Flechas (del arco del jugador y de los esqueletos) y bolas de fuego (jefes). Avanzan en
 // pasos cortos contra los bloques y las cajas de las entidades; las flechas se clavan y las
 // del jugador se pueden recoger. El daño de la flecha crece con la velocidad.
+// Online (api.red): cada disparo se difunde como evento (origen + velocidad) y todos simulan el
+// vuelo; la copia remota solo puede herir al jugador local (los monstruos los hiere quien disparó).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { TIPO } from '../texturas.js';
@@ -14,6 +16,7 @@ const VIDA_CLAVADA = 60;
 
 export function crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos }) {
     const lista = [];
+    const api = { red: null };
     const geoFlecha = new THREE.BoxGeometry(0.06, 0.06, 0.6);
     const matFlecha = new THREE.MeshBasicMaterial({ color: 0x8a6a3c });
     const geoPunta = new THREE.BoxGeometry(0.1, 0.1, 0.12);
@@ -32,14 +35,15 @@ export function crearProyectiles({ scene, mundo, jugador, inventario, vida, obje
         return g;
     }
 
-    // { pos, vel, dano, deJugador, tipo: 'flecha' | 'bola', recogible }
+    // { pos, vel, dano, deJugador, tipo: 'flecha' | 'bola', recogible, remoto }
     function disparar(op) {
         const p = {
             tipo: op.tipo || 'flecha', pos: op.pos.clone(), vel: op.vel.clone(), dano: op.dano ?? null,
-            deJugador: !!op.deJugador, recogible: !!op.recogible, clavada: false, edad: 0, malla: malla(op.tipo || 'flecha'),
-            alImpactar: op.alImpactar || null
+            deJugador: !!op.deJugador, recogible: !!op.recogible && !op.remoto, clavada: false, edad: 0, malla: malla(op.tipo || 'flecha'),
+            alImpactar: op.remoto ? null : op.alImpactar || null, remoto: !!op.remoto
         };
         lista.push(p);
+        if (api.red && !op.remoto) api.red.disparo(p);
         return p;
     }
 
@@ -63,6 +67,7 @@ export function crearProyectiles({ scene, mundo, jugador, inventario, vida, obje
                 return true;
             }
         }
+        if (p.remoto) return false;
         for (const o of objetivos(pos.x, pos.z, 3)) {
             if (!p.deJugador && o.tipo !== 'animal') continue; // las flechas de monstruos no se pegan entre ellos
             const r = o.ancho / 2 + 0.1;
@@ -119,5 +124,5 @@ export function crearProyectiles({ scene, mundo, jugador, inventario, vida, obje
         }
     }
 
-    return { lista, disparar, actualizar, quitar };
+    return { lista, disparar, actualizar, quitar, api };
 }
