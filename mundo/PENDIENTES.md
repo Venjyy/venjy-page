@@ -185,7 +185,7 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 
 **Pedido del dueño (2026-10-09) para el próximo PR del bloque 5**: (1) **service worker** para que la supervivencia (y el creativo) se abran y jueguen sin internet desde cero, con versión de caché y actualización segura; (2) **TURN** para las redes que no dejan conexión directa: hacer los `iceServers` configurables y, si hace falta una cuenta (Cloudflare, Metered…), dejar el código listo y los pasos para que el dueño la cree (un agente no crea cuentas ni pone credenciales secretas en el repo). Probar en la red de la universidad y con amigos reales lo hace el dueño.
 
-### Bloque 6 · Diálogos, amistad y vida entre amigos (6a hecho; 6b en curso: genéricas hechas, momentos especiales pendientes; 6c y 6d pendientes)
+### Bloque 6 · Diálogos, amistad y vida entre amigos (6a y 6b hechos; 6c y 6d pendientes)
 
 Va después del bloque 5 (online). Cada parte en su propio chat y PR.
 
@@ -301,6 +301,52 @@ Principios:
   | Cuadro mediano durante la escena | — | 3,1 ms (3,9), como las escenas de skin (cine, dos cuerpos y globo) |
 - **Pruebas**: `node mundo/tests/amistad.mjs` (5640 comprobaciones; nuevas: nivel de cada animación, pareja solo Venjy-Lona y nombre «Pareja», 3 animaciones con frase para toda skin × personaje, frases únicas contra todo el juego y sin emojis, guiones dentro de su duración, gestos que existen y metas dentro de los rangos de `rig.md`) y las demás de `mundo/tests/` OK. En el navegador: botones desbloqueados y bloqueados según el nivel, el panel se cierra y arranca la escena, Esc a la mitad restaura todo (Hadad vuelve a sentarse, sin pausa, ganchos sueltos), sin errores de consola; capturas de las 4 animaciones con Boris y Hadad, Moisés en el iglú, Pony en el muelle y Lona con skin de Venjy; panel a 1280×720, 1100×620, 760×560 (la fila queda bajo el scroll del panel, como los temas) y 390×760.
 - Depuración: `__venjy.cargarAmistad()` (promesa con el motor), `__venjy.amistadEscena` (`jugar(clave, tipo)`, `pausar(v)`, `irA(s)`, `saltar()`, `escena`, `actores`).
+
+**Estado 6b-2 (hecho, rama `amistad-6b-momentos` sobre `amistad-6b`, 2026-10-09)**. Capturas en `mundo/capturas/6b/momentos/`; frases al final de `mundo/DIALOGOS.md` (69 ES/EN).
+- **Archivos**: `supervivencia/momentos/<clave>.js` (13 nuevos, uno por personaje: guion, gestos propios y objetos; 3-6 KB cada uno). Cambios: `escena-amistad.js` (actores extra, frases de cualquier actor, giros `yaw`, objetos con `caja`/`sprite`/`pegar`/`soltar`/`prestar` que se borran o se devuelven al terminar, `momento(clave)` con `import()`, planos propios), `camaras.js` (opciones `minDist`, `evitarDist`, `holgura` y reintento con distancias normales antes del rescate; sin ellas todo queda igual), `amistad.js` (`momentoListo`), `hablar.js` (botón dorado «Momento especial»), `misiones.js`, `main.js`, `escena-amistad-datos.js` (textos del botón), `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`.
+- **Cómo funciona**: con la amistad en **100** aparece en «Hablar», bajo los saludos, el botón «Momento especial»; desde Íntimo se ve «Momento especial: amistad N/100». Al pulsarlo se descargan `escena-amistad.js` (si no estaba) y `momentos/<clave>.js`, y corre una escena de cine de 15-16 s con el mismo motor de los saludos (Saltar/Esc, todo se restaura). Se puede repetir y no da puntos.
+- **Los 13 momentos** (guion y textos del orquestador; poses y objetos, primera versión de Haiku):
+
+  | Personaje | Momento | Qué pasa |
+  |---|---|---|
+  | Venjy | El bloque del portafolio | teclea en el aire, aparece un bloque dorado con estrella, te lo da y lo levantan juntos |
+  | Venjy (skin de Lona) | Atardecer (pareja) | de la mano mirando el mundo, te da una flor que no se marchita, abrazo, beso y corazones |
+  | Pony | La pesca del siglo | tiran juntos de la caña, sale un salmón más alto que él, se pone de puntillas, chocan los cinco |
+  | Boris | Pentakill | parte un tronco de un hachazo, juegan LoL y celebra el pentakill |
+  | Moisés (con Lalo) | Monito de nieve | arma un monito de nieve en el iglú, Lalo se ríe de la nariz chueca, los tres levantan los brazos |
+  | Lalo (con Moisés) | El sombrero | se saca su sombrero de paja y te lo pone (el de verdad, prestado), pose «ahya» y lo recupera |
+  | Salonas (con Conejeros) | Solo de bajo | toca un solo con notas musicales, cabecean, saltan juntos y pose rockera |
+  | Lona | La bufanda | teje una bufanda, te la pone y cuenta que a Venjy, su novio, le hizo una igual |
+  | Lona (skin de Venjy) | La bufanda (pareja) | te tapas los ojos mientras teje, te la pone, «te amo», abrazo, beso y corazones |
+  | Hadad | El comercial | graba un comercial de papas fritas de bolsa, comen juntos y pulgar arriba («más famoso que la imagen de la IA») |
+  | Andy | Baile de victoria | enseña el baile que hace con Nacho, lo bailan sincronizados y pose de victoria |
+  | Nacho | Asado y carcajada | da vuelta la carne, te pasa el plato, se ríen hasta doblarse y brindan |
+  | Braulio | El tesoro de la orilla | cavan en la arena, sale un cofre con una concha dorada y se oye el mar |
+  | Lucho (con Boris) | El revive | espalda con espalda modo Apex, te botan, te revive y chocan los puños |
+  | Conejeros (con Salonas) | Dibujo .exe | te dibuja en el aire con orejas de conejo, se «pega» como programa colgado y vuelve con un golpecito |
+- **Decisiones (con motivo)**:
+  - «Amistad máxima» = la barra llena (100 puntos), no solo el nivel Íntimo (85). Motivo: Íntimo ya trae el saludo secreto; el momento es el premio de completar la barra. Con skin de Venjy, Lona parte en 85 y le faltan 15.
+  - Venjy y Lona son novios: con la skin del otro, su momento es de pareja (de la mano, flor, bufanda, «te amo», beso y corazones); con otra skin, Lona igual cuenta que Venjy es su novio.
+  - Un módulo por personaje en `momentos/` y `import()` al pulsar el botón. Motivo: cada momento trae gestos y objetos propios; solo se descarga el que se ve (3-6 KB) y la carga inicial no cambia.
+  - Los amigos que siempre están juntos participan (Lalo y Moisés, Salonas y Conejeros, Lucho y Boris) como actores extra que se quedan en su sitio. Es un adelanto de los grupos de 6c, sin escenas de grupo todavía.
+  - El sombrero de Lalo es el suyo (se presta y vuelve solo al terminar o al saltar), no una copia.
+  - Cámara: los planos de dos personajes sin los de sobre el hombro (con los dos tan cerca, la cabeza del jugador tapaba la entrega de objetos), lejos de todos (1,8 de los actores, 2,4 de cualquier persona) y sin quedar pegada a un bloque; si ningún plano cumple, se reintenta con las distancias normales. Bajo techo (el iglú) se usan los planos de las escenas de skin, porque no hay espacio para lo anterior. Cambia también los saludos de 6b-1.
+  - Mientras dura una escena de amistad se callan todos los que están a menos de 30 bloques (antes 5): las charlas de los grupos y los clones de Venjy se ven de lejos.
+  - Los textos los escribió el orquestador con las notas del dueño (Coyhaique, LoL, Apex, Fortnite y Discord, papas fritas de la imagen con IA, Arica, el grupo, «.exe», el sombrero). Ningún momento menciona fumar ni tomar.
+  - Modelos: el orquestador escribió el guion de cada momento (textos, tiempos y qué pasa) y amplió el motor; tres subagentes Haiku programaron en paralelo las poses y los objetos (4-5 momentos cada uno, ~200K tokens y ~12 min cada uno). Haiku verificó poco con capturas (uno solo un momento), así que el orquestador revisó los 15 con capturas y arregló la cámara, los callados y el abrazo de la pareja de Lona (faltaba en la pista del amigo). No se escaló a Sonnet: lo que falló era del motor y de la cámara, no de las poses.
+- **A revisar por el dueño**: los 69 textos (en especial los de pareja, el comercial de Hadad y el «.exe» de Conejeros); dentro del iglú la cámara tiene poco espacio (Lalo y el sombrero se ven, pero a veces desde atrás); en el revivir de Lucho el tronco de la atalaya tapa en parte al jugador arrodillado; en Boris, Andy y Conejeros a veces queda alguien en primer plano a un costado.
+- **Medidas** (mismo método que 6b-1; esta vez con la máquina sin otras pruebas corriendo):
+
+  | | main | rama `amistad-6b-momentos` |
+  |---|---|---|
+  | JS al abrir la página | 88 archivos, 2178 KB | 88 archivos, 2184 KB (+6 KB: botón, `momentoListo` y ganchos) |
+  | Carga de la página (`load`) | 5527 ms | 5856 ms (ruido del servidor local) |
+  | Entrar a un mundo nuevo | 511 ms | 514 ms |
+  | Cuadro mediano (p90) | 1,7 ms (2,1) | 1,8 ms (2,1) |
+  | Al pulsar «Momento especial» la primera vez | — | `escena-amistad.js` (27,7 KB) + `momentos/hadad.js` (5,2 KB), ~330 ms en local (en cadena) |
+  | Cuadro mediano durante el momento de Hadad | — | 2,7 ms (3,2) |
+- **Pruebas**: `node mundo/tests/amistad.mjs` (14148 comprobaciones; nuevas para los 13 momentos: módulo con `momento()` y `LINEAS`, pareja solo Venjy y Lona y con la skin del otro, 10-22 s, 3-8 frases que no se pisan y se alcanzan a leer, actores extra que existen y son amigos del personaje, gestos que existen y dentro de los rangos de `rig.md`, giros acotados, efectos dentro de la escena, frases únicas contra todo el juego y sin emojis) y las demás de `mundo/tests/` OK. En el navegador: con 100 aparece el botón, carga el momento, al terminar se restaura todo, sin errores de consola; capturas de los 15 momentos (6 tiempos cada uno) en el panel automatizado.
+- Depuración: `__venjy.amistadEscena.momento(clave)` (promesa con true si empezó), `pausar(v)`, `irA(s)`, `actores`.
 
 **6c · Mapa de relaciones y escenas de pareja (como las de Venjy, para cualquier skin)**
 - Tabla de relaciones entre los 13 personajes (Venjy, Pony, Boris, Moisés, Lalo, Salonas, Lona, Hadad, Andy, Nacho, Braulio, Lucho, Conejeros): 0 = no se conocen, 1 = conocidos, 2 = amigos, 3 = mejores amigos. La llenó el dueño (2026-10-09, abajo), con anécdotas o chistes internos para los diálogos.
@@ -540,6 +586,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-09 · **Bloque 6b-2 · momentos especiales** (rama `amistad-6b-momentos`): con la amistad en 100, botón «Momento especial» en «Hablar» con una escena única por personaje (13, más las variantes de pareja de Venjy y Lona), cargada con `import()` al usarla; el motor de 6b-1 suma actores extra, frases del jugador, giros y objetos; cámara con planos propios y distancias mínimas (sin cambios fuera de estas escenas); los cercanos se callan hasta 30 bloques · `supervivencia/momentos/*.js` (13 nuevos), `escena-amistad.js`, `camaras.js`, `amistad.js`, `hablar.js`, `misiones.js`, `main.js`, `escena-amistad-datos.js`, `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`, `mundo/capturas/6b/momentos/` · Verificado: pruebas de `mundo/tests/` (14148 comprobaciones en `amistad.mjs`), capturas de los 15 momentos, botón y restauración en el navegador, sin errores de consola; cuadro mediano 1,7 → 1,8 ms, +6 KB al iniciar. Detalle en «Estado 6b-2».
 - 2026-10-09 · **Bloque 6b-1 · animaciones por nivel de amistad** (rama `amistad-6b`): chocar puños (Amigo), abrazo (Buen amigo), saludo secreto + frase especial (Íntimo) y, entre Venjy y Lona, abrazo y beso con el nivel «Pareja»; los 13 personajes con su frase única ES/EN; botones en la fila «Saludos de amigos» de «Hablar»; escena corta de cine cargada con `import()` al usarla; el amigo sentado se pone de pie; los cercanos se callan · `supervivencia/escena-amistad.js`, `escena-amistad-datos.js` (nuevos), `amistad.js`, `hablar.js`, `misiones.js`, `main.js`, `criaturas/cuerpo.js`, `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`, `mundo/capturas/6b/` · Verificado: pruebas de `mundo/tests/`, capturas medidas de las 4 animaciones en 5 lugares, flujo desde el panel, Esc a la mitad, 4 tamaños de ventana, sin errores de consola; cuadro mediano 2,1 → 2,0 ms, +2 KB al iniciar. Detalle en «Estado 6b-1». Los momentos especiales quedan para 6b-2.
 - 2026-10-09 · **Arreglos tras probar «Hablar» (pedido del dueño)**:
   - (1) El clic derecho que abre el panel de un amigo (o una mesa, horno o cofre) ya no muestra el menú del navegador: `minado.js` lo bloquea también con una ventana abierta (menos en campos de texto).

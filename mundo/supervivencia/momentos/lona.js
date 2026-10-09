@@ -28,12 +28,88 @@ export const LINEAS_PAREJA = [
     { q: 'n', a: 12.2, d: 3.2, texto: t("Yo también te amo. Mila y Gala dicen que la cuides.", "I love you too. Mila and Gala say take good care of it.") }
 ];
 
+// ---- Utilidades (como escena-amistad.js) ----
+const suave = u => u * u * (3 - 2 * u);
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const tramo = (u, a, b) => lim((u - a) / (b - a), 0, 1);
+const env = (x, a, b, r) => suave(Math.min(tramo(x, a, a + r), 1 - tramo(x, b - r, b)));
+
+// Franjas rojas y blancas (la bufanda); la punta en el cuello del jugador va con la misma textura
+const FRANJAS = ['rr', 'rr', 'ww', 'ww', 'rr', 'rr', 'ww', 'ww'];
+const COL_BUFANDA = { r: '#d8283c', w: '#f4f4f4' };
+
 export function momento(info = {}) {
     const pareja = info.base === 'venjy';
+    // Pareja: Lona teje más rápido, la bufanda crece antes y se la pone antes; el abrazo y los corazones van después
+    const cfg = pareja
+        ? { t0: 0.8, t1: 6.6, entrega: 6.8, freq: 28, amp: 0.06, ojos: true, pistaN: [['tejeRapido', 0.8, 6.6], ['asiente', 6.6, 9.4], ['asiente', 9.4, 12.2], ['abrazoL', 12.2, 15.4]], pistaJ: [['ojos', 0.8, 6.6], ['toca', 9.4, 12.0], ['abrazoL', 12.2, 15.4]], abrazo: [12.2, 15.4], corazones: [12.6, 13.6, 14.6] }
+        : { t0: 1.0, t1: 6.8, entrega: 7.0, freq: 18, amp: 0.08, ojos: false, pistaN: [['teje', 1.0, 7.0], ['asiente', 7.0, 10.4], ['habla', 10.4, 13.6], ['abrazoL', 13.8, 15.6]], pistaJ: [['toca', 7.6, 10.4], ['abrazoL', 13.8, 15.6]], abrazo: [13.8, 15.6], corazones: [] };
+    const st = {};
+
+    const gestos = {
+        teje: (u, t) => { const s = Math.sin(t * cfg.freq) * cfg.amp; return { cx: 0.35, bDx: -1.1 - s, bIx: -1.1 + s, bDz: 0.4, bIz: -0.4 }; },
+        tejeRapido: (u, t) => { const s = Math.sin(t * 28) * 0.06; return { cx: 0.35, bDx: -1.1 - s, bIx: -1.1 + s, bDz: 0.4, bIz: -0.4 }; },
+        toca: (u, t) => { const s = Math.sin(t * 6) * 0.05; return { cx: 0.3, bDx: -0.75 + s, bIx: -0.75 - s, bDz: 0.3, bIz: -0.3 }; },
+        abrazoL: (u, t, i) => {
+            const k = env(u, 0, 1, 0.2), beso = env(u, 0.5, 0.8, 0.1);
+            const meta = { bDx: -1.45 * k, bDz: 0.8 * k, bIx: -1.45 * k, bIz: -0.8 * k, pz: 0.36 * k };
+            return i.j ? { ...meta, cz: 0.15 * k, cy: -0.2 * k } : { ...meta, cy: (0.45 + 0.1 * beso) * k, cz: -0.15 * k, cx: 0.2 * k };
+        }
+    };
+
     return {
         T: 16, r: 1.2,
         lineas: pareja ? LINEAS_PAREJA : LINEAS,
-        pista: { n: [['habla', 0.8, 3.6]], j: [] },
-        gestos: {}
+        pista: { n: cfg.pistaN, j: cfg.pistaJ },
+        gestos,
+        corazones: cfg.corazones,
+        golpes: [],
+        extra: {
+            iniciar(api) {
+                // Bufanda que teje (crece entre las manos), agujas y la bufanda puesta (anillo y punta)
+                st.tejida = api.caja(0.16, 1, 0.06, null, { filas: FRANJAS, colores: COL_BUFANDA });
+                st.agujaD = api.caja(0.04, 0.5, 0.04, '#c9c9c9');
+                st.agujaI = api.caja(0.04, 0.5, 0.04, '#c9c9c9');
+                st.anillo = api.caja(0.56, 0.12, 0.32, null, { filas: FRANJAS, colores: COL_BUFANDA });
+                st.punta = api.caja(0.16, 0.6, 0.05, null, { filas: FRANJAS, colores: COL_BUFANDA });
+                for (const o of [st.tejida, st.anillo, st.punta]) { o.visible = false; api.pegar(o); }
+                st.agujaD.visible = st.agujaI.visible = false;
+            },
+            cuadro(api) {
+                const t = api.e.t, THREE = api.THREE;
+                const { tejida, agujaD, agujaI, anillo, punta } = st;
+                if (!tejida) return;
+                const tejiendo = t >= cfg.t0 && t < cfg.entrega;
+                // Agujas: en cada mano, giran de un lado a otro (se cruzan)
+                const brazoD = api.actor('n').p.brazoD, brazoI = api.actor('n').p.brazoI;
+                const giro = Math.sin(t * cfg.freq * 1.5) * 0.7;
+                agujaD.visible = agujaI.visible = tejiendo;
+                if (tejiendo) {
+                    if (agujaD.parent !== brazoD) api.pegar(agujaD, 'n', 'brazoD', [0, -0.7, 0.12]);
+                    if (agujaI.parent !== brazoI) api.pegar(agujaI, 'n', 'brazoI', [0, -0.7, 0.12]);
+                    agujaD.rotation.set(0, 0, giro);
+                    agujaI.rotation.set(0, 0, -giro);
+                }
+                // Bufanda: cuelga entre las manos y crece hasta 0.9
+                tejida.visible = tejiendo;
+                if (tejiendo) {
+                    if (tejida.parent !== api.grupo) api.soltar(tejida);
+                    const a = api.punta(api.actor('n'), 'D', new THREE.Vector3()), c = api.punta(api.actor('n'), 'I', new THREE.Vector3());
+                    const L = Math.max(0.01, 0.6 * suave(tramo(t, cfg.t0, cfg.t1)));
+                    tejida.scale.set(1, L, 1);
+                    tejida.position.set((a.x + c.x) / 2, (a.y + c.y) / 2 - L / 2, (a.z + c.z) / 2);
+                    tejida.rotation.set(0, 0, 0);
+                }
+                // Se la pone al jugador: anillo en el cuello y punta que cuelga al frente
+                const puesta = t >= cfg.entrega;
+                anillo.visible = punta.visible = puesta;
+                if (puesta) {
+                    const k = 0.2 + 0.8 * suave(tramo(t, cfg.entrega, cfg.entrega + 0.5));
+                    if (anillo.parent !== api.actor('j').p.cuerpo) { api.pegar(anillo, 'j', 'cuerpo', [0, 1.45, 0]); api.pegar(punta, 'j', 'cuerpo', [0.08, 1.12, 0.16]); }
+                    anillo.scale.setScalar(k); punta.scale.setScalar(k);
+                }
+            }
+        }
     };
 }

@@ -36,6 +36,16 @@ const envolvente = (t, a, b, r) => suave(Math.min(tramo(t, a, a + r), 1 - tramo(
 const CAMPOS = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'pz'];
 const NEUTRAL = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0.05, bIx: 0, bIz: -0.05, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, pz: 0 };
 
+// Planos propios (camaras.js, opción `planos`): los de dos personajes sin los de sobre el hombro, que con los dos tan
+// cerca dejaban la cabeza del jugador tapando las manos y los objetos. ang 0 = detrás del jugador; dist desde el punto medio.
+const PLANOS_AMISTAD = [
+    { nombre: 'de lado', ang: Math.PI / 2, dist: 3.6, alto: 1.75, orbita: 0.1, dolly: -0.4 },
+    { nombre: 'tres cuartos, lado del jugador', ang: 0.85, dist: 4.0, alto: 1.9, orbita: 0.08, dolly: -0.3 },
+    { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.6, alto: 1.7, orbita: -0.1, dolly: -0.4 },
+    { nombre: 'tres cuartos, lado del amigo', ang: Math.PI - 0.85, dist: 4.0, alto: 1.9, orbita: -0.08, dolly: -0.3 },
+    { nombre: 'general', ang: -1.15, dist: 5.6, alto: 2.5, orbita: 0.14, dolly: -0.6 }
+];
+
 // Texturas píxel a píxel de los efectos (corazón como el de ganado.js y una chispa de cuatro puntas)
 function texturaPixeles(filas, colores) {
     const c = document.createElement('canvas'); c.width = filas[0].length; c.height = filas.length;
@@ -187,13 +197,21 @@ export function crearEscenaAmistad(ctx) {
         const extras = Object.values(e.actores).filter(a => a.n && a !== A).map(a => a.n);
         // Quien esté cerca (Lucho junto a Boris, la fogata) cuenta en `visibles`: la cámara no lo deja tapando a los dos
         const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
-        camaras.iniciarCine(n, { escena: true, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
+        // Al aire libre, planos propios y la cámara lejos de todos; bajo techo (el iglú) no hay espacio para eso:
+        // ahí van los planos de las escenas de skin, que ya están probados dentro del iglú
+        const piso = (n.y ?? 0) + dy, techo = [2, 3, 4].some(k => opaco(n.x, piso + k + 0.5, n.z));
+        const cam = techo ? {} : { planos: PLANOS_AMISTAD, minDist: 1.8, evitarDist: 2.4, holgura: 0.7 };
+        camaras.iniciarCine(n, { escena: true, ...cam, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
         // Los de al lado siguen con lo suyo, pero callados (con `n.escena` se apagan su globo y su charla)
-        const callados = cerca.filter(o => !o.escena).map(o => { const h = (dt, base) => base(); o.escena = h; return [o, h]; });
+        // (hasta 30 bloques: los globos y las charlas se ven de lejos, como el clon de Venjy cerca de la atalaya)
+        const aCallar = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && Math.hypot(o.x - n.x, o.z - n.z) < 30);
+        const callados = aCallar.filter(o => !o.escena).map(o => { const h = (dt, base) => base(); o.escena = h; return [o, h]; });
         e.callados = callados;
         camaras.pose = (c, dt) => { if (e) aplicar(e.actores.j, dt); };
         misiones.ocultarMarcas = true;
         document.body.classList.add('en-amistad');
+        const aviso = document.querySelector('.clic-seguir'); // «Haz clic para seguir jugando» no va encima de la escena
+        if (aviso) aviso.hidden = true;
         if (guion.extra && guion.extra.iniciar) guion.extra.iniciar(api());
         return true;
     }
