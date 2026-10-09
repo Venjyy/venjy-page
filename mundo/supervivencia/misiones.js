@@ -15,18 +15,24 @@ import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
 import { crearTienda } from './tienda.js';
 import { REQ_MINIJUEGOS } from './minijuegos-datos.js';
+import { crearAmistad, precioAmigo, NIVELES, RADIO_PELEA } from './amistad.js';
+import { tipoSkin } from './escenas-skin.js';
+
+// Quiénes ganan amistad con cada minijuego y qué finales cuentan como ganar
+const AMIGOS_MINIJUEGO = { lena: ['boris'], pesca: ['pony'], asado: ['hadad', 'andy', 'nacho'] };
+const FINALES_GANA = new Set(['gana', 'muchos', 'bien']);
 
 const TXT = {
     es: { aceptar: 'Aceptar', entregar: 'Entregar', cerrar: 'Cerrar', abandonar: 'Abandonar misión', premio: 'Premio', progreso: 'Progreso',
         ocupado: n => `Ya tienes una misión activa con ${n}. Termínala o abandónala primero.`, falta: 'Todavía te falta:', mision: 'Misión',
         matar: (m, n) => `Eliminar ${n} × ${m}`, cualquiera: 'monstruos', deNoche: ' (de noche)', visitar: n => `Visitar los ${n} lugares`, noche: 'Sobrevivir una noche sin dormir', hablar: 'Hablar con ella',
         completas: (n, t) => `Misiones: ${n}/${t}`, nueva: 'Nueva misión', listo: '¡Listo para entregar!', abandonada: 'Misión abandonada', recibes: 'Recibes:', jefe: 'Pelea de jefe',
-        usarAltar: 'Usa el objeto en el altar (clic derecho)', vidaExtra: '+1 corazón máximo' },
+        usarAltar: 'Usa el objeto en el altar (clic derecho)', vidaExtra: '+1 corazón máximo', subeAmistad: (n, nv) => `Amistad con ${n}: ${nv}` },
     en: { aceptar: 'Accept', entregar: 'Hand in', cerrar: 'Close', abandonar: 'Abandon quest', premio: 'Reward', progreso: 'Progress',
         ocupado: n => `You already have an active quest with ${n}. Finish or abandon it first.`, falta: 'You still need:', mision: 'Quest',
         matar: (m, n) => `Defeat ${n} × ${m}`, cualquiera: 'monsters', deNoche: ' (at night)', visitar: n => `Visit the ${n} places`, noche: 'Survive a night without sleeping', hablar: 'Talk to her',
         completas: (n, t) => `Quests: ${n}/${t}`, nueva: 'New quest', listo: 'Ready to hand in!', abandonada: 'Quest abandoned', recibes: 'You get:', jefe: 'Boss fight',
-        usarAltar: 'Use the item on the altar (right click)', vidaExtra: '+1 max heart' }
+        usarAltar: 'Use the item on the altar (right click)', vidaExtra: '+1 max heart', subeAmistad: (n, nv) => `Friendship with ${n}: ${nv}` }
 };
 
 export function crearMisiones(ctx) {
@@ -40,13 +46,37 @@ export function crearMisiones(ctx) {
     let ocultarMarcas = false;
     let botonMinijuego = null; // clave -> { texto, motivo } o null (lo pone minijuego.js con `misiones.minijuego`)
 
+    // ---- Amistad (bloque 6a): se guarda con las misiones, por jugador ----
+    const baseSkin = () => (ctx.skin ? tipoSkin(ctx.skin()).base : null);
+    const amistad = crearAmistad({ dia: () => dia.dias || 0, base: baseSkin });
+    amistad.alSubir = (clave, n) => { hud.mensaje(tx().subeAmistad(NOMBRES_AMIGO[clave], L(NIVELES[n])), 5); sonidos.nivel(); };
+
     // ---- Tienda (pestaña del panel de cada amigo) ----
     const tienda = crearTienda({
         // Una oferta se desbloquea con una misión o con una marca de minijuego ('mj-boris')
         inventario, hud, hechas: () => ({ has: id => estado.hechas.has(id) || estado.minijuegos.has(id) }), idioma, nombres: NOMBRES_AMIGO, abrirPanel, cerrarPanel,
         tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo, dar: lista => dar(lista),
-        decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave)
+        decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave), conversar: clave => conversar(clave),
+        precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda')
     });
+
+    // ---- Pestaña «Hablar»: hablar.js y dialogos-datos.js se cargan la primera vez que se abre ----
+    let hablarUI = null, cargandoHablar = null;
+    function conversar(clave) {
+        if (hablarUI) return hablarUI.abrir(clave);
+        if (!cargandoHablar) cargandoHablar = import('./hablar.js').then(m => {
+            hablarUI = m.crearHablar({
+                amistad, jugador, dy, inventario, hud, sonidos, nombreDe, abrirPanel, cerrarPanel, idioma, nombres: NOMBRES_AMIGO, base: baseSkin,
+                hechos: () => ({ hechas: estado.hechas, minijuegos: estado.minijuegos, jefes: estado.jefes }),
+                personaDe: c => (personas().find(p => p.clave === c) || {}).n || null,
+                pestanas: c => tienda.pestanas(c, 'hablar'),
+                decir: (c, texto) => decirEspecial(c, texto),
+                tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
+            });
+            return hablarUI;
+        }).catch(e => { cargandoHablar = null; console.error('No se pudo cargar «Hablar»', e); });
+        cargandoHablar.then(h => { if (h) h.abrir(clave); });
+    }
 
     // ---- Personas ----
     function personas() {
@@ -92,7 +122,9 @@ export function crearMisiones(ctx) {
     }
 
     // Avisos desde otros sistemas
-    function alMatar(tipo) {
+    // x, z: dónde cayó el monstruo (si no llega, donde está el jugador); cerca de un amigo suma amistad
+    function alMatar(tipo, x = jugador.pos.x, z = jugador.pos.z) {
+        for (const p of personas()) if (Math.hypot(p.n.x - x, p.n.z - z) < RADIO_PELEA) amistad.sumar(p.clave, 'pelea');
         const m = misionDe(estado.activa);
         if (!m || m.tipo !== 'matar') return;
         if (m.mob !== '*' && m.mob !== tipo) return;
@@ -172,7 +204,7 @@ export function crearMisiones(ctx) {
         const h = document.createElement('h2');
         h.textContent = NOMBRES_AMIGO[clave];
         el.appendChild(h);
-        if (tienda.tiene(clave)) el.appendChild(tienda.pestanas(clave, false));
+        el.appendChild(tienda.pestanas(clave, 'mision'));
         for (const parte of cuerpo) if (parte) el.appendChild(parte);
         const fila = document.createElement('div');
         fila.className = 'botones-mision';
@@ -241,6 +273,7 @@ export function crearMisiones(ctx) {
         }
         estado.hechas.add(m.id);
         estado.activa = null; estado.progreso = 0; estado.noche = null;
+        amistad.sumar(m.amigo, 'mision');
         dar(m.premio);
         sonidos.nivel();
         // El agradecimiento no es un panel: el amigo lo dice en su globo, como en sus conversaciones
@@ -256,6 +289,7 @@ export function crearMisiones(ctx) {
         const j = JEFES.find(x => x.id === id);
         if (!j || estado.jefes.has(id)) return;
         estado.jefes.add(id);
+        amistad.sumar('venjy', 'mision'); // las peleas de jefe son las misiones de Venjy
         if (estado.activa === id) { estado.activa = null; estado.progreso = 0; }
         dar(j.premio);
         if (j.vidaExtra) { estado.vidaExtra += j.vidaExtra; vida.vidaMax = 20 + estado.vidaExtra; vida.vida = vida.vidaMax; }
@@ -322,8 +356,25 @@ export function crearMisiones(ctx) {
             if (t >= 0 && t < mejorT) { mejorT = t; mejor = p; }
         }
         if (!mejor) return false;
-        hablar(mejor.clave);
+        abrirCon(mejor.clave);
         return true;
+    }
+    // ¿Tiene algo de misión para ti («!» o «?» sobre la cabeza)? Entonces el panel abre en «Misión»; si no, en «Hablar»
+    function tieneAviso(clave) {
+        const m = misionDe(estado.activa), libre = !estado.activa;
+        if (clave === 'venjy') { const j = jefeSiguiente(); return !!((j && libre && amigasHechas() >= j.requiere) || (m && m.jefe)); }
+        return !!((m && m.amigo === clave) || (libre && siguienteDe(clave)));
+    }
+    function abrirCon(clave) {
+        if (ctx.antesDeHablar && ctx.antesDeHablar(clave)) return;
+        if (tieneAviso(clave)) hablar(clave); else conversar(clave);
+    }
+    // Minijuego terminado (lo avisa minijuego.js): amistad con quienes juegan
+    function alMinijuego(juego, final) {
+        for (const c of AMIGOS_MINIJUEGO[juego] || []) {
+            amistad.sumar(c, 'minijuego');
+            if (FINALES_GANA.has(final)) amistad.sumar(c, 'gana');
+        }
     }
 
     // ---------------------------------------------------------
@@ -373,10 +424,11 @@ export function crearMisiones(ctx) {
             } else if (e) e.globo.actualizar(dt, false, n.x, 0, n.z);
         }
         pintarSeguimiento();
+        if (hablarUI) hablarUI.actualizar(dt);
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos] };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], amistad: amistad.serializar() };
     }
     function cargar(o) {
         if (!o) return;
@@ -389,13 +441,15 @@ export function crearMisiones(ctx) {
         estado.vidaExtra = o.vidaExtra || 0;
         estado.escenasSkin = new Set(o.escenasSkin || []);
         estado.minijuegos = new Set(o.minijuegos || []);
+        amistad.cargar(o.amistad); // guardado viejo (sin amistad): parte en blanco, con la amistad inicial de tu skin
         vida.vidaMax = 20 + estado.vidaExtra;
     }
 
     return {
-        estado, interactuar, hablar, actualizar, serializar, cargar, alMatar, alDormir, alMorir, jefeDerrotado, misionDe, amigasHechas,
+        estado, interactuar, hablar, conversar, abrirCon, actualizar, serializar, cargar, alMatar, alDormir, alMorir, jefeDerrotado, misionDe, amigasHechas, alMinijuego, amistad,
         get activa() { return misionDe(estado.activa); },
-        setIdioma(l) { idioma = l; firma = ''; tienda.setIdioma(l); },
+        get hablarUI() { return hablarUI; },
+        setIdioma(l) { idioma = l; firma = ''; tienda.setIdioma(l); if (hablarUI) hablarUI.setIdioma(l); },
         set ocultarMarcas(v) { ocultarMarcas = v; },
         // { texto(clave) -> { texto, motivo } | null, jugar(clave) } (main.js lo conecta con minijuego.js)
         set minijuego(o) { botonMinijuego = o; },

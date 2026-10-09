@@ -76,7 +76,7 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 
 **Archivos**: `main.js` (menú, carga, bucle, pausa, muerte, ajustes, `window.__venjy` con `dar(id, n)`), `objetos.js` (registro de objetos ≥256, dureza/herramienta/drops de bloques, comida, combustible), `iconos.js` (íconos pintados con código + cubos isométricos), `recetas.js` (78 recetas, horno), `inventario.js` (datos puros), `ui-inventario.js` (inventario, mesa, horno, cofre, libro de recetas; mantener = clic derecho en celular), `hud.js`, `vida.js`, `minado.js` (romper con grietas, poner, usar, comer, cubos, azada, puertas, cama), `entidades.js` (objetos tirados), `contenedores.js` + `botin.js` (cofres del mapa con botín por lugar, hornos que funden con la ventana cerrada), `agricultura.js` (registro de lo que crece: ~6 min regado, brote ~3 min, harina de huesos), `dia.js`, `guardado.js`, `sonidos.js` (WebAudio), `desplazado.js`, `tactil-supervivencia.js`, `supervivencia.css`. Compartidos nuevos: `mundo/rayo.js` (lo usa también `online/edicion.js`). `jugador.js` ganó ganchos (escaleras, lava, puertas, `alAterrizar`, `empuje`, `lento`, `puedeCorrer`). `cielo.js`: `fijarHora(h, dia)` y `nubesLibres`.
 
-**Pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs` y la de paridad.
+**Pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs`, `node mundo/tests/tienda.mjs`, `node mundo/tests/amistad.mjs` y la de paridad.
 
 **Estado**:
 - [x] PR 1 · Base: subsuelo, bloques y objetos, minado y puesta, inventario y crafteo con libro de recetas, horno, cofres con botín, vida/hambre/caída/ahogo/lava/fuego/veneno, armadura, día de 10 min y cama, muerte y reaparición, cultivos y árboles, ranuras + exportar/importar, controles táctiles, enlaces.
@@ -183,7 +183,7 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 - **Medido (2 pestañas, `?disp=2`, 2026-10-09)**: generar la invitación 176-206 ms (crear la oferta + juntar candidatos + dibujar); la respuesta del invitado 55-58 ms; desde que el anfitrión lee la respuesta: canales abiertos y el invitado presentado en 122-139 ms, lista recibida a los ~60 ms, foto del mundo por el canal 0,27 s y jugando a los ~1,4 s (el resto es generar el mundo). Bloques en ambos sentidos, jugador remoto visible, `cortarDirecto()` da la pantalla de fin y el anfitrión vuelve a 1/8, volver a entrar con una invitación nueva, salida del anfitrión. Sin errores de consola.
 - **Pendiente / límites**: **service worker** para abrir la página sin internet desde cero (hoy la página tiene que estar abierta o en caché antes de perder internet; el caso cubierto es la red del colegio que bloquea Supabase o un corte a mitad de tarde); probar en dos equipos reales de la misma red y con cámaras de verdad (en la prueba se pegó el texto: el navegador del panel no tiene cámara); redes que bloquean mDNS o aíslan equipos (Wi-Fi de invitados) no conectan y no hay respaldo; el anfitrión también necesita cámara o pegar el texto para leer la respuesta; Safari sin probar.
 
-### Bloque 6 · Diálogos, amistad y vida entre amigos (solo planificación, no implementado)
+### Bloque 6 · Diálogos, amistad y vida entre amigos (6a hecho; 6b, 6c y 6d pendientes)
 
 Va después del bloque 5 (online). Cada parte en su propio chat y PR.
 
@@ -209,6 +209,50 @@ Principios:
 - Cómo sube: hablar (poco y con tope diario, no se farmea), completar sus misiones, regalarle su objeto favorito (Pony pescado, Lona lana, etc.; definir uno o dos por amigo), jugar o ganar su minijuego, comprarle en la tienda, pelear juntos cerca de su zona.
 - Qué desbloquea: temas nuevos en «Hablar», descuentos en la tienda y las animaciones de amistad (6b).
 - Se guarda en `misiones.estado`, por jugador (compatible con el formato del mundo y el cooperativo del bloque 5).
+
+**Estado 6a (hecho, rama `amistad-6a`, 2026-10-09)**. Textos para revisar en `mundo/DIALOGOS.md` (generado desde los datos, 248 frases ES/EN); capturas en `mundo/capturas/6a/`.
+- **Archivos**: `supervivencia/amistad.js` (nuevo, lógica pura: niveles, puntos y topes, tabla de relaciones de 6c, amistad inicial por skin, favoritos, descuentos, requisitos), `supervivencia/hablar.js` (nuevo: pestaña, gestos sobre la animación normal, regalos), `supervivencia/dialogos-datos.js` (nuevo: `TEMAS`, `OPINIONES`, `SALUDOS`, `REGALOS`), `tests/amistad.mjs` (nuevo), `mundo/DIALOGOS.md` (nuevo). Cambios: `misiones.js` (crea la amistad, la guarda en `serializar`/`cargar`, carga «Hablar» con `import()`, elige la pestaña al hacer clic derecho, suma puntos por misión, jefe, pelea y minijuego), `tienda.js` (barra «Hablar | Misión | Tienda», precio de amigo, aviso de compra), `minijuego.js` (avisa el final a `misiones.alMinijuego`), `minijuegos-datos.js` (títulos de `lena`, `pesca` y `asado` para los requisitos), `escenas-skin.js` (exporta `GESTOS` y suma `asiente`), `main.js` (panel sin cine con `{ hablar: true }`, skin para la amistad, posición del monstruo muerto, oculta «Haz clic para seguir jugando» con un panel abierto), `supervivencia.css`.
+- **Cómo funciona**: clic derecho sobre un amigo abre «Misión» si tiene «!» o «?» y si no, «Hablar». La primera vez que se abre «Hablar» se descargan `hablar.js` (15 KB) y `dialogos-datos.js` (52 KB). El amigo deja de caminar, te mira (cabeza hasta ±1,1 rad; el cuerpo gira el 85 % del resto de pie y el 40 % sentado) y mezcla gestos (`asiente` al saludar, el gesto del tema y luego `habla`) sobre su animación normal con el gancho `n.escena`; al cerrar se desvanece en ~0,4 s y suelta el gancho. La respuesta sale en el panel y en su globo (`decirEspecial`). El panel va abajo a la izquierda, sin velo ni cámara de cine; si te alejas más de 7 bloques se cierra. Temas bloqueados: botón «???» con el requisito al lado. «¿Qué opinas de...?» lista solo a quienes conoce según la tabla. «Regalar» aparece si llevas uno de sus favoritos; si no, «Le gusta: …».
+- **Puntos** (0-100, por personaje; topes por día de juego, `dia.dias`):
+
+  | Acción | Puntos | Tope diario |
+  |---|---|---|
+  | Hablar (tema distinto) | +1 | 3 |
+  | Completar una misión suya (Venjy: vencer un jefe) | +12 | sin tope |
+  | Regalar un favorito | +8 | 1 regalo |
+  | Jugar su minijuego / ganarlo | +4 / +4 | 8 |
+  | Comprarle en la tienda | +2 | 4 |
+  | Monstruo eliminado a < 40 bloques de él | +1 | 3 |
+
+  Niveles: Desconocido 0 · Conocido 15 · Amigo 35 · Buen amigo 60 · Íntimo 85. Amistad inicial = nivel de la tabla de 6c (0 → 0, 1 → 15, 2 → 35, 3 → 60, pareja → 85). Descuento: Amigo 10 %, Buen amigo 20 %, Íntimo 30 %.
+- **Favoritos**: Venjy pastel · Pony salmón o bacalao cocido · Salonas redstone o papel · Lona lana o lana roja · Hadad papa asada · Andy pollo asado · Nacho chuleta o filete · Moisés estofado · Lalo pan · Boris manzana · Lucho galleta · Braulio hueso · Conejeros zanahoria o papel.
+- **Decisiones (con motivo)**:
+  - La amistad inicial no se guarda: se calcula con la skin actual + los puntos ganados. Motivo: la skin dice quién eres (como en las escenas de skin); cambiar de skin es presentarte como otra persona, y el guardado queda simple y compatible.
+  - Cada nivel de relación cae en el nivel de amistad del mismo número (Venjy-Lona, pareja, en Íntimo). Motivo: la tabla del dueño se lee directo.
+  - Con skin de Venjy nadie parte bajo «Amigo» (Hadad, Andy, Nacho y Conejeros son 1 en la tabla). Motivo: el plan dice «partes alto con todos». **A revisar por el dueño.**
+  - Con la skin del mismo personaje (tu clon) partes en «Amigo». **A revisar por el dueño.**
+  - Pestaña por defecto: «Misión» si hay algo que aceptar o entregar; si no, «Hablar». Motivo: que una misión nueva no quede escondida tras la charla. La pestaña «Misión» sigue con su cámara de cine, como antes; «Hablar» y la tienda abierta desde «Hablar» no la usan.
+  - Topes por día de juego (10 min), no por día real. Motivo: igual en solitario y en el cooperativo (el anfitrión manda la hora) y sin depender del reloj del equipo. Hablar suma solo por temas distintos del día: no se farmea un botón.
+  - Mientras hablan, quien camina (Lona, el Venjy del Inicio) se queda en su sitio; Lona deja su interacción con la gata (ya lo hacía `npcs.js` con cualquier escena).
+  - Descuentos: precio de 2 o más esmeraldas baja; precio 1 da yapa (más unidades, solo si la oferta trae 2 o más). Nunca queda más barato que lo que otro amigo paga por ese objeto (sin reventa con ganancia; lo comprueba `amistad.mjs`). El trueque no tiene descuento. En ofertas chicas, Amigo y Buen amigo dan lo mismo por el redondeo. **A revisar por el dueño.**
+  - Minijuegos: el duelo de hachas suma a Boris, la pesca a Pony y el asado a Hadad, Andy y Nacho; ganar = `gana`, 4+ peces o asado `bien`. Rendirse no suma.
+  - Pelear «cerca de su zona» = el monstruo muere a menos de 40 bloques del amigo (la zona segura es de 16: dentro no aparecen). Si el crédito llega por la red sin posición, cuenta donde estás tú.
+  - Íntimo no desbloquea temas propios (solo el 30 % y, en 6b, el saludo secreto). Los temas por amistad piden Amigo y Buen amigo. **A revisar por el dueño.**
+  - «¿Cómo conociste a Venjy?»: solo se usan datos de las notas (Coyhaique, Linares, primo, socio, pareja). Con Pony, Hadad, Andy, Nacho, Braulio y Conejeros la respuesta es vaga a propósito. **A revisar por el dueño.**
+  - Se agregó el gesto `asiente` (no existía) a `GESTOS`.
+- **Medidas** (navegador del panel con la pestaña oculta: reloj de 16 ms en lugar de `requestAnimationFrame`, 1280×720, servidor local sin caché, de día junto a la fogata, mundo nuevo):
+
+  | | main | rama `amistad-6a` |
+  |---|---|---|
+  | JS al abrir la página | 87 archivos, 2158 KB | 88 archivos, 2172 KB (+`amistad.js`, 14 KB) |
+  | Carga de la página (`load`) | 1269 ms | 896 ms (ruido del disco) |
+  | Entrar a un mundo nuevo | 586 ms | 516 ms |
+  | Cuadro mediano (p90) | 2,3 ms (2,7) | 2,1 ms (2,5); otra medida 1,8 (2,2) |
+  | Cuadro mediano con «Hablar» abierto | — | 2,0 ms (2,4) |
+  | Al abrir «Hablar» la primera vez | — | +2 archivos: 67 KB, ~3 ms en local |
+- **Pruebas**: `node mundo/tests/amistad.mjs` (2745 comprobaciones: niveles, inicial por skin, puntos y topes, subida de nivel, guardado viejo → nuevo e ida y vuelta por JSON, requisitos, descuentos sin reventa en las 13 tiendas y 5 niveles, 5-8 temas por personaje, opiniones = tabla, variantes de skin solo entre amigos, frases únicas contra todo el juego, sin emojis) y las demás de `mundo/tests/` OK. En el navegador: hablar con Hadad, Pony, Boris y Lona (skin de Pony y de Venjy); los 13 personajes con todos sus temas y opiniones sin errores; tope diario; regalo (+8 y bloqueo del día); misión (+12); compra (+2) → sube a Buen amigo con aviso; precio de amigo en la tienda; los ganchos se sueltan al cerrar; cooperativo con 2 pestañas (`?disp=2`): el invitado conversa y gana puntos en su pantalla, el anfitrión no cambia y guarda el perfil del invitado con su amistad. Sin errores de consola (salvo un primer intento del invitado con la pestaña en segundo plano: no abrió el canal de Supabase, ajeno a esto).
+- **A revisar por el dueño**: todos los textos (`mundo/DIALOGOS.md`); «negro» en dos frases de Lucho y Boris (la nota dice que es de cariño); «weón» y «waton klo» (Venjy, Pony, Salonas); los chistes de papas fritas de Hadad (interpreté «bromas de papas fritas» como chistes sobre papas fritas); los «secretos» (inventados e inofensivos); los favoritos; piso de Venjy, clon, descuentos e Íntimo (arriba). De paso: en `escenas-datos.js` la frase inglesa de Conejeros dice «she's playing today» sobre Salonas (no se tocó).
+- Depuración: `__venjy.misiones.amistad` (`puntos(c)`, `nivel(c)`, `sumar(c, motivo)`, `serializar()`), `__venjy.misiones.conversar(c)`, `__venjy.misiones.abrirCon(c)`, `__venjy.misiones.hablarUI` (`charla`).
 
 **6b · Animaciones por nivel de amistad (genéricas, para todos)**
 - Amigo: choque de puños.
@@ -452,6 +496,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-09 · **Bloque 6a · pestaña «Hablar» y amistad jugador ↔ personaje** (rama `amistad-6a`): «Hablar | Misión | Tienda» en el panel de los 13 personajes; 5-8 temas por personaje con desbloqueos por amistad, misión, minijuego y jefe, «¿Qué opinas de...?» según la tabla de relaciones, variantes por skin y regalos favoritos; amistad 0-100 en 5 niveles con topes por día de juego, amistad inicial por skin, descuentos sin reventa; se guarda en `misiones.estado` (guardados viejos y cooperativo); sin cine ni pausa y con gestos sobre la animación normal; diálogos cargados con `import()` · `supervivencia/amistad.js`, `hablar.js`, `dialogos-datos.js` (nuevos), `misiones.js`, `tienda.js`, `minijuego.js`, `minijuegos-datos.js`, `escenas-skin.js`, `main.js`, `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`, `mundo/capturas/6a/` · Verificado: todas las pruebas de `mundo/tests/`, flujo completo en el navegador (temas, opiniones, tope, regalo, misión, compra, subida de nivel, precio de amigo, los 13 personajes), cooperativo con 2 pestañas, medidas antes y después (cuadro mediano 2,3 → 2,1 ms; +14 KB al iniciar). Decisiones y lo que hay que revisar en «Estado 6a».
 
 - 2026-10-09 · **Modo `/gamemode devenjy`** (supervivencia) · `supervivencia/comandos-dev.js` (nuevo), `consola.js`, `main.js` (`irA`), `supervivencia.css` · `/gamemode devenjy` activa/apaga el modo de desarrollo y abre un panel con los comandos de siempre (`/fly /dia /noche /escenas /escena /ayuda`) y los nuevos, que solo funcionan con el modo activo: `/tp <lugar|persona|gata|altar|x y z>` (sin argumento lista los destinos: spawn, cama, zonas del portafolio, altares de jefes, todos los amigos/NPC y Mila/Gala), `/pos` (`/donde`), `/dar <objeto|bloque> [n]` (`/dar lista`), `/curar`, `/dios`, `/mob <tipo> [n]`, `/jefe <imbunche|chonchon|caleuche>` (te lleva al altar e invoca), `/limpiar`. Con el modo activo, al escribir en la consola aparecen **sugerencias** de comandos y argumentos (cada comando dev define `sugerir()`); Tab/Shift+Tab/↑/↓ completan y el clic también. Local: no se sincroniza online. Depuración: `__venjy.consola.modoDev`.
 - 2026-10-09 · **Bloque 5, PR C · supervivencia cooperativa sin internet con QR**: `SalaLocal` (sin Supabase: señalización por QR de ida y vuelta por invitado, lista de jugadores repartida por el anfitrión por el canal `f`), señal compacta de ~110 bytes en base45 (QR versión 10-11 con corrección H; respaldo con el SDP entero en `deflate-raw`), QR estilo Minecraft con la cara de la skin, lector con `BarcodeDetector` o jsQR, copiar y pegar sin cámara, «Hospedar» con o sin internet, «Unirse con QR», «Invitar jugador» en la pausa; arreglo del campo del código tapado por «Unirse» · `online/senal-qr.js`, `online/sala-local.js`, `online/qr.js`, `online/red.js`, `supervivencia/ui-qr.js`, `supervivencia/coop.js`, `supervivencia/main.js`, `supervivencia/skin.js`, `supervivencia.html` y `.css`, `vendor/qrcode.js`, `vendor/jsQR.js`, `tests/senal-qr.mjs` · Verificado: prueba de Node con SDP reales de Chrome y Firefox, jsQR lee el QR dibujado, dos pestañas sin ninguna petición a Supabase, conexión en ~0,13 s tras leer la respuesta y jugando en ~1,4 s, bloques en ambos sentidos, corte y vuelta con invitación nueva. Pendiente: service worker para cargar la página sin internet.

@@ -93,6 +93,7 @@ export function crearMinijuegos(ctx) {
                 e.premio = j.premio ? j.premio(e) : null;
                 darPremio(e.premio);
                 misiones.estado.minijuegos.add(clave);
+                if (misiones.alMinijuego) misiones.alMinijuego(clave, final); // amistad (bloque 6a)
             }
             if (j.alPasar) j.alPasar(e, fase);
             camaras.nuevaLinea();

@@ -505,6 +505,31 @@ body.en-ronda-fp #hud { visibility: hidden; }
 .tienda-fila .boton { margin: 0 0 0 auto; padding: 4px 12px; min-width: 96px; width: auto; flex: 0 0 auto; }
 .tienda-fila small { flex-basis: 100%; color: var(--gris); }
 .tienda-flecha { color: var(--gris); }
+.tienda-fila.rebaja { border-left-color: #6fd36f; }
+.tienda-rebaja { color: #8ff08f; font-style: normal; font-size: 0.85em; }
+
+/* ---------- Pestaña «Hablar» (bloque 6a): sin cine ni velo, el panel a un costado para ver al amigo ---------- */
+.capa-mision.capa-hablar { background: transparent; align-items: flex-end; justify-content: flex-start; }
+.capa-hablar .panel-mision { margin: auto auto 3vh 3vw; width: min(440px, 94vw); max-height: 86vh; overflow: auto; padding: 12px 14px; font-size: 0.9rem; background: rgb(16 10 6 / 0.88); }
+.capa-hablar .panel-mision h2 { font-size: 1.2rem; }
+@media (max-width: 600px) { .capa-hablar .panel-mision { margin: auto auto 2vh; } }
+.amistad { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+.amistad b { font-weight: normal; color: #ff9fcf; }
+.amistad small { color: var(--gris); }
+.amistad-barra { display: inline-flex; gap: 2px; }
+.amistad-barra i { width: 22px; height: 10px; border: 2px solid #000; background: linear-gradient(90deg, #e05a9a var(--lleno, 0%), #2a1a22 var(--lleno, 0%)); }
+.amistad-barra i.lleno { background: #e05a9a; }
+.temas-hablar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 8px 0; }
+@media (max-width: 420px) { .temas-hablar { grid-template-columns: 1fr; } }
+.temas-hablar .boton.tema { margin: 0; width: 100%; min-width: 0; text-align: left; padding: 6px 8px; font-size: 0.85rem; line-height: 1.2; }
+.temas-hablar .objetivo { grid-column: 1 / -1; }
+.tema-bloqueado { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tema-bloqueado .boton { flex: 0 0 44px; width: 44px; margin: 0; padding: 6px 0; opacity: 0.55; text-align: center; }
+.tema-bloqueado small { color: var(--gris); font-size: 0.75rem; line-height: 1.15; }
+.regalo-hablar { margin: 4px 0; }
+.regalo-hablar small { color: var(--gris); font-size: 0.85em; }
+.boton-regalo { width: 100%; margin: 0; background: #7a3a5a; }
+.boton-regalo:hover:not(:disabled), .boton-regalo:focus-visible { background: #9a4a72; }
 .tienda-pila { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; }
 .tienda-pila span { display: inline-flex; align-items: center; gap: 4px; }
 .tienda-pila canvas { width: 24px; height: 24px; image-rendering: pixelated; }
