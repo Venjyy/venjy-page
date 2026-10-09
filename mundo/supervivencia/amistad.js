@@ -77,6 +77,8 @@ export const nombreNivel = (n, base, clave) => (n === NIVELES.length - 1 && esPa
 // Animaciones por nivel de amistad (escena-amistad.js): nivel mínimo de cada una
 export const NIVEL_ANIMACION = { punos: 2, abrazo: 3, secreto: 4, pareja: 4 };
 export const animacionesDe = (base, clave) => ['punos', 'abrazo', esPareja(base, clave) ? 'pareja' : 'secreto'];
+// Momento especial (6b-2): con la amistad al máximo (barra llena) aparece el botón con la escena única del personaje
+export const momentoListo = puntos => puntos >= MAX;
 
 // Regalos favoritos (1 o 2 por personaje): solo esos se pueden regalar
 export const FAVORITOS = {

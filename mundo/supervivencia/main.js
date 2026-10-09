@@ -51,7 +51,7 @@ import { crearEscenasGatas } from './escenas-gatas.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMinijuegos } from './minijuego.js';
-import { NIVEL_ANIMACION } from './amistad.js';
+import { NIVEL_ANIMACION, momentoListo } from './amistad.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
@@ -706,7 +706,7 @@ async function arrancar(guardado, cx = null) {
     function cargarEscenaAmistad() {
         if (!cargandoAmistad) cargandoAmistad = import('./escena-amistad.js').then(m => {
             escenaAmistad = m.crearEscenaAmistad({
-                grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, idioma, personas: personasEscena,
+                grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, idioma, personas: personasEscena, base: () => escenas.tipoSkin(skinActual).base,
                 personaDe: c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio') : personasEscena().find(n => n.clave === c)) || null,
                 bloquear: bloquearEscena, liberar: liberarEscena
             });
@@ -721,6 +721,13 @@ async function arrancar(guardado, cx = null) {
             capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => { if (!ea || !ea.jugar(clave, tipo)) { uiAbierta = false; if (!vida.muerto) entrar(); } });
+        },
+        // Momento especial (6b-2): el motor y la escena del personaje se cargan con import() al usarse
+        momento: clave => {
+            if (!puedeAmistad() || !momentoListo(misiones.amistad.puntos(clave))) return;
+            capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
+            camaras.terminarCine();
+            cargarEscenaAmistad().then(ea => (ea ? ea.momento(clave) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
         }
     };
     // Música de fondo y temas de los amigos

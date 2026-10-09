@@ -9,9 +9,13 @@
 //   justa del amigo para que las manos se toquen, la cámara usa los planos de dos personajes y los globos
 //   llevan pestaña con el nombre y marco de color, sin colita. Se salta con Esc o «Saltar» y al terminar
 //   (o al saltar) se restaura todo: pose, yaw, cámara, marcas de misión y el jugador.
-// · iniciar(clave, guion) acepta también un guion propio, con gestos y efectos extra (los «Momentos
-//   especiales», segunda parte de 6b).
-// Depuración: __venjy.amistadEscena (jugar(clave, tipo), pausar(v), irA(s), saltar(), escena).
+// · Momentos especiales (6b-2): al llegar a 100 de amistad, momento(clave) carga con import() la escena única
+//   del personaje (momentos/<clave>.js) y la corre con este mismo motor. Un guion propio puede traer
+//   actores extra (otro amigo cercano), frases del jugador, gestos propios, giros (`yaw`), objetos y efectos.
+// Guion: { T, r, lineas: [{ q, texto, a, d }], pista: { n, j, <extra>: [[gesto, desde, hasta]] }, gestos,
+//   actores: { <q>: clave }, yaw: { <q>: t => radianes }, golpes, corazones, extra: { iniciar, cuadro, terminar } }
+//   (q = 'n' el amigo, 'j' el jugador o la clave de un actor extra).
+// Depuración: __venjy.amistadEscena (jugar(clave, tipo), momento(clave), pausar(v), irA(s), saltar(), escena).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { TIPO } from '../texturas.js';
@@ -128,7 +132,7 @@ export function crearEscenaAmistad(ctx) {
         p.cuerpo.rotation.x = v.inc; p.cuerpo.rotation.z = v.rz; p.cuerpo.position.y = v.y; p.cuerpo.position.z = v.pz;
     }
     const esc = n => n.escala || 1;
-    function actorAmigo(clave, n) {
+    function actorAmigo(clave, n, q = 'n') {
         const foto = leer(n.p);
         // Sentado (Hadad y Nacho en su tronco, Moisés en el suelo, Pony en el muelle): se pone de pie para el saludo
         // (la mezcla de la entrada lo levanta y la salida lo vuelve a sentar). Del tronco da un paso adelante.
@@ -139,7 +143,7 @@ export function crearEscenaAmistad(ctx) {
         if (levanta) { neutral.bDx = 0; neutral.bDz = 0.05; neutral.bIx = 0; neutral.bIz = -0.05; neutral.cx = 0; }
         if (Math.abs(foto.bDx) > 1.3) { neutral.bDx = 0; neutral.bDz = 0.05; }
         if (Math.abs(foto.bIx) > 1.3) { neutral.bIx = 0; neutral.bIz = -0.05; }
-        return { q: 'n', clave, n, p: n.p, foto, neutral, cur: { ...neutral }, sentado: false, levanta, adelante, giro: 1, yaw0: n.yaw, alto: 2.15 * esc(n) };
+        return { q, clave, n, p: n.p, foto, neutral, cur: { ...neutral }, sentado: false, levanta, adelante, giro: 1, yaw0: n.yaw, alto: 2.15 * esc(n) };
     }
     const actorJugador = () => ({ q: 'j', clave: 'j', p: camaras.cuerpo, neutral: { ...NEUTRAL }, cur: { ...NEUTRAL }, sentado: false, alto: 2.15, jugador: true });
     const pos = a => (a.jugador ? { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z } : { x: a.n.x, y: (a.n.y ?? 0) + dy, z: a.n.z });
@@ -170,11 +174,20 @@ export function crearEscenaAmistad(ctx) {
         if (l) jugador.colocar(l.x, l.y, l.z);
         jugador.yaw = Math.atan2(n.x - jugador.pos.x, n.z - jugador.pos.z) - Math.PI;
         jugador.pitch = 0;
-        e = { clave, guion, t: 0, T: guion.T, actores: { n: A, j: J }, lineas: guion.lineas || [], hechos: new Set(), ultimaLinea: null, callados: [] };
+        e = { clave, guion, t: 0, T: guion.T, actores: { n: A, j: J }, lineas: guion.lineas || [], hechos: new Set(), ultimaLinea: null, callados: [], props: [], prestados: [] };
         n.escena = (dt, base) => animarAmigo(A, dt, base);
+        // Actores extra del guion (otro amigo de al lado): se quedan en su sitio y siguen su pista
+        for (const [q, c] of Object.entries(guion.actores || {})) {
+            const m = personaDe(c);
+            if (!m || m === n || m.escena) continue;
+            const X = actorAmigo(c, m, q);
+            e.actores[q] = X;
+            m.escena = (dt, base) => animarAmigo(X, dt, base);
+        }
+        const extras = Object.values(e.actores).filter(a => a.n && a !== A).map(a => a.n);
         // Quien esté cerca (Lucho junto a Boris, la fogata) cuenta en `visibles`: la cámara no lo deja tapando a los dos
-        const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
-        camaras.iniciarCine(n, { escena: true, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...cerca], visibles: [n, ...cerca] });
+        const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
+        camaras.iniciarCine(n, { escena: true, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
         // Los de al lado siguen con lo suyo, pero callados (con `n.escena` se apagan su globo y su charla)
         const callados = cerca.filter(o => !o.escena).map(o => { const h = (dt, base) => base(); o.escena = h; return [o, h]; });
         e.callados = callados;
@@ -189,11 +202,16 @@ export function crearEscenaAmistad(ctx) {
         if (!e) return;
         const x = e; e = null;
         if (x.guion.extra && x.guion.extra.terminar) x.guion.extra.terminar(api(x));
-        const A = x.actores.n;
-        if (A.n.escena) delete A.n.escena;
-        A.n.yaw = A.yaw0;
-        escribir(A.p, A.foto);
+        for (const A of Object.values(x.actores)) {
+            if (!A.n) continue;
+            if (A.n.escena) delete A.n.escena;
+            A.n.yaw = A.yaw0;
+            escribir(A.p, A.foto);
+        }
         escribir(camaras.cuerpo, NEUTRAL);
+        // Objetos del guion: los propios se borran y los prestados (el sombrero de Lalo) vuelven a su dueño
+        for (const o of x.props) { if (o.parent) o.parent.remove(o); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }
+        for (const { o, padre, pos, rot, esc } of x.prestados.reverse()) { padre.add(o); o.position.copy(pos); o.rotation.copy(rot); o.scale.copy(esc); }
         for (const [o, h] of x.callados) if (o.escena === h) delete o.escena;
         for (const f of efectos.splice(0)) { grupo.remove(f.s); f.s.material.dispose(); }
         camaras.terminarCine();
@@ -210,6 +228,13 @@ export function crearEscenaAmistad(ctx) {
         for (const [g, desde, hasta] of pista) if (e.t >= desde && e.t < hasta) return { g, u: (e.t - desde) / (hasta - desde), w: envolvente(e.t, desde, hasta, Math.min(0.3, (hasta - desde) / 3)) };
         return null;
     }
+    // A quién mira cada uno: a quien habla (si es otro); si nadie habla, el amigo y el jugador se miran y los extras miran al amigo
+    function miraA(a) {
+        const ls = lineasAhora(), l = ls[ls.length - 1];
+        const habla = l && e.actores[l.q];
+        if (habla && habla !== a) return habla;
+        return a.jugador ? e.actores.n : a.q === 'n' ? e.actores.j : e.actores.n;
+    }
     function metaDe(g, a) {
         const otro = a.jugador ? e.actores.n : e.actores.j;
         const info = { s: a.sentado, otroS: otro.sentado, j: !!a.jugador, esc: esc(e.actores.n.n) };
@@ -224,7 +249,7 @@ export function crearEscenaAmistad(ctx) {
         const meta = g ? metaDe(g, a) : {};
         const w = g ? g.w : 0;
         // Mirada: a la cabeza del otro
-        const otro = a.jugador ? e.actores.n : e.actores.j;
+        const otro = miraA(a);
         const yo = pos(a), m = pos(otro);
         const yaw = a.jugador ? jugador.yaw + Math.PI : a.n.yaw;
         const d = Math.hypot(m.x - yo.x, m.z - yo.z) || 1;
@@ -248,8 +273,8 @@ export function crearEscenaAmistad(ctx) {
         if (!e) return base();
         const r = base(0); // la animación normal queda congelada: la escena lo mueve
         const wS = aplicar(a, dt);
-        const J = jugador.pos;
-        a.n.yaw = a.yaw0 + angulo(Math.atan2(J.x - a.n.x, J.z - a.n.z) - a.yaw0) * a.giro * wS;
+        const J = jugador.pos, giro = e.guion.yaw && e.guion.yaw[a.q];
+        a.n.yaw = a.yaw0 + (angulo(Math.atan2(J.x - a.n.x, J.z - a.n.z) - a.yaw0) * a.giro + (giro ? giro(e.t) : 0)) * wS;
         return r;
     }
 
@@ -260,6 +285,7 @@ export function crearEscenaAmistad(ctx) {
     function golpe(donde) {
         const A = e.actores.n, J = e.actores.j;
         const p = donde || punta(A, 'D', vA).lerp(punta(J, 'D', vB), 0.5);
+        if (!p) return;
         efecto('chispa', p.x, p.y, p.z);
         sonidos.golpe();
     }
@@ -269,8 +295,42 @@ export function crearEscenaAmistad(ctx) {
         const x = (A.x + J.x) / 2, z = (A.z + J.z) / 2, y = Math.max(A.y + e.actores.n.alto, J.y + 2.15) - dy + 0.2;
         for (let i = 0; i < 3; i++) efecto('corazon', x + (i - 1) * 0.3, y + i * 0.12, z, { vida: 1.6 + i * 0.2 });
     }
+    // ---- Objetos de los momentos especiales (se borran o se devuelven al terminar) ----
+    const HUESOS = ['brazoD', 'brazoI', 'cabeza', 'cuello', 'cuerpo', 'torso', 'piernaD', 'piernaI'];
+    const huesoDe = (q, h) => { const a = e.actores[q]; return a && HUESOS.includes(h) ? a.p[h] : null; };
+    // Caja de color liso (o una textura píxel con `filas` y `colores`); sin luz propia, como las partículas
+    function caja(w, h, d, color, op = {}) {
+        const mat = op.filas ? new THREE.MeshBasicMaterial({ map: texturaPixeles(op.filas, op.colores), transparent: !!op.transparente })
+            : new THREE.MeshBasicMaterial({ color, transparent: op.alfa !== undefined, opacity: op.alfa ?? 1 });
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        e.props.push(m);
+        return m;
+    }
+    function sprite(filas, colores, tam = 0.4) {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaPixeles(filas, colores), transparent: true, depthWrite: false }));
+        s.scale.set(tam, tam, 1);
+        e.props.push(s);
+        return s;
+    }
+    // Pega un objeto a un hueso de un actor (q: 'n', 'j' o un extra) o, sin hueso, al grupo del mapa (coordenadas del creativo)
+    function pegar(o, q, hueso, posL = [0, 0, 0], rot = [0, 0, 0]) {
+        const padre = q ? huesoDe(q, hueso) : grupo;
+        if (!padre) return o;
+        padre.add(o); o.position.set(...posL); o.rotation.set(...rot);
+        return o;
+    }
+    // Lo deja en el mundo donde está ahora (para lanzarlo o soltarlo)
+    function soltar(o) { if (o.parent) { o.parent.updateMatrixWorld(true); grupo.attach(o); } return o; }
+    // Toma prestado algo que ya existe (el sombrero de Lalo) y lo pega a otro hueso; al terminar vuelve tal cual
+    function prestar(o, q, hueso, posL, rot) {
+        if (!e.prestados.some(x => x.o === o)) e.prestados.push({ o, padre: o.parent, pos: o.position.clone(), rot: o.rotation.clone(), esc: o.scale.clone() });
+        return pegar(o, q, hueso, posL, rot);
+    }
+    // Pies de un actor en coordenadas del grupo (las de los objetos sueltos)
+    const posG = q => { const a = e.actores[q]; if (!a) return null; const p = pos(a); return { x: p.x, y: p.y - dy, z: p.z }; };
     // Lo que reciben los extras de un guion propio (momentos especiales)
-    const api = (x = e) => ({ e: x, grupo, dy, jugador, camaras, mundo, efecto, golpe, corazones, globoDe, personaDe, punta, pos, L, sonidos, THREE });
+    const api = (x = e) => ({ e: x, grupo, dy, jugador, camaras, mundo, efecto, golpe, corazones, globoDe, personaDe, punta, pos, posG, caja, sprite, pegar, soltar, prestar,
+        actor: q => x.actores[q], L, sonidos, THREE, suave, lim, lerp, tramo, envolvente });
 
     // ---- Globos (con encaje: esquivan cabezas, el botón «Saltar» y las franjas) ----
     function zonas() {
@@ -284,15 +344,15 @@ export function crearEscenaAmistad(ctx) {
         return out;
     }
     function anclaGlobo(quien) {
-        const a = quien === 'j' ? e.actores.j : e.actores.n;
+        const a = e.actores[quien] || e.actores.n;
         const p = pos(a);
         let y = p.y + a.alto + 0.6;
         for (let k = 2; k <= 4; k++) if (opaco(p.x, p.y + k + 0.5, p.z)) { y = Math.min(y, p.y + k - 0.5); break; } // bajo techo (el iglú)
-        const o = pos(quien === 'j' ? e.actores.n : e.actores.j);
+        const o = pos(a.jugador ? e.actores.n : e.actores.j);
         return [lerp(p.x, o.x, 0.2), y - dy, lerp(p.z, o.z, 0.2)];
     }
     const lineasAhora = () => e.lineas.filter(l => e.t >= l.a && e.t < l.a + l.d);
-    const focoDe = l => (!l ? 0.5 : l.q === 'j' ? 0.68 : 0.32);
+    const focoDe = l => (!l ? 0.5 : l.q === 'j' ? 0.68 : l.q === 'n' ? 0.32 : 0.5);
     const camPrueba = new THREE.PerspectiveCamera();
     function validarTexto(posCam, objetivo, objetivoDe) {
         if (!e) return 0;
@@ -335,7 +395,8 @@ export function crearEscenaAmistad(ctx) {
             for (const s of x.guion.golpes || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('g' + s)) { x.hechos.add('g' + s); golpe(); }
             for (const s of x.guion.corazones || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('c' + s)) { x.hechos.add('c' + s); corazones(); }
             if (x.guion.extra && x.guion.extra.cuadro) x.guion.extra.cuadro(api(x), pausada ? 0 : dt);
-            jugador.yaw = Math.atan2(x.actores.n.n.x - jugador.pos.x, x.actores.n.n.z - jugador.pos.z) - Math.PI;
+            const giroJ = x.guion.yaw && x.guion.yaw.j, wS = suave(Math.min(tramo(x.t, 0, 0.5), 1 - tramo(x.t, x.T - 0.7, x.T)));
+            jugador.yaw = Math.atan2(x.actores.n.n.x - jugador.pos.x, x.actores.n.n.z - jugador.pos.z) - Math.PI + (giroJ ? giroJ(x.t) * wS : 0);
             if (x.t >= x.T) terminar();
         }
         actualizarEfectos(dt);
@@ -349,6 +410,15 @@ export function crearEscenaAmistad(ctx) {
             const ok = iniciar(clave, guionGenerico(clave, tipo));
             if (ok && alTerminar) e.alTerminar = alTerminar;
             return ok;
+        },
+        // Momento especial (6b-2): carga momentos/<clave>.js la primera vez y lo corre; devuelve una promesa con true si empezó
+        momento(clave, alTerminar) {
+            if (e) return Promise.resolve(false);
+            return import(`./momentos/${clave}.js`).then(m => {
+                const ok = iniciar(clave, { ...m.momento({ base: ctx.base ? ctx.base() : null, idioma }), tipo: 'momento' });
+                if (ok && alTerminar) e.alTerminar = alTerminar;
+                return ok;
+            }).catch(err => { console.error('No se pudo cargar el momento especial', err); return false; });
         },
         get activa() { return !!e; },
         get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, t: e.t, T: e.T }; },

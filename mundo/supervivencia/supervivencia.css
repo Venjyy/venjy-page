@@ -536,6 +536,9 @@ body.panel-lado .mision-activa { display: none; } /* el globo del amigo queda ar
 .saludos-fila { display: flex; flex-wrap: wrap; gap: 4px; }
 .saludos-fila .boton.saludo { flex: 1 1 0; min-width: 0; width: auto; margin: 0; padding: 6px 6px; font-size: 0.8rem; line-height: 1.15; }
 .saludos-fila .boton.saludo.bloqueado { opacity: 0.55; }
+.saludos-hablar .boton-momento { display: block; width: 100%; margin: 5px 0 0; padding: 7px 8px; font-size: 0.9rem; background: #b8860b; border-color: #ffd84a; color: #fff6c8; }
+.saludos-hablar .boton-momento:hover, .saludos-hablar .boton-momento:focus-visible { background: #d4a017; }
+.momento-falta { display: block; margin-top: 4px; color: var(--gris); font-size: 0.75rem; }
 .regalo-hablar { margin: 4px 0; }
 .regalo-hablar small { color: var(--gris); font-size: 0.85em; }
 .boton-regalo { width: 100%; margin: 0; background: #7a3a5a; }
