@@ -51,6 +51,7 @@ import { crearEscenasGatas } from './escenas-gatas.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMinijuegos } from './minijuego.js';
+import { NIVEL_ANIMACION } from './amistad.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
@@ -698,6 +699,30 @@ async function arrancar(guardado, cx = null) {
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
+    // Animaciones de amistad (bloque 6b): escena-amistad.js se carga con import() la primera vez que se usa
+    // (botón de la pestaña «Hablar»); igual que el minijuego, cierra el panel sin pedir el puntero y empieza
+    let escenaAmistad = null, cargandoAmistad = null;
+    const personasEscena = () => [...npcs.lista, ...amigos.lista, ...venjys.lista];
+    function cargarEscenaAmistad() {
+        if (!cargandoAmistad) cargandoAmistad = import('./escena-amistad.js').then(m => {
+            escenaAmistad = m.crearEscenaAmistad({
+                grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, idioma, personas: personasEscena,
+                personaDe: c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio') : personasEscena().find(n => n.clave === c)) || null,
+                bloquear: bloquearEscena, liberar: liberarEscena
+            });
+            return escenaAmistad;
+        }).catch(err => { cargandoAmistad = null; console.error('No se pudo cargar la escena de amistad', err); });
+        return cargandoAmistad;
+    }
+    const puedeAmistad = () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !escenas.activa;
+    misiones.escenaAmistad = {
+        jugar: (clave, tipo) => {
+            if (!puedeAmistad() || misiones.amistad.nivel(clave) < NIVEL_ANIMACION[tipo]) return;
+            capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
+            camaras.terminarCine();
+            cargarEscenaAmistad().then(ea => { if (!ea || !ea.jugar(clave, tipo)) { uiAbierta = false; if (!vida.muerto) entrar(); } });
+        }
+    };
     // Música de fondo y temas de los amigos
     const musica = crearMusica();
     const personasMusica = () => {
@@ -1018,6 +1043,8 @@ async function arrancar(guardado, cx = null) {
         gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
+        // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
+        get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -1067,6 +1094,7 @@ async function arrancar(guardado, cx = null) {
         escenasGatas.actualizar(corre ? dt : 0);
         escenaCuello.actualizar(corre ? dt : 0);
         minijuegos.actualizar(corre ? dt : 0);
+        if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
         {

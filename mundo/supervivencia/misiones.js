@@ -45,6 +45,7 @@ export function crearMisiones(ctx) {
     const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set() };
     let ocultarMarcas = false;
     let botonMinijuego = null; // clave -> { texto, motivo } o null (lo pone minijuego.js con `misiones.minijuego`)
+    let escenaAmistad = null; // { jugar(clave, tipo) } (bloque 6b: main.js carga escena-amistad.js con import() al usarla)
 
     // ---- Amistad (bloque 6a): se guarda con las misiones, por jugador ----
     const baseSkin = () => (ctx.skin ? tipoSkin(ctx.skin()).base : null);
@@ -80,6 +81,8 @@ export function crearMisiones(ctx) {
                 personaDe: c => (personas().find(p => p.clave === c) || {}).n || null,
                 pestanas: c => tienda.pestanas(c, 'hablar'),
                 decir: (c, texto) => decirEspecial(c, texto),
+                // Antes de que la escena tome al amigo se suelta la retención (como el botón del minijuego)
+                saludar: (c, tipo) => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.jugar(c, tipo); },
                 tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
             });
             return hablarUI;
@@ -481,6 +484,8 @@ export function crearMisiones(ctx) {
         set ocultarMarcas(v) { ocultarMarcas = v; },
         // { texto(clave) -> { texto, motivo } | null, jugar(clave) } (main.js lo conecta con minijuego.js)
         set minijuego(o) { botonMinijuego = o; },
+        // { jugar(clave, tipo) } (main.js: animaciones de amistad, bloque 6b)
+        set escenaAmistad(o) { escenaAmistad = o; },
         // Atajos de depuración
         completarActiva() { const m = misionDe(estado.activa); if (m && !m.jefe) { estado.progreso = 999; estado.noche = 'lista'; if (m.tipo === 'entregar') for (const [p, n] of m.pide) inventario.agregar([].concat(p)[0], n); hablar(m.amigo); } }
     };

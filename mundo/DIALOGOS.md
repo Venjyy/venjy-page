@@ -1,4 +1,4 @@
-# Diálogos de la pestaña «Hablar» (bloque 6a)
+# Diálogos de la pestaña «Hablar» (bloques 6a y 6b)
 
 Generado desde `mundo/supervivencia/dialogos-datos.js` para que el dueño revise los textos antes del merge (248 frases ES/EN). Si cambias un texto, cámbialo en ese archivo; `node mundo/tests/amistad.mjs` comprueba que todas sigan únicas.
 
@@ -317,3 +317,51 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | Cuéntame algo que nadie sepa | Amistad: Buen amigo |  | No soy tan .exe como parezco. Bueno, sí. Pero ensayo los chistes antes. | I'm not as .exe as I look. Well, I am. But I rehearse the jokes first. |
 | (al regalar Zanahoria o Papel) | Libre |  | Zanahoria o papel, igual sirve: o se la comen los conejos o la dibujamos. | Carrot or paper, either works: the rabbits eat it or we draw on it. |
 
+
+## Saludos de amigos (bloque 6b)
+
+Generado desde `mundo/supervivencia/escena-amistad-datos.js` (`FRASES_AMISTAD`): la frase única de cada personaje en cada animación por nivel. La de pareja sale solo entre Venjy y Lona (con la skin del otro).
+
+| Personaje | Animación | ES | EN |
+|---|---|---|---|
+| Venjy | Chocar puños (Amigo) | ¡Eso! Choque de puños oficial del Inicio. Queda guardado en el código. | That's it! Official Start fist bump. It's saved in the code. |
+| Venjy | Abrazo (Buen amigo) | Ven acá. Gracias por recorrer el mundo que armé, de verdad. | Come here. Thanks for exploring the world I built, really. |
+| Venjy | Saludo secreto (Íntimo) | Ese saludo no lo sabe nadie más. Si algún día algo no compila, te llamo a ti primero. | Nobody else knows that handshake. If something ever doesn't compile, I'll call you first. |
+| Venjy | Abrazo y beso (Pareja: Venjy y Lona) | Mi amor, cada bloque de este mundo lo puse pensando en recorrerlo contigo. | My love, I placed every block of this world thinking of walking it with you. |
+| Pony | Chocar puños (Amigo) | Puño arriba, que si no, no llego. Ya, ya, no te rías. | Fist up high, or I can't reach. Okay, okay, don't laugh. |
+| Pony | Abrazo (Buen amigo) | Abrazo de pescador: corto, firme y con olor a salmón. De nada. | Fisherman's hug: short, firm and smelling of salmon. You're welcome. |
+| Pony | Saludo secreto (Íntimo) | Ni el Andy se sabe este saludo. Bueno, sí se lo sabe, pero a ti te sale mejor. | Not even Andy knows this handshake. Well, he does, but you do it better. |
+| Salonas | Chocar puños (Amigo) | ¡Puño con ritmo! Eso sonó como un golpe de bombo, compadre. | Fist with rhythm! That sounded like a kick drum, mate. |
+| Salonas | Abrazo (Buen amigo) | Abrazo de banda antes de salir al escenario. Ya, ahora sí estamos afinados. | Band hug before going on stage. Okay, now we are in tune. |
+| Salonas | Saludo secreto (Íntimo) | Este saludo lo voy a dibujar, con monitos y todo. Va a quedar ridículo y perfecto. | I'm going to draw this handshake, stick figures and all. It'll be ridiculous and perfect. |
+| Lona | Chocar puños (Amigo) | Choque de puños aprobado por Mila. Gala todavía lo está pensando. | Fist bump approved by Mila. Gala is still thinking about it. |
+| Lona | Abrazo (Buen amigo) | Un abrazo bien apretado, como los que dan las gatas cuando se te suben encima. | A really tight hug, like the ones the cats give when they climb on you. |
+| Lona | Saludo secreto (Íntimo) | Nuestro saludo secreto queda entre tú, yo y las gatas. Ellas no le cuentan a nadie. | Our secret handshake stays between you, me and the cats. They won't tell anyone. |
+| Lona | Abrazo y beso (Pareja: Venjy y Lona) | Te quiero, amor. Contigo hasta un mundo de bloques se siente como la casa. | I love you, my love. With you even a world of blocks feels like home. |
+| Hadad | Chocar puños (Amigo) | Puño de campeón. Este momento lo auspician las papas fritas de bolsa, obvio. | Champion fist bump. This moment is sponsored by bagged potato chips, obviously. |
+| Hadad | Abrazo (Buen amigo) | Abrazo junto a la fogata. Ahora sí eres parte del escuadrón. | A hug by the campfire. Now you are officially part of the squad. |
+| Hadad | Saludo secreto (Íntimo) | Ese saludo es como una victoria magistral: pocos la logran y nadie la olvida. | That handshake is like a Victory Royale: few get one and no one forgets it. |
+| Andy | Chocar puños (Amigo) | ¡Puño! Como cuando el Nacho y yo cerramos la partida en el último círculo. | Fist bump! Like when Nacho and I close out the match in the final circle. |
+| Andy | Abrazo (Buen amigo) | Abrazo de oso. Soy el más alto del grupo, así que estírate un poquito. | Bear hug. I'm the tallest in the group, so stretch up a little. |
+| Andy | Saludo secreto (Íntimo) | Saludo secreto desbloqueado. Esto no viene ni en el pase de batalla. | Secret handshake unlocked. Not even the battle pass has this one. |
+| Nacho | Chocar puños (Amigo) | Jajaja, ¡pum! Ese puño sonó más fuerte que la parrilla. | Haha, boom! That fist bump was louder than the grill. |
+| Nacho | Abrazo (Buen amigo) | Jajaja, ven, abrazo. Pero no me botes la carne, que está a punto. | Haha, come here, hug. Just don't knock the meat over, it's almost done. |
+| Nacho | Saludo secreto (Íntimo) | Jajaja, nos salió perfecto a la primera. Eso pasa solo con los amigos de verdad. | Haha, we nailed it on the first try. That only happens with real friends. |
+| Moisés | Chocar puños (Amigo) | Puño, hermano. Despacito, que en el iglú todo hace eco. | Fist bump, bro. Gently, everything echoes in the igloo. |
+| Moisés | Abrazo (Buen amigo) | Abrazo calentito, hermano. Así se le gana al frío de Coyhaique. | A warm hug, bro. That's how you beat the Coyhaique cold. |
+| Moisés | Saludo secreto (Íntimo) | Con el Lalo tenemos uno parecido, pero este es tuyo, hermano. Nadie más lo sabe. | Lalo and I have a similar one, but this one is yours, bro. Nobody else knows it. |
+| Lalo | Chocar puños (Amigo) | Ahya, ¡puño! Con cuidado, que se me cae el sombrero. | Ahya, fist bump! Careful, my hat is about to fall off. |
+| Lalo | Abrazo (Buen amigo) | Ahya, abrazo de hermano. En el iglú siempre hay lugar para uno más. | Ahya, brotherly hug. In the igloo there's always room for one more. |
+| Lalo | Saludo secreto (Íntimo) | Ahya, saludo secreto. Si el Moisés pregunta, tú no sabes nada. | Ahya, secret handshake. If Moisés asks, you know nothing. |
+| Boris | Chocar puños (Amigo) | Puño de leñador. Firme, como el hachazo que parte el tronco. | Lumberjack fist bump. Firm, like the swing that splits the log. |
+| Boris | Abrazo (Buen amigo) | Ya, abrazo, pero rápido, que se enfría el hacha. Mentira, quédate. | Okay, a hug, but quick, the axe is getting cold. Kidding, stay. |
+| Boris | Saludo secreto (Íntimo) | Este saludo es para los de confianza, como ir de copiloto a Linares. | This handshake is for trusted people, like riding shotgun to Linares. |
+| Lucho | Chocar puños (Amigo) | Puño de dúo. En Apex esto sería un revivir, pero en la vida real. | Duo fist bump. In Apex this would be a revive, but in real life. |
+| Lucho | Abrazo (Buen amigo) | Abrazo de familia. Aquí el que llega tan lejos ya es primo honorario. | Family hug. Around here whoever gets this far is an honorary cousin. |
+| Lucho | Saludo secreto (Íntimo) | Saludo secreto, como un ping que solo entiende tu dúo. Ni el Boris lo conoce. | Secret handshake, like a ping only your duo understands. Not even Boris knows it. |
+| Braulio | Chocar puños (Amigo) | Puño. Y con mi dedo doble, cuenta como choque y medio. | Fist bump. And with my double finger, it counts as one and a half. |
+| Braulio | Abrazo (Buen amigo) | Abrazo de playa: con arena incluida, perdón por eso. | Beach hug: sand included, sorry about that. |
+| Braulio | Saludo secreto (Íntimo) | Este saludo lo encontré en la orilla, como todo lo bueno. Ahora también es tuyo. | I found this handshake on the shore, like all good things. Now it is yours too. |
+| Conejeros | Chocar puños (Amigo) | Puño al ritmo del bajo. Uno, dos... ¡eso, cabeceaste! | Fist bump to the bass beat. One, two... yes, you headbanged! |
+| Conejeros | Abrazo (Buen amigo) | Abrazo de concierto, de esos que se dan cuando suena el tema bueno. | A concert hug, the kind you give when the good song plays. |
+| Conejeros | Saludo secreto (Íntimo) | Saludo secreto nivel .exe. El Salonas lo va a querer dibujar, ya verás. | Secret handshake, .exe level. Salonas is going to want to draw it, you'll see. |

@@ -1,0 +1,360 @@
+// =========================================================
+// VENJY · Supervivencia · Escenas de amistad (bloque 6b)
+// main.js lo carga con import() la primera vez que se usa (un botón de la pestaña «Hablar»): no suma
+// nada a la carga inicial.
+// · Animaciones genéricas por nivel (escena-amistad-datos.js), las mismas para los 13 personajes, cada uno
+//   con su frase única: choque de puños (Amigo), abrazo (Buen amigo), saludo secreto + frase especial
+//   (Íntimo) y, entre Venjy y Lona, abrazo y beso en la mejilla (pareja).
+// · Es una escena corta de cine, como las de skin (escenas-skin.js): el jugador queda quieto a la distancia
+//   justa del amigo para que las manos se toquen, la cámara usa los planos de dos personajes y los globos
+//   llevan pestaña con el nombre y marco de color, sin colita. Se salta con Esc o «Saltar» y al terminar
+//   (o al saltar) se restaura todo: pose, yaw, cámara, marcas de misión y el jugador.
+// · iniciar(clave, guion) acepta también un guion propio, con gestos y efectos extra (los «Momentos
+//   especiales», segunda parte de 6b).
+// Depuración: __venjy.amistadEscena (jugar(clave, tipo), pausar(v), irA(s), saltar(), escena).
+// =========================================================
+import * as THREE from '../../vendor/three.module.js';
+import { TIPO } from '../texturas.js';
+import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
+import { GESTOS } from './escenas-skin.js';
+import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD } from './escena-amistad-datos.js';
+import { NOMBRES_AMIGO } from './misiones-datos.js';
+import { sonidos } from './sonidos.js';
+
+const suave = u => u * u * (3 - 2 * u);
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const angulo = a => Math.atan2(Math.sin(a), Math.cos(a));
+const tramo = (u, a, b) => lim((u - a) / (b - a), 0, 1);
+const envolvente = (t, a, b, r) => suave(Math.min(tramo(t, a, a + r), 1 - tramo(t, b - r, b)));
+
+// Huesos que mueve la escena (nombres cortos de la skill); pz = cuerpo.position.z (un paso adelante)
+const CAMPOS = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'pz'];
+const NEUTRAL = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0.05, bIx: 0, bIz: -0.05, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, pz: 0 };
+
+// Texturas píxel a píxel de los efectos (corazón como el de ganado.js y una chispa de cuatro puntas)
+function texturaPixeles(filas, colores) {
+    const c = document.createElement('canvas'); c.width = filas[0].length; c.height = filas.length;
+    const x = c.getContext('2d');
+    filas.forEach((f, y) => { for (let i = 0; i < f.length; i++) if (colores[f[i]]) { x.fillStyle = colores[f[i]]; x.fillRect(i, y, 1, 1); } });
+    const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+}
+
+export function crearEscenaAmistad(ctx) {
+    const { grupo, dy, mundo, jugador, camara, camaras, misiones, personaDe, bloquear, liberar } = ctx;
+    let idioma = ctx.idioma || 'es';
+    const L = o => (o ? o[idioma] || o.es : '');
+    const tx = () => TXT_AMISTAD[idioma] || TXT_AMISTAD.es;
+
+    // ---- Botón «Saltar» (también táctil) y Esc ----
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'boton saltar-amistad';
+    boton.textContent = tx().saltar;
+    boton.addEventListener('click', ev => { ev.preventDefault(); saltar(); });
+    document.body.appendChild(boton);
+    document.addEventListener('keydown', ev => { if (e && ev.code === 'Escape' && !ev.repeat) { ev.preventDefault(); saltar(); } });
+
+    // ---- Globos con pestaña de nombre y color, sin colita (uno por quien habla) ----
+    const globos = new Map();
+    function globoDe(quien) {
+        if (!globos.has(quien)) globos.set(quien, crearGlobo(grupo, { nombre: quien === 'j' ? tx().tu : NOMBRES_AMIGO[quien] || quien, color: COLOR_GLOBO[quien] || COLOR_GLOBO.j }));
+        return globos.get(quien);
+    }
+
+    // ---- Efectos: corazones (pareja) y chispas (choques) en sprites píxel ----
+    const TEX = {
+        corazon: texturaPixeles(['.kk...kk.', 'kaak.kaak', 'kaaaaaaak', 'kaaaaaaak', '.kaaaaak.', '..kaaak..', '...kak...', '....k....'], { k: '#3a0008', a: '#e82040' }),
+        chispa: texturaPixeles(['...a...', '...b...', '..aba..', 'abbbbba', '..aba..', '...b...', '...a...'], { a: '#ffd84a', b: '#fffbe0' })
+    };
+    const efectos = [];
+    function efecto(tipo, x, y, z, op = {}) {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX[tipo], transparent: true, depthWrite: false }));
+        const tam = op.tam ?? (tipo === 'corazon' ? 0.32 : 0.28);
+        s.scale.set(tam, tam, 1);
+        s.position.set(x, y, z);
+        grupo.add(s);
+        efectos.push({ s, t: 0, vida: op.vida ?? (tipo === 'corazon' ? 1.6 : 0.45), vy: op.vy ?? (tipo === 'corazon' ? 0.45 : 0), tam, crece: tipo === 'chispa' });
+    }
+    function actualizarEfectos(dt) {
+        for (let i = efectos.length - 1; i >= 0; i--) {
+            const f = efectos[i];
+            f.t += dt;
+            const u = f.t / f.vida;
+            f.s.position.y += f.vy * dt;
+            f.s.material.opacity = 1 - tramo(u, 0.6, 1);
+            if (f.crece) { const k = f.tam * (0.6 + Math.sin(Math.min(1, u) * Math.PI) * 0.8); f.s.scale.set(k, k, 1); }
+            if (u >= 1) { grupo.remove(f.s); f.s.material.dispose(); efectos.splice(i, 1); }
+        }
+    }
+
+    // ---- Bloques que tapan / pisables ----
+    const opaco = (x, y, z) => { const id = mundo.bloque(x, y, z); return id > 0 && (TIPO[id] === 1 || TIPO[id] === 6); };
+    const solido = (x, y, z) => { const id = mundo.bloque(x, y, z); return id > 0 && TIPO[id] === 1; };
+    function libre(ax, ay, az, bx, by, bz) {
+        const n = Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) * 3);
+        for (let i = 1; i < n; i++) { const k = i / n; if (opaco(ax + (bx - ax) * k, ay + (by - ay) * k, az + (bz - az) * k)) return false; }
+        return true;
+    }
+    // Dónde se para el jugador: a r exactos del amigo (sin redondear al bloque: el contacto depende de eso),
+    // empezando por el ángulo ang0, con suelo, aire para el cuerpo (esquinas incluidas) y sin otras personas
+    function lugarExacto(n, r, ang0, otros) {
+        const piso = Math.round((n.y ?? 0) + dy);
+        const aire = (x, y, z) => [-0.3, 0.3].every(ex => [-0.3, 0.3].every(ez => !opaco(x + ex, y, z + ez)));
+        // Primero a la misma altura que el amigo (todas las direcciones) y solo después un bloque más arriba o abajo
+        for (const y of [piso, piso + 1, piso - 1]) for (let i = 0; i < 32; i++) {
+            const ang = ang0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.2;
+            const x = n.x + Math.sin(ang) * r, z = n.z + Math.cos(ang) * r;
+            if (otros.some(o => o !== n && Math.hypot(o.x - x, o.z - z) < 0.8)) continue;
+            if (solido(x, y - 0.5, z) && aire(x, y + 0.5, z) && aire(x, y + 1.5, z) && libre(x, y + 1.6, z, n.x, piso + 1.5, n.z)) return { x, y, z };
+        }
+        return null;
+    }
+
+    // ---- Actores ----
+    function leer(p) {
+        return {
+            cx: p.cuello.rotation.x, cy: p.cuello.rotation.y, cz: p.cuello.rotation.z, bDx: p.brazoD.rotation.x, bDz: p.brazoD.rotation.z, bIx: p.brazoI.rotation.x, bIz: p.brazoI.rotation.z,
+            pDx: p.piernaD.rotation.x, pIx: p.piernaI.rotation.x, inc: p.cuerpo.rotation.x, rz: p.cuerpo.rotation.z, y: p.cuerpo.position.y, pz: p.cuerpo.position.z
+        };
+    }
+    function escribir(p, v) {
+        p.cuello.rotation.x = v.cx; p.cuello.rotation.y = v.cy; p.cuello.rotation.z = v.cz;
+        p.brazoD.rotation.x = v.bDx; p.brazoD.rotation.z = v.bDz; p.brazoI.rotation.x = v.bIx; p.brazoI.rotation.z = v.bIz;
+        p.piernaD.rotation.x = v.pDx; p.piernaI.rotation.x = v.pIx;
+        p.cuerpo.rotation.x = v.inc; p.cuerpo.rotation.z = v.rz; p.cuerpo.position.y = v.y; p.cuerpo.position.z = v.pz;
+    }
+    const esc = n => n.escala || 1;
+    function actorAmigo(clave, n) {
+        const foto = leer(n.p);
+        // Sentado (Hadad y Nacho en su tronco, Moisés en el suelo, Pony en el muelle): se pone de pie para el saludo
+        // (la mezcla de la entrada lo levanta y la salida lo vuelve a sentar). Del tronco da un paso adelante.
+        const levanta = foto.pDx < -0.4;
+        const adelante = levanta && foto.y > 0 ? 0.4 : 0;
+        // De pie: piernas rectas y, si tenía un brazo en alto (saludo, hachazo), lo baja
+        const neutral = { ...foto, cz: 0, rz: 0, pz: adelante, pDx: 0, pIx: 0, y: 0, inc: lim(foto.inc, -0.1, 0.1) };
+        if (levanta) { neutral.bDx = 0; neutral.bDz = 0.05; neutral.bIx = 0; neutral.bIz = -0.05; neutral.cx = 0; }
+        if (Math.abs(foto.bDx) > 1.3) { neutral.bDx = 0; neutral.bDz = 0.05; }
+        if (Math.abs(foto.bIx) > 1.3) { neutral.bIx = 0; neutral.bIz = -0.05; }
+        return { q: 'n', clave, n, p: n.p, foto, neutral, cur: { ...neutral }, sentado: false, levanta, adelante, giro: 1, yaw0: n.yaw, alto: 2.15 * esc(n) };
+    }
+    const actorJugador = () => ({ q: 'j', clave: 'j', p: camaras.cuerpo, neutral: { ...NEUTRAL }, cur: { ...NEUTRAL }, sentado: false, alto: 2.15, jugador: true });
+    const pos = a => (a.jugador ? { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z } : { x: a.n.x, y: (a.n.y ?? 0) + dy, z: a.n.z });
+
+    // ---------------------------------------------------------
+    // Escena
+    // ---------------------------------------------------------
+    let e = null, pausada = false;
+
+    // Guion de una animación genérica: su tiempo, sus pistas y la frase única del personaje
+    function guionGenerico(clave, tipo) {
+        const a = ANIMACIONES[tipo], f = FRASES_AMISTAD[clave] && FRASES_AMISTAD[clave][tipo];
+        if (!a || !f) return null;
+        return { ...a, tipo, lineas: [{ q: 'n', texto: f, a: a.linea[0], d: a.linea[1] }] };
+    }
+
+    function iniciar(clave, guion) {
+        if (e || !guion) return false;
+        const n = personaDe(clave);
+        if (!n || n.escena) return false; // otra escena (skin, minijuego) lo tiene
+        bloquear();
+        const A = actorAmigo(clave, n), J = actorJugador();
+        // El jugador se para a la distancia del contacto: frente al amigo si estaba sentado (se levanta hacia adelante),
+        // si no, por el lado donde ya estaba. Si el amigo da un paso al pararse, el jugador queda ese paso más allá.
+        const r = guion.r + A.adelante;
+        const ang0 = A.levanta ? n.yaw : Math.atan2(jugador.pos.x - n.x, jugador.pos.z - n.z);
+        const l = lugarExacto(n, r, ang0, ctx.personas ? ctx.personas() : []);
+        if (l) jugador.colocar(l.x, l.y, l.z);
+        jugador.yaw = Math.atan2(n.x - jugador.pos.x, n.z - jugador.pos.z) - Math.PI;
+        jugador.pitch = 0;
+        e = { clave, guion, t: 0, T: guion.T, actores: { n: A, j: J }, lineas: guion.lineas || [], hechos: new Set(), ultimaLinea: null, callados: [] };
+        n.escena = (dt, base) => animarAmigo(A, dt, base);
+        // Quien esté cerca (Lucho junto a Boris, la fogata) cuenta en `visibles`: la cámara no lo deja tapando a los dos
+        const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
+        camaras.iniciarCine(n, { escena: true, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...cerca], visibles: [n, ...cerca] });
+        // Los de al lado siguen con lo suyo, pero callados (con `n.escena` se apagan su globo y su charla)
+        const callados = cerca.filter(o => !o.escena).map(o => { const h = (dt, base) => base(); o.escena = h; return [o, h]; });
+        e.callados = callados;
+        camaras.pose = (c, dt) => { if (e) aplicar(e.actores.j, dt); };
+        misiones.ocultarMarcas = true;
+        document.body.classList.add('en-amistad');
+        if (guion.extra && guion.extra.iniciar) guion.extra.iniciar(api());
+        return true;
+    }
+
+    function terminar() {
+        if (!e) return;
+        const x = e; e = null;
+        if (x.guion.extra && x.guion.extra.terminar) x.guion.extra.terminar(api(x));
+        const A = x.actores.n;
+        if (A.n.escena) delete A.n.escena;
+        A.n.yaw = A.yaw0;
+        escribir(A.p, A.foto);
+        escribir(camaras.cuerpo, NEUTRAL);
+        for (const [o, h] of x.callados) if (o.escena === h) delete o.escena;
+        for (const f of efectos.splice(0)) { grupo.remove(f.s); f.s.material.dispose(); }
+        camaras.terminarCine();
+        misiones.ocultarMarcas = false;
+        document.body.classList.remove('en-amistad');
+        liberar();
+        if (x.alTerminar) x.alTerminar();
+    }
+    function saltar() { if (e) terminar(); }
+
+    // ---- Pose: neutral → gesto de la pista (peso con rampas) → suavizado → mezcla con la animación base ----
+    function gestoDe(a) {
+        const pista = (e.guion.pista && e.guion.pista[a.q]) || [];
+        for (const [g, desde, hasta] of pista) if (e.t >= desde && e.t < hasta) return { g, u: (e.t - desde) / (hasta - desde), w: envolvente(e.t, desde, hasta, Math.min(0.3, (hasta - desde) / 3)) };
+        return null;
+    }
+    function metaDe(g, a) {
+        const otro = a.jugador ? e.actores.n : e.actores.j;
+        const info = { s: a.sentado, otroS: otro.sentado, j: !!a.jugador, esc: esc(e.actores.n.n) };
+        const f = (e.guion.gestos && e.guion.gestos[g.g]) || GESTOS_AMISTAD[g.g];
+        if (f) return f(g.u, e.t, info);
+        return GESTOS[g.g] ? GESTOS[g.g](g.u, e.t, a.sentado, !!a.jugador) : {};
+    }
+    const vMeta = {};
+    function aplicar(a, dt) {
+        const wS = suave(Math.min(tramo(e.t, 0, 0.5), 1 - tramo(e.t, e.T - 0.7, e.T)));
+        const g = gestoDe(a);
+        const meta = g ? metaDe(g, a) : {};
+        const w = g ? g.w : 0;
+        // Mirada: a la cabeza del otro
+        const otro = a.jugador ? e.actores.n : e.actores.j;
+        const yo = pos(a), m = pos(otro);
+        const yaw = a.jugador ? jugador.yaw + Math.PI : a.n.yaw;
+        const d = Math.hypot(m.x - yo.x, m.z - yo.z) || 1;
+        const cy = lim(angulo(Math.atan2(m.x - yo.x, m.z - yo.z) - yaw), -1.1, 1.1);
+        const cx = lim(-Math.atan2(m.y + 1.6 * (otro.jugador ? 1 : esc(otro.n)) - (yo.y + 1.6 * (a.jugador ? 1 : esc(a.n))), d), -0.45, 0.45);
+        for (const k of CAMPOS) {
+            let obj = k === 'cx' ? cx : a.neutral[k];
+            if (meta[k] !== undefined && k !== 'cy') obj = k === 'pz' ? obj + meta[k] * w : lerp(obj, meta[k], w); // el paso se suma al de pararse
+            vMeta[k] = obj;
+        }
+        vMeta.cy = cy + (meta.cy || 0) * w;
+        const r = Math.min(1, dt * (e.guion.rapidez || 11));
+        for (const k of CAMPOS) a.cur[k] += (vMeta[k] - a.cur[k]) * r;
+        const ahora = leer(a.p), fin = {};
+        for (const k of CAMPOS) fin[k] = lerp(ahora[k], a.cur[k], wS);
+        fin.y += (meta.salto || 0) * w * wS;
+        escribir(a.p, fin);
+        return wS;
+    }
+    function animarAmigo(a, dt, base) {
+        if (!e) return base();
+        const r = base(0); // la animación normal queda congelada: la escena lo mueve
+        const wS = aplicar(a, dt);
+        const J = jugador.pos;
+        a.n.yaw = a.yaw0 + angulo(Math.atan2(J.x - a.n.x, J.z - a.n.z) - a.yaw0) * a.giro * wS;
+        return r;
+    }
+
+    // ---- Puntos de los huesos (efectos en el contacto) ----
+    const vA = new THREE.Vector3(), vB = new THREE.Vector3();
+    function punta(a, lado, v) { a.p.g.updateMatrixWorld(true); return grupo.worldToLocal((lado === 'I' ? a.p.brazoI : a.p.brazoD).localToWorld(v.set(0, -0.75, 0))); }
+    // Golpe: sonido y chispa entre las dos manos derechas (o donde diga el guion)
+    function golpe(donde) {
+        const A = e.actores.n, J = e.actores.j;
+        const p = donde || punta(A, 'D', vA).lerp(punta(J, 'D', vB), 0.5);
+        efecto('chispa', p.x, p.y, p.z);
+        sonidos.golpe();
+    }
+    // Corazones: sobre las cabezas, en medio de los dos
+    function corazones() {
+        const A = pos(e.actores.n), J = pos(e.actores.j);
+        const x = (A.x + J.x) / 2, z = (A.z + J.z) / 2, y = Math.max(A.y + e.actores.n.alto, J.y + 2.15) - dy + 0.2;
+        for (let i = 0; i < 3; i++) efecto('corazon', x + (i - 1) * 0.3, y + i * 0.12, z, { vida: 1.6 + i * 0.2 });
+    }
+    // Lo que reciben los extras de un guion propio (momentos especiales)
+    const api = (x = e) => ({ e: x, grupo, dy, jugador, camaras, mundo, efecto, golpe, corazones, globoDe, personaDe, punta, pos, L, sonidos, THREE });
+
+    // ---- Globos (con encaje: esquivan cabezas, el botón «Saltar» y las franjas) ----
+    function zonas() {
+        const out = [];
+        if (!e) return out;
+        for (const a of Object.values(e.actores)) {
+            const p = pos(a), y = p.y - dy;
+            out.push({ quien: a.clave, tipo: 'cabeza', x: p.x, y: y + a.alto * 0.85, z: p.z, r: 0.35 });
+            out.push({ quien: a.clave, tipo: 'pecho', x: p.x, y: y + a.alto * 0.6, z: p.z, r: 0.32 });
+        }
+        return out;
+    }
+    function anclaGlobo(quien) {
+        const a = quien === 'j' ? e.actores.j : e.actores.n;
+        const p = pos(a);
+        let y = p.y + a.alto + 0.6;
+        for (let k = 2; k <= 4; k++) if (opaco(p.x, p.y + k + 0.5, p.z)) { y = Math.min(y, p.y + k - 0.5); break; } // bajo techo (el iglú)
+        const o = pos(quien === 'j' ? e.actores.n : e.actores.j);
+        return [lerp(p.x, o.x, 0.2), y - dy, lerp(p.z, o.z, 0.2)];
+    }
+    const lineasAhora = () => e.lineas.filter(l => e.t >= l.a && e.t < l.a + l.d);
+    const focoDe = l => (!l ? 0.5 : l.q === 'j' ? 0.68 : 0.32);
+    const camPrueba = new THREE.PerspectiveCamera();
+    function validarTexto(posCam, objetivo, objetivoDe) {
+        if (!e) return 0;
+        camPrueba.fov = camara.fov; camPrueba.aspect = camara.aspect;
+        camPrueba.position.copy(posCam);
+        grupo.updateWorldMatrix(true, false);
+        const prox = e.lineas.find(l => l.a > e.t), zs = zonas();
+        let peor = 0;
+        for (const l of prox ? [...lineasAhora(), prox] : lineasAhora()) {
+            camPrueba.lookAt(objetivoDe ? objetivoDe(focoDe(l)) : objetivo); camPrueba.updateMatrixWorld(true);
+            const [x, y, z] = anclaGlobo(l.q);
+            peor = Math.max(peor, globoDe(l.q).probar(camPrueba, x, y, z, zs).solape);
+        }
+        return peor;
+    }
+    function actualizarGlobos(dt) {
+        const activos = new Map();
+        if (e) for (const l of lineasAhora()) activos.set(l.q, l);
+        for (const q of activos.keys()) globoDe(q);
+        for (const [q, g] of globos) {
+            const l = activos.get(q);
+            if (!l) { g.actualizar(dt, false, 0, 0, 0); continue; }
+            g.decir(L(l.texto));
+            const [x, y, z] = anclaGlobo(q);
+            g.actualizar(dt, true, x, y, z, camara, zonas);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // Bucle (main.js, después de escenas.actualizar)
+    // ---------------------------------------------------------
+    function actualizar(dt) {
+        if (e) {
+            const t0 = e.t;
+            if (!pausada) e.t += dt;
+            const x = e;
+            const ls = lineasAhora(), l = ls[ls.length - 1];
+            if (l && l !== x.ultimaLinea) { x.ultimaLinea = l; camaras.nuevaLinea(); }
+            camaras.enfocar(focoDe(l));
+            // Golpes y corazones del guion (una vez cada uno; irA hacia atrás los vuelve a permitir)
+            for (const s of x.guion.golpes || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('g' + s)) { x.hechos.add('g' + s); golpe(); }
+            for (const s of x.guion.corazones || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('c' + s)) { x.hechos.add('c' + s); corazones(); }
+            if (x.guion.extra && x.guion.extra.cuadro) x.guion.extra.cuadro(api(x), pausada ? 0 : dt);
+            jugador.yaw = Math.atan2(x.actores.n.n.x - jugador.pos.x, x.actores.n.n.z - jugador.pos.z) - Math.PI;
+            if (x.t >= x.T) terminar();
+        }
+        actualizarEfectos(dt);
+        actualizarGlobos(dt);
+    }
+
+    return {
+        actualizar, saltar, iniciar,
+        // Una animación genérica (punos, abrazo, secreto, pareja) con la frase del personaje
+        jugar(clave, tipo, alTerminar) {
+            const ok = iniciar(clave, guionGenerico(clave, tipo));
+            if (ok && alTerminar) e.alTerminar = alTerminar;
+            return ok;
+        },
+        get activa() { return !!e; },
+        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, t: e.t, T: e.T }; },
+        setIdioma(l) { idioma = l; boton.textContent = tx().saltar; for (const [q, g] of globos) if (q === 'j') g.etiqueta = { nombre: tx().tu, color: COLOR_GLOBO.j }; },
+        // Depuración (capturas)
+        pausar(v = true) { pausada = v; },
+        irA(s) { if (e) { e.t = s; e.hechos.clear(); } },
+        get actores() { return e && e.actores; }
+    };
+}

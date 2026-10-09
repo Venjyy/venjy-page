@@ -185,7 +185,7 @@ Plan acordado el 2026-10-08 (3 PR grandes en la rama `feature/mundo-supervivenci
 
 **Pedido del dueño (2026-10-09) para el próximo PR del bloque 5**: (1) **service worker** para que la supervivencia (y el creativo) se abran y jueguen sin internet desde cero, con versión de caché y actualización segura; (2) **TURN** para las redes que no dejan conexión directa: hacer los `iceServers` configurables y, si hace falta una cuenta (Cloudflare, Metered…), dejar el código listo y los pasos para que el dueño la cree (un agente no crea cuentas ni pone credenciales secretas en el repo). Probar en la red de la universidad y con amigos reales lo hace el dueño.
 
-### Bloque 6 · Diálogos, amistad y vida entre amigos (6a hecho; 6b, 6c y 6d pendientes)
+### Bloque 6 · Diálogos, amistad y vida entre amigos (6a hecho; 6b en curso: genéricas hechas, momentos especiales pendientes; 6c y 6d pendientes)
 
 Va después del bloque 5 (online). Cada parte en su propio chat y PR.
 
@@ -263,6 +263,43 @@ Principios:
 - Íntimo: saludo secreto + frase especial.
 - Unas 3-4 animaciones en total, reutilizadas por los 13 personajes; cada uno las acompaña con su frase única.
 - **Momento especial** (pedido del dueño, 2026-10-09): al llegar a la amistad máxima con un personaje aparece en su panel un botón «Momento especial» que carga una escena con animaciones especiales **únicas para cada personaje** (13 escenas, cargadas con import() solo al usarse). Es aparte de las animaciones genéricas de arriba y de las escenas entre amigos de 6c.
+- Se divide en dos PR (pedido del dueño: si no cabe en uno, primero las genéricas): **6b-1** animaciones genéricas (rama `amistad-6b`) y **6b-2** momentos especiales.
+
+**Estado 6b-1 (hecho, rama `amistad-6b`, 2026-10-09)**. Capturas en `mundo/capturas/6b/`; frases nuevas al final de `mundo/DIALOGOS.md` (41 ES/EN).
+- **Archivos**: `supervivencia/escena-amistad.js` (nuevo: motor de la escena corta de cine, 21 KB), `supervivencia/escena-amistad-datos.js` (nuevo: `ANIMACIONES`, `GESTOS_AMISTAD`, `FRASES_AMISTAD`, `TXT_AMISTAD`; lógica pura). Cambios: `amistad.js` (`esPareja`, `nombreNivel`, `NIVEL_ANIMACION`, `animacionesDe`), `hablar.js` (fila «Saludos de amigos», nivel «Pareja» en la barra), `misiones.js` (`saludar` suelta la retención y llama a `escenaAmistad`), `main.js` (carga con `import()`, bucle, `puedeAmistad`, depuración), `criaturas/cuerpo.js` (el globo esquiva el botón `.saltar-amistad`), `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`.
+- **Cómo funciona**: en «Hablar» aparece la fila «Saludos de amigos» con tres botones: «Chocar puños» (Amigo), «Abrazo» (Buen amigo) y «Saludo secreto» (Íntimo); los que faltan salen como «???» con el nivel que piden en el título. Al pulsar uno, el panel se cierra, se suelta la retención de `hablar.js` (como el botón del minijuego) y la primera vez se descarga `escena-amistad.js`. En la escena el amigo se para frente a ti (si estaba sentado se pone de pie y da un paso fuera del tronco; al final se vuelve a sentar), el jugador queda a la distancia exacta del contacto, cámara de cine de dos personajes, globo con pestaña de nombre y color sin colita, chispa y sonido en cada contacto, corazones en la de pareja y la frase única del amigo. Esc o «Saltar» la cortan y todo vuelve a su lugar (pose, `yaw`, ganchos, cámara, marcas, jugador).
+- **Tiempos**:
+
+  | Animación | Nivel | Dura | Distancia | Momentos |
+  |---|---|---|---|---|
+  | Chocar puños | Amigo | 5,6 s | 1,25 | se acercan 0,45-1,45 · choque 1,45 · rebote y «explosión» 1,8-2,4 · frase 2,3-5,3 (risa y habla) |
+  | Abrazo | Buen amigo | 6,8 s | 0,95 | paso y brazos 0,4-1,2 · se mecen, dos palmadas 2,3-3,1 · se sueltan 4,3-4,9 · frase 1,6-5,0 |
+  | Saludo secreto | Íntimo | 9,0 s | 1,3 | cinco arriba 1,2 · puño 2,2 · palmas cruzadas 3,1 · cinco arriba y explosión 4,0-4,5 · frase especial 5,4-8,8 |
+  | Abrazo y beso | Pareja (Venjy-Lona) | 8,6 s | 0,9 | abrazo largo 0,4-6,4 · beso en la mejilla 3,4-4,8 · corazones 3,2, 4,2 y 5,4 · frase 4,6-8,2 |
+- **Contacto medido** (`--medir`, distancia entre las puntas de las manos en cada golpe): puños 0,16 (Boris), 0,21 (Hadad), 0,24 (Moisés), 0,21 (Pony) · secreto 0,12 / 0,16 / 0,17 / 0,15 (Boris) y 0,14 / 0,19 / 0,19 / 0,14 (Hadad).
+- **Decisiones (con motivo)**:
+  - Se disparan con botones en «Hablar» (fila «Saludos de amigos»). Motivo: ahí está la amistad (barra y nivel), se ve qué falta para la siguiente y no ocupa otra tecla (G ya reparte gatas e iglú).
+  - Son escenas cortas de cine, no gestos sobre la animación normal como los temas. Motivo: el contacto (puños, abrazo) necesita ver el cuerpo del jugador y ponerlo a la distancia justa; en primera persona no se lee. Duran 5,6-9 s y se saltan con Esc.
+  - No dan puntos de amistad y se pueden repetir. Motivo: son el premio de subir de nivel; si sumaran, serían un botón para farmear.
+  - El amigo sentado se pone de pie para el saludo y al final se vuelve a sentar. Motivo: la primera versión (sentado, con el jugador doblado encima) se veía forzada y el abrazo no llegaba; de pie, la misma pose sirve para los 13 y el contacto se mide igual.
+  - Venjy y Lona son novios: con la skin de uno, el nivel más alto del otro se llama **«Pareja»** (no «Íntimo») y su tercera animación es «Abrazo y beso» (abrazo largo, beso en la mejilla y corazones) en lugar del saludo secreto. Resuelve en parte lo pendiente de 6a («su relación tendrá algo propio»).
+  - Una sola frase por personaje y animación (la del amigo; el jugador no habla). Las frases evitan detalles que solo valen con la skin de Venjy (primo, socio), salvo las de pareja, que solo salen con esa skin.
+  - Los que están cerca (Lucho junto a Boris, la fogata, el iglú) siguen con su animación pero callados (sin globo ni charla) mientras dura la escena, y la cámara los cuenta en `visibles` para no dejarlos tapando a los dos.
+  - En el cooperativo la escena es local (cada uno en su pantalla), como «Hablar».
+  - Modelos: Haiku hizo la primera versión de las poses (puños, abrazo y secreto de pie, medidos con Boris). Se detuvo porque el servidor local rechazaba conexiones (cola de 5 con ~90 módulos; se reinició con cola de 256) y declaró grande el ajuste con amigos sentados. No se escaló a Sonnet: era un problema de puesta en escena (los sentados) y se resolvió en el orquestador haciendo que se paren.
+- **Medidas** (navegador del panel, reloj de 16 ms en lugar de `requestAnimationFrame`, 1280×720, servidor local sin caché, worktree de main contra la rama, de día junto a la fogata, mundo nuevo):
+
+  | | main | rama `amistad-6b` |
+  |---|---|---|
+  | JS al abrir la página | 88 archivos, 2178 KB | 88 archivos, 2180 KB (+2 KB en `amistad.js` y `main.js`) |
+  | Carga de la página (`load`) | 5866 ms | 5547 ms (ruido: Playwright corría en paralelo) |
+  | Entrar a un mundo nuevo | 977 ms | 695 ms |
+  | Cuadro mediano (p90) | 2,1 ms (2,9) | 2,0 ms (2,7) |
+  | Al abrir «Hablar» la primera vez | 2 archivos | 3 archivos (+`escena-amistad-datos.js`, 9 KB) |
+  | Al pulsar un saludo la primera vez | — | +`escena-amistad.js` (20,8 KB), lista en 11 ms |
+  | Cuadro mediano durante la escena | — | 3,1 ms (3,9), como las escenas de skin (cine, dos cuerpos y globo) |
+- **Pruebas**: `node mundo/tests/amistad.mjs` (5640 comprobaciones; nuevas: nivel de cada animación, pareja solo Venjy-Lona y nombre «Pareja», 3 animaciones con frase para toda skin × personaje, frases únicas contra todo el juego y sin emojis, guiones dentro de su duración, gestos que existen y metas dentro de los rangos de `rig.md`) y las demás de `mundo/tests/` OK. En el navegador: botones desbloqueados y bloqueados según el nivel, el panel se cierra y arranca la escena, Esc a la mitad restaura todo (Hadad vuelve a sentarse, sin pausa, ganchos sueltos), sin errores de consola; capturas de las 4 animaciones con Boris y Hadad, Moisés en el iglú, Pony en el muelle y Lona con skin de Venjy; panel a 1280×720, 1100×620, 760×560 (la fila queda bajo el scroll del panel, como los temas) y 390×760.
+- Depuración: `__venjy.cargarAmistad()` (promesa con el motor), `__venjy.amistadEscena` (`jugar(clave, tipo)`, `pausar(v)`, `irA(s)`, `saltar()`, `escena`, `actores`).
 
 **6c · Mapa de relaciones y escenas de pareja (como las de Venjy, para cualquier skin)**
 - Tabla de relaciones entre los 13 personajes (Venjy, Pony, Boris, Moisés, Lalo, Salonas, Lona, Hadad, Andy, Nacho, Braulio, Lucho, Conejeros): 0 = no se conocen, 1 = conocidos, 2 = amigos, 3 = mejores amigos. La llenó el dueño (2026-10-09, abajo), con anécdotas o chistes internos para los diálogos.
@@ -502,6 +539,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-09 · **Bloque 6b-1 · animaciones por nivel de amistad** (rama `amistad-6b`): chocar puños (Amigo), abrazo (Buen amigo), saludo secreto + frase especial (Íntimo) y, entre Venjy y Lona, abrazo y beso con el nivel «Pareja»; los 13 personajes con su frase única ES/EN; botones en la fila «Saludos de amigos» de «Hablar»; escena corta de cine cargada con `import()` al usarla; el amigo sentado se pone de pie; los cercanos se callan · `supervivencia/escena-amistad.js`, `escena-amistad-datos.js` (nuevos), `amistad.js`, `hablar.js`, `misiones.js`, `main.js`, `criaturas/cuerpo.js`, `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`, `mundo/capturas/6b/` · Verificado: pruebas de `mundo/tests/`, capturas medidas de las 4 animaciones en 5 lugares, flujo desde el panel, Esc a la mitad, 4 tamaños de ventana, sin errores de consola; cuadro mediano 2,1 → 2,0 ms, +2 KB al iniciar. Detalle en «Estado 6b-1». Los momentos especiales quedan para 6b-2.
 - 2026-10-09 · **Arreglos tras probar «Hablar» (pedido del dueño)**:
   - (1) El clic derecho que abre el panel de un amigo (o una mesa, horno o cofre) ya no muestra el menú del navegador: `minado.js` lo bloquea también con una ventana abierta (menos en campos de texto).
   - (2) Esc cierra el inventario, las ventanas y el panel sin abrir la pausa. Antes se pedía el puntero con Esc todavía abajo: el navegador lo daba y el mismo Esc lo soltaba. Ahora `main.js` espera a soltar la tecla (máximo 1,5 s si el keyup no llega).

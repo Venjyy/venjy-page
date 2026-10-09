@@ -69,6 +69,15 @@ export function nivelDe(puntos) {
     return n;
 }
 
+// Venjy y Lona son novios (bloque 6b): con la skin de uno, el otro te ve como su pareja. El nivel más alto
+// se llama «Pareja» en lugar de «Íntimo» y su animación es la de pareja (no el saludo secreto).
+export const esPareja = (base, clave) => (base === 'venjy' && clave === 'lona') || (base === 'lona' && clave === 'venjy');
+export const PAREJA = { es: 'Pareja', en: 'Partner' };
+export const nombreNivel = (n, base, clave) => (n === NIVELES.length - 1 && esPareja(base, clave) ? PAREJA : NIVELES[n]);
+// Animaciones por nivel de amistad (escena-amistad.js): nivel mínimo de cada una
+export const NIVEL_ANIMACION = { punos: 2, abrazo: 3, secreto: 4, pareja: 4 };
+export const animacionesDe = (base, clave) => ['punos', 'abrazo', esPareja(base, clave) ? 'pareja' : 'secreto'];
+
 // Regalos favoritos (1 o 2 por personaje): solo esos se pueden regalar
 export const FAVORITOS = {
     venjy: [O.PASTEL],

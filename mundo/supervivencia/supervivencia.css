@@ -443,6 +443,8 @@ body.en-cine .panel-mision h2 { font-size: 1.2rem; }
 /* Escenas de skin: botón «Saltar» sobre la franja de abajo (Esc también salta) */
 .saltar-escena { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-escena .saltar-escena { display: block; }
+.saltar-amistad { display: none; position: fixed; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
+body.en-amistad .saltar-amistad { display: block; }
 /* Recorrido de escenas (/escenas): «Terminar recorrido» abajo a la izquierda, frente a «Saltar» */
 .parar-recorrido { display: none; position: fixed; left: calc(3vw + env(safe-area-inset-left, 0px)); bottom: calc(9vh + 12px); z-index: 56; width: auto; margin: 0; padding: 8px 18px; font-size: 0.95rem; }
 body.en-recorrido .parar-recorrido { display: block; }
@@ -528,6 +530,12 @@ body.panel-lado .mision-activa { display: none; } /* el globo del amigo queda ar
 .tema-bloqueado { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .tema-bloqueado .boton { flex: 0 0 44px; width: 44px; margin: 0; padding: 6px 0; opacity: 0.55; text-align: center; }
 .tema-bloqueado small { color: var(--gris); font-size: 0.75rem; line-height: 1.15; }
+/* Saludos de amigos (bloque 6b): una animación por nivel de amistad */
+.saludos-hablar { margin: 6px 0 4px; }
+.saludos-titulo { display: block; color: var(--gris); font-size: 0.75rem; margin-bottom: 3px; }
+.saludos-fila { display: flex; flex-wrap: wrap; gap: 4px; }
+.saludos-fila .boton.saludo { flex: 1 1 0; min-width: 0; width: auto; margin: 0; padding: 6px 6px; font-size: 0.8rem; line-height: 1.15; }
+.saludos-fila .boton.saludo.bloqueado { opacity: 0.55; }
 .regalo-hablar { margin: 4px 0; }
 .regalo-hablar small { color: var(--gris); font-size: 0.85em; }
 .boton-regalo { width: 100%; margin: 0; background: #7a3a5a; }
