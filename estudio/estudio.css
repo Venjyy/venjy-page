@@ -157,6 +157,11 @@ body {
 
 .ayuda { margin: 10px 0 0; font-size: 0.8rem; color: var(--gris); }
 
+/* ---------- Pestaña Juego ---------- */
+.marco-juego { padding: 8px; }
+.marco-juego iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; background: #000; }
+a.boton.enlace { display: inline-block; text-decoration: none; }
+
 /* ---------- Panel lateral ---------- */
 .lateral { display: flex; flex-direction: column; gap: 12px; }
 .panel {

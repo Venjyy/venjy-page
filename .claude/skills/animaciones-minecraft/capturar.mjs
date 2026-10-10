@@ -1,5 +1,5 @@
 // =========================================================
-// Capturas de una animación del modo supervivencia (Playwright + Chromium del contenedor)
+// Capturas de una animación del modo supervivencia (Playwright; ver estudio/playwright.mjs para dónde lo busca)
 // Uso (con `node estudio/servidor.mjs` corriendo en la raíz del repo):
 //   node .claude/skills/animaciones-minecraft/capturar.mjs \
 //     --preparar "await v.escenas.forzar('pony')" \
@@ -22,65 +22,82 @@
 // · --plano k: deja la cámara de cine fija en el plano k (camaras.fijarPlano).
 // Imprime los errores de la página y deja PNG llamados t-<segundos>.png en --salida.
 // =========================================================
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { mkdirSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+import { abrirNavegador } from '../../../estudio/playwright.mjs';
 
-const arg = (n, def) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : def; };
-const preparar = arg('preparar', '');
-const paso = arg('paso', '');
-const tiempos = arg('tiempos', '0.5,2,4').split(',').map(Number);
-const salida = arg('salida', './capturas');
-const plano = arg('plano', null);
-const medir = arg('medir', '');
-const url = arg('url', 'http://localhost:5510/supervivencia.html');
-mkdirSync(salida, { recursive: true });
+// Playwright: variable PLAYWRIGHT o npm global (estudio/playwright.mjs). `node estudio/cli.mjs capturar escena …` llama a capturarEscena.
+export async function capturarEscena({ preparar = '', paso = '', tiempos = [0.5, 2, 4], salida = './capturas', plano = null, medir = '', url = 'http://localhost:5510/supervivencia.html', navegador = null, log = console.log } = {}) {
+    mkdirSync(salida, { recursive: true });
+    const propio = !navegador;
+    if (propio) navegador = await abrirNavegador();
+    const archivos = [], medidas = [], errores = [];
+    try {
+        const pagina = await navegador.newPage({ viewport: { width: 1280, height: 720 } });
+        pagina.on('pageerror', e => { errores.push(e.message); log('ERROR DE PÁGINA:', e.message); });
+        pagina.on('console', m => { if (m.type() === 'error') { errores.push(m.text()); log('CONSOLA:', m.text()); } });
 
-const navegador = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const pagina = await navegador.newPage({ viewport: { width: 1280, height: 720 } });
-pagina.on('pageerror', e => console.log('ERROR DE PÁGINA:', e.message));
-pagina.on('console', m => { if (m.type() === 'error') console.log('CONSOLA:', m.text()); });
+        await pagina.goto(url);
+        // Mundo nuevo en Pacífico (sin monstruos que molesten las capturas)
+        await pagina.waitForSelector('#nuevo-mundo:not([hidden])', { timeout: 30000 });
+        await pagina.click('#nuevo-mundo');
+        await pagina.fill('#nombre-mundo', 'Capturas');
+        await pagina.check('input[name="dificultad"][value="0"]');
+        await pagina.click('#crear');
+        await pagina.waitForFunction(() => window.__venjy && window.__venjy.jugador, null, { timeout: 120000 });
+        await pagina.waitForTimeout(2500);
 
-await pagina.goto(url);
-// Mundo nuevo en Pacífico (sin monstruos que molesten las capturas)
-await pagina.waitForSelector('#nuevo-mundo:not([hidden])', { timeout: 30000 });
-await pagina.click('#nuevo-mundo');
-await pagina.fill('#nombre-mundo', 'Capturas');
-await pagina.check('input[name="dificultad"][value="0"]');
-await pagina.click('#crear');
-await pagina.waitForFunction(() => window.__venjy && window.__venjy.jugador, null, { timeout: 120000 });
-await pagina.waitForTimeout(2500);
+        const AYUDAS = `
+            const esperar = ms => new Promise(r => setTimeout(r, ms));
+            const irJunto = async (x, z, y = 0, d = 3) => {
+                const DY = v.terreno.dy || 48;
+                v.jugador.colocar(x + d, (y ?? 0) + DY + 1, z);
+                await esperar(5000);
+                // Si quedó dentro de un bloque o en el aire, busca el suelo de arriba hacia abajo
+                for (let yy = (y ?? 0) + DY + 12; yy > DY - 10; yy--) if (v.mundo.bloque(x + d, yy - 0.5, z) > 0) { v.jugador.colocar(x + d, yy, z); break; }
+                v.jugador.yaw = Math.atan2(x - v.jugador.pos.x, z - v.jugador.pos.z) - Math.PI;
+                await esperar(1500);
+            };
+            // Marca como vistas todas las escenas de skin: así no se disparan solas durante las capturas
+            const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); if (v.escenas.callar) v.escenas.callar(); v.escenas.saltar(); if (v.amistadEscena) v.amistadEscena.saltar(); };
+            const mundoDe = (o, x = 0, y = 0, z = 0) => { o.updateMatrixWorld(true); const p = o.localToWorld(new v.camara.position.constructor(x, y, z)); return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2) }; };
+            const manoD = () => mundoDe(v.camaras.cuerpo.brazoD, 0, -0.75, 0);
+            const manoI = () => mundoDe(v.camaras.cuerpo.brazoI, 0, -0.75, 0);`;
+        if (preparar) await pagina.evaluate(`(async () => { const v = window.__venjy; ${AYUDAS} ${preparar} })()`);
+        if (plano !== null) await pagina.evaluate(k => window.__venjy.camaras.fijarPlano(Number(k)), plano);
 
-const AYUDAS = `
-    const esperar = ms => new Promise(r => setTimeout(r, ms));
-    const irJunto = async (x, z, y = 0, d = 3) => {
-        const DY = v.terreno.dy || 48;
-        v.jugador.colocar(x + d, (y ?? 0) + DY + 1, z);
-        await esperar(5000);
-        // Si quedó dentro de un bloque o en el aire, busca el suelo de arriba hacia abajo
-        for (let yy = (y ?? 0) + DY + 12; yy > DY - 10; yy--) if (v.mundo.bloque(x + d, yy - 0.5, z) > 0) { v.jugador.colocar(x + d, yy, z); break; }
-        v.jugador.yaw = Math.atan2(x - v.jugador.pos.x, z - v.jugador.pos.z) - Math.PI;
-        await esperar(1500);
-    };
-    // Marca como vistas todas las escenas de skin: así no se disparan solas durante las capturas
-    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); if (v.escenas.callar) v.escenas.callar(); v.escenas.saltar(); if (v.amistadEscena) v.amistadEscena.saltar(); };
-    const mundoDe = (o, x = 0, y = 0, z = 0) => { o.updateMatrixWorld(true); const p = o.localToWorld(new v.camara.position.constructor(x, y, z)); return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2) }; };
-    const manoD = () => mundoDe(v.camaras.cuerpo.brazoD, 0, -0.75, 0);
-    const manoI = () => mundoDe(v.camaras.cuerpo.brazoI, 0, -0.75, 0);`;
-if (preparar) await pagina.evaluate(`(async () => { const v = window.__venjy; ${AYUDAS} ${preparar} })()`);
-if (plano !== null) await pagina.evaluate(k => window.__venjy.camaras.fijarPlano(Number(k)), plano);
-
-const inicio = Date.now();
-for (const t of tiempos) {
-    if (paso) {
-        await pagina.evaluate(`(async () => { const v = window.__venjy; const t = ${t}; ${AYUDAS} ${paso} })()`);
-        await pagina.waitForTimeout(700); // deja que el suavizado llegue a la pose
-    } else {
-        const falta = t * 1000 - (Date.now() - inicio);
-        if (falta > 0) await pagina.waitForTimeout(falta);
+        const inicio = Date.now();
+        for (const t of tiempos) {
+            if (paso) {
+                await pagina.evaluate(`(async () => { const v = window.__venjy; const t = ${t}; ${AYUDAS} ${paso} })()`);
+                await pagina.waitForTimeout(700); // deja que el suavizado llegue a la pose
+            } else {
+                const falta = t * 1000 - (Date.now() - inicio);
+                if (falta > 0) await pagina.waitForTimeout(falta);
+            }
+            if (medir) {
+                const m = await pagina.evaluate(`(() => { const v = window.__venjy; ${AYUDAS} return (${medir}); })()`);
+                medidas.push({ t, medida: m });
+                log('medida t=' + t, JSON.stringify(m));
+            }
+            const archivo = `${salida}/t-${String(t).replace('.', '_')}.png`;
+            await pagina.screenshot({ path: archivo });
+            archivos.push(archivo);
+            log('captura', archivo);
+        }
+        await pagina.close();
+    } finally {
+        if (propio) await navegador.close();
     }
-    if (medir) console.log('medida t=' + t, JSON.stringify(await pagina.evaluate(`(() => { const v = window.__venjy; ${AYUDAS} return (${medir}); })()`)));
-    const archivo = `${salida}/t-${String(t).replace('.', '_')}.png`;
-    await pagina.screenshot({ path: archivo });
-    console.log('captura', archivo);
+    return { archivos, medidas, errores };
 }
-await navegador.close();
+
+// Uso directo: node .claude/skills/animaciones-minecraft/capturar.mjs --preparar … (ver arriba)
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+    const arg = (n, def) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : def; };
+    await capturarEscena({
+        preparar: arg('preparar', ''), paso: arg('paso', ''),
+        tiempos: arg('tiempos', '0.5,2,4').split(',').map(Number), salida: arg('salida', './capturas'),
+        plano: arg('plano', null), medir: arg('medir', ''), url: arg('url', 'http://localhost:5510/supervivencia.html')
+    });
+}

@@ -9,7 +9,7 @@
 // · --iniciar: JS que arranca la animación justo cuando empieza la grabación.
 // · --segundos: duración del video · --fps (30) · --ancho/--alto (960×540).
 // =========================================================
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { abrirNavegador } from '../../../estudio/playwright.mjs'; // PLAYWRIGHT=<carpeta> o npm global
 import { mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
@@ -21,7 +21,7 @@ const salida = arg('salida', './animacion.mp4');
 const cuadros = salida.replace(/\.mp4$/, '') + '-cuadros';
 rmSync(cuadros, { recursive: true, force: true }); mkdirSync(cuadros, { recursive: true });
 
-const navegador = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const navegador = await abrirNavegador();
 const pagina = await navegador.newPage({ viewport: { width: ancho, height: alto } });
 pagina.on('pageerror', e => console.log('ERROR DE PÁGINA:', e.message));
 // Reloj manual: mientras __manual es false todo corre normal; después, cada __paso(ms) avanza un cuadro

@@ -8,15 +8,28 @@
 //       inc (torso adelante) · rz (torso de lado) · y (subir/bajar el cuerpo). Ver referencia/rig.md.
 // Cajas: referencias semitransparentes en coordenadas del modelo (mira a +Z, pies en 0).
 // =========================================================
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
-const arg = (n, def) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : def; };
-const op = { skin: arg('skin', 'venjy'), pose: JSON.parse(arg('pose', '{}')), cajas: JSON.parse(arg('cajas', '[]')) };
-const salida = arg('salida', './pose.png');
-const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
-const p = await b.newPage({ viewport: { width: 900, height: 420 } });
-p.on('pageerror', e => console.log('ERROR:', e.message));
-await p.goto('http://localhost:5510/.claude/skills/animaciones-minecraft/posar.html#' + encodeURIComponent(JSON.stringify(op)));
-await p.waitForFunction(() => window.listo, null, { timeout: 20000 });
-await p.locator('canvas').screenshot({ path: salida });
-console.log('pose', salida);
-await b.close();
+import { pathToFileURL } from 'node:url';
+import { abrirNavegador } from '../../../estudio/playwright.mjs';
+
+// `node estudio/cli.mjs capturar pose|gesto …` llama a posar. `base` es el servidor (raíz del repo).
+export async function posar({ skin = 'venjy', pose = {}, cajas = [], salida = './pose.png', base = 'http://localhost:5510', navegador = null, log = console.log } = {}) {
+    const propio = !navegador;
+    if (propio) navegador = await abrirNavegador();
+    try {
+        const p = await navegador.newPage({ viewport: { width: 900, height: 420 } });
+        p.on('pageerror', e => log('ERROR:', e.message));
+        await p.goto(base + '/.claude/skills/animaciones-minecraft/posar.html#' + encodeURIComponent(JSON.stringify({ skin, pose, cajas })));
+        await p.waitForFunction(() => window.listo, null, { timeout: 20000 });
+        await p.locator('canvas').screenshot({ path: salida });
+        await p.close();
+        log('pose', salida);
+        return salida;
+    } finally {
+        if (propio) await navegador.close();
+    }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+    const arg = (n, def) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : def; };
+    await posar({ skin: arg('skin', 'venjy'), pose: JSON.parse(arg('pose', '{}')), cajas: JSON.parse(arg('cajas', '[]')), salida: arg('salida', './pose.png'), base: arg('base', 'http://localhost:5510') });
+}

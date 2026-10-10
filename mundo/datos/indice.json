@@ -6,13 +6,13 @@
       "esquema": "ui-layout",
       "lee": "mundo/supervivencia/tactil-supervivencia.js",
       "fase": 1,
-      "que": "Botones táctiles de la supervivencia (posición y tamaño por perfil de pantalla)"
+      "que": "Botones táctiles de la supervivencia (posición y tamaño por perfil de pantalla); se aplica en vivo con supervivencia.html?estudio"
     },
     "textos": {
       "esquema": "textos",
       "lee": "mundo/supervivencia/tactil-supervivencia.js",
       "fase": 1,
-      "que": "Textos nuevos con par es/en, por espacio (hoy: etiquetas de los botones táctiles de la supervivencia)"
+      "que": "Textos nuevos con par es/en, por espacio (hoy: etiquetas de los botones táctiles de la supervivencia); se aplica en vivo con supervivencia.html?estudio"
     },
     "posiciones": {
       "esquema": "posiciones",
