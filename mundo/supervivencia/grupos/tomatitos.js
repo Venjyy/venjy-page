@@ -18,7 +18,7 @@ export const ANCLA = 'andy';
 export const NPCS = ['hadad', 'andy', 'nacho'];
 export const COMUN = [
     ['andy', t('¿Quién mandó doscientos stickers al grupo?', 'Who sent two hundred stickers to the group chat?')],
-    ['nacho', t('Jajaja, no fui yo. Bueno, sí fui yo.', "Haha, it wasn't me. Okay, it was me.")],
+    ['nacho', t('Jajaja, fue el Hadad. Son todos de él con papas fritas.', "Haha, it was Hadad. Every single one is him with chips.")],
     ['hadad', t('Ya, Tomatitos: tomate en alto.', 'Alright, Tomatitos: tomatoes up.')],
     ['todos', t('¡Por los Tomatitos!', 'To the Tomatitos!')]
 ];
@@ -99,6 +99,7 @@ export function grupo(base) {
     for (const q of todos) if (q !== 'nacho') g.ges(q, 'celular', ding + 0.1, g.fin(c2));
     g.ges('nacho', 'celular', ding + 0.1, c2.a);
     g.ges('nacho', 'risa', c2.a, g.fin(c2) + 0.2);
+    g.ges('hadad', 'rasca', c2.a + 0.4, g.fin(c2));
     // Hadad saca tomates para todos
     const c3 = g.di(...COMUN[2]);
     g.ges('hadad', 'reparte', c3.a, g.fin(c3));

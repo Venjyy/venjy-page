@@ -40,7 +40,7 @@ export default {
         'Iglú: el Venjy de la mina entra por el túnel con el pico al hombro y se sacude la nieve; guerra de bolas de nieve hasta el sombrero de Lalo.',
         'Disparo: es la escena «uno por lugar» de la fogata, la atalaya y el iglú, antes que las de skin y los reencuentros. Con skin de Venjy el iglú sigue con su escena y Coyhaique queda en el botón. El clon que actuó da por vista su escena corta.',
         'Botón verde «Saludo del grupo» en «Hablar» para repetirla.',
-        'El pito y el bong del iglú ya no salen en ninguna escena de amistad: se esconden y vuelven al terminar.',
+        'Revisión tuya aplicada: frases con la duración de 6c-1 (escenas de 27-36 s), el pito y el bong se quedan, y Nacho ahora culpa a Hadad de los stickers.',
         '<code>/amistad grupos</code>, <code>/amistad tomatitos-braulio</code>, <code>/amistad atalaya-lucho</code>, <code>/amistad coyhaique-venjy</code> (con <code>/gamemode devenjy</code>).'
     ],
     archivos: {
@@ -48,18 +48,19 @@ export default {
         cambiados: ['mundo/supervivencia/escena-amistad.js', 'mundo/supervivencia/camaras.js', 'mundo/supervivencia/escenas-skin.js', 'mundo/supervivencia/amistad.js', 'mundo/supervivencia/main.js', 'mundo/supervivencia/hablar.js', 'mundo/supervivencia/misiones.js', 'mundo/supervivencia/comandos-dev.js', 'mundo/supervivencia/escena-amistad-datos.js', 'mundo/supervivencia/supervivencia.css', 'mundo/tests/amistad.mjs', 'mundo/DIALOGOS.md', 'mundo/PENDIENTES.md', 'mundo/DISENO-6c.md (borrado)']
     },
     revisar: [
-        'El ritmo: las frases de grupo son más rápidas que en 6c-1 (1,5-2,8 s). La atalaya con skin de Boris o Lucho dura ~27 s porque tiene 13 frases aprobadas más el salto.',
+        'La frase nueva de Nacho: «Jajaja, fue el Hadad. Son todos de él con papas fritas.» (Hadad se rasca la cabeza).',
+        'Las hojas de capturas son de antes de tu revisión: muestran frases más cortas y el iglú sin el pito ni el bong.',
         'La caída de la atalaya y la entrada por el túnel se juzgan mejor en movimiento (<code>/amistad atalaya-lucho</code>, <code>/amistad coyhaique-lalo</code>).',
         'En la fogata el plano «de lado» a veces queda detrás de la carpa.',
         'Tomás (el tomate de Conejeros) se ve chico en la mano izquierda.',
         'Falta la medida de la rama (se cortó Playwright a tu pedido).'
     ],
     decisiones: [
-        ['Frases de grupo más cortas: 0,95 s + 0,027 s por letra (1,5-2,8 s).', 'Con 9-13 frases es la única forma de acercarse a ~20-24 s sin sacar textos aprobados.', true],
+        ['Frases con la duración de 6c-1 (1,4 s + 0,03 s por letra, 2,3-3,6 s).', 'Decisión tuya: mejor escenas más largas (27-36 s) que frases apuradas, si se ven bien.', true],
         ['En grupo todos miran al centro (fogata, tocón, túnel) y la cabeza a quien habla; la cámara gira en torno al centro.', 'Con 4-5 personas, mirar solo al jugador dejaba a varios de espalda.', false],
-        ['El iglú usa planos fijos (desde el muro norte y desde la boca del túnel) y se paran en media luna.', 'Con 4 personas en 5×6 bloques los planos que giran quedaban dentro de una cabeza.', true],
+        ['El iglú usa planos fijos (desde el muro norte y desde la boca del túnel) y se paran en media luna.', 'Con 4 personas en 5×6 bloques los planos que giran quedaban dentro de una cabeza. Aprobado: con planos fijos, animaciones más elaboradas.', true],
         ['El Venjy de la atalaya aterriza al norte del tocón, frente a todos.', 'En la primera prueba caía detrás de Lucho y no se veía.', false],
-        ['El pito y el bong del iglú se esconden en toda escena de amistad.', 'Son personas reales: nada de fumar en las escenas.', true],
+        ['El pito y el bong del iglú se quedan.', 'Decisión tuya: la supervivencia es un proyecto personal; lo profesional es el modo creativo.', true],
         ['Lo hizo el orquestador (Opus) sin subagentes.', 'La parte delicada era el motor, la cámara y la puesta en escena con 4-5 personas; los gestos nuevos son pocos y simples.', false]
     ],
     secciones: [
@@ -78,7 +79,7 @@ export default {
         como: 'Chromium headless con SwiftShader, 1280×720, archivos desde disco sin caché, junto a la fogata de día, mundo nuevo. La medida de la rama quedó pendiente: se cortó Playwright a pedido del dueño.'
     },
     pruebas: [
-        '<code>node mundo/tests/amistad.mjs</code>: 97605 comprobaciones OK. Nuevas: 3 grupos con 13 variantes, actores solo del grupo, parte común completa, frases dentro de la escena y sin pisarse, rangos de <code>rig.md</code>, disparo (sola, solo botón, clon visto, grupo antes del reencuentro), y el motor real en Node: al saltar a la mitad y al terminar, todos vuelven a su sitio y la cámara manual se suelta.',
+        '<code>node mundo/tests/amistad.mjs</code>: 97359 comprobaciones OK. Nuevas: 3 grupos con 13 variantes, actores solo del grupo, parte común completa, frases dentro de la escena y sin pisarse, rangos de <code>rig.md</code>, disparo (sola, solo botón, clon visto, grupo antes del reencuentro), y el motor real en Node: al saltar a la mitad y al terminar, todos vuelven a su sitio y la cámara manual se suelta.',
         'Las demás de <code>mundo/tests/</code> (recetas, inventario, paridad, tienda, señal QR): OK.',
         'En el navegador: las 13 variantes corren sin errores de página y al saltar todos vuelven a su sitio (antes de cortar Playwright).'
     ],

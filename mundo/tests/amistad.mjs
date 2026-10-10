@@ -429,9 +429,9 @@ for (const [nombre, def] of Object.entries(GRUPOS)) {
         const extras = Object.values(g.actores || {});
         ok(g.ancla === m.ANCLA && extras.every(c => def.npcs.includes(c) || c === `venjy@${def.venjy}`), `${ruta}: actores solo del grupo (${extras.join(', ')})`);
         ok(g.reparto[m.ANCLA] === 'n' && typeof g.centro === 'function' && typeof g.colocar === 'function', `${ruta}: ancla, centro y lugar del jugador`);
-        ok(g.T >= 18 && g.T <= 28, `${ruta}: dura ${g.T} s (18-28)`);
+        ok(g.T >= 18 && g.T <= 40, `${ruta}: dura ${g.T} s (18-40)`);
         const qs = new Set(['j', 'todos', ...def.npcs, ...Object.keys(g.actores)]);
-        revisarLineas(ruta, g, qs, 8, 13, x => Math.min(1.8, 0.9 + x.es.length * 0.025));
+        revisarLineas(ruta, g, qs, 8, 13);
         revisarPista(ruta, g, qs);
         ok(g.lineas.filter(l => l.q === 'j').length >= 2 && g.lineas[g.lineas.length - 1].q === 'j', `${ruta}: tú hablas y cierras la escena`);
         ok(m.COMUN.every(([, x]) => g.lineas.some(l => l.texto === x)), `${ruta}: tiene toda la parte común del grupo`);

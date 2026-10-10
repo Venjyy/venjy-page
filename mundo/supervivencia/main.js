@@ -719,8 +719,6 @@ async function arrancar(guardado, cx = null) {
             escenaAmistad = m.crearEscenaAmistad({
                 grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, idioma, personas: personasEscena, base: () => escenas.tipoSkin(skinActual).base,
                 personaDe: personaAmistad,
-                // Son personas reales: el pito y el bong del iglú no salen en las escenas de amistad
-                ocultables: () => (amigos.iglu ? [amigos.iglu.bong.g, amigos.iglu.pito.g] : []),
                 bloquear: bloquearEscena, liberar: liberarEscena
             });
             return escenaAmistad;

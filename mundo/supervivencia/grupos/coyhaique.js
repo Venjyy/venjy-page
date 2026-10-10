@@ -46,7 +46,6 @@ export const MIEMBROS = Object.keys(VARIANTES);
 // Adentro caben justo los cuatro: se paran en media luna en la mitad norte, mirando hacia el túnel, y la cámara usa
 // planos fijos (no hay espacio para girar en torno a ellos): A desde el muro norte mientras entra el Venjy y B desde la
 // boca del túnel (con un acercamiento lento). Moisés se para un paso al norte: así la bola de nieve pasa por delante.
-// El pito y el bong del iglú no salen (escena-amistad.js los esconde en toda escena de amistad).
 const TUNEL = { x: 1.1, z: 6.6 };     // boca del túnel, afuera
 const DENTRO = { x: 1.2, z: -1.9 };   // donde se para el Venjy, al norte (pasa entre Moisés y Lalo)
 const JUGADOR = { x: -1.1, z: -0.8 }; // tú, al oeste de Moisés (sin pisar el cojín de la ronda)

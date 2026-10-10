@@ -622,7 +622,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Venjy | Hadad | ¡Venjy! Por fin sales del código y vienes a la fogata. | Venjy! You finally leave the code and come to the campfire. |
 | Venjy | Tú | Vi el grupo y no podía faltar. | I saw the group chat and couldn't miss it. |
 | Venjy (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Venjy (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Venjy (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Venjy (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Venjy | Tú | Les traje el tomate oficial de los Tomatitos. | I brought you the official Tomatitos tomato. |
 | Venjy | Nacho | Jajaja, ¡es más grande que el Pony! | Haha, it's bigger than Pony! |
@@ -631,7 +631,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Pony | Andy | ¡Pony! Siéntate, pero no webees, que estamos tranquilos. | Pony! Sit down, but no messing around, we're chilling. |
 | Pony | Tú | ¿Yo webear? Si soy un angelito. | Me, mess around? I'm a little angel. |
 | Pony (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Pony (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Pony (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Pony (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Pony | Tú | ¡Bajen los tomates, que no alcanzo! | Lower the tomatoes, I can't reach! |
 | Pony | Andy | Ya, por esta vez. | Okay, just this once. |
@@ -640,7 +640,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Braulio | Nacho | Jajaja, ¡Braulio! ¿Trajiste arena de la playa? | Haha, Braulio! Did you bring sand from the beach? |
 | Braulio | Tú | Un poco. Viene incluida conmigo. | A little. It comes included with me. |
 | Braulio (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Braulio (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Braulio (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Braulio (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Braulio | Tú | Yo brindo con esto. Escuchen: se oye el mar. | I'll toast with this. Listen: you can hear the sea. |
 | Braulio | Hadad | Se oye el mar y un cangrejo reclamando. | You can hear the sea and a crab complaining. |
@@ -649,7 +649,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Conejeros | Hadad | ¡Conejeros! ¿Vienes en modo normal o en modo .exe? | Conejeros! Coming in normal mode or .exe mode? |
 | Conejeros | Tú | Modo normal. Por ahora. | Normal mode. For now. |
 | Conejeros (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Conejeros (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Conejeros (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Conejeros (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Conejeros | Tú | Les presento a Tomás. Es un tomate, pero con sentimientos. | Meet Tomás. He's a tomato, but with feelings. |
 | Conejeros | Andy | ¿Y ahora cómo brindamos con Tomás? | And now how do we toast with Tomás? |
@@ -658,7 +658,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Hadad | Hadad | ¿Y tú quién eres? ¿Por qué tienes mi cara? | And who are you? Why do you have my face? |
 | Hadad | Tú | Lo mismo te pregunto. Levanta el brazo. | I was going to ask you the same. Raise your arm. |
 | Hadad (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Hadad (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Hadad (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Hadad (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Hadad | Nacho | Jajaja, ¡ahora hay dos que promocionan papas! | Haha, now there are two promoting chips! |
 | Hadad | Tú | Uno para cada bolsa. | One per bag. |
@@ -667,7 +667,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Andy | Andy | ¿Otro Andy? A ver, ¿te sabes el baile? | Another Andy? Let's see, do you know the dance? |
 | Andy | Tú | Me lo sé mejor que tú. | I know it better than you. |
 | Andy (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Andy (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Andy (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Andy (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Andy | Hadad | Dos Andy bailando y ninguno ganó nada. | Two Andys dancing and neither of them won anything. |
 | Andy | Tú | Todavía. | Yet. |
@@ -676,7 +676,7 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Nacho | Nacho | Jajaja, ¿otro Nacho? | Haha, another Nacho? |
 | Nacho | Tú | Jajaja, eso iba a decir yo. | Haha, that's what I was going to say. |
 | Nacho (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
-| Nacho (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Nacho (común) | Nacho | Jajaja, fue el Hadad. Son todos de él con papas fritas. | Haha, it was Hadad. Every single one is him with chips. |
 | Nacho (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
 | Nacho | Andy | Una risa ya era fuerte. Dos es un concierto. | One laugh was already loud. Two is a concert. |
 | Nacho | Tú | Jajaja, y viene el bis. | Haha, and here comes the encore. |

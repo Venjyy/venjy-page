@@ -1,8 +1,8 @@
 // =========================================================
 // VENJY · Supervivencia · Escenas de grupo (bloque 6c-2): piezas comunes
 // Lo importan grupos/tomatitos.js, grupos/atalaya.js y grupos/coyhaique.js (se cargan con import() al usarse).
-// · durG: lo que dura una frase de grupo (más corta que la de las bienvenidas: con 4-5 personas hay más frases y la
-//   escena tiene que quedar en ~20-24 s). crearGuion(): va poniendo frases una tras otra y gestos por personaje.
+// · durG: lo que dura una frase de grupo (la misma regla de las bienvenidas y reencuentros: que se alcance a leer; el
+//   dueño prefiere escenas más largas a frases apuradas). crearGuion(): frases una tras otra y gestos por personaje.
 // · ordenar(): gestos sin pisarse; los de relleno (`habla`, `asiente`, `mira`) solo ocupan los huecos.
 // · eventos(): sonidos y efectos de una vez (irA hacia atrás los vuelve a permitir, para las capturas).
 // · TOMATE: el tomate con bigote elegante (estilo cabeza de tomate de Fortnite: rojo, hojas verdes, bigote café curvo)
@@ -12,14 +12,15 @@
 // =========================================================
 import { MOLDES, PIX, SONIDOS, ruta } from '../moldes.js';
 import { tono } from '../sonidos.js';
+import { durLinea } from '../reencuentros.js';
 
 export { MOLDES, PIX, SONIDOS, ruta };
 export const t = (es, en) => ({ es, en });
 export const r2 = x => Math.round(x * 100) / 100;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
-export const PAUSA = 0.08;
+export const PAUSA = 0.15;
 // Lo que dura una frase de grupo en pantalla
-export const durG = txt => r2(lim(0.95 + txt.es.length * 0.027, 1.5, 2.8));
+export const durG = durLinea;
 
 // Guion por pasos: frases una tras otra (g.s es el reloj) y gestos [gesto, desde, hasta, relleno?] por personaje
 export function crearGuion(desde = 0.6) {

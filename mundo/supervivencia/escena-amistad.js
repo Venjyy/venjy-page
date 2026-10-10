@@ -288,9 +288,6 @@ export function crearEscenaAmistad(ctx) {
         e.callados = callados;
         camaras.pose = (c, dt) => { if (e) aplicar(e.actores.j, dt); };
         misiones.ocultarMarcas = true;
-        // Lo que no sale en una escena de amistad (el pito y el bong del iglú): se esconde y vuelve al terminar
-        e.ocultos = (ctx.ocultables ? ctx.ocultables() : []).filter(o => o && o.visible);
-        for (const o of e.ocultos) o.visible = false;
         document.body.classList.add('en-amistad');
         const aviso = document.querySelector('.clic-seguir'); // «Haz clic para seguir jugando» no va encima de la escena
         if (aviso) aviso.hidden = true;
@@ -316,7 +313,6 @@ export function crearEscenaAmistad(ctx) {
         for (const o of x.props) { if (o.parent) o.parent.remove(o); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }
         for (const { o, padre, pos, rot, esc } of x.prestados.reverse()) { padre.add(o); o.position.copy(pos); o.rotation.copy(rot); o.scale.copy(esc); }
         for (const [o, h] of x.callados) if (o.escena === h) delete o.escena;
-        for (const o of x.ocultos || []) o.visible = true;
         for (const f of efectos.splice(0)) { grupo.remove(f.s); f.s.material.dispose(); }
         camaras.manual = null; // el plano manual de una escena de grupo (el salto de la atalaya, el iglú)
         camaras.terminarCine();
