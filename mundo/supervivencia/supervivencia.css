@@ -38,6 +38,8 @@
 .info-mundo span { color: var(--gris); font-size: 0.85rem; }
 .botones-mundo { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 6px; }
 .botones-mundo .boton { margin: 0; padding: 8px 4px; font-size: 0.95rem; }
+.botones-copia { grid-template-columns: 1fr 1fr; }
+#copia-lista { display: grid; gap: 8px; margin: 8px 0; padding: 0; list-style: none; }
 .boton.peligro:hover, .boton.peligro:focus-visible { background: #b04a42; }
 .boton:disabled { opacity: 0.5; cursor: not-allowed; }
 .fila-botones { display: flex; gap: 8px; }
@@ -210,12 +212,19 @@
     position: absolute;
     top: 6px; right: 6px;
     width: 28px; height: 28px;
-    font: inherit; font-size: 0.9rem;
-    color: #fff; text-shadow: 1px 1px 0 #3f3f3f;
+    padding: 0;
+    display: grid; place-items: center;
     background: var(--boton);
     border: 2px solid #000;
     box-shadow: inset 2px 2px 0 var(--borde-claro), inset -2px -2px 0 var(--borde-oscuro);
     cursor: pointer;
+}
+/* La X son píxeles (7×7 con sombra), no un glifo de la fuente: así queda centrada en cualquier tamaño */
+.cerrar-ventana::before {
+    content: '';
+    width: 16px; height: 16px;
+    background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><path fill='%233f3f3f' d='M1 1h1v1h-1zM1 7h1v1h-1zM2 2h1v1h-1zM2 6h1v1h-1zM3 3h1v1h-1zM3 5h1v1h-1zM4 4h1v1h-1zM5 3h1v1h-1zM5 5h1v1h-1zM6 2h1v1h-1zM6 6h1v1h-1zM7 1h1v1h-1zM7 7h1v1h-1z'/><path fill='%23fff' d='M0 0h1v1h-1zM0 6h1v1h-1zM1 1h1v1h-1zM1 5h1v1h-1zM2 2h1v1h-1zM2 4h1v1h-1zM3 3h1v1h-1zM4 2h1v1h-1zM4 4h1v1h-1zM5 1h1v1h-1zM5 5h1v1h-1zM6 0h1v1h-1zM6 6h1v1h-1z'/></svg>") center / 16px 16px no-repeat;
+    image-rendering: pixelated;
 }
 .ventana-arriba { display: flex; gap: 14px; align-items: flex-end; margin-bottom: 10px; min-height: calc(var(--casilla) * 2); }
 .rejilla { display: grid; grid-template-columns: repeat(var(--columnas), var(--casilla)); }

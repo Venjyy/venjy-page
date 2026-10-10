@@ -557,7 +557,7 @@ Orden: 6a → 6b → 6c → 6d (primero la etapa sin visitas). Cada parte en su 
 | 6d · Vida entre amigos, etapa 1 (fogata e iglú) | Opus + subagente Haiku | Las animaciones van a Haiku. Opus diseña la lógica de cercanía, los temporizadores y los turnos. |
 | 6d · Etapa 2 (visitas) | Opus solo | Es arquitectura: rutas, estados, rendimiento y choques con misiones, tienda y escenas. Es el bug difícil que toca varios archivos. |
 
-### Bloque 7 · Pulido, juego en grupo y mundo vivo (solo planificación, no implementado)
+### Bloque 7 · Pulido, juego en grupo y mundo vivo (7a hecho; el resto, solo planificación)
 
 Plan del 2026-10-09 con la lista de 26 pedidos del dueño tras jugar con amigos: bugs (agua, X de cerrar, guardar con 5 mundos, lag al romper), sensación de juego (golpe, correr, knockback, velocidad), misiones más fáciles, contenido (ítems, Venjys, caminos) y actividades nuevas o compartidas en el cooperativo. **No cambia el bloque 6**: lo que pertenece a 6d está anotado aquí como 7j y lo toma el chat de 6d. Cada parte en su propio chat y PR.
 
@@ -567,7 +567,7 @@ Reglas que valen para todo el bloque: estética Minecraft, solo PixelCraft y sin
 
 | Sub | Nombre | Puntos | Depende de |
 |---|---|---|---|
-| 7a | Arreglos rápidos | 9, 10, 11, 14, 26 | nada |
+| 7a | Arreglos rápidos (**hecho**, rama `arreglos-7a`) | 9, 10, 11, 14, 26 | nada |
 | 7b | Rendimiento | 8 (+ menú de opciones) | nada (va antes de sumar contenido) |
 | 7c | Cuerpo y mano del jugador | 3, 4, 5, 6, 18 | 7b-1 deseable (medir) |
 | 7d | Misiones más fáciles | 1, 12 | nada |
@@ -580,7 +580,16 @@ Reglas que valen para todo el bloque: estética Minecraft, solo PixelCraft y sin
 
 Cambio respecto de la agrupación sugerida: 22 va con 21 en 7h-3 (el concierto es una sola actividad: unos tocan, otros alientan) y 7g se queda con la infraestructura común de «actividad compartida» (asientos, reservas, reloj, desconexiones), que usan después 7h.
 
-**7a · Arreglos rápidos (1 PR, Sonnet)**
+**7a · Arreglos rápidos (1 PR, Sonnet)** — **hecho el 2026-10-10** (rama `arreglos-7a`)
+
+Resultado, punto por punto (lo que cambió respecto del plan está marcado):
+- **9 · agua**: `jugador.js` deja `chocoLado` en `mover()`; nadando contra una pared con Espacio y avanzando (W/A/S/D), `vel.y = 7` (lava 5). Orilla a ras: sale; pared de 2 bloques: no. **Límite conocido**: una orilla de 1 bloque sobre la superficie del agua **no** se sube nadando (los pies dejan el agua a y = superficie − 0,5 y con 7 m/s solo suben +0,77); si en el mapa hay orillas así, subir el impulso a ≈ 10 m/s las deja pasar sin alcanzar paredes de 2 (decisión del dueño).
+- **10 · knockback**: `enemigos.js` exporta `RETROCESO`, `empujar` y `suavizarVelocidad` (las usan `golpear` y el bucle de cada monstruo). Valores **medidos** con `mundo/tests/retroceso.mjs`: ventana 0,5 s (el plan decía 0,4), factor ×16 (plan ×14), salto 6, roce 3 en el suelo y 2 en el aire; da 2,25 bloques normal y 4,3 corriendo (con el plan: 1,8 y 3,4; antes: 1,05). Los jefes ya tenían un empuje fijo propio (`jefes.js`, +2 m/s): no se tocaron.
+- **11 · X de cerrar**: dibujada como píxeles (7×7 con sombra, `background` SVG `crispEdges` en `.cerrar-ventana::before`), botón `display: grid; place-items: center; padding: 0`. Es el único «cerrar» con glifo; los demás paneles usan botones con texto «Cerrar».
+- **14 · velocidad (supervivencia)**: `jugador.vCaminar` 4,6 (nuevo, por instancia; el creativo sigue en 4,3), `vCorrer` 7,0, `impulsoSalto` 1,8, `topeSalto` 8,6 y `bonoCamino` 1,15 (nuevo, solo sobre `B.CAMINO` en el suelo). Valores en `main.js`; `movimiento.mjs` los lee de ahí.
+- **26 · copia con 5 mundos**: `guardado.js` suma `guardarCopiaConTope(almacen, copia, { reemplazarId, abiertoId, max })` (lógica pura: escribe primero y borra después; el abierto no se elige) y `descargarMundo(objeto)`. Panel nuevo `#copia-llena` en `supervivencia.html` con los mundos (nombre, día, fecha), «Reemplazar» (confirmación con el nombre; deshabilitado en el abierto), «Descargar antes» (`exportarMundo`) y «Descargar esta copia como archivo» (sin tocar la base). Tras reemplazar: «Seguir jugando esta copia» (sale de la sala, recarga y abre el mundo con `sessionStorage` `venjy-seguir`). Con espacio todo sigue igual que antes. No creció lo suficiente para otro PR.
+- **Pruebas nuevas**: `mundo/tests/movimiento.mjs` (19), `retroceso.mjs` (12), `guardado-copia.mjs` (16). Medido en el navegador (1 mundo nuevo, Chromium del panel, 6 s por tanda, duración del callback del bucle): antes p50 2,5 ms / p90 3,1; después p50 2,8 / p90 3,6 y 2,4 / 3,0 en una segunda tanda: sin cambio fuera del ruido. No se suman archivos de JS al abrir (la lógica nueva va dentro de `guardado.js` y `enemigos.js`).
+- **Falta probar en el navegador con dos pestañas** (`?disp=2`): invitado con 5 mundos que pierde al anfitrión, y el flujo reemplazar → «Seguir jugando esta copia». La lógica está cubierta por la prueba; la pantalla se vio con datos de ejemplo.
 
 **9 · No se puede salir del agua**
 - Estado: `mundo/jugador.js`, `actualizar()`, rama `else if (agua)`: con Espacio fija `vel.y = 4`; `enAgua()` mira `pos.y + 0.5`. No hay salto ni ayuda contra la pared.
@@ -1003,6 +1012,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-10 · **Bloque 7a · arreglos rápidos** (rama `arreglos-7a`): salir del agua contra una orilla a ras (impulso 7; lava 5), knockback medido (≈ 2,25 bloques normal y 4,3 corriendo; ventana de retroceso 0,5 s, ×16), X de cerrar dibujada en píxeles y centrada, velocidades de la supervivencia (4,6 / 7,0 / salto 8,6, +15 % en camino; el creativo no cambia) y panel «Tus mundos están llenos» al guardar la copia del cooperativo con 5 mundos (reemplazar con confirmación, descargar antes, descargar la copia como archivo, seguir jugando la copia). Pruebas nuevas `movimiento.mjs`, `retroceso.mjs`, `guardado-copia.mjs`; cuadro mediano sin cambio (2,4-2,8 ms). Límite conocido: orilla de 1 bloque sobre el agua no se sube nadando (ver 7a). Toca `jugador.js`, `enemigos.js`, `guardado.js`, `main.js`, `ui-inventario.js`, `supervivencia.css` y `supervivencia.html`.
 - 2026-10-10 · **6d etapa 1 · revisión del dueño**: nube con «Z» al roncar; el bong baja al suelo cuando los brazos hacen otra cosa (¡YIAAAAAA!, charlas) en vez de quedar flotando; el pase del bong y el pito ya no sale volando en la supervivencia (coordenadas del grupo con `worldToLocal`); el lag al romper bloques queda anotado como primero de 7b-1 · `criaturas/amigos.js`, `vida-amigos.js`, `vida-amigos-datos.js`.
 - 2026-10-10 · **Bloque 6d etapa 1 · vida entre amigos** (rama `amistad-6d`): 9 interacciones sin el jugador (5 en la fogata, 4 en el iglú) con globos únicos y 3 gestos propios, aparte de la charla de siempre; detalle solo a menos de 24 bloques, lejos solo un reloj (1 de cada 4 cuadros), tope de 2 con turnos, guiones con `import()` al acercarse; cuadro mediano 5,8 ms sin y 6,1 ms con (17 monstruos de noche) · `supervivencia/vida-amigos.js`, `vida-amigos-datos.js`, `criaturas/amigos.js`, `main.js`, `comandos-dev.js`, `tests/vida-amigos.mjs`, `DIALOGOS.md`. Además, a pedido del dueño: **sin «Haz clic para seguir jugando» al terminar una escena** (el puntero sigue capturado durante la escena, sin mirar ni usar las manos: `jugador.sinMirar`; si la escena se abrió desde un panel se recaptura con ese clic; Esc la salta; los botones dicen «Saltar (Esc)»; minijuegos y la ronda del iglú siguen con cursor) · `jugador.js`, `minado.js`, `main.js`, `escenas-datos.js`, `escena-amistad-datos.js`.
 - 2026-10-10 · **Estudio · fase 0 (diseño y contratos, sin código)** (rama `estudio-fase0`): arquitectura del editor visual en `estudio/DISENO.md`, con fases y la 1 detallada para ejecutar. Cambio de orden: textos (3) antes que posiciones (4), porque no tienen dependencias, son lo que más pesa y posiciones toca `amigos.js` (en 6d). Esquemas en `estudio/esquemas/` (comun, ui-layout, textos, posiciones, poses, indice). Datos iniciales con los valores de hoy en `mundo/datos/` (layout táctil, etiquetas táctiles, 9 amigos relativos a su lugar, 6 poses y 11 gestos); el juego todavía no los lee. Contrato del CLI `estudio/cli.mjs` y sección «Contenido nuevo en JSON» en `CLAUDE.md` · verificado: los 5 JSON cumplen sus esquemas y 8 casos inválidos fallan (validador de prueba); los 11 gestos en datos dan lo mismo que `GESTOS`/`GESTOS_AMISTAD` (16 040 comparaciones, diferencia 0).
