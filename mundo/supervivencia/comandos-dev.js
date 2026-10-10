@@ -15,6 +15,7 @@
 // Sin argumentos, /tp, /dar, /mob, /jefe y /amistad listan lo que aceptan.
 // =========================================================
 import { relacion, GRUPOS } from './amistad.js';
+import { INTERACCIONES } from './vida-amigos.js';
 
 const sinTildes = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
@@ -39,7 +40,7 @@ const TXT = {
         jefeNo: n => `No existe el jefe «${n}»`,
         jefeOcupado: 'Ya hay un jefe en curso o no se pudo invocar',
         limpiar: n => `${n} monstruos eliminados`,
-        amLista: l => `Escenas de amistad (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, grupos, una persona, persona-escena, skin-amigo o grupo-skin (${l})`,
+        amLista: l => `Escenas de amistad (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, grupos, una persona, persona-escena, skin-amigo, grupo-skin o vida-<charla> (${l})`,
         amNo: n => `No conozco «${n}». Escribe /amistad`,
         amSig: (q, i, n) => `Escena ${i}/${n}: ${q}. Saltar pasa a la siguiente; Esc ahora termina el recorrido`,
         amFin: 'Recorrido de escenas de amistad terminado',
@@ -67,7 +68,7 @@ const TXT = {
         jefeNo: n => `No boss called "${n}"`,
         jefeOcupado: 'A boss is already running or could not be summoned',
         limpiar: n => `${n} monsters removed`,
-        amLista: l => `Friendship scenes (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, grupos, a person, person-scene, skin-friend or group-skin (${l})`,
+        amLista: l => `Friendship scenes (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, grupos, a person, person-scene, skin-friend, group-skin or vida-<chat> (${l})`,
         amNo: n => `I don't know "${n}". Type /amistad`,
         amSig: (q, i, n) => `Scene ${i}/${n}: ${q}. Skip moves to the next one; Esc now ends the tour`,
         amFin: 'Friendship scene tour finished',
@@ -104,7 +105,18 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
     // ---- /amistad: recorrido por las escenas de amistad (amistad: { cargar() -> motor, persona(clave), nombre(clave), puede(), max(clave) }) ----
     let cola = null, espera = null;
     const opcionesAmistad = () => ['todo', 'saludos', 'momentos', 'bienvenidas', 'reencuentros', ...AMIGOS, ...AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => `${c}-${k}`)),
-        ...BIENVENIDAS.map(c => `${c}-bienvenida`), ...REENCUENTROS.map(([a, , b]) => `${a}-${b}`), 'grupos', ...ESC_GRUPOS.map(([c, , g]) => `${g}-${c}`)];
+        ...BIENVENIDAS.map(c => `${c}-bienvenida`), ...REENCUENTROS.map(([a, , b]) => `${a}-${b}`), 'grupos', ...ESC_GRUPOS.map(([c, , g]) => `${g}-${c}`),
+        ...Object.values(INTERACCIONES).flat().map(id => `vida-${id}`)];
+    // 6d: /amistad vida-<id> te lleva junto al lugar y empieza esa interacción entre amigos (sin ti)
+    function vida6d(id) {
+        const lugar = Object.keys(INTERACCIONES).find(l => INTERACCIONES[l].includes(id));
+        const n = lugar && amistad.persona(lugar === 'fogata' ? 'andy' : 'lalo');
+        if (!n || !amistad.vida) return false;
+        cortar(false);
+        irA(n.x + 2.5, undefined, n.z, n.y > 0 ? n.y : undefined);
+        setTimeout(() => { escenas.saltar(); amistad.vida.forzar(lugar, id, 0); }, 1600);
+        return true;
+    }
     function colaDe(q) {
         if (q === 'bienvenidas') return BIENVENIDAS.map(c => [c, 'bienvenida']);
         if (q === 'reencuentros') return REENCUENTROS.map(x => [...x]);
@@ -302,6 +314,7 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
             fn(arg) {
                 const q = sinTildes(arg).replace(/\s+/g, '-');
                 if (!q) { hud.mensaje(t.amLista(AMIGOS.join(', ')), 14); return; }
+                if (q.startsWith('vida-')) { if (!vida6d(q.slice(5))) hud.mensaje(t.amNo(arg), 4); return; }
                 const lista = colaDe(q);
                 if (!lista) { hud.mensaje(t.amNo(arg), 4); return; }
                 cortar(false);

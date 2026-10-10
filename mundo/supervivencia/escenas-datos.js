@@ -171,4 +171,4 @@ export const IGLU = [
 ];
 export const DURACION_IGLU = 24.4;
 
-export const TXT_ESCENA = { es: { saltar: 'Saltar' }, en: { saltar: 'Skip' } };
+export const TXT_ESCENA = { es: { saltar: 'Saltar (Esc)' }, en: { saltar: 'Skip (Esc)' } };

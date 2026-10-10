@@ -758,3 +758,102 @@ Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseñ
 | Moisés (común) | Lalo | Ahya, ¡me diste en el sombrero! | Ahya, you hit my hat! |
 | Moisés (común) | Todos | ¡Coyhaique, presente! | Coyhaique, present! |
 | Moisés | Tú | Coyhaique en el corazón, hermanos. Y nieve en la cara. | Coyhaique in our hearts, bros. And snow in our faces. |
+
+## Vida entre amigos (bloque 6d, etapa 1)
+
+Charlas cortas entre los que ya están juntos, sin el jugador: salen solas de vez en cuando (cada 18-40 s en cada lugar), aparte de su charla de siempre. Generado desde `mundo/supervivencia/vida-amigos-datos.js`.
+
+### Fogata (Hadad, Andy y Nacho)
+
+**El informe de la U** (`informe`, 17,9 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Andy | Nacho, ¿cuándo entregamos el informe de redes? | Nacho, when are we handing in the networks report? |
+| Nacho | El viernes. Yo hago la intro y tú los gráficos. | Friday. I do the intro and you do the charts. |
+| Hadad | ¿Y el Pony no estaba en su grupo? | Wasn't Pony in your group? |
+| Andy | Estaba. Nos webió todo el semestre. | He was. He messed around all semester. |
+| Nacho | Ahora somos dos y rendimos el doble. | Now there are two of us and we get twice as much done. |
+| Hadad | Ese grupo de dos es el mejor de la U. | That group of two is the best one at uni. |
+
+**Dormido en el Discord** (`discord`, 17,6 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Hadad | ¿Quién se quedó dormido anoche en el Discord? | Who fell asleep on Discord last night? |
+| Andy | El Nacho. Se escuchaba roncar por el micrófono. | Nacho. You could hear him snoring on the mic. |
+| Nacho | Mentira, estaba pensando la jugada. | Lies, I was planning the play. |
+| Hadad | Pensando con ronquidos, clarito. | Planning with snores, sure. |
+| Andy | Igual ganamos esa partida sin ti. | We still won that match without you. |
+| Nacho | ¿Ven? Mi plan funcionó. | See? My plan worked. |
+
+**El embajador de las papas** (`papas`, 15,45 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Nacho | Hadad, otra vez te mandaron la foto de las papas fritas. | Hadad, someone sent the potato chips photo again. |
+| Hadad | Esa foto la hizo una IA, yo nunca posé. | An AI made that photo, I never posed. |
+| Andy | Igual te queda bien el comercial. | The ad still suits you, though. |
+| Hadad | Si me pagan en papas, firmo altiro. | If they pay me in chips, I'll sign right away. |
+| Nacho | Embajador oficial de las papas de bolsa. | Official ambassador of bagged chips. |
+
+**El baile del calambre** (`baile`, 18,65 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Andy | Miren el baile nuevo que me aprendí. | Check out the new dance I learned. |
+| Nacho | Andy, eso parece un calambre. | Andy, that looks like a cramp. |
+| Hadad | Guárdalo para cuando ganemos, no para la fogata. | Save it for when we win, not for the campfire. |
+| Andy | En la fogata también se gana, Hadad. | You can win at the campfire too, Hadad. |
+| Nacho | Lo voy a subir al grupo de los Tomatitos. | I'm posting it in the Tomatitos group. |
+
+**Papas a la brasa** (`malvaviscos`, 14,55 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Nacho | ¿Alguien trajo malvaviscos para la fogata? | Did anyone bring marshmallows for the fire? |
+| Hadad | No. Traje papas fritas. | No. I brought potato chips. |
+| Andy | Obvio que trajiste papas fritas. | Of course you brought potato chips. |
+| Hadad | ¿Y si las tostamos? Papas a la brasa. | What if we toast them? Fire-roasted chips. |
+| Nacho | Eso no existe, pero yo me lo como. | That's not a thing, but I'd eat it. |
+
+### Iglú (Lalo y Moisés)
+
+**La loza de la casa** (`loza`, 14,95 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Moisés | Lalo, ¿a quién le toca lavar la loza en la casa? | Lalo, whose turn is it to do the dishes at home? |
+| Lalo | A ti, yo la lavé el martes, ahya. | Yours, I did them on Tuesday, ahya. |
+| Moisés | El martes lavaste una taza, hermano. | On Tuesday you washed one mug, bro. |
+| Lalo | Una taza bien lavada vale por toda la loza. | One well-washed mug counts for all the dishes. |
+| Los dos | Jajajaja. | Hahahaha. |
+
+**El monito de nieve** (`nevazon`, 15,45 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Lalo | ¿Te acordai cuando nevó tanto que no hubo clases en Coyhaique? | Remember when it snowed so much there was no school in Coyhaique? |
+| Moisés | Hicimos un mono de nieve más alto que el Venjy. | We built a snowman taller than Venjy. |
+| Lalo | Y al otro día era puro charco. | And the next day it was just a puddle. |
+| Moisés | Como todo en la vida, hermano. Ahya. | Like everything in life, bro. Ahya. |
+| Lalo | Qué profundo. Pásame el bong. | So deep. Pass me the bong. |
+
+**El encendedor perdido** (`encendedor`, 11,6 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Lalo | Oye, ¿y el encendedor? Lo tenía recién. | Hey, where is the lighter? I just had it. |
+| Moisés | Lo tienes en la mano, Lalo. | It's in your hand, Lalo. |
+| Lalo | ... Ah. Sí. Ahya. | ... Oh. Yeah. Ahya. |
+| Los dos | ¡Jajajajaja! | Hahahahaha! |
+
+**Compañeros de casa** (`hermanos`, 14,85 s)
+
+| Quién | Español | English |
+|---|---|---|
+| Moisés | Oye Lalo, gracias por ser buen compañero de casa. | Hey Lalo, thanks for being a good roommate. |
+| Lalo | Ya po, no te pongai sentimental. | Come on, don't get all sentimental. |
+| Moisés | Es el humo, me pone sensible. | It is the smoke, it makes me soft. |
+| Lalo | Igual te quiero, hermano. Desde los trece. | Love you anyway, bro. Since we were thirteen. |
+| Los dos | ¡Yia de hermanos! | Brothers yia! |
