@@ -28,7 +28,7 @@ export default {
     titulo: 'Arreglos rápidos 7a',
     h1: 'Bloque 7a · Arreglos rápidos',
     estado: 'PR abierto, sin mergear. Cinco arreglos de la supervivencia: salir del agua, knockback, X de cerrar, velocidad y guardar la copia del cooperativo con 5 mundos.',
-    pr: { n: 0, url: 'https://github.com/Venjyy/venjy-page/pulls' },
+    pr: { n: 45, url: 'https://github.com/Venjyy/venjy-page/pull/45' },
     meta: 'Rama <code>arreglos-7a</code> · parte de <code>main</code> con #43 y #44 fusionados · 2026-10-10 · Sonnet',
     hecho: [
         '<b>9 · Agua</b>: nadando contra una orilla a ras, con Espacio y avanzando, el impulso es de 7 m/s (lava 5). Sale de la orilla a ras; una pared de 2 bloques no se sube.',
