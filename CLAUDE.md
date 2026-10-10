@@ -19,6 +19,8 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 - **Si un pedido es grande, avisarlo y proponer hacerlo en un chat dedicado.**
 
+- **Al terminar cada chat de trabajo** (PR abierto o fusionado, o plan escrito): entregar el prompt de traspaso al siguiente chat con el modelo recomendado y la parte del plan que sigue. Cómo, en la skill `.claude/skills/traspaso-chat/`.
+
 - **Nunca** incluir enlaces de sesión (`claude.ai/code/session…`) ni la línea «Generated with Claude Code» en commits, PRs, comentarios o archivos del repo (ni la línea `Claude-Session:` en los commits).
 
 - **Artifacts** (resúmenes de trabajo, reportes de PR, revisiones): siempre con la receta de `.claude/artifacts/GUIA.md` (estética de paneles Minecraft, PixelCraft incrustada, datos generados desde el código, secciones en orden fijo). El generador de ejemplo es `.claude/artifacts/ejemplo-6a.mjs`.
