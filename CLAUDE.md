@@ -6,12 +6,13 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 ## Ejecutar
 
-- Servidor local: `python -m http.server 5510` (configurado en `.claude/launch.json` como `venjy`). Ya no se puede abrir `index.html` con doble clic: `script.js` y el mundo 3D usan módulos ES y necesitan servidor o hosting.
+- Servidor local: `node estudio/servidor.mjs` (puerto 5510, o `PORT=…`; `--lan` para probar en el celular; configurado en `.claude/launch.json` como `venjy`). Sirve todo con ETag y es el único que guarda desde el editor del Estudio (`http://localhost:5510/estudio/`). `python -m http.server 5510` sigue sirviendo, pero solo de lectura y sin ETag. Ya no se puede abrir `index.html` con doble clic: `script.js` y el mundo 3D usan módulos ES y necesitan servidor o hosting.
 
 ## Mapa del proyecto
 
 - `script.js` genera en canvas el mapa de Minecraft, las texturas, los íconos pixelados y los estandartes. No hay imágenes para eso.
 - `PRODUCT.md`: audiencia, contenido y datos de ProcedimientoSeguro. `DESIGN.md`: tokens y reglas visuales. Léelos antes de cambiar contenido o diseño.
+- `estudio/`: editor visual, servidor y CLI (no se publica). `mundo/datos/`: JSON que lee el juego.
 - `images/`: fotos, GIFs y CVs. Los GIFs pesan varios MB; no los abras, refiérete a ellos por nombre.
 - No leer salvo que se pida: `respaldo-2026-10-06/` (versión anterior), `.impeccable/review/` (capturas), `centroeventostest/` (demo aparte).
 
@@ -33,9 +34,9 @@ Diseño y fases en `estudio/DISENO.md`; esquemas en `estudio/esquemas/`.
 
 - Las posiciones, el layout táctil, los ángulos de poses, los textos ES/EN y los precios **nuevos** van en `mundo/datos/*.json`, siempre que el juego ya lea ese archivo (`lee` distinto de `null` en `mundo/datos/indice.json`). Si todavía no lo lee, siguen en JS como hasta ahora.
 - La lógica sigue en JS y solo lee el JSON. Si falta una clave, el juego usa el valor del código.
-- Nunca sobrescribir valores que el dueño editó a mano: solo añadir claves. Cambiar un valor existente solo si él lo pide (`node estudio/cli.mjs validar --contra HEAD` lo avisa, desde la fase 1).
+- Nunca sobrescribir valores que el dueño editó a mano: solo añadir claves. Cambiar un valor existente solo si él lo pide (`node estudio/cli.mjs validar --contra HEAD` lo avisa; `--permitir-cambios` si lo pidió).
 - Lo viejo se migra a JSON solo cuando se toca por otro motivo.
-- Para leer contenido, primero `node estudio/cli.mjs resumen` (desde la fase 1) en vez de abrir los `*-datos.js`.
+- Para leer contenido, primero `node estudio/cli.mjs resumen [archivo|js:dialogos|js:tienda|js:amistad] [clave]` en vez de abrir los `*-datos.js`. Al cambiar un JSON: `node estudio/cli.mjs validar` y `node mundo/tests/estudio.mjs`. Lo que está en `ui-layout.json` (botones táctiles) se edita arrastrando en `/estudio/`.
 
 ## Mundo 3D (`mundo.html`)
 

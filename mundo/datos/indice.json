@@ -4,13 +4,13 @@
   "archivos": {
     "ui-layout": {
       "esquema": "ui-layout",
-      "lee": null,
+      "lee": "mundo/supervivencia/tactil-supervivencia.js",
       "fase": 1,
       "que": "Botones táctiles de la supervivencia (posición y tamaño por perfil de pantalla)"
     },
     "textos": {
       "esquema": "textos",
-      "lee": null,
+      "lee": "mundo/supervivencia/tactil-supervivencia.js",
       "fase": 1,
       "que": "Textos nuevos con par es/en, por espacio (hoy: etiquetas de los botones táctiles de la supervivencia)"
     },

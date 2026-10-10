@@ -1,7 +1,7 @@
 // =========================================================
 // Video MP4 de una animación del modo supervivencia, cuadro por cuadro con reloj controlado
 // (sale fluido aunque el navegador del contenedor dibuje lento). Necesita ffmpeg y el servidor
-// (`python -m http.server 5510` en la raíz del repo).
+// (`node estudio/servidor.mjs` en la raíz del repo).
 //   node .claude/skills/animaciones-minecraft/grabar.mjs \
 //     --preparar "const g = v.gatas.gatas.find(g => g.clave === 'gala'); await irJunto(g.x, g.z, g.y, 1.5)" \
 //     --iniciar "v.caricias.forzar('gala')" --segundos 8.6 --salida /scratchpad/caricia.mp4

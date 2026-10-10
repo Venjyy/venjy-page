@@ -1,6 +1,6 @@
 // =========================================================
 // Vista previa rápida de una pose de persona (sin cargar el mundo): frente, 3/4 y lado.
-// Uso (con `python -m http.server 5510` en la raíz del repo):
+// Uso (con `node estudio/servidor.mjs` en la raíz del repo):
 //   node .claude/skills/animaciones-minecraft/posar.mjs --salida /scratchpad/pose.png \
 //     --skin venjy --pose '{"bDx":-2.8,"bDz":0.42,"cx":0.12}' \
 //     --cajas '[{"x":0,"y":0.35,"z":0.9,"w":0.5,"h":0.4,"d":0.9,"color":"#333"}]'

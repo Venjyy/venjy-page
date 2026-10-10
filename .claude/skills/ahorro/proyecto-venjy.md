@@ -21,7 +21,7 @@ La tabla de verificación es la de `SKILL.md` §3. En este proyecto:
 - **Lógica**: `node mundo/tests/recetas.mjs`, `inventario.mjs`, `amistad.mjs`, `senal-qr.mjs`.
 - **Animaciones y escenas**: capturas y Playwright con la skill `animaciones-minecraft`:
   `capturar.mjs` (hojas de tiempos), `planos.mjs` (cámara de cine) y `grabar.mjs` (video, solo
-  cuando el dueño lo vaya a revisar). Servidor local: `python -m http.server 5510` (`venjy` en
+  cuando el dueño lo vaya a revisar). Servidor local: `node estudio/servidor.mjs` (`venjy` en
   `.claude/launch.json`).
 - **Chromium en Windows solo arranca desde PowerShell**; desde Bash da «spawn UNKNOWN».
 - Capturas a escala 0.5 y hojas de varios tiempos en una imagen; carpeta de salida
