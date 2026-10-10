@@ -13,6 +13,10 @@
 //     con un cálculo independiente de la fórmula de tonos de los
 //     mapas de Minecraft, con la paleta escrita aquí aparte (±1 por
 //     redondeo), en ambas orientaciones ('h' y 'v').
+//  4. Creativo intacto (7b-1): el mundo de bloques del creativo (vox,
+//     luz y mallas de un chunk de cada 3×3) tiene la misma huella SHA-1
+//     que en main antes de 7b-1, y editar un bloque en el creativo sigue
+//     por el camino de siempre (llenarChunk entero, sin secciones).
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 
@@ -87,6 +91,41 @@ for (const orient of ['h', 'v']) {
     }
     if (malos) falla(`[${orient}] ${malos} celdas con color distinto`);
     console.log(`[${orient}] celdas ${W * H}, distintas ${malos}`);
+}
+
+// 4. Creativo intacto (huellas tomadas de main en 7bbf88e, antes de 7b-1)
+{
+    const { createHash } = await import('crypto');
+    const V = await import(pathToFileURL(resolve(raiz, 'mundo/voxeles.js')).href);
+    const HUELLA = { h: '2217adbc7f487638f37176fc7ac43eeb77556ac4', v: '5ba5a051ece556ec1cd4cba07bee056efd248c10' };
+    for (const orient of ['h', 'v']) {
+        const ter = V.prepararTerreno(generarDatos(orient));
+        const h = createHash('sha1');
+        for (let cz = 0; cz < ter.BD / 16; cz += 3) for (let cx = 0; cx < ter.BW / 16; cx += 3) {
+            const r = V.llenarChunk(ter, cx, cz);
+            h.update(r.vox); h.update(r.luz); h.update(String(r.maxY));
+            const g = V.mallarChunkCrudo(cx, cz, r);
+            for (const q of [g.solido, g.agua]) if (q) for (const k of ['p', 'u', 'c', 'l', 'i']) h.update(Buffer.from(q[k].buffer));
+        }
+        const d = h.digest('hex');
+        if (d !== HUELLA[orient]) falla(`[${orient}] el mundo del creativo cambió (huella ${d})`);
+        else console.log(`[${orient}] creativo: misma huella que main`);
+    }
+    // Editar en el creativo: chunk entero rehecho (sin el camino rápido de la supervivencia)
+    const THREE = await import(pathToFileURL(resolve(raiz, 'vendor/three.module.js')).href);
+    const ter = V.prepararTerreno(generarDatos('h'));
+    const mundo = new V.MundoVoxel(new THREE.Scene(), ter, { solido: new THREE.MeshBasicMaterial(), agua: new THREE.MeshBasicMaterial() }, 2);
+    mundo.planificar(400, 300);
+    while (mundo.construir(1e9) > 0) { /* todo */ }
+    const x = 400, z = 300;
+    let y = 79;
+    while (y > 0 && mundo.bloque(x, y, z) <= 0) y--;
+    mundo.editar(x, y, z, 0);
+    const k = V.claveChunk(x, z), ch = mundo.chunks.get(k);
+    const r = V.llenarChunk(ter, Math.floor(x / 16), Math.floor(z / 16));
+    if (ch.secc || mundo.sucios.size) falla('el creativo usó el camino rápido de la supervivencia');
+    if (r.luz.some((v, i) => v !== ch.luz[i]) || r.vox.some((v, i) => v !== ch.vox[i])) falla('editar en el creativo no da lo mismo que llenarChunk');
+    else console.log('creativo: editar rehace el chunk entero como antes');
 }
 
 console.log(fallos ? `${fallos} fallo(s)` : 'paridad OK');

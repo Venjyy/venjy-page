@@ -1,0 +1,3 @@
+[{"sitio":"campo","cuadros":1462,"ediciones":108,"p50":2.6,"p95":3.8,"p99":5.5,"max":119.4,"remallado":6.11,"chunksPorEdicion":1.06,"fases":{"llenar":2.25,"luz":0.14,"mallar":3.56,"instalar":0.15,"workers":0.05,"soltar":0.05,"particulas":0.04}},
+{"sitio":"campamento","cuadros":2635,"ediciones":103,"p50":2.6,"p95":22.5,"p99":25.1,"max":46.4,"remallado":119.76,"chunksPorEdicion":7.71,"fases":{"llenar":16.9,"luz":67.95,"mallar":33.12,"instalar":1.79,"workers":0.04,"soltar":0.03,"particulas":0.01}},
+{"sitio":"base","cuadros":1653,"ediciones":108,"p50":20.3,"p95":26.2,"p99":32.9,"max":50.5,"remallado":181.24,"chunksPorEdicion":8.99,"fases":{"llenar":19.57,"luz":123.27,"mallar":36.31,"instalar":2.1,"workers":0.03,"soltar":0.05,"particulas":0.01}}]

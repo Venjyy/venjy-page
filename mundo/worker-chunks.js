@@ -31,11 +31,15 @@ self.onmessage = e => {
             const relleno = llenarChunk(terreno, m.x, m.z);
             const g = mallarChunkCrudo(m.x, m.z, relleno);
             self.postMessage(
-                { t: 'chunk', k: m.k, x: m.x, z: m.z, gen: m.g, g, vox: relleno.vox, luz: relleno.luz },
+                { t: 'chunk', k: m.k, x: m.x, z: m.z, gen: m.g, g, vox: relleno.vox, luz: relleno.luz, maxY: relleno.maxY },
                 [...buffersDe(g), relleno.vox.buffer, relleno.luz.buffer]
             );
+        } else if (m.t === 'mallar') {
+            // Supervivencia (7b-1): malla entera con los arreglos que manda el hilo principal (luz ya exacta)
+            const g = mallarChunkCrudo(m.x, m.z, { vox: m.vox, luz: m.luz, maxY: m.maxY });
+            self.postMessage({ t: 'malla', k: m.k, gen: m.g, g }, buffersDe(g));
         }
     } catch (err) {
-        self.postMessage({ t: 'error', mensaje: String(err && err.message || err) });
+        self.postMessage({ t: 'error', k: m && m.k, mensaje: String(err && err.message || err) });
     }
 };
