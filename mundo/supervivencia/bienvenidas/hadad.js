@@ -6,7 +6,7 @@
 //   Venjy saluda, asiente mientras hablas y saca una bolsa de papas en la mano derecha (`pasa` al pasarla).
 //   P      la bolsa pasa a tu mano izquierda (`recibe` antes, con el brazo al frente).
 //   P+1.0  levantas la bolsa a la altura de la cara con pulgar arriba (pose de comercial); visto bueno.
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';
 import { PIX, SONIDOS } from '../moldes.js';

@@ -51,7 +51,7 @@ import { crearEscenasGatas } from './escenas-gatas.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMinijuegos } from './minijuego.js';
-import { NIVEL_ANIMACION, momentoListo } from './amistad.js';
+import { NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
@@ -659,7 +659,8 @@ async function arrancar(guardado, cx = null) {
         // Bienvenidas y reencuentros (bloque 6c-1): el motor de amistad y la escena se cargan con import() al usarse
         amistad6c: {
             bienvenida: base => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.bienvenida(base) : false)) : false),
-            reencuentro: (base, clave) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.reencuentro(base, clave) : false)) : false)
+            reencuentro: (base, clave) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.reencuentro(base, clave) : false)) : false),
+            grupo: (nombre, base) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.grupo(nombre, base) : false)) : false)
         }
     });
     const puede6c = () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !(escenaAmistad && escenaAmistad.activa);
@@ -710,11 +711,14 @@ async function arrancar(guardado, cx = null) {
     // (botón de la pestaña «Hablar»); igual que el minijuego, cierra el panel sin pedir el puntero y empieza
     let escenaAmistad = null, cargandoAmistad = null;
     const personasEscena = () => [...npcs.lista, ...amigos.lista, ...venjys.lista];
+    // 'venjy' es el del Inicio; 'venjy@atalaya' o 'venjy@mina' (6c-2), el Venjy de ese lugar
+    const personaAmistad = c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio')
+        : c.startsWith('venjy@') ? venjys.lista.find(n => n.lugar === c.slice(6)) : personasEscena().find(n => n.clave === c)) || null;
     function cargarEscenaAmistad() {
         if (!cargandoAmistad) cargandoAmistad = import('./escena-amistad.js').then(m => {
             escenaAmistad = m.crearEscenaAmistad({
                 grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, idioma, personas: personasEscena, base: () => escenas.tipoSkin(skinActual).base,
-                personaDe: c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio') : personasEscena().find(n => n.clave === c)) || null,
+                personaDe: personaAmistad,
                 bloquear: bloquearEscena, liberar: liberarEscena
             });
             return escenaAmistad;
@@ -735,6 +739,14 @@ async function arrancar(guardado, cx = null) {
             capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => (ea ? ea.momento(clave) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
+        },
+        // Saludo del grupo (6c-2): repite la escena de grupo de este amigo con tu skin
+        grupo: clave => {
+            const base = escenas.tipoSkin(skinActual).base, g = grupoDe(base, clave);
+            if (!puedeAmistad() || !g) return;
+            capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
+            camaras.terminarCine();
+            cargarEscenaAmistad().then(ea => (ea ? ea.grupo(g, base) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
         }
     };
     // Música de fondo y temas de los amigos
@@ -775,7 +787,7 @@ async function arrancar(guardado, cx = null) {
         // /amistad (bloque 6b): recorre los saludos y momentos especiales; /amistad100 deja la amistad en 100
         amistad: {
             cargar: () => cargarEscenaAmistad(),
-            persona: c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio') : personasEscena().find(n => n.clave === c)) || null,
+            persona: personaAmistad,
             nombre: c => NOMBRES_AMIGO[c] || c,
             puede: () => puedeAmistad(),
             max: c => { for (let i = 0; i < 12 && misiones.amistad.puntos(c) < 100; i++) misiones.amistad.sumar(c, 'mision'); },

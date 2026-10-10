@@ -84,6 +84,7 @@ export function crearMisiones(ctx) {
                 // Antes de que la escena tome al amigo se suelta la retención (como el botón del minijuego)
                 saludar: (c, tipo) => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.jugar(c, tipo); },
                 momento: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.momento(c); },
+                grupo: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.grupo(c); },
                 tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
             });
             return hablarUI;
@@ -491,7 +492,7 @@ export function crearMisiones(ctx) {
         set ocultarMarcas(v) { ocultarMarcas = v; },
         // { texto(clave) -> { texto, motivo } | null, jugar(clave) } (main.js lo conecta con minijuego.js)
         set minijuego(o) { botonMinijuego = o; },
-        // { jugar(clave, tipo), momento(clave) } (main.js: animaciones de amistad y momentos especiales, bloque 6b)
+        // { jugar(clave, tipo), momento(clave), grupo(clave) } (main.js: animaciones de amistad, momentos especiales y saludo del grupo)
         set escenaAmistad(o) { escenaAmistad = o; },
         // Atajos de depuración
         completarActiva() { const m = misionDe(estado.activa); if (m && !m.jefe) { estado.progreso = 999; estado.noche = 'lista'; if (m.tipo === 'entregar') for (const [p, n] of m.pide) inventario.agregar([].concat(p)[0], n); hablar(m.amigo); } }

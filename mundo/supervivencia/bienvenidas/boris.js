@@ -7,7 +7,7 @@
 //   B = bache en «¡Cuidado con el bache!»: los dos rebotan (`manejaB` / `ventanaB`, salto 0.3) y suena el golpe.
 //   Llegan: se bajan (los yaw vuelven a mirarse) y empieza el saludo secreto (`secreto`, 4.6 s) en la frase
 //   «Llegamos»; luego el abrazo (`abrazo`, 4.5 s). Venjy recuerda con la mano al mentón (`recuerda`).
-//   Tiempos: ver las frases en LINEAS (a = inicio, d = duración). Textos aprobados (DISENO-6c.md §2).
+//   Tiempos: ver las frases en LINEAS (a = inicio, d = duración). Textos aprobados (mundo/DIALOGOS.md).
 // Son personas reales: siempre en buena onda.
 // =========================================================
 import { t, encadenar, fin, r2, secreto, abrazo, MOLDES } from './comun.js';

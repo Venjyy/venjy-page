@@ -7,7 +7,7 @@
 //   Mientras tú hablas te acercas un paso (`orejitasJ`) y le pones orejitas de conejo (dos cajas en la cabeza).
 //   FL     flash de la foto (sonido de obturador); Venjy mira el celular (`celular`) mientras le preguntas.
 //   Tú dibujas en el aire con el dedo (`traza`) al final: «lo voy a dibujar todo».
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';
 import { PIX, SONIDOS } from '../moldes.js';

@@ -7,7 +7,7 @@
 //   Tú te ríes de su baile (`risa`) y le señalas (`tu`): «eso no es mi baile».
 //   Venjy se rasca la cabeza, asiente y tú le enseñas bailando (`baile` desde la frase 4).
 //   Venjy se suma al mismo reloj de escena: quedan sincronizados. Al final, los dos brazos arriba.
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';
 import { SONIDOS } from '../moldes.js';

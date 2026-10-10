@@ -13,7 +13,7 @@
 //   Al cerrar, el gesto se desvanece en ~0,4 s y se suelta el gancho.
 // =========================================================
 import { TEMAS, OPINIONES, SALUDOS, REGALOS, GESTO_REGALO } from './dialogos-datos.js';
-import { NIVELES, FAVORITOS, relacion, cumple, nombreNivel, animacionesDe, NIVEL_ANIMACION, momentoListo } from './amistad.js';
+import { NIVELES, FAVORITOS, relacion, cumple, nombreNivel, animacionesDe, NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
 import { GESTOS } from './escenas-skin.js';
 import { TXT_AMISTAD } from './escena-amistad-datos.js';
 
@@ -34,7 +34,8 @@ const MAX_DIST = 7; // más lejos, el panel se cierra solo
 
 // ctx: amistad, hechos() -> { hechas, minijuegos, jefes }, personaDe(clave) -> n, jugador, camara, dy, nombres, base() (clave de tu skin),
 // pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en},
-// saludar(clave, tipo) y momento(clave) (bloque 6b: animación de amistad y momento especial; misiones.js suelta antes la retención)
+// saludar(clave, tipo), momento(clave) y grupo(clave) (bloques 6b y 6c-2: animación de amistad, momento especial y saludo del
+// grupo; misiones.js suelta antes la retención)
 export function crearHablar(ctx) {
     const { amistad, jugador, dy, nombres, inventario, sonidos } = ctx;
     let idioma = ctx.idioma || 'es';
@@ -244,6 +245,8 @@ export function crearHablar(ctx) {
             const pts = amistad.puntos(clave);
             if (ctx.momento && momentoListo(pts)) caja.appendChild(boton(ta.momento, () => ctx.momento(clave), 'boton-momento'));
             else if (ctx.momento && nivelDeActual >= NIVELES.length - 1) caja.appendChild(Object.assign(document.createElement('small'), { className: 'momento-falta', textContent: ta.momentoFalta(pts) }));
+            // Saludo del grupo (6c-2): con la skin de un integrante, frente a uno del grupo (la fogata, la atalaya, el iglú)
+            if (ctx.grupo && grupoDe(base, clave)) caja.appendChild(boton(ta.grupo, () => ctx.grupo(clave), 'boton-grupo'));
             el.appendChild(caja);
         }
 

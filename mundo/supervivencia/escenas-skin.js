@@ -14,6 +14,9 @@
 // import() (ctx.amistad6c). Regla «uno por lugar»: al llegar a un lugar (la fogata, el iglú, la atalaya...)
 // sale una sola escena automática por skin; las demás de ese lugar, la primera vez que le haces clic derecho
 // a cada uno. Claves en las vistas: 'bv:<skin>', 'rc:<skin>:<amigo>' y 'lugar:<skin>:<lugar>'.
+// Bloque 6c-2: con la skin de un integrante, la escena de grupo (Tomatitos en la fogata, trío de la atalaya, los de
+// Coyhaique en el iglú) es la automática de su lugar, antes que la de skin y los reencuentros; vista 'gr:<grupo>:<skin>'.
+// Si tu clon actuó en ella, su escena corta de skin queda vista. Con skin de Venjy el iglú sigue con la suya.
 // Coordenadas: los amigos viven en el mapa original dentro de `grupo` (y + dy en el mundo).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -21,14 +24,19 @@ import { TIPO } from '../texturas.js';
 import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { BASES } from './skin.js';
 import { CORTAS, VENJY, IGLU, DURACION_IGLU, TXT_ESCENA } from './escenas-datos.js';
-import { relacion } from './amistad.js';
+import { relacion, GRUPOS, grupoDe } from './amistad.js';
 
 // Lugar de cada persona para la regla «uno por lugar» (los que están juntos comparten lugar)
 export const LUGAR = { hadad: 'fogata', andy: 'fogata', nacho: 'fogata', lalo: 'iglu', moises: 'iglu', boris: 'atalaya', lucho: 'atalaya',
     salonas: 'escenario', conejeros: 'escenario', pony: 'muelle', braulio: 'playa', lona: 'lona', venjy: 'inicio' };
-// Escena de amistad 6c que le toca a esta persona con tu skin (o null): con skin de Venjy no hay (ya tiene las suyas)
+// Escena de amistad 6c que le toca a esta persona con tu skin (o null). Primero la de grupo (6c-2: la fogata, la atalaya
+// y el iglú, también con skin de Venjy o junto a tu clon); si no, bienvenida o reencuentro (con skin de Venjy no hay).
 export function pendiente6c(base, clave, vistas) {
-    if (!base || base === 'venjy' || clave === base) return null;
+    if (!base) return null;
+    const g = grupoDe(base, clave);
+    if (g && !(GRUPOS[g].soloBoton || []).includes(base) && !vistas.has(`gr:${g}:${base}`))
+        return { tipo: 'grupo', grupo: g, vista: `gr:${g}:${base}`, clon: GRUPOS[g].npcs.includes(base) ? base : null };
+    if (base === 'venjy' || clave === base) return null;
     if (clave === 'venjy') return vistas.has('bv:' + base) ? null : { tipo: 'bienvenida', vista: 'bv:' + base };
     const r = relacion(base, clave);
     if (r !== 2 && r !== 3) return null;
@@ -473,10 +481,14 @@ export function crearEscenasSkin(ctx) {
         cargando6c = true;
         vistas().add(p6.vista);
         if (lugar) vistas().add(lugar);
-        const pr = p6.tipo === 'bienvenida' ? ctx.amistad6c.bienvenida(info.base) : ctx.amistad6c.reencuentro(info.base, clave);
+        // El clon que actuó en la escena de grupo ya te vio: su escena corta de skin se da por vista
+        const clon = p6.clon && !vistas().has(p6.clon) ? p6.clon : null;
+        if (clon) vistas().add(clon);
+        const pr = p6.tipo === 'bienvenida' ? ctx.amistad6c.bienvenida(info.base)
+            : p6.tipo === 'grupo' ? ctx.amistad6c.grupo(p6.grupo, info.base) : ctx.amistad6c.reencuentro(info.base, clave);
         Promise.resolve(pr).then(ok => {
             cargando6c = false;
-            if (!ok) { vistas().delete(p6.vista); if (lugar) vistas().delete(lugar); reloj = -4; }
+            if (!ok) { vistas().delete(p6.vista); if (lugar) vistas().delete(lugar); if (clon) vistas().delete(clon); reloj = -4; }
         });
         return true;
     }
@@ -486,8 +498,10 @@ export function crearEscenasSkin(ctx) {
         for (const p of cerca) {
             const lugar = `lugar:${info.base}:${LUGAR[p.clave] || p.clave}`;
             if (vistas().has(lugar)) continue;
-            if (reacciona(p.clave, info)) { vistas().add(lugar); iniciar(p.clave, p.n, info); return; }
+            // La de grupo va antes que la de skin (también la de tu clon) y que los reencuentros del lugar
             const p6 = pendiente6c(info.base, p.clave, vistas());
+            if (p6 && p6.tipo === 'grupo' && iniciar6c(p.clave, info, p6, lugar)) return;
+            if (reacciona(p.clave, info)) { vistas().add(lugar); iniciar(p.clave, p.n, info); return; }
             if (p6 && iniciar6c(p.clave, info, p6, lugar)) return;
         }
     }
@@ -578,9 +592,10 @@ export function crearEscenasSkin(ctx) {
         const info = tipoSkin(skin());
         const p = personas().find(x => x.clave === clave);
         if (!p) return false;
+        const p6 = pendiente6c(info.base, clave, vistas());
+        if (p6 && p6.tipo === 'grupo') return iniciar6c(clave, info, p6, null);
         if (reacciona(clave, info)) { iniciar(clave, p.n, info); return true; }
         // Bienvenida o reencuentro que no salió sola (otra escena ya ocupó el lugar): la primera vez que le haces clic derecho
-        const p6 = pendiente6c(info.base, clave, vistas());
         return !!(p6 && iniciar6c(clave, info, p6, null));
     }
 

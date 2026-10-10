@@ -5,7 +5,7 @@
 // Guion (r 1.3): los dos se frotan las manos y soplan (`frotaM`, `sopla`); saltitos para el frío (`salta`);
 //   choque de botas de frente: cada uno patea con la pierna derecha (`botas`: pDx, leve rz) en Hb;
 //   saludo secreto (`secreto`, 4.6 s) y abrazo (`abrazo`, 4.5 s); Venjy recuerda con la mano al mentón.
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, secreto, abrazo, MOLDES } from './comun.js';
 import { ruta } from '../moldes.js';

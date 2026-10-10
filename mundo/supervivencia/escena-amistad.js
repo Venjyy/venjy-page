@@ -15,6 +15,10 @@
 // · Bienvenidas y reencuentros (6c-1): bienvenida(base) carga bienvenidas/<base>.js (el Venjy del Inicio recibe a
 //   tu skin) y reencuentro(base, clave) carga reencuentros.js (dos amigos con relación 2 o 3). Los dispara
 //   escenas-skin.js (sola al acercarte, una por lugar, o con clic derecho) por medio de main.js.
+// · Escenas de grupo (6c-2): grupo(nombre, base) carga grupos/<nombre>.js (Tomatitos en la fogata, trío de la atalaya,
+//   los de Coyhaique en el iglú) con la variante de tu skin. El guion trae `ancla` (el amigo 'n'), `centro(api)` (todos lo
+//   miran y la cámara gira en torno a él), `colocar(api)` (dónde se para el jugador) y frases de 'todos' (un globo para el
+//   grupo). api.girar(q, yaw) fija hacia dónde mira alguien (el que camina) y api.camara(f) pone un plano manual (el salto).
 // Guion: { T, r, lineas: [{ q, texto, a, d }], pista: { n, j, <extra>: [[gesto, desde, hasta]] }, gestos,
 //   actores: { <q>: clave | { clave, radio } }, reparto: { <personaje>: q }, yaw: { <q>: t => radianes }, golpes,
 //   corazones, extra: { iniciar, cuadro, terminar } }
@@ -33,7 +37,7 @@ import { GESTOS } from './escenas-skin.js';
 import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD } from './escena-amistad-datos.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { sonidos } from './sonidos.js';
-import { PERSONAJES, relacion } from './amistad.js';
+import { PERSONAJES, relacion, GRUPOS } from './amistad.js';
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -54,6 +58,21 @@ const PLANOS_AMISTAD = [
     { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.6, alto: 1.7, orbita: -0.1, dolly: -0.4 },
     { nombre: 'tres cuartos, lado del amigo', ang: Math.PI - 0.85, dist: 4.0, alto: 1.9, orbita: -0.08, dolly: -0.3 },
     { nombre: 'general', ang: -1.15, dist: 5.6, alto: 2.5, orbita: 0.14, dolly: -0.6 }
+];
+// Escenas de grupo (6c-2): giran en torno al centro del grupo (4-5 personas), más abiertos; ang 0 = detrás del jugador
+const PLANOS_GRUPO = [
+    { nombre: 'grupo de lado', ang: Math.PI / 2, dist: 6.2, alto: 3.1, orbita: 0.08, dolly: -0.4 },
+    { nombre: 'grupo, tres cuartos', ang: 0.75, dist: 6.4, alto: 3.2, orbita: 0.06, dolly: -0.3 },
+    { nombre: 'grupo, frente al jugador', ang: Math.PI - 0.6, dist: 6.0, alto: 2.9, orbita: -0.07, dolly: -0.4 },
+    { nombre: 'grupo, otro lado', ang: -Math.PI / 2 - 0.2, dist: 6.2, alto: 3.1, orbita: -0.08, dolly: -0.4 },
+    { nombre: 'grupo, picado', ang: -0.6, dist: 7.0, alto: 4.4, orbita: 0.1, dolly: -0.5 }
+];
+// Bajo techo (el iglú): más cerca y a la altura de las cabezas
+const PLANOS_GRUPO_TECHO = [
+    { nombre: 'iglú, de lado', ang: Math.PI / 2, dist: 2.6, alto: 1.6, orbita: 0.05, dolly: -0.2 },
+    { nombre: 'iglú, frente al jugador', ang: Math.PI - 0.5, dist: 2.6, alto: 1.6, orbita: -0.05, dolly: -0.2 },
+    { nombre: 'iglú, otro lado', ang: -Math.PI / 2, dist: 2.6, alto: 1.5, orbita: -0.05, dolly: -0.2 },
+    { nombre: 'iglú, tres cuartos', ang: 0.7, dist: 2.8, alto: 1.7, orbita: 0.04, dolly: -0.2 }
 ];
 
 // Texturas píxel a píxel de los efectos (corazón como el de ganado.js y una chispa de cuatro puntas)
@@ -82,10 +101,11 @@ export function crearEscenaAmistad(ctx) {
 
     // ---- Globos con pestaña de nombre y color, sin colita (uno por persona: la clave del amigo o 'j') ----
     const globos = new Map();
-    const claveDe = q => (q === 'j' ? 'j' : (e && e.actores[q] ? e.actores[q].clave : q));
+    const claveDe = q => (q === 'j' || q === 'todos' ? q : (e && e.actores[q] ? e.actores[q].clave : q));
+    // 'venjy@atalaya' (otro Venjy del mapa) se llama y se pinta como Venjy; 'todos' (6c-2) es un globo para el grupo
     function globoDe(q) {
-        const quien = claveDe(q);
-        if (!globos.has(quien)) globos.set(quien, crearGlobo(grupo, { nombre: quien === 'j' ? tx().tu : NOMBRES_AMIGO[quien] || quien, color: COLOR_GLOBO[quien] || COLOR_GLOBO.j }));
+        const quien = claveDe(q), base = quien.split('@')[0];
+        if (!globos.has(quien)) globos.set(quien, crearGlobo(grupo, { nombre: quien === 'j' ? tx().tu : quien === 'todos' ? tx().todos : NOMBRES_AMIGO[base] || base, color: COLOR_GLOBO[base] || COLOR_GLOBO.j }));
         return globos.get(quien);
     }
 
@@ -184,9 +204,9 @@ export function crearEscenaAmistad(ctx) {
         if (levanta) { neutral.bDx = 0; neutral.bDz = 0.05; neutral.bIx = 0; neutral.bIz = -0.05; neutral.cx = 0; }
         if (Math.abs(foto.bDx) > 1.3) { neutral.bDx = 0; neutral.bDz = 0.05; }
         if (Math.abs(foto.bIx) > 1.3) { neutral.bIx = 0; neutral.bIz = -0.05; }
-        return { q, clave, n, p: n.p, foto, neutral, cur: { ...neutral }, sentado: false, levanta, adelante, giro: 1, yaw0: n.yaw, alto: 2.15 * esc(n) };
+        return { q, clave, n, p: n.p, foto, neutral, cur: { ...neutral }, sentado: false, levanta, adelante, giro: 1, yaw0: n.yaw, alto: 2.15 * esc(n), yawMeta: null };
     }
-    const actorJugador = () => ({ q: 'j', clave: 'j', p: camaras.cuerpo, neutral: { ...NEUTRAL }, cur: { ...NEUTRAL }, sentado: false, alto: 2.15, jugador: true });
+    const actorJugador = () => ({ q: 'j', clave: 'j', p: camaras.cuerpo, neutral: { ...NEUTRAL }, cur: { ...NEUTRAL }, sentado: false, alto: 2.15, jugador: true, yawMeta: null });
     const pos = a => (a.jugador ? { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z } : { x: a.n.x, y: (a.n.y ?? 0) + dy, z: a.n.z });
 
     // ---------------------------------------------------------
@@ -219,10 +239,13 @@ export function crearEscenaAmistad(ctx) {
         const A = actorAmigo(clave, n), J = actorJugador();
         // El jugador se para a la distancia del contacto: frente al amigo si estaba sentado (se levanta hacia adelante),
         // si no, por el lado donde ya estaba. Si el amigo da un paso al pararse, el jugador queda ese paso más allá.
-        const r = guion.r + A.adelante;
-        const ang0 = A.levanta ? n.yaw : Math.atan2(jugador.pos.x - n.x, jugador.pos.z - n.z);
-        const l = lugarExacto(n, r, ang0, ctx.personas ? ctx.personas() : []);
-        if (l) jugador.colocar(l.x, l.y, l.z);
+        // Una escena de grupo (guion.colocar) elige ella el lugar del jugador, más abajo.
+        if (!guion.colocar) {
+            const r = guion.r + A.adelante;
+            const ang0 = A.levanta ? n.yaw : Math.atan2(jugador.pos.x - n.x, jugador.pos.z - n.z);
+            const l = lugarExacto(n, r, ang0, ctx.personas ? ctx.personas() : []);
+            if (l) jugador.colocar(l.x, l.y, l.z);
+        }
         jugador.yaw = Math.atan2(n.x - jugador.pos.x, n.z - jugador.pos.z) - Math.PI;
         jugador.pitch = 0;
         e = { clave, guion, t: 0, T: guion.T, actores: { n: A, j: J }, lineas: guion.lineas || [], hechos: new Set(), ultimaLinea: null, callados: [], props: [], prestados: [],
@@ -239,15 +262,25 @@ export function crearEscenaAmistad(ctx) {
             e.actores[q] = X;
             m.escena = (dt, base) => animarAmigo(X, dt, base);
         }
-        e.lineas = e.lineas.filter(l => e.actores[l.q]); // las de un actor opcional que no vino no salen
+        e.lineas = e.lineas.filter(l => e.actores[l.q] || l.q === 'todos'); // las de un actor opcional que no vino no salen
         const extras = Object.values(e.actores).filter(a => a.n && a !== A).map(a => a.n);
+        // Escena de grupo (6c-2): el centro del grupo (todos lo miran y la cámara gira en torno a él) y el lugar del jugador
+        if (guion.centro) e.centro = guion.centro(api());
+        if (guion.colocar) {
+            const l = guion.colocar(api());
+            if (l) jugador.colocar(l.x, (l.y ?? jugador.pos.y - dy) + dy, l.z);
+            e.jugador0 = { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z };
+        }
+        if (e.centro) jugador.yaw = Math.atan2(e.centro.x - jugador.pos.x, e.centro.z - jugador.pos.z) - Math.PI;
         // Quien esté cerca (Lucho junto a Boris, la fogata) cuenta en `visibles`: la cámara no lo deja tapando a los dos
         const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
         // Al aire libre, planos propios y la cámara lejos de todos; bajo techo (el iglú) no hay espacio para eso:
         // ahí van los planos de las escenas de skin, que ya están probados dentro del iglú
         const piso = (n.y ?? 0) + dy, techo = [2, 3, 4].some(k => opaco(n.x, piso + k + 0.5, n.z));
-        const cam = techo ? {} : { planos: PLANOS_AMISTAD, minDist: 1.8, evitarDist: 2.4, holgura: 0.7 };
-        camaras.iniciarCine(n, { escena: true, ...cam, sinTerceros: true, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
+        let cam = techo ? { sinTerceros: true } : { planos: PLANOS_AMISTAD, minDist: 1.8, evitarDist: 2.4, holgura: 0.7, sinTerceros: true };
+        // En grupo hay siempre alguien más cerca de la cámara que el centro: sin la regla de terceros, planos más abiertos
+        if (e.centro) cam = { planos: techo ? PLANOS_GRUPO_TECHO : PLANOS_GRUPO, minDist: techo ? 1 : 1.6, evitarDist: techo ? 1.2 : 2.0, holgura: techo ? 0 : 0.5, centro: centroCamara };
+        camaras.iniciarCine(n, { escena: true, ...cam, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
         // Los de al lado siguen con lo suyo, pero callados (con `n.escena` se apagan su globo y su charla)
         // (hasta 30 bloques: los globos y las charlas se ven de lejos, como el clon de Venjy cerca de la atalaya)
         const aCallar = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && Math.hypot(o.x - n.x, o.z - n.z) < 30);
@@ -281,6 +314,7 @@ export function crearEscenaAmistad(ctx) {
         for (const { o, padre, pos, rot, esc } of x.prestados.reverse()) { padre.add(o); o.position.copy(pos); o.rotation.copy(rot); o.scale.copy(esc); }
         for (const [o, h] of x.callados) if (o.escena === h) delete o.escena;
         for (const f of efectos.splice(0)) { grupo.remove(f.s); f.s.material.dispose(); }
+        camaras.manual = null; // el plano manual de una escena de grupo (el salto de la atalaya, el iglú)
         camaras.terminarCine();
         misiones.ocultarMarcas = false;
         document.body.classList.remove('en-amistad');
@@ -300,7 +334,7 @@ export function crearEscenaAmistad(ctx) {
         const ls = lineasAhora(), l = ls[ls.length - 1];
         const habla = l && e.actores[l.q];
         if (habla && habla !== a) return habla;
-        return a.jugador ? e.actores.n : a.q === 'n' ? e.actores.j : e.actores.n;
+        return a.jugador ? e.actores.n : a.q === 'n' || e.centro ? e.actores.j : e.actores.n;
     }
     function metaDe(g, a) {
         const otro = a.jugador ? e.actores.n : e.actores.j;
@@ -340,7 +374,9 @@ export function crearEscenaAmistad(ctx) {
         if (!e) return base();
         const r = base(0); // la animación normal queda congelada: la escena lo mueve
         const wS = aplicar(a, dt);
-        const J = jugador.pos, giro = e.guion.yaw && e.guion.yaw[a.q];
+        // Mira al jugador (o, en grupo, al centro del grupo); un actor que camina o mira algo lejos lleva su giro fijo (api.girar)
+        if (a.yawMeta !== null) { a.n.yaw += angulo(a.yawMeta - a.n.yaw) * Math.min(1, dt * 8); return r; }
+        const J = e.centro ? { x: e.centro.x, z: e.centro.z } : jugador.pos, giro = e.guion.yaw && e.guion.yaw[a.q];
         a.n.yaw = a.yaw0 + (angulo(Math.atan2(J.x - a.n.x, J.z - a.n.z) - a.yaw0) * a.giro + (giro ? giro(e.t) : 0)) * wS;
         return r;
     }
@@ -413,9 +449,26 @@ export function crearEscenaAmistad(ctx) {
         const o = a.orig || a.n;
         return { x: o.x, y: o.y ?? 0, z: o.z };
     };
+    // Giro fijo de un actor (radianes, hacia donde mira el cuerpo, como n.yaw; null vuelve a mirar al jugador o al centro)
+    function girar(q, yaw) { const a = e && e.actores[q]; if (a) a.yawMeta = yaw; }
+    // Plano manual de la cámara: f() -> { pos: [x, y, z], mira: [x, y, z] } en coordenadas del grupo, o null para volver a los planos
+    const vCam = new THREE.Vector3(), vMira = new THREE.Vector3();
+    function camaraManual(f) {
+        camaras.manual = f ? () => {
+            const m = f();
+            if (!m) return null;
+            return { pos: vCam.set(m.pos[0], m.pos[1] + dy, m.pos[2]), mira: vMira.set(m.mira[0], m.mira[1] + dy, m.mira[2]) };
+        } : null;
+    }
+    // Cámara de grupo (camaras.js, opción centro): gira en torno al centro del grupo y mira hacia quien habla (miraG, suavizado)
+    function centroCamara(c, objetivo) {
+        if (!e || !e.centro) return;
+        c.set(e.centro.x, (e.actores.n.n.y ?? 0) + dy + 1.55, e.centro.z);
+        if (e.miraG) objetivo.set(e.miraG.x, e.miraG.y, e.miraG.z); else objetivo.copy(c);
+    }
     // Lo que reciben los extras de un guion propio (momentos especiales)
     const api = (x = e) => ({ e: x, grupo, dy, jugador, camaras, mundo, efecto, golpe, corazones, globoDe, personaDe, punta, pos, posG, caja, sprite, pegar, soltar, prestar, mover, origen,
-        actor: q => x.actores[q], L, sonidos, THREE, suave, lim, lerp, tramo, envolvente });
+        girar, camara: camaraManual, opaco: (bx, by, bz) => opaco(bx, by + dy, bz), actor: q => x.actores[q], L, sonidos, THREE, suave, lim, lerp, tramo, envolvente });
 
     // ---- Globos (con encaje: esquivan cabezas, el botón «Saltar» y las franjas) ----
     function zonas() {
@@ -429,6 +482,13 @@ export function crearEscenaAmistad(ctx) {
         return out;
     }
     function anclaGlobo(quien) {
+        // «Todos» (6c-2): sobre el centro del grupo, encima de la cabeza más alta (y bajo el techo del iglú)
+        if (quien === 'todos' && e.centro) {
+            const piso = (e.actores.n.n.y ?? 0) + dy;
+            let y = piso + 2.15 + 0.9;
+            for (let k = 2; k <= 4; k++) if (opaco(e.centro.x, piso + k + 0.5, e.centro.z)) { y = Math.min(y, piso + k - 0.4); break; }
+            return [e.centro.x, y - dy, e.centro.z];
+        }
         const a = e.actores[quien] || e.actores.n;
         const p = pos(a);
         let y = p.y + a.alto + 0.6;
@@ -481,7 +541,17 @@ export function crearEscenaAmistad(ctx) {
             for (const s of x.guion.corazones || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('c' + s)) { x.hechos.add('c' + s); corazones(); }
             if (x.guion.extra && x.guion.extra.cuadro) x.guion.extra.cuadro(api(x), pausada ? 0 : dt);
             const giroJ = x.guion.yaw && x.guion.yaw.j, wS = suave(Math.min(tramo(x.t, 0, 0.5), 1 - tramo(x.t, x.T - 0.7, x.T)));
-            jugador.yaw = Math.atan2(x.actores.n.n.x - jugador.pos.x, x.actores.n.n.z - jugador.pos.z) - Math.PI + (giroJ ? giroJ(x.t) * wS : 0);
+            const J = x.actores.j, mira = x.centro || x.actores.n.n;
+            if (J.yawMeta !== null) jugador.yaw += angulo(J.yawMeta - Math.PI - jugador.yaw) * Math.min(1, dt * 8);
+            else jugador.yaw = Math.atan2(mira.x - jugador.pos.x, mira.z - jugador.pos.z) - Math.PI + (giroJ ? giroJ(x.t) * wS : 0);
+            // Cámara de grupo: el punto de mira se corre con suavidad hacia quien habla
+            if (x.centro) {
+                const a = l && x.actores[l.q], p = a ? pos(a) : null, c = x.centro, y = (x.actores.n.n.y ?? 0) + dy + 1.55;
+                const meta = p ? { x: c.x + (p.x - c.x) * 0.35, y: y + (p.y + 1.55 - y) * 0.35, z: c.z + (p.z - c.z) * 0.35 } : { x: c.x, y, z: c.z };
+                if (!x.miraG) x.miraG = { ...meta };
+                const k = Math.min(1, dt * 2);
+                for (const ax of ['x', 'y', 'z']) x.miraG[ax] += (meta[ax] - x.miraG[ax]) * k;
+            }
             if (x.t >= x.T) terminar();
         }
         actualizarEfectos(dt);
@@ -526,9 +596,19 @@ export function crearEscenaAmistad(ctx) {
                 return ok;
             }).catch(err => { console.error('No se pudo cargar el reencuentro', err); return false; });
         },
+        // Escena de grupo (6c-2): grupos/<nombre>.js con la variante de tu skin (base); devuelve una promesa con true si empezó
+        grupo(nombre, base, alTerminar) {
+            if (e || !GRUPOS[nombre] || !GRUPOS[nombre].miembros.includes(base)) return Promise.resolve(false);
+            return import(`./grupos/${nombre}.js`).then(m => {
+                const g = m.grupo(base, { idioma });
+                const ok = !!g && iniciar(g.ancla, { ...g, tipo: 'grupo', base, grupo: nombre });
+                if (ok && alTerminar) e.alTerminar = alTerminar;
+                return ok;
+            }).catch(err => { console.error('No se pudo cargar la escena de grupo', err); return false; });
+        },
         get activa() { return !!e; },
-        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, base: e.guion.base || null, t: e.t, T: e.T }; },
-        setIdioma(l) { idioma = l; boton.textContent = tx().saltar; for (const [q, g] of globos) if (q === 'j') g.etiqueta = { nombre: tx().tu, color: COLOR_GLOBO.j }; },
+        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, base: e.guion.base || null, grupo: e.guion.grupo || null, t: e.t, T: e.T }; },
+        setIdioma(l) { idioma = l; boton.textContent = tx().saltar; for (const [q, g] of globos) if (q === 'j' || q === 'todos') g.etiqueta = { nombre: q === 'j' ? tx().tu : tx().todos, color: COLOR_GLOBO.j }; },
         // Depuración (capturas)
         pausar(v = true) { pausada = v; },
         irA(s) { if (e) { e.t = s; e.hechos.clear(); } },

@@ -6,7 +6,7 @@
 //   0.3-2.6  Venjy tirita con los brazos cruzados (`tirita`) mientras habla del viento.
 //   2.6-H-1  Venjy se queda quieto y tiembla (`tiembla`); tú le frotas los hombros (`frotaJ`, un paso adelante).
 //   H-1.0 a H+0.95  chocan puños de frente (`punoM`); chispa y sonido en H.
-//   H+0.95-  Venjy habla del iglú; tú contestas. Textos aprobados por el dueño (DISENO-6c.md §2).
+//   H+0.95-  Venjy habla del iglú; tú contestas. Textos aprobados por el dueño (mundo/DIALOGOS.md).
 // Son personas reales: siempre en buena onda.
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';

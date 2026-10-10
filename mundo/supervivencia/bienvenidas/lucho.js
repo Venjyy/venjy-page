@@ -11,7 +11,7 @@
 //   11.2-14.6 Venjy recuerda cuando los presentaron como primos (`recuerda`); tú asientes.
 //   15.6-20.2 saludo secreto de 6b (`secreto(15.6)`, golpes incluidos).
 //   20.3-24.8 abrazo de 6b (`abrazo(20.3)`); Venjy cierra la despedida durante el abrazo.
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, r2, secreto, abrazo, MOLDES } from './comun.js';
 import { PIX } from '../moldes.js';

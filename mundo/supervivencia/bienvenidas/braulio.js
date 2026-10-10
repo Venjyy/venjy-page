@@ -8,7 +8,7 @@
 //   PS-PE     palmada de cinco: la mano se retira y choca al centro (`palma`); dos chispas en H y H+0.3.
 //   a4-f5     Venjy pregunta por Arica y tú contestas.
 //   Ajustes de tiempos: H = inicio de «Choca esos cinco» + 0.4; PS = H-0.8; PE = H+0.9.
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';
 import { ruta } from '../moldes.js';

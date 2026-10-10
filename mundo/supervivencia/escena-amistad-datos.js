@@ -177,7 +177,7 @@ export const FRASES_AMISTAD = {
 // Botones del panel «Hablar» y textos de la escena
 export const TXT_AMISTAD = {
     es: { titulo: 'Saludos de amigos', punos: 'Chocar puños', abrazo: 'Abrazo', secreto: 'Saludo secreto', pareja: 'Abrazo y beso', saltar: 'Saltar', bloqueado: '???', tu: 'Tú',
-        momento: 'Momento especial', momentoFalta: p => `Momento especial: amistad ${p}/100` },
+        momento: 'Momento especial', momentoFalta: p => `Momento especial: amistad ${p}/100`, grupo: 'Saludo del grupo', todos: 'Todos' },
     en: { titulo: 'Friend greetings', punos: 'Fist bump', abrazo: 'Hug', secreto: 'Secret handshake', pareja: 'Hug and kiss', saltar: 'Skip', bloqueado: '???', tu: 'You',
-        momento: 'Special moment', momentoFalta: p => `Special moment: friendship ${p}/100` }
+        momento: 'Special moment', momentoFalta: p => `Special moment: friendship ${p}/100`, grupo: 'Group greeting', todos: 'Everyone' }
 };
