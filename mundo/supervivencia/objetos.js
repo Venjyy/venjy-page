@@ -128,6 +128,7 @@ obj('BRUJULA', 'Brújula', 'Compass', { icono: 'brujula', apila: 1 });
 obj('PUERTA', 'Puerta de madera', 'Oak Door', { icono: 'puerta', apila: 64, combustible: 10 });
 obj('CAMA', 'Cama', 'Bed', { icono: 'cama', apila: 1 });
 obj('CUENCO', 'Cuenco', 'Bowl', { icono: 'cuenco', combustible: 5 });
+obj('CARTA', 'Carta', 'Letter', { icono: 'carta', apila: 1, encargo: true }); // 7f-1: la da el Venjy del correo; no se vende
 
 // ---- Objetos de los jefes (los entrega Venjy; se usan en su altar) ----
 obj('AMULETO_MINA', 'Amuleto de la mina', 'Mine Amulet', { icono: 'amuleto', apila: 1, jefe: 'imbunche' });
