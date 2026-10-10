@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vista táctil · Estudio</title>
+    <!-- Capa táctil real de la supervivencia, sin el mundo. La carga el editor de layout en un iframe.
+         Fuerza el modo táctil antes de importar (iniciarTactil mira 'ontouchstart' in window). -->
+    <script>window.ontouchstart = null;</script>
+    <link rel="stylesheet" href="../mundo/mundo.css">
+    <link rel="stylesheet" href="../mundo/supervivencia/supervivencia.css">
+    <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; }
+        body { background: linear-gradient(#78a7e8 0 58%, #5f9a3c 58% 100%); }
+        /* Zona segura simulada (el editor manda { tipo: 'seguro' }): mueve el contenedor de los botones */
+        .tactil { inset: var(--sim-t, 0px) var(--sim-r, 0px) var(--sim-b, 0px) var(--sim-l, 0px); }
+        #sonda-pie { position: absolute; left: 0; bottom: var(--pie); width: 1px; height: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="supervivencia">
+    <div id="hud">
+        <div id="barra-rapida" class="barra-rapida" role="listbox"></div>
+    </div>
+    <script type="module">
+        import { iniciarTactil } from '../mundo/tactil.js';
+        import { iniciarTactilSupervivencia } from '../mundo/supervivencia/tactil-supervivencia.js';
+        import { aplicarLayout } from '../mundo/supervivencia/layout-datos.js';
+        import { cargarDatos } from '../mundo/datos/cargador.js';
+
+        const barra = document.getElementById('barra-rapida');
+        for (let i = 0; i < 9; i++) {
+            const c = document.createElement('div');
+            c.className = 'casilla-rapida' + (i === 0 ? ' elegida' : '');
+            barra.appendChild(c);
+        }
+        // Misión de ejemplo (hijo de #hud, como en misiones.js)
+        const mision = document.createElement('div');
+        mision.className = 'mision-activa';
+        mision.textContent = 'MISIÓN · Ejemplo 0/3';
+        document.getElementById('hud').appendChild(mision);
+
+        // Lo mínimo que leen tactil.js y tactil-supervivencia.js
+        const jugador = { teclas: new Set(), vuela: false, sinAgachar: false, activo: false, yaw: 0, pitch: 0, corre: false, alternarVuelo() {} };
+        const nada = () => {};
+        const tactil = iniciarTactil(jugador);
+        const idioma = new URLSearchParams(location.search).get('idioma') === 'en' ? 'en' : 'es';
+        document.documentElement.lang = idioma;
+        // El módulo pide ui-layout y textos al importarse: esperarlos aquí evita que lleguen tarde sobre el layout del editor
+        await Promise.all([cargarDatos('ui-layout'), cargarDatos('textos')]);
+        const sv = iniciarTactilSupervivencia({
+            tactil, idioma,
+            minado: { abajo: nada, arriba: nada, soltarEnMano: nada },
+            ventanas: { abrir: nada },
+            inventario: { elegida: 0 }
+        });
+        tactil.activar();
+        sv.acariciar.hidden = false; // ACARICIAR aparece siempre en la vista
+        const sonda = document.createElement('div');
+        sonda.id = 'sonda-pie';
+        document.querySelector('.tactil').appendChild(sonda);
+
+        window.addEventListener('message', e => {
+            if (e.origin !== location.origin) return;
+            const m = e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.tipo === 'layout') {
+                aplicarLayout(m.datos || {});
+            } else if (m.tipo === 'seguro') {
+                const r = document.querySelector('.tactil').style;
+                r.setProperty('--sim-t', (m.t || 0) + 'px');
+                r.setProperty('--sim-r', (m.r || 0) + 'px');
+                r.setProperty('--sim-b', (m.b || 0) + 'px');
+                r.setProperty('--sim-l', (m.l || 0) + 'px');
+            }
+            parent.postMessage({ tipo: 'aplicado' }, location.origin);
+        });
+        parent.postMessage({ tipo: 'listo' }, location.origin);
+    </script>
+</body>
+</html>

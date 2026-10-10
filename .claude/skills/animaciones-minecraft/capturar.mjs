@@ -1,6 +1,6 @@
 // =========================================================
 // Capturas de una animación del modo supervivencia (Playwright + Chromium del contenedor)
-// Uso (con `python -m http.server 5510` corriendo en la raíz del repo):
+// Uso (con `node estudio/servidor.mjs` corriendo en la raíz del repo):
 //   node .claude/skills/animaciones-minecraft/capturar.mjs \
 //     --preparar "await v.escenas.forzar('pony')" \
 //     --paso "v.escenas.pausar(); v.escenas.irA(t)" \

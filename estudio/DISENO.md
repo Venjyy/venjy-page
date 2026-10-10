@@ -528,3 +528,23 @@ entero.
 - **Más adelante**: el mismo `aplicarLayout` podría servir para que cada jugador mueva sus botones
   dentro del juego (guardado en `localStorage`), por ejemplo en el menú de opciones de 7b-2. No se
   hace ahora.
+
+## 9. Fase 1 · lo que cambió al construirla (2026-10-10)
+
+- **Datos corregidos**: `pausa` y `pantalla` salen de `ui-layout.json`. Sus valores de la fase 0 no eran los de
+  hoy (`mundo/mundo.css` las ubica con `!important` según ancho y minimapa). Si se editan, se escriben y
+  `layout-datos.js` agrega `!important` solo a esas dos claves.
+- **`desde: pie` no suma `env(safe-area-inset-bottom)`**: `--pie` ya lo trae. El texto del §5 decía lo mismo;
+  queda fijado con la prueba de CSS esperado.
+- **`PUT` exige `If-Match`** (428 sin él; `*` para crear). También rechaza un `Host` que no sea localhost
+  (contra DNS rebinding) y contesta 405 a los otros métodos.
+- **Sin `?tactil`**: el juego no lo tiene. El editor usa `vista-tactil.html`; en el juego real, el modo
+  dispositivo del navegador.
+- **Zona segura simulada**: `vista-tactil.html` recibe `{ tipo: 'seguro', t, r, b, l }` y mueve el contenedor
+  `.tactil` (no puede cambiar `env()`); es una aproximación para ver el efecto, no medidas reales.
+- **El cargador pide los dos JSON al importar `tactil-supervivencia.js`** y aplica el layout al llegar si los
+  botones ya existían (sin tocar `main.js`).
+- **El editor guarda lo medido**: al arrastrar, x e y salen del `getBoundingClientRect` real de la vista; en
+  perfil `baja` solo se guarda lo que difiere de `normal`.
+- **Medición**: ver «Estudio» en `mundo/PENDIENTES.md`. El servidor Node carga en frío ~5 veces más rápido que
+  `python -m http.server` (1,2 s contra 6 s con 97 recursos) y siempre sirve archivos al día.

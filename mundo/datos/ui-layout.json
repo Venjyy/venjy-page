@@ -3,6 +3,7 @@
   "version": 1,
   "supervivencia": {
     "normal": {
+      "nota": "pausa y pantalla no están a propósito: su lugar depende del ancho y del minimapa (mundo/mundo.css, con !important); se escriben aquí solo si se mueven en el Estudio",
       "pie": 60,
       "botones": {
         "joy": { "ancla": "ii", "x": 14, "y": 0, "desde": "pie", "w": 116, "h": 116, "palanca": 48 },
@@ -15,8 +16,6 @@
         "sv-soltar": { "ancla": "si", "x": 12, "y": 130, "w": 64, "h": 40, "letra": 0.8 },
         "sv-camara": { "ancla": "si", "x": 12, "y": 176, "w": 64, "h": 40, "letra": 0.8 },
         "sv-comando": { "ancla": "si", "x": 12, "y": 222, "w": 64, "h": 40, "letra": 0.9 },
-        "pausa": { "ancla": "sd", "x": 12, "y": 12, "w": 44, "h": 44 },
-        "pantalla": { "ancla": "sd", "x": 64, "y": 12, "w": 44, "h": 44 },
         "mision": { "ancla": "si", "x": 12, "y": 270, "seguro": false }
       }
     },
