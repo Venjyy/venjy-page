@@ -19,6 +19,9 @@
 // g golpe a monstruo · gj golpe a jefe · d daño a jugador · x explosión · pr proyectil · mk muerte
 // para misiones · jv jefe vencido · ry rayo · h hora · z en cama · am amanecer · pf perfil ·
 // pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado.
+// Ping (7e, ver online/ping.js): sin mensajes nuevos. Directo: getStats() en SalaDirecta. Respaldo: `p` lleva `ec`
+// (invitado: [t del último p del anfitrión, ms retenido]; anfitrión: [[id corto, t, retenido], …] solo para los
+// invitados de respaldo) y `h` lleva `pg` (ms de cada invitado, para que todos vean la lista).
 //
 // Sin internet (misma red): SalaLocal (online/sala-local.js) con un QR de ida y vuelta por invitado y
 // sin Supabase; hospedarLocal / unirseLocal. Mismo juego y mismos mensajes; sin respaldo.
@@ -43,6 +46,7 @@ import { infoBloque } from './objetos.js';
 import { etapasDe } from './agricultura.js';
 import { Bufer, RETRASO, mezclar, mezclarAngulo } from './interpolacion.js';
 import { sonidos } from './sonidos.js';
+import { Eco, Suave, RelojAnfitrion, rttDeEco, ecoDeLista, ecoPropio, idCorto } from '../online/ping.js';
 
 export const MAX_COOP = 8;      // todos con conexión directa
 export const MAX_RESPALDO = 4;  // si alguien entra por el respaldo de Supabase (presupuesto medido en el PR A)
@@ -270,6 +274,7 @@ export function crearCoop(cx, ctx) {
         scene.remove(r.modelo.g); scene.remove(r.nombreSp);
         remotos.delete(id);
         camas.delete(id);
+        eco.olvidar(id); rttEco.delete(id);
     }
     for (const [id, m] of sala.jugadores) agregarRemoto(id, m);
     cx.alEntrar = m => {
@@ -295,6 +300,49 @@ export function crearCoop(cx, ctx) {
 
     const remotoPorId = id => remotos.get(id) || null;
 
+    // ---------- Ping (7e) ----------
+    const eco = new Eco();
+    const rttEco = new Map();          // id -> Suave: RTT medido con el eco del respaldo
+    const reloj = new RelojAnfitrion(); // desfase de reloj con el anfitrión (invitado)
+    let pgAjenos = {};                  // idCorto -> ms (el anfitrión los reparte en `h`)
+    const suaveEco = id => { let s = rttEco.get(id); if (!s) rttEco.set(id, s = new Suave()); return s; };
+    // RTT con el par `id` (el anfitrión para un invitado y viceversa): directo si hay canal, si no el eco
+    function rttDe(id) {
+        const d = sala.rttDirecto ? sala.rttDirecto(id) : null;
+        if (d != null) return d;
+        const s = rttEco.get(id);
+        return s ? s.valor : null;
+    }
+    function pingDe(id) {
+        if (esAnfitrion || id === cx.anfitrion) return rttDe(id);
+        const v = pgAjenos[idCorto(id)];
+        return v == null ? null : v;
+    }
+    function pingPropio() {
+        if (!esAnfitrion) return rttDe(cx.anfitrion);
+        let peor = null;
+        for (const id of remotos.keys()) { const v = rttDe(id); if (v != null && (peor == null || v > peor)) peor = v; }
+        return peor;
+    }
+    // Eco que va a cuestas del `p` (solo por el respaldo; con canal directo el ping sale de getStats)
+    function ecoSaliente(t) {
+        if (esAnfitrion) return sala.respaldo && sala.respaldo.size ? ecoDeLista(eco, sala.respaldo, t) : null;
+        return !sala.directo && cx.anfitrion ? eco.para(cx.anfitrion, t) : null;
+    }
+    function medirEco(m) {
+        const t = ahora();
+        if (esAnfitrion) {
+            eco.anotar(m.de, m.t, t);
+            if (Array.isArray(m.ec)) { const v = rttDeEco(t, m.ec[0], m.ec[1]); if (v != null) suaveEco(m.de).agregar(v); }
+        } else if (m.de === cx.anfitrion) {
+            eco.anotar(m.de, m.t, t);
+            const e = ecoPropio(m.ec, yoId);
+            if (e) { const v = rttDeEco(t, e[0], e[1]); if (v != null) suaveEco(m.de).agregar(v); }
+            const rtt = rttDe(m.de);
+            if (rtt != null) reloj.agregar(m.t, t, rtt);
+        }
+    }
+
     // ---------- Posición propia (y monstruos y jefe propios en el mismo mensaje) ----------
     let ultimoTick = 0, ultimoPos = 0, ultimaPos = null;
     function enviarPosicion() {
@@ -308,6 +356,8 @@ export function crearCoop(cx, ctx) {
         const mobs = mobsDelTick(t);
         if (igual && !mobs && t - ultimoPos < 1000) return;
         if (mobs) Object.assign(m, mobs);
+        const ec = ecoSaliente(t);
+        if (ec) m.ec = ec;
         ultimoPos = t; ultimaPos = m;
         sala.enviar('p', m);
     }
@@ -491,8 +541,14 @@ export function crearCoop(cx, ctx) {
             camas.clear();
             sala.enviar('am', {});
             ctx.amanecerLocal && ctx.amanecerLocal();
-            sala.enviar('h', { t: +dia.t.toFixed(1), d: dia.dias });
+            sala.enviar('h', { t: +dia.t.toFixed(1), d: dia.dias, pg: pingsParaH() });
         }
+    }
+    // ms de cada invitado por id corto, para repartirlos en `h`
+    function pingsParaH() {
+        const o = {};
+        for (const id of remotos.keys()) { const v = rttDe(id); if (v != null) o[idCorto(id)] = v; }
+        return o;
     }
     // Clic en la cama: online la noche se salta solo cuando todos están acostados
     function acostarse() {
@@ -543,6 +599,7 @@ export function crearCoop(cx, ctx) {
     // ---------- Recibir ----------
     const manejadores = {
         p(m) {
+            medirEco(m);
             const r = remotoPorId(m.de);
             if (!r) return;
             r.bufer.agregar(m.t, { x: m.x, y: m.y, z: m.z, yaw: m.a, pit: m.b, f: m.f });
@@ -625,6 +682,7 @@ export function crearCoop(cx, ctx) {
         },
         h(m) {
             if (esAnfitrion) return;
+            if (m.pg && typeof m.pg === 'object') pgAjenos = m.pg;
             const dif = Math.abs(dia.t - m.t) + (dia.dias !== m.d ? 1000 : 0);
             if (dif > 2) { dia.t = m.t; dia.dias = m.d; }
         },
@@ -725,7 +783,7 @@ export function crearCoop(cx, ctx) {
         else if (cx.ultimoCont) { enviarCont(cx.ultimoCont); cx.ultimoCont = null; }
         // Hora (anfitrión) y perfiles
         relojHora += dt;
-        if (esAnfitrion && relojHora >= 10) { relojHora = 0; sala.enviar('h', { t: +dia.t.toFixed(1), d: dia.dias }); }
+        if (esAnfitrion && relojHora >= 10) { relojHora = 0; sala.enviar('h', { t: +dia.t.toFixed(1), d: dia.dias, pg: pingsParaH() }); }
         relojPerfil += dt;
         if (relojPerfil >= 30) { relojPerfil = 0; enviarPerfil(); }
         if (esAnfitrion) revisarCamas();
@@ -753,6 +811,11 @@ export function crearCoop(cx, ctx) {
         set compartido(v) { compartido = !!v; enviarPerfil(); },
         // El inventario de un compañero ausente cambió (cofre compartido)
         cofreEditado(disp, inv) { const p = perfiles.get(disp); if (p) p.inv = inv; sala.enviar('pc', { disp, inv }); },
+        // Ping (7e): ms con ese jugador (null si aún no hay medida); `pingPropio` es el tuyo con el anfitrión
+        // (el anfitrión ve el peor invitado). `relojAnfitrion()` da la hora del anfitrión en la escala de performance.now().
+        pingDe, pingPropio,
+        relojAnfitrion: () => (esAnfitrion ? ahora() : reloj.listo ? reloj.anfitrion(ahora()) : null),
+        get desfaseAnfitrion() { return esAnfitrion ? 0 : reloj.listo ? reloj.desfase : null; },
         anunciarSkin(skin) { sala.anunciar({ skin }); },
         estadisticas: (reiniciar = false) => sala.estadisticas(reiniciar),
         get directo() { return sala.directo; },   // invitado: ¿juega por el canal directo?

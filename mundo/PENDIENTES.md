@@ -567,7 +567,7 @@ Orden: 6a → 6b → 6c → 6d (primero la etapa sin visitas). Cada parte en su 
 | 6d · Vida entre amigos, etapa 1 (fogata e iglú) | Opus + subagente Haiku | Las animaciones van a Haiku. Opus diseña la lógica de cercanía, los temporizadores y los turnos. |
 | 6d · Etapa 2 (visitas) | Opus solo | Es arquitectura: rutas, estados, rendimiento y choques con misiones, tienda y escenas. Es el bug difícil que toca varios archivos. |
 
-### Bloque 7 · Pulido, juego en grupo y mundo vivo (7a y 7b-1 hechos; el resto, solo planificación)
+### Bloque 7 · Pulido, juego en grupo y mundo vivo (7a, 7b-1 y 7e hechos; el resto, solo planificación)
 
 Plan del 2026-10-09 con la lista de 26 pedidos del dueño tras jugar con amigos: bugs (agua, X de cerrar, guardar con 5 mundos, lag al romper), sensación de juego (golpe, correr, knockback, velocidad), misiones más fáciles, contenido (ítems, Venjys, caminos) y actividades nuevas o compartidas en el cooperativo. **No cambia el bloque 6**: lo que pertenece a 6d está anotado aquí como 7j y lo toma el chat de 6d. Cada parte en su propio chat y PR.
 
@@ -581,7 +581,7 @@ Reglas que valen para todo el bloque: estética Minecraft, solo PixelCraft y sin
 | 7b | Rendimiento (**7b-1 hecho**, rama `rendimiento-7b1`; 7b-2 pendiente) | 8 (+ menú de opciones) | nada (va antes de sumar contenido) |
 | 7c | Cuerpo y mano del jugador | 3, 4, 5, 6, 18 | 7b-1 deseable (medir) |
 | 7d | Misiones más fáciles | 1, 12 | nada |
-| 7e | Red: indicador de ms | 24 | nada; da el reloj compartido a 7g y 7h-3 |
+| 7e | Red: indicador de ms (**hecho**, rama `red-7e`) | 24 | nada; da el reloj compartido a 7g y 7h-3 (`coop.relojAnfitrion()`) |
 | 7f | Contenido y mundo | 2, 7, 13 | 7b-1 para 7f-3 |
 | 7g | Actividades compartidas | 15, 16, 17 | 7c-1, 7e |
 | 7h | Actividades nuevas | 19, 20, 21, 22 | 7g-1 (las partes en grupo) |
@@ -744,7 +744,24 @@ Mecanismo propuesto:
 - Facilidades: animales nuevos **al final** de `animales.lista` (el ganado guarda índices); huerto de Lalo como decorado determinista de la supervivencia + registro en `agricultura.js` (en el cooperativo lo hace crecer el anfitrión, como ya pasa); «pistas» = flecha en la brújula y marca en el minimapa hacia el punto más cercano, buscado una vez al aceptar con la generación determinista del subsuelo (≤ 64 bloques, sin cargar chunks); monstruos garantizados = un intento de aparición extra por noche fuera de la zona segura (cada jugador para sí, como ya funcionan los monstruos).
 - Prueba: `mundo/tests/misiones.mjs` (nuevo): cada misión no jefe tiene kit; kit una vez (aceptar/abandonar/aceptar, guardar y cargar); inventario lleno = el kit queda en el suelo completo; ningún objeto prestado cuenta para `pide`; provisiones fuera de `pide`/`compra`; valor ≤ 1/3 del premio; `inventario.mjs` suma la marca `p` (apilado, guardado, cofres).
 
-**7e · Red: indicador de ms (1 PR, Sonnet)**
+**7e · Red: indicador de ms (1 PR, Sonnet) · HECHO (rama `red-7e`)**
+
+- **Cómo quedó** (lógica pura en `mundo/online/ping.js`, prueba `mundo/tests/ping.mjs`):
+  - Directo y sala local: `SalaDirecta.medirPares()` lee `getStats()` cada 2 s por par abierto (`rttDeStats`: candidate-pair del transporte, o `nominated`+`succeeded`, o `selected`); mediana de las últimas 5 lecturas (`Suave`). `sala.rttDirecto(id)`.
+  - Respaldo: el campo del eco no puede llamarse `e` (ya es el nombre del evento en el payload), va como **`ec`** en el `p`. Invitado: `ec = [t del último p del anfitrión, ms retenido]`; anfitrión: `ec = [[id corto, t, retenido], …]` solo para los invitados de respaldo (≤ 3). Solo viaja con respaldo (con canal directo no hace falta). Cero mensajes nuevos.
+  - Los pings de todos se reparten en el `h` que el anfitrión ya manda cada 10 s (`pg: { idCorto: ms }`), para que cada invitado vea la lista completa; su propio valor lo mide él.
+  - Desfase de reloj: `RelojAnfitrion` (mediana de 9 muestras de `t + RTT/2 − ahora` con cada `p` del anfitrión). API para 7g y 7h-3: `coop.relojAnfitrion()` (hora del anfitrión en la escala de `performance.now()` local; en el anfitrión es `performance.now()`) y `coop.desfaseAnfitrion`. Medido entre dos pestañas (cada una con su `timeOrigin`): error 0,1 ms con RTT ≈ 0 ms. Error teórico = (ida − vuelta)/2, acotado por RTT/2.
+  - Dónde se ve: barras de señal de 4 (verde 4 barras < 80 ms, amarillo 3-2 barras < 150, rojo 1 barra ≥ 150) con «NN ms» en la lista de la pausa y en una lista nueva que aparece **mientras se mantiene Tab** (solo cooperativo). «Mostrar mi ping (ms) en pantalla» en la pausa (casilla guardada en `localStorage` `venjy-sv-ms`; 7b-2 puede moverla a «Rendimiento»): en el HUD de la sala sale «· 34 ms» (el anfitrión ve «peor invitado»). La fila del anfitrión no lleva barras: es el servidor.
+  - Costo: un ciclo completo (anotar + eco + RTT + suavizado + reloj) ≈ 0,7 µs en Node, a 5 Hz ≈ 3,4 µs/s; `getStats()` cada 2 s por par; en solitario no corre nada de esto (solo un `keydown` de Tab que sale al instante sin sala).
+- **Valores medidos** (dos pestañas del mismo equipo, 2026-10-10; el equipo con el que se midió está en Chile y Supabase está en São Paulo):
+
+| Modo | Medido |
+|---|---|
+| WebRTC directo (mismo equipo, 2 pestañas) | 1-2 ms |
+| Sala local por QR (mismo equipo) | 0-1 ms |
+| Respaldo Supabase (`?directo=0`) | 177 ms (invitado) y 187 ms (anfitrión): dentro del rango estimado, algo sobre el techo de «misma red» (100-160) |
+
+  La tabla de abajo conserva las estimaciones de otras redes; no se pudo medir Wi-Fi ni otra región (hace falta un segundo equipo).
 
 - Dónde medir:
   - **WebRTC directo y sala local por QR**: `RTCPeerConnection.getStats()` → `candidate-pair` activo `currentRoundTripTime`, cada 2 s; sin mensajes nuevos. El anfitrión mide cada invitado.
@@ -756,11 +773,12 @@ Mecanismo propuesto:
 | Modo | Misma red (Wi-Fi) | Misma ciudad (otra casa) | Otra región (p. ej. Coyhaique ↔ Santiago) |
 |---|---|---|---|
 | WebRTC directo | 3-15 | 10-35 | 30-60 |
-| Respaldo Supabase (São Paulo) | 100-160 | 100-170 | 120-200 |
+| Respaldo Supabase (São Paulo) | **≈ 180 (medido: 177-187)** | 100-170 → ≈ 180-200 | 120-200 → ≈ 200-250 |
 | Sala local por QR | 2-12 | no aplica | no aplica |
 
   - De dónde sale: directo = ruta física entre los dos equipos (Wi-Fi suma 1-5 ms por salto; entre casas de la misma ciudad los ISP chilenos intercambian tráfico en Santiago, pero a veces la ruta da la vuelta por otro país y sube a 60-150); otra región: ~1600 km de fibra ≈ 16 ms de ida y vuelta mínimo + equipos. Respaldo: el mensaje va invitado → Supabase en São Paulo → anfitrión y la respuesta vuelve igual: son 2 viajes de ida y vuelta Chile ↔ São Paulo (40-60 ms cada uno según mediciones típicas) + 10-30 ms de Realtime. Lo que el jugador **ve** de los demás suma además el retraso de dibujo de la interpolación (200 ms a 5 Hz). Son estimaciones: el indicador las confirma y la tabla se corrige en `PENDIENTES.md` con valores medidos.
-- Prueba: `mundo/tests/ping.mjs` (cálculo del eco y del desfase con relojes falsos); dos pestañas en los tres modos (`?directo=0` para el respaldo).
+- Prueba: `mundo/tests/ping.mjs` (35 comprobaciones: colores, getStats, eco y desfase con relojes falsos y retención); dos pestañas en los tres modos (`?directo=0` para el respaldo). Para probar en el navegador con una pestaña en segundo plano: el bucle de red del anfitrión solo corre por `setInterval` si `document.hidden` (con el panel sin dibujar no hay `requestAnimationFrame`).
+- Las estimaciones de las columnas «Misma ciudad» y «Otra región» del respaldo son extrapolaciones de la medida (≈ 180 ms ya con los dos equipos en la misma máquina): se confirman con un segundo equipo.
 
 **7f · Contenido y mundo (3 PR)**
 
@@ -1039,6 +1057,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-10 · **Bloque 7e · indicador de ms y reloj compartido** (rama `red-7e`): `mundo/online/ping.js` (lógica pura: `rttDeStats`, `Suave`, `Eco`, `RelojAnfitrion`, colores verde < 80 / amarillo < 150 / rojo ≥ 150), `SalaDirecta.medirPares()` con `getStats()` cada 2 s (directo y sala local), eco a cuestas del `p` en el respaldo (campo `ec`; `pg` en el `h` reparte los pings), `coop.pingDe/pingPropio/relojAnfitrion/desfaseAnfitrion`, barras de señal en la pausa y en la lista de Tab, casilla «Mostrar mi ping (ms) en pantalla». Medido en 2 pestañas: directo 1-2 ms, sala local 0-1 ms, respaldo 177-187 ms; desfase de reloj con error 0,1 ms. Cero mensajes nuevos · `mundo/online/ping.js` (nuevo), `red.js`, `supervivencia/coop.js`, `main.js`, `supervivencia.css`, `supervivencia.html`, `mundo/tests/ping.mjs` (nuevo), `MAPA.md`.
 - 2026-10-10 · **Bloque 7f-1 · qué dicen los Venjy en la supervivencia** (rama `venjys-7f1`): `mundo/supervivencia/venjys-datos.js` (cargado con `import()` al primer globo) con las ocho fuentes (pista del lugar, brújula viva, progreso, reacción a tu skin y a tu amistad, carta diaria, hora y peligro, chistes internos) y su selector por prioridad; `n.frases` pasa a función en la supervivencia (`criaturas/venjy.js` acepta función y guarda `n.dichos`; el creativo no cambia). Objeto **Carta** (`objetos.js`, ícono en `iconos.js`), `PUNTOS.carta` en `amistad.js`, `estado.carta` y entrega en `misiones.js`, botón en `hablar.js`. Prueba nueva `mundo/tests/venjys.mjs` (224 frases únicas contra 1151 del resto del juego, sin emojis, par ES/EN, selector, carta); todas las de `mundo/tests/` pasan. Medición: 130 archivos al abrir antes y después; `venjys.actualizar` ~0,017 ms por cuadro igual en ambas (el panel del navegador estaba oculto y `requestAnimationFrame` no corre: no hay mediana de cuadro, se midió el costo de la función). Textos por revisar por el dueño (Artifact del PR) · `mundo/PENDIENTES.md`.
 - 2026-10-10 · **Bloque 7b-1 · lag al romper y poner bloques** (rama `rendimiento-7b1`): comando `/medir romper [captura]` (devenjy) con marcas por fase; luz por inundación incremental (`mundo/luz-incremental.js`) exacta respecto de `llenarChunk`, remallado por secciones de 16 de alto en el hilo principal y el resto en los workers (rehacer desde cero o solo mallar), objetos tirados que se juntan al soltar. Base con antorchas: cuadro p99 32,9 → 5,2 ms y hilo principal por bloque 181 → 1,0 ms; campamento p99 25,1 → 4,5. Pruebas `luz-incremental.mjs` (nueva) y `paridad.mjs` (huella del creativo). El creativo no cambia.
 - 2026-10-10 · **Estudio · fase 2 (el juego dentro del Estudio, SSE, CLI `capturar`)** (rama `estudio-fase2`): `estudio/puente-protocolo.js`, `puente-juego.js`, `puente-cliente.js` (canal `venjy-estudio`: `hola`, `datos`, `tp`), `juego.js` + pestaña Juego en `estudio/index.html`, `GET /api/eventos` (SSE al guardar y con `fs.watch`) en `servidor.mjs`, `avisos-layout.js` (compartido por el editor y el CLI), `evaluar.mjs`, `playwright.mjs`, `capturar.mjs` y `cli.mjs capturar`; `capturar.mjs`, `posar.mjs`, `planos.mjs` y `grabar.mjs` de la skill ya no usan `/opt/node22`; `supervivencia.html` (3 líneas, solo con `?estudio`) y `tactil-supervivencia.js` (`aplicarDatosVivos`); no se tocó `main.js`. Verificado: `estudio.mjs`, `estudio-navegador.mjs` y las demás pruebas de `mundo/tests/`; capturas de layout (choques reales de la fase 1), pose, hoja de gesto y escena de Pony. Medida sin `?estudio`: sin cambio (97 archivos y +1 KB al abrir).

@@ -66,6 +66,7 @@ import { hospedar, unirse, hospedarLocal, unirseLocal, guardadoDeInvitado, crear
 import { crearPanelQR } from './ui-qr.js';
 import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
+import { nivelDeMs, barrasDeMs } from '../online/ping.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
@@ -120,6 +121,7 @@ const TXT = {
         pasoUnirse2: '2. Muestra este código al anfitrión para que lo escanee.',
         preparando: 'Preparando la respuesta…', esperandoAnfitrion: 'Esperando a que el anfitrión lea tu código…', conectandoQR: 'Conectando…',
         entroQR: n => `${n} entró a la sala`, avisoLocal: 'Sala sin internet: invita a cada amigo desde la pausa («Invitar jugador»).', solos: 'Solo tú',
+        tuyo: ' (tú)', tuAnf: ' (tú · anfitrión)', anfitrion: ' (anfitrión)', msPeor: n => `peor invitado: ${n} ms`, tabTitulo: 'Jugadores',
         erroresQR: {
             'qr-ilegible': 'Ese código no es de Venjy o está incompleto.', 'qr-tipo': 'Ese código no corresponde a este paso.',
             'qr-otra': 'Esa respuesta es de otra invitación. Usa la última.', 'qr-conexion': 'No se pudo conectar. ¿Están en la misma red? Prueba con una invitación nueva.',
@@ -154,6 +156,7 @@ const TXT = {
         pasoUnirse2: '2. Show this code to the host so they can scan it.',
         preparando: 'Preparing the reply…', esperandoAnfitrion: 'Waiting for the host to read your code…', conectandoQR: 'Connecting…',
         entroQR: n => `${n} joined`, avisoLocal: 'Offline room: invite each friend from the pause menu («Invite player»).', solos: 'Just you',
+        tuyo: ' (you)', tuAnf: ' (you · host)', anfitrion: ' (host)', msPeor: n => `worst guest: ${n} ms`, tabTitulo: 'Players',
         erroresQR: {
             'qr-ilegible': "That code isn't from Venjy or is incomplete.", 'qr-tipo': "That code doesn't belong to this step.",
             'qr-otra': 'That reply belongs to another invite. Use the latest one.', 'qr-conexion': "Couldn't connect. Are you on the same network? Try a new invite.",
@@ -884,7 +887,6 @@ async function arrancar(guardado, cx = null) {
     function pintarCoop() {
         if (!coop) return;
         const texto = coop.local ? tx().salaLocal(coop.total) : tx().sala(coop.codigo, coop.total);
-        $('coop-hud').textContent = texto;
         $('coop-sala').textContent = texto;
         $('coop-pausa').hidden = false;
         $('coop-copia').hidden = coop.esAnfitrion;
@@ -893,8 +895,82 @@ async function arrancar(guardado, cx = null) {
         $('coop-copiar').hidden = coop.local;
         $('coop-invitar').hidden = !(coop.local && coop.esAnfitrion);
         $('coop-invitar').disabled = coop.total >= MAX_COOP;
-        $('coop-lista').textContent = [...coop.remotos.values()].map(r => r.nombre).join(' · ') || tx().solos;
+        pintarPing();
     }
+    // ---- Ping (7e): barras de señal en la pausa y en la lista de Tab, «34 ms» opcional en el HUD ----
+    const CLAVE_MS = 'venjy-sv-ms';
+    let verMs = false;
+    try { verMs = localStorage.getItem(CLAVE_MS) === '1'; } catch (e) { /* sin almacenamiento */ }
+    const COLOR_MS = ['v', 'a', 'r'];
+    function senalDe(ms) {
+        const el = document.createElement('span');
+        el.className = 'senal';
+        const barras = barrasDeMs(ms), n = nivelDeMs(ms);
+        for (let i = 1; i <= 4; i++) {
+            const b = document.createElement('i');
+            if (i <= barras) b.className = COLOR_MS[n];
+            el.appendChild(b);
+        }
+        return el;
+    }
+    // Una fila por jugador, yo primero. El anfitrión es el servidor: sin barras en su fila.
+    function filasJugadores() {
+        const t = tx(), filas = [];
+        filas.push({ nombre: cx.nombre + (coop.esAnfitrion ? t.tuAnf : t.tuyo), ms: coop.esAnfitrion ? null : coop.pingPropio(), anf: coop.esAnfitrion });
+        for (const [id, r] of coop.remotos) filas.push({ nombre: r.nombre + (r.anf ? t.anfitrion : ''), ms: r.anf ? null : coop.pingDe(id), anf: r.anf });
+        return filas;
+    }
+    function pintarFilas(cont) {
+        const nodos = [];
+        for (const f of filasJugadores()) {
+            const fila = document.createElement('span');
+            fila.className = 'jug';
+            const nom = document.createElement('span');
+            nom.textContent = f.nombre;
+            fila.appendChild(nom);
+            if (!f.anf) {
+                fila.appendChild(senalDe(f.ms));
+                const ms = document.createElement('span');
+                ms.className = 'ms ' + (f.ms == null ? '' : COLOR_MS[nivelDeMs(f.ms)]);
+                ms.textContent = f.ms == null ? '— ms' : f.ms + ' ms';
+                fila.appendChild(ms);
+            }
+            nodos.push(fila);
+        }
+        cont.replaceChildren(...nodos);
+    }
+    function pintarPing() {
+        if (!coop) return;
+        const lista = $('coop-lista');
+        if (!coop.remotos.size) lista.textContent = tx().solos;
+        else pintarFilas(lista);
+        const hudSala = $('coop-hud');
+        hudSala.textContent = coop.local ? tx().salaLocal(coop.total) : tx().sala(coop.codigo, coop.total);
+        const ms = verMs ? coop.pingPropio() : null;
+        if (ms != null && coop.remotos.size) {
+            const e = document.createElement('span');
+            e.className = 'ms ' + COLOR_MS[nivelDeMs(ms)];
+            e.textContent = ' · ' + (coop.esAnfitrion ? tx().msPeor(ms) : ms + ' ms');
+            hudSala.appendChild(e);
+        }
+        if (!tabLista.hidden) { tabTitulo.textContent = tx().tabTitulo; pintarFilas(tabCuerpo); }
+    }
+    const tabLista = document.createElement('div');
+    tabLista.id = 'coop-tab'; tabLista.className = 'coop-tab'; tabLista.hidden = true;
+    const tabTitulo = document.createElement('b');
+    const tabCuerpo = document.createElement('div');
+    tabCuerpo.className = 'coop-tab-cuerpo';
+    tabLista.append(tabTitulo, tabCuerpo);
+    if (coop) $('hud').appendChild(tabLista);
+    const ocultarTab = () => { tabLista.hidden = true; };
+    document.addEventListener('keydown', e => {
+        if (e.code !== 'Tab' || !coop || !jugador.activo || vida.muerto) return;
+        e.preventDefault();
+        if (tabLista.hidden) { tabLista.hidden = false; pintarPing(); }
+    });
+    document.addEventListener('keyup', e => { if (e.code === 'Tab') ocultarTab(); });
+    window.addEventListener('blur', ocultarTab);
+    if (coop) setInterval(() => { if (!document.hidden && (verMs || !tabLista.hidden || !$('coop-pausa').hidden)) pintarPing(); }, 1000);
     pintarCoop();
     if (coop && coop.local && coop.esAnfitrion) setTimeout(() => hud.mensaje(tx().avisoLocal, 6), 1500);
     // Anfitrión sin internet: invitación (QR) → respuesta del invitado (QR o texto). Una a la vez.
@@ -1127,6 +1203,12 @@ async function arrancar(guardado, cx = null) {
     $('coop-copiar').addEventListener('click', () => { try { navigator.clipboard.writeText(coop.codigo); hud.mensaje(tx().copiado, 2); } catch (e) { /* sin portapapeles */ } });
     $('coop-invitar').addEventListener('click', () => { if (coop && coop.local && coop.esAnfitrion) invitarQR(); });
     $('coop-compartir').addEventListener('change', e => { if (coop) coop.compartido = e.target.checked; });
+    $('coop-ms').checked = verMs;
+    $('coop-ms').addEventListener('change', e => {
+        verMs = e.target.checked;
+        try { localStorage.setItem(CLAVE_MS, verMs ? '1' : '0'); } catch (err) { /* sin almacenamiento */ }
+        pintarPing();
+    });
     $('coop-copia').addEventListener('click', () => guardarCopia('pausa'));
     $('coop-fin-copia').addEventListener('click', () => guardarCopia('coop-fin', () => { $('coop-fin-copia').disabled = true; }));
     $('coop-fin-salir').addEventListener('click', async () => { if (coop) await coop.salir().catch(() => {}); location.reload(); });
