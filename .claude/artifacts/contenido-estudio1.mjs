@@ -35,7 +35,7 @@ export default {
     titulo: 'Estudio fase 1',
     h1: 'Estudio · fase 1 · servidor, layout táctil desde JSON y editor',
     estado: 'PR abierto, sin mergear, esperando tu revisión. Abre <code>http://localhost:5510/estudio/</code>, mueve un botón, guarda, y el celular lo muestra donde lo dejaste.',
-    pr: { n: 0, url: 'https://github.com/Venjyy/venjy-page/pulls' },
+    pr: { n: 46, url: 'https://github.com/Venjyy/venjy-page/pull/46' },
     meta: 'Rama <code>estudio-fase1</code> · parte de <code>main</code> (a075c3b, con #43 y #44 fusionados) · 2026-10-10',
     hecho: [
         '<b>Servidor Node</b> <code>node estudio/servidor.mjs</code> en lugar de Python: mismos archivos, con <code>ETag</code>, y la API para guardar. Mismo nombre <code>venjy</code> y puerto 5510 en <code>.claude/launch.json</code>.',
