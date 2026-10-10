@@ -19,10 +19,10 @@ import { TXT_AMISTAD } from './escena-amistad-datos.js';
 
 const TXT = {
     es: { cerrar: 'Cerrar', volver: 'Volver', opinaDe: n => `¿Qué opinas de ${n}?`, regalar: n => `Regalar: ${n}`, leGusta: l => `Le gusta: ${l}`, o: ' o ',
-        yaRegalo: 'Ya le regalaste algo hoy. Vuelve mañana.', amistad: 'Amistad', bloqueado: '???',
+        yaRegalo: 'Ya le regalaste algo hoy. Vuelve mañana.', amistad: 'Amistad', bloqueado: '???', carta: 'Entregar la carta de Venjy',
         req: { nivel: n => `Amistad: ${n}`, mision: t => `Misión: ${t}`, mj: t => t, jefe: t => `Jefe: ${t}` }, sinConocidos: 'No conoce a nadie más por aquí.' },
     en: { cerrar: 'Close', volver: 'Back', opinaDe: n => `What do you think of ${n}?`, regalar: n => `Give: ${n}`, leGusta: l => `Likes: ${l}`, o: ' or ',
-        yaRegalo: 'You already gave a gift today. Come back tomorrow.', amistad: 'Friendship', bloqueado: '???',
+        yaRegalo: 'You already gave a gift today. Come back tomorrow.', amistad: 'Friendship', bloqueado: '???', carta: "Hand over Venjy's letter",
         req: { nivel: n => `Friendship: ${n}`, mision: t => `Quest: ${t}`, mj: t => t, jefe: t => `Boss: ${t}` }, sinConocidos: 'Knows nobody else around here.' }
 };
 const suave = u => u * u * (3 - 2 * u);
@@ -34,6 +34,7 @@ const MAX_DIST = 7; // más lejos, el panel se cierra solo
 
 // ctx: amistad, hechos() -> { hechas, minijuegos, jefes }, personaDe(clave) -> n, jugador, camara, dy, nombres, base() (clave de tu skin),
 // pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en},
+// carta { para() -> clave | null, entregar(clave) -> Promise<frase|null> } (7f-1: carta del Venjy del correo),
 // saludar(clave, tipo), momento(clave) y grupo(clave) (bloques 6b y 6c-2: animación de amistad, momento especial y saludo del
 // grupo; misiones.js suelta antes la retención)
 export function crearHablar(ctx) {
@@ -258,6 +259,8 @@ export function crearHablar(ctx) {
         if (tiene !== undefined && !amistad.regaloHoy(clave)) regalo.appendChild(boton(tx().regalar(ctx.nombreDe(tiene, idioma)), () => regalar(clave, tiene), 'boton-regalo'));
         else if (tiene !== undefined) regalo.appendChild(Object.assign(document.createElement('small'), { textContent: tx().yaRegalo }));
         else regalo.appendChild(Object.assign(document.createElement('small'), { textContent: tx().leGusta(favs.map(id => ctx.nombreDe(id, idioma)).join(tx().o)) }));
+        // Carta del Venjy del correo (7f-1): solo frente a su destinatario
+        if (ctx.carta && ctx.carta.para() === clave) el.appendChild(boton(tx().carta, () => entregarCarta(clave), 'boton-regalo'));
         el.appendChild(regalo);
 
         const fila = document.createElement('div'); fila.className = 'botones-mision';
@@ -281,6 +284,14 @@ export function crearHablar(ctx) {
         abrir(clave, frase, vista);
         const dur = lim(frase.length / 16, 2, 6);
         gesticular(g && g !== 'habla' ? [{ g, dur: 1.8 }, { g: 'habla', dur: Math.max(1, dur - 1.8) }] : [{ g: 'habla', dur }]);
+    }
+    function entregarCarta(clave) {
+        ctx.carta.entregar(clave).then(frase => {
+            if (!frase || !charla || charla.clave !== clave) return;
+            ctx.decir(clave, frase);
+            abrir(clave, frase);
+            gesticular([{ g: 'risa', dur: 1.6 }, { g: 'asiente', dur: 1.2 }]);
+        });
     }
     function regalar(clave, id) {
         if (amistad.regaloHoy(clave) || inventario.contar(id) <= 0) return;

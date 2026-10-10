@@ -63,6 +63,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
 | `hablar.js` (332) | Pestaña «Hablar»; carga por `import()`. `crearHablar:38` `abrir:184` `regalar:282` `actualizar:316` |
 | `dialogos-datos.js` (365) | `TEMAS:22` `OPINIONES:227` `SALUDOS:330` `REGALOS:349` |
+| `venjys-datos.js` (338) | 7f-1: lo que dicen los Venjy en la supervivencia: pistas, brújula, progreso, skin, amistad, carta, hora, chistes; `crearSelector` (`import()` al primer globo). `brujula` `progreso` `amistadFrase` `paraDe` `crearSelector` |
 | `escenas-datos.js` (174) | Diálogos de las escenas de skin. `CORTAS:12` `VENJY:68` `IGLU:162` |
 | `escenas-skin.js` (626) | Escena al acercarte con skin de un amigo. `crearEscenasSkin:90` `iniciar:187` `terminar:254` |
 | `escena-amistad-datos.js` (183) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105` |
