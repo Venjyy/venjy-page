@@ -27,6 +27,16 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 - Todo texto visible lleva su par `data-es` / `data-en`.
 - Solo fuente `PixelCraft`; sin emojis como íconos (se dibujan en `ICONOS` de `script.js`).
 
+## Contenido nuevo en JSON (Estudio)
+
+Diseño y fases en `estudio/DISENO.md`; esquemas en `estudio/esquemas/`.
+
+- Las posiciones, el layout táctil, los ángulos de poses, los textos ES/EN y los precios **nuevos** van en `mundo/datos/*.json`, siempre que el juego ya lea ese archivo (`lee` distinto de `null` en `mundo/datos/indice.json`). Si todavía no lo lee, siguen en JS como hasta ahora.
+- La lógica sigue en JS y solo lee el JSON. Si falta una clave, el juego usa el valor del código.
+- Nunca sobrescribir valores que el dueño editó a mano: solo añadir claves. Cambiar un valor existente solo si él lo pide (`node estudio/cli.mjs validar --contra HEAD` lo avisa, desde la fase 1).
+- Lo viejo se migra a JSON solo cuando se toca por otro motivo.
+- Para leer contenido, primero `node estudio/cli.mjs resumen` (desde la fase 1) en vez de abrir los `*-datos.js`.
+
 ## Mundo 3D (`mundo.html`)
 
 Minecraft 3D jugable con Three.js (carpeta `mundo/`, `vendor/`). Antes de tocarlo lee `mundo/PENDIENTES.md` (estado, arquitectura y tareas) y **actualízalo en cada cambio**: marca tareas hechas y añade una entrada a la bitácora.

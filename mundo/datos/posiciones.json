@@ -1,0 +1,44 @@
+{
+  "$schema": "../../estudio/esquemas/posiciones.schema.json",
+  "version": 1,
+  "personas": {
+    "hadad": {
+      "ancla": "campamento",
+      "dx": -2.15,
+      "dy": 0,
+      "dz": 2,
+      "giro": 90,
+      "nota": "al borde del tronco, hacia la fogata"
+    },
+    "nacho": { "ancla": "campamento", "dx": 3.15, "dy": 0, "dz": 2, "giro": -90 },
+    "andy": { "ancla": "campamento", "dx": 1.3, "dy": 0, "dz": 3.6, "giro": 180 },
+    "moises": { "ancla": "iglu", "dx": -0.6, "dy": 0, "dz": 1.4, "giro": 0 },
+    "lalo": { "ancla": "iglu", "dx": 1.6, "dy": 0, "dz": 0.6, "giro": 0 },
+    "boris": {
+      "ancla": "atalaya",
+      "dx": -0.5,
+      "dy": 0,
+      "dz": 7.15,
+      "giro": 180,
+      "nota": "junto al tocón de la leñera (tocón en dx -0.5, dz 5.5)"
+    },
+    "lucho": { "ancla": "atalaya", "dx": 2.3, "dy": 0, "dz": 6.5, "giro": 0 },
+    "braulio": {
+      "ancla": "naufragio",
+      "dx": 4.5,
+      "dy": "suelo",
+      "dz": 4.5,
+      "giro": 0,
+      "nota": "punto de partida: pasea por la orilla"
+    },
+    "conejeros": {
+      "ancla": "escenario",
+      "marco": "ancla",
+      "dx": 1.6,
+      "dy": "suelo",
+      "dz": 6.2,
+      "giro": 180,
+      "nota": "frente al escenario de Salonas"
+    }
+  }
+}

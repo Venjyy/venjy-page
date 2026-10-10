@@ -47,6 +47,8 @@ export default {
         'Las reglas de «Rendimiento de la vida entre amigos»: detalle solo cerca, lejos solo un reloj, tope de 2 con turnos y guiones cargados con <code>import()</code>.',
         '3 gestos nuevos (Haiku): Andy imita los ronquidos de Nacho, Lalo se palpa los bolsillos, pulgar arriba de Hadad. El resto reutiliza gestos ya aprobados (risa, rasca, yo, tú, baile, celular, sorpresa, brazos arriba, recuerda).',
         'Tu pedido de esta sesión: <b>sin «Haz clic para seguir jugando» al terminar una escena</b>. El puntero queda capturado durante la escena (sin mirar ni usar las manos); si la abriste desde un panel, se recaptura con ese mismo clic. Esc la salta y los botones dicen «Saltar (Esc)». Los minijuegos y la ronda del iglú siguen con cursor.',
+        'Tu revisión: nube con «Z» que sube al roncar; el bong baja al suelo cuando los brazos hacen otra cosa (¡YIAAAAAA! o una charla) en vez de quedar flotando; el pase del bong y el pito ya no sale volando hacia arriba (venía de antes: mezclaba las coordenadas del mundo con las del grupo de la supervivencia).',
+        'Incluye la rama <code>estudio-fase0</code> (PR #44, diseño y contratos del Estudio, sin código): al aceptar este PR entran los dos.',
         '<code>/amistad vida-&lt;id&gt;</code> te lleva junto al lugar y empieza esa interacción (con <code>/gamemode devenjy</code>).'
     ],
     archivos: {
@@ -55,7 +57,8 @@ export default {
     },
     revisar: [
         'Los textos (tabla de abajo o <code>mundo/DIALOGOS.md</code>, sección «Vida entre amigos»).',
-        'Los gestos «ronca» (<code>/amistad vida-discord</code>) y «palpa» (<code>/amistad vida-encendedor</code>): no se alcanzaron a ver bien en capturas; el iglú es estrecho.',
+        'El gesto «palpa» (<code>/amistad vida-encendedor</code>) no se alcanzó a ver bien en capturas (el iglú es estrecho); el pase del bong y el pito y el ¡YIAAAAAA! con el bong, en el juego.',
+        'El lag al romper y poner bloques quedó anotado como lo primero de 7b-1 (rendimiento del motor): es grande para este PR.',
         'El puntero en las escenas: que al terminar sigas jugando sin clic, y que Esc salte la escena (después de Esc sí puede pedir un clic: lo exige el navegador).',
         'El ritmo: una interacción cada 18-40 s por lugar.'
     ],
@@ -89,7 +92,7 @@ export default {
     capturas: [{ h2: 'Capturas de la fogata', dir: 'mundo/capturas/6d', items: [
         ['fogata-baile.jpg', 'El baile del calambre: Andy baila y Nacho gesticula sentado.'],
         ['fogata-papas.jpg', 'El embajador de las papas: Hadad con el pulgar adelante y su globo.'],
-        ['fogata-discord.jpg', 'Dormido en el Discord: Andy (de espalda) imita los ronquidos.']
+        ['fogata-discord.jpg', 'Dormido en el Discord: Andy imita los ronquidos y sube la nube con «Z».']
     ] }],
     tabla: {
         h2: 'Todas las frases', unidad: 'frases',

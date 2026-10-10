@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "textos.schema.json",
+  "title": "Textos ES/EN (mundo/datos/textos.json)",
+  "description": "Textos visibles nuevos, agrupados por espacio (tactil, hud, una persona, una misión...). Cada texto lleva es y en. Si falta un texto, el juego usa el del código. Los diálogos largos (temas de «Hablar», escenas) tendrán su propio archivo en la fase 3 con este mismo bloque de texto.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "textos": {
+      "description": "espacio -> clave -> texto. El espacio dice quién lo lee (tactil = tactil.js y tactil-supervivencia.js).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+        "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+      }
+    }
+  },
+  "required": ["version", "textos"],
+  "additionalProperties": false
+}

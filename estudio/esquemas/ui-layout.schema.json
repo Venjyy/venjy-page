@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ui-layout.schema.json",
+  "title": "Layout táctil (mundo/datos/ui-layout.json)",
+  "description": "Posición y tamaño de los botones táctiles. Lo que falta usa el CSS actual (mundo/tactil.css y mundo/supervivencia/supervivencia.css): el cargador solo escribe reglas para las claves presentes. Medidas en px CSS; letra en rem.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "supervivencia": { "$ref": "#/$defs/pantalla" }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "pantalla": {
+      "description": "Perfiles de una página. normal: siempre. baja: se suma dentro de @media (max-height: 460px) (celular acostado) y solo lleva lo que cambia.",
+      "type": "object",
+      "properties": {
+        "normal": { "$ref": "#/$defs/perfil" },
+        "baja": { "$ref": "#/$defs/perfil" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "perfil": {
+      "type": "object",
+      "properties": {
+        "pie": {
+          "description": "Alto extra de la franja inferior sobre la barra rápida: --pie = var(--casilla) + pie px (+ zona segura abajo en normal). Hoy 60 en normal y 50 en baja.",
+          "type": "number", "minimum": 0, "maximum": 400
+        },
+        "botones": {
+          "type": "object",
+          "properties": {
+            "joy": { "$ref": "#/$defs/boton", "description": ".tactil-joy (joystick). Acepta palanca." },
+            "saltar": { "$ref": "#/$defs/boton", "description": ".tactil-saltar" },
+            "bajar": { "$ref": "#/$defs/boton", "description": ".tactil-bajar (AGACHAR / BAJAR)" },
+            "pausa": { "$ref": "#/$defs/boton", "description": ".tactil-pausa" },
+            "pantalla": { "$ref": "#/$defs/boton", "description": ".tactil-pantalla (pantalla completa)" },
+            "sv-romper": { "$ref": "#/$defs/boton" },
+            "sv-usar": { "$ref": "#/$defs/boton" },
+            "sv-inventario": { "$ref": "#/$defs/boton" },
+            "sv-soltar": { "$ref": "#/$defs/boton" },
+            "sv-camara": { "$ref": "#/$defs/boton" },
+            "sv-comando": { "$ref": "#/$defs/boton" },
+            "sv-acariciar": { "$ref": "#/$defs/boton" },
+            "mision": { "$ref": "#/$defs/boton", "description": "#hud .mision-activa (misión en curso). Sin w ni h: su tamaño es el del texto." }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "boton": {
+      "type": "object",
+      "properties": {
+        "ancla": {
+          "description": "Esquina desde la que se mide: si = superior izquierda, sd = superior derecha, ii = inferior izquierda, id = inferior derecha.",
+          "enum": ["si", "sd", "ii", "id"]
+        },
+        "x": { "description": "Distancia en px al borde lateral de la ancla (izquierdo o derecho).", "type": "number", "minimum": -200, "maximum": 2000 },
+        "y": { "description": "Distancia en px al borde superior o inferior de la ancla (o a --pie si desde = pie).", "type": "number", "minimum": -200, "maximum": 2000 },
+        "desde": {
+          "description": "borde (por defecto) o pie: y se mide desde var(--pie), sobre la barra rápida y las barras de vida. Solo con anclas inferiores.",
+          "enum": ["borde", "pie"]
+        },
+        "seguro": { "description": "Suma env(safe-area-inset-*) del lado de la ancla (por defecto true). La misión hoy no la suma.", "type": "boolean" },
+        "w": { "type": "number", "minimum": 24, "maximum": 400 },
+        "h": { "type": "number", "minimum": 24, "maximum": 400 },
+        "letra": { "description": "font-size en rem.", "type": "number", "minimum": 0.5, "maximum": 2 },
+        "palanca": { "description": "Solo joy: lado de la palanca en px.", "type": "number", "minimum": 16, "maximum": 200 },
+        "oculto": { "description": "true esconde el botón en este perfil.", "type": "boolean" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
