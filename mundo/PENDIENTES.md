@@ -48,6 +48,7 @@ Proyecto aparte que se intercala con los bloques 6 y 7. Todo el detalle está en
 
 - Fases: 0 diseño (hecha) → 1 servidor Node + layout táctil (siguiente) → 2 juego dentro del Estudio → 3 textos ES/EN → 4 posiciones con gizmo (después de 6d) → 5 escenas → 6 poses → 7 motor genérico (opcional).
 - Datos en `mundo/datos/` (qué lee el juego: `indice.json`), esquemas en `estudio/esquemas/` y reglas en «Contenido nuevo en JSON» de `CLAUDE.md`.
+- Criterio del dueño: lo más cómodo para él y para Claude; el diseño lo decide cada chat y él solo opina en lo obvio. Aprobado: orden textos → posiciones y giro en grados. `estudio/` no se publica (`_config.yml` lo excluye de GitHub Pages).
 
 ## Modo online (Supabase)
 

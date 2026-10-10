@@ -1,0 +1,4 @@
+# GitHub Pages (build Jekyll de la rama main): el Estudio es una herramienta local, no se publica.
+# mundo/datos/ sí se publica (lo lee el juego). Ver estudio/DISENO.md §8.
+exclude:
+  - estudio

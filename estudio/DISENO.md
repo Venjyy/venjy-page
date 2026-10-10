@@ -76,7 +76,7 @@ Este archivo es el contrato. Los esquemas están en `estudio/esquemas/` y los da
 | `mundo/datos/<nombre>.json` | Datos que lee el juego. Van con el sitio publicado. |
 | `mundo/datos/indice.json` | Lista de archivos: esquema, módulo que lo lee (`lee`, `null` = todavía nadie), fase y descripción. El servidor solo guarda archivos listados aquí. |
 | `estudio/esquemas/<nombre>.schema.json` | JSON Schema (subconjunto, ver `comun.schema.json`). Cada dato apunta a su esquema con `"$schema"`, así VS Code autocompleta. |
-| `estudio/` | Editor, servidor y CLI. No lo carga el juego. Publicado sin servidor queda en solo lectura. |
+| `estudio/` | Editor, servidor y CLI. No lo carga el juego y no se publica (lo excluye `_config.yml`). |
 
 Archivos de esta fase:
 
@@ -513,13 +513,18 @@ Todo el contenido en JS de la supervivencia (archivos `*-datos.js`, momentos, bi
 reencuentros y moldes) más `DIALOGOS.md` pesa **474 KB** (39 archivos), ~135 000 tokens si se leyera
 entero.
 
-## 8. Decisiones abiertas para el dueño
+## 8. Decisiones del dueño (2026-10-10)
 
-- **Orden 3 ↔ 4** (textos antes que posiciones): propuesto arriba; confirmar.
-- **Giro en grados** en `posiciones.json` (el resto del juego usa radianes): propuesto por ser más
-  fácil de editar a mano.
-- **El Estudio en el sitio publicado**: hoy queda en solo lectura si se abre sin servidor. Otra
-  opción es no publicarlo (excluir `estudio/` del hosting). No cambia nada del juego.
+- **Criterio general**: el Estudio tiene que ser lo más cómodo posible para el dueño y para Claude.
+  El dueño solo opina en lo obvio; las decisiones de diseño y arquitectura las toma el chat de cada
+  fase (y las anota aquí o en la bitácora).
+- **Orden 3 ↔ 4** (textos antes que posiciones): aprobado.
+- **Giro en grados** en `posiciones.json` (el resto del juego usa radianes): aprobado. Poner a
+  alguien de espaldas es sumarle 180.
+- **`estudio/` no se publica**: `_config.yml` lo excluye del build de GitHub Pages (Jekyll, rama
+  `main`, raíz). Solo existe en el repo y en el servidor local. `mundo/datos/` sí se publica, porque
+  lo lee el juego. Después de fusionar, comprobar que
+  `https://venjyy.github.io/venjy-page/estudio/DISENO.md` da 404 y que el juego carga igual.
 - **Más adelante**: el mismo `aplicarLayout` podría servir para que cada jugador mueva sus botones
   dentro del juego (guardado en `localStorage`), por ejemplo en el menú de opciones de 7b-2. No se
   hace ahora.
