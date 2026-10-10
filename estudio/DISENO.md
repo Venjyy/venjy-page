@@ -103,7 +103,9 @@ juego sigue usando el código.
    - 2 espacios de sangría y el orden de claves intacto;
    - arreglos de primitivos, o de arreglos de primitivos, en una línea: `[[0.45, 0], [1.45, -0.98]]`;
    - objeto plano (solo primitivos) en una línea si la línea completa cabe en 120 columnas;
-   - UTF-8 sin BOM, `\n` y salto final.
+   - UTF-8 sin BOM, `\n` y salto final. `.gitattributes` fuerza LF en `mundo/datos/*.json`
+     (en este equipo `core.autocrlf` es `true` y si no los pasaría a CRLF). El validador igual
+     acepta CRLF al leer.
    Los 5 archivos de `mundo/datos/` ya están en este formato. Prueba de la fase 1:
    `formatear(JSON.parse(archivo)) === archivo`.
 5. **Quién escribe qué.** El editor guarda lo que el dueño movió (para eso es). Un agente **solo
