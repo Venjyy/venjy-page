@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "posiciones.schema.json",
+  "title": "Posiciones y puntos de interés (mundo/datos/posiciones.json)",
+  "description": "Dónde va cada persona, objeto o punto de interés, siempre relativo a una ancla del mapa (los lugares se colocan con semilla y pueden moverse si cambia el terreno; las coordenadas absolutas se romperían). Las anclas no se editan aquí: los puntos de mundo/mundo-datos.js (DISENOS) generan el terreno y el mapa 2D, y moverlos rompe la paridad (node mundo/tests/paridad.mjs).",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "personas": {
+      "description": "Clave de la persona (PERSONAS de criaturas/amigos.js, npcs.js, venjy.js) -> dónde está parada al cargar el mundo.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/punto" }
+    },
+    "objetos": {
+      "description": "Objetos de escena y decoración nuevos (fase 4): clave -> punto.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/punto" }
+    },
+    "poi": {
+      "description": "Puntos de interés nuevos (destinos de /tp, marcas de misión, sitios de escena): clave -> punto.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/punto" }
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "punto": {
+      "type": "object",
+      "properties": {
+        "ancla": {
+          "description": "Clave de terreno.lugares (molino, atalaya, campamento, portal, iglu, naufragio; colocarLugares en mundo/construcciones.js), un punto de RUTA (spawn, casa, registro, mina, aldea, gatera, correo, faro) o escenario (terreno.escenario, el de Salonas, que trae giro propio).",
+          "type": "string"
+        },
+        "marco": {
+          "description": "lugar (por defecto): dx y dz en ejes del mundo (este = +X, sur = +Z) desde la base (bx, bz) del ancla. ancla: ejes girados con el giro del ancla, como hijo de un Group de Three.js (dz = hacia donde mira el ancla).",
+          "enum": ["lugar", "ancla"]
+        },
+        "dx": { "type": "number", "minimum": -200, "maximum": 200 },
+        "dy": {
+          "description": "Altura sobre la del ancla (bloques), o suelo: el juego busca el suelo en ese punto.",
+          "anyOf": [{ "type": "number", "minimum": -64, "maximum": 64 }, { "const": "suelo" }]
+        },
+        "dz": { "type": "number", "minimum": -200, "maximum": 200 },
+        "giro": { "description": "Hacia dónde mira, en grados (0 = +Z, 90 = +X). Con marco ancla se suma al giro del ancla.", "type": "number", "minimum": -360, "maximum": 360 },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["ancla", "dx", "dz"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "../../estudio/esquemas/textos.schema.json",
+  "version": 1,
+  "textos": {
+    "tactil": {
+      "romper": { "es": "ROMPER", "en": "BREAK" },
+      "usar": { "es": "USAR", "en": "USE" },
+      "inventario": { "es": "INV", "en": "INV" },
+      "soltar": { "es": "SOLTAR", "en": "DROP" },
+      "acariciar": { "es": "ACARICIAR", "en": "PET" },
+      "camara": { "es": "CAM", "en": "CAM" },
+      "comando": { "es": "/", "en": "/" }
+    }
+  }
+}

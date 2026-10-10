@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "comun.schema.json",
+  "title": "Piezas comunes del Estudio",
+  "description": "Definiciones que reutilizan los demás esquemas. Subconjunto de JSON Schema que entiende estudio/validar.mjs: type, enum, const, properties, required, additionalProperties, patternProperties, propertyNames, items, prefixItems, minItems, maxItems, minimum, maximum, minLength, maxLength, pattern, $ref (local o a otro archivo de esta carpeta), anyOf. $schema va solo en la raíz y nota solo donde el esquema la declara.",
+  "$defs": {
+    "version": {
+      "description": "Versión del formato del archivo. Sube solo si cambia el significado de una clave (y el cargador migra).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "nota": {
+      "description": "Comentario libre para personas y agentes (JSON no admite comentarios). El juego la ignora.",
+      "type": "string"
+    },
+    "clave": {
+      "description": "Nombre interno: empieza con minúscula; luego letras, números o guion. Igual que las claves del código (skins, lugares, gestos).",
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9-]*$"
+    },
+    "texto": {
+      "description": "Texto visible con su par español/inglés (regla del proyecto: todo texto visible lleva los dos). Variables entre llaves: {n}, {nombre}.",
+      "type": "object",
+      "properties": {
+        "es": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 },
+        "revisado": { "description": "true cuando el dueño ya aprobó el texto (son personas reales). Falta o false = pendiente de revisión.", "type": "boolean" },
+        "max": { "description": "Largo máximo en caracteres que cabe en su lugar (botón, globo). validar avisa si se pasa.", "type": "integer", "minimum": 1 },
+        "nota": { "$ref": "#/$defs/nota" }
+      },
+      "required": ["es", "en"],
+      "additionalProperties": false
+    },
+    "radianes": {
+      "description": "Ángulo de hueso en radianes, con los signos de .claude/skills/animaciones-minecraft/referencia/rig.md.",
+      "type": "number",
+      "minimum": -3.2,
+      "maximum": 3.2
+    }
+  }
+}

@@ -42,6 +42,14 @@ Constantes clave (`voxeles.js`): `ESCALA = 4` (1 celda = 4×4 bloques), `FACTOR_
 
 Cómo se arma una columna: la altura sale de interpolar `E` (suavizado bilineal por celda); el material, del tipo `T` de la celda con el borde desordenado. Las celdas con `F = 1` son estructuras: tope exacto `vh(E)` y material de color desde la altura base (`BASE_ESTRUCTURA`). Puentes (`T = madera` sin `F`) se tratan aparte (`ES = 2`).
 
+## Estudio (editor visual y contenido en JSON)
+
+Proyecto aparte que se intercala con los bloques 6 y 7. Todo el detalle está en `estudio/DISENO.md`; aquí solo el estado.
+
+- Fases: 0 diseño (hecha) → 1 servidor Node + layout táctil (siguiente) → 2 juego dentro del Estudio → 3 textos ES/EN → 4 posiciones con gizmo (después de 6d) → 5 escenas → 6 poses → 7 motor genérico (opcional).
+- Datos en `mundo/datos/` (qué lee el juego: `indice.json`), esquemas en `estudio/esquemas/` y reglas en «Contenido nuevo en JSON» de `CLAUDE.md`.
+- Criterio del dueño: lo más cómodo para él y para Claude; el diseño lo decide cada chat y él solo opina en lo obvio. Aprobado: orden textos → posiciones y giro en grados. `estudio/` no se publica (`_config.yml` lo excluye de GitHub Pages).
+
 ## Modo online (Supabase)
 
 Solo para pasar el rato con amigos. Sin sala no se descarga nada de Supabase y el mundo funciona exactamente igual que offline.
@@ -981,6 +989,8 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+
+- 2026-10-10 · **Estudio · fase 0 (diseño y contratos, sin código)** (rama `estudio-fase0`): arquitectura del editor visual en `estudio/DISENO.md`, con fases y la 1 detallada para ejecutar. Cambio de orden: textos (3) antes que posiciones (4), porque no tienen dependencias, son lo que más pesa y posiciones toca `amigos.js` (en 6d). Esquemas en `estudio/esquemas/` (comun, ui-layout, textos, posiciones, poses, indice). Datos iniciales con los valores de hoy en `mundo/datos/` (layout táctil, etiquetas táctiles, 9 amigos relativos a su lugar, 6 poses y 11 gestos); el juego todavía no los lee. Contrato del CLI `estudio/cli.mjs` y sección «Contenido nuevo en JSON» en `CLAUDE.md` · verificado: los 5 JSON cumplen sus esquemas y 8 casos inválidos fallan (validador de prueba); los 11 gestos en datos dan lo mismo que `GESTOS`/`GESTOS_AMISTAD` (16 040 comparaciones, diferencia 0).
 
 - 2026-10-10 · **Bloque 6c-2 · escenas de grupo** (rama `amistad-6c-grupos`): Tomatitos en la fogata (7 variantes), trío de la atalaya (3: el Venjy de arriba salta y cae con polvo) y los de Coyhaique en el iglú (3: el Venjy de la mina llega por el túnel y guerra de nieve), cargados con `import()` (`supervivencia/grupos/`). Es la escena automática de su lugar con skin de integrante (salvo Venjy en el iglú) y se repite con «Saludo del grupo». Motor: modo grupo, frases de «Todos», giros fijos, cámara en torno al centro y planos manuales. Revisión del dueño: frases con la duración de 6c-1 (escenas de 27-36 s), el pito y el bong se quedan y Nacho culpa a Hadad de los stickers. Archivos y decisiones en «Estado 6c-2». Verificado: `mundo/tests/*.mjs` OK (amistad 97359 comprobaciones, con el motor real en Node para «vuelve a su sitio»), las 13 en el navegador sin errores; hojas en `mundo/capturas/6c/grupos/`. `mundo/DISENO-6c.md` borrado.
 

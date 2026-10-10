@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "poses.schema.json",
+  "title": "Poses y gestos por hueso (mundo/datos/poses.json)",
+  "description": "Poses fijas y gestos de las personas de cajas, por canal (nombres cortos de .claude/skills/animaciones-minecraft/referencia/rig.md). Un canal vale: número fijo, o claves k interpoladas (o base) más osciladores. Equivale a las funciones de GESTOS (escenas-skin.js) y GESTOS_AMISTAD (escena-amistad-datos.js): ruta() es k con interp suave y Math.sin(t * f) es un oscilador. Lo que no se pueda expresar así (condiciones, composición como alHombro) sigue en JS; si un gesto no está aquí, el juego usa el del código.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "poses": {
+      "description": "Poses fijas (atlas de rig.md): nombre -> canales numéricos.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "canales": { "$ref": "#/$defs/canalesFijos" },
+          "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+        },
+        "required": ["canales"],
+        "additionalProperties": false
+      }
+    },
+    "gestos": {
+      "description": "Gestos animados: nombre (el mismo que usan las pistas de las escenas) -> definición.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/gesto" }
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "nombreCanal": {
+      "description": "cx cy cz: cuello · bDx bDz bIx bIz: brazos · pDx pIx: piernas · inc rz y: cuerpo · salto: se suma a y (el motor lo apaga sentado) · pz: avanza el cuerpo (abrazos).",
+      "enum": ["cx", "cy", "cz", "bDx", "bDz", "bIx", "bIz", "pDx", "pIx", "inc", "rz", "y", "salto", "pz"]
+    },
+    "canalesFijos": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/nombreCanal" },
+      "additionalProperties": { "$ref": "comun.schema.json#/$defs/radianes" }
+    },
+    "canales": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/nombreCanal" },
+      "additionalProperties": { "$ref": "#/$defs/canal" }
+    },
+    "canal": {
+      "anyOf": [
+        { "$ref": "comun.schema.json#/$defs/radianes" },
+        {
+          "type": "object",
+          "properties": {
+            "base": { "description": "Valor de partida si no hay k (por defecto 0).", "type": "number" },
+            "k": {
+              "description": "Claves [tiempo, valor] en orden creciente de tiempo, en el reloj del gesto. Antes de la primera y después de la última se mantiene el valor del extremo (como ruta()).",
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2 }
+            },
+            "interp": { "description": "suave (smoothstep, como ruta(); por defecto), lineal o paso.", "enum": ["suave", "lineal", "paso"] },
+            "osc": { "type": "array", "items": { "$ref": "#/$defs/oscilador" } },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "oscilador": {
+      "description": "Se suma: amp * forma(t * frec + fase) * envolvente. t es siempre el reloj de la escena en segundos (igual que en el código).",
+      "type": "object",
+      "properties": {
+        "forma": { "description": "sin = Math.sin · abs = |sin| · pos = max(0, sin) · neg = min(0, sin).", "enum": ["sin", "abs", "pos", "neg"] },
+        "amp": { "type": "number" },
+        "frec": { "description": "Multiplica a t (rad/s), como Math.sin(t * frec).", "type": "number" },
+        "fase": { "type": "number" },
+        "env": {
+          "description": "[a, b]: multiplica por tramo(u, a, b), con u = 0..1 dentro del tramo del gesto (sube de 0 a 1 entre a y b).",
+          "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2
+        }
+      },
+      "required": ["forma", "amp", "frec"],
+      "additionalProperties": false
+    },
+    "gesto": {
+      "type": "object",
+      "properties": {
+        "reloj": {
+          "description": "En qué tiempo están las claves k: t = reloj de la escena en s (como GESTOS_AMISTAD hoy) · local = s desde que empieza el tramo del gesto (lo recomendado para gestos nuevos) · u = 0..1 dentro del tramo.",
+          "enum": ["t", "local", "u"]
+        },
+        "ciclo": { "description": "Si está, el reloj de k se repite cada ciclo segundos (hachazo, martillo).", "type": "number", "minimum": 0.05 },
+        "canales": { "$ref": "#/$defs/canales" },
+        "variantes": {
+          "description": "Canales que reemplazan a los de arriba en un caso: sentado (el actor está sentado) o jugador (el cuerpo del jugador, p. ej. en espejo).",
+          "type": "object",
+          "properties": {
+            "sentado": { "$ref": "#/$defs/canales" },
+            "jugador": { "$ref": "#/$defs/canales" }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["reloj", "canales"],
+      "additionalProperties": false
+    }
+  }
+}

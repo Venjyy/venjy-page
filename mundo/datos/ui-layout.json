@@ -1,0 +1,32 @@
+{
+  "$schema": "../../estudio/esquemas/ui-layout.schema.json",
+  "version": 1,
+  "supervivencia": {
+    "normal": {
+      "pie": 60,
+      "botones": {
+        "joy": { "ancla": "ii", "x": 14, "y": 0, "desde": "pie", "w": 116, "h": 116, "palanca": 48 },
+        "saltar": { "ancla": "id", "x": 14, "y": 0, "desde": "pie", "w": 76, "h": 76 },
+        "bajar": { "ancla": "id", "x": 98, "y": 0, "desde": "pie", "w": 64, "h": 64, "letra": 0.8 },
+        "sv-usar": { "ancla": "id", "x": 14, "y": 88, "desde": "pie", "w": 76, "h": 76 },
+        "sv-romper": { "ancla": "id", "x": 98, "y": 88, "desde": "pie", "w": 76, "h": 76 },
+        "sv-acariciar": { "ancla": "id", "x": 14, "y": 176, "desde": "pie", "w": 96, "h": 40, "letra": 0.8 },
+        "sv-inventario": { "ancla": "si", "x": 12, "y": 84, "w": 64, "h": 40, "letra": 0.8 },
+        "sv-soltar": { "ancla": "si", "x": 12, "y": 130, "w": 64, "h": 40, "letra": 0.8 },
+        "sv-camara": { "ancla": "si", "x": 12, "y": 176, "w": 64, "h": 40, "letra": 0.8 },
+        "sv-comando": { "ancla": "si", "x": 12, "y": 222, "w": 64, "h": 40, "letra": 0.9 },
+        "pausa": { "ancla": "sd", "x": 12, "y": 12, "w": 44, "h": 44 },
+        "pantalla": { "ancla": "sd", "x": 64, "y": 12, "w": 44, "h": 44 },
+        "mision": { "ancla": "si", "x": 12, "y": 270, "seguro": false }
+      }
+    },
+    "baja": {
+      "pie": 50,
+      "botones": {
+        "sv-usar": { "y": 82, "w": 66, "h": 66 },
+        "sv-romper": { "x": 88, "y": 82, "w": 66, "h": 66 },
+        "sv-acariciar": { "y": 156 }
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+# Datos del Estudio: siempre LF, para que el formato estable (estudio/DISENO.md §3) sea igual byte a byte en Windows
+mundo/datos/*.json text eol=lf
