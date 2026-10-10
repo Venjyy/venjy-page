@@ -335,7 +335,7 @@ export function crearMinado(ctx) {
     }
 
     // ---- Entrada ----
-    const activo = () => estado.activo && jugador.activo && !ventanas.abierta && !vida.muerto;
+    const activo = () => estado.activo && jugador.activo && !jugador.sinMirar && !ventanas.abierta && !vida.muerto;
     function abajo(boton) {
         if (!activo()) return;
         if (boton === 0) {

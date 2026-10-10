@@ -50,6 +50,7 @@ import { crearCaricias } from './caricias.js';
 import { crearEscenasGatas } from './escenas-gatas.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
+import { crearVidaAmigos } from './vida-amigos.js';
 import { crearMinijuegos } from './minijuego.js';
 import { NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
@@ -575,6 +576,8 @@ async function arrancar(guardado, cx = null) {
     const animales = crearAnimales(vista.grupo, ctxCriaturas);
     const npcs = crearNPCs(vista.grupo, { ...ctxCriaturas, gatas, carteles: null, idioma });
     const amigos = crearAmigos(vista.grupo, { ...ctxCriaturas, npcs, idioma });
+    // Vida entre amigos (bloque 6d): charlas y bromas en la fogata y el iglú sin el jugador; los guiones se cargan al acercarse
+    const vidaAmigos = crearVidaAmigos({ amigos, jugador: vista.jugador, idioma: () => idioma, libre: () => !vida.muerto });
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
@@ -644,12 +647,21 @@ async function arrancar(guardado, cx = null) {
     ponerSkin(skinInicial);
     juego = { ponerSkin };
     // Escenas de skin: un amigo reconoce tu skin (o a Venjy) la primera vez que te acercas
-    // Bloqueo del jugador durante las escenas (skins y caricias a las gatas): el mundo sigue, sin control
-    const bloquearEscena = () => {
+    // Bloqueo del jugador durante las escenas (skins y caricias a las gatas): el mundo sigue, sin control.
+    // El puntero sigue capturado (sin mirar ni usar las manos): así al terminar se vuelve a jugar sin «Haz clic
+    // para seguir jugando», que el navegador exige si hay que pedir el puntero sin un clic reciente. Si la escena
+    // se abrió desde un panel (puntero suelto), se recaptura con ese mismo clic. Esc la salta (el navegador suelta
+    // el puntero; el botón «Saltar» queda a mano). conCursor: minijuegos y la ronda del iglú, que usan el mouse.
+    const bloquearEscena = (conCursor = false) => {
         uiAbierta = true; jugador.congelado = true; jugador.teclas.clear();
-        if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();
+        if (tactil) { tactil.desactivar(); return; }
+        if (conCursor === true) { if (document.pointerLockElement) document.exitPointerLock(); return; }
+        jugador.sinMirar = true;
+        if (!document.pointerLockElement && navigator.userActivation && navigator.userActivation.isActive) {
+            try { const r = lienzo.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* queda con cursor */ }
+        }
     };
-    const liberarEscena = () => { uiAbierta = false; jugador.congelado = false; if (!vida.muerto) entrar(); };
+    const liberarEscena = () => { uiAbierta = false; jugador.congelado = false; jugador.sinMirar = false; if (!vida.muerto && !jugador.activo) entrar(); };
     escenas = crearEscenasSkin({
         grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, npcs, amigos, venjys, idioma,
         skin: () => skinActual,
@@ -685,7 +697,7 @@ async function arrancar(guardado, cx = null) {
         grupo: vista.grupo, dy: DY, jugador, camara, camaras, misiones, amigos, escenas, terreno, idioma, lienzo, hud,
         skin: () => skinActual,
         puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
-        bloquear: bloquearEscena,
+        bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
     // Minijuegos (duelo de hachas con Boris, pesca con Pony, asado en la fogata): botón en el panel del amigo
@@ -693,7 +705,7 @@ async function arrancar(guardado, cx = null) {
         grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, amigos, npcs, terreno, inventario, entidades, hud, particulas, idioma,
         tinteMundo: materiales.solido.color,
         puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa,
-        bloquear: bloquearEscena,
+        bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
     misiones.minijuego = {
@@ -794,7 +806,8 @@ async function arrancar(guardado, cx = null) {
             // 6c-1: el recorrido de bienvenidas y reencuentros te pone la skin del amigo y al final te devuelve la tuya
             skin: () => skinActual,
             ponerSkin: d => ponerSkin(d),
-            callar: v => escenas.callar(v)
+            callar: v => escenas.callar(v),
+            vida: vidaAmigos // 6d: /amistad vida-<id>
         }
     });
     // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>, /gamemode devenjy (+ comandos de desarrollo)
@@ -1078,7 +1091,7 @@ async function arrancar(guardado, cx = null) {
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
-        gatas, animales, npcs, amigos, venjys, minimapa, guardarYa, estadoActual,
+        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
@@ -1146,6 +1159,7 @@ async function arrancar(guardado, cx = null) {
         gatas.actualizar(dtC);
         npcs.actualizar(dtC, false);
         animales.actualizar(dtC, false);
+        vidaAmigos.actualizar(dtC);
         amigos.actualizar(dtC, false);
         venjys.actualizar(dtC, false);
         misiones.actualizar(dtC);

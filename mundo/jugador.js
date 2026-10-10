@@ -37,6 +37,7 @@ export class Jugador {
         // Ganchos del modo online (arena): sin vuelo, sin piso en y<0, jugador congelado
         this.sinVuelo = false;
         this.congelado = false;
+        this.sinMirar = false;     // escenas de la supervivencia: puntero capturado pero sin mirar ni teclas
         this.vacio = null; // { y, alCaer } cae al vacío bajo esa altura
         // Ganchos de la supervivencia (en creativo quedan sin uso)
         this.alAterrizar = null;   // fn(bloquesCaidos) al tocar suelo tras caer
@@ -56,7 +57,7 @@ export class Jugador {
             this.alCambiarActivo && this.alCambiarActivo(this.activo);
         });
         document.addEventListener('mousemove', e => {
-            if (!this.activo) return;
+            if (!this.activo || this.sinMirar) return;
             this.yaw -= e.movementX * this.sensibilidad;
             this.pitch -= e.movementY * this.sensibilidad;
             this.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, this.pitch));
@@ -67,7 +68,7 @@ export class Jugador {
     }
 
     tecla(e, abajo) {
-        if (!this.activo) return;
+        if (!this.activo || this.sinMirar) return;
         const c = e.code;
         if (['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'ShiftLeft', 'ControlLeft', 'Tab'].includes(c)) e.preventDefault();
         if (abajo) {
