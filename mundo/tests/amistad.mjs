@@ -327,12 +327,13 @@ function revisarPista(ruta, g, qs) {
         }
     }
 }
-function revisarLineas(ruta, g, qs, nMin, nMax) {
+// minD(texto): lo mínimo que dura una frase para leerse (1.8 s; en los grupos una exclamación corta puede durar menos)
+function revisarLineas(ruta, g, qs, nMin, nMax, minD = () => 1.8) {
     ok(g.lineas.length >= nMin && g.lineas.length <= nMax, `${ruta}: ${nMin} a ${nMax} frases`);
     let fin = 0;
     for (const l of g.lineas) {
         ok(qs.has(l.q), `${ruta}: habla un actor de la escena (${l.q})`);
-        ok(l.a >= 0.3 && l.d >= 1.8 && l.a + l.d <= g.T, `${ruta}: «${l.texto.es}» cabe en la escena y se alcanza a leer`);
+        ok(l.a >= 0.3 && l.d >= minD(l.texto) && l.a + l.d <= g.T, `${ruta}: «${l.texto.es}» cabe en la escena y se alcanza a leer`);
         ok(l.a >= fin - 0.01, `${ruta}: las frases no se pisan («${l.texto.es}»)`);
         fin = l.a + l.d;
     }
@@ -395,7 +396,7 @@ for (const [k, d] of Object.entries(REENCUENTROS)) for (const [i, [q, txt]] of d
 }
 // Disparo: bienvenida con toda skin de amigo (no con Venjy), reencuentros solo con relación 2-3, una vez cada uno
 {
-    const vistas = new Set();
+    const vistas = new Set(['gr:tomatitos:pony']); // con skin de Pony, la escena de grupo (6c-2) va antes que el reencuentro con Andy: aquí ya se vio
     for (const base of amigos6c) ok(pendiente6c(base, 'venjy', vistas)?.tipo === 'bienvenida', `${base}: le toca la bienvenida`);
     ok(pendiente6c('venjy', 'pony', vistas) === null && pendiente6c('venjy', 'lona', vistas) === null && pendiente6c(null, 'venjy', vistas) === null, 'con skin de Venjy (o sin base) no hay escenas 6c');
     ok(pendiente6c('pony', 'pony', vistas) === null, 'tu clon no tiene reencuentro (tiene su escena de skin)');
@@ -404,7 +405,103 @@ for (const [k, d] of Object.entries(REENCUENTROS)) for (const [i, [q, txt]] of d
     vistas.add('bv:pony'); vistas.add('rc:pony:andy');
     ok(pendiente6c('pony', 'venjy', vistas) === null && pendiente6c('pony', 'andy', vistas) === null && pendiente6c('andy', 'pony', vistas)?.tipo === 'reencuentro', 'una vez por partida y por skin');
     for (const c of PERSONAJES) ok(!!LUGAR[c], `${c}: tiene lugar para «uno por lugar»`);
+    ok(pendiente6c('pony', 'andy', vistas) === null, 'tras su reencuentro y su grupo, Andy no tiene otra escena con skin de Pony');
     ok(LUGAR.hadad === LUGAR.andy && LUGAR.andy === LUGAR.nacho && LUGAR.lalo === LUGAR.moises && LUGAR.boris === LUGAR.lucho && LUGAR.salonas === LUGAR.conejeros, 'los que están juntos comparten lugar');
+}
+
+// ---------------------------------------------------------
+// 6c-2 · Escenas de grupo (grupos/<grupo>.js, cargados con import())
+// ---------------------------------------------------------
+const { GRUPOS, grupoDe } = await import('../supervivencia/amistad.js');
+ok(Object.keys(GRUPOS).length === 3 && Object.values(GRUPOS).reduce((s, d) => s + d.miembros.length, 0) === 13, '3 grupos con 13 variantes');
+const modGrupos = {};
+for (const [nombre, def] of Object.entries(GRUPOS)) {
+    const m = await import(`../supervivencia/grupos/${nombre}.js`);
+    modGrupos[nombre] = m;
+    ok(typeof m.grupo === 'function' && m.VARIANTES && m.COMUN, `grupo ${nombre}: módulo con grupo(), VARIANTES y COMUN`);
+    ok(m.MIEMBROS.length === def.miembros.length && def.miembros.every(c => m.MIEMBROS.includes(c)), `grupo ${nombre}: una variante por cada integrante (${def.miembros.join(', ')})`);
+    ok(def.npcs.every(c => def.miembros.includes(c)) && def.npcs.includes(m.ANCLA), `grupo ${nombre}: los del lugar son del grupo y el ancla es uno de ellos`);
+    for (const c of PERSONAJES) if (!def.miembros.includes(c)) ok(!m.grupo(c) && !grupoDe(c, def.npcs[0]), `grupo ${nombre}: sin variante ni disparo para ${c}`);
+    const vistasG = new Set();
+    for (const base of def.miembros) {
+        const g = m.grupo(base), ruta = `grupo ${nombre}/${base}`;
+        // Solo actúan los del grupo: los NPC del lugar y el Venjy que se suma (el de la atalaya o el de la mina)
+        const extras = Object.values(g.actores || {});
+        ok(g.ancla === m.ANCLA && extras.every(c => def.npcs.includes(c) || c === `venjy@${def.venjy}`), `${ruta}: actores solo del grupo (${extras.join(', ')})`);
+        ok(g.reparto[m.ANCLA] === 'n' && typeof g.centro === 'function' && typeof g.colocar === 'function', `${ruta}: ancla, centro y lugar del jugador`);
+        ok(g.T >= 18 && g.T <= 28, `${ruta}: dura ${g.T} s (18-28)`);
+        const qs = new Set(['j', 'todos', ...def.npcs, ...Object.keys(g.actores)]);
+        revisarLineas(ruta, g, qs, 8, 13, x => Math.min(1.8, 0.9 + x.es.length * 0.025));
+        revisarPista(ruta, g, qs);
+        ok(g.lineas.filter(l => l.q === 'j').length >= 2 && g.lineas[g.lineas.length - 1].q === 'j', `${ruta}: tú hablas y cierras la escena`);
+        ok(m.COMUN.every(([, x]) => g.lineas.some(l => l.texto === x)), `${ruta}: tiene toda la parte común del grupo`);
+        ok(g.lineas.some(l => l.q === 'todos'), `${ruta}: todos dicen la frase del grupo`);
+        // Tu clon actúa como él mismo si es del lugar (sus frases son del NPC, no tuyas)
+        if (def.npcs.includes(base)) ok(m.VARIANTES[base].llegada.some(([q]) => q === base), `${ruta}: tu clon habla en la llegada`);
+        // Disparo: automática la primera vez con la skin de un integrante, salvo «solo botón» (Venjy en el iglú)
+        for (const c of def.npcs) {
+            ok(grupoDe(base, c) === nombre, `${ruta}: «Saludo del grupo» frente a ${c}`);
+            const p = pendiente6c(base, c, vistasG);
+            if ((def.soloBoton || []).includes(base)) ok(p === null || p.tipo !== 'grupo', `${ruta}: solo con el botón`);
+            else ok(p?.tipo === 'grupo' && p.grupo === nombre && p.clon === (def.npcs.includes(base) ? base : null), `${ruta}: sale sola frente a ${c} (y da por vista la escena de tu clon)`);
+        }
+    }
+    for (const [i, [, x]] of m.COMUN.entries()) textos.push([`GRUPO.${nombre}.comun.${i}`, x]);
+    for (const [base, v] of Object.entries(m.VARIANTES)) {
+        for (const [k, x] of [...(v.llegada || []).map(([, y], i) => [`llegada${i}`, y]), ...(v.brindis || []).map(([, y], i) => [`brindis${i}`, y]),
+            ['despues', v.despues], ['bola', v.bola], ['cierre', v.cierre]]) if (x) textos.push([`GRUPO.${nombre}.${base}.${k}`, x]);
+    }
+}
+{
+    const vistas = new Set();
+    ok(pendiente6c('pony', 'andy', vistas)?.tipo === 'grupo', 'con skin de Pony en la fogata, primero los Tomatitos');
+    vistas.add('gr:tomatitos:pony');
+    ok(pendiente6c('pony', 'andy', vistas)?.tipo === 'reencuentro', 'después del grupo, el reencuentro con Andy (clic derecho)');
+    ok(pendiente6c('venjy', 'boris', vistas)?.tipo === 'grupo' && pendiente6c('venjy', 'lalo', vistas) === null, 'con skin de Venjy: atalaya sola, iglú solo con el botón');
+    ok(grupoDe('venjy', 'moises') === 'coyhaique' && grupoDe('salonas', 'hadad') === null && grupoDe('pony', 'boris') === null, 'el botón solo con la skin de un integrante');
+}
+// Quien se movió vuelve a su sitio: el motor real (escena-amistad.js) con un DOM mínimo y personas de cajas falsas.
+// Sin frases (los globos piden el DOM entero): los movimientos no dependen de ellas.
+{
+    const THREE = await import('../../vendor/three.module.js');
+    const lienzo2d = { fillRect() {}, fillStyle: '' };
+    const elem = () => ({ style: {}, classList: { add() {}, remove() {} }, addEventListener() {}, getContext: () => lienzo2d, width: 0, height: 0 });
+    globalThis.document ??= { createElement: elem, body: { appendChild() {}, classList: { add() {}, remove() {}, contains: () => false } }, addEventListener() {}, querySelector: () => null, querySelectorAll: () => [] };
+    const { crearEscenaAmistad } = await import('../supervivencia/escena-amistad.js');
+    const rig = () => {
+        const p = {};
+        for (const k of ['g', 'cuerpo', 'torso', 'cuello', 'cabeza', 'brazoD', 'brazoI', 'piernaD', 'piernaI']) p[k] = new THREE.Group();
+        p.g.add(p.cuerpo); p.cuerpo.add(p.torso, p.cuello, p.brazoD, p.brazoI, p.piernaD, p.piernaI); p.cuello.add(p.cabeza);
+        return p;
+    };
+    // Sitios medidos en el mapa (creativo: y sin el desnivel de 48)
+    const SITIOS = { hadad: [721.85, 25, 538, 1.57], andy: [725.3, 25, 539.6, 3.14], nacho: [727.15, 25, 538, -1.57], boris: [879.5, 27, 630.15, 3.14], lucho: [882.3, 27, 629.5, -1.34],
+        moises: [1327.4, 45, 133.4, 2.27], lalo: [1329.6, 45, 132.6, -1.57], 'venjy@atalaya': [879.5, 38, 621.5, 3.14], 'venjy@mina': [1294.9, 21, 138, -0.45] };
+    const personas = Object.entries(SITIOS).map(([clave, [x, y, z, yaw]]) => ({ clave, x, y, z, yaw, p: rig() }));
+    const jugador = { pos: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, colocar(x, y, z) { this.pos.x = x; this.pos.y = y; this.pos.z = z; } };
+    const camaras = { cuerpo: rig(), iniciarCine() {}, terminarCine() {}, nuevaLinea() {}, enfocar() {}, set pose(f) {}, set manual(f) { this.m = f; } };
+    const motor = crearEscenaAmistad({ grupo: new THREE.Group(), dy: 48, mundo: { bloque: () => 0 }, jugador, camara: new THREE.PerspectiveCamera(), camaras, misiones: {},
+        personas: () => personas, personaDe: c => personas.find(n => n.clave === c) || null, bloquear() {}, liberar() {} });
+    const foto = () => personas.map(n => [n.clave, n.x, n.y, n.z, n.yaw]);
+    for (const [nombre, m] of Object.entries(modGrupos)) for (const base of m.MIEMBROS) for (const corte of [0.6, 1.1]) {
+        const ruta = `grupo ${nombre}/${base} (${corte < 1 ? 'Saltar a la mitad' : 'hasta el final'})`;
+        const antes = foto(), g = m.grupo(base);
+        ok(motor.iniciar(g.ancla, { ...g, lineas: [] }), `${ruta}: empieza`);
+        const j0 = { ...jugador.pos };
+        let movidos = new Set();
+        for (let x = 0; x < g.T * corte && motor.activa; x += 0.05) {
+            motor.actualizar(0.05);
+            for (const [i, n] of personas.entries()) if (Math.hypot(n.x - antes[i][1], n.y - antes[i][2], n.z - antes[i][3]) > 0.05) movidos.add(n.clave);
+            if (Math.hypot(jugador.pos.x - j0.x, jugador.pos.z - j0.z) > 0.05) movidos.add('j');
+        }
+        if (motor.activa) motor.saltar();
+        const esperados = { atalaya: ['venjy@atalaya'], coyhaique: ['venjy@mina', 'moises'] }[nombre] || (base === 'braulio' ? ['j'] : []);
+        ok(esperados.every(c => movidos.has(c)), `${ruta}: se movieron ${[...movidos].join(', ') || 'nadie'} (esperados: ${esperados.join(', ') || 'nadie'})`);
+        const despues = foto();
+        ok(!motor.activa && antes.every((a, i) => a.every((v, k) => v === despues[i][k])), `${ruta}: todos vuelven a su sitio (posición y giro)`);
+        ok(jugador.pos.x === j0.x && jugador.pos.y === j0.y && jugador.pos.z === j0.z, `${ruta}: el jugador queda donde empezó la escena`);
+        ok(camaras.m === null || camaras.m === undefined, `${ruta}: la cámara manual se suelta`);
+    }
 }
 
 // Frases únicas (las preguntas de los botones se repiten a propósito) y sin emojis

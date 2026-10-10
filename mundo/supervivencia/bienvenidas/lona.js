@@ -8,7 +8,7 @@
 //   8.9-14.3   bailan lento, tomados de la mano: se mecen (`mece`, `rz` suave) y giran despacio un paso de
 //              baile (yaw de Venjy y de tu cuerpo, ±0.25 rad, en fase; el giro vuelve a 0 al final del paso).
 //   14.4-20.4  abrazo, beso en la mejilla y corazones de comun.js (`pareja(14.4)`, corazones en 17.2, 18.2 y 19.4).
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, r2, pareja, MOLDES } from './comun.js';
 

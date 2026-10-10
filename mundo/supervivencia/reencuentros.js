@@ -2,7 +2,7 @@
 // VENJY · Supervivencia · Reencuentros entre amigos (bloque 6c-1)
 // escena-amistad.js lo carga con import() la primera vez que hace falta (escenas-skin.js lo pide al acercarte
 // con la skin de un amigo que tiene relación 2 o 3 con otro, o al hacerle clic derecho).
-// · REENCUENTROS: los 16 de mundo/DISENO-6c.md §3, con las frases por personaje (no por papel): la misma
+// · REENCUENTROS: los 16 de mundo/DIALOGOS.md, con las frases por personaje (no por papel): la misma
 //   escena sirve en las dos direcciones (con skin de Pony frente a Andy dices las de Pony; con skin de Andy
 //   frente a Pony, las de Andy). Textos aprobados por el dueño (2026-10-10): no se cambian sin preguntar.
 // · reencuentro(base, clave) arma el guion para escena-amistad.js:

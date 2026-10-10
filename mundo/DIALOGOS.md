@@ -610,3 +610,151 @@ Generado desde `mundo/supervivencia/reencuentros.js`: una escena por pareja de a
 | Andy - Nacho | 3 · larga | Andy | ¿Te acuerdas del primer trabajo juntos? No sabíamos ni por dónde empezar. | Remember our first assignment together? We didn't even know where to start. |
 | Andy - Nacho | 3 · larga | Nacho | Y lo sacamos adelante igual. Jajaja, todavía no sé cómo. | And we pulled it off anyway. Haha, I still don't know how. |
 | Andy - Nacho | 3 · larga | Andy | Así somos: tarde, pero siempre llegamos. | That's us: late, but we always make it. |
+
+## Escenas de grupo (bloque 6c-2)
+
+Generadas desde `supervivencia/grupos/<grupo>.js` (textos aprobados en el diseño de 6c, sin cambios). «Tú» es quien juega con esa skin; si tu skin es la de alguien del lugar, su clon habla como él mismo.
+
+### Tomatitos (fogata)
+
+| Tu skin | Quién | Español | English |
+|---|---|---|---|
+| Venjy | Hadad | ¡Venjy! Por fin sales del código y vienes a la fogata. | Venjy! You finally leave the code and come to the campfire. |
+| Venjy | Tú | Vi el grupo y no podía faltar. | I saw the group chat and couldn't miss it. |
+| Venjy (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Venjy (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Venjy (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Venjy | Tú | Les traje el tomate oficial de los Tomatitos. | I brought you the official Tomatitos tomato. |
+| Venjy | Nacho | Jajaja, ¡es más grande que el Pony! | Haha, it's bigger than Pony! |
+| Venjy (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Venjy | Tú | Esto es lo que más me gusta del mundo: ustedes. | This is what I like most about the world: you guys. |
+| Pony | Andy | ¡Pony! Siéntate, pero no webees, que estamos tranquilos. | Pony! Sit down, but no messing around, we're chilling. |
+| Pony | Tú | ¿Yo webear? Si soy un angelito. | Me, mess around? I'm a little angel. |
+| Pony (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Pony (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Pony (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Pony | Tú | ¡Bajen los tomates, que no alcanzo! | Lower the tomatoes, I can't reach! |
+| Pony | Andy | Ya, por esta vez. | Okay, just this once. |
+| Pony (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Pony | Tú | Lo mejor de la U fueron ustedes. No le digan a nadie. | The best thing about uni was you guys. Don't tell anyone. |
+| Braulio | Nacho | Jajaja, ¡Braulio! ¿Trajiste arena de la playa? | Haha, Braulio! Did you bring sand from the beach? |
+| Braulio | Tú | Un poco. Viene incluida conmigo. | A little. It comes included with me. |
+| Braulio (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Braulio (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Braulio (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Braulio | Tú | Yo brindo con esto. Escuchen: se oye el mar. | I'll toast with this. Listen: you can hear the sea. |
+| Braulio | Hadad | Se oye el mar y un cangrejo reclamando. | You can hear the sea and a crab complaining. |
+| Braulio (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Braulio | Tú | La próxima fogata la hacemos en la playa. | Next campfire we do on the beach. |
+| Conejeros | Hadad | ¡Conejeros! ¿Vienes en modo normal o en modo .exe? | Conejeros! Coming in normal mode or .exe mode? |
+| Conejeros | Tú | Modo normal. Por ahora. | Normal mode. For now. |
+| Conejeros (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Conejeros (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Conejeros (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Conejeros | Tú | Les presento a Tomás. Es un tomate, pero con sentimientos. | Meet Tomás. He's a tomato, but with feelings. |
+| Conejeros | Andy | ¿Y ahora cómo brindamos con Tomás? | And now how do we toast with Tomás? |
+| Conejeros (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Conejeros | Tú | Tomás dice que los quiere. Yo también, un poco. | Tomás says he loves you. Me too, a little. |
+| Hadad | Hadad | ¿Y tú quién eres? ¿Por qué tienes mi cara? | And who are you? Why do you have my face? |
+| Hadad | Tú | Lo mismo te pregunto. Levanta el brazo. | I was going to ask you the same. Raise your arm. |
+| Hadad (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Hadad (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Hadad (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Hadad | Nacho | Jajaja, ¡ahora hay dos que promocionan papas! | Haha, now there are two promoting chips! |
+| Hadad | Tú | Uno para cada bolsa. | One per bag. |
+| Hadad (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Hadad | Tú | Dos Hadad en la fogata. El grupo no está listo para esto. | Two Hadads at the campfire. The group isn't ready for this. |
+| Andy | Andy | ¿Otro Andy? A ver, ¿te sabes el baile? | Another Andy? Let's see, do you know the dance? |
+| Andy | Tú | Me lo sé mejor que tú. | I know it better than you. |
+| Andy (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Andy (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Andy (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Andy | Hadad | Dos Andy bailando y ninguno ganó nada. | Two Andys dancing and neither of them won anything. |
+| Andy | Tú | Todavía. | Yet. |
+| Andy (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Andy | Tú | Con ustedes hasta perder es divertido. | With you guys, even losing is fun. |
+| Nacho | Nacho | Jajaja, ¿otro Nacho? | Haha, another Nacho? |
+| Nacho | Tú | Jajaja, eso iba a decir yo. | Haha, that's what I was going to say. |
+| Nacho (común) | Andy | ¿Quién mandó doscientos stickers al grupo? | Who sent two hundred stickers to the group chat? |
+| Nacho (común) | Nacho | Jajaja, no fui yo. Bueno, sí fui yo. | Haha, it wasn't me. Okay, it was me. |
+| Nacho (común) | Hadad | Ya, Tomatitos: tomate en alto. | Alright, Tomatitos: tomatoes up. |
+| Nacho | Andy | Una risa ya era fuerte. Dos es un concierto. | One laugh was already loud. Two is a concert. |
+| Nacho | Tú | Jajaja, y viene el bis. | Haha, and here comes the encore. |
+| Nacho (común) | Todos | ¡Por los Tomatitos! | To the Tomatitos! |
+| Nacho | Tú | Jajaja, los quiero, Tomatitos. Aunque se rían de mi Tilted. | Haha, love you, Tomatitos. Even if you laugh at my Tilted. |
+
+### Trío de la atalaya
+
+| Tu skin | Quién | Español | English |
+|---|---|---|---|
+| Venjy | Lucho | ¡Primo! Llegaste justo, el negro y yo estábamos armando trío. | Cousin! Right on time, negro and I were putting a trio together. |
+| Venjy | Tú | ¿Trío? Somos tres... ¿y quién es ese de arriba? | A trio? There are three of us... and who's that up there? |
+| Venjy (común) | Venjy | ¡Esperen! ¡Voy! | Wait! I'm coming! |
+| Venjy (común) | Venjy | ¡Aterrizaje de superhéroe! | Superhero landing! |
+| Venjy | Tú | Ya, ahora somos cuatro. Uno sobra y no soy yo. | Okay, now there are four of us. One's extra and it's not me. |
+| Venjy (común) | Boris | Eso te dolió. | That hurt. |
+| Venjy (común) | Venjy | Ni un poquito. Bueno, un poquito. | Not even a little. Well, a little. |
+| Venjy (común) | Lucho | ¡Ping! Enemigo a la izquierda. | Ping! Enemy on the left. |
+| Venjy (común) | Boris | Era una vaca, Lucho. Otra vez. | It was a cow, Lucho. Again. |
+| Venjy (común) | Todos | ¡Trío de la atalaya! | Watchtower trio! |
+| Venjy | Tú | Una partida de cada uno: Apex y LoL. | One match of each: Apex and LoL. |
+| Boris | Lucho | ¿Boris? ¿Y este otro Boris de dónde salió? | Boris? And where did this other Boris come from? |
+| Boris | Tú | Vine a jugar con ustedes. El otro corta la leña. | I came to play with you guys. The other one chops the wood. |
+| Boris | Boris | Me parece justo. | Sounds fair to me. |
+| Boris | Tú | Solo nos falta el Venjy para el trío. | We're only missing Venjy for the trio. |
+| Boris (común) | Venjy | ¡Esperen! ¡Voy! | Wait! I'm coming! |
+| Boris (común) | Venjy | ¡Aterrizaje de superhéroe! | Superhero landing! |
+| Boris | Tú | Lo invocamos y cayó del cielo. | We summoned him and he fell from the sky. |
+| Boris (común) | Boris | Eso te dolió. | That hurt. |
+| Boris (común) | Venjy | Ni un poquito. Bueno, un poquito. | Not even a little. Well, a little. |
+| Boris (común) | Lucho | ¡Ping! Enemigo a la izquierda. | Ping! Enemy on the left. |
+| Boris (común) | Boris | Era una vaca, Lucho. Otra vez. | It was a cow, Lucho. Again. |
+| Boris (común) | Todos | ¡Trío de la atalaya! | Watchtower trio! |
+| Boris | Tú | Después a Linares: yo manejo y tú pones la música, Venjy. | Later to Linares: I drive and you pick the music, Venjy. |
+| Lucho | Boris | ¿Lucho? Pero si estabas ahí al lado. | Lucho? But you were right over there. |
+| Lucho | Tú | Soy otro Lucho, negro. Vengo a armar trío. | I'm another Lucho, negro. Here to build a trio. |
+| Lucho | Lucho | Con dos Luchos ya somos trío... ¿o no? | With two Luchos we're already a trio... or not? |
+| Lucho | Tú | Falta el primo. ¡Venjy! | We're missing cousin. Venjy! |
+| Lucho (común) | Venjy | ¡Esperen! ¡Voy! | Wait! I'm coming! |
+| Lucho (común) | Venjy | ¡Aterrizaje de superhéroe! | Superhero landing! |
+| Lucho | Tú | Primo, ¿no había escalera? | Cousin, wasn't there a ladder? |
+| Lucho (común) | Boris | Eso te dolió. | That hurt. |
+| Lucho (común) | Venjy | Ni un poquito. Bueno, un poquito. | Not even a little. Well, a little. |
+| Lucho (común) | Lucho | ¡Ping! Enemigo a la izquierda. | Ping! Enemy on the left. |
+| Lucho (común) | Boris | Era una vaca, Lucho. Otra vez. | It was a cow, Lucho. Again. |
+| Lucho (común) | Todos | ¡Trío de la atalaya! | Watchtower trio! |
+| Lucho | Tú | Esta noche: el primo, el negro y yo. Ranked hasta las cuatro. | Tonight: cousin, negro and me. Ranked until four. |
+
+### Los de Coyhaique (iglú)
+
+| Tu skin | Quién | Español | English |
+|---|---|---|---|
+| Venjy | Tú | ¿Otro yo minando? Yo vine directo al iglú. | Another me mining? I came straight to the igloo. |
+| Venjy (común) | Venjy | Vengo de la mina. Ni un diamante, pero llegué. | I'm coming from the mine. Not one diamond, but I made it. |
+| Venjy (común) | Moisés | Hermano, ¿te acuerdas de las guerras de nieve en Coyhaique? | Bro, remember the snowball fights in Coyhaique? |
+| Venjy (común) | Lalo | Ahya, ¡y siempre perdías tú! | Ahya, and you always lost! |
+| Venjy | Tú | ¡Oye! Eso fue a traición. | Hey! That was a sneak attack. |
+| Venjy (común) | Moisés | En Coyhaique no había reglas, hermano. | There were no rules in Coyhaique, bro. |
+| Venjy (común) | Lalo | Ahya, ¡me diste en el sombrero! | Ahya, you hit my hat! |
+| Venjy (común) | Todos | ¡Coyhaique, presente! | Coyhaique, present! |
+| Venjy | Tú | Desde los trece, hermanos. Y todavía perdiendo en la nieve. | Since thirteen, bros. And still losing in the snow. |
+| Lalo | Lalo | Ahya, ¿otro Lalo? Uno de los dos es el original. | Ahya, another Lalo? One of us is the original. |
+| Lalo | Tú | Ahya, el original soy yo, hermano. | Ahya, I'm the original, bro. |
+| Lalo (común) | Venjy | Vengo de la mina. Ni un diamante, pero llegué. | I'm coming from the mine. Not one diamond, but I made it. |
+| Lalo (común) | Moisés | Hermano, ¿te acuerdas de las guerras de nieve en Coyhaique? | Bro, remember the snowball fights in Coyhaique? |
+| Lalo (común) | Lalo | Ahya, ¡y siempre perdías tú! | Ahya, and you always lost! |
+| Lalo | Tú | ¡Me tiraste a mí mismo! | You threw it at yourself! |
+| Lalo (común) | Moisés | En Coyhaique no había reglas, hermano. | There were no rules in Coyhaique, bro. |
+| Lalo (común) | Lalo | Ahya, ¡me diste en el sombrero! | Ahya, you hit my hat! |
+| Lalo (común) | Todos | ¡Coyhaique, presente! | Coyhaique, present! |
+| Lalo | Tú | Ahya, dos Lalos, un Moisés y un Venjy. El iglú quedó chico. | Ahya, two Lalos, one Moisés and one Venjy. The igloo got too small. |
+| Moisés | Moisés | ¿Y tú? Te pareces a mí, pero más abrigado. | And you? You look like me, but more bundled up. |
+| Moisés | Tú | Soy el Moisés de visita. El de la casa eres tú. | I'm the visiting Moisés. You're the one who lives here. |
+| Moisés (común) | Venjy | Vengo de la mina. Ni un diamante, pero llegué. | I'm coming from the mine. Not one diamond, but I made it. |
+| Moisés (común) | Moisés | Hermano, ¿te acuerdas de las guerras de nieve en Coyhaique? | Bro, remember the snowball fights in Coyhaique? |
+| Moisés (común) | Lalo | Ahya, ¡y siempre perdías tú! | Ahya, and you always lost! |
+| Moisés | Tú | ¡Lalo! ¿A mí? Si vivimos juntos. | Lalo! Me? We live together. |
+| Moisés (común) | Moisés | En Coyhaique no había reglas, hermano. | There were no rules in Coyhaique, bro. |
+| Moisés (común) | Lalo | Ahya, ¡me diste en el sombrero! | Ahya, you hit my hat! |
+| Moisés (común) | Todos | ¡Coyhaique, presente! | Coyhaique, present! |
+| Moisés | Tú | Coyhaique en el corazón, hermanos. Y nieve en la cara. | Coyhaique in our hearts, bros. And snow in our faces. |

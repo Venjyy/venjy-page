@@ -2,7 +2,7 @@
 // VENJY · Supervivencia · Moldes de movimiento (bloque 6c)
 // Piezas reutilizables para las bienvenidas (bienvenidas/<clave>.js), los reencuentros (reencuentros.js) y,
 // en 6c-2, las escenas de grupo. Se carga con import() junto con ellas: no suma nada a la carga inicial.
-// · MOLDES: los 18 movimientos nuevos de mundo/DISENO-6c.md §1 (agacha, tirita, frota, teclea, maneja, traza,
+// · MOLDES: los 18 movimientos nuevos del diseño de 6c (agacha, tirita, frota, teclea, maneja, traza,
 //   barre, selfie, orejitas, recuerda, mide, empujon, celular, brinda, ping, lanza, cae, sacude) más `ventana`
 //   (copiloto con el brazo afuera). Misma firma que GESTOS_AMISTAD: (u, t, info) -> metas de los huesos
 //   (nombres cortos de la skill, referencia/rig.md); u = 0..1 en su tramo, t = reloj de la escena,

@@ -79,6 +79,16 @@ export const NIVEL_ANIMACION = { punos: 2, abrazo: 3, secreto: 4, pareja: 4 };
 export const animacionesDe = (base, clave) => ['punos', 'abrazo', esPareja(base, clave) ? 'pareja' : 'secreto'];
 // Momento especial (6b-2): con la amistad al máximo (barra llena) aparece el botón con la escena única del personaje
 export const momentoListo = puntos => puntos >= MAX;
+// Escenas de grupo (6c-2, grupos/<grupo>.js): quiénes son (las skins que la activan), quiénes están en el lugar (los NPC
+// que actúan) y el Venjy que se suma (el de lo alto de la atalaya, el de la mina). soloBoton: con esa skin no sale sola
+// (con skin de Venjy el iglú sigue con su escena de siempre) y queda solo el botón «Saludo del grupo».
+export const GRUPOS = {
+    tomatitos: { lugar: 'fogata', miembros: ['venjy', 'pony', 'hadad', 'andy', 'nacho', 'braulio', 'conejeros'], npcs: ['hadad', 'andy', 'nacho'] },
+    atalaya: { lugar: 'atalaya', miembros: ['venjy', 'boris', 'lucho'], npcs: ['boris', 'lucho'], venjy: 'atalaya' },
+    coyhaique: { lugar: 'iglu', miembros: ['venjy', 'lalo', 'moises'], npcs: ['lalo', 'moises'], venjy: 'mina', soloBoton: ['venjy'] }
+};
+// Grupo cuya escena se ve con tu skin (base) junto a esta persona (clave), o null
+export const grupoDe = (base, clave) => Object.keys(GRUPOS).find(g => GRUPOS[g].miembros.includes(base) && GRUPOS[g].npcs.includes(clave)) || null;
 
 // Regalos favoritos (1 o 2 por personaje): solo esos se pueden regalar
 export const FAVORITOS = {

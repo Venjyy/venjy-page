@@ -6,7 +6,7 @@
 //   Venjy te saluda y se ríe (`risa`) mientras habla de los creepers.
 //   Tú te ríes tan fuerte que te doblas (`doblaRisa`); Venjy se contagia y se dobla también (desde la frase 4).
 //   Los dos se secan las lágrimas (`seca`) con gotas de llanto; al final respiran y se despiden.
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';
 import { PIX } from '../moldes.js';

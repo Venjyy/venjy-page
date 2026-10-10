@@ -144,6 +144,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         if (cine.escena) centro.lerp(yo, 0.5);
         let dist = (pl.dist ?? (cine.escena ? distJ * 0.5 + 1.8 : distJ + 2.4)) + pl.dolly * u;
         objetivo.copy(amigo).lerp(yo, cine.escena ? cine.foco : pl.mira * 0.5);
+        // Escenas de grupo (6c-2): la cámara gira en torno al centro del grupo y mira hacia quien habla
+        if (cine.centro) cine.centro(centro, objetivo);
         // Bajo techo (el iglú) cada plano prueba también más abajo, hasta la altura del pecho
         const bajo = cine.escena ? Math.min(pl.alto, 1.3) : pl.alto;
         let nominal = null; // lo que tapa la posición nominal del plano (la primera que se prueba)
@@ -255,6 +257,16 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         if (cine.activa) {
             cine.t += dt;
             cine.foco += (cine.focoObj - cine.foco) * Math.min(1, dt * 1.5);
+            // Plano manual de la escena (6c-2: el Venjy que salta de la atalaya): posición y punto de mira fijados por ella
+            const m = cine.manual && cine.manual();
+            if (m) {
+                camara.position.copy(m.pos); camara.lookAt(m.mira);
+                cine.fundido = Math.max(0, cine.fundido - dt);
+                fundidoEl.style.opacity = cine.fundido > 0 ? Math.min(1, cine.fundido / 0.35 * 1.6 - 0.2).toFixed(2) : '0';
+                actualizarCuerpo(dt, true);
+                if (cine.pose) cine.pose(cuerpo, dt);
+                return;
+            }
             if (cine.fijo !== null) { cine.plano = cine.fijo; cine.t = Math.min(cine.t, DURACION * 0.5); }
             // esperarLinea (escenas con guion): el plano que ya cumplió su tiempo cambia al empezar una línea nueva
             else if (cine.t >= DURACION && (!cine.esperarLinea || cine.corte)) { cine.t = 0; cine.plano = siguientePlano(cine.plano); cine.fundido = 0.35; cine.corte = false; cine.buena = null; }
@@ -300,6 +312,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         nuevaLinea() { if (cine.activa && cine.esperarLinea && cine.t >= DURACION - 0.1) cine.corte = true; },
         fijarPlano(k = null) { cine.fijo = k; }, // depuración (capturas): deja la cámara en un plano
         set pose(f) { cine.pose = f; },
+        // Plano manual: f() -> { pos, mira } (Vector3 del mundo) o null para volver a los planos; el cambio va con fundido
+        set manual(f) { if (!!f !== !!cine.manual) { cine.fundido = 0.35; cine.t = DURACION; cine.corte = true; } cine.manual = f; },
         cambiarVista() { vista = (vista + 1) % 3; },
         iniciarCine(n, op = {}) {
             if (!n) return;
@@ -309,6 +323,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cine.esperarLinea = !!op.esperarLinea; cine.corte = false; cine.buena = null; cine.usado = null;
             cine.validarTexto = op.validarTexto || null;
             cine.sinTerceros = !!op.sinTerceros;
+            cine.centro = op.centro || null; cine.manual = null;
             cine.relajado = null; cine.minDist = op.minDist ?? 1; cine.evitarDist = op.evitarDist ?? 1.7; cine.holgura = op.holgura || 0; // escenas de amistad: más lejos, para que nadie quede tapando en primer plano
             cine.plano = calcular(0, 0, true) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');
@@ -316,6 +331,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         terminarCine() {
             if (!cine.activa) return;
             cine.activa = false; cine.n = null; cine.escena = false; cine.pose = null; cine.visibles = null; diag = null; cine.esperarLinea = false; cine.corte = false; cine.validarTexto = null;
+            cine.centro = null; cine.manual = null;
             document.body.classList.remove('en-cine');
         },
         // Depuración (planos.mjs): plano actual y diagnóstico de líneas a las cabezas (null si no se pidió `visibles`)

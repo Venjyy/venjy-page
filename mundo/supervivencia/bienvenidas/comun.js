@@ -5,7 +5,7 @@
 //   Inicio, 'j' = tú); cada una dura lo que se alcanza a leer (durLinea de reencuentros.js).
 // · secreto(S0) / abrazo(A0) / pareja(P0): bloques de 6b corridos a otro segundo (gestos, pistas y golpes o
 //   corazones), para las bienvenidas de relación 3 (saludo secreto, abrazo y recuerdo) y la de pareja.
-// Duración según la relación (DISENO-6c.md §2): 1 cordial · 2 corta · 3 larga con secreto, abrazo y recuerdo · pareja.
+// Duración según la relación (mundo/DIALOGOS.md): 1 cordial · 2 corta · 3 larga con secreto, abrazo y recuerdo · pareja.
 // =========================================================
 import { durLinea } from '../reencuentros.js';
 import { MOLDES, desplazar } from '../moldes.js';

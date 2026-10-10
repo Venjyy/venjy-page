@@ -8,7 +8,7 @@
 //   5.6-8.4  Venjy se inclina y estira el puño bajito (`punoBajo`: puños de 6b + cuerpo agachado); choque en 7.4.
 //   8.4-10.3 le das un empujoncito al hombro (`empujonLargo`, sonido en 9.1); Venjy se ríe.
 //   11.0-14  Venjy señala hacia el muelle y habla; tú lo apuntas: «te culpo a ti».
-// Son personas reales: siempre en buena onda; textos aprobados por el dueño (DISENO-6c.md §2).
+// Son personas reales: siempre en buena onda; textos aprobados por el dueño (mundo/DIALOGOS.md).
 // =========================================================
 import { t, encadenar, fin, r2, MOLDES } from './comun.js';
 import { desplazar, ruta } from '../moldes.js';
