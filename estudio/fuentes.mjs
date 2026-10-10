@@ -2,6 +2,7 @@
 // VENJY · Estudio · fuentes JS que el CLI resume sin migrarlas (estudio/DISENO.md §7)
 // Cada fuente exporta: archivo (para el KB), cargar() -> { resumen, filas(filtro) }.
 // filas devuelve [{ clave, texto, extra? }] y filtra por clave o prefijo.
+// `dialogos` ya no es una fuente JS: desde la fase 3 vive en mundo/datos/dialogos.json (lo resume cli.mjs).
 // =========================================================
 import { statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -13,41 +14,6 @@ const coincide = (clave, filtro) => !filtro || clave === filtro || clave.startsW
 const lado = (t, idioma) => (idioma === 'ambos' ? `${t.es} | ${t.en}` : t[idioma] || t.es);
 
 export const FUENTES = {
-    dialogos: {
-        archivo: 'mundo/supervivencia/dialogos-datos.js',
-        async cargar() {
-            const { TEMAS, OPINIONES } = await importar(this.archivo);
-            let temas = 0, skins = 0, opiniones = 0;
-            for (const lista of Object.values(TEMAS)) for (const tema of lista) { temas++; skins += Object.keys(tema.skin || {}).length; }
-            for (const o of Object.values(OPINIONES)) opiniones += Object.keys(o).length;
-            return {
-                resumen: `${temas} temas, ${skins} variantes de skin, ${opiniones} opiniones (dialogos-datos.js, ${kb(this.archivo)} KB)`,
-                filas: (filtro, { idioma }) => {
-                    const filas = [];
-                    for (const [persona, lista] of Object.entries(TEMAS)) {
-                        for (const tema of lista) {
-                            const clave = `${persona}.${tema.id}`;
-                            if (!coincide(clave, filtro)) continue;
-                            const marcas = [];
-                            if (tema.g) marcas.push(`[g ${tema.g}]`);
-                            if (tema.skin) marcas.push(`[skin ${Object.keys(tema.skin).length}]`);
-                            if (tema.req) marcas.push(`[req ${Object.entries(tema.req).map(([k, v]) => `${k} ${v}`).join(', ')}]`);
-                            const r = tema.r ? lado(tema.r, idioma) : '(abre las opiniones)';
-                            filas.push({ clave, texto: `${lado(tema.p, idioma)} -> ${r}`, extra: marcas.join(' ') });
-                        }
-                    }
-                    for (const [persona, mapa] of Object.entries(OPINIONES)) {
-                        for (const [de, t] of Object.entries(mapa)) {
-                            const clave = `${persona}.opina.${de}`;
-                            if (coincide(clave, filtro)) filas.push({ clave, texto: lado(t, idioma), extra: '[opinión]' });
-                        }
-                    }
-                    return filas;
-                }
-            };
-        }
-    },
-
     tienda: {
         archivo: 'mundo/supervivencia/tienda-datos.js',
         async cargar() {

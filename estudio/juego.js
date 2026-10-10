@@ -5,7 +5,7 @@
 // (layout.js llama a enviarDatos en cada cambio). El iframe se crea al abrir la pestaña por primera vez.
 // =========================================================
 
-const ARCHIVOS_VIVOS = ['ui-layout', 'textos'];
+import { DATOS_VIVOS as ARCHIVOS_VIVOS } from './puente-protocolo.js';
 const ESTADOS = {
     'sin-juego': { es: 'Sin juego: abre la pestaña Juego o supervivencia.html?estudio', en: 'No game: open the Game tab or supervivencia.html?estudio' },
     esperando: { es: 'Cargando el juego…', en: 'Loading the game…' },

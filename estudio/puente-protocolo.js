@@ -6,9 +6,10 @@
 // =========================================================
 export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
-// Archivos de mundo/datos/ que el juego aplica sin recargar. Fases siguientes: posiciones, poses.
-export const DATOS_VIVOS = ['ui-layout', 'textos'];
+// Archivos de mundo/datos/ que el juego aplica sin recargar (fase 3: dialogos). Fases siguientes: posiciones, poses.
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos'];
 
+const MAX_GLOBO = 400;
 const NOMBRE_DESTINO = /^[a-z0-9áéíóúüñ][a-z0-9áéíóúüñ _-]{0,40}$/i;
 const esNum = v => typeof v === 'number' && Number.isFinite(v);
 const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -16,8 +17,9 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 // Crea el manejador del lado del juego. `juego` pone lo que depende del mundo:
 //   listo()                        (opcional) false mientras el mundo todavía se abre: `hola` responde `estado`
 //   idioma()                       'es' | 'en'
-//   aplicarDatos(nombre, datos)    aplica un JSON sin recargar (lanza si no puede)
+//   aplicarDatos(nombre, datos)    aplica un JSON sin recargar (puede ser asíncrona; lanza si no puede)
 //   teletransportar(destino)       destino: { destino } | { x, y, z }; devuelve { x, y, z } o lanza
+//   globo(persona, texto)          muestra `texto` en el globo de esa persona (vista previa del editor de textos)
 // Devuelve responder(mensaje) -> objeto de respuesta o null (si el mensaje no es para el juego).
 export function crearManejador(juego) {
     return async function responder(m) {
@@ -33,7 +35,7 @@ export function crearManejador(juego) {
                 case 'datos': {
                     if (!DATOS_VIVOS.includes(m.nombre)) return error(`«${m.nombre}» no se aplica en vivo (solo ${DATOS_VIVOS.join(', ')})`);
                     if (!esObjeto(m.datos)) return error('datos tiene que ser un objeto');
-                    juego.aplicarDatos(m.nombre, m.datos);
+                    await juego.aplicarDatos(m.nombre, m.datos);
                     return { ...base, tipo: 'ok' };
                 }
                 case 'tp': {
@@ -46,6 +48,13 @@ export function crearManejador(juego) {
                     } else return error('tp pide destino (texto) o x, y, z');
                     const pos = await juego.teletransportar(destino);
                     return { ...base, tipo: 'ok', pos };
+                }
+                case 'globo': {
+                    if (typeof m.persona !== 'string' || !NOMBRE_DESTINO.test(m.persona)) return error('persona no válida');
+                    if (typeof m.texto !== 'string' || !m.texto.trim() || m.texto.length > MAX_GLOBO) return error(`texto vacío o de más de ${MAX_GLOBO} caracteres`);
+                    if (!juego.globo) return error('este juego no sabe mostrar globos');
+                    juego.globo(m.persona, m.texto);
+                    return { ...base, tipo: 'ok' };
                 }
                 default:
                     return error(`mensaje desconocido: ${m.tipo}`);

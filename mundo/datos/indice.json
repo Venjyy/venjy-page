@@ -25,6 +25,18 @@
       "lee": null,
       "fase": 6,
       "que": "Poses fijas y gestos por canal de hueso (keyframes y osciladores)"
+    },
+    "dialogos": {
+      "esquema": "dialogos",
+      "lee": "mundo/supervivencia/dialogos-datos.js",
+      "fase": 3,
+      "que": "Textos de la pestaña «Hablar» (temas, opiniones, saludos y regalos de los 13 personajes, ES/EN con marca «revisado»); dialogos-datos.js es la fachada; se aplica en vivo con supervivencia.html?estudio"
+    },
+    "tienda": {
+      "esquema": "tienda",
+      "lee": null,
+      "fase": 3,
+      "que": "Ofertas nuevas de la tienda por nombre de objeto (como /dar); las de hoy siguen en tienda-datos.js"
     }
   }
 }

@@ -10,6 +10,15 @@ import { CANAL, DATOS_VIVOS, crearManejador } from './puente-protocolo.js';
 import { aplicarDatosVivos } from '../mundo/supervivencia/tactil-supervivencia.js';
 
 const MUNDO = 'Estudio';
+
+// ui-layout y textos los aplica tactil-supervivencia.js; dialogos, la fachada de «Hablar» (con ?estudio el
+// módulo se carga aquí si todavía no estaba: hablar.js lee sus objetos al usarlos, así que ve el cambio)
+async function aplicar(nombre, datos) {
+    if (nombre === 'dialogos') {
+        const m = await import('../mundo/supervivencia/dialogos-datos.js');
+        m.aplicarDatosVivos(datos);
+    } else aplicarDatosVivos(nombre, datos);
+}
 const canal = new BroadcastChannel(CANAL);
 const decir = m => canal.postMessage({ de: 'juego', ...m });
 const dormir = ms => new Promise(r => setTimeout(r, ms));
@@ -62,7 +71,13 @@ const juegoListo = () => !!(window.__venjy && window.__venjy.jugador && window._
 const responder = crearManejador({
     listo: juegoListo,
     idioma: () => document.documentElement.lang === 'en' ? 'en' : 'es',
-    aplicarDatos(nombre, datos) { aplicarDatosVivos(nombre, datos); },
+    aplicarDatos: aplicar,
+    // Vista previa de un texto: el globo especial de misiones.js (el mismo de los diálogos únicos)
+    globo(persona, texto) {
+        const m = window.__venjy && window.__venjy.misiones;
+        if (!m || !m.decir) throw new Error('el juego todavía no está listo');
+        m.decir(persona, texto);
+    },
     teletransportar
 });
 
@@ -80,7 +95,7 @@ function escucharDisco() {
         if (!DATOS_VIVOS.includes(nombre)) return;
         try {
             const r = await fetch(new URL(`../mundo/datos/${nombre}.json`, import.meta.url), { cache: 'no-cache' });
-            if (r.ok) aplicarDatosVivos(nombre, await r.json());
+            if (r.ok) await aplicar(nombre, await r.json());
         } catch (err) { console.warn('[estudio] no se pudo recargar', nombre, err); }
     });
 }
