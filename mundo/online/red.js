@@ -8,6 +8,7 @@
 // Supabase se carga solo al entrar a una sala: sin ella, nada de esto se descarga.
 // =========================================================
 import { CONFIG_ONLINE, ONLINE_ACTIVO, HZ_POSICION, MAX_JUGADORES } from './config.js';
+import { rttDeStats, Suave } from './ping.js';
 
 export const CODIGO_VALIDO = /^[A-Z0-9]{3,12}$/;
 export function normalizarCodigo(t) { return String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12); }
@@ -252,6 +253,8 @@ export class Sala {
 //   medio de la partida se sigue por respaldo y se reintenta (3 s, 10 s, 30 s y luego cada 60 s).
 // - Sin internet (QR): SalaLocal en online/sala-local.js reemplaza la señalización por el QR y
 //   Presence por una lista que reparte el anfitrión.
+// - Ping (7e): getStats() de cada par abierto cada 2 s (`rttDirecto`); el respaldo lo mide coop.js con
+//   el eco del mensaje `p` (ver online/ping.js).
 // - Pruebas: `?directo=0` fuerza el respaldo (ICE sin servidores y solo relay: nunca conecta);
 //   `cortarDirecto()` corta el canal como si fallara la red.
 // =========================================================
@@ -260,6 +263,7 @@ const ESPERA_ICE = 2000;      // ms máximos juntando candidatos antes de mandar
 const ESPERA_DIRECTO = 6000;  // ms máximos para que se abran los canales
 const TROZO = 16 * 1024;      // bytes por trozo binario (seguro en todos los navegadores)
 const REINTENTOS = [3000, 10000, 30000, 60000];
+const CADA_STATS = 2000;      // ms entre lecturas de getStats() para el ping
 const esperar = ms => new Promise(r => setTimeout(r, ms));
 
 function cuentaNueva() {
@@ -279,6 +283,7 @@ export class SalaDirecta extends Sala {
         this.forzarRespaldo = new URLSearchParams(location.search).get('directo') === '0';
         this.configIce = null;      // SalaLocal: sin STUN (solo la red local)
         this.cuenta = cuentaNueva();
+        this.relojStats = null;
         this.en('sale', ({ id }) => { this.respaldo.delete(id); this.cerrarPar(id); });
     }
 
@@ -347,8 +352,9 @@ export class SalaDirecta extends Sala {
     nuevoPar(id, iniciador) {
         this.cerrarPar(id);
         const pc = new RTCPeerConnection(this.configIce || (this.forzarRespaldo ? { iceServers: [], iceTransportPolicy: 'relay' } : { iceServers: STUN }));
-        const par = { id, pc, f: null, r: null, abierto: false, caido: false, binario: null };
+        const par = { id, pc, f: null, r: null, abierto: false, caido: false, binario: null, rtt: new Suave() };
         this.pares.set(id, par);
+        if (!this.relojStats) this.relojStats = setInterval(() => this.medirPares(), CADA_STATS);
         const preparar = canal => {
             canal.binaryType = 'arraybuffer';
             if (canal.label === 'r') par.r = canal; else par.f = canal;
@@ -439,6 +445,20 @@ export class SalaDirecta extends Sala {
         this.pares.delete(id);
         try { par.pc.close(); } catch (e) { /* ya cerrada */ }
     }
+    // ---------- Ping (7e) ----------
+    // RTT del candidate-pair activo de cada par abierto; sin mensajes nuevos
+    async medirPares() {
+        for (const par of [...this.pares.values()]) {
+            if (!par.abierto || par.caido) continue;
+            try { par.rtt.agregar(rttDeStats(await par.pc.getStats())); } catch (e) { /* par cerrado a mitad */ }
+        }
+    }
+    // ms (mediana de las últimas 5 lecturas) del par directo con `id`, o null si no hay canal directo o medida
+    rttDirecto(id) {
+        const par = this.pares.get(id);
+        return par && par.abierto ? par.rtt.valor : null;
+    }
+
     // Para probar el respaldo: corta como si fallara la red
     cortarDirecto() { for (const par of [...this.pares.values()]) this.parCaido(par); }
 
@@ -577,6 +597,8 @@ export class SalaDirecta extends Sala {
     async salir() {
         clearTimeout(this.reintento);
         this.reintento = null;
+        clearInterval(this.relojStats);
+        this.relojStats = null;
         for (const id of [...this.pares.keys()]) this.cerrarPar(id);
         this.respaldo.clear();
         await this.cerrarRespaldo();

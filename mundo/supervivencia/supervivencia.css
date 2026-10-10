@@ -609,7 +609,19 @@ body.en-minijuego .mj-tablero.visible { display: flex; }
 .coop-pausa .fila-coop { align-items: center; }
 .coop-sala { flex: 1; color: #8ce07a; letter-spacing: 0.08em; }
 .coop-pausa .opcion { display: flex; gap: 8px; align-items: center; margin: 6px 0; color: var(--gris); font-size: 0.85rem; }
-.coop-lista { margin: 4px 0 0; }
+.coop-lista { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+/* Ping (7e): barras de señal como las de Minecraft; verde < 80 ms, amarillo < 150, rojo ≥ 150 */
+.jug { display: inline-flex; align-items: flex-end; gap: 6px; }
+.senal { display: inline-flex; align-items: flex-end; gap: 1px; height: 12px; padding: 0 1px; }
+.senal i { display: block; width: 3px; background: #4a4a4a; }
+.senal i:nth-child(1) { height: 3px; } .senal i:nth-child(2) { height: 6px; } .senal i:nth-child(3) { height: 9px; } .senal i:nth-child(4) { height: 12px; }
+.senal i.v { background: #55ff55; } .senal i.a { background: #ffff55; } .senal i.r { background: #ff5555; }
+.ms { font-size: 0.8rem; }
+.ms.v { color: #55ff55; } .ms.a { color: #ffff55; } .ms.r { color: #ff5555; }
+.coop-tab { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: 90vw; padding: 8px 14px 10px; background: rgb(0 0 0 / 0.6); border: 2px solid #000; color: var(--blanco); text-shadow: 2px 2px 0 #1f1f1f; pointer-events: none; text-align: center; }
+.coop-tab b { display: block; margin-bottom: 6px; }
+.coop-tab-cuerpo { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+.coop-tab .jug { justify-content: space-between; gap: 14px; }
 #coop-qr { width: 100%; margin: 8px 0 0; }
 /* QR para jugar sin internet */
 .panel-qr { max-height: 100vh; overflow-y: auto; }
