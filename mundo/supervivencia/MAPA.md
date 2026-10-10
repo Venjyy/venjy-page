@@ -62,7 +62,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `tienda-datos.js` (215) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `crearTienda:21` `comprar:110` `vender:123` |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
 | `hablar.js` (332) | Pestaña «Hablar»; carga por `import()`. `crearHablar:38` `abrir:184` `regalar:282` `actualizar:316` |
-| `dialogos-datos.js` (365) | `TEMAS:22` `OPINIONES:227` `SALUDOS:330` `REGALOS:349` |
+| `dialogos-datos.js` (50) | Fachada de `mundo/datos/dialogos.json` (Estudio, fase 3): `TEMAS` `OPINIONES` `SALUDOS` `REGALOS` `GESTO_REGALO` y `aplicarDatosVivos:40`; fetch en el navegador, `fs` en Node |
 | `escenas-datos.js` (174) | Diálogos de las escenas de skin. `CORTAS:12` `VENJY:68` `IGLU:162` |
 | `escenas-skin.js` (626) | Escena al acercarte con skin de un amigo. `crearEscenasSkin:90` `iniciar:187` `terminar:254` |
 | `escena-amistad-datos.js` (183) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105` |
@@ -99,14 +99,16 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |
 | `estudio/validar.mjs` (95) | `validar(datos, esquema)`: subconjunto de JSON Schema sin dependencias |
-| `estudio/cli.mjs` (293) / `fuentes.mjs` (111) | `resumen`, `validar` y `capturar` (delega en `capturar.mjs`); fuentes JS `dialogos`, `tienda`, `amistad` |
+| `estudio/cli.mjs` (446) / `fuentes.mjs` (77) | `resumen` (con `dialogos --md [--escribir]`), `validar`, `glifos` y `capturar` (delega en `capturar.mjs`); fuentes JS `tienda` y `amistad` |
 | `estudio/capturar.mjs` (180) | `capturar layout\|pose\|gesto\|escena`: servidor propio + Playwright. `aparatoDe:29` `capturar:110` |
 | `estudio/playwright.mjs` (109) | Dónde está Playwright y un navegador: `cargarPlaywright:34` `buscarChromiumLocal:68` `lanzarNavegador:90` `abrirNavegador:106` |
-| `estudio/puente-protocolo.js` (57) | Canal `venjy-estudio`, `DATOS_VIVOS`, `crearManejador:22` (mensajes `hola`, `datos`, `tp`; sin DOM) |
-| `estudio/puente-juego.js` (100) | Lado del juego, solo con `?estudio`: abre/crea el mundo «Estudio», `/tp` por la consola, SSE |
+| `estudio/puente-protocolo.js` (66) | Canal `venjy-estudio`, `DATOS_VIVOS`, `crearManejador:24` (mensajes `hola`, `datos`, `tp`, `globo`; sin DOM) |
+| `estudio/puente-juego.js` (115) | Lado del juego, solo con `?estudio`: abre/crea el mundo «Estudio», `/tp` por la consola, globo de vista previa, SSE; aplica `dialogos` en la fachada |
 | `estudio/puente-cliente.js` (67) / `juego.js` (98) | Lado del Estudio: `crearCliente:11`; pestaña Juego (iframe, `/tp`, aplicar archivos) |
 | `estudio/avisos-layout.js` (26) / `evaluar.mjs` (35) | `calcularAvisos` (choques, chicos, fuera); `evaluarGesto` de `poses.json` (referencia) |
-| `estudio/index.html` · `estudio.js` (72) · `estudio.css` | Cáscara: idioma ES/EN, estado del servidor, pestañas (Layout y Juego), cliente del puente |
+| `estudio/avisos-textos.js` (68) / `glifos.mjs` (75) / `dialogos-md.mjs` (87) | `avisosDeTexto` (par, emoji, glifo, plantilla, largo); `leerGlifos` (cmap de PixelCraft → `glifos.json`); `generarPersonas` y `escribirEnDocumento` (tablas de `mundo/DIALOGOS.md`) |
+| `estudio/textos.js` (352) | Editor de textos ES/EN: tabla filtrable, «revisado», avisos, globo en el juego, guardar. `montarTextos:22` |
+| `estudio/index.html` · `estudio.js` (74) · `estudio.css` | Cáscara: idioma ES/EN, estado del servidor, pestañas (Layout, Juego y Textos), cliente del puente |
 | `estudio/layout.js` (578) | Editor de layout: asas, panel de campos, avisos, guardar; manda cada cambio al juego. `APARATOS:50` `montarLayout:65` |
 | `estudio/vista-tactil.html` (87) | Capa táctil real sin el mundo (iframe del editor); recibe `{tipo:'layout'}` y `{tipo:'seguro'}` |
 

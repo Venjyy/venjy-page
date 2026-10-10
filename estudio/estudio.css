@@ -254,3 +254,4 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
     .fila-texto { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .tx-info, .tx-lado { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: 10px; }
 }
+#tx-resumen, #tx-elegido-meta, #tx-globo-nota { margin: 0 0 8px; overflow-wrap: anywhere; }

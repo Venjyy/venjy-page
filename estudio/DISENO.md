@@ -591,3 +591,46 @@ entero.
   caché; no se instaló nada: `PLAYWRIGHT=<ruta a esa carpeta>`.
 - **Sin probar**: la pestaña Juego en un celular real con `--lan`. `capturar escena pony` sí corrió (va junto a la persona con
   `irJunto`, fuerza la escena y mide).
+
+## 11. Fase 3 · lo que cambió al construirla (2026-10-10)
+
+- **Archivos**: `mundo/datos/dialogos.json` y `estudio/esquemas/dialogos.schema.json`; `mundo/supervivencia/dialogos-datos.js` (ahora fachada);
+  `estudio/textos.js` (editor, pestaña Textos), `avisos-textos.js` (avisos sin DOM: editor y `validar`), `glifos.mjs` y `glifos.json`
+  (cmap de PixelCraft), `dialogos-md.mjs` (genera `mundo/DIALOGOS.md`); `mundo/datos/tienda.json` y `tienda.schema.json`;
+  `mundo/tests/estudio-textos.mjs`.
+- **Forma del JSON**: `temas` (persona → lista de `{ id, p, r?, g?, req?, skin? }`), `opiniones`, `saludos`, `regalos` y `gestoRegalo`
+  (`GESTO_REGALO` también salió del JS). Cada texto es `{ es, en }` y puede llevar `revisado: true`. La migración la hizo un script
+  que volcó los cinco exports tal cual: `deepEqual` contra el módulo anterior, diferencia 0 (93 temas, 53 variantes de skin, 74 opiniones,
+  13 saludos, 13 regalos; 341 pares). Ningún texto quedó marcado como revisado: eso lo aprueba el dueño.
+- **Fachada**: `dialogos-datos.js` hace `await fetch` del JSON en el navegador y `readFileSync` en Node (pruebas y CLI importan lo mismo
+  que el juego). No usa `import … with { type: 'json' }`: exige Chrome 123, Safari 17.2 o Firefox 138, y un navegador más viejo rompería
+  «Hablar» con un error de sintaxis. Se sigue cargando con el `import()` dinámico de `misiones.js`; al abrir la página no baja nada nuevo.
+  Aquí el archivo **es** la fuente (no hay «código por defecto»), así que `?sin-datos` no lo afecta. `aplicarDatosVivos(datos)` cambia el
+  contenido **en el sitio** (los objetos exportados son los mismos), y `hablar.js` los lee al usarlos: un texto editado se ve al reabrir
+  el panel.
+- **Datos vivos**: `dialogos` entra en `DATOS_VIVOS`. `puente-juego.js` importa la fachada con `import()` (solo con `?estudio`) y la
+  actualiza, tanto al recibir `datos` del Estudio como por SSE al guardarse el archivo. `crearManejador` ahora espera `aplicarDatos`.
+- **Vista en un globo real**: mensaje nuevo `globo { persona, texto }` (hasta 400 caracteres). El juego lo muestra con el globo especial de
+  `misiones.js` (el mismo de los diálogos únicos), para lo cual `misiones.js` expone `decir` (una línea). El globo solo se ve a menos de
+  14 bloques: el editor viaja con `/tp` junto a la persona (casilla activada por defecto). Las preguntas no tienen globo: son el texto de un botón.
+- **Avisos** (`avisos-textos.js`): par incompleto, emoji, glifo que PixelCraft no tiene, variable `{n}` en un idioma y no en el otro, y
+  largo (error si pasa su `max`; aviso si pasa 140 caracteres, que es un globo largo: hoy el más largo mide 132). En el editor se ven por
+  fila y en un panel; Guardar se deshabilita mientras haya errores. `validar` aplica las mismas reglas a todo par `{ es, en }` de
+  cualquier JSON y agrega las del contenido: ids de tema repetidos, tema sin respuesta que no sea `opina`, y en `tienda.json` que cada nombre
+  de objeto exista (los de `/dar`). Necesita `estudio/glifos.json`: `node estudio/cli.mjs glifos` lo regenera desde la fuente (1379 glifos);
+  `estudio-textos.mjs` avisa si quedó desactualizado.
+- **`mundo/DIALOGOS.md`**: `resumen dialogos --md` imprime las 13 tablas; con `--escribir` reemplaza solo esas secciones (hasta «Saludos de
+  amigos»). Las demás secciones vienen de otros archivos y no se tocan. La salida reproduce las 248 filas del archivo anterior sin
+  diferencias de contenido; solo suma la columna **Revisado**. La prueba comprueba que el archivo esté al día.
+- **CLI**: `dialogos` pasó de fuente JS a archivo de `indice.json` (`js:dialogos` sigue funcionando como alias). `resumen dialogos` muestra
+  también saludos y regalos, y `[sin revisar]`. `resumen` cuenta cuántos textos faltan por revisar.
+- **Tienda**: `tienda.schema.json` con ofertas y compras **nuevas** por nombre de objeto (no por id: `O` y `B` cambian al agregar
+  objetos). `tienda.json` está vacío y `lee: null`: las 80 ofertas de hoy siguen en `tienda-datos.js`. Conectarlo es sumar esas ofertas al
+  final de `TIENDAS` al cargar (misma lectura de `tienda.js`), cuando exista la primera oferta nueva.
+- **Medida** (mismo Chromium con swiftshader, 1280×720, mundo nuevo en Pacífico; `main` en el commit base contra la rama, sin `?estudio`):
+  al abrir 97 archivos y 2510 KB en las dos; hasta entrar al mundo 133 archivos y 5381 KB en las dos; entrar 0,75-1,25 s y cuadro mediano
+  67-117 ms en las dos (swiftshader, ruidoso, sin diferencia). Al abrir «Hablar»: 2 archivos y 72 KB (`hablar.js` y `dialogos-datos.js`
+  de 53 KB) contra 3 archivos y 91 KB (`hablar.js`, la fachada de 3 KB y `dialogos.json` de 69 KB). El +19 KB (sin comprimir; GitHub Pages
+  sirve JSON con gzip) es del formato estable con un par ES/EN por varias líneas.
+- **Sin probar / pendiente**: el globo en el juego con el Estudio en otra pestaña o por `--lan`; el editor con un teclado en celular (no es
+  su uso). `estudio-navegador.mjs` falla en el paso de `/tp spawn` también en `main` (el jugador ya está ahí): no es de esta fase.
