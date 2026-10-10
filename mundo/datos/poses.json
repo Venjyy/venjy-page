@@ -1,0 +1,193 @@
+{
+  "$schema": "../../estudio/esquemas/poses.schema.json",
+  "version": 1,
+  "poses": {
+    "neutral": {
+      "canales": { "bDz": 0.05, "bIz": -0.05 },
+      "nota": "rig.md"
+    },
+    "brazoHorizontal": {
+      "canales": { "bDx": -1.57 },
+      "nota": "rig.md: mano a 1.5 de alto, 0.75 adelante"
+    },
+    "doblarse": {
+      "canales": { "inc": 0.6, "pDx": -0.6, "pIx": -0.6, "y": 0.13, "bDx": -0.55, "bDz": 0.12, "bIx": 0.25, "cx": 0.3 },
+      "nota": "rig.md: doblarse de cintura y bajar la mano"
+    },
+    "inclinadoPecho": {
+      "canales": { "inc": 0.3, "pDx": -0.3, "pIx": -0.3, "y": 0.034, "bDx": -1.6 },
+      "nota": "rig.md: mano a la altura del pecho"
+    },
+    "sentadoSuelo": {
+      "canales": { "y": -0.62, "pDx": -1.45, "pIx": -1.45, "inc": 0.15, "bDx": -1, "bDz": 0.1, "cx": 0.35 },
+      "nota": "rig.md"
+    },
+    "sentadoSilla": {
+      "canales": { "pDx": -1.5, "pIx": -1.5 },
+      "nota": "rig.md: el actor va 0.6 más alto"
+    }
+  },
+  "gestos": {
+    "asiente": {
+      "reloj": "t",
+      "canales": {
+        "cx": {
+          "base": 0.08,
+          "osc": [
+            { "forma": "pos", "amp": 0.3, "frec": 7 }
+          ]
+        }
+      },
+      "nota": "escenas-skin.js GESTOS.asiente"
+    },
+    "habla": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -0.9,
+          "osc": [
+            { "forma": "sin", "amp": 0.3, "frec": 5 }
+          ]
+        },
+        "bDz": {
+          "base": 0.2,
+          "osc": [
+            { "forma": "sin", "amp": 0.15, "frec": 3.1 }
+          ]
+        },
+        "bIx": {
+          "base": -0.55,
+          "osc": [
+            { "forma": "sin", "amp": 0.2, "frec": 4, "fase": 1 }
+          ]
+        },
+        "bIz": -0.15,
+        "cx": {
+          "osc": [
+            { "forma": "sin", "amp": 0.06, "frec": 6 }
+          ]
+        }
+      },
+      "nota": "escenas-skin.js GESTOS.habla"
+    },
+    "rasca": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -2.85,
+          "osc": [
+            { "forma": "sin", "amp": 0.08, "frec": 14 }
+          ]
+        },
+        "bDz": 0.42,
+        "bIx": -0.15,
+        "bIz": -0.05,
+        "cx": 0.12,
+        "cz": 0.15
+      },
+      "nota": "escenas-skin.js GESTOS.rasca"
+    },
+    "yo": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -1.25,
+        "bDz": {
+          "base": 0.85,
+          "osc": [
+            { "forma": "sin", "amp": 0.06, "frec": 10 }
+          ]
+        },
+        "bIx": -0.1,
+        "cx": 0.3
+      },
+      "nota": "escenas-skin.js GESTOS.yo"
+    },
+    "tu": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -1.6,
+        "bDz": {
+          "base": 0.05,
+          "osc": [
+            { "forma": "sin", "amp": 0.03, "frec": 6 }
+          ]
+        },
+        "bIx": -0.15,
+        "cx": -0.05
+      },
+      "nota": "escenas-skin.js GESTOS.tu"
+    },
+    "mano": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -1.45,
+          "osc": [
+            {
+              "forma": "sin",
+              "amp": 0.08,
+              "frec": 9,
+              "env": [0.3, 0.5]
+            }
+          ]
+        },
+        "bDz": 0.15
+      },
+      "nota": "escenas-skin.js GESTOS.mano"
+    },
+    "saluda": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -2.7,
+        "bDz": {
+          "base": -0.35,
+          "osc": [
+            { "forma": "sin", "amp": 0.35, "frec": 9 }
+          ]
+        }
+      },
+      "nota": "escenas-skin.js GESTOS.saluda"
+    },
+    "risa": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -0.55,
+        "bDz": 0.35,
+        "bIx": -0.55,
+        "bIz": -0.35,
+        "cx": -0.35,
+        "salto": {
+          "osc": [
+            { "forma": "abs", "amp": 0.05, "frec": 17 }
+          ]
+        }
+      },
+      "nota": "escenas-skin.js GESTOS.risa"
+    },
+    "pasa": {
+      "reloj": "t",
+      "canales": { "bDx": -1.35, "bDz": 0.1, "cx": 0.1 },
+      "nota": "escenas-skin.js GESTOS.pasa"
+    },
+    "dedo": {
+      "reloj": "t",
+      "canales": { "bIx": -1.45, "bIz": -0.35, "cx": 0.4, "cy": 0.35 },
+      "nota": "escenas-skin.js GESTOS.dedo"
+    },
+    "puno": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "k": [[0.45, 0], [1.45, -0.98], [1.8, -0.78], [2, -0.93], [2.2, -0.3], [2.4, -0.05]],
+          "interp": "suave"
+        },
+        "bDz": {
+          "k": [[0.45, 0.05], [1.45, 0.45], [1.8, 0.4], [2, 0.45], [2.2, -0.5], [2.4, -0.2]],
+          "interp": "suave"
+        },
+        "cx": 0.1
+      },
+      "nota": "escena-amistad-datos.js GESTOS_AMISTAD.puno (keyframes en tiempo de escena, golpe en t = 1.45)"
+    }
+  }
+}

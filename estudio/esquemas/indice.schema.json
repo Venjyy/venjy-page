@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "indice.schema.json",
+  "title": "Índice de datos (mundo/datos/indice.json)",
+  "description": "Lista de archivos de mundo/datos: su esquema, qué módulo del juego lo lee (null = todavía no lo lee nadie: es referencia) y en qué fase del Estudio se conecta. Lo usan el servidor (solo guarda archivos listados aquí) y el CLI.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "archivos": {
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "esquema": { "description": "Nombre del esquema en estudio/esquemas/ (sin .schema.json).", "type": "string" },
+          "lee": { "description": "Ruta del módulo que lo lee, o null.", "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "fase": { "type": "integer", "minimum": 0 },
+          "que": { "type": "string" }
+        },
+        "required": ["esquema", "lee", "que"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["version", "archivos"],
+  "additionalProperties": false
+}
