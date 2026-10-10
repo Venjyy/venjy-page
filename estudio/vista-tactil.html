@@ -14,6 +14,10 @@
         body { background: linear-gradient(#78a7e8 0 58%, #5f9a3c 58% 100%); }
         /* Zona segura simulada (el editor manda { tipo: 'seguro' }): mueve el contenedor de los botones */
         .tactil { inset: var(--sim-t, 0px) var(--sim-r, 0px) var(--sim-b, 0px) var(--sim-l, 0px); }
+        /* Copia de .mm-pequeno de mundo/minimapa.js (el mapa real necesita el mundo) */
+        #hud .mm-pequeno { position: absolute; top: 10px; right: 12px; width: 160px; height: 160px; padding: 3px; background: #2f5a2a;
+            border: 3px solid #000; box-shadow: inset 0 0 0 3px #8b8b8b, 0 0 0 3px #373737; box-sizing: border-box; }
+        @media (max-width: 600px) { #hud .mm-pequeno { width: 110px; height: 110px; top: 8px; right: 8px; padding: 2px; } }
         #sonda-pie { position: absolute; left: 0; bottom: var(--pie); width: 1px; height: 0; pointer-events: none; }
     </style>
 </head>
@@ -33,6 +37,9 @@
             c.className = 'casilla-rapida' + (i === 0 ? ' elegida' : '');
             barra.appendChild(c);
         }
+        const mm = document.createElement('div');
+        mm.className = 'mm-pequeno';
+        document.getElementById('hud').appendChild(mm);
         // Misión de ejemplo (hijo de #hud, como en misiones.js)
         const mision = document.createElement('div');
         mision.className = 'mision-activa';

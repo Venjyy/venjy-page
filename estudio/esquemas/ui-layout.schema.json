@@ -45,7 +45,8 @@
             "sv-camara": { "$ref": "#/$defs/boton" },
             "sv-comando": { "$ref": "#/$defs/boton" },
             "sv-acariciar": { "$ref": "#/$defs/boton" },
-            "mision": { "$ref": "#/$defs/boton", "description": "#hud .mision-activa (misión en curso). Sin w ni h: su tamaño es el del texto." }
+            "mision": { "$ref": "#/$defs/boton", "description": "#hud .mision-activa (misión en curso). Sin w ni h: su tamaño es el del texto." },
+            "minimapa": { "$ref": "#/$defs/boton", "description": "#hud .mm-pequeno (minimapa de la esquina). Hoy sd, x 12, y 10, seguro false, 160x160 (110x110 con ancho <= 600). Pausa y pantalla bajan bajo él por mundo.css: si lo mueves, muévelas también." }
           },
           "additionalProperties": false
         },

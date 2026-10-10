@@ -21,7 +21,8 @@ const BOTONES = [
     ['sv-camara', 'Cámara', 'Camera'],
     ['sv-comando', 'Comando /', 'Command /'],
     ['sv-acariciar', 'Acariciar', 'Pet'],
-    ['mision', 'Misión', 'Quest']
+    ['mision', 'Misión', 'Quest'],
+    ['minimapa', 'Minimapa', 'Minimap']
 ];
 const NOMBRE = Object.fromEntries(BOTONES.map(([c, es, en]) => [c, { es, en }]));
 
@@ -39,7 +40,8 @@ const DEF = {
     'sv-soltar': { ancla: 'si' },
     'sv-camara': { ancla: 'si' },
     'sv-comando': { ancla: 'si' },
-    mision: { ancla: 'si', seguro: false }
+    mision: { ancla: 'si', seguro: false },
+    minimapa: { ancla: 'sd', seguro: false }
 };
 const LADOS = { si: ['left', 'top'], sd: ['right', 'top'], ii: ['left', 'bottom'], id: ['right', 'bottom'] };
 const ANCLAS = [['si', 'Arriba izquierda', 'Top left'], ['sd', 'Arriba derecha', 'Top right'], ['ii', 'Abajo izquierda', 'Bottom left'], ['id', 'Abajo derecha', 'Bottom right']];
@@ -128,7 +130,7 @@ export async function montarLayout(ctx) {
         if (!e) return null;
         const r = e.getBoundingClientRect();
         if (!r.width && !r.height) return null;
-        const cont = (clave === 'mision' ? d.getElementById('hud') : d.querySelector('.tactil')).getBoundingClientRect();
+        const cont = (clave === 'mision' || clave === 'minimapa' ? d.getElementById('hud') : d.querySelector('.tactil')).getBoundingClientRect();
         const [h, v] = LADOS[c.ancla];
         const x = h === 'left' ? r.left - cont.left : cont.right - r.right;
         let y;
