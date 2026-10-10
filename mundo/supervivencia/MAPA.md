@@ -4,7 +4,8 @@ Hecho a partir de las cabeceras (primeras líneas) y de grep sobre `main` (`cc03
 `archivo` (líneas) — qué hace · `función:línea`. Actualízalo en el mismo PR que mueve o agrega módulos.
 Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 
-Base compartida del creativo en `mundo/*.js` (`voxeles`, `texturas`, `jugador`, `cielo`, `gatas`,
+`mundo/` es el portafolio 3D ya terminado (no se le harán más cambios); el desarrollo activo es
+`mundo/supervivencia/`. Base compartida del creativo en `mundo/*.js` (`voxeles`, `texturas`, `jugador`, `cielo`, `gatas`,
 `construcciones`, `minimapa`, `ajustes`, …); red en `mundo/online/` (`red.js`, `sala-local.js`,
 `qr.js`, `config.js`). Aquí solo `mundo/supervivencia/` y `mundo/criaturas/`.
 

@@ -5,10 +5,10 @@ proyecto.
 
 ## Leer poco
 
-- **Mapa**: `mundo/MAPA.md` (una línea por módulo de `mundo/supervivencia/` y `mundo/criaturas/`, con
+- **Mapa**: `mundo/supervivencia/MAPA.md` (una línea por módulo de `mundo/supervivencia/` y `mundo/criaturas/`, con
   funciones y líneas, más los flujos clave). Léelo primero; después grep; después tramos.
 - **Pendientes**: `mundo/PENDIENTES.md`, **solo la sección en curso** (se encuentra con
-  `grep -n "^#" mundo/PENDIENTES.md`). Lo terminado vive en `mundo/historial/`: no se lee salvo que
+  `grep -n "^#" mundo/PENDIENTES.md`). Lo terminado vive en `mundo/supervivencia/historial/`: no se lee salvo que
   haga falta.
 - No leer sin que se pida: `respaldo-2026-10-06/`, `.impeccable/review/`, `centroeventostest/`,
   `images/` (los GIFs pesan varios MB: se citan por nombre), `vendor/`.
@@ -35,7 +35,7 @@ La tabla de verificación es la de `SKILL.md` §3. En este proyecto:
 - **Traspaso**: skill `traspaso-chat`, con lectura mínima (secciones de `PENDIENTES.md` y `MAPA.md`,
   estado en 5-10 líneas).
 - **Actualizar** `mundo/PENDIENTES.md` (marcar hecho; la entrada de bitácora va al historial) y
-  `mundo/MAPA.md` si se movieron módulos.
+  `mundo/supervivencia/MAPA.md` si se movieron módulos.
 
 ## Reglas del proyecto que se mantienen
 

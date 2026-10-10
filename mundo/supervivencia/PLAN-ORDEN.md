@@ -10,27 +10,27 @@ modifican (`amistad-6c-grupos` lo cambia): hacerla **después de fusionar** esa 
 
 ## a) Archivar `PENDIENTES.md` (1085 líneas → < 250)
 
-Se crea `mundo/historial/` (no se lee salvo que haga falta). Secciones, por título y rango:
+`mundo/` (portafolio 3D) está terminado: lo nuevo vive en `mundo/supervivencia/`. Se crea `mundo/supervivencia/historial/` (no se lee salvo que haga falta). Secciones, por título y rango:
 
 | Rango | Sección | Destino |
 |---|---|---|
 | 1-17 | Objetivo, Cómo ejecutar | queda |
 | 18-44 | Arquitectura | queda |
-| 45-61 | Modo online (Supabase) | queda; líneas «Estado»/hechos → `historial/online.md` |
-| 62-111 | Modo supervivencia | queda condensada (~30 líneas); el «Estado» de la línea 81 en adelante → `historial/supervivencia.md` |
-| 112-187 | Bloque 5 · cooperativo | → `historial/bloque5-coop.md`; quedan solo las líneas «Pendiente / límites» (141, 163, 184) |
+| 45-61 | Modo online (Supabase) | queda; líneas «Estado»/hechos → `mundo/supervivencia/historial/online.md` |
+| 62-111 | Modo supervivencia | queda condensada (~30 líneas); el «Estado» de la línea 81 en adelante → `mundo/supervivencia/historial/supervivencia.md` |
+| 112-187 | Bloque 5 · cooperativo | → `mundo/supervivencia/historial/bloque5-coop.md`; quedan solo las líneas «Pendiente / límites» (141, 163, 184) |
 | 188-202 | Bloque 6 · principios | queda |
-| 203-352 | 6a y 6b, incluidos «Estado 6a» (215), «Estado 6b-1» (268) y «Estado 6b-2» (305) | → `historial/bloque6-6a-6b.md` |
-| 353-443 | 6c: descripción y tabla de relaciones (363-440) | tabla → `historial/bloque6-relaciones.md`; queda la parte de 6c-2 pendiente (~40 líneas). Si 6c-2 la necesita, enlazar a `mundo/DISENO-6c.md` |
-| 444-489 | «Estado 6c-1» (hecho) | → `historial/bloque6-6c1.md` |
+| 203-352 | 6a y 6b, incluidos «Estado 6a» (215), «Estado 6b-1» (268) y «Estado 6b-2» (305) | → `mundo/supervivencia/historial/bloque6-6a-6b.md` |
+| 353-443 | 6c: descripción y tabla de relaciones (363-440) | tabla → `mundo/supervivencia/historial/bloque6-relaciones.md`; queda la parte de 6c-2 pendiente (~40 líneas). Si 6c-2 la necesita, enlazar a `mundo/DISENO-6c.md` |
+| 444-489 | «Estado 6c-1» (hecho) | → `mundo/supervivencia/historial/bloque6-6c1.md` |
 | 490-514 | 6d · vida entre amigos | queda |
-| 515-838 | Bloque 7 (planificación, 324 líneas) | → `mundo/PLAN-BLOQUE7.md` (no es historial: es lo vivo, pero largo); en PENDIENTES queda un índice de 7a-7i y el orden recomendado (779-791) |
-| 839-861 | Portafolio interactivo | → `historial/portafolio.md` (deja 1 línea con el «Pendiente» de la 860) |
-| 862-893 | Vida en el mundo | → `historial/vida-en-el-mundo.md` |
-| 894-902 | Estado actual (Fase 1) | → `historial/fase1.md` |
-| 903-945 | Por hacer: Fase 2, Gatas, Fase 3, Técnico | queda lo no marcado como hecho; lo hecho → `historial/fase1.md` |
+| 515-838 | Bloque 7 (planificación, 324 líneas) | → `mundo/supervivencia/PLAN-BLOQUE7.md` (no es historial: es lo vivo, pero largo); en PENDIENTES queda un índice de 7a-7i y el orden recomendado (779-791) |
+| 839-861 | Portafolio interactivo | → `mundo/supervivencia/historial/portafolio.md` (deja 1 línea con el «Pendiente» de la 860) |
+| 862-893 | Vida en el mundo | → `mundo/supervivencia/historial/vida-en-el-mundo.md` |
+| 894-902 | Estado actual (Fase 1) | → `mundo/supervivencia/historial/fase1.md` |
+| 903-945 | Por hacer: Fase 2, Gatas, Fase 3, Técnico | queda lo no marcado como hecho; lo hecho → `mundo/supervivencia/historial/fase1.md` |
 | 946-958 | Notas para depurar, Convenciones | queda |
-| 959-1085 | Bitácora de cambios | → `historial/bitacora.md`; en PENDIENTES, una línea de puntero |
+| 959-1085 | Bitácora de cambios | → `mundo/supervivencia/historial/bitacora.md`; en PENDIENTES, una línea de puntero |
 
 Cuenta aproximada de lo que queda: 17+27+17+30+10+15+40+25+25+43+13+ índices ≈ 240 líneas.
 **Verificar con `wc -l`**; si pasa de 250, condensar «Por hacer» antes de mover más.
@@ -66,7 +66,7 @@ creación (hay `const` que dependen de otros: TDZ) ni las firmas de `crearX` de 
 Seguridad: un bloque por commit; tras cada uno, `node --check` del archivo, las pruebas
 (`node mundo/tests/*.mjs`), carga sin interfaz con errores de consola y 1 captura de la partida
 (refactor, según `ahorro` §3). Al final, comparar `estadoActual()` antes y después en una partida
-nueva (mismo JSON), y probar `supervivencia.html?disp=2` (cooperativo). Actualizar `mundo/MAPA.md`
+nueva (mismo JSON), y probar `supervivencia.html?disp=2` (cooperativo). Actualizar `mundo/supervivencia/MAPA.md`
 (líneas de `main.js` y los archivos nuevos) en el mismo PR. Modelo: Opus decide el `ctx` de cada
 bloque; Sonnet ejecuta los bloques 1-6 una vez fijado.
 
@@ -76,8 +76,8 @@ bloque; Sonnet ejecuta los bloques 1-6 una vez fijado.
 
 ```
 - **Al empezar cualquier tarea**: usar la skill `ahorro` (`.claude/skills/ahorro/`, con `proyecto-venjy.md`).
-- **Leer primero `mundo/MAPA.md`**; de `mundo/PENDIENTES.md`, solo la sección en curso (`grep -n "^#"`).
-  Lo terminado está en `mundo/historial/`: no se lee salvo que haga falta.
+- **Leer primero `mundo/supervivencia/MAPA.md`**; de `mundo/PENDIENTES.md`, solo la sección en curso (`grep -n "^#"`).
+  Lo terminado está en `mundo/supervivencia/historial/`: no se lee salvo que haga falta.
 ```
 
 **Skill `traspaso-chat`** (`SKILL.md`):
@@ -87,7 +87,7 @@ bloque; Sonnet ejecuta los bloques 1-6 una vez fijado.
 - *Plantilla del prompt* (37-55): la línea «qué leer primero» pasa a listar **secciones** (`MAPA.md`,
   «Bloque X» de `PENDIENTES.md`), nunca archivos completos de más de 200 líneas.
 - Añadir al prompt un bloque de **estado en 5-10 líneas** (hecho, rama/PR, decisiones, lo no tocado).
-- *Reglas* (56-61): añadir «no pegar diffs ni bitácora; mover el estado terminado a `historial/`».
+- *Reglas* (56-61): añadir «no pegar diffs ni bitácora; mover el estado terminado a `mundo/supervivencia/historial/`».
 
 **Skill `animaciones-minecraft`**: añadir al final de §2 «Flujo de trabajo» un subapartado
 «Ahorrar sin perder calidad» con, **sin quitar ni suavizar nada** de lo que hoy exigen §2 y §5:
