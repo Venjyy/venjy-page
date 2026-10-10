@@ -36,6 +36,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { SalaDirecta } from '../online/red.js';
 import { SalaLocal } from '../online/sala-local.js';
 import { B } from '../texturas.js';
+import { marcar } from '../voxeles.js';
 import { crearModelo } from './skin.js';
 import { caminar } from '../criaturas/cuerpo.js';
 import { infoBloque } from './objetos.js';
@@ -708,8 +709,10 @@ export function crearCoop(cx, ctx) {
         enviarPosicion();
         // Bloques del cuadro en un mensaje (los lotes grandes, como el barco, se parten)
         if (bloquesPend.length) {
+            const t0 = performance.now();
             for (let i = 0; i < bloquesPend.length; i += 4 * 1500) sala.enviar('b', { l: bloquesPend.slice(i, i + 4 * 1500) });
             bloquesPend = [];
+            marcar('red', t0);
         }
         if (finPend.size) { sala.enviar('mf', { l: [...finPend] }); finPend.clear(); }
         const pj = jefes.posJefe();

@@ -3,7 +3,7 @@
 // Atajos del dueño para probar el juego: teletransportes a lugares, personas, gatas y altares,
 // objetos, vida, monstruos y jefes. Son locales; los registra main.js en la consola (consola.js).
 //   /tp <destino> · /tp <x> <y> <z> · /pos · /dar <objeto> [n] · /curar · /dios · /mob <tipo> [n]
-//   /jefe <nombre> · /limpiar · /donde
+//   /jefe <nombre> · /limpiar · /donde · /medir romper (7b-1: mide el lag al romper en 3 sitios; medir.js con import())
 //   /amistad <todo|saludos|momentos|persona|persona-escena> (bloque 6b: recorre los saludos y los momentos
 //   especiales; te lleva junto a cada persona y pasa a la siguiente al terminar o con Saltar; Esc entre dos escenas
 //   termina el recorrido) · /amistad100 <persona|todos> (amistad en 100 para probar el botón real)
@@ -98,7 +98,7 @@ for (let i = 0; i < AMIGOS.length; i++) for (let k = i + 1; k < AMIGOS.length; k
 const ESC_GRUPOS = Object.entries(GRUPOS).flatMap(([g, d]) => d.miembros.map(c => [c, 'grupo', g]));
 const NOMBRE_GRUPO = { tomatitos: 'Tomatitos', atalaya: { es: 'Trío de la atalaya', en: 'Watchtower trio' }, coyhaique: { es: 'Los de Coyhaique', en: 'The Coyhaique crew' } };
 
-export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, gatas, escenas, destinos, spawn, spawnCama, irA, hud, O, B, nombreDe, amistad, idioma = 'es' }) {
+export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, gatas, escenas, destinos, spawn, spawnCama, irA, hud, O, B, nombreDe, amistad, medir, idioma = 'es' }) {
     const t = TXT[idioma] || TXT.es;
     let dios = false;
 
@@ -307,6 +307,13 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
         }
     };
     cmds['/donde'] = { ...cmds['/pos'], ayuda: { es: '/donde (igual que /pos)', en: '/donde (same as /pos)' } };
+    if (medir) {
+        cmds['/medir'] = {
+            ayuda: { es: '/medir romper (lag al romper bloques)', en: '/medir romper (lag when breaking blocks)' },
+            sugerir: () => ['romper'],
+            fn(arg) { import('./medir.js').then(m => m.medirRomper({ ...medir, idioma }, arg)); }
+        };
+    }
     if (amistad) {
         cmds['/amistad'] = {
             ayuda: { es: '/amistad <todo|saludos|momentos|bienvenidas|reencuentros|grupos|persona|persona-escena|skin-amigo|grupo-skin>', en: '/amistad <todo|saludos|momentos|bienvenidas|reencuentros|grupos|person|person-scene|skin-friend|group-skin>' },
