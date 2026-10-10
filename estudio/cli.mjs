@@ -2,7 +2,7 @@
 // VENJY · Estudio · CLI para el agente (estudio/DISENO.md §7)
 //   node estudio/cli.mjs resumen [archivo|js:fuente] [clave] [--completo] [--idioma es|en|ambos] [--json]
 //   node estudio/cli.mjs validar [archivo...] [--contra HEAD] [--arreglar] [--permitir-cambios] [--json]
-//   node estudio/cli.mjs capturar ...   (fase 2)
+//   node estudio/cli.mjs capturar layout|pose|gesto|escena <nombre> [--tiempos a,b] [--hoja] [--medir js] [--salida dir]   (estudio/capturar.mjs)
 // Códigos de salida: 0 bien, 1 errores, 2 avisos que piden confirmación.
 // =========================================================
 import fs from 'node:fs';
@@ -19,7 +19,7 @@ const DATOS = path.join(RAIZ, 'mundo', 'datos');
 // ---------- argumentos ----------
 function leerArgs(argv) {
     const pos = [], op = {};
-    const conValor = new Set(['idioma', 'contra']);
+    const conValor = new Set(['idioma', 'contra', 'salida', 'skin', 'tiempos', 'medir', 'plano', 'url', 'datos', 'pose']);
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a.startsWith('--')) {
@@ -280,5 +280,14 @@ const [orden, ...resto] = process.argv.slice(2);
 const { pos, op } = leerArgs(resto);
 if (orden === 'resumen') await resumen(pos, op);
 else if (orden === 'validar') validarCmd(pos, op);
-else if (orden === 'capturar') salir(['capturar llega en la fase 2 del Estudio (estudio/DISENO.md §6).'], op, 1);
-else salir(['Uso: node estudio/cli.mjs resumen [archivo|js:fuente] [clave] | validar [archivo...] [--contra HEAD] | capturar (fase 2)'], op, orden ? 1 : 0);
+else if (orden === 'capturar') {
+    // Playwright y el servidor se cargan solo aquí: resumen y validar no los necesitan
+    const { capturar } = await import('./capturar.mjs');
+    try {
+        const r = await capturar(pos, op, { log: () => {} });
+        salir(r.lineas, op, r.errores.length ? 2 : 0, r);
+    } catch (e) {
+        salir(['capturar: ' + String((e && e.message) || e)], op, 1);
+    }
+}
+else salir(['Uso: node estudio/cli.mjs resumen [archivo|js:fuente] [clave] | validar [archivo...] [--contra HEAD] | capturar layout|pose|gesto|escena <nombre> [--tiempos …] [--hoja] [--medir js]'], op, orden ? 1 : 0);

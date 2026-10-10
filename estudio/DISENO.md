@@ -548,3 +548,46 @@ entero.
   perfil `baja` solo se guarda lo que difiere de `normal`.
 - **Medición**: ver «Estudio» en `mundo/PENDIENTES.md`. El servidor Node carga en frío ~5 veces más rápido que
   `python -m http.server` (1,2 s contra 6 s con 97 recursos) y siempre sirve archivos al día.
+
+## 10. Fase 2 · lo que cambió al construirla (2026-10-10)
+
+- **Archivos**: `estudio/puente-protocolo.js` (canal, versión, `DATOS_VIVOS`, `crearManejador`: el lado del juego sin DOM),
+  `puente-juego.js` (el lado del juego con DOM: abre el mundo, `/tp`, SSE), `puente-cliente.js` (el lado del Estudio y de
+  las pruebas), `juego.js` (pestaña Juego), `avisos-layout.js` (choques, botones chicos y fuera de pantalla: lo usan el editor
+  y el CLI), `evaluar.mjs` (evaluador de gestos de referencia: lo usan el CLI y la prueba de paridad), `playwright.mjs` y
+  `capturar.mjs` (CLI).
+- **Cambia `supervivencia.html`** (3 líneas): un script clásico que fuerza el táctil con `?estudio=tactil` y un
+  `<script type="module">` que hace `import('./estudio/puente-juego.js')` solo con `?estudio`. `main.js` no se toca. El único
+  cambio en código del juego es `aplicarDatosVivos(nombre, datos)` en `tactil-supervivencia.js` (cambia el JSON ya cargado y
+  repinta los botones existentes).
+- **Mensajes implementados**: `hola` (→ `listo { version, idioma }`, o `estado { fase: 'abriendo' }` mientras el mundo
+  carga), `datos` (`ui-layout` y `textos`), `tp`. Del juego, sin `id`: `estado { fase }` y `error { mensaje }`. `cambio`,
+  `elegir`, `escena`, `pausa`, `irA` y `pose` quedan para las fases 4 a 6 (el manejador contesta «mensaje desconocido»).
+  Todo mensaje lleva `de: 'estudio' | 'juego'`; las respuestas repiten el `id`. El cliente espera 15 s antes de dar error
+  (el juego puede estar generando chunks).
+- **`/tp` sin tocar `comandos-dev.js` ni `main.js`**: el puente prende el modo devenjy, manda `/tp <destino>` por
+  `__venjy.consola.ejecutar` y lo apaga en el mismo instante (así el panel de ayuda no se queda en pantalla). El destino
+  se valida con una lista corta de caracteres; si la posición no cambia, el error dice que no existe el destino.
+- **Mundo «Estudio»**: el puente cliquea el DOM del menú (como `capturar.mjs`): abre la tarjeta que se llama «Estudio» o crea
+  una en Pacífico. Con 5 mundos y sin «Estudio» da un error que lo explica. Las escenas de skin pueden dispararse al llegar
+  a una persona (no se silencian: lo decidirá la fase 5).
+- **SSE** (`GET /api/eventos`): `event: cambio` con `data: <nombre>`. Se anuncia al guardar (`PUT`) y al detectar un cambio en
+  disco con `fs.watch` (un agente, VS Code); un hash evita el aviso doble y los toques sin cambios. El juego con `?estudio` lo
+  escucha, vuelve a leer el archivo y lo aplica (solo `ui-layout` y `textos`). Latido cada 25 s; `close()` del servidor corta los flujos.
+- **Estudio**: la pestaña Juego carga el iframe la primera vez que se abre. Lo que se mueve en Layout se manda al juego en cada
+  cambio (con o sin guardar; se junta un mensaje por cuadro). La casilla «Controles táctiles» recarga el iframe con
+  `?estudio=tactil` (si no, el juego de escritorio no tiene botones táctiles que mover). «Abrir en otra pestaña» sirve para
+  un segundo monitor: el canal funciona igual.
+- **CLI `capturar`**: `layout <aparato> [--seguro] [--datos archivo]`, `pose <clave|--pose json>`, `gesto <clave> --tiempos … [--hoja]`
+  y `escena <clave> --tiempos … [--medir js] [--plano k]`. Levanta su propio servidor en un puerto libre (no hace falta
+  tener el 5510 abierto; `--url` usa otro). La salida es una línea por archivo; `layout` agrega choques, fuera y chicos
+  (los de `avisos-layout.js`). Códigos: 0 bien, 1 error de uso o de entorno, 2 si la página dio errores de consola.
+  `capturar.mjs`, `posar.mjs`, `planos.mjs` y `grabar.mjs` de la skill resuelven Playwright con `estudio/playwright.mjs`;
+  `capturar.mjs` y `posar.mjs` además exportan `capturarEscena` y `posar` (el CLI las importa) y siguen sirviendo por línea de comandos.
+- **Playwright y navegador**: `PLAYWRIGHT` (carpeta del paquete `playwright` o `playwright-core`) → `npm root -g`. Navegador:
+  `PLAYWRIGHT_CHROMIUM` → el que trae el paquete → el más nuevo de la caché `ms-playwright` (headless shell primero) → Chrome →
+  Edge. Con Chromium 153 el argumento `--use-gl=swiftshader` hace fallar `screenshot`; se usa `--use-angle=swiftshader`
+  (vale también en los anteriores). En este equipo hay `playwright-core` 1.62.1 dentro de `omniroute` y un Chromium en la
+  caché; no se instaló nada: `PLAYWRIGHT=<ruta a esa carpeta>`.
+- **Sin probar**: la pestaña Juego en un celular real con `--lan`. `capturar escena pony` sí corrió (va junto a la persona con
+  `irJunto`, fuerza la escena y mide).

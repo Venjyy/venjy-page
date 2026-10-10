@@ -3,12 +3,16 @@
 // Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout.
 // =========================================================
 import { montarLayout } from './layout.js';
+import { montarJuego } from './juego.js';
+import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
     idioma: 'es',
     zonaSegura: false,
     servidor: { escritura: false },
-    alIdioma: []
+    alIdioma: [],
+    puente: crearCliente(), // canal con el juego (fase 2); layout.js manda cada cambio por aquí
+    juego: null
 };
 
 function idiomaGuardado() {
@@ -52,3 +56,17 @@ for (const b of document.querySelectorAll('[data-idioma]')) b.addEventListener('
 aplicarIdioma(idiomaGuardado());
 await buscarServidor();
 await montarLayout(ctx);
+montarJuego(ctx);
+
+// Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez)
+for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
+    b.addEventListener('click', () => {
+        for (const o of document.querySelectorAll('.pestana[data-pestana]')) {
+            const activa = o === b;
+            o.classList.toggle('activa', activa);
+            document.getElementById('seccion-' + o.dataset.pestana).hidden = !activa;
+        }
+        if (b.dataset.pestana === 'juego') ctx.juego.activar();
+        window.dispatchEvent(new Event('resize')); // el editor de layout mide la vista al volver
+    });
+}
