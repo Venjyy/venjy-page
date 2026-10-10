@@ -99,6 +99,8 @@ malo('poses', 'poses', d => { d.poses.neutral.canales.cx = 9; }, '9');
     ok(/\.tactil-pausa\{right:calc\(20px \+ env\(safe-area-inset-right, 0px\)\) !important;left:auto !important;top:calc\(30px \+ env\(safe-area-inset-top, 0px\)\) !important;bottom:auto !important\}/.test(cssLayout(mover)), 'pausa gana a mundo.css con !important');
     const sinSeguro = { supervivencia: { normal: { botones: { saltar: { ancla: 'id', x: 5, y: 7, seguro: false } } } } };
     ok(cssLayout(sinSeguro).includes('right:5px;left:auto;bottom:7px;top:auto'), 'seguro:false no suma env()');
+    const mm = { supervivencia: { normal: { botones: { minimapa: { ancla: 'sd', x: 8, y: 6, w: 120, h: 120, seguro: false } } } } };
+    ok(cssLayout(mm).includes('#hud .mm-pequeno{right:8px;left:auto;top:6px;bottom:auto;width:120px;height:120px}'), 'minimapa mueve y cambia tamaño sin zona segura');
     const oculto = { supervivencia: { normal: { botones: { 'sv-camara': { oculto: true } } } } };
     ok(cssLayout(oculto).includes('display:none'), 'oculto esconde el botón');
 }
