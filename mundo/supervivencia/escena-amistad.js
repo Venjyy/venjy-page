@@ -19,7 +19,7 @@
 // Para revisarlas en el juego: /amistad (comandos-dev.js, con /gamemode devenjy).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
-import { TIPO } from '../texturas.js';
+import { TIPO, B } from '../texturas.js';
 import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { GESTOS } from './escenas-skin.js';
 import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD } from './escena-amistad-datos.js';
@@ -118,7 +118,9 @@ export function crearEscenaAmistad(ctx) {
     // empezando por el ángulo ang0, con suelo, aire para el cuerpo (esquinas incluidas) y sin otras personas
     function lugarExacto(n, r, ang0, otros) {
         const piso = Math.round((n.y ?? 0) + dy);
-        const aire = (x, y, z) => [-0.3, 0.3].every(ex => [-0.3, 0.3].every(ez => !opaco(x + ex, y, z + ez)));
+        // Aire para el cuerpo, sin agua ni lava (en la orilla quedaba dentro del agua y se ahogaba durante el momento)
+        const liquido = (x, y, z) => { const id = mundo.bloque(x, y, z); return id === B.AGUA || id === B.LAVA; };
+        const aire = (x, y, z) => [-0.3, 0.3].every(ex => [-0.3, 0.3].every(ez => !opaco(x + ex, y, z + ez) && !liquido(x + ex, y, z + ez)));
         // Primero a la misma altura que el amigo (todas las direcciones) y solo después un bloque más arriba o abajo
         for (const y of [piso, piso + 1, piso - 1]) for (let i = 0; i < 32; i++) {
             const ang = ang0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.2;

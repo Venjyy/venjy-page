@@ -41,13 +41,15 @@ export function momento(info = {}) {
         gestos: {
             // Pistola de dedos: brazo derecho estirado al frente, el izquierdo lo sostiene; la cabeza mira de un lado a otro
             apunta: (u, t) => ({ bDx: -1.5, bDz: 0.05, bIx: -1.1, bIz: -0.45, cy: Math.sin(t * 1.6) * 0.35 }),
-            // Revivir: agachado detrás del jugador, inclinado con las piernas compensadas y las dos manos sobre su espalda
+            // Revivir: un poco inclinado (piernas compensadas, sin avanzar: antes quedaba encima del jugador) con las dos manos
+            // estiradas hacia los hombros del jugador sentado
             revive: (u, t) => ({
-                inc: 0.55, pDx: -0.55, pIx: -0.55, y: 0.11, pz: 0.25, cx: 0.3,
-                bDx: -0.55 + Math.sin(t * 9) * 0.06, bDz: 0.12, bIx: -0.55 + Math.sin(t * 9 + 1) * 0.06, bIz: -0.12
+                inc: 0.3, pDx: -0.3, pIx: -0.3, y: 0.034, cx: 0.35,
+                bDx: -1.3 + Math.sin(t * 9) * 0.06, bDz: 0.2, bIx: -1.3 + Math.sin(t * 9 + 1) * 0.06, bIz: -0.2
             }),
-            // Cae de rodillas: cuerpo bajo e inclinado, un brazo hacia el suelo y el otro a la cara
-            cae: () => ({ y: -0.45, inc: 0.25, pDx: 0.2, pIx: 0.2, bDx: 0.35, bDz: 0.1, bIx: -0.6, bIz: -0.25, cx: 0.45 }),
+            // Cae sentado en el suelo (el sentado del atlas de rig.md: las piernas quedan estiradas sobre el suelo, no bajo él),
+            // apoyado en una mano y con la cabeza gacha
+            cae: () => ({ y: -0.62, pDx: -1.45, pIx: -1.45, inc: 0.15, bDx: 0.3, bDz: -0.15, bIx: -0.9, bIz: -0.2, cx: 0.4 }),
             // Choque de puños: la derecha de cada uno llega al centro y choca en 13.0
             choque: (u, t) => {
                 const k = suave(tramo(t, 12.2, 13.0)) * (1 - tramo(t, 13.4, 14.0));

@@ -28,6 +28,7 @@ const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
 const tramo = (u, a, b) => lim((u - a) / (b - a), 0, 1);
+const envolvente = (x, a, b, r) => suave(Math.min(tramo(x, a, a + r), 1 - tramo(x, b - r, b)));
 
 export function momento(info = {}) {
     let espatula = [], filete = null, plato = null, vasos = [];
@@ -43,16 +44,22 @@ export function momento(info = {}) {
             asa: (u, t) => ({ bDx: -0.55 + Math.sin(t * 6) * 0.06, bDz: 0.15, bIx: -0.3, bIz: -0.1, cx: 0.25 }),
             // Recibe el plato con la izquierda estirada al frente
             recibe: () => ({ bIx: -1.35, bIz: -0.1, cx: 0.1 }),
-            // Carcajada: inclinado al frente con piernas compensadas, una mano en la guata y sacudones
+            // Carcajada: echado un poco hacia atrás (inclinados al frente quedaban cara a cara, como en un beso), una mano en la
+            // guata, la otra en la rodilla y sacudones; los dos giran de lado mientras se ríen (yaw)
             carcajada: (u, t) => {
                 const s = Math.sin(t * 17);
-                return { inc: 0.3 + s * 0.02, pDx: -0.3, pIx: -0.3, y: 0.03, bDx: -0.9 + s * 0.05, bDz: 0.6, bIx: -0.5, bIz: -0.3, cx: -0.35, rz: s * 0.03 };
+                return { inc: -0.12 + s * 0.02, bDx: -0.75 + s * 0.05, bDz: 0.6, bIx: -0.25, bIz: -0.2, cx: -0.4, rz: s * 0.03, salto: Math.abs(s) * 0.04 };
             },
             // Brindis: el vaso sube y choca con el del otro en 14.2
             brinda: (u, t) => {
                 const k = suave(tramo(t, 13.6, 14.2)) * (1 - tramo(t, 14.9, 15.6));
                 return { bDx: -0.6 - 0.6 * k, bDz: 0.1 + 0.05 * k, cx: -0.2 };
             }
+        },
+        // Durante la carcajada los dos giran ~45° hacia afuera, para no quedar cara a cara
+        yaw: {
+            n: t => 0.75 * envolvente(t, 9.4, 13.6, 0.5),
+            j: t => -0.75 * envolvente(t, 9.4, 13.6, 0.5)
         },
         golpes: [14.2],
         extra: {

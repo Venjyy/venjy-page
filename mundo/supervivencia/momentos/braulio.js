@@ -26,6 +26,7 @@ const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
 const tramo = (u, a, b) => lim((u - a) / (b - a), 0, 1);
+const envolvente = (x, a, b, r) => suave(Math.min(tramo(x, a, a + r), 1 - tramo(x, b - r, b)));
 
 // Cofrecito de madera con borde dorado; concha dorada (sprite píxel)
 const COL_COFRE = { g: '#f5c542', b: '#7a4a1f', d: '#5a3414' };
@@ -45,13 +46,19 @@ export function momento(info = {}) {
     };
 
     return {
-        T: 16, r: 1.4,
+        T: 16, r: 1.8,
         lineas: LINEAS,
         pista: {
             n: [['cava', 1.0, 6.0], ['sorpresa', 6.0, 6.9], ['pasa', 9.4, 10.6], ['asiente', 12.6, 15.4]],
             j: [['cava', 1.0, 6.0], ['sorpresa', 6.0, 6.9], ['recibe', 9.4, 10.6], ['oreja', 12.6, 15.4]]
         },
         gestos,
+        // Para cavar se ponen hombro con hombro mirando al mismo lado (frente a frente, inclinados, se metían uno en el otro);
+        // en 6.0 se vuelven a mirar para el cofre
+        yaw: {
+            n: t => (Math.PI / 2) * envolvente(t, 0.8, 6.2, 0.6),
+            j: t => -(Math.PI / 2) * envolvente(t, 0.8, 6.2, 0.6)
+        },
         golpes: [],
         corazones: [],
         extra: {
