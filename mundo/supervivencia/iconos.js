@@ -167,6 +167,10 @@ const PINTORES = {
         p.mascara(['', '', '..cccccccccc....', '..aaaaaaaaaab...', '..abbbbbbbbab...', '..aaaaaaaaaab...', '..abbbbbbbab....', '..aaaaaaaaaab...', '..abbbbbbbbab...', '..aaaaaaaaaab...', '..bbbbbbbbbbb...'], { a: [240, 240, 232], b: [190, 190, 180], c: [255, 255, 250] });
         p.contornear();
     },
+    carta(p) {
+        p.mascara(['', '', '', '.cccccccccccc...', '.abaaaaaaaaba...', '.aabaaaaaabaa...', '.aaabaaaabaaa...', '.aaaabrrbaaaa...', '.aaaaaaaaaaaa...', '.aaaaaaaaaaaa...', '.bbbbbbbbbbbb...'], { a: [244, 236, 214], b: [186, 172, 140], c: [255, 252, 240], r: [196, 40, 40] });
+        p.contornear();
+    },
     libro(p) {
         p.mascara(['', '', '...ccccccccc....', '..caaaaaaaaab...', '..caaaaaaaaab...', '..caabbbbbaab...', '..caaaaaaaaab...', '..caaaaaaaaab...', '..caaaaaaaaab...', '..cwwwwwwwwwb...', '...bbbbbbbbb....'], { a: [120, 70, 40], b: [70, 40, 20], c: [160, 100, 60], w: [236, 230, 210] });
         p.contornear();

@@ -22,7 +22,7 @@ const suave = u => u * u * (3 - 2 * u);
 
 // Lo que dice en cada lugar (es / en)
 const F = (es, en) => ({ es, en });
-const DICHOS = {
+export const DICHOS = {
     inicio: [
         F('¡Hola! Soy Venjy, Benjamín Flores. Bienvenido a mi portafolio hecho Minecraft.', "Hi! I'm Venjy, Benjamín Flores. Welcome to my portfolio, Minecraft style."),
         F('Consejo: la versión estable es el mapa horizontal. Para la mejor experiencia, usa ese.', 'Tip: the stable version is the horizontal map. For the best experience, use that one.'),
@@ -193,7 +193,7 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
         agregarExtras(p, piel.extras, tinte, 6000 + lista.length * 7);
         scene.add(p.g);
         const n = {
-            lugar, p, x, z, y, yaw, yawBase: yaw, anim, frases, t: Math.random() * 10, fase: 0, ciclo: Math.random() * 3,
+            lugar, p, x, z, y, yaw, yawBase: yaw, anim, frases, dichos: frases, t: Math.random() * 10, fase: 0, ciclo: Math.random() * 3,
             nombre: crearNombre(scene, 'Venjy'), globo: crearGlobo(scene, { nombre: 'Venjy', color: COLOR_GLOBO.venjy }), frase: null, cerca: false, cambioFrase: 0,
             cargado: false, candidatos: candidatos || [[x, z]], ...extra
         };
@@ -553,9 +553,11 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
                 if (cerca && (!n.cerca || (n.cambioFrase -= dt) <= 0)) {
                     let nueva = !n.cerca && n.primera && !n.saludo ? n.primera : null;
                     if (nueva) n.saludo = true;
-                    while (!nueva || (n.frases.length > 1 && nueva === n.frase && !n.primera)) {
-                        nueva = n.frases[Math.floor(Math.random() * n.frases.length)];
-                        if (n.frases.length <= 1 || nueva !== n.frase) break;
+                    // En la supervivencia `n.frases` es una función (venjys-datos.js) que elige por prioridad; devuelve null mientras carga
+                    if (!nueva && typeof n.frases === 'function') nueva = n.frases(n);
+                    while (!nueva || (n.dichos.length > 1 && nueva === n.frase && !n.primera)) {
+                        nueva = n.dichos[Math.floor(Math.random() * n.dichos.length)];
+                        if (n.dichos.length <= 1 || nueva !== n.frase) break;
                     }
                     n.frase = nueva; n.cambioFrase = 6.5;
                 }

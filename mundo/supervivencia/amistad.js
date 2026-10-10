@@ -5,7 +5,7 @@
 // · Puntos = inicial (según tu skin y la tabla de relaciones de 6c) + ganados, con tope 100.
 //   La inicial no se guarda: si cambias de skin, los amigos te ven como a otra persona.
 // · Se gana al hablar, completar sus misiones, regalarle su objeto favorito, jugar su minijuego,
-//   comprarle en la tienda y pelear cerca de su zona; casi todo con tope por día de juego (10 min).
+//   comprarle en la tienda, pelear cerca de su zona y entregarle la carta del Venjy del correo; casi todo con tope por día de juego (10 min).
 // · Se guarda dentro de misiones.estado (serializar/cargar): un guardado viejo sin amistad parte en blanco.
 // =========================================================
 import { O } from './objetos.js';
@@ -31,7 +31,8 @@ export const PUNTOS = {
     minijuego: { p: 4, tope: 8 },    // jugar; ganar suma `gana`
     gana: { p: 4, tope: null },      // extra al ganar (comparte el tope de minijuego)
     tienda: { p: 2, tope: 4 },       // por compra
-    pelea: { p: 1, tope: 3 }         // monstruo eliminado a menos de RADIO_PELEA de él
+    pelea: { p: 1, tope: 3 },        // monstruo eliminado a menos de RADIO_PELEA de él
+    carta: { p: 2, tope: 2 }         // 7f-1: carta del Venjy del correo entregada (una al día)
 };
 export const RADIO_PELEA = 40;
 
@@ -159,7 +160,7 @@ export function crearAmistad(ctx) {
     function registroDe(clave) {
         const d = ctx.dia();
         let r = hoy[clave];
-        if (!r || r.d !== d) { r = { d, hablar: 0, regalo: 0, minijuego: 0, tienda: 0, pelea: 0, temas: [] }; hoy[clave] = r; }
+        if (!r || r.d !== d) { r = { d, hablar: 0, regalo: 0, minijuego: 0, tienda: 0, pelea: 0, carta: 0, temas: [] }; hoy[clave] = r; }
         return r;
     }
     // Suma puntos por un motivo (respeta el tope del día). Devuelve los puntos sumados.
@@ -200,7 +201,7 @@ export function crearAmistad(ctx) {
             ganados = {}; hoy = {};
             if (!o) return;
             for (const k of PERSONAJES) if (Number.isFinite(o.ganados?.[k])) ganados[k] = Math.max(0, o.ganados[k]);
-            if (o.hoy && typeof o.hoy === 'object') for (const k of PERSONAJES) if (o.hoy[k]) hoy[k] = { hablar: 0, regalo: 0, minijuego: 0, tienda: 0, pelea: 0, temas: [], ...o.hoy[k] };
+            if (o.hoy && typeof o.hoy === 'object') for (const k of PERSONAJES) if (o.hoy[k]) hoy[k] = { hablar: 0, regalo: 0, minijuego: 0, tienda: 0, pelea: 0, carta: 0, temas: [], ...o.hoy[k] };
         }
     };
 }
