@@ -6,6 +6,7 @@
 // =========================================================
 import { SELECTORES } from '../mundo/supervivencia/layout-datos.js';
 import { formatear } from './formato.mjs';
+import { calcularAvisos, MIN_TOQUE } from './avisos-layout.js';
 
 // Orden de la lista: clave, nombre ES, nombre EN
 const BOTONES = [
@@ -46,7 +47,7 @@ const DEF = {
 const LADOS = { si: ['left', 'top'], sd: ['right', 'top'], ii: ['left', 'bottom'], id: ['right', 'bottom'] };
 const ANCLAS = [['si', 'Arriba izquierda', 'Top left'], ['sd', 'Arriba derecha', 'Top right'], ['ii', 'Abajo izquierda', 'Bottom left'], ['id', 'Abajo derecha', 'Bottom right']];
 
-const APARATOS = [
+export const APARATOS = [
     { id: 'cel-v', es: 'Celular vertical 390×844', en: 'Phone portrait 390×844', w: 390, h: 844, seguro: { t: 47, b: 34 } },
     { id: 'cel-h', es: 'Celular acostado 844×390', en: 'Phone landscape 844×390', w: 844, h: 390, seguro: { l: 47, r: 47, b: 21 } },
     { id: 'and-v', es: 'Android vertical 412×915', en: 'Android portrait 412×915', w: 412, h: 915, seguro: { t: 32, b: 24 } },
@@ -117,6 +118,8 @@ export async function montarLayout(ctx) {
     // ---------- Vista ----------
     const doc = () => (listo ? vista.contentDocument : null);
     function enviar() {
+        // El juego abierto con ?estudio (iframe de la pestaña Juego, otra pestaña o el celular) recibe lo mismo
+        if (ctx.puente) ctx.puente.enviarDatos('ui-layout', clonar(datos));
         if (!listo) return;
         vista.contentWindow.postMessage({ tipo: 'layout', datos }, location.origin);
         const s = ctx.zonaSegura ? aparato.seguro : {};
@@ -348,22 +351,14 @@ export async function montarLayout(ctx) {
         const avisos = [];
         const marcas = new Map();
         const marcar = (clave, clase) => { marcas.set(clave, (marcas.get(clave) || '') + ' ' + clase); };
-        for (let i = 0; i < visibles.length; i++) {
-            const a = visibles[i];
-            for (let j = i + 1; j < visibles.length; j++) {
-                const b = visibles[j];
-                const ancho = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
-                const alto = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
-                if (ancho > 1 && alto > 1) {
-                    marcar(a.clave, 'choque'); marcar(b.clave, 'choque');
-                    avisos.push(['choque', `${NOMBRE[a.clave].es} y ${NOMBRE[b.clave].es} se tapan`, `${NOMBRE[a.clave].en} and ${NOMBRE[b.clave].en} overlap`]);
-                }
-            }
-            if (a.clave !== 'mision' && Math.min(a.r.width, a.r.height) < 44) {
+        for (const a of calcularAvisos(visibles, w, h)) {
+            if (a.tipo === 'choque') {
+                marcar(a.a, 'choque'); marcar(a.b, 'choque');
+                avisos.push(['choque', `${NOMBRE[a.a].es} y ${NOMBRE[a.b].es} se tapan`, `${NOMBRE[a.a].en} and ${NOMBRE[a.b].en} overlap`]);
+            } else if (a.tipo === 'chico') {
                 marcar(a.clave, 'chico');
-                avisos.push(['chico', `${NOMBRE[a.clave].es} mide menos de 44 px (${Math.round(a.r.width)}×${Math.round(a.r.height)})`, `${NOMBRE[a.clave].en} is under 44 px (${Math.round(a.r.width)}×${Math.round(a.r.height)})`]);
-            }
-            if (a.r.left < -0.5 || a.r.top < -0.5 || a.r.right > w + 0.5 || a.r.bottom > h + 0.5) {
+                avisos.push(['chico', `${NOMBRE[a.clave].es} mide menos de ${MIN_TOQUE} px (${a.ancho}×${a.alto})`, `${NOMBRE[a.clave].en} is under ${MIN_TOQUE} px (${a.ancho}×${a.alto})`]);
+            } else {
                 marcar(a.clave, 'fuera');
                 avisos.push(['fuera', `${NOMBRE[a.clave].es} sale de la pantalla`, `${NOMBRE[a.clave].en} is off screen`]);
             }

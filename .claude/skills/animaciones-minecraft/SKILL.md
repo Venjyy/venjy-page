@@ -190,6 +190,8 @@ presenta el video al dueño. Lleva a la skill lo que el subagente diga que falt�
 6. **Verifica con capturas** (y, si tocaste la cámara, con la hoja de planos `planos.mjs`) (`referencia/verificar.md`): al menos 5 tiempos clave y 2 planos de
    cámara. Mira cada imagen: ¿la pose se lee?, ¿la mano llega donde debe?, ¿algo atraviesa un
    bloque o una cabeza?, ¿la cámara ve a los actores? Corrige y vuelve a capturar.
+   Atajo: `node estudio/cli.mjs capturar pose|gesto|escena <clave> [--tiempos …] [--hoja] [--medir …]` (levanta
+   su propio servidor; Playwright por `PLAYWRIGHT=<carpeta del paquete>` o `npm i -g playwright-core`, ver `estudio/playwright.mjs`).
 7. **Corre las pruebas**: `node mundo/tests/recetas.mjs`, `node mundo/tests/inventario.mjs` y
    `node mundo/tests/paridad.mjs` (no deben romperse) y revisa que no haya errores de consola en las capturas.
 8. **Graba un video** con `grabar.mjs` (`referencia/verificar.md` §2b) y entrégalo: es lo que

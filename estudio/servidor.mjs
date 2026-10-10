@@ -86,6 +86,41 @@ export function crearServidor({ raiz = RAIZ, log = false } = {}) {
     const dirDatos = path.join(raiz, 'mundo', 'datos');
     const leerIndice = () => JSON.parse(fs.readFileSync(path.join(dirDatos, 'indice.json'), 'utf8'));
 
+    // ---- GET /api/eventos (SSE): avisa «cambio <nombre>» cuando un archivo de mundo/datos/ cambia de contenido ----
+    // Lo oye el juego con ?estudio (también el celular en --lan). Se anuncia al guardar (PUT) y al detectar
+    // un cambio en disco (fs.watch: un agente o VS Code editando); el hash evita avisar dos veces lo mismo.
+    const oyentes = new Set();
+    const anunciado = new Map();
+    function anunciar(nombre, etag) {
+        if (anunciado.get(nombre) === etag) return;
+        anunciado.set(nombre, etag);
+        for (const r of oyentes) r.write(`event: cambio\ndata: ${nombre}\n\n`);
+    }
+    const alDisco = new Map();
+    function mirarDisco(archivo) {
+        const m = /^([a-z][a-z0-9-]*)\.json$/.exec(archivo || '');
+        if (!m || m[1] === 'indice') return;
+        clearTimeout(alDisco.get(m[1]));
+        alDisco.set(m[1], setTimeout(() => {
+            alDisco.delete(m[1]);
+            try { anunciar(m[1], sha1(fs.readFileSync(path.join(dirDatos, archivo)))); } catch (e) { /* se borró o está en uso */ }
+        }, 120));
+    }
+    let vigia = null;
+    try { vigia = fs.watch(dirDatos, (ev, archivo) => mirarDisco(archivo)); vigia.on('error', () => {}); } catch (e) { /* sin vigilancia: solo avisa al guardar */ }
+    // Parte del hash de lo que ya hay, para no anunciar un toque sin cambios
+    try {
+        for (const a of fs.readdirSync(dirDatos)) if (/\.json$/.test(a) && a !== 'indice.json') anunciado.set(a.slice(0, -5), sha1(fs.readFileSync(path.join(dirDatos, a))));
+    } catch (e) { /* sin datos */ }
+
+    function eventos(req, res) {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        res.write('retry: 2000\n: abierto\n\n');
+        oyentes.add(res);
+        const latido = setInterval(() => res.write(': latido\n\n'), 25000);
+        req.on('close', () => { clearInterval(latido); oyentes.delete(res); });
+    }
+
     async function guardar(req, res, nombre) {
         let indice;
         try { indice = leerIndice(); } catch (e) { return json(res, 500, { ok: false, error: 'indice.json ilegible: ' + e.message }); }
@@ -122,7 +157,9 @@ export function crearServidor({ raiz = RAIZ, log = false } = {}) {
         const salida = Buffer.from(formatear(datos), 'utf8');
         if (!previo || !salida.equals(previo)) escribirArchivo(destino, salida);
         console.log(`guardado ${nombre}.json (${salida.length} B)`);
-        return json(res, 200, { ok: true, bytes: salida.length, etag: sha1(salida) });
+        const etagNuevo = sha1(salida);
+        anunciar(nombre, etagNuevo);
+        return json(res, 200, { ok: true, bytes: salida.length, etag: etagNuevo });
     }
 
     function estatico(req, res, rutaUrl) {
@@ -164,12 +201,13 @@ export function crearServidor({ raiz = RAIZ, log = false } = {}) {
         fs.createReadStream(abs).on('error', () => res.destroy()).pipe(res);
     }
 
-    return http.createServer((req, res) => {
+    const servidor = http.createServer((req, res) => {
         const inicio = Date.now();
         if (log) res.on('finish', () => console.log(`${req.method} ${req.url} ${res.statusCode} ${Date.now() - inicio} ms`));
         let rutaUrl;
         try { rutaUrl = new URL(req.url, 'http://x').pathname; } catch (e) { return texto(res, 400, 'URL no válida'); }
         if (rutaUrl === '/api/estudio' && req.method === 'GET') return json(res, 200, { ok: true, escritura: true, version: 1 });
+        if (rutaUrl === '/api/eventos' && req.method === 'GET') return eventos(req, res);
         const m = /^\/api\/datos\/([^/]+)$/.exec(rutaUrl);
         if (m) {
             if (req.method !== 'PUT') return json(res, 405, { ok: false, error: 'usa PUT' });
@@ -179,6 +217,16 @@ export function crearServidor({ raiz = RAIZ, log = false } = {}) {
         if (req.method !== 'GET' && req.method !== 'HEAD') return texto(res, 405, 'Método no permitido');
         return estatico(req, res, rutaUrl);
     });
+    // close() también corta los SSE abiertos y la vigilancia (si no, el servidor no termina)
+    const cerrar = servidor.close.bind(servidor);
+    servidor.close = cb => {
+        if (vigia) vigia.close();
+        for (const r of oyentes) r.end();
+        oyentes.clear();
+        for (const t of alDisco.values()) clearTimeout(t);
+        return cerrar(cb);
+    };
+    return servidor;
 }
 
 export function iniciar({ puerto = 5510, lan = false, log = false, raiz = RAIZ } = {}) {

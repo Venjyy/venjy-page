@@ -1,4 +1,4 @@
-// Prueba del Estudio, fase 1: node mundo/tests/estudio.mjs
+// Prueba del Estudio, fases 1 y 2: node mundo/tests/estudio.mjs
 // Formato estable, validador, fusión de datos, CSS del layout, servidor de desarrollo, CLI y paridad de gestos.
 // Lo que depende del navegador (estilos computados con y sin datos, mover un botón y guardar) se prueba a mano:
 // ver «Estudio · fase 1» en mundo/PENDIENTES.md.
@@ -13,6 +13,7 @@ import { validar } from '../../estudio/validar.mjs';
 import { iniciar } from '../../estudio/servidor.mjs';
 import { fusionar, texto } from '../datos/cargador.js';
 import { cssLayout } from '../supervivencia/layout-datos.js';
+import { evaluarCanal } from '../../estudio/evaluar.mjs';
 
 let fallos = 0;
 const ok = (cond, msg) => { if (!cond) { fallos++; console.log('FALLA:', msg); } };
@@ -226,26 +227,7 @@ try {
     globalThis.window ??= { addEventListener() {} };
     const { GESTOS } = await import('../supervivencia/escenas-skin.js');
     const { GESTOS_AMISTAD } = await import('../supervivencia/escena-amistad-datos.js');
-    const FORMAS = { sin: Math.sin, abs: x => Math.abs(Math.sin(x)), pos: x => Math.max(0, Math.sin(x)), neg: x => Math.min(0, Math.sin(x)) };
-    const suave = u => u * u * (3 - 2 * u);
-    const tramo = (u, a, b) => Math.max(0, Math.min(1, (u - a) / (b - a)));
-    const clave = (k, t, interp) => {
-        if (t <= k[0][0]) return k[0][1];
-        for (let i = 1; i < k.length; i++) {
-            if (t <= k[i][0]) {
-                const [t0, v0] = k[i - 1], [t1, v1] = k[i];
-                const f = (t - t0) / (t1 - t0);
-                return interp === 'paso' ? v0 : v0 + (v1 - v0) * (interp === 'lineal' ? f : suave(f));
-            }
-        }
-        return k[k.length - 1][1];
-    };
-    const canal = (c, t, u) => {
-        if (typeof c === 'number') return c;
-        let v = c.k ? clave(c.k, t, c.interp) : (c.base || 0);
-        for (const o of c.osc || []) v += o.amp * FORMAS[o.forma](t * o.frec + (o.fase || 0)) * (o.env ? tramo(u, o.env[0], o.env[1]) : 1);
-        return v;
-    };
+    const canal = evaluarCanal; // el mismo evaluador que usa el CLI (estudio/evaluar.mjs)
     const gestos = json('poses.json').gestos;
     let comparaciones = 0, maxima = 0;
     for (const [nombre, def] of Object.entries(gestos)) {
@@ -267,6 +249,192 @@ try {
     ok(maxima < 1e-9, `poses.json se aparta del código (diferencia máxima ${maxima})`);
     ok(Object.keys(gestos).length >= 11, 'poses.json debe traer los 11 gestos');
     console.log(`gestos: ${Object.keys(gestos).length} · ${comparaciones} comparaciones · diferencia máxima ${maxima}`);
+}
+
+// ---------- 8. Puente BroadcastChannel (fase 2) ----------
+{
+    const { CANAL, DATOS_VIVOS, crearManejador } = await import('../../estudio/puente-protocolo.js');
+    const { crearCliente } = await import('../../estudio/puente-cliente.js');
+    ok(CANAL === 'venjy-estudio', 'el canal se llama venjy-estudio');
+    ok(DATOS_VIVOS.includes('ui-layout') && DATOS_VIVOS.includes('textos'), 'layout y textos se aplican en vivo');
+    // Un «juego» de mentira detrás de un canal real y un cliente real, como entre dos pestañas
+    const aplicados = [], viajes = [];
+    let listoJuego = false;
+    const responder = crearManejador({
+        listo: () => listoJuego,
+        idioma: () => 'en',
+        aplicarDatos(nombre, datos) { if (datos.romper) throw new Error('rompe'); aplicados.push([nombre, datos]); },
+        async teletransportar(d) { if (d.destino === 'nada') throw new Error('no existe'); viajes.push(d); return { x: 1, y: 2, z: 3 }; }
+    });
+    const canalJuego = new BroadcastChannel(CANAL);
+    canalJuego.onmessage = async e => { const r = await responder(e.data); if (r) canalJuego.postMessage(r); };
+    const cliente = crearCliente({ tope: 1500 });
+    const vistos = [];
+    cliente.alMensaje(m => vistos.push(m.tipo));
+    try {
+        const antes = await cliente.hola();
+        ok(antes.tipo === 'estado' && antes.fase === 'abriendo', 'hola con el mundo abriéndose da estado');
+        listoJuego = true;
+        const h = await cliente.hola();
+        ok(h.tipo === 'listo' && h.version === 1 && h.idioma === 'en', 'hola da listo { version, idioma }');
+        ok(cliente.estado.listo === true && cliente.estado.idioma === 'en', 'el cliente recuerda que el juego está listo');
+        const d = await cliente.enviar('datos', { nombre: 'ui-layout', datos: { supervivencia: {} } });
+        ok(d.tipo === 'ok' && aplicados.length === 1 && aplicados[0][0] === 'ui-layout', 'datos se aplica y responde ok');
+        const dm = await cliente.enviar('datos', { nombre: 'posiciones', datos: {} }).then(() => null, e => e.message);
+        ok(dm && dm.includes('no se aplica en vivo'), 'un archivo que no es vivo da error');
+        const dr = await cliente.enviar('datos', { nombre: 'textos', datos: { romper: 1 } }).then(() => null, e => e.message);
+        ok(dr === 'rompe', 'el error de aplicarDatos llega al cliente');
+        const tp = await cliente.tp('spawn');
+        ok(tp.tipo === 'ok' && tp.pos.x === 1 && viajes[0].destino === 'spawn', 'tp con destino responde ok { pos }');
+        await cliente.tp({ x: 10, y: 70, z: -5 });
+        ok(viajes[1].x === 10 && viajes[1].y === 70 && viajes[1].z === -5, 'tp con x y z');
+        await cliente.tp({ x: 10, z: 5 });
+        ok(viajes[2].y === undefined, 'tp sin y deja y sin definir');
+        for (const malo of ['../x', '', 'a;b', 'x'.repeat(60)]) {
+            const e = await cliente.tp(malo).then(() => null, er => er.message);
+            ok(e !== null, `tp rechaza el destino «${malo.slice(0, 12)}»`);
+        }
+        ok((await cliente.tp('nada').then(() => null, e => e.message)) === 'no existe', 'el error de teletransportar llega');
+        const desc = await cliente.enviar('volar').then(() => null, e => e.message);
+        ok(desc && desc.includes('desconocido'), 'un mensaje desconocido da error');
+        // varios cambios en el mismo cuadro llegan como uno solo
+        const antesN = aplicados.length;
+        cliente.enviarDatos('ui-layout', { n: 1 });
+        cliente.enviarDatos('ui-layout', { n: 2 });
+        cliente.enviarDatos('ui-layout', { n: 3 });
+        await new Promise(r => setTimeout(r, 120));
+        ok(aplicados.length === antesN + 1 && aplicados[aplicados.length - 1][1].n === 3, 'enviarDatos junta los cambios del mismo cuadro');
+        // un mensaje que no es del Estudio no se responde
+        ok((await responder({ de: 'juego', tipo: 'hola' })) === null && (await responder('x')) === null, 'el manejador ignora lo que no es del Estudio');
+        ok(vistos.includes('listo'), 'alMensaje recibe los mensajes del juego');
+        // sin juego: el cliente da error por tiempo, no se cuelga
+        canalJuego.onmessage = null;
+        const mudo = await cliente.hola().then(() => null, e => e.message);
+        ok(mudo && mudo.includes('no respondió'), 'sin juego, la petición vence');
+    } finally {
+        cliente.cerrar();
+        canalJuego.close();
+    }
+}
+
+// ---------- 9. Eventos del servidor (SSE) ----------
+{
+    const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), 'estudio-sse-'));
+    fs.mkdirSync(path.join(tmp2, 'mundo', 'datos'), { recursive: true });
+    for (const f of ['indice.json', 'ui-layout.json', 'textos.json']) fs.copyFileSync(path.join(DATOS, f), path.join(tmp2, 'mundo', 'datos', f));
+    const srv = await iniciar({ puerto: 0, raiz: tmp2 });
+    const p2 = srv.address().port;
+    const recibidos = [];
+    const req = http.get({ host: '127.0.0.1', port: p2, path: '/api/eventos' }, res => {
+        ok(res.statusCode === 200 && res.headers['content-type'].startsWith('text/event-stream'), '/api/eventos es text/event-stream');
+        res.setEncoding('utf8');
+        res.on('data', c => recibidos.push(c));
+    });
+    req.on('error', () => {});
+    const espera = (cond, ms = 2500) => new Promise(r => { const fin = Date.now() + ms; const t = setInterval(() => { if (cond() || Date.now() > fin) { clearInterval(t); r(cond()); } }, 25); });
+    const cuenta = () => (recibidos.join('').match(/event: cambio\ndata: ui-layout\n\n/g) || []).length;
+    const pedirP = (metodo, ruta, cab, cuerpo) => new Promise((res2, rej) => {
+        const r = http.request({ host: '127.0.0.1', port: p2, method: metodo, path: ruta, headers: cab }, x => {
+            const b = [];
+            x.on('data', c => b.push(c));
+            x.on('end', () => res2({ codigo: x.statusCode, cabeceras: x.headers, texto: Buffer.concat(b).toString() }));
+        });
+        r.on('error', rej);
+        if (cuerpo !== undefined) r.write(cuerpo);
+        r.end();
+    });
+    try {
+        await espera(() => recibidos.join('').includes(': abierto'));
+        ok(recibidos.join('').includes('retry:'), 'el flujo abre con retry');
+        // 1) guardar con PUT avisa una vez
+        const lay2 = JSON.parse(fs.readFileSync(path.join(tmp2, 'mundo', 'datos', 'ui-layout.json'), 'utf8'));
+        const et = (await pedirP('GET', '/mundo/datos/ui-layout.json', {})).cabeceras.etag;
+        lay2.supervivencia.normal.botones['sv-usar'].y = 97;
+        const put = await pedirP('PUT', '/api/datos/ui-layout', { 'X-Estudio': '1', 'If-Match': et, 'Content-Type': 'application/json' }, JSON.stringify(lay2));
+        ok(put.codigo === 200, 'PUT para el SSE: ' + put.texto);
+        ok(await espera(() => cuenta() === 1), 'guardar anuncia «cambio ui-layout»');
+        await new Promise(r => setTimeout(r, 400)); // fs.watch ve el mismo cambio: no debe repetirlo
+        ok(cuenta() === 1, 'el cambio no se anuncia dos veces (PUT y fs.watch)');
+        // 2) una edición en disco (un agente) también avisa
+        const archivoLay = path.join(tmp2, 'mundo', 'datos', 'ui-layout.json');
+        fs.writeFileSync(archivoLay, fs.readFileSync(archivoLay, 'utf8').replace('"y": 97', '"y": 95'));
+        ok(await espera(() => cuenta() === 2), 'editar el archivo en disco también anuncia el cambio');
+        // 3) regrabar el mismo contenido no avisa
+        fs.writeFileSync(archivoLay, fs.readFileSync(archivoLay));
+        await new Promise(r => setTimeout(r, 400));
+        ok(cuenta() === 2, 'regrabar el mismo contenido no anuncia nada');
+        ok((await pedirP('POST', '/api/eventos', {})).codigo === 404, 'POST a /api/eventos da 404');
+    } finally {
+        req.destroy();
+        await new Promise(r => srv.close(r));
+        fs.rmSync(tmp2, { recursive: true, force: true });
+    }
+}
+
+// ---------- 10. CLI capturar: las piezas que no abren navegador ----------
+{
+    const { aparatoDe } = await import('../../estudio/capturar.mjs');
+    const { calcularAvisos } = await import('../../estudio/avisos-layout.js');
+    const { candidatosPlaywright, cargarPlaywright, buscarChromiumLocal, lanzarNavegador } = await import('../../estudio/playwright.mjs');
+    const { evaluarGesto } = await import('../../estudio/evaluar.mjs');
+
+    ok(aparatoDe('acostado').w === 844 && aparatoDe('acostado').h === 390, 'aparato acostado = 844×390');
+    ok(aparatoDe('vertical').h === 844 && aparatoDe('tablet').w === 820, 'alias vertical y tablet');
+    ok(aparatoDe('cel-h').id === 'cel-h' && aparatoDe('915x412').w === 915, 'id de layout.js y ANCHOxALTO');
+    ok((() => { try { aparatoDe('reloj'); return false; } catch (e) { return /desconocido/.test(e.message); } })(), 'aparato desconocido da error claro');
+
+    const r = (l, t, w, h) => ({ left: l, top: t, right: l + w, bottom: t + h, width: w, height: h });
+    const av = calcularAvisos([
+        { clave: 'a', r: r(0, 0, 80, 80) }, { clave: 'b', r: r(70, 70, 80, 80) }, { clave: 'c', r: r(300, 0, 30, 60) },
+        { clave: 'mision', r: r(0, 200, 30, 20) }, { clave: 'd', r: r(390, 10, 60, 60) }
+    ], 400, 300);
+    ok(av.some(x => x.tipo === 'choque' && x.a === 'a' && x.b === 'b'), 'calcularAvisos ve el choque');
+    ok(av.some(x => x.tipo === 'chico' && x.clave === 'c' && x.ancho === 30), 'calcularAvisos ve el botón chico');
+    ok(!av.some(x => x.tipo === 'chico' && x.clave === 'mision'), 'la misión no cuenta como chica');
+    ok(av.some(x => x.tipo === 'fuera' && x.clave === 'd'), 'calcularAvisos ve lo que sale de la pantalla');
+    ok(calcularAvisos([{ clave: 'a', r: r(0, 0, 50, 50) }, { clave: 'b', r: r(50, 0, 50, 50) }], 400, 300).filter(x => x.tipo === 'choque').length === 0, 'botones pegados no chocan');
+
+    // Resolución de Playwright con paquetes de mentira
+    const falso = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-falso-'));
+    fs.writeFileSync(path.join(falso, 'package.json'), '{"name":"playwright-core","main":"index.js"}');
+    fs.writeFileSync(path.join(falso, 'index.js'), 'exports.chromium = { launch: async o => ({ lanzado: o }) };');
+    ok(candidatosPlaywright({ PLAYWRIGHT: '/x' }, '/g')[0] === '/x' && candidatosPlaywright({}, '/g').length === 2, 'candidatos: PLAYWRIGHT primero y luego el global');
+    ok(cargarPlaywright({ PLAYWRIGHT: falso }, null).origen === falso, 'cargarPlaywright toma la variable PLAYWRIGHT');
+    const sinPaquete = (() => { try { cargarPlaywright({ PLAYWRIGHT: path.join(falso, 'no-existe') }, null); return ''; } catch (e) { return e.message; } })();
+    ok(/No encuentro Playwright/.test(sinPaquete) && sinPaquete.includes('PLAYWRIGHT'), 'sin paquete el error dice cómo arreglarlo');
+    // caché de navegadores: la revisión más nueva primero
+    const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'ms-pw-'));
+    const exe = process.platform === 'win32' ? 'chrome-headless-shell-win64/chrome-headless-shell.exe'
+        : process.platform === 'darwin' ? 'chrome-headless-shell-mac-arm64/chrome-headless-shell' : 'chrome-headless-shell-linux64/chrome-headless-shell';
+    for (const rev of [1100, 1243]) {
+        const p = path.join(cache, 'chromium_headless_shell-' + rev, exe);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, '');
+    }
+    const locales = buscarChromiumLocal({ PLAYWRIGHT_BROWSERS_PATH: cache });
+    ok(locales.length === 2 && locales[0].includes('1243') && locales[1].includes('1100'), 'buscarChromiumLocal ordena por revisión');
+    ok(buscarChromiumLocal({ PLAYWRIGHT_BROWSERS_PATH: path.join(cache, 'nada') }).length === 0, 'sin caché, lista vacía');
+    // lanzarNavegador prueba en orden hasta que uno abre: por defecto (falla), 1243 (falla), 1100 (abre)
+    const intentos = [];
+    const chromiumFalso = { launch: async o => { intentos.push(o); if (!o.executablePath || o.executablePath.includes('1243')) throw new Error('no abre'); return { ok: true, o }; } };
+    const nav = await lanzarNavegador(chromiumFalso, { PLAYWRIGHT_BROWSERS_PATH: cache });
+    ok(nav.ok && nav.o.executablePath.includes('1100') && intentos.length === 3, `lanzarNavegador cae al siguiente (intentos: ${intentos.length})`);
+    const todosMal = await lanzarNavegador({ launch: async () => { throw new Error('nada'); } }, { PLAYWRIGHT_BROWSERS_PATH: cache }).then(() => '', e => e.message);
+    ok(/No pude abrir un navegador/.test(todosMal), 'si ningún navegador abre, el error los lista');
+    fs.rmSync(falso, { recursive: true, force: true });
+    fs.rmSync(cache, { recursive: true, force: true });
+
+    // evaluarGesto es el mismo evaluador de la paridad
+    const habla = json('poses.json').gestos.habla;
+    const e0 = evaluarGesto(habla, 0);
+    ok(Math.abs(e0.bDx - -0.9) < 1e-9 && Object.keys(e0).length === Object.keys(habla.canales).length, 'evaluarGesto(habla, 0)');
+
+    // el CLI falla con un mensaje claro y código 1 antes de abrir nada
+    for (const args of [['capturar'], ['capturar', 'gesto', 'inexistente'], ['capturar', 'pose', 'nada']]) {
+        let codigo = 0, salida = '';
+        try { execFileSync(process.execPath, [path.join(RAIZ, 'estudio', 'cli.mjs'), ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { codigo = e.status; salida = String(e.stdout); }
+        ok(codigo === 1 && /^capturar: /.test(salida), `cli ${args.join(' ')} sale con 1 y un mensaje (salió ${codigo}: ${salida.slice(0, 80)})`);
+    }
 }
 
 console.log(fallos ? `${fallos} fallas` : 'estudio OK');

@@ -8,6 +8,8 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 - Servidor local: `node estudio/servidor.mjs` (puerto 5510, o `PORT=…`; `--lan` para probar en el celular; configurado en `.claude/launch.json` como `venjy`). Sirve todo con ETag y es el único que guarda desde el editor del Estudio (`http://localhost:5510/estudio/`). `python -m http.server 5510` sigue sirviendo, pero solo de lectura y sin ETag. Ya no se puede abrir `index.html` con doble clic: `script.js` y el mundo 3D usan módulos ES y necesitan servidor o hosting.
 
+- **El juego dentro del Estudio**: `supervivencia.html?estudio` abre (o crea) el mundo «Estudio» en Pacífico y escucha al Estudio por el canal `venjy-estudio` (pestaña Juego de `/estudio/`; `?estudio=tactil` fuerza los controles táctiles). Sin `?estudio` no se carga nada nuevo. En el celular con `--lan` el juego se actualiza solo cuando cambia un JSON de `mundo/datos/` (`GET /api/eventos`).
+
 ## Mapa del proyecto
 
 - `script.js` genera en canvas el mapa de Minecraft, las texturas, los íconos pixelados y los estandartes. No hay imágenes para eso.
@@ -36,7 +38,7 @@ Diseño y fases en `estudio/DISENO.md`; esquemas en `estudio/esquemas/`.
 - La lógica sigue en JS y solo lee el JSON. Si falta una clave, el juego usa el valor del código.
 - Nunca sobrescribir valores que el dueño editó a mano: solo añadir claves. Cambiar un valor existente solo si él lo pide (`node estudio/cli.mjs validar --contra HEAD` lo avisa; `--permitir-cambios` si lo pidió).
 - Lo viejo se migra a JSON solo cuando se toca por otro motivo.
-- Para leer contenido, primero `node estudio/cli.mjs resumen [archivo|js:dialogos|js:tienda|js:amistad] [clave]` en vez de abrir los `*-datos.js`. Al cambiar un JSON: `node estudio/cli.mjs validar` y `node mundo/tests/estudio.mjs`. Lo que está en `ui-layout.json` (botones táctiles) se edita arrastrando en `/estudio/`.
+- Para leer contenido, primero `node estudio/cli.mjs resumen [archivo|js:dialogos|js:tienda|js:amistad] [clave]` en vez de abrir los `*-datos.js`. Al cambiar un JSON: `node estudio/cli.mjs validar` y `node mundo/tests/estudio.mjs`. Capturas medidas: `node estudio/cli.mjs capturar layout acostado | pose <clave> | gesto <clave> --hoja | escena <clave> --medir "manoD()"` (levanta su propio servidor; Playwright por `PLAYWRIGHT=<carpeta del paquete>` o `npm i -g playwright-core`, ver `estudio/playwright.mjs`). `node mundo/tests/estudio-navegador.mjs` prueba el puente con un navegador real (se omite sin Playwright). Lo que está en `ui-layout.json` (botones táctiles) se edita arrastrando en `/estudio/`.
 
 ## Mundo 3D (`mundo.html`)
 

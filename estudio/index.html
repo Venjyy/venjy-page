@@ -12,6 +12,7 @@
         <h1 data-es="Estudio" data-en="Studio">Estudio</h1>
         <nav class="pestanas" aria-label="Secciones">
             <button class="pestana activa" type="button" data-pestana="layout" data-es="Layout" data-en="Layout">Layout</button>
+            <button class="pestana" type="button" data-pestana="juego" data-es="Juego" data-en="Game">Juego</button>
             <button class="pestana" type="button" disabled data-es="Textos · fase 3" data-en="Texts · phase 3">Textos · fase 3</button>
             <button class="pestana" type="button" disabled data-es="Posiciones · fase 4" data-en="Positions · phase 4">Posiciones · fase 4</button>
             <button class="pestana" type="button" disabled data-es="Escenas · fase 5" data-en="Scenes · phase 5">Escenas · fase 5</button>
@@ -86,6 +87,54 @@
                     <button id="descargar" class="boton secundario" type="button" data-es="Descargar JSON" data-en="Download JSON">Descargar JSON</button>
                 </div>
                 <p id="mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-juego" class="seccion" hidden>
+        <section class="escritorio">
+            <div class="fila-aparato">
+                <label class="casilla-marca">
+                    <input id="juego-tactil" type="checkbox">
+                    <span data-es="Controles táctiles" data-en="Touch controls">Controles táctiles</span>
+                </label>
+                <button id="juego-recargar" class="boton chico" type="button" data-es="Recargar el juego" data-en="Reload the game">Recargar el juego</button>
+                <a id="juego-aparte" class="boton chico enlace" target="_blank" rel="noopener" href="../supervivencia.html?estudio"
+                   data-es="Abrir en otra pestaña" data-en="Open in another tab">Abrir en otra pestaña</a>
+            </div>
+            <div class="marco marco-juego">
+                <iframe id="juego" title="Juego" allow="fullscreen; autoplay"></iframe>
+            </div>
+            <p class="ayuda" data-es="El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante."
+               data-en="The game opens (or creates) the world “Estudio” on Peaceful. Click the game to play; Esc to get back. What you move in Layout shows up here instantly.">El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante.</p>
+        </section>
+
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Estado" data-en="Status">Estado</h2>
+                <p id="juego-estado" class="mensaje">…</p>
+            </section>
+            <section class="panel">
+                <h2 data-es="Ir a" data-en="Go to">Ir a</h2>
+                <label class="campo">
+                    <span data-es="Lugar o persona (como /tp)" data-en="Place or person (like /tp)">Lugar o persona (como /tp)</span>
+                    <input id="tp-destino" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="spawn">
+                </label>
+                <div class="campos">
+                    <label class="campo"><span>X</span><input id="tp-x" type="number" step="1"></label>
+                    <label class="campo"><span>Y</span><input id="tp-y" type="number" step="1"></label>
+                    <label class="campo"><span>Z</span><input id="tp-z" type="number" step="1"></label>
+                </div>
+                <div class="fila-botones">
+                    <button id="tp-ir" class="boton" type="button" data-es="Ir" data-en="Go">Ir</button>
+                    <button id="tp-ir-xyz" class="boton secundario" type="button" data-es="Ir a X Y Z" data-en="Go to X Y Z">Ir a X Y Z</button>
+                </div>
+                <p id="tp-mensaje" class="mensaje" role="status"></p>
+            </section>
+            <section class="panel">
+                <h2 data-es="Datos" data-en="Data">Datos</h2>
+                <button id="juego-datos" class="boton secundario" type="button" data-es="Aplicar los archivos guardados" data-en="Apply the saved files">Aplicar los archivos guardados</button>
+                <p id="datos-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

@@ -7,7 +7,7 @@
 // · --planos: cuántos planos tiene la lista (k = 0 … n−1). Usa camaras.fijarPlano(k).
 // · Imprime por plano el nombre y, si existe, camaras.diagnostico (ver referencia/camara.md).
 // =========================================================
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { abrirNavegador } from '../../../estudio/playwright.mjs'; // PLAYWRIGHT=<carpeta> o npm global
 import { mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
@@ -17,7 +17,7 @@ const medir = arg('medir', '');
 const dir = salida.replace(/\.png$/, '') + '-cuadros';
 rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true });
 
-const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const b = await abrirNavegador();
 const p = await b.newPage({ viewport: { width: 960, height: 540 } });
 p.on('pageerror', e => console.log('ERROR DE PÁGINA:', e.message));
 await p.goto('http://localhost:5510/supervivencia.html');

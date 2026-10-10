@@ -36,7 +36,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `skin.js` (245) | Skin del jugador y editor. `skinPorDefecto:32` `crearModelo:53` `crearEditorSkin:110` |
 | `sonidos.js` (104) / `musica.js` (299) | Efectos y música sintetizados con WebAudio. `sonidos:63` · `crearMusica:228` |
 | `interpolacion.js` (66) | Búfer de red a 2-5 Hz. `Bufer:14` `mezclar:61` |
-| `tactil-supervivencia.js` (61) | Botones táctiles; etiquetas y layout salen de `mundo/datos/` (`textos.json`, `ui-layout.json`) con el código como defecto. `iniciarTactilSupervivencia:27` |
+| `tactil-supervivencia.js` (70) | Botones táctiles; etiquetas y layout salen de `mundo/datos/` (`textos.json`, `ui-layout.json`) con el código como defecto. `aplicarDatosVivos:28` (Estudio, sin recargar) `iniciarTactilSupervivencia:36` |
 | `layout-datos.js` (112) | Estudio fase 1: genera un `<style id="layout-datos">` desde `ui-layout.json` solo con las claves presentes. `cssLayout:88` `aplicarLayout:97` |
 | `consola.js` (176) / `comandos-dev.js` (316) | Consola T o `/` y comandos de desarrollo (`/gamemode devenjy`). `crearConsola:40` · `crearComandosDev:95` |
 | `creditos.js` (35) | Créditos al hundir el Caleuche. `mostrarCreditos:13` |
@@ -87,7 +87,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `coop.js` (763) | Hasta 8 jugadores por WebRTC en estrella. `hospedar:118` `unirse:133` `hospedarLocal:169` `unirseLocal:180` `guardadoDeInvitado:198` `crearCoop:211` `actualizar:706` `salir:733` |
 | `ui-qr.js` (86) | Panel QR para jugar sin internet. `crearPanelQR:15` |
 
-## Estudio · editor y datos (fase 1)
+## Estudio · editor y datos (fases 1 y 2)
 
 Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en `mundo/datos/`. Diseño y contratos: `estudio/DISENO.md`.
 
@@ -95,13 +95,19 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 |---|---|
 | `mundo/datos/cargador.js` (58) | Navegador: `cargarDatos:21` (fetch con tope 3 s, caché, `?sin-datos`), `fusionar:46`, `texto:55` |
 | `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos` (los lee el juego), `posiciones` y `poses` (referencia); `indice.json` dice quién lee qué |
-| `estudio/servidor.mjs` (201) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag y `PUT /api/datos/<nombre>`. `crearServidor:85` `iniciar:184` |
+| `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |
 | `estudio/validar.mjs` (95) | `validar(datos, esquema)`: subconjunto de JSON Schema sin dependencias |
-| `estudio/cli.mjs` (284) / `fuentes.mjs` (111) | `resumen` y `validar` (`capturar` es de la fase 2); fuentes JS `dialogos`, `tienda`, `amistad` |
-| `estudio/index.html` · `estudio.js` (54) · `estudio.css` | Cáscara: idioma ES/EN, estado del servidor, pestañas |
-| `estudio/layout.js` (581) | Editor de layout: asas, panel de campos, avisos, guardar. `montarLayout:62` |
-| `estudio/vista-tactil.html` (80) | Capa táctil real sin el mundo (iframe del editor); recibe `{tipo:'layout'}` y `{tipo:'seguro'}` |
+| `estudio/cli.mjs` (293) / `fuentes.mjs` (111) | `resumen`, `validar` y `capturar` (delega en `capturar.mjs`); fuentes JS `dialogos`, `tienda`, `amistad` |
+| `estudio/capturar.mjs` (180) | `capturar layout\|pose\|gesto\|escena`: servidor propio + Playwright. `aparatoDe:29` `capturar:110` |
+| `estudio/playwright.mjs` (109) | Dónde está Playwright y un navegador: `cargarPlaywright:34` `buscarChromiumLocal:68` `lanzarNavegador:90` `abrirNavegador:106` |
+| `estudio/puente-protocolo.js` (57) | Canal `venjy-estudio`, `DATOS_VIVOS`, `crearManejador:22` (mensajes `hola`, `datos`, `tp`; sin DOM) |
+| `estudio/puente-juego.js` (100) | Lado del juego, solo con `?estudio`: abre/crea el mundo «Estudio», `/tp` por la consola, SSE |
+| `estudio/puente-cliente.js` (67) / `juego.js` (98) | Lado del Estudio: `crearCliente:11`; pestaña Juego (iframe, `/tp`, aplicar archivos) |
+| `estudio/avisos-layout.js` (26) / `evaluar.mjs` (35) | `calcularAvisos` (choques, chicos, fuera); `evaluarGesto` de `poses.json` (referencia) |
+| `estudio/index.html` · `estudio.js` (72) · `estudio.css` | Cáscara: idioma ES/EN, estado del servidor, pestañas (Layout y Juego), cliente del puente |
+| `estudio/layout.js` (578) | Editor de layout: asas, panel de campos, avisos, guardar; manda cada cambio al juego. `APARATOS:50` `montarLayout:65` |
+| `estudio/vista-tactil.html` (87) | Capa táctil real sin el mundo (iframe del editor); recibe `{tipo:'layout'}` y `{tipo:'seguro'}` |
 
 ## criaturas/ · base compartida con el creativo
 

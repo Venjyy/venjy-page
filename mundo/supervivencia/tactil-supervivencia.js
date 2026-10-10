@@ -24,6 +24,15 @@ const pendientes = new Set();
 cargarDatos('ui-layout').then(d => { datosLayout = d; for (const f of pendientes) f(); });
 cargarDatos('textos').then(d => { datosTextos = d; for (const f of pendientes) f(); });
 
+// Estudio (?estudio, estudio/puente-juego.js): cambia el JSON ya cargado y repinta sin recargar la página.
+export function aplicarDatosVivos(nombre, datos) {
+    if (nombre === 'ui-layout') datosLayout = datos;
+    else if (nombre === 'textos') datosTextos = datos;
+    else return false;
+    for (const f of pendientes) f();
+    return true;
+}
+
 export function iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma = 'es', camaras, consola, caricias }) {
     const claves = ['romper', 'usar', 'inventario', 'soltar', 'acariciar', 'camara', 'comando'];
     const etiqueta = clave => texto(fusionar(TEXTOS, datosTextos && datosTextos.textos && datosTextos.textos.tactil)[clave], idioma);
