@@ -9,6 +9,11 @@
 //    En el iglú, Lalo y Moisés le pasan el pito y el bong al jugador (humo, burbujas y tos).
 // Durante la escena el jugador queda congelado, el HUD se oculta (modo cine de camaras.js) y se
 // puede saltar con Esc o con el botón «Saltar». Las escenas vistas se guardan en las misiones.
+// Bloque 6c-1: también decide cuándo toca una bienvenida (el Venjy del Inicio recibe a tu skin de amigo) o un
+// reencuentro (tu skin y un amigo con relación 2 o 3); las corre escena-amistad.js, que main.js carga con
+// import() (ctx.amistad6c). Regla «uno por lugar»: al llegar a un lugar (la fogata, el iglú, la atalaya...)
+// sale una sola escena automática por skin; las demás de ese lugar, la primera vez que le haces clic derecho
+// a cada uno. Claves en las vistas: 'bv:<skin>', 'rc:<skin>:<amigo>' y 'lugar:<skin>:<lugar>'.
 // Coordenadas: los amigos viven en el mapa original dentro de `grupo` (y + dy en el mundo).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -16,6 +21,20 @@ import { TIPO } from '../texturas.js';
 import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { BASES } from './skin.js';
 import { CORTAS, VENJY, IGLU, DURACION_IGLU, TXT_ESCENA } from './escenas-datos.js';
+import { relacion } from './amistad.js';
+
+// Lugar de cada persona para la regla «uno por lugar» (los que están juntos comparten lugar)
+export const LUGAR = { hadad: 'fogata', andy: 'fogata', nacho: 'fogata', lalo: 'iglu', moises: 'iglu', boris: 'atalaya', lucho: 'atalaya',
+    salonas: 'escenario', conejeros: 'escenario', pony: 'muelle', braulio: 'playa', lona: 'lona', venjy: 'inicio' };
+// Escena de amistad 6c que le toca a esta persona con tu skin (o null): con skin de Venjy no hay (ya tiene las suyas)
+export function pendiente6c(base, clave, vistas) {
+    if (!base || base === 'venjy' || clave === base) return null;
+    if (clave === 'venjy') return vistas.has('bv:' + base) ? null : { tipo: 'bienvenida', vista: 'bv:' + base };
+    const r = relacion(base, clave);
+    if (r !== 2 && r !== 3) return null;
+    const vista = `rc:${base}:${clave}`;
+    return vistas.has(vista) ? null : { tipo: 'reencuentro', vista };
+}
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -70,6 +89,7 @@ const CAMPOS = ['cx', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz
 
 export function crearEscenasSkin(ctx) {
     const { grupo, dy, mundo, jugador, camara, camaras, misiones, npcs, amigos, venjys, skin, puede, bloquear, liberar } = ctx;
+    // ctx.amistad6c: { bienvenida(base), reencuentro(base, clave) } -> promesa con true si empezó (main.js, import() al usarse)
     let idioma = ctx.idioma || 'es';
     const L = o => (o ? o[idioma] || o.es : '');
     const vistas = () => misiones.estado.escenasSkin;
@@ -445,6 +465,32 @@ export function crearEscenasSkin(ctx) {
         return libre(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z, n.x, ny + 1.5 * esc(n), n.z);
     }
     function reacciona(clave, info) { return !vistas().has(clave) && !!info.base && (info.base === 'venjy' || info.base === clave) && (clave !== 'venjy' || info.base === 'venjy'); }
+    // Bienvenida o reencuentro (6c-1): marca la escena como vista y la pide a escena-amistad.js; si no pudo empezar
+    // (otra escena tenía al amigo), se desmarca para intentarlo después
+    let cargando6c = false, sinAuto = false;
+    function iniciar6c(clave, info, p6, lugar) {
+        if (!ctx.amistad6c) return false;
+        cargando6c = true;
+        vistas().add(p6.vista);
+        if (lugar) vistas().add(lugar);
+        const pr = p6.tipo === 'bienvenida' ? ctx.amistad6c.bienvenida(info.base) : ctx.amistad6c.reencuentro(info.base, clave);
+        Promise.resolve(pr).then(ok => {
+            cargando6c = false;
+            if (!ok) { vistas().delete(p6.vista); if (lugar) vistas().delete(lugar); reloj = -4; }
+        });
+        return true;
+    }
+    // Llegada a un lugar: una sola escena automática por skin (la de la persona más cercana que tenga una)
+    function automatica(info) {
+        const cerca = personas().filter(p => cercaDe(p.n)).sort((a, b) => Math.hypot(a.n.x - jugador.pos.x, a.n.z - jugador.pos.z) - Math.hypot(b.n.x - jugador.pos.x, b.n.z - jugador.pos.z));
+        for (const p of cerca) {
+            const lugar = `lugar:${info.base}:${LUGAR[p.clave] || p.clave}`;
+            if (vistas().has(lugar)) continue;
+            if (reacciona(p.clave, info)) { vistas().add(lugar); iniciar(p.clave, p.n, info); return; }
+            const p6 = pendiente6c(info.base, p.clave, vistas());
+            if (p6 && iniciar6c(p.clave, info, p6, lugar)) return;
+        }
+    }
 
     // Hacia quién se inclina el encuadre en una línea (0 amigo, 1 jugador)
     const focoDe = l => (!l ? 0.5 : l.q === 'j' ? 0.68 : l.q === 'ambos' || l.q === 'todos' ? 0.5 : 0.32);
@@ -461,9 +507,9 @@ export function crearEscenasSkin(ctx) {
             jugador.yaw = Math.atan2(e.centro.x - jugador.pos.x, e.centro.z - jugador.pos.z) - Math.PI;
         } else if ((reloj += dt) > 0.25) {
             reloj = 0;
-            if (puede()) {
+            if (puede() && !cargando6c && !sinAuto) {
                 const info = tipoSkin(skin());
-                if (info.base) for (const p of personas()) if (reacciona(p.clave, info) && cercaDe(p.n)) { iniciar(p.clave, p.n, info); break; }
+                if (info.base) automatica(info);
             }
         }
         actualizarGlobos(dt);
@@ -528,18 +574,19 @@ export function crearEscenasSkin(ctx) {
 
     // Antes de abrir el panel de un amigo: si le toca la escena, va primero
     function antesDeHablar(clave) {
-        if (escena) return true;
+        if (escena || cargando6c) return true;
         const info = tipoSkin(skin());
-        if (!reacciona(clave, info)) return false;
         const p = personas().find(x => x.clave === clave);
         if (!p) return false;
-        iniciar(clave, p.n, info);
-        return true;
+        if (reacciona(clave, info)) { iniciar(clave, p.n, info); return true; }
+        // Bienvenida o reencuentro que no salió sola (otra escena ya ocupó el lugar): la primera vez que le haces clic derecho
+        const p6 = pendiente6c(info.base, clave, vistas());
+        return !!(p6 && iniciar6c(clave, info, p6, null));
     }
 
     return {
         actualizar, antesDeHablar, saltar, tipoSkin,
-        get activa() { return !!escena; },
+        get activa() { return !!escena || cargando6c; },
         // Personas con escena (recorrido de /escenas): clave, nombre y posición en coordenadas del creativo
         personas: () => personas().map(p => ({ clave: p.clave, nombre: p.n.nombre?.texto || p.clave, x: p.n.x, y: p.n.y ?? 0, z: p.n.z })),
         // Diagnóstico del último cuadro dibujado (revisor automático): globo y zonas en NDC (-1..1), línea activa y plano
@@ -563,6 +610,8 @@ export function crearEscenasSkin(ctx) {
         // Depuración: olvidar las escenas vistas, forzar una, detener el guion (para capturas) o saltar a un segundo
         sinEvitar(b = true) { sinEvitarDepurar = !!b; for (const g of Object.values(globos)) g.sinEvitar = b; },
         reiniciar() { vistas().clear(); },
+        // Sin escenas automáticas (capturas): ni de skin ni bienvenidas ni reencuentros; el clic derecho sigue igual
+        callar(v = true) { sinAuto = !!v; },
         pausar(v = true) { pausada = v; },
         irA(t) { if (escena) escena.t = t; },
         forzar(clave) {

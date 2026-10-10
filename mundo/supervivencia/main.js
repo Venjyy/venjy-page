@@ -655,8 +655,14 @@ async function arrancar(guardado, cx = null) {
         skin: () => skinActual,
         puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
         bloquear: bloquearEscena,
-        liberar: liberarEscena
+        liberar: liberarEscena,
+        // Bienvenidas y reencuentros (bloque 6c-1): el motor de amistad y la escena se cargan con import() al usarse
+        amistad6c: {
+            bienvenida: base => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.bienvenida(base) : false)) : false),
+            reencuentro: (base, clave) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.reencuentro(base, clave) : false)) : false)
+        }
     });
+    const puede6c = () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !(escenaAmistad && escenaAmistad.activa);
     // Escenas especiales con Mila y Gala: la primera caricia con skin de base Lona o Venjy
     const escenasGatas = crearEscenasGatas({
         grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, gatas, misiones, idioma,
@@ -772,7 +778,11 @@ async function arrancar(guardado, cx = null) {
             persona: c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio') : personasEscena().find(n => n.clave === c)) || null,
             nombre: c => NOMBRES_AMIGO[c] || c,
             puede: () => puedeAmistad(),
-            max: c => { for (let i = 0; i < 12 && misiones.amistad.puntos(c) < 100; i++) misiones.amistad.sumar(c, 'mision'); }
+            max: c => { for (let i = 0; i < 12 && misiones.amistad.puntos(c) < 100; i++) misiones.amistad.sumar(c, 'mision'); },
+            // 6c-1: el recorrido de bienvenidas y reencuentros te pone la skin del amigo y al final te devuelve la tuya
+            skin: () => skinActual,
+            ponerSkin: d => ponerSkin(d),
+            callar: v => escenas.callar(v)
         }
     });
     // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>, /gamemode devenjy (+ comandos de desarrollo)

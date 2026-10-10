@@ -10,6 +10,7 @@
 //   Pareja (skin de Venjy, info.base === 'venjy'): 0.8-6.6 el jugador se tapa los ojos (gesto `ojos` de escenas-skin.js) mientras Lona teje rápido; 6.8 se la pone; 9.4-12.0 el jugador la toca; 12.2-15.4 abrazo largo con beso en la mejilla y corazones en 12.6, 13.6 y 14.6.
 // Son personas reales: siempre en buena onda; el dueño revisa los textos antes del merge.
 // =========================================================
+import { alHombro } from '../escena-amistad-datos.js';
 const t = (es, en) => ({ es, en });
 
 // Frases (únicas en todo el juego; las comprueba mundo/tests/amistad.mjs)
@@ -53,8 +54,10 @@ export function momento(info = {}) {
         toca: (u, t) => { const s = Math.sin(t * 6) * 0.05; return { cx: 0.3, bDx: -0.75 + s, bIx: -0.75 - s, bDz: 0.3, bIz: -0.3 }; },
         abrazoL: (u, t, i) => {
             const k = env(u, 0, 1, 0.2), beso = env(u, 0.5, 0.8, 0.1);
-            const meta = { bDx: -1.45 * k, bDz: 0.8 * k, bIx: -1.45 * k, bIz: -0.8 * k, pz: 0.36 * k };
-            return i.j ? { ...meta, cz: 0.15 * k, cy: -0.2 * k } : { ...meta, cy: (0.45 + 0.1 * beso) * k, cz: -0.15 * k, cx: 0.2 * k };
+            // Cabeza al hombro (alHombro de escena-amistad-datos.js); el beso solo en la variante de pareja
+            const b = cfg.ojos ? beso : 0, h = alHombro(env(u, 0, 1, 0.1) * (1 - b)); // la cabeza llega al hombro antes que los brazos
+            const meta = { bDx: -1.45 * k, bDz: 0.8 * k, bIx: -1.45 * k, bIz: -0.8 * k, pz: 0.36 * k, ...h };
+            return i.j ? { ...meta, cz: h.cz + 0.15 * b, cy: h.cy - 0.2 * b } : { ...meta, cy: h.cy + 0.55 * b, cz: h.cz - 0.15 * b, cx: h.cx + 0.2 * b };
         }
     };
 

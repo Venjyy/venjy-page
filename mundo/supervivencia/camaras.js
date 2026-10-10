@@ -179,7 +179,22 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     const pegadaABloque = () => { const h = cine.holgura; return [[h, 0, 0], [-h, 0, 0], [0, h, 0], [0, -h, 0], [0, 0, h], [0, 0, -h]].some(([x, y, z]) => opaco(mundo, cam.x + x, cam.y + y, cam.z + z)); };
     // ¿La cámara quedó encima de alguno de los actores (cabeza o torso)?
     const vC = new THREE.Vector3();
-    const tapa = () => cine.evitar.some(e => cam.distanceTo(e.p.cabeza.getWorldPosition(vC)) < cine.evitarDist || cam.distanceTo(e.p.torso.getWorldPosition(vC)) < cine.evitarDist - 0.3);
+    const tapa = () => cine.evitar.some(e => cam.distanceTo(e.p.cabeza.getWorldPosition(vC)) < cine.evitarDist || cam.distanceTo(e.p.torso.getWorldPosition(vC)) < cine.evitarDist - 0.3) || primerPlano();
+    // ¿Alguien que no es el amigo (un tercero sentado al lado, la fogata) queda entre la cámara y los actores, dentro del
+    // cuadro? Solo en las escenas de amistad (opción sinTerceros, sigue aunque se relajen las distancias): se lee como un bulto en primer plano aunque no tape las cabezas
+    const vD = new THREE.Vector3(), vO = new THREE.Vector3();
+    const primerPlano = () => {
+        if (!cine.sinTerceros) return false;
+        vO.copy(objetivo).sub(cam);
+        const dObj = vO.length();
+        vO.normalize();
+        return cine.evitar.some(e => {
+            if (e === cine.n) return false;
+            vD.copy(e.p.torso.getWorldPosition(vC)).sub(cam);
+            const d = vD.length();
+            return d < dObj - 0.6 && vD.normalize().dot(vO) > Math.cos(0.85); // casi todo el ancho del cuadro (16:9)
+        });
+    };
     // Comprobación de línea libre cámara → cabeza de cada persona (los actores de `visibles` y el jugador).
     // Una cabeza cuenta como tapada si hay bloques en la línea o si otra persona (su torso o su cabeza)
     // queda sobre ella. Devuelve los nombres de las cabezas tapadas (lista vacía = todas se ven).
@@ -293,6 +308,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cine.visibles = op.visibles && op.visibles.length ? op.visibles : null;
             cine.esperarLinea = !!op.esperarLinea; cine.corte = false; cine.buena = null; cine.usado = null;
             cine.validarTexto = op.validarTexto || null;
+            cine.sinTerceros = !!op.sinTerceros;
             cine.relajado = null; cine.minDist = op.minDist ?? 1; cine.evitarDist = op.evitarDist ?? 1.7; cine.holgura = op.holgura || 0; // escenas de amistad: más lejos, para que nadie quede tapando en primer plano
             cine.plano = calcular(0, 0, true) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');

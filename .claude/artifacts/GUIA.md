@@ -1,6 +1,21 @@
 # Guía de Artifacts (estilo Venjy)
 
-El dueño quiere que **todos los Artifacts** (resúmenes de trabajo, reportes de PR, revisiones, planes) se vean y funcionen como el del bloque 6a: «Hablar y amistad 6a» (https://claude.ai/artifact/Frm7pmrRtjGp1vBihytp6w). Esta guía es la receta completa. El generador de ese Artifact está en `ejemplo-6a.mjs`, junto a esta guía: cópialo y adáptalo, no partas de cero.
+El dueño quiere que **todos los Artifacts** (resúmenes de trabajo, reportes de PR, revisiones, planes) se vean y funcionen como el del bloque 6a: «Hablar y amistad 6a» (https://claude.ai/artifact/Frm7pmrRtjGp1vBihytp6w). Esta guía es la receta completa. Para armar uno nuevo usa el **camino corto** de abajo (`plantilla.mjs` + un archivo de contenido); `ejemplo-6a.mjs` queda solo como referencia de una página hecha a mano.
+
+## Cuándo (obligatorio)
+
+**Todo chat de trabajo termina con su Artifact**, antes del prompt de traspaso: al abrir el PR de una parte (o al escribir un plan), se publica el Artifact con esta receta, se enlaza en el PR y se entrega el enlace en el último mensaje. No hace falta que el dueño lo pida. Ejemplos: «Hablar y amistad 6a», «Amistad animada 6b» y «Bienvenidas y reencuentros 6c».
+
+## Camino corto (el que se usa; gasta pocos tokens)
+
+`plantilla.mjs` ya trae todo lo repetido: lee el CSS de esta guía, incrusta la fuente y las capturas, arma las secciones en el orden fijo, el filtro de la tabla y revisa que no haya emojis. **Solo se escribe el contenido**:
+
+1. Copia `contenido-6c1.mjs` al scratchpad (o junto a él con otro nombre) y cambia los textos: título, estado, PR, qué se hizo, archivos, a revisar, decisiones, secciones de datos, medidas, pruebas, capturas y tabla. Los datos y frases se importan de los módulos del juego (nunca a mano).
+2. Achica las capturas para el Artifact (las del repo quedan grandes): `ffmpeg -i <hoja>.jpg -vf scale=960:-1 -q:v 6 <scratch>/<carpeta>/<hoja>.jpg`; ~150 KB cada una.
+3. Genera y publica: `CAPTURAS=<carpeta> node .claude/artifacts/plantilla.mjs <contenido.mjs> <scratch>/<nombre>.html` y la herramienta Artifact (`icon` de una palabra, `description` de una frase).
+4. Enlaza el Artifact en el PR (`gh pr edit <n> --body-file`) con «privado: ábrelo con tu cuenta».
+
+Para no gastar: no leas Artifacts viejos completos (pesan MB por las capturas en base64; si hace falta mirar uno, bájalo con `path` y quita los `data:` con `sed` antes de leerlo), no reescribas el CSS ni el HTML, y revisa la página con **una** captura de Playwright o ninguna (la plantilla ya está probada). Si una sección no aplica, se omite del contenido.
 
 ## Cómo se arma (proceso)
 

@@ -1,4 +1,4 @@
-# Diálogos de la pestaña «Hablar» (bloques 6a y 6b)
+# Diálogos de la pestaña «Hablar» y escenas de amistad (bloques 6a, 6b y 6c-1)
 
 Generado desde `mundo/supervivencia/dialogos-datos.js` para que el dueño revise los textos antes del merge (248 frases ES/EN). Si cambias un texto, cámbialo en ese archivo; `node mundo/tests/amistad.mjs` comprueba que todas sigan únicas.
 
@@ -441,3 +441,172 @@ Generado desde `mundo/supervivencia/momentos/<clave>.js`: una escena única por 
 | Conejeros | Dibujo .exe | Normal | Conejeros | Talento .exe. ¡Listo! Eres tú, pero con orejas de conejo. | Talent.exe. Done! It's you, but with bunny ears. |
 | Conejeros | Dibujo .exe | Normal | Salonas | Se le pegó otra vez. Dale un golpecito. | He froze again. Give him a little tap. |
 | Conejeros | Dibujo .exe | Normal | Conejeros | Ya volví. Este dibujo va al lado del conejo con lentes, en la galería de tonteras. | I am back. This drawing goes next to the rabbit with glasses, in the nonsense gallery. |
+
+## Bienvenidas del Venjy del Inicio (bloque 6c-1)
+
+Generado desde `mundo/supervivencia/bienvenidas/<clave>.js`: el Venjy del Inicio recibe a cada skin de amigo (todas menos Venjy), una vez por partida. **Tú** es el jugador con la skin de ese amigo. Textos aprobados por el dueño en `mundo/DISENO-6c.md` §2.
+
+| Tu skin | Bienvenida | Relación | Habla | ES | EN |
+|---|---|---|---|---|---|
+| Hadad | Papas para el camino | 1 · cordial | Venjy | ¡Hadad! Qué bueno que te pasaste por el mundo. | Hadad! So glad you dropped by the world. |
+| Hadad | Papas para el camino | 1 · cordial | Tú | Me dijeron que había fogata y nada de Fortnite, así que vine a ver. | They told me there was a campfire and no Fortnite, so I came to see. |
+| Hadad | Papas para el camino | 1 · cordial | Venjy | Toma, para el camino. De tu marca, obvio. | Here, for the road. Your brand, obviously. |
+| Hadad | Papas para el camino | 1 · cordial | Tú | Auspiciado por mí mismo. | Sponsored by myself. |
+| Hadad | Papas para el camino | 1 · cordial | Venjy | Gracias por venir. Prueba todo con tu skin, hay harto que descubrir. | Thanks for coming. Try everything with your skin, there's lots to discover. |
+| Hadad | Papas para el camino | 1 · cordial | Tú | Trato hecho. Parto por la fogata. | Deal. I'll start with the campfire. |
+| Andy | El baile mal hecho | 1 · cordial | Venjy | ¡Andy! Bienvenido. Mira, practiqué tu baile. | Andy! Welcome. Look, I practiced your dance. |
+| Andy | El baile mal hecho | 1 · cordial | Tú | Eso no es mi baile. Eso es un calambre. | That's not my dance. That's a cramp. |
+| Andy | El baile mal hecho | 1 · cordial | Venjy | Ya, enséñame bien. | Okay, teach me properly. |
+| Andy | El baile mal hecho | 1 · cordial | Tú | Brazo, brazo, y la cadera. ¡Eso! | Arm, arm, and the hips. That's it! |
+| Andy | El baile mal hecho | 1 · cordial | Venjy | Gracias por pasarte. Con tu skin hay cosas que yo ni he probado. | Thanks for dropping by. With your skin there are things I haven't even tried. |
+| Andy | El baile mal hecho | 1 · cordial | Tú | Entonces aquí también voy a ganar. | Then I'm going to win here too. |
+| Nacho | Carcajada contagiosa | 1 · cordial | Venjy | ¡Nacho! Te escuché reír desde el Inicio. | Nacho! I heard you laughing from the Start. |
+| Nacho | Carcajada contagiosa | 1 · cordial | Tú | Jajaja, ¿tan fuerte? | Haha, that loud? |
+| Nacho | Carcajada contagiosa | 1 · cordial | Venjy | Hasta los creepers se dieron vuelta. | Even the creepers turned around. |
+| Nacho | Carcajada contagiosa | 1 · cordial | Tú | Jajaja, ¡no puedo! ¡Los creepers! | Haha, I can't! The creepers! |
+| Nacho | Carcajada contagiosa | 1 · cordial | Venjy | Gracias por venir. Ojalá lo disfrutes, y prueba todo con tu skin. | Thanks for coming. I hope you enjoy it, and try everything with your skin. |
+| Nacho | Carcajada contagiosa | 1 · cordial | Tú | Jajaja, voy. Pero primero respiro. | Haha, I will. But first I need to breathe. |
+| Conejeros | Orejitas de conejo | 1 · cordial | Venjy | ¡Conejeros! Bienvenido. ¿Una foto para el recuerdo? | Conejeros! Welcome. A photo to remember? |
+| Conejeros | Orejitas de conejo | 1 · cordial | Tú | Obvio. Sonríe, que va a quedar épica. | Of course. Smile, it's going to be epic. |
+| Conejeros | Orejitas de conejo | 1 · cordial | Venjy | ¿Me pusiste orejas de conejo? | Did you give me bunny ears? |
+| Conejeros | Orejitas de conejo | 1 · cordial | Tú | Es mi firma, compadre. | It's my signature, mate. |
+| Conejeros | Orejitas de conejo | 1 · cordial | Venjy | Gracias por pasarte. Hay harto que probar con tu skin, disfrútalo. | Thanks for dropping by. There's lots to try with your skin, enjoy it. |
+| Conejeros | Orejitas de conejo | 1 · cordial | Tú | Lo voy a dibujar todo. | I'm going to draw all of it. |
+| Pony | Puño bajito | 2 | Venjy | ¿Pony? Me dijeron que venías... | Pony? They told me you were coming... |
+| Pony | Puño bajito | 2 | Tú | Estoy aquí abajo, weón. | I'm down here, dude. |
+| Pony | Puño bajito | 2 | Venjy | ¡Ahí estás! Puño bajito, para que llegues. | There you are! Low fist, so you can reach. |
+| Pony | Puño bajito | 2 | Tú | El chico seré yo, pero el weón eres tú. | I might be the short one, but you're the goof. |
+| Pony | Puño bajito | 2 | Venjy | Gracias por venir, Pony. El muelle te está esperando. | Thanks for coming, Pony. The pier is waiting for you. |
+| Pony | Puño bajito | 2 | Tú | Si no pica nada, te culpo a ti. | If nothing bites, I'm blaming you. |
+| Moisés | Frío de Coyhaique | 2 | Venjy | ¡Moisés! ¿Sentiste ese viento? Me acordé de Coyhaique. | Moisés! Did you feel that wind? It reminded me of Coyhaique. |
+| Moisés | Frío de Coyhaique | 2 | Tú | Esto no es frío, hermano. Frío era a los trece. | This isn't cold, bro. Cold was when we were thirteen. |
+| Moisés | Frío de Coyhaique | 2 | Venjy | Tienes razón. Igual frótame un poco. | You're right. Rub my arms a bit anyway. |
+| Moisés | Frío de Coyhaique | 2 | Tú | Ya, ya, sobreviviste. | There, there, you survived. |
+| Moisés | Frío de Coyhaique | 2 | Venjy | Gracias por venir. Pásate por el iglú: hay un Moisés igualito a ti. | Thanks for coming. Drop by the igloo: there's a Moisés just like you. |
+| Moisés | Frío de Coyhaique | 2 | Tú | ¿Otro yo? Eso tengo que verlo. | Another me? I have to see that. |
+| Braulio | Choque y medio | 2 | Venjy | ¡Braulio! A ver esa mano... uno, dos, tres... | Braulio! Let's see that hand... one, two, three... |
+| Braulio | Choque y medio | 2 | Tú | Sigue contando, que viene lo bueno. | Keep counting, the good part is coming. |
+| Braulio | Choque y medio | 2 | Venjy | ¡El dedo doble! Nunca me acostumbro. | The double finger! I'll never get used to it. |
+| Braulio | Choque y medio | 2 | Tú | Choca esos cinco. Bueno, esos seis. | High five. Well, high six. |
+| Braulio | Choque y medio | 2 | Venjy | Gracias por venir. ¿Y de verdad eres de Arica, tan blanquito? | Thanks for coming. And you're really from Arica, that pale? |
+| Braulio | Choque y medio | 2 | Tú | El sol de Arica me respeta, no me quema. | The Arica sun respects me, it doesn't burn me. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Venjy | ¡Boris! ¿Y el auto? Pensé que venías a buscarme. | Boris! Where's the car? I thought you came to pick me up. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Tú | Súbete, que este auto no necesita calles. | Get in, this car doesn't need roads. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Venjy | ¡Cuidado con el bache! Igual que llegando a Linares. | Watch the pothole! Just like driving into Linares. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Tú | Llegamos. Te extrañaba, compadre. | We're here. I missed you, mate. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Venjy | ¿Te acuerdas de la última en tu PC? Perdimos por el jungla. | Remember the last game on your PC? We lost because of the jungler. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Tú | Perdimos por ti. Pero ya, te perdono. | We lost because of you. But fine, I forgive you. |
+| Boris | De copiloto a Linares | 3 · secreto, abrazo y recuerdo | Venjy | Gracias por venir. Próxima vez en Linares: unas chelitas y revancha. | Thanks for coming. Next time in Linares: a couple of beers and a rematch. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Venjy | ¡Lalo! ¿Y el Moisés? Pensé que no salías sin él. | Lalo! Where's Moisés? I thought you never went out without him. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Tú | Ahya, el Moisés cuida el iglú. Yo vine a verte, hermano. | Ahya, Moisés is minding the igloo. I came to see you, bro. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Venjy | Como en Coyhaique: saltitos para el frío y choque de botas. | Like in Coyhaique: little hops for the cold and a boot bump. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Tú | Ahya, nadie más entiende este saludo. | Ahya, nobody else gets this greeting. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Venjy | Nieve hasta las rodillas, y nosotros felices. | Snow up to our knees, and we were happy. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Tú | Éramos cabros chicos y creíamos que el frío no existía. | We were just kids and thought cold didn't exist. |
+| Lalo | Choque de botas | 3 · secreto, abrazo y recuerdo | Venjy | Gracias por venir, hermano. En el iglú te espera otro Lalo, con sombrero y todo. | Thanks for coming, bro. Another Lalo is waiting in the igloo, hat and all. |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Venjy | ¡Socio! ¿Vienes a revisar el último commit? | Partner! Here to review the latest commit? |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Tú | Vengo a ver si compila. Con lo tuyo, uno nunca sabe. | I came to see if it compiles. With your stuff, you never know. |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Venjy | Ya, a la cuenta de tres, enter. | Okay, on three, hit enter. |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Tú | ¡Compiló! Esto amerita un solo de bajo. | It compiled! This calls for a bass solo. |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Venjy | ¿Te acuerdas de la primera versión de ProcedimientoSeguro? Un formulario y puro entusiasmo. | Remember the first version of ProcedimientoSeguro? One form and pure enthusiasm. |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Tú | Y mira dónde llegó. Todavía me da orgullo, socio. | And look how far it got. I'm still proud of it, partner. |
+| Salonas | Commit en vivo | 3 · secreto, abrazo y recuerdo | Venjy | Gracias por venir. Tú pones el bajo y yo el código. | Thanks for coming. You bring the bass and I'll bring the code. |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Venjy | ¡Primo! A ver, déjame explicarte el árbol... | Cousin! Wait, let me explain the family tree... |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Tú | Yo soy primo de tu mamá, entonces tú eres... | I'm your mom's cousin, so you're my... |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Venjy | Ya me perdí. | I'm lost already. |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Tú | Primo es primo. Fin del árbol. | Cousin is cousin. End of the tree. |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Venjy | ¿Te acuerdas cuando nos presentaron como primos? Nadie preguntó más. | Remember when they introduced us as cousins? Nobody asked any more. |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Tú | Y desde ahí, primos. Ya no hay vuelta atrás. | And since then, cousins. No going back now. |
+| Lucho | El árbol de los primos | 3 · secreto, abrazo y recuerdo | Venjy | Gracias por venir. Esta noche, dúo en Apex: tú me revives. | Thanks for coming. Tonight, Apex duos: you revive me. |
+| Lona | Baile lento | pareja | Venjy | ¿Amor? ¿Tú también estás en el juego? | Love? You're in the game too? |
+| Lona | Baile lento | pareja | Tú | Vine a ver el mundo que tanto me contabas. | I came to see the world you kept telling me about. |
+| Lona | Baile lento | pareja | Venjy | Entonces, antes del recorrido, un baile. | Then, before the tour, a dance. |
+| Lona | Baile lento | pareja | Tú | Sin música y todo. Eres un tontito. | Without music and everything. You're such a goof. |
+| Lona | Baile lento | pareja | Venjy | Te estaba esperando. Ahora sí está completo. | I was waiting for you. Now it's complete. |
+| Lona | Baile lento | pareja | Tú | Las gatas se quedaron cuidando la casa... o eso espero. | The cats stayed home looking after the house... or so I hope. |
+| Lona | Baile lento | pareja | Venjy | Mila debe estar durmiendo y Gala botando algo. Ya, te muestro todo. | Mila must be asleep and Gala knocking something over. Okay, let me show you everything. |
+
+## Reencuentros entre amigos (bloque 6c-1)
+
+Generado desde `mundo/supervivencia/reencuentros.js`: una escena por pareja de amigos con relación 2 (corta: puños y una broma) o 3 (larga: saludo secreto, abrazo y recuerdo). Las frases van por personaje: si juegas con la skin de uno, dices sus frases y el otro las suyas. Textos aprobados por el dueño en `mundo/DISENO-6c.md` §3.
+
+| Pareja | Relación | Habla | ES | EN |
+|---|---|---|---|---|
+| Pony - Salonas | 2 · corta (empujon) | Salonas | ¡Llegó el waton klo! | Here comes the big goof! |
+| Pony - Salonas | 2 · corta (empujon) | Pony | ¿Waton klo yo? Waton klo tú, compadre. | Me, a big goof? You're the big goof, mate. |
+| Pony - Salonas | 2 · corta (empujon) | Salonas | Ya, tregua. Puño y seguimos. | Okay, truce. Fist bump and we move on. |
+| Pony - Salonas | 2 · corta (empujon) | Pony | Tregua hasta la próxima, waton klo. | Truce until next time, big goof. |
+| Pony - Hadad | 2 · corta (risa) | Hadad | ¡Pony! ¿Quieres papas fritas? Son de la marca que promociono. | Pony! Want some chips? They're the brand I promote. |
+| Pony - Hadad | 2 · corta (risa) | Pony | Esa imagen con IA te va a perseguir toda la vida. | That AI picture is going to follow you forever. |
+| Pony - Hadad | 2 · corta (risa) | Hadad | Me persigue y me paga. Bueno, no me paga. | It follows me and pays me. Well, it doesn't pay me. |
+| Pony - Hadad | 2 · corta (risa) | Pony | Comparte igual, famoso. | Share anyway, celebrity. |
+| Pony - Nacho | 2 · corta (mide) | Nacho | Jajaja, ¡Pony! ¿Pescaste algo o vienes por carne? | Haha, Pony! Did you catch anything or are you here for meat? |
+| Pony - Nacho | 2 · corta (mide) | Pony | Las dos cosas. El pescado me lo comí en el camino. | Both. I ate the fish on the way. |
+| Pony - Nacho | 2 · corta (mide) | Nacho | Jajaja, te guardo una chuleta. Chiquita, a tu medida. | Haha, I'll save you a chop. A little one, your size. |
+| Pony - Nacho | 2 · corta (mide) | Pony | ¿Tú también, Nacho? Hasta tú. | You too, Nacho? Even you. |
+| Pony - Braulio | 2 · corta (mide) | Braulio | Pony, ponte aquí. A ver quién es más bajo. | Pony, stand here. Let's see who's shorter. |
+| Pony - Braulio | 2 · corta (mide) | Pony | Obvio que tú. Mira, te gano por un pelo. | You, obviously. Look, I beat you by a hair. |
+| Pony - Braulio | 2 · corta (mide) | Braulio | Ese pelo está parado, no cuenta. | That hair is sticking up, it doesn't count. |
+| Pony - Braulio | 2 · corta (mide) | Pony | Quedamos iguales y nadie se entera. | We call it even and nobody finds out. |
+| Pony - Conejeros | 2 · corta (empujon) | Conejeros | Ah, llegó mi enemigo favorito. | Oh, my favorite enemy is here. |
+| Pony - Conejeros | 2 · corta (empujon) | Pony | Enemigo y todo, igual te vine a saludar. | Enemy or not, I still came to say hi. |
+| Pony - Conejeros | 2 · corta (empujon) | Conejeros | Te dibujé en mi cuaderno, con una caña más grande que tú. | I drew you in my notebook, with a rod bigger than you. |
+| Pony - Conejeros | 2 · corta (empujon) | Pony | Eso es difamación... pero el dibujo te quedó bueno. | That's slander... but the drawing turned out good. |
+| Salonas - Andy | 2 · corta (risa) | Andy | ¡Salonas! ¿Cómo va ese bajo? | Salonas! How's that bass going? |
+| Salonas - Andy | 2 · corta (risa) | Salonas | Afinado y sonando. ¿Y el Fortnite? | Tuned and playing. And Fortnite? |
+| Salonas - Andy | 2 · corta (risa) | Andy | Ganando, a veces. Cuando el Nacho no se tira solo. | Winning, sometimes. When Nacho doesn't drop in alone. |
+| Salonas - Andy | 2 · corta (risa) | Salonas | Pásate al escenario un día y te dedico un tema. | Come by the stage someday and I'll dedicate a song to you. |
+| Salonas - Braulio | 2 · corta (risa) | Braulio | Salonas, te escuché tocar desde la playa. | Salonas, I heard you playing from the beach. |
+| Salonas - Braulio | 2 · corta (risa) | Salonas | ¿Tan fuerte? Entonces está bien ecualizado. | That loud? Then it's well mixed. |
+| Salonas - Braulio | 2 · corta (risa) | Braulio | Hasta los peces cabeceaban, te lo juro. | Even the fish were headbanging, I swear. |
+| Salonas - Braulio | 2 · corta (risa) | Salonas | Ese es mi público objetivo, compadre. | That's my target audience, mate. |
+| Andy - Braulio | 2 · corta (rasca) | Andy | ¡Braulio! ¿Encontraste algo en la orilla? | Braulio! Did you find anything on the shore? |
+| Andy - Braulio | 2 · corta (rasca) | Braulio | Una concha, una chala y un cangrejo enojado. | A shell, a flip-flop and an angry crab. |
+| Andy - Braulio | 2 · corta (rasca) | Andy | Con ese botín ya te alcanza para el pase de batalla. | With that loot you can afford the battle pass. |
+| Andy - Braulio | 2 · corta (rasca) | Braulio | Y el cangrejo viene como skin exclusiva. | And the crab comes as an exclusive skin. |
+| Braulio - Conejeros | 2 · corta (risa) | Conejeros | ¡Braulio! Te iba a saludar, pero se me colgó el cerebro. | Braulio! I was going to say hi, but my brain froze. |
+| Braulio - Conejeros | 2 · corta (risa) | Braulio | Tranquilo: Control, Alt, Suprimir y listo. | Relax: Control, Alt, Delete and done. |
+| Braulio - Conejeros | 2 · corta (risa) | Conejeros | Ya, volví. ¿Me perdí de algo? | Okay, I'm back. Did I miss anything? |
+| Braulio - Conejeros | 2 · corta (risa) | Braulio | Por eso yo me quedé en la versión estable. | That's why I stayed on the stable version. |
+| Pony - Andy | 3 · larga | Andy | ¡Pony! ¿Vienes a hacer un trabajo conmigo? Mentira, ya no caigo. | Pony! Here to do an assignment with me? Just kidding, I won't fall for it. |
+| Pony - Andy | 3 · larga | Pony | Oye, yo era un aporte. Un aporte de risas, pero aporte. | Hey, I contributed. Laughs, but still a contribution. |
+| Pony - Andy | 3 · larga | Andy | Ven, abrazo. Te perdono todas las entregas a última hora. | Come here, hug. I forgive you for every last-minute submission. |
+| Pony - Andy | 3 · larga | Pony | ¿Te acuerdas cuando hacíamos los trabajos juntos? Nos reíamos tanto. | Remember when we did assignments together? We laughed so much. |
+| Pony - Andy | 3 · larga | Andy | Por eso ahora los hago con el Nacho. Pero contigo era más divertido. | That's why I do them with Nacho now. But it was more fun with you. |
+| Pony - Andy | 3 · larga | Pony | El próximo lo hacemos juntos, palabra de Pony. | We'll do the next one together, Pony's word. |
+| Boris - Lucho | 3 · larga | Lucho | ¡Negro! ¿Soltaste el hacha un rato? | Negro! Did you put the axe down for a bit? |
+| Boris - Lucho | 3 · larga | Boris | Por ti, sí. Pero rápido, que la leña no se corta sola. | For you, yes. But quick, the firewood won't chop itself. |
+| Boris - Lucho | 3 · larga | Lucho | Ven, negro. Desde la media que nos aguantamos. | Come here, negro. We've put up with each other since high school. |
+| Boris - Lucho | 3 · larga | Boris | ¿Te acuerdas de la media? Tú con el LoL y yo diciéndote que te acostaras. | Remember high school? You with LoL and me telling you to go to bed. |
+| Boris - Lucho | 3 · larga | Lucho | Algunas cosas no cambian, negro. | Some things never change, negro. |
+| Boris - Lucho | 3 · larga | Boris | Así me gusta. Vamos, que el tronco no espera. | That's how I like it. Come on, the log won't wait. |
+| Moisés - Lalo | 3 · larga | Lalo | Ahya, ¡Moisés! Vivimos juntos y igual te extraño. | Ahya, Moisés! We live together and I still miss you. |
+| Moisés - Lalo | 3 · larga | Moisés | Te fuiste a buscar leña hace cinco minutos, hermano. | You went for firewood five minutes ago, bro. |
+| Moisés - Lalo | 3 · larga | Lalo | Cinco minutos es harto. Ven, abrazo. | Five minutes is a lot. Come here, hug. |
+| Moisés - Lalo | 3 · larga | Moisés | ¿Te acuerdas de Coyhaique? Éramos cabros chicos y ya éramos inseparables. | Remember Coyhaique? We were little kids and already inseparable. |
+| Moisés - Lalo | 3 · larga | Lalo | Y seguimos igual, solo que ahora pagamos cuentas. | And we still are, except now we pay bills. |
+| Moisés - Lalo | 3 · larga | Moisés | Vamos al iglú, que sin ti se siente vacío. | Let's go to the igloo, it feels empty without you. |
+| Salonas - Conejeros | 3 · larga | Conejeros | ¡Salonas! Te hice un dibujo. Eres tú, pero con alas. | Salonas! I made you a drawing. It's you, but with wings. |
+| Salonas - Conejeros | 3 · larga | Salonas | ¿Por qué tengo alas y un bajo de tres cuerdas? | Why do I have wings and a three-string bass? |
+| Salonas - Conejeros | 3 · larga | Conejeros | Porque el arte no se explica, compadre. Ven, abrazo. | Because art can't be explained, mate. Come here, hug. |
+| Salonas - Conejeros | 3 · larga | Salonas | ¿Te acuerdas del primer monito que dibujamos juntos? Era horrible. | Remember the first doodle we drew together? It was awful. |
+| Salonas - Conejeros | 3 · larga | Conejeros | Horrible y perfecto. Todavía lo tengo guardado. | Awful and perfect. I still have it saved. |
+| Salonas - Conejeros | 3 · larga | Salonas | Hagamos el segundo. Con más alas. | Let's make the second one. With more wings. |
+| Hadad - Andy | 3 · larga | Hadad | ¡Andy! ¿Saliste del Discord? Pensé que vivías ahí. | Andy! You left Discord? I thought you lived there. |
+| Hadad - Andy | 3 · larga | Andy | Salí a tomar aire. Cinco minutos y vuelvo, como siempre. | I came out for some air. Five minutes and I'm back, as always. |
+| Hadad - Andy | 3 · larga | Hadad | Abrazo de escuadrón. Falta el Nacho, pero cuenta igual. | Squad hug. Nacho's missing, but it still counts. |
+| Hadad - Andy | 3 · larga | Andy | ¿Te acuerdas de esa partida que ganamos sin construir nada? | Remember that match we won without building anything? |
+| Hadad - Andy | 3 · larga | Hadad | Ni yo me lo creo. Y tú bailando antes de que terminara. | I still can't believe it. And you dancing before it was over. |
+| Hadad - Andy | 3 · larga | Andy | Era seguro. Bueno, casi seguro. | It was a sure thing. Well, almost sure. |
+| Hadad - Nacho | 3 · larga | Nacho | Jajaja, ¡Hadad! ¿Me vienes a cobrar las papas fritas? | Haha, Hadad! Here to charge me for the chips? |
+| Hadad - Nacho | 3 · larga | Hadad | Vengo a buscarte para el Fortnite. Las papas, después. | I came to get you for Fortnite. Chips later. |
+| Hadad - Nacho | 3 · larga | Nacho | Jajaja, ven, abrazo. Tantas horas de Discord no se olvidan. | Haha, come here, hug. All those Discord hours don't get forgotten. |
+| Hadad - Nacho | 3 · larga | Hadad | ¿Te acuerdas cuando caíste en Tilted y duraste diez segundos? | Remember when you dropped into Tilted and lasted ten seconds? |
+| Hadad - Nacho | 3 · larga | Nacho | Jajaja, nueve. Esa vez fueron nueve. | Haha, nine. That time it was nine. |
+| Hadad - Nacho | 3 · larga | Hadad | Esta noche, dúo. Y caemos lejos de Tilted. | Tonight, duos. And we land far from Tilted. |
+| Andy - Nacho | 3 · larga | Nacho | Jajaja, ¡Andy! ¿Ya entregamos el trabajo? | Haha, Andy! Did we hand in the assignment yet? |
+| Andy - Nacho | 3 · larga | Andy | Anoche a las tres, en el Discord, entre partida y partida. | Last night at three, on Discord, between matches. |
+| Andy - Nacho | 3 · larga | Nacho | Jajaja, el mejor equipo de la U. Ven, abrazo. | Haha, the best team at uni. Come here, hug. |
+| Andy - Nacho | 3 · larga | Andy | ¿Te acuerdas del primer trabajo juntos? No sabíamos ni por dónde empezar. | Remember our first assignment together? We didn't even know where to start. |
+| Andy - Nacho | 3 · larga | Nacho | Y lo sacamos adelante igual. Jajaja, todavía no sé cómo. | And we pulled it off anyway. Haha, I still don't know how. |
+| Andy - Nacho | 3 · larga | Andy | Así somos: tarde, pero siempre llegamos. | That's us: late, but we always make it. |

@@ -27,8 +27,11 @@ No se usa en preguntas rápidas ni en charla.
    subagente (animaciones: Haiku primero, §0 de la skill `animaciones-minecraft`).
 3. **Revisar el estado de git**: rama actual, PR abierto o fusionado (número y enlace) y si `main` local
    está al día con `origin/main`. Si el siguiente chat debe partir de `main` actualizado, dilo en el prompt.
-4. **Escribir el prompt** (plantilla abajo) dentro de un bloque de código para copiar, en español.
-5. Si cambió algo del plan en este chat, confirmar que ya está en `PENDIENTES.md` (el prompt no reemplaza
+4. **Artifact del trabajo** (obligatorio, antes del prompt): si este chat abrió un PR o escribió un plan y aún no
+   publicó su Artifact, hazlo ahora con el camino corto de `.claude/artifacts/GUIA.md` (`plantilla.mjs` + un archivo
+   de contenido copiado de `contenido-6c1.mjs`), enlázalo en el PR y pon el enlace en el mensaje final.
+5. **Escribir el prompt** (plantilla abajo) dentro de un bloque de código para copiar, en español.
+6. Si cambió algo del plan en este chat, confirmar que ya está en `PENDIENTES.md` (el prompt no reemplaza
    al archivo: solo apunta a él).
 
 ## Plantilla del prompt
@@ -45,7 +48,7 @@ Estado al empezar:
 
 Antes de programar lee: `CLAUDE.md`, `AGENTS.md`, en `mundo/PENDIENTES.md` <secciones exactas> y <skill o archivos clave, con ruta>.
 
-Qué entregar: <PR(s) con nombre de rama sugerido>, medición antes/después (carga y cuadro mediano), pruebas en `mundo/tests/`, `PENDIENTES.md` actualizado (estado + bitácora) y, al final, el prompt de traspaso al siguiente chat (skill `traspaso-chat`).
+Qué entregar: <PR(s) con nombre de rama sugerido>, el Artifact del trabajo (`.claude/artifacts/GUIA.md`, camino corto), medición antes/después (carga y cuadro mediano), pruebas en `mundo/tests/`, `PENDIENTES.md` actualizado (estado + bitácora) y, al final, el prompt de traspaso al siguiente chat (skill `traspaso-chat`).
 
 Ojo: <decisiones del dueño que aplican, riesgos o cosas que no tocar>.
 ````

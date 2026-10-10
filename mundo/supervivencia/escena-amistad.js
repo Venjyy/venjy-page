@@ -12,10 +12,18 @@
 // · Momentos especiales (6b-2): al llegar a 100 de amistad, momento(clave) carga con import() la escena única
 //   del personaje (momentos/<clave>.js) y la corre con este mismo motor. Un guion propio puede traer
 //   actores extra (otro amigo cercano), frases del jugador, gestos propios, giros (`yaw`), objetos y efectos.
+// · Bienvenidas y reencuentros (6c-1): bienvenida(base) carga bienvenidas/<base>.js (el Venjy del Inicio recibe a
+//   tu skin) y reencuentro(base, clave) carga reencuentros.js (dos amigos con relación 2 o 3). Los dispara
+//   escenas-skin.js (sola al acercarte, una por lugar, o con clic derecho) por medio de main.js.
 // Guion: { T, r, lineas: [{ q, texto, a, d }], pista: { n, j, <extra>: [[gesto, desde, hasta]] }, gestos,
-//   actores: { <q>: clave }, yaw: { <q>: t => radianes }, golpes, corazones, extra: { iniciar, cuadro, terminar } }
-//   (q = 'n' el amigo, 'j' el jugador o la clave de un actor extra).
-// Depuración: __venjy.amistadEscena (jugar(clave, tipo), momento(clave), pausar(v), irA(s), saltar(), escena).
+//   actores: { <q>: clave | { clave, radio } }, reparto: { <personaje>: q }, yaw: { <q>: t => radianes }, golpes,
+//   corazones, extra: { iniciar, cuadro, terminar } }
+//   (q = 'n' el amigo, 'j' el jugador o la clave de un actor extra). Con `reparto` las frases, pistas y giros pueden
+//   ir por personaje ('pony', 'andy'): la misma escena sirve en las dos direcciones. Un actor con `radio` es
+//   opcional (tu clon: solo actúa si está a menos de `radio` bloques); sus pistas se ignoran si no está.
+//   api.mover(q, x, y, z) mueve a un actor (coordenadas del grupo) y al terminar o saltar vuelve a su sitio.
+// Depuración: __venjy.amistadEscena (jugar(clave, tipo), momento(clave), bienvenida(base), reencuentro(base, clave),
+//   pausar(v), irA(s), saltar(), escena).
 // Para revisarlas en el juego: /amistad (comandos-dev.js, con /gamemode devenjy).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -25,6 +33,7 @@ import { GESTOS } from './escenas-skin.js';
 import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD } from './escena-amistad-datos.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { sonidos } from './sonidos.js';
+import { PERSONAJES, relacion } from './amistad.js';
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -86,13 +95,21 @@ export function crearEscenaAmistad(ctx) {
         chispa: texturaPixeles(['...a...', '...b...', '..aba..', 'abbbbba', '..aba..', '...b...', '...a...'], { a: '#ffd84a', b: '#fffbe0' })
     };
     const efectos = [];
+    // tipo: 'corazon', 'chispa' o un dibujo { filas, colores } (moldes.js, PIX); la textura se guarda para la próxima vez
+    const texPix = new Map();
+    const texDe = tipo => {
+        if (typeof tipo === 'string') return TEX[tipo];
+        if (!texPix.has(tipo)) texPix.set(tipo, texturaPixeles(tipo.filas, tipo.colores));
+        return texPix.get(tipo);
+    };
     function efecto(tipo, x, y, z, op = {}) {
-        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX[tipo], transparent: true, depthWrite: false }));
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texDe(tipo), transparent: true, depthWrite: false }));
         const tam = op.tam ?? (tipo === 'corazon' ? 0.32 : 0.28);
         s.scale.set(tam, tam, 1);
         s.position.set(x, y, z);
         grupo.add(s);
-        efectos.push({ s, t: 0, vida: op.vida ?? (tipo === 'corazon' ? 1.6 : 0.45), vy: op.vy ?? (tipo === 'corazon' ? 0.45 : 0), tam, crece: tipo === 'chispa' });
+        efectos.push({ s, t: 0, vida: op.vida ?? (tipo === 'corazon' ? 1.6 : 0.45), vy: op.vy ?? (tipo === 'corazon' ? 0.45 : 0), tam, crece: op.crece ?? tipo === 'chispa' });
+        return s;
     }
     function actualizarEfectos(dt) {
         for (let i = efectos.length - 1; i >= 0; i--) {
@@ -121,12 +138,23 @@ export function crearEscenaAmistad(ctx) {
         // Aire para el cuerpo, sin agua ni lava (en la orilla quedaba dentro del agua y se ahogaba durante el momento)
         const liquido = (x, y, z) => { const id = mundo.bloque(x, y, z); return id === B.AGUA || id === B.LAVA; };
         const aire = (x, y, z) => [-0.3, 0.3].every(ex => [-0.3, 0.3].every(ez => !opaco(x + ex, y, z + ez) && !liquido(x + ex, y, z + ez)));
-        // Primero a la misma altura que el amigo (todas las direcciones) y solo después un bloque más arriba o abajo
-        for (const y of [piso, piso + 1, piso - 1]) for (let i = 0; i < 32; i++) {
-            const ang = ang0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.2;
-            const x = n.x + Math.sin(ang) * r, z = n.z + Math.cos(ang) * r;
-            if (otros.some(o => o !== n && Math.hypot(o.x - x, o.z - z) < 0.8)) continue;
-            if (solido(x, y - 0.5, z) && aire(x, y + 0.5, z) && aire(x, y + 1.5, z) && libre(x, y + 1.6, z, n.x, piso + 1.5, n.z)) return { x, y, z };
+        // Primero a la misma altura que el amigo (todas las direcciones) y solo después un bloque más arriba o abajo.
+        // Con gente al lado (la fogata, el iglú), entre los sitios posibles gana el más lejos de los demás: así la
+        // cámara, que gira alrededor de los dos, no deja a un tercero en primer plano.
+        const vecinos = otros.filter(o => o !== n && Math.hypot(o.x - n.x, o.z - n.z) < 6);
+        for (const y of [piso, piso + 1, piso - 1]) {
+            let mejor = null, puntos = -Infinity;
+            for (let i = 0; i < 32; i++) {
+                const ang = ang0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.2;
+                const x = n.x + Math.sin(ang) * r, z = n.z + Math.cos(ang) * r;
+                if (otros.some(o => o !== n && Math.hypot(o.x - x, o.z - z) < 0.8)) continue;
+                if (!(solido(x, y - 0.5, z) && aire(x, y + 0.5, z) && aire(x, y + 1.5, z) && libre(x, y + 1.6, z, n.x, piso + 1.5, n.z))) continue;
+                if (!vecinos.length) return { x, y, z };
+                const lejos = Math.min(3, ...vecinos.map(o => Math.hypot(o.x - x, o.z - z)));
+                const p = lejos - Math.ceil(i / 2) * 0.04;
+                if (p > puntos) { puntos = p; mejor = { x, y, z }; }
+            }
+            if (mejor) return mejor;
         }
         return null;
     }
@@ -173,8 +201,18 @@ export function crearEscenaAmistad(ctx) {
         return { ...a, tipo, lineas: [{ q: 'n', texto: f, a: a.linea[0], d: a.linea[1] }] };
     }
 
+    // Frases, pistas y giros por personaje: con guion.reparto ({ pony: 'j', andy: 'n' }) pasan a su papel en la escena
+    function repartir(guion) {
+        const rep = guion.reparto;
+        if (!rep) return guion;
+        const rol = q => rep[q] ?? q;
+        const porRol = o => (o ? Object.fromEntries(Object.entries(o).map(([q, v]) => [rol(q), v])) : o);
+        return { ...guion, lineas: (guion.lineas || []).map(l => ({ ...l, q: rol(l.q) })), pista: porRol(guion.pista), yaw: porRol(guion.yaw) };
+    }
+
     function iniciar(clave, guion) {
         if (e || !guion) return false;
+        guion = repartir(guion);
         const n = personaDe(clave);
         if (!n || n.escena) return false; // otra escena (skin, minijuego) lo tiene
         bloquear();
@@ -187,16 +225,21 @@ export function crearEscenaAmistad(ctx) {
         if (l) jugador.colocar(l.x, l.y, l.z);
         jugador.yaw = Math.atan2(n.x - jugador.pos.x, n.z - jugador.pos.z) - Math.PI;
         jugador.pitch = 0;
-        e = { clave, guion, t: 0, T: guion.T, actores: { n: A, j: J }, lineas: guion.lineas || [], hechos: new Set(), ultimaLinea: null, callados: [], props: [], prestados: [] };
+        e = { clave, guion, t: 0, T: guion.T, actores: { n: A, j: J }, lineas: guion.lineas || [], hechos: new Set(), ultimaLinea: null, callados: [], props: [], prestados: [],
+            jugador0: { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z } };
         n.escena = (dt, base) => animarAmigo(A, dt, base);
-        // Actores extra del guion (otro amigo de al lado): se quedan en su sitio y siguen su pista
-        for (const [q, c] of Object.entries(guion.actores || {})) {
+        // Actores extra del guion (otro amigo de al lado, tu clon): se quedan en su sitio y siguen su pista.
+        // Con `radio`, el actor es opcional: solo entra si está cerca del amigo (tu clon en la fogata, el iglú...)
+        for (const [q, def] of Object.entries(guion.actores || {})) {
+            const c = typeof def === 'string' ? def : def.clave;
             const m = personaDe(c);
             if (!m || m === n || m.escena) continue;
+            if (def.radio && (!m.p || !m.p.g.visible || Math.hypot(m.x - n.x, m.z - n.z) > def.radio || Math.abs((m.y ?? 0) - (n.y ?? 0)) > 4)) continue;
             const X = actorAmigo(c, m, q);
             e.actores[q] = X;
             m.escena = (dt, base) => animarAmigo(X, dt, base);
         }
+        e.lineas = e.lineas.filter(l => e.actores[l.q]); // las de un actor opcional que no vino no salen
         const extras = Object.values(e.actores).filter(a => a.n && a !== A).map(a => a.n);
         // Quien esté cerca (Lucho junto a Boris, la fogata) cuenta en `visibles`: la cámara no lo deja tapando a los dos
         const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
@@ -204,7 +247,7 @@ export function crearEscenaAmistad(ctx) {
         // ahí van los planos de las escenas de skin, que ya están probados dentro del iglú
         const piso = (n.y ?? 0) + dy, techo = [2, 3, 4].some(k => opaco(n.x, piso + k + 0.5, n.z));
         const cam = techo ? {} : { planos: PLANOS_AMISTAD, minDist: 1.8, evitarDist: 2.4, holgura: 0.7 };
-        camaras.iniciarCine(n, { escena: true, ...cam, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
+        camaras.iniciarCine(n, { escena: true, ...cam, sinTerceros: true, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
         // Los de al lado siguen con lo suyo, pero callados (con `n.escena` se apagan su globo y su charla)
         // (hasta 30 bloques: los globos y las charlas se ven de lejos, como el clon de Venjy cerca de la atalaya)
         const aCallar = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && Math.hypot(o.x - n.x, o.z - n.z) < 30);
@@ -226,10 +269,13 @@ export function crearEscenaAmistad(ctx) {
         for (const A of Object.values(x.actores)) {
             if (!A.n) continue;
             if (A.n.escena) delete A.n.escena;
+            if (A.orig) { A.n.x = A.orig.x; A.n.y = A.orig.y; A.n.z = A.orig.z; }
             A.n.yaw = A.yaw0;
             escribir(A.p, A.foto);
         }
         escribir(camaras.cuerpo, NEUTRAL);
+        // El jugador que se movió en la escena (baile, auto) vuelve a donde quedó al empezar
+        if (x.jugadorMovido) jugador.colocar(x.jugador0.x, x.jugador0.y, x.jugador0.z);
         // Objetos del guion: los propios se borran y los prestados (el sombrero de Lalo) vuelven a su dueño
         for (const o of x.props) { if (o.parent) o.parent.remove(o); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }
         for (const { o, padre, pos, rot, esc } of x.prestados.reverse()) { padre.add(o); o.position.copy(pos); o.rotation.copy(rot); o.scale.copy(esc); }
@@ -349,8 +395,26 @@ export function crearEscenaAmistad(ctx) {
     }
     // Pies de un actor en coordenadas del grupo (las de los objetos sueltos)
     const posG = q => { const a = e.actores[q]; if (!a) return null; const p = pos(a); return { x: p.x, y: p.y - dy, z: p.z }; };
+    // Mueve a un actor (coordenadas del grupo, como posG); al terminar o al saltar vuelve a su sitio.
+    // El jugador se mueve con colocar(); un amigo, por su x/y/z (su animación queda congelada durante la escena).
+    function mover(q, x, y, z) {
+        const a = e && e.actores[q];
+        if (!a) return;
+        if (a.jugador) { e.jugadorMovido = true; jugador.colocar(x, (y ?? jugador.pos.y - dy) + dy, z); return; }
+        if (!a.orig) a.orig = { x: a.n.x, y: a.n.y, z: a.n.z };
+        a.n.x = x; a.n.z = z;
+        if (y !== undefined) a.n.y = y;
+    }
+    // Sitio de partida de un actor (antes de moverse), en coordenadas del grupo
+    const origen = q => {
+        const a = e && e.actores[q];
+        if (!a) return null;
+        if (a.jugador) return { x: e.jugador0.x, y: e.jugador0.y - dy, z: e.jugador0.z };
+        const o = a.orig || a.n;
+        return { x: o.x, y: o.y ?? 0, z: o.z };
+    };
     // Lo que reciben los extras de un guion propio (momentos especiales)
-    const api = (x = e) => ({ e: x, grupo, dy, jugador, camaras, mundo, efecto, golpe, corazones, globoDe, personaDe, punta, pos, posG, caja, sprite, pegar, soltar, prestar,
+    const api = (x = e) => ({ e: x, grupo, dy, jugador, camaras, mundo, efecto, golpe, corazones, globoDe, personaDe, punta, pos, posG, caja, sprite, pegar, soltar, prestar, mover, origen,
         actor: q => x.actores[q], L, sonidos, THREE, suave, lim, lerp, tramo, envolvente });
 
     // ---- Globos (con encaje: esquivan cabezas, el botón «Saltar» y las franjas) ----
@@ -443,8 +507,27 @@ export function crearEscenaAmistad(ctx) {
                 return ok;
             }).catch(err => { console.error('No se pudo cargar el momento especial', err); return false; });
         },
+        // Bienvenida del Venjy del Inicio a tu skin (6c-1): bienvenidas/<base>.js
+        bienvenida(base, alTerminar) {
+            if (e || !base || base === 'venjy' || !PERSONAJES.includes(base)) return Promise.resolve(false);
+            return import(`./bienvenidas/${base}.js`).then(m => {
+                const ok = iniciar('venjy', { ...m.bienvenida({ idioma }), tipo: 'bienvenida', base });
+                if (ok && alTerminar) e.alTerminar = alTerminar;
+                return ok;
+            }).catch(err => { console.error('No se pudo cargar la bienvenida', err); return false; });
+        },
+        // Reencuentro entre tu skin (base) y un amigo con relación 2 o 3 (6c-1): reencuentros.js
+        reencuentro(base, clave, alTerminar) {
+            if (e || base === 'venjy' || clave === 'venjy' || relacion(base, clave) < 2) return Promise.resolve(false);
+            return import('./reencuentros.js').then(m => {
+                const g = m.reencuentro(base, clave);
+                const ok = !!g && iniciar(clave, { ...g, tipo: 'reencuentro', base });
+                if (ok && alTerminar) e.alTerminar = alTerminar;
+                return ok;
+            }).catch(err => { console.error('No se pudo cargar el reencuentro', err); return false; });
+        },
         get activa() { return !!e; },
-        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, t: e.t, T: e.T }; },
+        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, base: e.guion.base || null, t: e.t, T: e.T }; },
         setIdioma(l) { idioma = l; boton.textContent = tx().saltar; for (const [q, g] of globos) if (q === 'j') g.etiqueta = { nombre: tx().tu, color: COLOR_GLOBO.j }; },
         // Depuración (capturas)
         pausar(v = true) { pausada = v; },
