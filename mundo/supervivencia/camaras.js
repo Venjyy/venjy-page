@@ -155,8 +155,9 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         for (const [di, ai] of pares) {
             const dist = d0 - 0.3 * di, alto = pl.alto - 0.3 * ai;
             cam.set(centro.x + Math.sin(ang) * dist, (n.y ?? 0) + dy + alto, centro.z + Math.cos(ang) * dist);
-            if (cine.escena && (cam.distanceTo(yo) < 1 || cam.distanceTo(amigo) < 1 || tapa())) continue;
+            if (cine.escena && (cam.distanceTo(yo) < cine.minDist || cam.distanceTo(amigo) < cine.minDist || tapa())) continue;
             if (cine.visibles && mundo.bloque(cam.x, cam.y, cam.z) > 0) continue; // la cámara no puede quedar dentro de un bloque
+            if (cine.holgura && pegadaABloque()) continue; // ni pegada a uno (un fardo en primer plano)
             const tapadas = cine.visibles ? cabezasTapadas() : null;
             if (nominal === null && tapadas) nominal = tapadas;
             if (libre(mundo, objetivo, cam) && !(tapadas && tapadas.length)) {
@@ -174,9 +175,11 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         if (cine.visibles) diag = { plano: k, nombre: pl.nombre, nominal: nominal || [], libre: false, usada: null };
         return false;
     }
+    // ¿Hay un bloque opaco a menos de `holgura` de la cámara (en los 6 lados)?
+    const pegadaABloque = () => { const h = cine.holgura; return [[h, 0, 0], [-h, 0, 0], [0, h, 0], [0, -h, 0], [0, 0, h], [0, 0, -h]].some(([x, y, z]) => opaco(mundo, cam.x + x, cam.y + y, cam.z + z)); };
     // ¿La cámara quedó encima de alguno de los actores (cabeza o torso)?
     const vC = new THREE.Vector3();
-    const tapa = () => cine.evitar.some(e => cam.distanceTo(e.p.cabeza.getWorldPosition(vC)) < 1.7 || cam.distanceTo(e.p.torso.getWorldPosition(vC)) < 1.4);
+    const tapa = () => cine.evitar.some(e => cam.distanceTo(e.p.cabeza.getWorldPosition(vC)) < cine.evitarDist || cam.distanceTo(e.p.torso.getWorldPosition(vC)) < cine.evitarDist - 0.3);
     // Comprobación de línea libre cámara → cabeza de cada persona (los actores de `visibles` y el jugador).
     // Una cabeza cuenta como tapada si hay bloques en la línea o si otra persona (su torso o su cabeza)
     // queda sobre ella. Devuelve los nombres de las cabezas tapadas (lista vacía = todas se ven).
@@ -211,6 +214,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         cam.set(centro.x, centro.y + 0.6, centro.z);
     }
     function siguientePlano(desde) {
+        // Si el plano anterior se eligió con distancias relajadas, el siguiente vuelve a probar primero las estrictas
+        if (cine.relajado) { [cine.minDist, cine.evitarDist, cine.holgura] = cine.relajado; cine.relajado = null; }
         const n = planos().length;
         let menos = null, solape = Infinity;
         for (let i = 1; i <= n; i++) {
@@ -219,6 +224,15 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             if (cine.peor && cine.peor.s < solape) { solape = cine.peor.s; menos = { k, di: cine.peor.di, ai: cine.peor.ai }; } // válido pero sin lugar para el globo
         }
         if (menos) { cine.usado = { k: menos.k, di: menos.di, ai: menos.ai }; return menos.k; }
+        // Con distancias estrictas (escenas de amistad) y ningún plano libre: se prueban con las normales antes del
+        // rescate, y quedan así mientras dure ese plano (si no, cada cuadro lo daría por tapado)
+        if (cine.minDist > 1 || cine.holgura || cine.evitarDist > 1.7) {
+            const estrictas = [cine.minDist, cine.evitarDist, cine.holgura];
+            cine.minDist = 1; cine.evitarDist = 1.7; cine.holgura = 0;
+            const k = siguientePlano(desde);
+            cine.relajado = estrictas;
+            return k;
+        }
         return desde;
     }
 
@@ -279,6 +293,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cine.visibles = op.visibles && op.visibles.length ? op.visibles : null;
             cine.esperarLinea = !!op.esperarLinea; cine.corte = false; cine.buena = null; cine.usado = null;
             cine.validarTexto = op.validarTexto || null;
+            cine.relajado = null; cine.minDist = op.minDist ?? 1; cine.evitarDist = op.evitarDist ?? 1.7; cine.holgura = op.holgura || 0; // escenas de amistad: más lejos, para que nadie quede tapando en primer plano
             cine.plano = calcular(0, 0, true) ? 0 : siguientePlano(0);
             document.body.classList.add('en-cine');
         },

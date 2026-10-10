@@ -4,7 +4,10 @@
 // objetos, vida, monstruos y jefes. Son locales; los registra main.js en la consola (consola.js).
 //   /tp <destino> · /tp <x> <y> <z> · /pos · /dar <objeto> [n] · /curar · /dios · /mob <tipo> [n]
 //   /jefe <nombre> · /limpiar · /donde
-// Sin argumentos, /tp, /dar, /mob y /jefe listan lo que aceptan.
+//   /amistad <todo|saludos|momentos|persona|persona-escena> (bloque 6b: recorre los saludos y los momentos
+//   especiales; te lleva junto a cada persona y pasa a la siguiente al terminar o con Saltar; Esc entre dos escenas
+//   termina el recorrido) · /amistad100 <persona|todos> (amistad en 100 para probar el botón real)
+// Sin argumentos, /tp, /dar, /mob, /jefe y /amistad listan lo que aceptan.
 // =========================================================
 const sinTildes = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
@@ -28,7 +31,14 @@ const TXT = {
         jefeLista: l => `Jefes (/jefe <nombre>): ${l.join(', ')}`,
         jefeNo: n => `No existe el jefe «${n}»`,
         jefeOcupado: 'Ya hay un jefe en curso o no se pudo invocar',
-        limpiar: n => `${n} monstruos eliminados`
+        limpiar: n => `${n} monstruos eliminados`,
+        amLista: l => `Escenas de amistad (/amistad <...>): todo, saludos, momentos, una persona o persona-escena (${l})`,
+        amNo: n => `No conozco «${n}». Escribe /amistad`,
+        amSig: (q, i, n) => `Escena ${i}/${n}: ${q}. Saltar pasa a la siguiente; Esc ahora termina el recorrido`,
+        amFin: 'Recorrido de escenas de amistad terminado',
+        amCorte: 'Recorrido cortado',
+        amNoPuede: 'Ahora no se puede (muerto, jefe, ronda o minijuego en curso)',
+        amMax: n => `Amistad en 100 con ${n}: abre «Hablar» para ver el botón «Momento especial»`
     },
     en: {
         tpLista: l => `Destinations (/tp <name>): ${l.join(', ')}`,
@@ -49,16 +59,76 @@ const TXT = {
         jefeLista: l => `Bosses (/jefe <name>): ${l.join(', ')}`,
         jefeNo: n => `No boss called "${n}"`,
         jefeOcupado: 'A boss is already running or could not be summoned',
-        limpiar: n => `${n} monsters removed`
+        limpiar: n => `${n} monsters removed`,
+        amLista: l => `Friendship scenes (/amistad <...>): todo, saludos, momentos, a person or person-scene (${l})`,
+        amNo: n => `I don't know "${n}". Type /amistad`,
+        amSig: (q, i, n) => `Scene ${i}/${n}: ${q}. Skip moves to the next one; Esc now ends the tour`,
+        amFin: 'Friendship scene tour finished',
+        amCorte: 'Tour stopped',
+        amNoPuede: 'Not possible right now (dead, boss, round or minigame running)',
+        amMax: n => `Friendship 100 with ${n}: open «Hablar» to see the «Special moment» button`
     }
 };
 
 const MOBS = ['zombi', 'esqueleto', 'arana', 'creeper', 'trauco', 'lepisma'];
 const JEFES = ['imbunche', 'chonchon', 'caleuche'];
+// Escenas de amistad (bloque 6b), en el orden del recorrido. Venjy y Lona muestran también su variante de pareja.
+const AMIGOS = ['venjy', 'pony', 'boris', 'moises', 'lalo', 'salonas', 'lona', 'hadad', 'andy', 'nacho', 'braulio', 'lucho', 'conejeros'];
+const PAREJA = { venjy: 'lona', lona: 'venjy' };
+const NOMBRE_ESC = { punos: { es: 'chocar puños', en: 'fist bump' }, abrazo: { es: 'abrazo', en: 'hug' }, secreto: { es: 'saludo secreto', en: 'secret handshake' },
+    pareja: { es: 'abrazo y beso', en: 'hug and kiss' }, momento: { es: 'momento especial', en: 'special moment' }, 'momento-pareja': { es: 'momento especial de pareja', en: 'couple special moment' } };
+const saludosDe = c => ['punos', 'abrazo', 'secreto', ...(PAREJA[c] ? ['pareja'] : [])];
+const momentosDe = c => ['momento', ...(PAREJA[c] ? ['momento-pareja'] : [])];
 
-export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, gatas, escenas, destinos, spawn, spawnCama, irA, hud, O, B, nombreDe, idioma = 'es' }) {
+export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, gatas, escenas, destinos, spawn, spawnCama, irA, hud, O, B, nombreDe, amistad, idioma = 'es' }) {
     const t = TXT[idioma] || TXT.es;
     let dios = false;
+
+    // ---- /amistad: recorrido por las escenas de amistad (amistad: { cargar() -> motor, persona(clave), nombre(clave), puede(), max(clave) }) ----
+    let cola = null, espera = null;
+    const opcionesAmistad = () => ['todo', 'saludos', 'momentos', ...AMIGOS, ...AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => `${c}-${k}`))];
+    function colaDe(q) {
+        if (q === 'todo') return AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => [c, k]));
+        if (q === 'saludos') return AMIGOS.flatMap(c => saludosDe(c).map(k => [c, k]));
+        if (q === 'momentos') return AMIGOS.flatMap(c => momentosDe(c).map(k => [c, k]));
+        if (AMIGOS.includes(q)) return [...saludosDe(q), ...momentosDe(q)].map(k => [q, k]);
+        const i = q.indexOf('-'), c = q.slice(0, i), k = q.slice(i + 1);
+        return AMIGOS.includes(c) && [...saludosDe(c), ...momentosDe(c)].includes(k) ? [[c, k]] : null;
+    }
+    function cortar(aviso = true) {
+        if (espera) clearTimeout(espera);
+        espera = null;
+        if (cola && aviso) hud.mensaje(t.amCorte, 3);
+        cola = null;
+    }
+    // Esc en la pausa entre dos escenas termina el recorrido (durante una escena, Esc es «Saltar»)
+    document.addEventListener('keydown', e => { if (cola && cola.pausa && e.code === 'Escape') cortar(); });
+    function siguiente() {
+        if (!cola) return;
+        if (cola.i >= cola.lista.length) { cola = null; hud.mensaje(t.amFin, 4); return; }
+        const [c, k] = cola.lista[cola.i++];
+        const n = amistad.persona(c);
+        if (!n) { siguiente(); return; }
+        cola.pausa = true;
+        hud.mensaje(t.amSig(`${amistad.nombre(c)} · ${NOMBRE_ESC[k][idioma] || NOMBRE_ESC[k].es}`, cola.i, cola.lista.length), 3);
+        irA(n.x + 2.5, undefined, n.z, n.y > 0 ? n.y : undefined); // junto a la persona (y espera a que cargue el terreno)
+        let intentos = 0;
+        const empezar = async () => {
+            espera = null;
+            if (!cola) return;
+            if (!amistad.puede()) { hud.mensaje(t.amNoPuede, 4); cortar(false); return; }
+            escenas.saltar(); // una escena de skin que se disparó al llegar no deja empezar
+            const ea = await amistad.cargar();
+            if (!ea || !cola) return;
+            cola.pausa = false;
+            const despues = () => { if (cola) { cola.pausa = true; espera = setTimeout(siguiente, 1200); } };
+            const ok = k === 'momento' || k === 'momento-pareja'
+                ? await ea.momento(c, despues, k === 'momento-pareja' ? { base: PAREJA[c] } : {})
+                : ea.jugar(c, k, despues);
+            if (!ok && cola) { cola.pausa = true; if (++intentos < 3) espera = setTimeout(empezar, 1500); else espera = setTimeout(siguiente, 300); }
+        };
+        espera = setTimeout(empezar, 1600);
+    }
 
     // Todos los destinos con nombre: { clave: { x, y?, z } } (y en coordenadas del mundo; sin y se busca el suelo)
     function lugares() {
@@ -181,5 +251,31 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
         }
     };
     cmds['/donde'] = { ...cmds['/pos'], ayuda: { es: '/donde (igual que /pos)', en: '/donde (same as /pos)' } };
+    if (amistad) {
+        cmds['/amistad'] = {
+            ayuda: { es: '/amistad <todo|saludos|momentos|persona|persona-escena>', en: '/amistad <todo|saludos|momentos|person|person-scene>' },
+            sugerir: opcionesAmistad,
+            fn(arg) {
+                const q = sinTildes(arg).replace(/\s+/g, '-');
+                if (!q) { hud.mensaje(t.amLista(AMIGOS.join(', ')), 14); return; }
+                const lista = colaDe(q);
+                if (!lista) { hud.mensaje(t.amNo(arg), 4); return; }
+                cortar(false);
+                cola = { lista, i: 0, pausa: true };
+                siguiente();
+            }
+        };
+        cmds['/amistad100'] = {
+            ayuda: { es: '/amistad100 <persona|todos>', en: '/amistad100 <person|todos>' },
+            sugerir: () => ['todos', ...AMIGOS],
+            fn(arg) {
+                const q = sinTildes(arg);
+                const lista = q === 'todos' ? AMIGOS : AMIGOS.filter(c => c === q || c.startsWith(q)).slice(0, 1);
+                if (!q || !lista.length) { hud.mensaje(t.amNo(arg), 4); return; }
+                for (const c of lista) amistad.max(c);
+                hud.mensaje(t.amMax(lista.map(c => amistad.nombre(c)).join(', ')), 5);
+            }
+        };
+    }
     return cmds;
 }

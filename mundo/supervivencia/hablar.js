@@ -4,14 +4,18 @@
 // dialogos-datos.js): no suma nada a la carga inicial.
 // · Temas como botones (los bloqueados se ven con su requisito), «¿Qué opinas de...?» con la lista de
 //   quienes conoce, y «Regalar» si llevas su objeto favorito. La respuesta sale en el panel y en su globo.
+// · «Saludos de amigos» (bloque 6b): un botón por animación de nivel (puños, abrazo, saludo secreto o, entre
+//   Venjy y Lona, abrazo y beso); la escena la corre escena-amistad.js (cine corto, se carga al usarla).
+//   Con la amistad en 100 aparece «Momento especial» (6b-2): la escena única del personaje.
 // · Hablar no corta el juego: sin cámara de cine ni pausa (el panel solo libera el puntero, como el inventario).
 // · El amigo te mira (cabeza y un poco el cuerpo) y mezcla gestos de escenas-skin.js (asiente, habla, risa,
 //   rasca...) sobre su animación normal con el gancho `n.escena`; si caminaba, se queda en su sitio.
 //   Al cerrar, el gesto se desvanece en ~0,4 s y se suelta el gancho.
 // =========================================================
 import { TEMAS, OPINIONES, SALUDOS, REGALOS, GESTO_REGALO } from './dialogos-datos.js';
-import { NIVELES, FAVORITOS, relacion, cumple } from './amistad.js';
+import { NIVELES, FAVORITOS, relacion, cumple, nombreNivel, animacionesDe, NIVEL_ANIMACION, momentoListo } from './amistad.js';
 import { GESTOS } from './escenas-skin.js';
+import { TXT_AMISTAD } from './escena-amistad-datos.js';
 
 const TXT = {
     es: { cerrar: 'Cerrar', volver: 'Volver', opinaDe: n => `¿Qué opinas de ${n}?`, regalar: n => `Regalar: ${n}`, leGusta: l => `Le gusta: ${l}`, o: ' o ',
@@ -29,7 +33,8 @@ const CAMPOS = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'inc', 'rz'];
 const MAX_DIST = 7; // más lejos, el panel se cierra solo
 
 // ctx: amistad, hechos() -> { hechas, minijuegos, jefes }, personaDe(clave) -> n, jugador, camara, dy, nombres, base() (clave de tu skin),
-// pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en}
+// pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en},
+// saludar(clave, tipo) y momento(clave) (bloque 6b: animación de amistad y momento especial; misiones.js suelta antes la retención)
 export function crearHablar(ctx) {
     const { amistad, jugador, dy, nombres, inventario, sonidos } = ctx;
     let idioma = ctx.idioma || 'es';
@@ -153,7 +158,7 @@ export function crearHablar(ctx) {
         const d = document.createElement('div');
         d.className = 'amistad';
         const n = nivelDe(clave), pts = amistad.puntos(clave);
-        const b = document.createElement('b'); b.textContent = `${tx().amistad}: ${L(NIVELES[n])}`;
+        const b = document.createElement('b'); b.textContent = `${tx().amistad}: ${L(nombreNivel(n, ctx.base(), clave))}`;
         const s = document.createElement('small'); s.textContent = `${pts}/100`;
         const barra = document.createElement('span'); barra.className = 'amistad-barra';
         // 5 tramos, uno por nivel; cada uno se llena según el avance dentro del nivel
@@ -220,6 +225,27 @@ export function crearHablar(ctx) {
             }
         }
         el.appendChild(lista);
+
+        // Saludos de amigos (bloque 6b): una animación por nivel; las que faltan, con su requisito
+        if (vista === 'temas' && ctx.saludar) {
+            const ta = TXT_AMISTAD[idioma] || TXT_AMISTAD.es;
+            const caja = document.createElement('div'); caja.className = 'saludos-hablar';
+            const tt = document.createElement('small'); tt.className = 'saludos-titulo'; tt.textContent = ta.titulo;
+            const fila = document.createElement('div'); fila.className = 'saludos-fila';
+            for (const tipo of animacionesDe(base, clave)) {
+                const nv = NIVEL_ANIMACION[tipo];
+                const b = nivelDeActual >= nv ? boton(ta[tipo], () => ctx.saludar(clave, tipo), 'saludo') : boton(ta.bloqueado, null, 'saludo bloqueado');
+                if (nivelDeActual < nv) b.title = tx().req.nivel(L(nombreNivel(nv, base, clave)));
+                b.dataset.tipo = tipo;
+                fila.appendChild(b);
+            }
+            caja.append(tt, fila);
+            // Momento especial (6b-2): con la amistad en 100; desde Íntimo se ve lo que falta
+            const pts = amistad.puntos(clave);
+            if (ctx.momento && momentoListo(pts)) caja.appendChild(boton(ta.momento, () => ctx.momento(clave), 'boton-momento'));
+            else if (ctx.momento && nivelDeActual >= NIVELES.length - 1) caja.appendChild(Object.assign(document.createElement('small'), { className: 'momento-falta', textContent: ta.momentoFalta(pts) }));
+            el.appendChild(caja);
+        }
 
         // Regalo: solo su objeto favorito, uno al día
         const favs = FAVORITOS[clave] || [];

@@ -383,7 +383,7 @@ export function crearGlobo(scene, etiqueta = null) {
     // (con un minijuego, el tablero también cuenta: se toma el borde más alto de lo que esté visible)
     const sueloGlobo = franja => {
         let suelo = null;
-        for (const b of document.querySelectorAll('.saltar-escena, .saltar-cuello, .saltar-caricia, .saltar-minijuego, .mj-tablero')) {
+        for (const b of document.querySelectorAll('.saltar-escena, .saltar-cuello, .saltar-caricia, .saltar-minijuego, .saltar-amistad, .mj-tablero')) {
             const r = b.getBoundingClientRect();
             if (r.height && getComputedStyle(b).display !== 'none') suelo = Math.max(suelo ?? -1, 1 - 2 * r.top / innerHeight);
         }

@@ -1,4 +1,4 @@
-# Diálogos de la pestaña «Hablar» (bloque 6a)
+# Diálogos de la pestaña «Hablar» (bloques 6a y 6b)
 
 Generado desde `mundo/supervivencia/dialogos-datos.js` para que el dueño revise los textos antes del merge (248 frases ES/EN). Si cambias un texto, cámbialo en ese archivo; `node mundo/tests/amistad.mjs` comprueba que todas sigan únicas.
 
@@ -317,3 +317,127 @@ Columnas: **Pregunta** (botón), **Desbloqueo** (qué hace falta para que aparez
 | Cuéntame algo que nadie sepa | Amistad: Buen amigo |  | No soy tan .exe como parezco. Bueno, sí. Pero ensayo los chistes antes. | I'm not as .exe as I look. Well, I am. But I rehearse the jokes first. |
 | (al regalar Zanahoria o Papel) | Libre |  | Zanahoria o papel, igual sirve: o se la comen los conejos o la dibujamos. | Carrot or paper, either works: the rabbits eat it or we draw on it. |
 
+
+## Saludos de amigos (bloque 6b)
+
+Generado desde `mundo/supervivencia/escena-amistad-datos.js` (`FRASES_AMISTAD`): la frase única de cada personaje en cada animación por nivel. La de pareja sale solo entre Venjy y Lona (con la skin del otro).
+
+| Personaje | Animación | ES | EN |
+|---|---|---|---|
+| Venjy | Chocar puños (Amigo) | ¡Eso! Choque de puños oficial del Inicio. Queda guardado en el código. | That's it! Official Start fist bump. It's saved in the code. |
+| Venjy | Abrazo (Buen amigo) | Ven acá. Gracias por recorrer el mundo que armé, de verdad. | Come here. Thanks for exploring the world I built, really. |
+| Venjy | Saludo secreto (Íntimo) | Ese saludo no lo sabe nadie más. Si algún día algo no compila, te llamo a ti primero. | Nobody else knows that handshake. If something ever doesn't compile, I'll call you first. |
+| Venjy | Abrazo y beso (Pareja: Venjy y Lona) | Mi amor, cada bloque de este mundo lo puse pensando en recorrerlo contigo. | My love, I placed every block of this world thinking of walking it with you. |
+| Pony | Chocar puños (Amigo) | Puño arriba, que si no, no llego. Ya, ya, no te rías. | Fist up high, or I can't reach. Okay, okay, don't laugh. |
+| Pony | Abrazo (Buen amigo) | Abrazo de pescador: corto, firme y con olor a salmón. De nada. | Fisherman's hug: short, firm and smelling of salmon. You're welcome. |
+| Pony | Saludo secreto (Íntimo) | Ni el Andy se sabe este saludo. Bueno, sí se lo sabe, pero a ti te sale mejor. | Not even Andy knows this handshake. Well, he does, but you do it better. |
+| Salonas | Chocar puños (Amigo) | ¡Puño con ritmo! Eso sonó como un golpe de bombo, compadre. | Fist with rhythm! That sounded like a kick drum, mate. |
+| Salonas | Abrazo (Buen amigo) | Abrazo de banda antes de salir al escenario. Ya, ahora sí estamos afinados. | Band hug before going on stage. Okay, now we are in tune. |
+| Salonas | Saludo secreto (Íntimo) | Este saludo lo voy a dibujar, con monitos y todo. Va a quedar ridículo y perfecto. | I'm going to draw this handshake, stick figures and all. It'll be ridiculous and perfect. |
+| Lona | Chocar puños (Amigo) | Choque de puños aprobado por Mila. Gala todavía lo está pensando. | Fist bump approved by Mila. Gala is still thinking about it. |
+| Lona | Abrazo (Buen amigo) | Un abrazo bien apretado, como los que dan las gatas cuando se te suben encima. | A really tight hug, like the ones the cats give when they climb on you. |
+| Lona | Saludo secreto (Íntimo) | Nuestro saludo secreto queda entre tú, yo y las gatas. Ellas no le cuentan a nadie. | Our secret handshake stays between you, me and the cats. They won't tell anyone. |
+| Lona | Abrazo y beso (Pareja: Venjy y Lona) | Te quiero, amor. Contigo hasta un mundo de bloques se siente como la casa. | I love you, my love. With you even a world of blocks feels like home. |
+| Hadad | Chocar puños (Amigo) | Puño de campeón. Este momento lo auspician las papas fritas de bolsa, obvio. | Champion fist bump. This moment is sponsored by bagged potato chips, obviously. |
+| Hadad | Abrazo (Buen amigo) | Abrazo junto a la fogata. Ahora sí eres parte del escuadrón. | A hug by the campfire. Now you are officially part of the squad. |
+| Hadad | Saludo secreto (Íntimo) | Ese saludo es como una victoria magistral: pocos la logran y nadie la olvida. | That handshake is like a Victory Royale: few get one and no one forgets it. |
+| Andy | Chocar puños (Amigo) | ¡Puño! Como cuando el Nacho y yo cerramos la partida en el último círculo. | Fist bump! Like when Nacho and I close out the match in the final circle. |
+| Andy | Abrazo (Buen amigo) | Abrazo de oso. Soy el más alto del grupo, así que estírate un poquito. | Bear hug. I'm the tallest in the group, so stretch up a little. |
+| Andy | Saludo secreto (Íntimo) | Saludo secreto desbloqueado. Esto no viene ni en el pase de batalla. | Secret handshake unlocked. Not even the battle pass has this one. |
+| Nacho | Chocar puños (Amigo) | Jajaja, ¡pum! Ese puño sonó más fuerte que la parrilla. | Haha, boom! That fist bump was louder than the grill. |
+| Nacho | Abrazo (Buen amigo) | Jajaja, ven, abrazo. Pero no me botes la carne, que está a punto. | Haha, come here, hug. Just don't knock the meat over, it's almost done. |
+| Nacho | Saludo secreto (Íntimo) | Jajaja, nos salió perfecto a la primera. Eso pasa solo con los amigos de verdad. | Haha, we nailed it on the first try. That only happens with real friends. |
+| Moisés | Chocar puños (Amigo) | Puño, hermano. Despacito, que en el iglú todo hace eco. | Fist bump, bro. Gently, everything echoes in the igloo. |
+| Moisés | Abrazo (Buen amigo) | Abrazo calentito, hermano. Así se le gana al frío de Coyhaique. | A warm hug, bro. That's how you beat the Coyhaique cold. |
+| Moisés | Saludo secreto (Íntimo) | Con el Lalo tenemos uno parecido, pero este es tuyo, hermano. Nadie más lo sabe. | Lalo and I have a similar one, but this one is yours, bro. Nobody else knows it. |
+| Lalo | Chocar puños (Amigo) | Ahya, ¡puño! Con cuidado, que se me cae el sombrero. | Ahya, fist bump! Careful, my hat is about to fall off. |
+| Lalo | Abrazo (Buen amigo) | Ahya, abrazo de hermano. En el iglú siempre hay lugar para uno más. | Ahya, brotherly hug. In the igloo there's always room for one more. |
+| Lalo | Saludo secreto (Íntimo) | Ahya, saludo secreto. Si el Moisés pregunta, tú no sabes nada. | Ahya, secret handshake. If Moisés asks, you know nothing. |
+| Boris | Chocar puños (Amigo) | Puño de leñador. Firme, como el hachazo que parte el tronco. | Lumberjack fist bump. Firm, like the swing that splits the log. |
+| Boris | Abrazo (Buen amigo) | Ya, abrazo, pero rápido, que se enfría el hacha. Mentira, quédate. | Okay, a hug, but quick, the axe is getting cold. Kidding, stay. |
+| Boris | Saludo secreto (Íntimo) | Este saludo es para los de confianza, como ir de copiloto a Linares. | This handshake is for trusted people, like riding shotgun to Linares. |
+| Lucho | Chocar puños (Amigo) | Puño de dúo. En Apex esto sería un revivir, pero en la vida real. | Duo fist bump. In Apex this would be a revive, but in real life. |
+| Lucho | Abrazo (Buen amigo) | Abrazo de familia. Aquí el que llega tan lejos ya es primo honorario. | Family hug. Around here whoever gets this far is an honorary cousin. |
+| Lucho | Saludo secreto (Íntimo) | Saludo secreto, como un ping que solo entiende tu dúo. Ni el Boris lo conoce. | Secret handshake, like a ping only your duo understands. Not even Boris knows it. |
+| Braulio | Chocar puños (Amigo) | Puño. Y con mi dedo doble, cuenta como choque y medio. | Fist bump. And with my double finger, it counts as one and a half. |
+| Braulio | Abrazo (Buen amigo) | Abrazo de playa: con arena incluida, perdón por eso. | Beach hug: sand included, sorry about that. |
+| Braulio | Saludo secreto (Íntimo) | Este saludo lo encontré en la orilla, como todo lo bueno. Ahora también es tuyo. | I found this handshake on the shore, like all good things. Now it is yours too. |
+| Conejeros | Chocar puños (Amigo) | Puño al ritmo del bajo. Uno, dos... ¡eso, cabeceaste! | Fist bump to the bass beat. One, two... yes, you headbanged! |
+| Conejeros | Abrazo (Buen amigo) | Abrazo de concierto, de esos que se dan cuando suena el tema bueno. | A concert hug, the kind you give when the good song plays. |
+| Conejeros | Saludo secreto (Íntimo) | Saludo secreto nivel .exe. El Salonas lo va a querer dibujar, ya verás. | Secret handshake, .exe level. Salonas is going to want to draw it, you'll see. |
+
+## Momentos especiales (bloque 6b-2)
+
+Generado desde `mundo/supervivencia/momentos/<clave>.js`: una escena única por personaje, con la amistad en 100. **Habla**: el amigo, Tú (el jugador) u otro amigo que participa. La variante «Pareja» sale solo entre Venjy y Lona (con la skin del otro).
+
+| Personaje | Momento | Variante | Habla | ES | EN |
+|---|---|---|---|---|---|
+| Venjy | El bloque del portafolio | Normal | Venjy | Ven, tengo algo para ti. Lo programé anoche, sin dormir, obvio. | Come here, I have something for you. I coded it last night, without sleeping, obviously. |
+| Venjy | El bloque del portafolio | Normal | Venjy | Compila... compila... ¡compiló! Primera vez sin errores. | Compiling... compiling... it compiled! First time with no errors. |
+| Venjy | El bloque del portafolio | Normal | Tú | ¿Un bloque? ¿Para mí? | A block? For me? |
+| Venjy | El bloque del portafolio | Normal | Venjy | Un bloque único, con tu nombre. Va directo a la sección de amigos del portafolio. | A one-of-a-kind block, with your name. It goes straight to the friends section of the portfolio. |
+| Venjy | El bloque del portafolio | Normal | Venjy | ¡Eso! Gracias por jugar mi mundo de punta a cabo. | Yes! Thanks for playing my world from start to finish. |
+| Venjy | El bloque del portafolio | Pareja | Venjy | Ven, amor. Desde aquí se ve todo el mundo que armé. | Come, love. From here you can see the whole world I built. |
+| Venjy | El bloque del portafolio | Pareja | Tú | Y todo tiene algo de nosotros, ¿cachai? | And all of it has a little bit of us, you know? |
+| Venjy | El bloque del portafolio | Pareja | Venjy | Te hice una flor que no se marchita. Ni con el día ni con la noche. | I made you a flower that never wilts. Not by day, not by night. |
+| Venjy | El bloque del portafolio | Pareja | Venjy | Te amo, Lona. Eres mi lugar favorito de este mundo. | I love you, Lona. You are my favorite place in this world. |
+| Pony | La pesca del siglo | Normal | Pony | ¡Picó! ¡Picó! ¡Ayúdame, que este es más grande que yo! | It bit! It bit! Help me, this one is bigger than me! |
+| Pony | La pesca del siglo | Normal | Tú | ¡Tira, Pony, tira! | Pull, Pony, pull! |
+| Pony | La pesca del siglo | Normal | Pony | Ya, lo admito: este salmón me ganó en altura. Por poquito. | Okay, I admit it: this salmon beat me in height. Barely. |
+| Pony | La pesca del siglo | Normal | Pony | Pero el récord es de los dos. Lo pongo en el muelle con tu nombre al lado del mío. | But the record belongs to both of us. I will put it on the dock with your name next to mine. |
+| Boris | Pentakill | Normal | Boris | Mira esto: un solo hachazo y el tronco se parte en dos. | Watch this: one swing and the log splits in two. |
+| Boris | Pentakill | Normal | Tú | ¡Uf! Eso fue limpio. | Whoa! That was clean. |
+| Boris | Pentakill | Normal | Boris | Ahora lo importante: una partida de LoL, tú y yo, como en mi pieza. | Now the important part: a round of LoL, you and me, like in my room. |
+| Boris | Pentakill | Normal | Boris | ¡Pentakill! Esa va directo al grupo, para que la vean todos. | Pentakill! That one goes straight to the group chat, for everyone to see. |
+| Moisés | Monito de nieve | Normal | Moisés | Hermano, en Coyhaique hacíamos monitos de nieve más grandes que nosotros. | Bro, in Coyhaique we made snowmen bigger than us. |
+| Moisés | Monito de nieve | Normal | Lalo | Ahya, y el Moisés siempre le ponía la nariz chueca. | Ahya, and Moisés always put the nose on crooked. |
+| Moisés | Monito de nieve | Normal | Moisés | Esta vez quedó derechita. Es el monito de los tres. | This time it is nice and straight. It is the snowman of the three of us. |
+| Moisés | Monito de nieve | Normal | Tú | Le falta un sombrero, ¿no? | It needs a hat, right? |
+| Moisés | Monito de nieve | Normal | Lalo | Ahya, que no sea el mío, que ese tiene historia. | Ahya, just not mine, that one has history. |
+| Lalo | El sombrero | Normal | Lalo | Ahya, este sombrero me acompaña desde Coyhaique. Nunca se lo presto a nadie. | Ahya, this hat has been with me since Coyhaique. I never lend it to anyone. |
+| Lalo | El sombrero | Normal | Moisés | ¿Nunca? A mí no me lo has pasado ni una vez. | Never? You haven't passed it to me even once. |
+| Lalo | El sombrero | Normal | Lalo | Por eso mismo. Hoy te lo pongo a ti, hermano. | Exactly. Today I am putting it on you, bro. |
+| Lalo | El sombrero | Normal | Tú | ¿En serio? Me queda gigante. | Seriously? It is huge on me. |
+| Lalo | El sombrero | Normal | Lalo | Ahya, te queda perfecto. Ahora eres parte del iglú para siempre. | Ahya, it fits you perfectly. Now you are part of the igloo forever. |
+| Salonas | Solo de bajo | Normal | Salonas | Compadre, compuse un solo nuevo. Eres el primero en escucharlo. | Mate, I wrote a new solo. You are the first to hear it. |
+| Salonas | Solo de bajo | Normal | Conejeros | ¡Eso, Salonas! ¡Más fuerte! | Yes, Salonas! Louder! |
+| Salonas | Solo de bajo | Normal | Tú | ¡Esto tiene que salir en un disco! | This has to be on an album! |
+| Salonas | Solo de bajo | Normal | Salonas | Entonces el disco lleva tu nombre en la portada, dibujado por el Conejeros. | Then the album has your name on the cover, drawn by Conejeros. |
+| Salonas | Solo de bajo | Normal | Conejeros | Ya lo estoy imaginando: tú con lentes de sol y un conejo. | I can already picture it: you in sunglasses and a rabbit. |
+| Lona | La bufanda | Normal | Lona | Espera un poquito, que te estoy tejiendo algo hace días. | Wait a little, I've been knitting you something for days. |
+| Lona | La bufanda | Normal | Lona | Mila se robó el ovillo dos veces, pero lo recuperé. | Mila stole the ball of yarn twice, but I got it back. |
+| Lona | La bufanda | Normal | Tú | ¡Está calentita! ¿La hiciste tú? | It's so warm! Did you make it? |
+| Lona | La bufanda | Normal | Lona | Sí. A Venjy le tejí una igual, porque es mi novio, pero la tuya tiene más color. | Yes. I knitted Venjy one just like it, because he is my boyfriend, but yours has more color. |
+| Lona | La bufanda | Pareja | Lona | Amor, cierra los ojos. No, en serio, ciérralos. | Love, close your eyes. No, really, close them. |
+| Lona | La bufanda | Pareja | Tú | Ya, ya, los cerré... ¿puedo mirar? | Okay, okay, they are closed... can I look? |
+| Lona | La bufanda | Pareja | Lona | Ahora sí. Una bufanda para las noches que programas hasta tarde. | Now you can. A scarf for the nights you code until late. |
+| Lona | La bufanda | Pareja | Tú | Te amo. Es el mejor regalo de todo el mundo, y lo digo yo que hice el mundo. | I love you. It's the best gift in the whole world, and I'm the one who made the world. |
+| Lona | La bufanda | Pareja | Lona | Yo también te amo. Mila y Gala dicen que la cuides. | I love you too. Mila and Gala say take good care of it. |
+| Hadad | El comercial | Normal | Hadad | Atención, que esto es un comercial. Tú eres mi invitado especial. | Attention, this is a commercial. You are my special guest. |
+| Hadad | El comercial | Normal | Hadad | Papas fritas de bolsa: las que acompañan cada victoria del escuadrón. | Bagged potato chips: the ones that go with every squad victory. |
+| Hadad | El comercial | Normal | Tú | ¿Y puedo probar o es solo para el comercial? | And can I try some or is it only for the ad? |
+| Hadad | El comercial | Normal | Hadad | Prueba nomás. Dicen que con amigos saben el doble. | Go ahead. They say they taste twice as good with friends. |
+| Hadad | El comercial | Normal | Hadad | Y corte. Ese comercial ya es más famoso que la imagen de la IA. | And cut. This commercial is already more famous than the AI picture. |
+| Andy | Baile de victoria | Normal | Andy | Ya, te voy a enseñar el baile que hacemos con el Nacho cuando ganamos. | Okay, I will teach you the dance Nacho and I do when we win. |
+| Andy | Baile de victoria | Normal | Tú | A ver, muéstrame primero. | Okay, show me first. |
+| Andy | Baile de victoria | Normal | Andy | Brazo, brazo, saltito... ¡eso! Te sale mejor que al Pony. | Arm, arm, little hop... yes! You do it better than Pony. |
+| Andy | Baile de victoria | Normal | Andy | ¡Top 1, dúo! Esta noche en el Discord no se habla de otra cosa. | Top 1, duo! Tonight on Discord nobody will talk about anything else. |
+| Nacho | Asado y carcajada | Normal | Nacho | Jajaja, llegaste justo: la mejor pieza de carne es para ti. | Haha, you came just in time: the best cut of meat is for you. |
+| Nacho | Asado y carcajada | Normal | Tú | ¿En serio? ¿Y el Hadad y el Andy? | Really? What about Hadad and Andy? |
+| Nacho | Asado y carcajada | Normal | Nacho | Jajaja, ellos ya comieron tres veces. Hoy el invitado de honor eres tú. | Haha, they already ate three times. Today you are the guest of honor. |
+| Nacho | Asado y carcajada | Normal | Nacho | Jajaja, ¿te conté cuando se me quemó el asado por contar un chiste? Jajaja. | Haha, did I tell you about when I burned the barbecue telling a joke? Haha. |
+| Braulio | El tesoro de la orilla | Normal | Braulio | Espera, algo brilla en la arena. ¡Ayúdame a cavar! | Wait, something is shining in the sand. Help me dig! |
+| Braulio | El tesoro de la orilla | Normal | Tú | ¿Otro hueso para tu colección? | Another bone for your collection? |
+| Braulio | El tesoro de la orilla | Normal | Braulio | No... ¡un cofre! Y adentro hay una concha dorada. | No... a chest! And inside there is a golden seashell. |
+| Braulio | El tesoro de la orilla | Normal | Braulio | Es para ti. En Arica dicen que si la escuchas, se oye el mar. | It is for you. In Arica they say if you listen to it, you can hear the sea. |
+| Braulio | El tesoro de la orilla | Normal | Tú | Se oye... ¡se oye el mar de verdad! | I can hear... I can really hear the sea! |
+| Lucho | El revive | Normal | Lucho | Modo Apex: espalda con espalda, que vienen por todos lados. | Apex mode: back to back, they are coming from everywhere. |
+| Lucho | El revive | Normal | Boris | Yo cubro desde el tronco. Tranquilos, tengo el hacha. | I'll cover from the log. Relax, I've got the axe. |
+| Lucho | El revive | Normal | Tú | ¡Me botaron! ¡Revíveme! | I'm down! Revive me! |
+| Lucho | El revive | Normal | Lucho | Aguanta, aguanta... ¡revivido! Nadie se queda atrás en mi dúo. | Hold on, hold on... revived! Nobody gets left behind in my duo. |
+| Lucho | El revive | Normal | Lucho | Ahora eres primo honorario y compañero de ranked. Combo completo. | Now you are an honorary cousin and a ranked teammate. Full combo. |
+| Conejeros | Dibujo .exe | Normal | Conejeros | Quédate quieto, que te voy a dibujar. No, no te muevas. | Stay still, I am going to draw you. No, don't move. |
+| Conejeros | Dibujo .exe | Normal | Tú | ¿Y cómo dibujas en el aire? | And how do you draw in the air? |
+| Conejeros | Dibujo .exe | Normal | Conejeros | Talento .exe. ¡Listo! Eres tú, pero con orejas de conejo. | Talent.exe. Done! It's you, but with bunny ears. |
+| Conejeros | Dibujo .exe | Normal | Salonas | Se le pegó otra vez. Dale un golpecito. | He froze again. Give him a little tap. |
+| Conejeros | Dibujo .exe | Normal | Conejeros | Ya volví. Este dibujo va al lado del conejo con lentes, en la galería de tonteras. | I am back. This drawing goes next to the rabbit with glasses, in the nonsense gallery. |
