@@ -5,7 +5,7 @@ Hecho a partir de las cabeceras (primeras líneas) y de grep sobre `main` (`cc03
 Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 
 `mundo/` es el portafolio 3D ya terminado (no se le harán más cambios); el desarrollo activo es
-`mundo/supervivencia/`. Base compartida del creativo en `mundo/*.js` (`voxeles`, `texturas`, `jugador`, `cielo`, `gatas`,
+`mundo/supervivencia/`. Base compartida del creativo en `mundo/*.js` (`voxeles`, `luz-incremental`, `texturas`, `jugador`, `cielo`, `gatas`,
 `construcciones`, `minimapa`, `ajustes`, …); red en `mundo/online/` (`red.js`, `sala-local.js`,
 `qr.js`, `config.js`). Aquí solo `mundo/supervivencia/` y `mundo/criaturas/`.
 
@@ -26,7 +26,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `contenedores.js` (164) | Cofres, barriles y hornos por posición. `crearContenedores:15` |
 | `botin.js` (30) | Tablas de botín por lugar. `botinDe:21` |
 | `agricultura.js` (146) | Cultivos y brotes por registro. `crearAgricultura:26` |
-| `entidades.js` (206) | Objetos tirados. `crearEntidades:69` |
+| `entidades.js` (215) | Objetos tirados; se juntan los iguales a < 1 bloque también al soltar (7b-1). `crearEntidades:69` |
 | `particulas.js` (95) | Partículas con un InstancedMesh. `crearParticulas:11` |
 | `dia.js` (41) | Día de 10 min. `crearDia:15` |
 | `subsuelo.js` (188) | Roca madre, cuevas, lava, menas. `llenarSubsuelo:128` |
@@ -38,7 +38,8 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `interpolacion.js` (66) | Búfer de red a 2-5 Hz. `Bufer:14` `mezclar:61` |
 | `tactil-supervivencia.js` (61) | Botones táctiles; etiquetas y layout salen de `mundo/datos/` (`textos.json`, `ui-layout.json`) con el código como defecto. `iniciarTactilSupervivencia:27` |
 | `layout-datos.js` (112) | Estudio fase 1: genera un `<style id="layout-datos">` desde `ui-layout.json` solo con las claves presentes. `cssLayout:88` `aplicarLayout:97` |
-| `consola.js` (176) / `comandos-dev.js` (316) | Consola T o `/` y comandos de desarrollo (`/gamemode devenjy`). `crearConsola:40` · `crearComandosDev:95` |
+| `consola.js` (176) / `comandos-dev.js` (345) | Consola T o `/` y comandos de desarrollo (`/gamemode devenjy`). `crearConsola:40` · `crearComandosDev:95` |
+| `medir.js` (182) | 7b-1: `/medir romper [captura]` (devenjy, con `import()`): rompe 6×6×3 a 4 bloques/s en campo, campamento y base con antorchas; cuadro p50/p95/p99 y ms por fase (`marcar` de `voxeles.js`). `medirRomper:45` |
 | `creditos.js` (35) | Créditos al hundir el Caleuche. `mostrarCreditos:13` |
 
 ## supervivencia/ · combate, mundo vivo y jefes
@@ -125,6 +126,16 @@ activo o UI abierta, o coop, y no muerto). Con el mundo corriendo: `dia` → `ju
 (`escenaGuardian`, `escenas`, `caricias`, `escenasGatas`, `escenaCuello`, `minijuegos`, `escenaAmistad`),
 `camaras`, `ronda`, música, criaturas (`gatas`, `npcs`, `animales`, `amigos`, `venjys`), `misiones`,
 `hud`, minimapa y `renderer.render`. En pausa el mundo se detiene; online nunca.
+
+**Romper y poner (motor, 7b-1)**: `minado.romperBloque` → `mundo.editar` → `editarLote` → en la
+supervivencia `editarRapido` (`voxeles.js:1453`): parcha el bloque en los chunks cuya ventana lo
+contiene, actualiza la luz con `actualizarLuz` (`luz-incremental.js:25`; chunks de luz local sobre su
+ventana con `campoChunk:94`, chunks forzados — `chunkForzado:894` — sobre la caja `cajaGlobal:1580`) y
+marca secciones de 16 de alto. `procesar:1359` → `vaciarSucios:1636` las remalla en el hilo principal
+(`mallarChunkCrudo:1228` con rango de y) y `instalarSeccion:1650` las oculta de la malla entera con grupos
+de índices. Los chunks con luz no exacta (camino lento) y los vecinos que solo cambian de luz van a
+los workers (`pedirTrabajos:1684`; vuelven por `rehecho:1711` y `mallaDeWorker:1723`). El creativo sigue
+con `remallarYa` (chunk entero). Prueba: `mundo/tests/luz-incremental.mjs`.
 
 **Escenas de skin y 6c**: `escenas-skin.js` detecta el amigo cercano con tu skin base (`pendiente6c:30`,
 `tipoSkin:56`) y arma la escena con `escenas-datos.js`. Para bienvenidas y reencuentros usa los

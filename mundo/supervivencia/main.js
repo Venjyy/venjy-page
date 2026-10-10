@@ -7,7 +7,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { generarDatos } from '../mundo-datos.js';
 import { crearAtlas, animarAgua, B } from '../texturas.js';
-import { prepararTerreno, MundoVoxel, ESCALA, CHUNK, ALTO, fijarAlto, ALTO_SUPERVIVENCIA, DESNIVEL_SUPERVIVENCIA, recalcularEmisores, llenarChunk, mallarChunkCrudo } from '../voxeles.js';
+import { prepararTerreno, MundoVoxel, ESCALA, CHUNK, ALTO, fijarAlto, ALTO_SUPERVIVENCIA, DESNIVEL_SUPERVIVENCIA, recalcularEmisores, llenarChunk, mallarChunkCrudo, medicion, chunkForzado } from '../voxeles.js';
 import { Jugador } from '../jugador.js';
 import { crearCielo, COLOR_HORIZONTE } from '../cielo.js';
 import { iniciarTactil } from '../tactil.js';
@@ -453,7 +453,7 @@ async function arrancar(guardado, cx = null) {
         const k = cx + ',' + cz;
         if (cx < 0 || cz < 0 || cx >= mundo.cx || cz >= mundo.cz || mundo.chunks.has(k)) return;
         const relleno = llenarChunk(terreno, cx, cz);
-        mundo.instalar(k, mallarChunkCrudo(cx, cz, relleno), relleno.vox, relleno.luz);
+        mundo.instalar(k, mallarChunkCrudo(cx, cz, relleno), relleno.vox, relleno.luz, relleno.maxY);
     }
     // Carga los chunks cercanos a (x, z) antes de soltar al jugador, y deja planeados los demás
     function cargarCerca(x, z) {
@@ -822,7 +822,8 @@ async function arrancar(guardado, cx = null) {
             ponerSkin: d => ponerSkin(d),
             callar: v => escenas.callar(v),
             vida: vidaAmigos // 6d: /amistad vida-<id>
-        }
+        },
+        medir: { mundo, jugador, minado, entidades, terreno, irA, hud, B, DY, chunkForzado } // /medir romper (7b-1)
     });
     // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>, /gamemode devenjy (+ comandos de desarrollo)
     const consola = crearConsola({
@@ -1181,6 +1182,7 @@ async function arrancar(guardado, cx = null) {
     const fpsEl = $('fps'), coordsEl = $('coords');
     function bucle(ahora) {
         requestAnimationFrame(bucle);
+        const tBucle = performance.now();
         const dt = Math.min(0.1, (ahora - anterior) / 1000);
         anterior = ahora;
         // En pausa (Esc) el mundo se detiene, como en Minecraft de un jugador; con el inventario abierto sigue.
@@ -1242,6 +1244,7 @@ async function arrancar(guardado, cx = null) {
         mundo.procesar(5);
         renderer.render(scene, camara);
         if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine) mano.dibujar();
+        if (medicion.activa && medicion.cuadros) medicion.cuadros.push(performance.now() - tBucle); // /medir romper
 
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {

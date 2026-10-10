@@ -2,7 +2,7 @@
 // VENJY · Supervivencia · Objetos tirados
 // Lo que suelta un bloque roto, un animal, la muerte del jugador o la tecla Q. Los bloques se
 // ven como cubitos con su textura y los objetos como un plano que gira hacia la cámara.
-// Física simple contra los bloques, se juntan los iguales cercanos, el jugador los recoge
+// Física simple contra los bloques, se juntan los iguales a menos de 1 bloque (también al soltar), el jugador los recoge
 // al pasar y desaparecen a los 5 minutos (como en Minecraft).
 // Online (api.red): cada objeto tiene un uid que viaja por la red; todos lo simulan, pero recogerlo
 // lo decide el anfitrión (el primero que lo pide se lo lleva) y no se juntan pilas.
@@ -11,6 +11,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TIPO, TAM, COLS, FILAS } from '../texturas.js';
 import { crearAtlasObjetos, uvObjeto } from './iconos.js';
 import { sonidos } from './sonidos.js';
+import { marcar } from '../voxeles.js';
 
 const VIDA_OBJETO = 300;
 const MAX_OBJETOS = 400;
@@ -89,6 +90,13 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     // `uid`: solo para objetos que llegan por la red (no se vuelven a difundir)
     function soltar(id, n, d, x, y, z, vel = null, demora = 0.5, uid = null) {
         if (!id || n <= 0) return null;
+        const t0 = performance.now();
+        // Sin red: si ya hay una pila igual a menos de 1 bloque, se suma a ella (7b-1: una explosión no
+        // crea decenas de mallas). Online no se juntan pilas (cada una tiene su uid).
+        if (!api.red && !uid && !d) {
+            const otra = lista.find(e => e.id === id && !e.d && e.edad > 0.2 && (e.pos.x - x) ** 2 + (e.pos.y - y) ** 2 + (e.pos.z - z) ** 2 < 1);
+            if (otra) { otra.n += n; otra.edad = 0; otra.quieto = false; marcar('soltar', t0); return otra; }
+        }
         if (lista.length >= MAX_OBJETOS) quitar(lista[0]);
         const e = {
             uid: uid || api.prefijo + (contador++).toString(36),
@@ -101,6 +109,7 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
         e.malla.position.copy(e.pos);
         lista.push(e);
         if (api.red && !uid) api.red.soltado(e);
+        marcar('soltar', t0);
         return e;
     }
     const porUid = u => lista.find(e => e.uid === u) || null;
@@ -145,7 +154,7 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
             if (a.d) continue;
             for (let j = i + 1; j < lista.length; j++) {
                 const b = lista[j];
-                if (b.id !== a.id || b.d || a.pos.distanceToSquared(b.pos) > 1.2) continue;
+                if (b.id !== a.id || b.d || a.pos.distanceToSquared(b.pos) >= 1) continue; // a menos de 1 bloque, como Minecraft
                 a.n += b.n; a.edad = Math.min(a.edad, b.edad);
                 quitar(b); j--;
             }

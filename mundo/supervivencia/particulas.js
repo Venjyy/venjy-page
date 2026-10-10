@@ -5,6 +5,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TAM, COLS } from '../texturas.js';
+import { marcar } from '../voxeles.js';
 
 const MAX = 600;
 
@@ -45,11 +46,13 @@ export function crearParticulas({ scene, atlasLienzo }) {
 
     return {
         romper(id, x, y, z) {
+            const t0 = performance.now();
             const c = colorBloque(id);
             for (let i = 0; i < 14; i++) {
                 const k = 0.7 + Math.random() * 0.5;
                 emitir(x + 0.5 + az(0.8), y + 0.5 + az(0.8), z + 0.5 + az(0.8), az(4), 2 + Math.random() * 3, az(4), [c[0] * k, c[1] * k, c[2] * k], 0.08 + Math.random() * 0.06, 0.6 + Math.random() * 0.4);
             }
+            marcar('particulas', t0);
         },
         golpe(id, x, y, z) {
             const c = colorBloque(id);
@@ -72,6 +75,7 @@ export function crearParticulas({ scene, atlasLienzo }) {
         },
         fuego(x, y, z) { emitir(x + az(0.5), y + Math.random() * 0.6, z + az(0.5), az(0.4), 1.2, az(0.4), Math.random() < 0.5 ? [1, 0.6, 0.1] : [1, 0.85, 0.3], 0.08, 0.5, -1); },
         actualizar(dt) {
+            const t0 = performance.now();
             for (let i = p.length - 1; i >= 0; i--) {
                 const e = p[i];
                 e.vida -= dt;
@@ -90,6 +94,7 @@ export function crearParticulas({ scene, atlasLienzo }) {
             }
             malla.instanceMatrix.needsUpdate = true;
             if (malla.instanceColor) malla.instanceColor.needsUpdate = true;
+            if (p.length) marcar('particulas', t0);
         }
     };
 }
