@@ -41,7 +41,7 @@ export default {
         'Salen solas al acercarte (una vez por partida y por skin) con la regla «uno por lugar»; las demás de ese lugar, al hacer clic derecho. Con skin de Venjy no hay escenas nuevas.',
         'Tu clon, si está al lado, mira dos veces al empezar y se ríe al final.',
         'Motor listo para 6c-2: actores que se mueven y vuelven, clon como actor, 18 moldes nuevos con <code>fusion()</code>, efectos píxel y sonidos sintetizados (incluido el ping).',
-        'Abrazo nuevo en todas las escenas (pedido tuyo): cada uno apoya la barbilla en el hombro del otro y mira por encima, con las cabezas una al lado de la otra (0,39 bloques corridas); ya no quedan nariz con nariz.',
+        'Abrazo nuevo en todas las escenas (pedido tuyo): cada uno apoya la barbilla en el hombro del otro y mira por encima, con las cabezas una al lado de la otra (0,39 bloques corridas); ya no quedan nariz con nariz. Sin vaivén de lado a lado: la cabeza va directo al hombro (en 0,9 s) antes de juntar los cuerpos.',
         'La cámara ya no deja a un tercero en primer plano (también mejora los saludos y momentos de 6b).',
         '<code>/amistad bienvenidas</code>, <code>/amistad reencuentros</code>, <code>/amistad pony-bienvenida</code> y <code>/amistad pony-andy</code> (con <code>/gamemode devenjy</code>).'
     ],

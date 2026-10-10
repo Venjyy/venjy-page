@@ -55,7 +55,7 @@ export function momento(info = {}) {
         abrazoL: (u, t, i) => {
             const k = env(u, 0, 1, 0.2), beso = env(u, 0.5, 0.8, 0.1);
             // Cabeza al hombro (alHombro de escena-amistad-datos.js); el beso solo en la variante de pareja
-            const b = cfg.ojos ? beso : 0, h = alHombro(k * (1 - b));
+            const b = cfg.ojos ? beso : 0, h = alHombro(env(u, 0, 1, 0.1) * (1 - b)); // la cabeza llega al hombro antes que los brazos
             const meta = { bDx: -1.45 * k, bDz: 0.8 * k, bIx: -1.45 * k, bIz: -0.8 * k, pz: 0.36 * k, ...h };
             return i.j ? { ...meta, cz: h.cz + 0.15 * b, cy: h.cy - 0.2 * b } : { ...meta, cy: h.cy + 0.55 * b, cz: h.cz - 0.15 * b, cx: h.cx + 0.2 * b };
         }

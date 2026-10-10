@@ -66,8 +66,10 @@ export const GESTOS_AMISTAD = {
         const pat = (t > 2.3 && t < 3.1) ? 0.2 * Math.max(0, Math.sin((t - 2.3) * 2 * Math.PI / 0.4)) : 0;
         const base = ruta(t, [[0.4, 0], [1.2, -1.45], [4.3, -1.45], [4.9, 0]]);
         const z = ruta(t, [[0.4, 0.05], [1.2, 0.85], [4.3, 0.85], [4.9, 0.05]]);
-        const k = ruta(t, [[0.4, 0], [1.2, 1], [4.3, 1], [4.9, 0]]), h = alHombro(k);
-        return { bDx: base, bDz: z, bIx: base + pat, bIz: -z, pz: ruta(t, [[0.4, 0], [1.2, 0.25], [4.3, 0.25], [4.9, 0]]), ...h, rz: h.rz + Math.sin(t * 2.2) * 0.04 };
+        // Sin vaivén de lado a lado (cara a cara se leía como beso): primero la cabeza va al hombro (0.4-0.85) y
+        // recién después da el paso adelante (0.7-1.2), quietos mientras dura el abrazo
+        const h = alHombro(ruta(t, [[0.4, 0], [0.85, 1], [4.3, 1], [4.9, 0]]));
+        return { bDx: base, bDz: z, bIx: base + pat, bIz: -z, pz: ruta(t, [[0.4, 0], [0.7, 0], [1.2, 0.25], [4.3, 0.25], [4.9, 0]]), ...h };
     },
     // Saludo secreto (golpes 1.2, 2.2, 3.1, 4.0): (a) chocan los cinco arriba; (b) puño al centro;
     // (c) palmas cruzadas al pecho (los dos brazos); (d) chocan arriba otra vez y explotan con los dos brazos arriba y afuera.
@@ -88,11 +90,11 @@ export const GESTOS_AMISTAD = {
         const meta = {
             bDx: base, bDz: ruta(t, [[0.4, 0.05], [1.4, 0.8], [6.0, 0.8], [6.4, 0.05]]),
             bIx: base, bIz: -ruta(t, [[0.4, 0.05], [1.4, 0.8], [6.0, 0.8], [6.4, 0.05]]),
-            pz: ruta(t, [[0.4, 0], [1.4, 0.22], [6.0, 0.22], [6.4, 0]]),
-            rz: Math.sin(t * 1.3) * 0.04
+            pz: ruta(t, [[0.4, 0], [0.8, 0], [1.4, 0.22], [6.0, 0.22], [6.4, 0]]),
+            rz: 0
         };
         // Abrazados, cabeza al hombro; solo durante el beso (k) el amigo gira la cara hacia la mejilla del jugador
-        const h = alHombro(ruta(t, [[0.4, 0], [1.4, 1], [6.0, 1], [6.4, 0]]) * (1 - k));
+        const h = alHombro(ruta(t, [[0.4, 0], [0.9, 1], [6.0, 1], [6.4, 0]]) * (1 - k));
         Object.assign(meta, h, { rz: meta.rz + h.rz });
         if (i.j) return { ...meta, cz: h.cz + 0.15 * k, cy: h.cy - 0.2 * k };
         return { ...meta, cy: h.cy + 0.5 * k, cz: h.cz - 0.15 * k, cx: h.cx + 0.2 * k };
