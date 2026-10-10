@@ -16,6 +16,7 @@
 //   actores: { <q>: clave }, yaw: { <q>: t => radianes }, golpes, corazones, extra: { iniciar, cuadro, terminar } }
 //   (q = 'n' el amigo, 'j' el jugador o la clave de un actor extra).
 // Depuración: __venjy.amistadEscena (jugar(clave, tipo), momento(clave), pausar(v), irA(s), saltar(), escena).
+// Para revisarlas en el juego: /amistad (comandos-dev.js, con /gamemode devenjy).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { TIPO } from '../texturas.js';
@@ -430,10 +431,12 @@ export function crearEscenaAmistad(ctx) {
             return ok;
         },
         // Momento especial (6b-2): carga momentos/<clave>.js la primera vez y lo corre; devuelve una promesa con true si empezó
-        momento(clave, alTerminar) {
+        // op.base fuerza la base de la skin (el /amistad de desarrollo muestra la variante de pareja sin cambiar de skin)
+        momento(clave, alTerminar, op = {}) {
             if (e) return Promise.resolve(false);
             return import(`./momentos/${clave}.js`).then(m => {
-                const ok = iniciar(clave, { ...m.momento({ base: ctx.base ? ctx.base() : null, idioma }), tipo: 'momento' });
+                const base = op.base !== undefined ? op.base : ctx.base ? ctx.base() : null;
+                const ok = iniciar(clave, { ...m.momento({ base, idioma }), tipo: 'momento' });
                 if (ok && alTerminar) e.alTerminar = alTerminar;
                 return ok;
             }).catch(err => { console.error('No se pudo cargar el momento especial', err); return false; });

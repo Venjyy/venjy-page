@@ -52,6 +52,7 @@ import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearMinijuegos } from './minijuego.js';
 import { NIVEL_ANIMACION, momentoListo } from './amistad.js';
+import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
@@ -764,7 +765,15 @@ async function arrancar(guardado, cx = null) {
         destinos: destinosDev,
         spawn: () => ({ x: spawnMundo.x, y: spawnMundo.y, z: spawnMundo.z }),
         spawnCama: () => spawnCama,
-        irA
+        irA,
+        // /amistad (bloque 6b): recorre los saludos y momentos especiales; /amistad100 deja la amistad en 100
+        amistad: {
+            cargar: () => cargarEscenaAmistad(),
+            persona: c => (c === 'venjy' ? venjys.lista.find(n => n.lugar === 'inicio') : personasEscena().find(n => n.clave === c)) || null,
+            nombre: c => NOMBRES_AMIGO[c] || c,
+            puede: () => puedeAmistad(),
+            max: c => { for (let i = 0; i < 12 && misiones.amistad.puntos(c) < 100; i++) misiones.amistad.sumar(c, 'mision'); }
+        }
     });
     // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>, /gamemode devenjy (+ comandos de desarrollo)
     const consola = crearConsola({
