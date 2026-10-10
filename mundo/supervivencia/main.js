@@ -19,7 +19,7 @@ import { crearAmigos } from '../criaturas/amigos.js';
 import { crearVenjys } from '../criaturas/venjy.js';
 import { silenciarMundo, mundoSilenciado } from '../criaturas/cuerpo.js';
 import { destinos as destinosZonas } from '../portafolio/zonas.js';
-import { listarMundos, cargarMundo, guardarMundo, borrarMundo, exportarMundo, importarMundo, nuevoId, serializarEdiciones, cargarEdiciones, MAX_MUNDOS } from './guardado.js';
+import { listarMundos, cargarMundo, guardarMundo, borrarMundo, exportarMundo, descargarMundo, guardarCopiaConTope, importarMundo, nuevoId, serializarEdiciones, cargarEdiciones, MAX_MUNDOS } from './guardado.js';
 import { Inventario } from './inventario.js';
 import { O, nombreDe } from './objetos.js';
 import { fijarAtlasBloques } from './iconos.js';
@@ -105,6 +105,12 @@ const TXT = {
         errores: { 'sin-anfitrion': 'No hay nadie hospedando esa sala.', llena: `La sala está llena (máximo ${MAX_COOP}).`, 'llena-respaldo': `Tu red no permite conexión directa y la sala ya tiene ${MAX_RESPALDO} o más jugadores.`, foto: 'El anfitrión no mandó el mundo. Prueba de nuevo.', codigo: 'No se pudo abrir la sala. Prueba de nuevo.', 'sin-config': 'El modo online no está configurado.' },
         errorRed: 'No se pudo conectar', sala: (c, n) => `Sala ${c} · ${n}/${MAX_COOP}`, copiado: 'Código copiado',
         copiaGuardada: 'Copia guardada en este dispositivo', copiaLlena: `Ya tienes ${MAX_MUNDOS} mundos: borra uno para guardar la copia.`,
+        copiaTitulo: 'Tus mundos están llenos', copiaGuardadaTitulo: 'Copia guardada',
+        copiaNotaLlena: 'Para guardar esta copia, reemplaza uno de tus mundos o descárgala como archivo (se importa después).',
+        copiaNotaGuardada: n => `La copia «${n}» quedó en este dispositivo.`, copiaDescargada: 'Copia descargada como archivo',
+        reemplazar: 'Reemplazar', descargarAntes: 'Descargar antes', mundoAbierto: 'Es el mundo que tienes abierto: no se puede reemplazar.',
+        borrarParaSiempre: n => `Se borrará «${n}» para siempre. ¿Reemplazarlo por la copia?`,
+        errorBorrarCopia: 'La copia se guardó, pero no se pudo borrar el mundo viejo: bórralo desde el menú.',
         finAnfitrion: 'El anfitrión cerró la partida.', finConexion: 'Se cortó la conexión con la sala.', copia: n => `${n} (copia)`,
         finLocal: 'Se cortó la conexión con el anfitrión. Para volver, pídele una invitación nueva («Invitar jugador» en su pausa).',
         salaLocal: n => `Sala sin internet · ${n}/${MAX_COOP}`, invitarTitulo: 'Invitar jugador', unirseTitulo: 'Unirse con QR',
@@ -133,6 +139,12 @@ const TXT = {
         errores: { 'sin-anfitrion': 'Nobody is hosting that room.', llena: `The room is full (max ${MAX_COOP}).`, 'llena-respaldo': `Your network doesn't allow a direct connection and the room already has ${MAX_RESPALDO} or more players.`, foto: "The host didn't send the world. Try again.", codigo: "Couldn't open the room. Try again.", 'sin-config': 'Online mode is not configured.' },
         errorRed: "Couldn't connect", sala: (c, n) => `Room ${c} · ${n}/${MAX_COOP}`, copiado: 'Code copied',
         copiaGuardada: 'Copy saved on this device', copiaLlena: `You already have ${MAX_MUNDOS} worlds: delete one to save the copy.`,
+        copiaTitulo: 'Your worlds are full', copiaGuardadaTitulo: 'Copy saved',
+        copiaNotaLlena: 'To save this copy, replace one of your worlds or download it as a file (you can import it later).',
+        copiaNotaGuardada: n => `The copy "${n}" is now on this device.`, copiaDescargada: 'Copy downloaded as a file',
+        reemplazar: 'Replace', descargarAntes: 'Download first', mundoAbierto: "This is the world you have open: it can't be replaced.",
+        borrarParaSiempre: n => `"${n}" will be deleted forever. Replace it with the copy?`,
+        errorBorrarCopia: "The copy was saved, but the old world couldn't be deleted: delete it from the menu.",
         finAnfitrion: 'The host closed the game.', finConexion: 'The connection to the room was lost.', copia: n => `${n} (copy)`,
         finLocal: 'The connection to the host was lost. To come back, ask for a new invite («Invite player» in their pause menu).',
         salaLocal: n => `Offline room · ${n}/${MAX_COOP}`, invitarTitulo: 'Invite player', unirseTitulo: 'Join with QR',
@@ -188,7 +200,7 @@ const guardarAjustes = () => { try { localStorage.setItem(AJUSTES_CLAVE, JSON.st
 // Menú de mundos
 // ---------------------------------------------------------
 const $ = id => document.getElementById(id);
-const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin', 'hospedar-modo', 'panel-qr'];
+const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin', 'copia-llena', 'hospedar-modo', 'panel-qr'];
 function mostrar(id) {
     $('inicio').hidden = !id;
     for (const p of pantallas) $(p).hidden = p !== id;
@@ -423,9 +435,11 @@ async function arrancar(guardado, cx = null) {
     const mundo = new MundoVoxel(scene, terreno, materiales, ajustes.distancia);
     const jugador = new Jugador(camara, mundo, lienzo, { x: terreno.BW, z: terreno.BD });
     jugador.sinVuelo = true;
-    jugador.vCorrer = 6.1;        // un poco más rápido que el creativo (5,6)
-    jugador.impulsoSalto = 1.6;   // saltar corriendo suma impulso…
-    jugador.topeSalto = 7.6;      // …hasta este tope (correr y saltar es más rápido que solo correr)
+    jugador.vCaminar = 4.6;       // 7a: más rápido que el creativo (4,3); Minecraft camina a 4,32
+    jugador.vCorrer = 7.0;        // 7a: creativo 5,6; el mapa es grande (Inicio → Faro ≈ 3 min)
+    jugador.bonoCamino = 1.15;    // 7a: +15 % sobre B.CAMINO
+    jugador.impulsoSalto = 1.8;   // saltar corriendo suma impulso…
+    jugador.topeSalto = 8.6;      // …hasta este tope (correr y saltar es más rápido que solo correr)
     jugador.sensibilidad = ajustes.sens / 10000;
 
     const [sx, sz] = datos.P.spawn;
@@ -935,17 +949,73 @@ async function arrancar(guardado, cx = null) {
     }
     // Copia local del mundo de la sala: queda como un mundo tuyo (tus cosas y tus misiones; las de los
     // demás, en sus cofres de compañero)
-    async function guardarCopia() {
+    // Con espacio se guarda directo; con MAX_MUNDOS se abre el panel «Tus mundos están llenos» (7a · 26):
+    // reemplazar uno (con confirmación), descargarlo antes o bajar la copia como archivo sin tocar la base.
+    // `origen` es el panel al que se vuelve ('pausa' o 'coop-fin'); `alGuardar` corre cuando la copia quedó guardada.
+    const almacen = { listar: listarMundos, guardar: guardarMundo, borrar: borrarMundo };
+    async function guardarCopia(origen = 'pausa', alGuardar = null) {
         try {
-            const lista = await listarMundos();
-            if (lista.length >= MAX_MUNDOS) { alert(tx().copiaLlena); return false; }
-            const e = estadoActual();
-            await guardarMundo({ ...e, id: nuevoId(), nombre: tx().copia(guardado.nombre || tx().mundo).slice(0, 24), creado: Date.now(), idDueno: miDisp });
-            hud.mensaje(tx().copiaGuardada, 3);
-            return true;
+            const copia = { ...estadoActual(), id: nuevoId(), nombre: tx().copia(guardado.nombre || tx().mundo).slice(0, 24), creado: Date.now(), idDueno: miDisp };
+            const r = await guardarCopiaConTope(almacen, copia, { abiertoId: invitado ? null : guardado.id });
+            if (r.ok) { hud.mensaje(tx().copiaGuardada, 3); alGuardar && alGuardar(); return true; }
+            abrirPanelCopia(copia, r.lista, origen, alGuardar);
+            return false;
         } catch (err) { console.error(err); alert(tx().errorGuardar); return false; }
     }
-
+    function abrirPanelCopia(copia, lista, origen, alGuardar) {
+        const abiertoId = invitado ? null : guardado.id;
+        const fecha = ms => new Date(ms).toLocaleDateString(idioma === 'en' ? 'en-US' : 'es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
+        $('copia-titulo').textContent = tx().copiaTitulo;
+        $('copia-nota').textContent = tx().copiaNotaLlena;
+        $('copia-seguir').hidden = true;
+        $('copia-archivo').hidden = false;
+        const ul = $('copia-lista');
+        ul.hidden = false;
+        ul.textContent = '';
+        const guardada = r => {
+            alGuardar && alGuardar();
+            ul.hidden = true;
+            $('copia-archivo').hidden = true;
+            $('copia-titulo').textContent = tx().copiaGuardadaTitulo;
+            $('copia-nota').textContent = tx().copiaNotaGuardada(copia.nombre) + (r.errorBorrar ? ' ' + tx().errorBorrarCopia : '');
+            $('copia-seguir').hidden = false;
+            $('copia-seguir').onclick = async () => {
+                try { sessionStorage.setItem('venjy-seguir', copia.id); } catch (e) { /* sin almacenamiento */ }
+                if (coop) await coop.salir().catch(() => {});
+                location.reload();
+            };
+            hud.mensaje(tx().copiaGuardada, 3);
+        };
+        for (const m of lista) {
+            const li = document.createElement('li');
+            li.className = 'tarjeta-mundo';
+            const info = document.createElement('div');
+            info.className = 'info-mundo';
+            const n = document.createElement('b'); n.textContent = m.nombre;
+            const d = document.createElement('span');
+            d.textContent = [tx().dia(m.dias + 1), fecha(m.actualizado)].join(' · ');
+            info.append(n, d);
+            const botones = document.createElement('div');
+            botones.className = 'botones-mundo botones-copia';
+            const br = boton(tx().reemplazar, async () => {
+                if (!confirm(tx().borrarParaSiempre(m.nombre))) return;
+                try {
+                    const r = await guardarCopiaConTope(almacen, copia, { reemplazarId: m.id, abiertoId });
+                    if (r.ok) guardada(r);
+                } catch (err) { console.error(err); alert(tx().errorGuardar); }
+            }, 'secundario peligro');
+            if (m.id === abiertoId) { br.disabled = true; br.title = tx().mundoAbierto; }
+            const bd = boton(tx().descargarAntes, () => exportarMundo(m.id).catch(err => alert(err.message)), 'secundario');
+            botones.append(br, bd);
+            li.append(info, botones);
+            ul.appendChild(li);
+        }
+        $('copia-archivo').onclick = async () => {
+            try { await descargarMundo(copia); hud.mensaje(tx().copiaDescargada, 3); alGuardar && alGuardar(); } catch (err) { console.error(err); alert(err.message); }
+        };
+        $('copia-volver').onclick = () => mostrar(origen);
+        mostrar('copia-llena');
+    }
 
     // ---- Guardado ----
     function estadoActual() {
@@ -1056,8 +1126,8 @@ async function arrancar(guardado, cx = null) {
     $('coop-copiar').addEventListener('click', () => { try { navigator.clipboard.writeText(coop.codigo); hud.mensaje(tx().copiado, 2); } catch (e) { /* sin portapapeles */ } });
     $('coop-invitar').addEventListener('click', () => { if (coop && coop.local && coop.esAnfitrion) invitarQR(); });
     $('coop-compartir').addEventListener('change', e => { if (coop) coop.compartido = e.target.checked; });
-    $('coop-copia').addEventListener('click', () => guardarCopia());
-    $('coop-fin-copia').addEventListener('click', async () => { if (await guardarCopia()) $('coop-fin-copia').disabled = true; });
+    $('coop-copia').addEventListener('click', () => guardarCopia('pausa'));
+    $('coop-fin-copia').addEventListener('click', () => guardarCopia('coop-fin', () => { $('coop-fin-copia').disabled = true; }));
     $('coop-fin-salir').addEventListener('click', async () => { if (coop) await coop.salir().catch(() => {}); location.reload(); });
     if (coop) window.addEventListener('beforeunload', () => { coop.salir(); });
     $('reaparecer').addEventListener('click', () => {
@@ -1183,4 +1253,7 @@ async function arrancar(guardado, cx = null) {
     requestAnimationFrame(bucle);
 }
 
-pintarMenu();
+// «Seguir jugando esta copia» (7a · 26): tras salir de la sala se abre el mundo recién guardado
+let seguir = null;
+try { seguir = sessionStorage.getItem('venjy-seguir'); sessionStorage.removeItem('venjy-seguir'); } catch (e) { /* sin almacenamiento */ }
+if (seguir) jugar(seguir).catch(() => pintarMenu()); else pintarMenu();
