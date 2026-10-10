@@ -13,7 +13,7 @@ function ctxListo() {
 }
 
 // Ráfaga de ruido filtrado (pasos, romper, golpes secos)
-function ruido({ dur = 0.08, frec = 1200, q = 1, vol = 0.3, tipo = 'bandpass', retardo = 0 } = {}) {
+export function ruido({ dur = 0.08, frec = 1200, q = 1, vol = 0.3, tipo = 'bandpass', retardo = 0 } = {}) {
     const a = ctxListo();
     if (!a) return;
     const { ctx, master } = a;
@@ -31,7 +31,7 @@ function ruido({ dur = 0.08, frec = 1200, q = 1, vol = 0.3, tipo = 'bandpass', r
 }
 
 // Tono con caída de frecuencia (pop, golpe, eructo)
-function tono({ f0 = 440, f1 = 220, dur = 0.12, vol = 0.2, forma = 'square', retardo = 0 } = {}) {
+export function tono({ f0 = 440, f1 = 220, dur = 0.12, vol = 0.2, forma = 'square', retardo = 0 } = {}) {
     const a = ctxListo();
     if (!a) return;
     const { ctx, master } = a;

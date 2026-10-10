@@ -289,6 +289,124 @@ for (const clave of PERSONAJES) {
     }
 }
 
+// ---------------------------------------------------------
+// 6c-1 · Bienvenidas del Venjy del Inicio y reencuentros entre amigos (cargados con import())
+// ---------------------------------------------------------
+const { MOLDES, molde, fusion, seguidos, espejo, desplazar } = await import('../supervivencia/moldes.js');
+const { REENCUENTROS, reencuentro, claveDe } = await import('../supervivencia/reencuentros.js');
+const { pendiente6c, LUGAR } = await import('../supervivencia/escenas-skin.js');
+ok(Object.keys(MOLDES).length >= 18, 'moldes.js: los 18 moldes nuevos de 6c');
+for (const k of ['agacha', 'tirita', 'frota', 'teclea', 'maneja', 'traza', 'barre', 'selfie', 'orejitas', 'recuerda', 'mide', 'empujon', 'celular', 'brinda', 'ping', 'lanza', 'cae', 'sacude']) ok(typeof MOLDES[k] === 'function', `molde ${k}`);
+for (const k of ['puno', 'abrazo', 'secreto', 'pareja', 'habla', 'risa', 'sorpresa', 'saluda']) ok(typeof molde(k) === 'function', `molde() encuentra ${k}`);
+// Fusión: brazos de uno y cuerpo del otro
+{
+    const m = fusion('teclea', 'agacha')(0.5, 1, { j: false });
+    const a = MOLDES.teclea(0.5, 1, {}), b = MOLDES.agacha(0.5, 1, {});
+    ok(m.bDx === a.bDx && m.bIz === a.bIz && m.inc === b.inc && m.y === b.y && m.cx === b.cx, 'fusion: brazos de a y cuerpo de b');
+    const s = seguidos('risa', 'tirita', 0.5);
+    ok(s(0.2, 1, {}).bDz === molde('risa')(0.4, 1, {}).bDz && s(0.8, 1, {}).bDz === MOLDES.tirita(0.6, 1, {}).bDz, 'seguidos: a y luego b');
+    const e = espejo('selfie')(0.5, 1, {});
+    ok(e.bIx === MOLDES.selfie(0.5, 1, {}).bDx && e.cy === -MOLDES.selfie(0.5, 1, {}).cy, 'espejo: el otro brazo');
+    ok(desplazar('puno', 2)(0, 3.45, {}).bDx === GESTOS_AMISTAD.puno(0, 1.45, {}).bDx, 'desplazar: corre el reloj');
+}
+// Metas de un guion: gestos que existen y dentro de los rangos de rig.md
+function revisarPista(ruta, g, qs) {
+    for (const [q, lista] of Object.entries(g.pista || {})) {
+        ok(qs.has(q), `${ruta}: pista de un actor de la escena (${q})`);
+        let fin = 0;
+        for (const [gesto, desde, hasta] of lista) {
+            const f = (g.gestos && g.gestos[gesto]) || GESTOS_AMISTAD[gesto] || MOLDES[gesto];
+            ok(!!(f || GESTOS[gesto]), `${ruta}: el gesto ${gesto} existe`);
+            ok(desde >= 0 && hasta > desde && hasta <= g.T, `${ruta}: ${gesto} dentro de la escena`);
+            ok(desde >= fin - 0.01, `${ruta}.${q}: ${gesto} no pisa al gesto anterior`);
+            fin = hasta;
+            for (let u = 0; u <= 1.0001; u += 0.05) {
+                const meta = f ? f(u, desde + u * (hasta - desde), { s: false, otroS: false, j: q === 'j', esc: 1 }) : GESTOS[gesto](u, desde + u * (hasta - desde), false, q === 'j');
+                for (const [k, val] of Object.entries(meta)) ok(Number.isFinite(val) && (!RANGO[k] || (val >= RANGO[k][0] && val <= RANGO[k][1])), `${ruta}.${q}.${gesto}: ${k}=${val} en rango (u ${u.toFixed(2)})`);
+            }
+        }
+    }
+}
+function revisarLineas(ruta, g, qs, nMin, nMax) {
+    ok(g.lineas.length >= nMin && g.lineas.length <= nMax, `${ruta}: ${nMin} a ${nMax} frases`);
+    let fin = 0;
+    for (const l of g.lineas) {
+        ok(qs.has(l.q), `${ruta}: habla un actor de la escena (${l.q})`);
+        ok(l.a >= 0.3 && l.d >= 1.8 && l.a + l.d <= g.T, `${ruta}: «${l.texto.es}» cabe en la escena y se alcanza a leer`);
+        ok(l.a >= fin - 0.01, `${ruta}: las frases no se pisan («${l.texto.es}»)`);
+        fin = l.a + l.d;
+    }
+    for (const s of [...(g.golpes || []), ...(g.corazones || [])]) ok(s > 0 && s < g.T, `${ruta}: efecto en ${s} s dentro de la escena`);
+    for (const [q, f] of Object.entries(g.yaw || {})) for (let x = 0; x <= g.T; x += 0.5) ok(qs.has(q) && Number.isFinite(f(x)) && Math.abs(f(x)) <= Math.PI + 0.01, `${ruta}: giro de ${q} en ${x} s`);
+}
+// Bienvenidas: una por skin de amigo (todas menos Venjy); duración y frases según la relación con Venjy
+const BIEN = { 1: [6, 6, 12, 22], 2: [6, 6, 12, 22], 3: [7, 7, 16, 28], 4: [7, 7, 15, 26] };
+const amigos6c = PERSONAJES.filter(c => c !== 'venjy');
+for (const clave of amigos6c) {
+    const m = await import(`../supervivencia/bienvenidas/${clave}.js`);
+    const ruta = `bienvenida ${clave}`;
+    ok(typeof m.bienvenida === 'function' && Array.isArray(m.LINEAS), `${ruta}: módulo con bienvenida() y LINEAS`);
+    const g = m.bienvenida({ idioma: 'es' });
+    const rel = relacion('venjy', clave), [nMin, nMax, tMin, tMax] = BIEN[rel];
+    ok(rel >= 1, `${ruta}: Venjy conoce a ${clave}`);
+    ok(g.T >= tMin && g.T <= tMax, `${ruta}: dura ${g.T} s (relación ${rel}: ${tMin}-${tMax})`);
+    ok(g.r >= 0.6 && g.r <= 2.2, `${ruta}: distancia razonable`);
+    ok(g.lineas === m.LINEAS, `${ruta}: las frases son LINEAS`);
+    const qs = new Set(['n', 'j', ...Object.keys(g.actores || {})]);
+    revisarLineas(ruta, g, qs, nMin, nMax);
+    revisarPista(ruta, g, qs);
+    ok(g.lineas.filter(l => l.q === 'j').length >= 3, `${ruta}: tú hablas al menos 3 veces`);
+    if (rel === 3) ok((g.golpes || []).length >= 4 && Object.values(g.pista).flat().some(([x]) => /secreto/.test(x)) && Object.values(g.pista).flat().some(([x]) => /abrazo/.test(x)) && Object.values(g.pista).flat().some(([x]) => x === 'recuerda'), `${ruta}: relación 3 con saludo secreto, abrazo y recuerdo`);
+    if (rel === 4) ok((g.corazones || []).length >= 3 && Object.values(g.pista).flat().some(([x]) => /pareja/.test(x)), `${ruta}: pareja con abrazo, beso y corazones`);
+    for (const [i, l] of m.LINEAS.entries()) {
+        ok(l.texto.es && l.texto.en && l.texto.es !== l.texto.en, `${ruta}.${i}: frase ES/EN`);
+        textos.push([`BIENVENIDA.${clave}.${i}`, l.texto]);
+    }
+}
+// Reencuentros: exactamente uno por pareja con relación 2 o 3 (corto en 2, largo en 3), ninguno con Venjy
+const parejas = [];
+for (let i = 0; i < PERSONAJES.length; i++) for (let k = i + 1; k < PERSONAJES.length; k++) {
+    const a = PERSONAJES[i], b = PERSONAJES[k], r = relacion(a, b);
+    if (a !== 'venjy' && b !== 'venjy' && (r === 2 || r === 3)) parejas.push([a, b, r]);
+}
+ok(parejas.length === 16 && Object.keys(REENCUENTROS).length === 16, `16 reencuentros (pares con relación 2-3: ${parejas.length})`);
+for (const [a, b, r] of parejas) {
+    const k = claveDe(a, b);
+    ok(!!k && REENCUENTROS[k].rel === r, `reencuentro ${a}-${b} (relación ${r})`);
+    for (const [base, otro] of [[a, b], [b, a]]) {
+        const g = reencuentro(base, otro), ruta = `reencuentro ${base}->${otro}`;
+        if (!g) { ok(false, `${ruta}: sin guion`); continue; }
+        ok(r === 3 ? g.T >= 16 && g.T <= 25 : g.T >= 9 && g.T <= 16, `${ruta}: dura ${g.T} s (${r === 3 ? 'largo' : 'corto'})`);
+        ok(g.reparto[base] === 'j' && g.reparto[otro] === 'n', `${ruta}: tu skin habla como tú y el amigo como el NPC`);
+        // Frases por personaje: el guion habla con las claves de los dos; el motor las pasa a j / n
+        const qs = new Set([a, b, 'c']);
+        revisarLineas(ruta, g, qs, r === 3 ? 6 : 4, r === 3 ? 6 : 4);
+        revisarPista(ruta, g, qs);
+        ok(g.actores.c.clave === base && g.actores.c.radio > 0, `${ruta}: tu clon reacciona si está cerca`);
+        if (r === 3) ok(g.golpes.length === 4 && g.pista[a].some(([x]) => x === 'secretoR') && g.pista[a].some(([x]) => x === 'abrazoR') && Object.values(g.pista).flat().some(([x]) => x === 'recuerda'), `${ruta}: largo con secreto, abrazo y recuerdo`);
+        else ok(g.golpes.length === 1 && Object.values(g.pista).flat().some(([x]) => x === REENCUENTROS[k].broma.gesto), `${ruta}: corto con puños y la broma (${REENCUENTROS[k].broma.gesto})`);
+    }
+}
+for (const a of PERSONAJES) for (const b of PERSONAJES) if (a !== b && !parejas.some(([x, y]) => (x === a && y === b) || (x === b && y === a))) ok(!reencuentro(a, b), `sin reencuentro ${a}-${b}`);
+for (const [k, d] of Object.entries(REENCUENTROS)) for (const [i, [q, txt]] of d.lineas.entries()) {
+    ok(k.split('-').includes(q), `reencuentro ${k}.${i}: habla uno de los dos`);
+    ok(txt.es && txt.en && txt.es !== txt.en, `reencuentro ${k}.${i}: frase ES/EN`);
+    textos.push([`REENCUENTRO.${k}.${i}`, txt]);
+}
+// Disparo: bienvenida con toda skin de amigo (no con Venjy), reencuentros solo con relación 2-3, una vez cada uno
+{
+    const vistas = new Set();
+    for (const base of amigos6c) ok(pendiente6c(base, 'venjy', vistas)?.tipo === 'bienvenida', `${base}: le toca la bienvenida`);
+    ok(pendiente6c('venjy', 'pony', vistas) === null && pendiente6c('venjy', 'lona', vistas) === null && pendiente6c(null, 'venjy', vistas) === null, 'con skin de Venjy (o sin base) no hay escenas 6c');
+    ok(pendiente6c('pony', 'pony', vistas) === null, 'tu clon no tiene reencuentro (tiene su escena de skin)');
+    ok(pendiente6c('pony', 'andy', vistas)?.tipo === 'reencuentro' && pendiente6c('pony', 'boris', vistas) === null && pendiente6c('salonas', 'hadad', vistas) === null, 'reencuentro solo con relación 2-3');
+    ok(pendiente6c('pony', 'conejeros', vistas)?.tipo === 'reencuentro', 'Pony-Conejeros (2) tiene reencuentro aunque se digan enemigos');
+    vistas.add('bv:pony'); vistas.add('rc:pony:andy');
+    ok(pendiente6c('pony', 'venjy', vistas) === null && pendiente6c('pony', 'andy', vistas) === null && pendiente6c('andy', 'pony', vistas)?.tipo === 'reencuentro', 'una vez por partida y por skin');
+    for (const c of PERSONAJES) ok(!!LUGAR[c], `${c}: tiene lugar para «uno por lugar»`);
+    ok(LUGAR.hadad === LUGAR.andy && LUGAR.andy === LUGAR.nacho && LUGAR.lalo === LUGAR.moises && LUGAR.boris === LUGAR.lucho && LUGAR.salonas === LUGAR.conejeros, 'los que están juntos comparten lugar');
+}
+
 // Frases únicas (las preguntas de los botones se repiten a propósito) y sin emojis
 const respuestas = textos.filter(([r]) => !/\.p$/.test(r));
 const otros = [];

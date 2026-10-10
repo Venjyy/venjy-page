@@ -36,7 +36,7 @@ const AYUDAS = `
         v.jugador.yaw = Math.atan2(x - v.jugador.pos.x, z - v.jugador.pos.z) - Math.PI;
         await esperar(1500);
     };
-    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); };`;
+    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); if (v.escenas.callar) v.escenas.callar(); v.escenas.saltar(); if (v.amistadEscena) v.amistadEscena.saltar(); };`;
 if (preparar) await p.evaluate(`(async () => { const v = window.__venjy; ${AYUDAS} ${preparar} })()`);
 for (let k = 0; k < n; k++) {
     await p.evaluate(k => window.__venjy.camaras.fijarPlano(k), k);

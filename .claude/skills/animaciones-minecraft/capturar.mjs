@@ -62,7 +62,7 @@ const AYUDAS = `
         await esperar(1500);
     };
     // Marca como vistas todas las escenas de skin: así no se disparan solas durante las capturas
-    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); };
+    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); if (v.escenas.callar) v.escenas.callar(); v.escenas.saltar(); if (v.amistadEscena) v.amistadEscena.saltar(); };
     const mundoDe = (o, x = 0, y = 0, z = 0) => { o.updateMatrixWorld(true); const p = o.localToWorld(new v.camara.position.constructor(x, y, z)); return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2) }; };
     const manoD = () => mundoDe(v.camaras.cuerpo.brazoD, 0, -0.75, 0);
     const manoI = () => mundoDe(v.camaras.cuerpo.brazoI, 0, -0.75, 0);`;
@@ -72,7 +72,7 @@ if (plano !== null) await pagina.evaluate(k => window.__venjy.camaras.fijarPlano
 const inicio = Date.now();
 for (const t of tiempos) {
     if (paso) {
-        await pagina.evaluate(`(() => { const v = window.__venjy; const t = ${t}; ${paso} })()`);
+        await pagina.evaluate(`(async () => { const v = window.__venjy; const t = ${t}; ${AYUDAS} ${paso} })()`);
         await pagina.waitForTimeout(700); // deja que el suavizado llegue a la pose
     } else {
         const falta = t * 1000 - (Date.now() - inicio);

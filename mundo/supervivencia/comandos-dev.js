@@ -7,8 +7,13 @@
 //   /amistad <todo|saludos|momentos|persona|persona-escena> (bloque 6b: recorre los saludos y los momentos
 //   especiales; te lleva junto a cada persona y pasa a la siguiente al terminar o con Saltar; Esc entre dos escenas
 //   termina el recorrido) · /amistad100 <persona|todos> (amistad en 100 para probar el botón real)
+//   Bloque 6c-1: /amistad bienvenidas (las 12 del Venjy del Inicio), /amistad reencuentros (los 16 entre amigos),
+//   /amistad <persona>-bienvenida y /amistad <skin>-<amigo> (un reencuentro, p. ej. pony-andy). Para cada una te pone
+//   la skin del amigo y al terminar el recorrido te devuelve la tuya; mientras dura, no salen escenas automáticas.
 // Sin argumentos, /tp, /dar, /mob, /jefe y /amistad listan lo que aceptan.
 // =========================================================
+import { relacion } from './amistad.js';
+
 const sinTildes = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 const TXT = {
@@ -32,7 +37,7 @@ const TXT = {
         jefeNo: n => `No existe el jefe «${n}»`,
         jefeOcupado: 'Ya hay un jefe en curso o no se pudo invocar',
         limpiar: n => `${n} monstruos eliminados`,
-        amLista: l => `Escenas de amistad (/amistad <...>): todo, saludos, momentos, una persona o persona-escena (${l})`,
+        amLista: l => `Escenas de amistad (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, una persona, persona-escena o skin-amigo (${l})`,
         amNo: n => `No conozco «${n}». Escribe /amistad`,
         amSig: (q, i, n) => `Escena ${i}/${n}: ${q}. Saltar pasa a la siguiente; Esc ahora termina el recorrido`,
         amFin: 'Recorrido de escenas de amistad terminado',
@@ -60,7 +65,7 @@ const TXT = {
         jefeNo: n => `No boss called "${n}"`,
         jefeOcupado: 'A boss is already running or could not be summoned',
         limpiar: n => `${n} monsters removed`,
-        amLista: l => `Friendship scenes (/amistad <...>): todo, saludos, momentos, a person or person-scene (${l})`,
+        amLista: l => `Friendship scenes (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, a person, person-scene or skin-friend (${l})`,
         amNo: n => `I don't know "${n}". Type /amistad`,
         amSig: (q, i, n) => `Scene ${i}/${n}: ${q}. Skip moves to the next one; Esc now ends the tour`,
         amFin: 'Friendship scene tour finished',
@@ -76,9 +81,16 @@ const JEFES = ['imbunche', 'chonchon', 'caleuche'];
 const AMIGOS = ['venjy', 'pony', 'boris', 'moises', 'lalo', 'salonas', 'lona', 'hadad', 'andy', 'nacho', 'braulio', 'lucho', 'conejeros'];
 const PAREJA = { venjy: 'lona', lona: 'venjy' };
 const NOMBRE_ESC = { punos: { es: 'chocar puños', en: 'fist bump' }, abrazo: { es: 'abrazo', en: 'hug' }, secreto: { es: 'saludo secreto', en: 'secret handshake' },
-    pareja: { es: 'abrazo y beso', en: 'hug and kiss' }, momento: { es: 'momento especial', en: 'special moment' }, 'momento-pareja': { es: 'momento especial de pareja', en: 'couple special moment' } };
+    pareja: { es: 'abrazo y beso', en: 'hug and kiss' }, bienvenida: { es: 'bienvenida del Venjy del Inicio', en: 'welcome from the Start Venjy' }, re: { es: 'reencuentro', en: 'reunion' }, momento: { es: 'momento especial', en: 'special moment' }, 'momento-pareja': { es: 'momento especial de pareja', en: 'couple special moment' } };
 const saludosDe = c => ['punos', 'abrazo', 'secreto', ...(PAREJA[c] ? ['pareja'] : [])];
 const momentosDe = c => ['momento', ...(PAREJA[c] ? ['momento-pareja'] : [])];
+// 6c-1: bienvenidas (toda skin de amigo) y reencuentros (pares de amigos con relación 2 o 3, sin Venjy)
+const BIENVENIDAS = AMIGOS.filter(c => c !== 'venjy');
+const REENCUENTROS = [];
+for (let i = 0; i < AMIGOS.length; i++) for (let k = i + 1; k < AMIGOS.length; k++) {
+    const a = AMIGOS[i], b = AMIGOS[k];
+    if (a !== 'venjy' && relacion(a, b) >= 2 && relacion(a, b) <= 3) REENCUENTROS.push([a, 're', b]);
+}
 
 export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, gatas, escenas, destinos, spawn, spawnCama, irA, hud, O, B, nombreDe, amistad, idioma = 'es' }) {
     const t = TXT[idioma] || TXT.es;
@@ -86,8 +98,16 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
 
     // ---- /amistad: recorrido por las escenas de amistad (amistad: { cargar() -> motor, persona(clave), nombre(clave), puede(), max(clave) }) ----
     let cola = null, espera = null;
-    const opcionesAmistad = () => ['todo', 'saludos', 'momentos', ...AMIGOS, ...AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => `${c}-${k}`))];
+    const opcionesAmistad = () => ['todo', 'saludos', 'momentos', 'bienvenidas', 'reencuentros', ...AMIGOS, ...AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => `${c}-${k}`)),
+        ...BIENVENIDAS.map(c => `${c}-bienvenida`), ...REENCUENTROS.map(([a, , b]) => `${a}-${b}`)];
     function colaDe(q) {
+        if (q === 'bienvenidas') return BIENVENIDAS.map(c => [c, 'bienvenida']);
+        if (q === 'reencuentros') return REENCUENTROS.map(x => [...x]);
+        {
+            const i = q.indexOf('-'), a = q.slice(0, i), b = q.slice(i + 1);
+            if (b === 'bienvenida' && BIENVENIDAS.includes(a)) return [[a, 'bienvenida']];
+            if (REENCUENTROS.some(([x, , y]) => (x === a && y === b) || (x === b && y === a))) return [[a, 're', b]];
+        }
         if (q === 'todo') return AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => [c, k]));
         if (q === 'saludos') return AMIGOS.flatMap(c => saludosDe(c).map(k => [c, k]));
         if (q === 'momentos') return AMIGOS.flatMap(c => momentosDe(c).map(k => [c, k]));
@@ -99,18 +119,30 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
         if (espera) clearTimeout(espera);
         espera = null;
         if (cola && aviso) hud.mensaje(t.amCorte, 3);
+        terminarCola();
+    }
+    // Al terminar (o cortar) el recorrido: tu skin de antes y las escenas automáticas de vuelta
+    function terminarCola() {
+        if (cola && cola.skin !== undefined && amistad.ponerSkin) { amistad.ponerSkin(cola.skin); amistad.callar(false); }
         cola = null;
     }
     // Esc en la pausa entre dos escenas termina el recorrido (durante una escena, Esc es «Saltar»)
     document.addEventListener('keydown', e => { if (cola && cola.pausa && e.code === 'Escape') cortar(); });
     function siguiente() {
         if (!cola) return;
-        if (cola.i >= cola.lista.length) { cola = null; hud.mensaje(t.amFin, 4); return; }
-        const [c, k] = cola.lista[cola.i++];
-        const n = amistad.persona(c);
+        if (cola.i >= cola.lista.length) { terminarCola(); hud.mensaje(t.amFin, 4); return; }
+        const [c, k, otro] = cola.lista[cola.i++];
+        // 6c-1: la bienvenida es con el Venjy del Inicio y el reencuentro con el amigo; tú llevas la skin de c
+        const seis = k === 'bienvenida' || k === 're';
+        const n = amistad.persona(k === 'bienvenida' ? 'venjy' : k === 're' ? otro : c);
         if (!n) { siguiente(); return; }
+        if (seis && amistad.ponerSkin) {
+            if (cola.skin === undefined) { cola.skin = amistad.skin(); amistad.callar(true); }
+            amistad.ponerSkin(c);
+        }
         cola.pausa = true;
-        hud.mensaje(t.amSig(`${amistad.nombre(c)} · ${NOMBRE_ESC[k][idioma] || NOMBRE_ESC[k].es}`, cola.i, cola.lista.length), 3);
+        const titulo = k === 're' ? `${amistad.nombre(c)} - ${amistad.nombre(otro)}` : amistad.nombre(c);
+        hud.mensaje(t.amSig(`${titulo} · ${NOMBRE_ESC[k][idioma] || NOMBRE_ESC[k].es}`, cola.i, cola.lista.length), 3);
         irA(n.x + 2.5, undefined, n.z, n.y > 0 ? n.y : undefined); // junto a la persona (y espera a que cargue el terreno)
         let intentos = 0;
         const empezar = async () => {
@@ -122,7 +154,10 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
             if (!ea || !cola) return;
             cola.pausa = false;
             const despues = () => { if (cola) { cola.pausa = true; espera = setTimeout(siguiente, 1200); } };
-            const ok = k === 'momento' || k === 'momento-pareja'
+            ea.saltar(); // una bienvenida o un reencuentro que salió solo al llegar
+            const ok = k === 'bienvenida' ? await ea.bienvenida(c, despues)
+                : k === 're' ? await ea.reencuentro(c, otro, despues)
+                : k === 'momento' || k === 'momento-pareja'
                 ? await ea.momento(c, despues, k === 'momento-pareja' ? { base: PAREJA[c] } : {})
                 : ea.jugar(c, k, despues);
             if (!ok && cola) { cola.pausa = true; if (++intentos < 3) espera = setTimeout(empezar, 1500); else espera = setTimeout(siguiente, 300); }
@@ -253,7 +288,7 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
     cmds['/donde'] = { ...cmds['/pos'], ayuda: { es: '/donde (igual que /pos)', en: '/donde (same as /pos)' } };
     if (amistad) {
         cmds['/amistad'] = {
-            ayuda: { es: '/amistad <todo|saludos|momentos|persona|persona-escena>', en: '/amistad <todo|saludos|momentos|person|person-scene>' },
+            ayuda: { es: '/amistad <todo|saludos|momentos|bienvenidas|reencuentros|persona|persona-escena|skin-amigo>', en: '/amistad <todo|saludos|momentos|bienvenidas|reencuentros|person|person-scene|skin-friend>' },
             sugerir: opcionesAmistad,
             fn(arg) {
                 const q = sinTildes(arg).replace(/\s+/g, '-');

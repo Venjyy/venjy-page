@@ -55,7 +55,7 @@ const AYUDAS = `
         await esperar(1500);
     };
     // Marca como vistas todas las escenas de skin: así no se disparan solas durante las capturas
-    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); };`;
+    const callarEscenas = () => { for (const l of [v.npcs.lista, v.amigos.lista]) for (const n of l) v.misiones.estado.escenasSkin.add(n.clave); v.misiones.estado.escenasSkin.add('venjy'); if (v.escenas.callar) v.escenas.callar(); v.escenas.saltar(); if (v.amistadEscena) v.amistadEscena.saltar(); };`;
 if (preparar) await pagina.evaluate(`(async () => { const v = window.__venjy; ${AYUDAS} ${preparar} })()`);
 // Pasa a reloj manual (desde el tiempo real actual, para que el primer dt sea normal)
 await pagina.evaluate(() => { window.__reloj = performance.now(); window.__manual = true; });
