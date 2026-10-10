@@ -466,6 +466,330 @@ Orden: 6a → 6b → 6c → 6d (primero la etapa sin visitas). Cada parte en su 
 | 6d · Vida entre amigos, etapa 1 (fogata e iglú) | Opus + subagente Haiku | Las animaciones van a Haiku. Opus diseña la lógica de cercanía, los temporizadores y los turnos. |
 | 6d · Etapa 2 (visitas) | Opus solo | Es arquitectura: rutas, estados, rendimiento y choques con misiones, tienda y escenas. Es el bug difícil que toca varios archivos. |
 
+### Bloque 7 · Pulido, juego en grupo y mundo vivo (solo planificación, no implementado)
+
+Plan del 2026-10-09 con la lista de 26 pedidos del dueño tras jugar con amigos: bugs (agua, X de cerrar, guardar con 5 mundos, lag al romper), sensación de juego (golpe, correr, knockback, velocidad), misiones más fáciles, contenido (ítems, Venjys, caminos) y actividades nuevas o compartidas en el cooperativo. **No cambia el bloque 6**: lo que pertenece a 6d está anotado aquí como 7j y lo toma el chat de 6d. Cada parte en su propio chat y PR.
+
+Reglas que valen para todo el bloque: estética Minecraft, solo PixelCraft y sin emojis, todo texto visible con par ES/EN y en contexto chileno, son personas reales (buena onda; el dueño revisa los textos), lo nuevo y pesado se carga con `import()` solo al usarse, medir antes y después (carga y cuadro mediano; referencia 6b-2: 88 archivos / 2184 KB al abrir, entrar ~514 ms, cuadro mediano 1,8 ms con p90 2,1), pruebas en `mundo/tests/`, este archivo se actualiza en cada cambio, commits y PR sin «Generated with Claude Code», sin enlaces de sesión y sin la línea Claude-Session.
+
+**Subbloques**
+
+| Sub | Nombre | Puntos | Depende de |
+|---|---|---|---|
+| 7a | Arreglos rápidos | 9, 10, 11, 14, 26 | nada |
+| 7b | Rendimiento | 8 (+ menú de opciones) | nada (va antes de sumar contenido) |
+| 7c | Cuerpo y mano del jugador | 3, 4, 5, 6, 18 | 7b-1 deseable (medir) |
+| 7d | Misiones más fáciles | 1, 12 | nada |
+| 7e | Red: indicador de ms | 24 | nada; da el reloj compartido a 7g y 7h-3 |
+| 7f | Contenido y mundo | 2, 7, 13 | 7b-1 para 7f-3 |
+| 7g | Actividades compartidas | 15, 16, 17 | 7c-1, 7e |
+| 7h | Actividades nuevas | 19, 20, 21, 22 | 7g-1 (las partes en grupo) |
+| 7i | Amigos acompañantes | 23 | 6d etapa 2 |
+| 7j | Lo que pertenece a 6d (anotado en el bloque 7; el bloque 6 no se toca) | 25 y el corte de rutina de 23 | se hace dentro de 6d |
+
+Cambio respecto de la agrupación sugerida: 22 va con 21 en 7h-3 (el concierto es una sola actividad: unos tocan, otros alientan) y 7g se queda con la infraestructura común de «actividad compartida» (asientos, reservas, reloj, desconexiones), que usan después 7h.
+
+**7a · Arreglos rápidos (1 PR, Sonnet)**
+
+**9 · No se puede salir del agua**
+- Estado: `mundo/jugador.js`, `actualizar()`, rama `else if (agua)`: con Espacio fija `vel.y = 4`; `enAgua()` mira `pos.y + 0.5`. No hay salto ni ayuda contra la pared.
+- Causa: al sacar medio cuerpo, `agua` pasa a falso y entra la gravedad (32) con `vel.y = 4` → sube solo 4²/64 = 0,25 más. Los pies llegan a ~0,25 bajo la superficie y la orilla está a ras de ella: te quedas corto siempre.
+- Propuesta (como Minecraft, que da 0,3 bloques/tick ≈ 6 m/s al chocar con un borde nadando): `mover()` deja `this.chocoLado`; si `agua && chocoLado && Espacio` → `vel.y = 7` (sube ~0,77: los pies quedan +0,27 sobre la orilla). Sin cambio en aguas abiertas. Lava igual pero con 5.
+- Riesgo: subir paredes de 2 bloques nadando (no debe: con 7 no alcanza 2). Escaleras y vuelo no cambian.
+- Prueba: `mundo/tests/movimiento.mjs` (nuevo, `Jugador` con mundo falso y cámara mínima): piscina con orilla a ras, W+Espacio 3 s → sale; pared de 2 → no sale.
+
+**10 · Más knockback a los enemigos**
+- Estado: `enemigos.js`, `golpear()` suma `fuerza × 12` (0,45 → 5,4 m/s; corriendo 0,85 → 10,2) y `vel.y = 5,5`; `combate.js` `atacar()` calcula la fuerza.
+- Causa: el cuadro siguiente la persecución (`e.vel += (ix·v − e.vel)·a`, k = 10 en el suelo) borra el empuje en ~0,1 s y el monstruo vuelve hacia ti. Retroceso real ≈ 0,5-1,4 bloques; en Minecraft ≈ 2,5 normal y ≈ 4 corriendo.
+- Propuesta: `e.retroceso = 0,4 s` al golpear; mientras dura no persigue (sin `ix/iz`) y el roce baja a k = 3. Factor 12 → 14, `vel.y` 5,5 → 6. Meta: 2,5 ± 0,5 bloques normal, 4 ± 0,5 corriendo; jefes ×0,3 (no se sacan del altar).
+- Riesgo: cooperativo: el empuje lo aplica el dueño del monstruo al validar el golpe (ya pasa por `golpear`), los fantasmas lo ven por la posición; sin mensajes nuevos. Creeper empujado no debe explotar fuera de alcance (la mecha ya se apaga a > 7).
+- Prueba: `mundo/tests/retroceso.mjs` (mundo plano falso + `moverCuerpo` de `mundo/fisica.js`): distancia recorrida en ambos casos y jefe.
+
+**11 · X de cerrar mal alineada**
+- Estado: `ui-inventario.js:353-357` (`cerrar-ventana`, texto «X») y `supervivencia.css:209` (sin `padding`, `line-height` ni centrado; el glifo de PixelCraft queda corrido).
+- Propuesta: dibujar la X como píxeles (7×7, `ICONOS`/`iconos.js` o un `background` SVG `crispEdges` en CSS), botón `display: grid; place-items: center; padding: 0`, y revisar todos los «cerrar» de paneles (misión, hablar, QR) para que usen la misma clase.
+- Prueba: capturas a 1280×720, 760×560 y 390×760 en inventario, mesa, horno, cofre y libro.
+
+**14 · Más velocidad** (decidido: la propuesta)
+
+| | Minecraft | Hoy (survival) | Propuesta |
+|---|---|---|---|
+| Caminar | 4,32 | 4,3 (`V_CAMINAR`) | **4,6** |
+| Correr | 5,61 | 6,1 (`vCorrer`, `main.js:425`) | **7,0** |
+| Salto corriendo (tope) | ≈ 7,1 promedio | 7,6 (`topeSalto`) | **8,6**, impulso 1,6 → 1,8 |
+| Bonus en camino de tierra | — | — | **×1,15** sobre `B.CAMINO` (premia usar los caminos de 7f-3) |
+- Motivo: el mapa mide 1536×1024; de Inicio al Faro son ~1450 bloques ≈ 3,9 min corriendo hoy, ≈ 3 min con la propuesta (≈ 2,6 por camino). Monstruos no cambian (corres más que un zombi, como en Minecraft).
+- Riesgo: cooperativo (la interpolación a 5 Hz aguanta: 7 m/s = 1,4 bloques por tick); daño por caída no cambia; el creativo no se toca (`vCorrer` es por instancia).
+- Prueba: en `movimiento.mjs`, velocidad media en 5 s caminando, corriendo y saltando corriendo.
+
+**26 · Guardar con 5 mundos en el cooperativo**
+- Estado: `main.js` `guardarCopia()` (~línea 903): si hay `MAX_MUNDOS` hace `alert(copiaLlena)` y devuelve false. No hay forma de borrar en ese momento; el invitado que perdió al anfitrión no puede seguir.
+- Flujo nuevo («Guardar copia» en la pausa o en «Fin de la partida»):
+  1. Con espacio: igual que hoy.
+  2. Lleno: panel «Tus mundos están llenos» con los 5 (nombre, día, fecha) y tres salidas: **Reemplazar** uno (confirmación con el nombre: «Se borrará “X” para siempre»), **Descargar ese mundo antes** (`exportarMundo`, sigue el flujo) y **Descargar esta copia como archivo** (`.venjy` del estado actual sin tocar la base; se importa después).
+  3. Tras guardar: botón «Seguir jugando esta copia» (carga el mundo nuevo como principal).
+- Nunca se ofrece borrar el mundo que está abierto (el del anfitrión no está en el equipo del invitado; si el anfitrión guarda copia, su mundo actual sale deshabilitado). El borrado se hace solo después de escribir la copia en memoria (si falla la escritura, no se borra nada).
+- Prueba: `mundo/tests/guardado-copia.mjs`: la lógica de elección sale a una función pura con el almacén inyectado (lista llena, reemplazo, fallo al escribir = nada borrado, el abierto no se puede elegir). En el navegador: dos pestañas `?disp=2`, invitado con 5 mundos, cortar al anfitrión.
+
+**7b · Rendimiento (2 PR)**
+
+**8 · Lag al romper rápido** — dónde se va el tiempo (hipótesis del código; el PR empieza midiendo)
+- `voxeles.js` `editarLote()` con `inmediato` (default de `editar`) llama `remallarYa()` en el hilo principal: **`llenarChunk` completo** (terreno, árboles, subsuelo con ruido 3D de cuevas, luz) + `mallarChunkCrudo`. La bitácora lo mide en ~8 ms por chunk; en un borde se rehacen 2-3 chunks (16-24 ms).
+- Cerca de antorchas, estructuras o emisores del jugador (`zonaAmpliada` o luz) `R = RADIO_LUZ + 1` marca hasta 3×3 chunks; `procesarRemallado(1)` rehace uno por cuadro: rompiendo 4 bloques/s en tu base iluminada son ~36 chunks/s × 8 ms ≈ 30 % del hilo principal → tirones constantes.
+- Menores: `entidades.soltar` (una malla por objeto tirado, sin juntar), partículas (tope 600, instanciadas: barato), sonidos, `postMessage` de cada edición a todos los workers, mensaje `b` del cooperativo.
+- Cómo medir: comando dev `/medir romper` (modo devenjy) que rompe un volumen 6×6×3 a 4 bloques/s en tres sitios (campo abierto, junto al campamento, base con antorchas puestas) y marca con `performance.mark` cada fase (`llenar`, `luz`, `mallar`, `instalar`, `soltar`, `particulas`, `red`). Reporta p50/p95/p99 del cuadro y ms por fase.
+- **7b-1 · Arreglo (Opus)**:
+  1. Camino rápido para el chunk editado: reutilizar `vox`/`luz` que ya guarda `instalar()`, parchar el bloque y **actualizar la luz por inundación incremental** (quitar y volver a propagar, como Minecraft) en vez de `llenarChunk`. Solo se malla.
+  2. Los chunks vecinos que no son de borde inmediato van a los **workers** (ya reciben las ediciones) con prioridad, en vez de `procesarRemallado` en el hilo principal.
+  3. Juntar: un remallado por chunk por cuadro aunque lleguen varias ediciones.
+  4. Objetos tirados: juntar los del mismo id a < 1 bloque (como Minecraft) y compartir geometría.
+  - Metas: remallado por edición en el hilo principal ≤ 3 ms (hoy ~8-24); p99 del cuadro rompiendo en la base ≤ 12 ms (estimado hoy 25-40); cuadro mediano sin cambios (~1,8 ms); misma imagen (capturas antes/después, sin costuras de luz nuevas).
+  - Riesgo: es el corazón del motor. Luz distinta entre el camino rápido y el worker = costuras; ediciones del cooperativo que llegan en lote; explosiones (`editarLote` grande). Pruebas: `mundo/tests/luz-incremental.mjs` (nuevo: para ediciones al azar, la luz incremental = la de `llenarChunk` desde cero, bloque a bloque) y `paridad.mjs`.
+- **7b-2 · Menú «Rendimiento» en la pausa (Sonnet)**: preajuste Rápido / Equilibrado / Bonito; distancia (ya existe); **escala de render** (`setPixelRatio` 0,5-1,5, hoy fijo `min(dpr, 1,5)`); partículas (todas / pocas / mínimas); nubes; animación de personajes lejanos (cada 1/2/4 cuadros); límite de FPS (30 / 60 / libre, ahorra batería); mostrar FPS y ms (con 7e); **distancia automática** (portar `aplicarDistanciaAuto` del creativo). No hay sombras reales (la oclusión ambiental va en el mallado), así que no se ofrece «sombras». Se guarda en `localStorage`, todo con par ES/EN.
+
+**7c · Cuerpo y mano del jugador (2 PR, Opus + Haiku)**
+
+Estado: primera persona = `mano.js` (brazo vacío o el objeto **flotando solo**, golpe y balanceo); tercera persona = `camaras.js` `actualizarCuerpo()` (solo `caminar()`); otros jugadores = `coop.js` `dibujarRemotos()` (solo `caminar()`; el mensaje `p` lleva `f` con agachado y muerto). Por eso el golpe no se ve en F5 ni en los demás.
+
+- **3 · Golpe visible**: brazo derecho en arco (Minecraft: ~0,3 s) al romper, atacar y usar.
+- **4 · Mano que agarra**: en primera persona el objeto va en la mano (brazo con la skin, el objeto hijo de la mano y girado como en Bedrock). Decidido: se muestra el brazo con la skin (Minecraft Java no lo hace).
+- **5 · Correr rápido**: cuerpo inclinado ~0,2 rad, brazos y piernas con más amplitud y frecuencia; en primera persona, el campo de visión sube 10 % suave (como Minecraft) y la mano se mece más.
+- **6 · Objeto en la mano del cuerpo (evaluación)**: sí se puede, en los tres casos:
+  - Primera persona: ya está (`mano.js`); se suma la mano (4).
+  - Tercera persona y otros jugadores: un módulo nuevo `supervivencia/pose-jugador.js` con `posar(modelo, estado, dt)` que usan `camaras.js` y `coop.js` (una sola fuente): caminar/correr, golpe, objeto en la mano, comer, arco tensado, escudo, sentado (para 7g). La malla del objeto se saca de `mano.js` (`crearMalla`/`extruir` exportados con caché por id).
+  - Costo: una malla y una llamada de dibujo por jugador con algo en la mano (el objeto extruido tiene ~200-800 triángulos); medido como ≤ 0,1 ms con 8 jugadores. Red: en el mismo mensaje `p` (5 Hz, sin mensajes nuevos): bits nuevos en `f` (4 = corre, 8 = golpeó desde el último tick, 16 = come, 32 = tensa, 64 = bloquea) y `i` = id en la mano **solo cuando cambia** y cada 5 s (para quien entra tarde). ≈ +4 bytes; por el respaldo de Supabase no suma mensajes.
+- **18 · Ruleta de animaciones (7c-2)**: mantener **B** (o el botón GESTOS en el celular) abre una rueda de 8 gestos; soltar sobre uno lo hace. Propuesta: saludar, reír, aplaudir, bailar (el de Andy), señalar, pulgar arriba, «facepalm», sentarse en el suelo. Reutiliza `GESTOS` (`escenas-skin.js`) y los de 6b. Se ve en F5 y en los demás con un evento `em` {k} (fiable, máx. 1/s). En primera persona se pasa a tercera persona mientras dura (como las escenas).
+- PR: **7c-1** pose del cuerpo + mano + red (Haiku hace las poses de golpe, correr, comer, sentado; Opus el módulo y la red); **7c-2** ruleta (Haiku los 8 gestos).
+- Riesgo: escenas y minijuegos que mueven el cuerpo (`cine.pose`) deben seguir mandando: `posar` no corre si hay `cine.pose`. Las escenas de 6b ponen al jugador en poses propias.
+- Pruebas: capturas con la herramienta de la skill (golpe a 0/0,15/0,3 s, correr, objeto en la mano en F5); `mundo/tests/pose-jugador.mjs`: ángulos dentro de los rangos de `rig.md`, bits de `f` ida y vuelta; dos pestañas: el otro ve el golpe y el objeto.
+
+**7d · Misiones más fáciles (1 PR, Sonnet)**
+
+Estado: `misiones.js` `aceptar()` solo da algo en los jefes; `abandonar()` + aceptar de nuevo no tiene memoria. Las tiendas solo compran materias primas (bacalao, salmón, redstone, vacuno, pólvora, huevo, nieve, trigo, tronco, hueso, pedernal).
+
+Mecanismo propuesto:
+- `kit` en cada misión de `misiones-datos.js`; se entrega **una sola vez por mundo** (`estado.kits`, se serializa): abandonar y volver a aceptar no repite.
+- **Objetos regalados con marca**: las herramientas del kit llevan una marca en la casilla (`p: 'pony'`) y se muestran «Caña (de Pony)». No cuentan para `pide` (no se puede entregar la caña de Pony en pony3), ninguna tienda las compra, tienen **la mitad de durabilidad** y se pueden usar, guardar en cofres y tirar (la marca viaja con ellas; también en el perfil del cooperativo). **Decidido por el dueño: se quedan (regalo), no se devuelven.**
+- **Sin kits infinitos**: `estado.kits` guarda las misiones cuyo kit ya se entregó; abandonar y volver a aceptar, morir, recargar el mundo o entrar a otra sala con el mismo perfil no lo repite. En el cooperativo va en el perfil de cada jugador (cada uno recibe el suyo una vez).
+- **Inventario lleno**: lo que no cabe cae a tus pies (ya lo hace `dar()` con `entidades.soltar`) y el HUD avisa «Inventario lleno: <objeto> quedó en el suelo».
+- Regla de las provisiones del kit: nada que pida otra misión ni que compre una tienda, salvo semillas para plantar (lalo2). Valor del kit ≤ 1/3 del premio de la misión (con la valoración de `tienda.mjs`).
+
+| Misión | Pide | Facilidad (1) | Kit al aceptar (12) |
+|---|---|---|---|
+| pony1 | 5 bacalao | (ya está: pesca y minijuego) | Caña (de Pony) |
+| pony2 | 3 salmón + 1 pez globo | pez globo ×3 y salmón ×1,5 en el muelle mientras esté activa | 4 galletas |
+| pony3 | 1 caña | — | 2 hilos (la caña sale con 3 palos) |
+| salonas1 | 8 lana | corral de 4 ovejas junto al escenario | Tijeras (de Salonas) |
+| salonas2 | 4 piedra luminosa | pista a la caverna con piedra luminosa más cercana | Pico de piedra (de Salonas) |
+| salonas3 | 2 bloques de redstone | pista: redstone bajo y = 16 | 6 papas asadas |
+| lona1 | 6 pescado cocido | horno usable en la gatera | 4 carbón |
+| lona2 | 1 cama | corral de ovejas (salonas1) | Tijeras (de Lona) |
+| lona3 | 4 lanas | mismo corral | 3 manzanas |
+| hadad1 | 16 troncos | (árboles junto al campamento) | Hacha de piedra (de Hadad) |
+| hadad2 | 5 zombis | de noche aparece al menos 1 zombi por noche al borde de la zona segura | Espada de piedra (de Hadad) + 3 papas asadas |
+| hadad3 | espada de hierro | pista a hierro (y 20-60) | 3 carbón |
+| andy1 | mesa + cofre | — | Hacha de madera (de Andy) |
+| andy2 | sobrevivir una noche | — | Espada de piedra (de Andy) + 4 galletas |
+| andy3 | 3 creepers | 1 creeper garantizado por noche cerca | Escudo (de Andy) |
+| nacho1 | 8 carne cocida | (pradera junto al campamento y asado) | Espada de madera (de Nacho) + 4 carbón |
+| nacho2 | 20 antorchas | pista a carbón en superficie | 10 palos |
+| nacho3 | escudo | — | 1 lingote de hierro |
+| moises1 | 10 nieve | (nieve del iglú) | Pala de madera (de Moisés) |
+| moises2 | 4 vidrio | pista a arena (orilla) | 4 carbón |
+| moises3 | 3 diamantes | pista: diamante bajo y = 16 | Pico de hierro (de Moisés) |
+| lalo1 | 12 trigo | huerto de Lalo junto al iglú (trigo ya sembrado) | Azada (de Lalo) + 6 semillas |
+| lalo2 | 6 zanahoria + 6 papa | mismo huerto con zanahoria y papa | 2 zanahorias + 2 papas (para plantar) |
+| lalo3 | 4 traucos | 1 Trauco garantizado por noche en el bosque cercano | Espada de piedra (de Lalo) + 3 manzanas |
+| boris1 | hacha de piedra | — | Pico de madera (de Boris) |
+| boris2 | 32 tablones | — | Hacha de piedra (de Boris) |
+| boris3 | hacha de diamante | pista: diamante | Pico de hierro (de Boris) |
+| lucho1 | 5 arañas | araña garantizada por noche | Espada de piedra (de Lucho) |
+| lucho2 | arco + 16 flechas | gallinas junto a la atalaya (plumas), grava cerca (pedernal) | 3 hilos |
+| lucho3 | 8 esqueletos | esqueleto garantizado por noche | Escudo (de Lucho) |
+| braulio1 | 10 huesos | esqueletos en la playa de noche | Espada de piedra (de Braulio) |
+| braulio2 | visitar 6 lugares | los 6 lugares marcados con «?» en el minimapa | 4 galletas |
+| braulio3 | brújula | pista a hierro | Pico de piedra (de Braulio) |
+| conejeros1 | 4 huevos | 3 gallinas junto al escenario | 4 semillas |
+| conejeros2 | 5 pan | (huerto de Lalo / trigo de la aldea) | Azada (de Conejeros) + 6 semillas |
+| conejeros3 | 10 monstruos de noche | — | Escudo (de Conejeros) |
+| jefes | — | (ya dan el objeto de invocación) | — |
+
+- Por qué no rompe la economía: las herramientas son prestadas (no se venden ni se entregan, media durabilidad, el premio de la misión siempre es mejor); las provisiones no aparecen en ningún `pide` ni `compra`; una vez por mundo, 36 kits en total.
+- Facilidades: animales nuevos **al final** de `animales.lista` (el ganado guarda índices); huerto de Lalo como decorado determinista de la supervivencia + registro en `agricultura.js` (en el cooperativo lo hace crecer el anfitrión, como ya pasa); «pistas» = flecha en la brújula y marca en el minimapa hacia el punto más cercano, buscado una vez al aceptar con la generación determinista del subsuelo (≤ 64 bloques, sin cargar chunks); monstruos garantizados = un intento de aparición extra por noche fuera de la zona segura (cada jugador para sí, como ya funcionan los monstruos).
+- Prueba: `mundo/tests/misiones.mjs` (nuevo): cada misión no jefe tiene kit; kit una vez (aceptar/abandonar/aceptar, guardar y cargar); inventario lleno = el kit queda en el suelo completo; ningún objeto prestado cuenta para `pide`; provisiones fuera de `pide`/`compra`; valor ≤ 1/3 del premio; `inventario.mjs` suma la marca `p` (apilado, guardado, cofres).
+
+**7e · Red: indicador de ms (1 PR, Sonnet)**
+
+- Dónde medir:
+  - **WebRTC directo y sala local por QR**: `RTCPeerConnection.getStats()` → `candidate-pair` activo `currentRoundTripTime`, cada 2 s; sin mensajes nuevos. El anfitrión mide cada invitado.
+  - **Respaldo por Supabase Realtime**: eco a cuestas del mensaje `p` (que ya va a 5 Hz o 1 Hz quieto): cada `p` lleva `e: [t del último p recibido de ese par, ms que lo retuvo]` y `RTT = ahora − t − retenido` (al estilo NTP). Cero mensajes extra (importa por el tope de Supabase).
+  - Con el RTT se estima el desfase de reloj con el anfitrión (para 7g y 7h-3).
+- Dónde se ve: barras de señal al estilo Minecraft en la lista de jugadores (pausa del anfitrión y nueva lista con Tab) y, si se activa en «Rendimiento», «34 ms» en el HUD. Colores: verde < 80, amarillo < 150, rojo ≥ 150.
+- Tabla de ms estimados (RTT de ida y vuelta entre invitado y anfitrión):
+
+| Modo | Misma red (Wi-Fi) | Misma ciudad (otra casa) | Otra región (p. ej. Coyhaique ↔ Santiago) |
+|---|---|---|---|
+| WebRTC directo | 3-15 | 10-35 | 30-60 |
+| Respaldo Supabase (São Paulo) | 100-160 | 100-170 | 120-200 |
+| Sala local por QR | 2-12 | no aplica | no aplica |
+
+  - De dónde sale: directo = ruta física entre los dos equipos (Wi-Fi suma 1-5 ms por salto; entre casas de la misma ciudad los ISP chilenos intercambian tráfico en Santiago, pero a veces la ruta da la vuelta por otro país y sube a 60-150); otra región: ~1600 km de fibra ≈ 16 ms de ida y vuelta mínimo + equipos. Respaldo: el mensaje va invitado → Supabase en São Paulo → anfitrión y la respuesta vuelve igual: son 2 viajes de ida y vuelta Chile ↔ São Paulo (40-60 ms cada uno según mediciones típicas) + 10-30 ms de Realtime. Lo que el jugador **ve** de los demás suma además el retraso de dibujo de la interpolación (200 ms a 5 Hz). Son estimaciones: el indicador las confirma y la tabla se corrige en `PENDIENTES.md` con valores medidos.
+- Prueba: `mundo/tests/ping.mjs` (cálculo del eco y del desfase con relojes falsos); dos pestañas en los tres modos (`?directo=0` para el respaldo).
+
+**7f · Contenido y mundo (3 PR)**
+
+**2 · Qué hacen los Venjy en la supervivencia (7f-1, Sonnet; textos los revisa el dueño)**. Hoy `criaturas/venjy.js` `DICHOS` (15 lugares) habla del portafolio. Se suma `supervivencia/venjys-datos.js` (cargado con `import()` al primer globo) y en la supervivencia `n.frases` pasa a ser una función que elige por prioridad. Propuestas (recomiendo las 8):
+1. **Pista del lugar**: consejo útil de ese sitio (mina: «el diamante vive bajo y = 16»; faro: «el Caleuche sale frente al naufragio»; portal: el Chonchon). Banco por lugar, ES/EN.
+2. **Brújula viva**: «El campamento queda a 230 bloques al este; síguelo por el camino». Cálculo con `datos.P` y tu posición.
+3. **Progreso**: «Te faltan 3 misiones para el Imbunche» (lee `misiones.estado`).
+4. **Reacción a tu skin** (`tipoSkin`, la primera vez por skin): con skin de Pony «¿Perdido? El muelle está al sur, weón»; con skin de Venjy, el chiste del clon.
+5. **Reacción a la amistad**: comenta tu mejor amistad («Supe que el Boris ya te considera íntimo») con `amistad.nivel`.
+6. **Mini-encargo diario** (el Venjy del correo): «Llévale esta carta a Lucho» → objeto «Carta» (no se vende) → al entregarla, +amistad (+2, con tope) y 1 esmeralda. Uno por día de juego.
+7. **Hora y peligro**: de noche «el Trauco anda suelto, no te alejes del camino»; al amanecer otra frase.
+8. **Chistes internos** (de las notas, en buena onda): Linares, Apex con Lucho, el LoL de Boris, ProcedimientoSeguro con Salonas.
+- Riesgo: el creativo no cambia (solo con `supervivencia`). Prueba: frases únicas contra todo el juego y sin emojis (extender `amistad.mjs` o `venjys.mjs` nuevo).
+
+**7 · Más ítems y recetas (7f-2, Sonnet)**. Hoy 78 recetas. Propuesta (≈ 16 objetos y 20 recetas, todo con ícono pintado en `iconos.js` y par ES/EN; sin comidas nuevas, decisión del dueño):
+- Útiles: **Reloj** (4 oro + redstone: muestra la hora; base de 7j-0), **Mapa** (papel + brújula: abre el minimapa grande sin tecla), **Farol** (antorcha + hierro: luz colgante), **Cartel** (tablones + palo: texto propio; base de 7f-3), **Botella** y **leche** (cubo + vaca), **losas y escaleras** de piedra, tablones y adoquín, **escotilla**, **valla de jardín** de abedul y pino.
+- De actividades (7h): **Mazo de cartas** (papel ×3 + tinta de calamar o carbón), **Pluma de juguete** (pluma + palo + hilo, para la carrera de gatas), **instrumentos** decorativos (guitarra, teclado, tambor) para el concierto.
+- Riesgo: los ids nuevos se agregan al final (guardados); `tienda.mjs` vuelve a valorar todo (sin reventa). Prueba: `recetas.mjs` y `tienda.mjs`.
+
+**13 · Caminos y lugares sin NPC (7f-3, Sonnet con este diseño; Opus si los workers fallan)**. Solo en la supervivencia; todo determinista (lo calculan los workers con la misma semilla, como los decorados) para no pasar el presupuesto: los bloques van dentro de la malla del chunk (costo 0 por cuadro).
+- En los caminos (`RUTA` y `desvios` de `mundo-datos.js`):
+  - **Carteles de cruce** de madera con flechas y distancias («← Mina 120 m · Aldea 340 m →»), en PixelCraft y en el idioma actual; el texto solo se crea a < 24 bloques (como los carteles de `portafolio/carteles.js`).
+  - **Mojones** cada ~100 bloques con el número del tramo.
+  - **Faroles** solo en los cruces (pocos: cada emisor amplía la ventana de luz del chunk; se registran en `zonasLuz`).
+  - **Banca y mirador** en 2-3 puntos altos con vista (sentarse de 7g; al descubrirlo, «Descubriste: Mirador del Faro»).
+- Lugares sin amigos (casa, registro, mina, correo, faro, molino, portal, letras): cada uno gana **un motivo para ir**:
+  - casa → base inicial (cama, cofre con algo de inicio, mesa);
+  - registro → **tablón de encargos** (los mini-encargos de 2);
+  - correo → buzón con una **carta diaria** de un amigo (texto único);
+  - faro → **catalejo** (mirador que muestra lugares lejanos marcados);
+  - molino → **refugio con cama** y las aspas girando (punto de reaparición a mitad de mapa);
+  - portal → ruina con cofre y la historia del Chonchon;
+  - mina → vagoneta con botín y la entrada a la cueva honda (pistas de 7d);
+  - letras → mirador del título.
+- Vida chica: **ruinas** pequeñas (pilar caído, arco musgoso) con cofre de botín en 6-8 puntos del bosque; **fauna de ambiente** instanciada y solo cerca (mariposas y abejas junto a flores, peces que saltan en el lago, **luciérnagas** de noche; tope 64 en total); **coleccionables**: 12 «Páginas del cuaderno de los Tomatitos» escondidas (chistes internos en buena onda, se leen en un cuaderno y dan un premio al juntarlas todas); **eventos chicos**: estrella fugaz de noche que deja un objeto donde cae, carreta abandonada en el camino.
+- Riesgo: `paridad.mjs` (el mapa 2D) no cambia porque solo aplica con `terreno.dy`; los decorados nuevos no deben caer sobre estructuras ni caminos de NPC. Medir: cuadro mediano y tiempo de llenado de chunk (meta: ≤ +5 %).
+
+**7g · Actividades compartidas (3 PR, Opus + Haiku)**
+
+**Infraestructura común (7g-1)**: `supervivencia/actividades-red.js`. El anfitrión manda (modelo estrella ya existente):
+- Mensaje `ac` (canal fiable `f`): `{ k: 'fogata'|'iglu'|'lena'|..., op: 'unir'|'salir'|'estado'|'evento', ... }`. El anfitrión guarda por actividad: participantes, asientos, fase, `t0` (hora del anfitrión) y semilla.
+- **Entrar**: el invitado pide `unir` (con asiento); el anfitrión valida cupo y reparte `estado` a todos (los que miran también ven quién está sentado).
+- **Tiempo**: inicios con `t0 = hora del anfitrión + 3 s` convertidos con el desfase de 7e (error ≈ RTT/2: 2-30 ms directo).
+- **Progreso**: a cuestas del `p` a 5 Hz (campo `ax`), sin mensajes nuevos; eventos sueltos (`evento`) solo para cosas raras (≤ 0,5/s por jugador). Por el respaldo de Supabase se mantiene el tope.
+- **Desconexión**: al salir alguien (`sale` de Presence o de la lista de `SalaLocal`) el anfitrión lo saca: su asiento queda libre y en una carrera cuenta como rendirse; la actividad sigue para los demás. Si el que sale es el anfitrión, la sala termina como hoy y cada uno termina su actividad en local contra los NPC (sin premio si era una carrera entre jugadores).
+- **15 · Sentarse en la fogata**: anillo de 8 asientos (los 2 troncos libres + suelo con piernas cruzadas + en cuclillas), cualquiera con G cerca de un asiento libre; varios jugadores. Sentado: cámara libre, calentar las manos (gesto) y la charla del campamento (y la de 6d) te incluye. Pose «sentado» en `pose-jugador.js` (bit en `f`, asiento en `ax`).
+
+**16 · Iglú con varios (7g-2)**: hoy `ronda-iglu.js` es local (Lalo y Moisés te pasan a ti). Cupo: **4 jugadores** (el iglú mide ~6×6; decidido). La rueda incluye a Lalo, Moisés y a los sentados; el turno sale del tiempo: `(t − t0) / 20 s` y la lista de asientos → nadie manda pases por la red. Al entrar o salir alguien, el anfitrión reparte un `t0` nuevo alineado al siguiente pase. Cada equipo dibuja a los demás sentados con la pose que les toca en el guion (no con su `p`). Los globos dirigidos salen solo para quien corresponde.
+
+**17 · Leña con varios (7g-3)**: hasta 4 tocones (Boris + 3 jugadores; decidido). Cada uno juega su barra en local; los leños partidos van en `ax`; el anfitrión decide el ganador por orden de llegada (empate: hora del emisor). Los que miran ven los cuerpos hachando (golpe de 7c-1) y los leños partiéndose (evento). Premio de cada uno en su equipo.
+
+Riesgos 7g: escenas locales que mueven al NPC (`n.escena`) vs. lo compartido: la actividad compartida toma el gancho y las escenas de skin esperan; guardado no cambia (nada de esto se guarda). Pruebas: `mundo/tests/actividades.mjs` (cupos, asientos, turnos del iglú a partir de `t0`, salida a mitad, desfase de reloj); dos y tres pestañas.
+
+**7h · Actividades nuevas (4 PR)**
+
+**19 · Carrera de gatas con Lona (7h-1, Opus + Haiku; Sonnet si la cámara queda grande)**
+- Mila contra Gala en una pista recta de ~12 bloques en la Gatera hasta el plato de Lona; Lona arbitra (3-2-1).
+- Juego de un botón (marco de `minijuego.js`): «LLAMAR» con la pluma de juguete en la zona verde acelera a tu gata; aparecen distracciones (mariposa, caja de cartón) que hay que esquivar pulsando a tiempo, si no la gata se sienta a mirarla 1 s.
+- Solo: eliges gata y la otra la lleva el juego. En grupo (7g-1): 2 jugadores, uno por gata, el resto alienta.
+- Las gatas son inmortales y locales: en grupo, su posición sale del estado compartido (determinista), no de su IA. Premio: pescado cocido o lana y amistad con Lona (+4, tope del día).
+
+**20 · Duelo de cartas con Lucho (7h-2, Sonnet)**
+- Nombre propio («Duelo de Cartas Pixel»); se juega en una mesa junto a la atalaya, panel en pantalla (DOM, cartas dibujadas en píxeles con PixelCraft).
+- Reglas: mazo de **15 cartas**, mano de 3, **2000 puntos de vida**; por turno robas 1 y juegas 1 (criatura o hechizo). Criaturas con ATK/DEF en 3 zonas; atacas una vez por criatura: ATK contra ATK, la menor muere y la diferencia baja la vida; contra una zona vacía, daño directo. 3 hechizos (subir ATK +500, destruir una criatura, curar 500). Sin sacrificios ni trampas. Gana quien deja al otro en 0 o si el otro no puede robar. Partida de 3-5 min.
+- Cartas **inventadas**: criaturas del juego (Zombi, Esqueleto, Creeper, Araña, Trauco, Imbunche, Chonchon, Caleuche) y amigos en buena onda («Pony, pescador de oficio», «Boris del hacha»). No se copia ningún nombre, arte ni texto de cartas reales; el nombre de la marca solo aparece en el diálogo de Lucho («como el Yu-Gi-Oh, pero corto», igual que hoy se nombra LoL o Pokémon TCG). Decidido: los amigos van como cartas (el dueño revisa los textos).
+- **Tutorial en la primera partida** (pedido del dueño): la primera vez Lucho te enseña jugando una partida guiada y corta, con mazos fijos y 5 pasos con su globo y una flecha sobre lo que hay que tocar: «Roba una carta» → «Juega una criatura en una zona» → «Ataca: si tu ATK es mayor, la suya cae y la diferencia baja su vida» → «Usa un hechizo» → «Deja su vida en 0 y ganas». Frases simples, ES/EN. En la pantalla del duelo queda un botón «?» con las reglas en 6 líneas, y al terminar el tutorial «¿Jugamos de verdad?». Se marca como visto en `misiones.estado.minijuegos` (`cartas-tuto`); se puede repetir desde el panel de Lucho.
+- IA de Lucho: codiciosa simple (juega la más fuerte, ataca si gana). Duelo entre jugadores: segunda etapa (por turnos, fácil de sincronizar con `ac`).
+- Prueba: `mundo/tests/cartas.mjs` (reglas, fin de partida, IA siempre con jugada válida, textos únicos).
+
+**21 + 22 · Concierto con Salonas (7h-3, dos PR: tocar en solitario → público y grupo; Opus + Haiku)**
+- Canciones: los **3 riffs originales** de `criaturas/bajo.js` (estilo Primus, ya sintetizados) + **1 nueva** (decidido: una cumbia, contexto chileno). Para cada una se escriben partes que calzan con el bajo (mismo tempo y tonalidad).
+- Instrumentos (sintetizados con los de `musica.js`): **guitarra eléctrica**, **batería**, **teclado**. Los nombres de las canciones los elige el dueño.
+- Juego: notas que bajan por 3 carriles (teclas J K L o toques), con la partitura de la canción; acierto/fallo con puntaje. Se elige canción e instrumento en un panel junto al escenario.
+- **22 · Público** (bucle como el iglú): junto a Conejeros, G para quedarte escuchando; botones ALENTAR (aplaudir, gritar «¡otra!», levantar una antorcha) que llenan un medidor de energía; lleno = fuegos artificiales de píxeles y un solo especial de Salonas. Salonas toca en bucle aunque nadie toque.
+- Sincronía (con 7g-1 y 7e): el anfitrión fija canción y `t0`; cada equipo agenda el audio local en su `AudioContext` desde `t0` (deriva despreciable en 3 min). Lo que tocan los demás **suena siempre a tiempo** en cada equipo (la parte de la partitura), y los fallos de quien toca solo bajan su volumen y se ven como chispa roja: así 200 ms de red no desordenan la música. Aciertos y aliento van en `ax` a 5 Hz (sin mensajes nuevos). Quien entra a mitad recibe `estado` (canción y `t0`) y se suma en el compás actual.
+- Riesgo: CPU del audio con 4 instrumentos + bajo (medir; meta ≤ +0,5 ms de cuadro mediano); latencia de entrada del navegador (calibración opcional en el panel).
+
+**7i · Amigos acompañantes (23) — después de 6d etapa 2 (Opus)**
+
+- Invitar: en «Hablar», con amistad Buen amigo o más: «¿Me acompañas?». Uno a la vez por jugador.
+- Seguir sin buscador de rutas: **migas de pan** (la posición del jugador cada 0,5 bloques); el amigo camina por esa misma línea (por donde pasaste no hay paredes), salta escalones; si queda a > 24 bloques o atascado 3 s, aparece detrás de ti fuera de la vista (como los lobos de Minecraft).
+- Peleas: ataca monstruos a < 6 bloques de ti con daño de espada de piedra; sigue invulnerable (regla del juego); si «perdería», se sienta 10 s a descansar. No da zona segura: la zona segura queda en su lugar de origen.
+- Panel, misiones y tienda viajan con él (clic derecho funciona donde esté). Lo que depende del lugar (su minijuego, la ronda del iglú, la charla del grupo) sale desactivado con el motivo («Vuelve a la leñera con Boris»).
+- Despedir: «Puedes volver»: se despide, camina 5 s y, fuera de la vista, vuelve a su sitio. **Al desconectarte o salir, todos vuelven a su sitio** (no se guarda quién te acompaña).
+- Cooperativo: los amigos hoy son locales en cada equipo. El acompañante lo simula su dueño y viaja a cuestas del `p` (como los monstruos: `npc: { k, x, y, z, a, anim }`); los demás ocultan su copia local y dibujan esa. El anfitrión arbitra que un amigo acompañe a una sola persona (mensaje `ac` con `k: 'acompana'`); si el dueño se va, el anfitrión lo libera y vuelve a su sitio en todos.
+- Rutinas (6d): si el amigo tenía rutina, se corta de forma clara: el globo lo dice («Le aviso a Andy que no llego») y su rutina queda en «acompañando»; al despedirlo retoma la rutina en el tramo que corresponde a la hora. Por eso va después de 6d etapa 2: reutiliza su máquina de estados y el manejo de «amigo lejos de su sitio».
+- Prueba: `mundo/tests/acompanante.mjs` (migas, atasco → reaparición, liberar al salir, uno por jugador).
+
+**7j · Lo que pertenece a 6d (anotado aquí; la sección del bloque 6 no se toca)**
+
+Pedido del dueño: el plan no interrumpe ni edita los apartados pendientes del bloque 6. Estos dos puntos quedan en el bloque 7 marcados «se hace dentro de 6d» y el chat de 6d los toma de aquí.
+
+- **7j-0 · Hora del mundo (punto 25, se hace al empezar 6d)**: reloj en el HUD (opcional en «Rendimiento») y en la pausa «Día 3 · 14:30» (el día de 10 min pasa a 24 h: 1 hora = 25 s, con `horaDe` de `dia.js`); objeto **Reloj** (7f-2) que la muestra al tenerlo en la mano; en el panel de cada amigo, su horario («08:00-18:00 en el campamento»). Va antes de las rutinas, que lo usan. Cooperativo: la hora ya la manda el anfitrión.
+- **7j-1 · Estado «acompañando» en las rutinas (se hace en 6d etapa 2, lo usa 7i)**: la máquina de estados de las rutinas suma el estado «acompañando» (cortado por el jugador) y una forma de retomar la rutina según la hora.
+
+**Orden recomendado**
+
+1. **7a** (bugs que molestan jugando) — en paralelo, en worktrees distintos: **7d** y **7f-2** (tocan archivos distintos: `jugador/combate/enemigos/main` vs `misiones/misiones-datos/inventario` vs `objetos/recetas/iconos`; `main.js` es el punto de choque, cambios chicos).
+2. **7b-1** rendimiento del motor (antes de sumar contenido; deja la medición de referencia).
+3. **7e** ping (chico; da el reloj compartido) ∥ **7f-1** Venjys.
+4. **7c-1** cuerpo y mano (lo necesitan 7g y 7h para que se vean los demás) → **7c-2** ruleta.
+5. **7b-2** menú de rendimiento (cuando quieras después de 7b-1).
+6. **6c** (bloque 6, sin cambios) puede ir aquí.
+7. **7g-1** → **7g-2** ∥ **7g-3**.
+8. **7h-2** cartas (en solitario no depende de nada: puede ir antes) · **7h-1** · **7h-3** (concierto, el más grande).
+9. **7f-3** caminos y lugares (después de 7b-1).
+10. **6d** (el chat de 6d hace primero 7j-0 y en su etapa 2 7j-1) → **7i**.
+
+**Modelo por parte**
+
+| Parte | Modelo | Por qué |
+|---|---|---|
+| 7a · Arreglos rápidos | Sonnet solo | Bugs con la causa ya encontrada y valores definidos en el plan. |
+| 7b-1 · Motor: luz incremental, workers, medición | Opus solo | Es el corazón del motor (luz, workers, costuras); bug difícil que toca varios archivos. |
+| 7b-2 · Menú de rendimiento | Sonnet solo | Ajustes con patrón existente (`ajustes.js` del creativo). |
+| 7c-1 · Cuerpo, mano y red | Opus + subagente Haiku | Haiku hace las poses (regla de la skill); Opus el módulo común y los bits de red. |
+| 7c-2 · Ruleta de animaciones | Opus + subagente Haiku | 8 gestos cortos: grande y mecánico, fácil de verificar con capturas. |
+| 7d · Misiones más fáciles | Sonnet solo | Datos + marca de préstamo + pruebas, con la tabla ya decidida. |
+| 7e · Ping | Sonnet solo | Acotado: `getStats`, eco en `p` y un indicador. |
+| 7f-1 · Venjys | Sonnet solo | Datos y un selector; el dueño revisa los textos (como 6a). |
+| 7f-2 · Ítems y recetas | Sonnet solo | Sigue `objetos.js`, `recetas.js`, `iconos.js`; `tienda.mjs` valida. |
+| 7f-3 · Caminos y lugares | Sonnet solo (Opus si falla en los workers) | Diseño hecho aquí; lo delicado es el determinismo en los workers. |
+| 7g-1 · Actividades compartidas + fogata | Opus + subagente Haiku | Arquitectura de red (Opus); poses de sentado (Haiku). |
+| 7g-2 · Iglú con varios | Opus + subagente Haiku | Guion compartido por tiempo (Opus); poses y pases (Haiku, Sonnet si queda grande, §0). |
+| 7g-3 · Leña con varios | Opus + subagente Haiku | Arbitraje del anfitrión (Opus); tocones y poses (Haiku). |
+| 7h-1 · Carrera de gatas | Opus + subagente Haiku | Escena con 2 gatas y Lona; Sonnet si la cámara queda grande (§0). |
+| 7h-2 · Duelo de cartas | Sonnet solo | Juego de panel con reglas ya escritas; poca animación. |
+| 7h-3 · Concierto (2 PR) | Opus + subagente Haiku | Sincronía de audio y partituras piden criterio; poses de instrumentos a Haiku. |
+| 7i · Acompañantes | Opus solo | Arquitectura: seguir sin rutas, red, rutinas de 6d. |
+| 7j-0 · Hora del mundo (dentro de 6d) | Sonnet solo | Chico y claro; base de las rutinas. |
+
+Subagentes caros (Sonnet/Opus) solo si Haiku se declara superado (§0 de la skill).
+
+**Pedidos grandes → varios PR**
+
+- 7b → 7b-1 (motor) y 7b-2 (menú).
+- 7c → 7c-1 (cuerpo, mano, red) y 7c-2 (ruleta).
+- 7f → tres PR independientes.
+- 7g → tres PR (infra + fogata, iglú, leña).
+- 7h → cuatro PR; el concierto en dos (tocar solo; público y grupo).
+- 7i → uno, pero grande: chat dedicado.
+Cada uno en su propio chat (regla del proyecto: avisar y proponer chat dedicado si es grande).
+
+**Decisiones del dueño (2026-10-09, todas las recomendaciones aceptadas)**
+
+1. Velocidades (14): caminar 4,6, correr 7,0, tope salto 8,6, +15 % en camino.
+2. Mano visible con objeto en primera persona (4): sí.
+3. Préstamos del kit (12): se quedan como regalo (marcados, media durabilidad), una sola vez por mundo; si el inventario está lleno, caen al suelo.
+4. Cupos: iglú 4 jugadores, leña 4 tocones (Boris + 3), fogata 8.
+5. Concierto: 3 riffs de Salonas + 1 cumbia nueva; guitarra, batería y teclado; nombres de canciones del dueño.
+6. Cartas: amigos como cartas en buena onda. Sí, con revisión de textos y con tutorial en la primera partida.
+7. Acompañantes: pelean (daño de espada de piedra) y siguen invulnerables.
+8. Orden: el de la sección D. El bloque 7 no edita ni reordena los apartados pendientes del bloque 6 (6c y 6d siguen su plan; 7 se intercala entre sus PR).
+9. Sin comidas chilenas nuevas en 7f-2.
+
 ## Portafolio interactivo (el mundo como portafolio)
 
 Cada lugar del mundo muestra el contenido real del portafolio: cartel flotante encima y panel al acercarse (~4,5 bloques).
@@ -588,6 +912,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-09 · **Plan del bloque 7 (pulido, juego en grupo y mundo vivo)** anotado en «Modo supervivencia», con los 26 pedidos del dueño en subbloques: arreglos rápidos (agua, knockback, X de cerrar, velocidad, guardar con 5 mundos en el cooperativo; 7a), rendimiento al romper y menú de opciones (7b), cuerpo y mano del jugador con golpe, correr, objeto en la mano y ruleta de gestos (7c), kits y facilidades por misión (7d), indicador de ms con tabla estimada por modo de conexión (7e), Venjys, ítems y caminos (7f), actividades compartidas en el cooperativo (7g), carrera de gatas, duelo de cartas con tutorial y concierto con Salonas (7h), amigos acompañantes (7i) y lo que pertenece a 6d (7j: hora del mundo y corte de rutina); causas encontradas en el código, orden, dependencias, modelo por parte y decisiones del dueño. El bloque 6 no cambia · solo planificación · `mundo/PENDIENTES.md`.
 - 2026-10-09 · **Bloque 6b · retoques tras probar en el juego (dueño)**: Nacho y el jugador ya no quedan cara a cara en la carcajada (se ríen echados hacia atrás y girados ~45° hacia afuera); Braulio y el jugador cavan hombro con hombro mirando al mismo lado y más separados (`r` 1,4 → 1,8), y se vuelven a mirar para el cofre; en el revivir de Lucho el jugador cae sentado (las piernas quedaban bajo la tierra) y Lucho lo revive un poco inclinado, sin subirse encima; el motor ya no deja al jugador dentro del agua o la lava al empezar una escena de amistad (en la orilla se ahogaba durante el momento de Braulio) · `momentos/nacho.js`, `braulio.js`, `lucho.js`, `escena-amistad.js` · Verificado con capturas de los tres momentos y pruebas de `mundo/tests/` OK.
 - 2026-10-09 · **Bloque 6b · `/amistad` y PR único** (pedido del dueño): comando de desarrollo `/amistad` que recorre las escenas nuevas de amistad (todas, saludos, momentos, por persona o una sola; Saltar pasa a la siguiente, Esc entre escenas termina) y `/amistad100`; el motor acepta una base forzada para mostrar los momentos de pareja; la ayuda de comandos se oculta durante el cine; 6b-1 y 6b-2 en un solo PR · `comandos-dev.js`, `escena-amistad.js`, `main.js`, `supervivencia.css` · Verificado: `/amistad venjy-momento-pareja` y `/amistad pony` (4 escenas seguidas) en el navegador, pruebas de `mundo/tests/` OK.
 - 2026-10-09 · **Bloque 6b-2 · momentos especiales** (rama `amistad-6b-momentos`): con la amistad en 100, botón «Momento especial» en «Hablar» con una escena única por personaje (13, más las variantes de pareja de Venjy y Lona), cargada con `import()` al usarla; el motor de 6b-1 suma actores extra, frases del jugador, giros y objetos; cámara con planos propios y distancias mínimas (sin cambios fuera de estas escenas); los cercanos se callan hasta 30 bloques · `supervivencia/momentos/*.js` (13 nuevos), `escena-amistad.js`, `camaras.js`, `amistad.js`, `hablar.js`, `misiones.js`, `main.js`, `escena-amistad-datos.js`, `supervivencia.css`, `tests/amistad.mjs`, `mundo/DIALOGOS.md`, `mundo/capturas/6b/momentos/` · Verificado: pruebas de `mundo/tests/` (14148 comprobaciones en `amistad.mjs`), capturas de los 15 momentos, botón y restauración en el navegador, sin errores de consola; cuadro mediano 1,7 → 1,8 ms, +6 KB al iniciar. Detalle en «Estado 6b-2».
