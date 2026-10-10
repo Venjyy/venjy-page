@@ -155,13 +155,13 @@ export function crearVidaAmigos(ctx) {
             n.vida = { q, texto: '', cur: null, animar: dt => animar(l, q, n, dt) };
         }
     }
-    function sacar(l) { for (const n of Object.values(l.actores)) delete n.vida; }
+    function sacar(l) { for (const n of Object.values(l.actores)) { if (n.vida && datos && datos.efectos) datos.efectos(n, null, 0, 0); delete n.vida; } }
 
     function animar(l, q, n, dt) {
         const s = estado[l.clave], v = vida.lugares.find(x => x.clave === l.clave), e = v.e;
         const ahora = leer(n.p);
         n.vida.texto = '';
-        if (!e || !s || s.w <= 0.001) { n.vida.cur = null; return; }
+        if (!e || !s || s.w <= 0.001) { n.vida.cur = null; if (datos.efectos) datos.efectos(n, null, 0, 0); return; }
         const g = e.g, t = e.t;
         // Globo: su frase (o la de 'ambos')
         const ls = lineasEn(g, t);
@@ -170,6 +170,7 @@ export function crearVidaAmigos(ctx) {
         // Gesto de su pista
         const ge = gestoEn(g, q, t);
         const sentado = l.sentados.has(q);
+        if (datos.efectos) datos.efectos(n, ge && ge.nombre, (ge ? ge.w : 0) * s.w, t); // la nube con «Z» de `ronca`
         let meta = {};
         if (ge) {
             // Moldes y gestos de grupo o propios: (u, t, info) · los de las escenas de skin: (u, t, sentado, jugador)

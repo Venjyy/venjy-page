@@ -449,7 +449,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const { p } = n, otro = n === moises ? lalo : moises;
         if (pase) return animarPase(n, dt, t);
         const T = n.objeto === 'bong' ? 14 : 9;
-        n.ciclo = (n.ciclo + dt) % T;
+        // En una charla de la vida entre amigos (n.vida) no empiezan otra fumada: terminan rápido la que llevaban y esperan
+        n.ciclo = (n.ciclo + dt * (n.vida ? (fumando(n) ? 3 : 0) : 1)) % T;
         const e = n.objeto === 'bong' ? usarBong(n, dt, t, dJ) : usarPito(n, dt, t);
         n.yaw += angulo(n.yawBase - n.yaw) * k(dt, 3);
         // Cabeza: aguanta mirando arriba, bota el humo, mira al otro cuando habla o cabecea relajado
@@ -516,6 +517,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             recibe.p.g.updateMatrixWorld(true);
             if (clave === 'bong') recibe.p.cuerpo.localToWorld(vA.set(...recibe.reposoBong));
             else recibe.p.brazoD.localToWorld(vA.set(...POS_PITO));
+            scene.worldToLocal(vA); // los objetos sueltos viven en `scene` (en la supervivencia, un grupo corrido 48 bloques)
             const g = clave === 'bong' ? bongO.g : pitoO.g;
             vB.copy(pase.desde[clave]).lerp(vA, suave(u));
             g.position.copy(vB);
@@ -529,6 +531,18 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         }
     }
     const animarMoises = animarFumador, animarLalo = animarFumador;
+    // El bong no queda flotando: si los brazos están en otra cosa (¡YIAAAAAA! o una charla de la vida entre amigos),
+    // quien lo tiene lo deja en el suelo a su lado y lo vuelve a tomar al terminar (bajaBong: 0 en la mano, 1 en el suelo)
+    const BONG_SUELO = { moises: [0.36, 0.6, 0.5], lalo: [0.32, 0.06, 0.42] };
+    function bongAlSuelo(n, dt) {
+        if (n.objeto !== 'bong' || pase) { n.bajaBong = 0; return; }
+        const ocupado = n.yia > 0 || (n.vida && !fumando(n));
+        n.bajaBong = Math.max(0, Math.min(1, (n.bajaBong || 0) + (ocupado ? dt * 3 : -dt * 2.5)));
+        if (!n.bajaBong) return;
+        const k = suave(n.bajaBong), s = BONG_SUELO[n.clave], g = bongO.g;
+        g.position.set(lerp(g.position.x, s[0], k), lerp(g.position.y, s[1], k), lerp(g.position.z, s[2], k));
+        g.rotation.x = lerp(g.rotation.x, 0, k);
+    }
 
     // ---------------------------------------------------------
     // Atalaya: Boris corta leña y Lucho conversa a su lado
@@ -809,6 +823,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                     visible = (n.escena ? n.escena(dt, base) : base()) !== false;
                     // Vida entre amigos (supervivencia/vida-amigos.js): sus gestos van encima de la animación normal
                     if (visible && !n.escena && n.vida) n.vida.animar(dt);
+                    if (visible && !n.escena && (n === moises || n === lalo)) bongAlSuelo(n, dt);
                 }
                 n.p.g.visible = visible;
                 if (n.clave === 'boris') { n.leno.visible = visible && !n.partido; if (!visible) for (const h of n.mitades) h.m.visible = false; }

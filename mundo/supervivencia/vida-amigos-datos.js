@@ -10,6 +10,7 @@
 // =========================================================
 import { crearGuion, cerrar, t, MOLDES, GESTOS_GRUPO } from './grupos/comun.js';
 import { GESTOS } from './escenas-skin.js';
+import * as THREE from '../../vendor/three.module.js';
 
 export const GESTOS_SKIN = GESTOS;
 
@@ -22,6 +23,41 @@ export const PROPIOS = {
     // Pulgar arriba orgulloso: brazo derecho adelante a la altura del pecho, un rebote al inicio, cabeza ladeada (sentado: solo brazos y cabeza)
     pulgar: (u, t) => { const reb = u < 0.3 ? Math.sin(u / 0.3 * Math.PI) : 0; return { bDx: -1.0 - reb * 0.25 + Math.sin(t * 2) * 0.03, bDz: 0.35, cz: 0.12 }; },
 };
+
+// Efectos de los gestos propios: mientras dura `ronca`, una nubecita con «Z» sube desde la cabeza (tres a destiempo,
+// crecen y se desvanecen). La llama vida-amigos.js cada cuadro con el peso del gesto (0 = se esconde).
+let texZ = null;
+function texturaZ() {
+    if (texZ) return texZ;
+    const c = document.createElement('canvas'); c.width = c.height = 12;
+    const x = c.getContext('2d');
+    const nube = ['....####....', '..########..', '.##########.', '############', '############', '############', '############', '.##########.', '..########..', '....####....'];
+    nube.forEach((f, j) => { for (let i = 0; i < 12; i++) if (f[i] === '#') { x.fillStyle = '#f4f6fa'; x.fillRect(i, j + 1, 1, 1); } });
+    x.fillStyle = '#2c4a8c';
+    for (const [i, j] of [[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [7, 4], [6, 5], [5, 6], [4, 7], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [8, 8]]) x.fillRect(i, j, 1, 1);
+    texZ = new THREE.CanvasTexture(c); texZ.magFilter = texZ.minFilter = THREE.NearestFilter; texZ.colorSpace = THREE.SRGBColorSpace;
+    return texZ;
+}
+const zzz = new Map();
+export function efectos(n, nombre, peso, t) {
+    let e = zzz.get(n);
+    if (nombre !== 'ronca' || peso <= 0.01) { if (e) e.g.visible = false; return; }
+    if (typeof document === 'undefined') return;
+    if (!e) {
+        const g = new THREE.Group();
+        const sp = [0, 1, 2].map(() => { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaZ(), transparent: true, depthWrite: false })); g.add(m); return m; });
+        n.p.g.add(g);
+        e = { g, sp };
+        zzz.set(n, e);
+    }
+    e.g.visible = true;
+    e.sp.forEach((m, i) => {
+        const f = (t * 0.55 + i / 3) % 1; // cada una tarda ~1,8 s en subir
+        m.position.set(-0.25 - f * 0.45, 2.25 + f * 0.95, 0.1);
+        m.scale.setScalar(0.2 + f * 0.25);
+        m.material.opacity = peso * Math.sin(Math.PI * f);
+    });
+}
 
 // Quien habla gesticula en los huecos (relleno) y los demás asienten de a ratos
 function rellenar(g) {
