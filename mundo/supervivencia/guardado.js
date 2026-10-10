@@ -94,9 +94,8 @@ async function descomprimir(blob) {
     return new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).text();
 }
 
-export async function exportarMundo(id) {
-    const m = await cargarMundo(id);
-    if (!m) throw new Error('No existe el mundo');
+// Descarga el objeto de un mundo como archivo .venjy (no toca la base: sirve para una copia que aún no se guardó)
+export async function descargarMundo(m) {
     const blob = await comprimir(JSON.stringify({ formato: 'venjy-supervivencia', ...m }));
     const a = document.createElement('a');
     const seguro = (m.nombre || 'mundo').replace(/[^\p{L}\p{N}_-]+/gu, '_').slice(0, 30) || 'mundo';
@@ -105,6 +104,32 @@ export async function exportarMundo(id) {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+export async function exportarMundo(id) {
+    const m = await cargarMundo(id);
+    if (!m) throw new Error('No existe el mundo');
+    await descargarMundo(m);
+}
+
+// Guardar la copia de una sala cooperativa con tope de mundos (bloque 7a, punto 26). Lógica pura: el almacén
+// llega inyectado ({ listar, guardar, borrar }) para probarla sin IndexedDB.
+//   - con espacio: guarda y listo;
+//   - lleno y sin `reemplazarId`: no hace nada ({ ok: false, motivo: 'lleno', lista });
+//   - lleno y con `reemplazarId`: primero escribe la copia y solo después borra ese mundo (si falla la
+//     escritura no se borra nada). Nunca se borra `abiertoId` (el mundo que está abierto).
+export async function guardarCopiaConTope(almacen, copia, { reemplazarId = null, abiertoId = null, max = MAX_MUNDOS } = {}) {
+    const lista = await almacen.listar();
+    const lleno = lista.length >= max;
+    if (lleno) {
+        if (!reemplazarId) return { ok: false, motivo: 'lleno', lista };
+        if (reemplazarId === abiertoId) return { ok: false, motivo: 'abierto', lista };
+        if (!lista.some(m => m.id === reemplazarId)) return { ok: false, motivo: 'no-existe', lista };
+    }
+    await almacen.guardar(copia);
+    let errorBorrar = null;
+    if (lleno) { try { await almacen.borrar(reemplazarId); } catch (e) { errorBorrar = e; } }
+    return { ok: true, id: copia.id, borrado: lleno ? reemplazarId : null, errorBorrar };
 }
 
 // Lee un archivo .venjy y lo guarda como un mundo nuevo (no pisa ninguno existente)

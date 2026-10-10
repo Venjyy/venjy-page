@@ -45,7 +45,10 @@ export class Jugador {
         this.lento = 1;            // multiplicador de velocidad (comer, tensar el arco, telaraña…)
         this.empuje = new THREE.Vector3(); // retroceso al recibir un golpe (se disipa solo)
         this.yMaxAire = null;      // altura más alta desde que dejó el suelo (daño por caída)
-        this.vCorrer = V_CORRER;   // la supervivencia corre un poco más rápido
+        this.vCaminar = V_CAMINAR; // la supervivencia camina y corre un poco más rápido (main.js)
+        this.vCorrer = V_CORRER;
+        this.bonoCamino = 1;       // multiplicador de velocidad sobre B.CAMINO (supervivencia: 1,15)
+        this.chocoLado = false;    // el último mover() pegó contra una pared (para salir del agua)
         // Salto corriendo (supervivencia): cada salto suma impulso hacia adelante hasta un tope y en el
         // aire se conserva la velocidad (como en Minecraft, saltar corriendo es más rápido que correr)
         this.impulsoSalto = 0;     // m/s que suma cada salto corriendo (0 = desactivado)
@@ -137,8 +140,8 @@ export class Jugador {
         // Volando y atrapado dentro de bloques (un chunk se cargó encima): se sale libremente
         if (this.vuela && this.choca(p.x, p.y, p.z) && p.y >= 0) { p.x += dx; p.y += dy; p.z += dz; return; }
         const borde = this.agachado && this.enSuelo && this.choca(p.x, p.y - 0.5, p.z);
-        if (!this.choca(p.x + dx, p.y, p.z) && !(borde && !this.choca(p.x + dx, p.y - 0.5, p.z))) p.x += dx; else this.vel.x = 0;
-        if (!this.choca(p.x, p.y, p.z + dz) && !(borde && !this.choca(p.x, p.y - 0.5, p.z + dz))) p.z += dz; else this.vel.z = 0;
+        if (!this.choca(p.x + dx, p.y, p.z) && !(borde && !this.choca(p.x + dx, p.y - 0.5, p.z))) p.x += dx; else { this.vel.x = 0; if (dx) this.chocoLado = true; }
+        if (!this.choca(p.x, p.y, p.z + dz) && !(borde && !this.choca(p.x, p.y - 0.5, p.z + dz))) p.z += dz; else { this.vel.z = 0; if (dz) this.chocoLado = true; }
         const antes = this.enSuelo;
         this.enSuelo = false;
         if (!this.choca(p.x, p.y + dy, p.z)) p.y += dy;
@@ -194,8 +197,9 @@ export class Jugador {
         const lava = !this.vuela && this.enLava();
         const agua = !this.vuela && (this.enAgua() || lava);
         const escalera = !this.vuela && this.enEscalera();
-        let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.agachado ? V_AGACHADO : this.corre ? this.vCorrer : V_CAMINAR);
+        let v = this.vuela ? (this.corre ? V_VUELO_RAPIDO : V_VUELO) : (this.agachado ? V_AGACHADO : this.corre ? this.vCorrer : this.vCaminar);
         if (agua) v *= lava ? 0.35 : 0.6;
+        else if (this.bonoCamino !== 1 && this.enSuelo && !this.vuela && !escalera && this.mundo.bloque(this.pos.x, this.pos.y - 0.1, this.pos.z) === B.CAMINO) v *= this.bonoCamino;
         v *= this.lento;
 
         // Suavizado de la velocidad horizontal
@@ -222,7 +226,11 @@ export class Jugador {
             this.yMaxAire = null;
         } else if (agua) {
             this.vel.y += ((lava ? -1.2 : -2.5) - this.vel.y) * (1 - Math.exp(-3 * dt));
-            if (t.has('Space')) this.vel.y = lava ? 2.2 : 4;
+            if (t.has('Space')) {
+                this.vel.y = lava ? 2.2 : 4;
+                // Contra una orilla nadando: impulso que deja los pies sobre el borde (como Minecraft)
+                if (this.chocoLado && (adelante || lado)) this.vel.y = lava ? 5 : 7;
+            }
             this.yMaxAire = null;
         } else {
             if (this.cargadoEn(this.pos.x, this.pos.z)) this.vel.y -= GRAVEDAD * dt;
@@ -248,6 +256,7 @@ export class Jugador {
             this.empuje.set(0, 0, 0);
         }
         const pasos = Math.max(1, Math.ceil(Math.max(Math.abs(this.vel.x), Math.abs(this.vel.y), Math.abs(this.vel.z)) * dt / 0.4));
+        this.chocoLado = false;
         for (let i = 0; i < pasos; i++) {
             if (this.vuela && this.noclipVuelo) {
                 this.pos.x += this.vel.x * dt / pasos; this.pos.y += this.vel.y * dt / pasos; this.pos.z += this.vel.z * dt / pasos;

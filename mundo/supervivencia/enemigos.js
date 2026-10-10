@@ -19,6 +19,27 @@ import { sonidos } from './sonidos.js';
 const ajustar = ([r, g, b], f) => [r * f, g * f, b * f];
 const mota = (c, f = 0.18) => (x, y, r) => ajustar(c, 1 - f / 2 + r() * f);
 
+// Retroceso al recibir un golpe (7a). Durante `tiempo` el monstruo no persigue y casi no frena, así el
+// empuje no se borra al cuadro siguiente: ≈ 2,3 bloques normal y ≈ 4,3 corriendo (Minecraft: 2,5 y 4). Valores
+// medidos con mundo/tests/retroceso.mjs (el plan decía 0,4 s y ×14: daba 1,8 y 3,4).
+export const RETROCESO = { tiempo: 0.5, factor: 16, salto: 6, rocePersecucion: 10, roceRetroceso: 3, roceAire: 2 };
+
+export function empujar(e, dx, dz, fuerza) {
+    const n = Math.hypot(dx, dz) || 1;
+    e.vel.x += dx / n * fuerza * RETROCESO.factor; e.vel.z += dz / n * fuerza * RETROCESO.factor;
+    if (e.enSuelo) e.vel.y = RETROCESO.salto;
+    e.retroceso = RETROCESO.tiempo;
+}
+
+// Suaviza la velocidad horizontal hacia (ix, iz)·v. En retroceso el objetivo es 0 y el roce es bajo.
+export function suavizarVelocidad(e, ix, iz, v, dt) {
+    let k = e.enSuelo ? RETROCESO.rocePersecucion : RETROCESO.roceAire;
+    if (e.retroceso > 0) { ix = 0; iz = 0; if (e.enSuelo) k = RETROCESO.roceRetroceso; e.retroceso = Math.max(0, e.retroceso - dt); }
+    const a = 1 - Math.exp(-k * dt);
+    e.vel.x += (ix * v - e.vel.x) * a;
+    e.vel.z += (iz * v - e.vel.z) * a;
+}
+
 export const NOMBRES_MOB = {
     zombi: { es: 'Zombi', en: 'Zombie' }, esqueleto: { es: 'Esqueleto', en: 'Skeleton' },
     arana: { es: 'Araña', en: 'Spider' }, creeper: { es: 'Creeper', en: 'Creeper' }, trauco: { es: 'Trauco', en: 'Trauco' },
@@ -319,9 +340,7 @@ export function crearEnemigos(ctx) {
         if (origen) e.por = origen.por || null; // online: quién pegó (null = el jugador local)
         const fuerza = origen && origen.fuerza != null ? origen.fuerza : 0.45;
         if (origen) {
-            const dx = e.pos.x - origen.x, dz = e.pos.z - origen.z, n = Math.hypot(dx, dz) || 1;
-            e.vel.x += dx / n * fuerza * 12; e.vel.z += dz / n * fuerza * 12;
-            if (e.enSuelo) e.vel.y = 5.5;
+            empujar(e, e.pos.x - origen.x, e.pos.z - origen.z, fuerza);
         }
         if (origen && origen.fuego) e.fuego = Math.max(e.fuego, 5);
         sonidos.golpe();
@@ -486,9 +505,7 @@ export function crearEnemigos(ctx) {
         if (e.tipo === 'arana' && e.persigue && dist < 4 && dist > 2 && e.enSuelo && Math.random() < dt * 1.2) { e.vel.y = 6.5; e.vel.x += ix * 3; e.vel.z += iz * 3; }
 
         // Movimiento
-        const a = 1 - Math.exp(-(e.enSuelo ? 10 : 2) * dt);
-        e.vel.x += (ix * v - e.vel.x) * a;
-        e.vel.z += (iz * v - e.vel.z) * a;
+        suavizarVelocidad(e, ix, iz, v, dt);
         moverCuerpo(mundo, e, dt);
         if (e.chocoLado && (ix || iz)) {
             if (d.trepa) e.vel.y = 3; // la araña trepa por las paredes

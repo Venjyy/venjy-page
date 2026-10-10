@@ -354,7 +354,7 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
         cerrarB.type = 'button';
         cerrarB.className = 'cerrar-ventana';
         cerrarB.setAttribute('aria-label', t().cerrar);
-        cerrarB.textContent = 'X';
+        cerrarB.title = t().cerrar; // la X la dibuja el CSS (::before), sin texto
         cerrarB.addEventListener('click', () => cerrar(true));
         panel.appendChild(cerrarB);
 

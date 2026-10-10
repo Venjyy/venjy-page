@@ -14,7 +14,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
 | `main.js` (1160) | Arranque, menús, cableado de todos los sistemas y bucle. `aplicarIdioma:82` `pintarMenu:199` `hospedarMundo:271` `jugar:387` `iniciarJuego:397` `arrancar:408` `estadoActual:926` `guardarYa:944` `bucle:1087` |
-| `guardado.js` (125) | Hasta 5 mundos en IndexedDB `venjy-supervivencia`. `listarMundos:42` `cargarMundo:49` `guardarMundo:50` `borrarMundo:51` `serializarEdiciones:60` `cargarEdiciones:72` |
+| `guardado.js` (150) | Hasta 5 mundos en IndexedDB `venjy-supervivencia`. `listarMundos:42` `cargarMundo:49` `guardarMundo:50` `borrarMundo:51` `serializarEdiciones:60` `cargarEdiciones:72` `descargarMundo:98` `guardarCopiaConTope:121` (copia del coop con tope, almacén inyectado) |
 | `vida.js` (218) | Vida, hambre, aire, daño y armadura. `crearVida:23` |
 | `inventario.js` (173) | Datos puros: 36 casillas, armadura, mano. `Inventario:12` `clicCasilla:149` |
 | `objetos.js` (346) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
@@ -47,7 +47,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 |---|---|
 | `combate.js` (135) | Golpe con carga, crítico, arco. `crearCombate:16` |
 | `proyectiles.js` (128) | Flechas y bolas de fuego. `crearProyectiles:17` |
-| `enemigos.js` (620) | Zombi, esqueleto, araña, creeper, Trauco. `crearEnemigos:192` |
+| `enemigos.js` (637) | Zombi, esqueleto, araña, creeper, Trauco. `RETROCESO` `empujar` `suavizarVelocidad` (knockback, 7a) · `crearEnemigos:213` |
 | `jefes.js` (579) | Imbunche y demás jefes en altares. `crearJefes:34` |
 | `ganado.js` (231) | Caza y cría sobre `criaturas/animales.js`. `crearGanado:35` |
 | `pesca.js` (120) | Caña y boya. `crearPesca:22` |
