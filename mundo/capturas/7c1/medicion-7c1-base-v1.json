@@ -1,0 +1,139 @@
+{
+ "medicion": [
+  {
+   "sitio": "campo",
+   "x": 118,
+   "z": 485,
+   "cuadros": 236,
+   "ediciones": 108,
+   "p50": 5,
+   "p95": 22.9,
+   "p99": 293.4,
+   "max": 650.8,
+   "remallado": 1.02,
+   "fases": {
+    "workers": {
+     "ms": 18.5,
+     "n": 114,
+     "max": 5.1,
+     "porEdicion": 0.17
+    },
+    "luzInc": {
+     "ms": 9.4,
+     "n": 114,
+     "max": 1,
+     "porEdicion": 0.09
+    },
+    "soltar": {
+     "ms": 4.5,
+     "n": 109,
+     "max": 0.7,
+     "porEdicion": 0.04
+    },
+    "particulas": {
+     "ms": 4693,
+     "n": 350,
+     "max": 2397.3,
+     "porEdicion": 43.45
+    },
+    "seccion": {
+     "ms": 100.8,
+     "n": 87,
+     "max": 7.1,
+     "porEdicion": 0.93
+    }
+   }
+  },
+  {
+   "sitio": "campamento",
+   "x": 741,
+   "z": 533,
+   "cuadros": 200,
+   "ediciones": 103,
+   "p50": 4.8,
+   "p95": 8.8,
+   "p99": 49.1,
+   "max": 543.3,
+   "remallado": 1.45,
+   "fases": {
+    "workers": {
+     "ms": 9.6,
+     "n": 106,
+     "max": 1.4,
+     "porEdicion": 0.09
+    },
+    "luzInc": {
+     "ms": 43.1,
+     "n": 106,
+     "max": 18.6,
+     "porEdicion": 0.42
+    },
+    "soltar": {
+     "ms": 5.1,
+     "n": 103,
+     "max": 1,
+     "porEdicion": 0.05
+    },
+    "particulas": {
+     "ms": 5.2,
+     "n": 306,
+     "max": 0.8,
+     "porEdicion": 0.05
+    },
+    "seccion": {
+     "ms": 106.4,
+     "n": 101,
+     "max": 12.7,
+     "porEdicion": 1.03
+    }
+   }
+  },
+  {
+   "sitio": "base",
+   "x": 390,
+   "z": 485,
+   "cuadros": 145,
+   "ediciones": 108,
+   "p50": 5.8,
+   "p95": 13.2,
+   "p99": 495.9,
+   "max": 953.4,
+   "remallado": 1.34,
+   "fases": {
+    "workers": {
+     "ms": 30,
+     "n": 109,
+     "max": 6.1,
+     "porEdicion": 0.28
+    },
+    "luzInc": {
+     "ms": 78.5,
+     "n": 109,
+     "max": 23.4,
+     "porEdicion": 0.73
+    },
+    "soltar": {
+     "ms": 14.4,
+     "n": 109,
+     "max": 4.2,
+     "porEdicion": 0.13
+    },
+    "particulas": {
+     "ms": 5,
+     "n": 254,
+     "max": 1,
+     "porEdicion": 0.05
+    },
+    "seccion": {
+     "ms": 66.1,
+     "n": 96,
+     "max": 4,
+     "porEdicion": 0.61
+    }
+   }
+  }
+ ],
+ "idMano": 306,
+ "vista": 1,
+ "errores": []
+}

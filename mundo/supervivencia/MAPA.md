@@ -13,7 +13,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
-| `main.js` (1344) | Arranque, menús, cableado de todos los sistemas y bucle. `aplicarIdioma:84` `hospedarMundo:287` `jugar:403` `iniciarJuego:413` `arrancar:424` `pintarCoop:887` `pintarPing:942` (barras de ms, lista de Tab, 7e) `estadoActual:1098` `guardarYa:1116` `bucle:1265` |
+| `main.js` (1362) | Arranque, menús, cableado de todos los sistemas y bucle. `aplicarIdioma:84` `hospedarMundo:287` `jugar:403` `iniciarJuego:413` `arrancar:424` `pintarCoop:887` `pintarPing:942` (barras de ms, lista de Tab, 7e) `estadoActual:1098` `guardarYa:1116` `bucle:1265` |
 | `guardado.js` (150) | Hasta 5 mundos en IndexedDB `venjy-supervivencia`. `listarMundos:42` `cargarMundo:49` `guardarMundo:50` `borrarMundo:51` `serializarEdiciones:60` `cargarEdiciones:72` `descargarMundo:98` `guardarCopiaConTope:121` (copia del coop con tope, almacén inyectado) |
 | `vida.js` (218) | Vida, hambre, aire, daño y armadura. `crearVida:23` |
 | `inventario.js` (173) | Datos puros: 36 casillas, armadura, mano. `Inventario:12` `clicCasilla:149` |
@@ -31,8 +31,9 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `dia.js` (41) | Día de 10 min. `crearDia:15` |
 | `subsuelo.js` (188) | Roca madre, cuevas, lava, menas. `llenarSubsuelo:128` |
 | `desplazado.js` (41) | Vista con el mapa subido `dy` para las criaturas. `vistaDesplazada:20` |
-| `mano.js` (199) | Mano en primera persona. `crearMano:57` |
-| `camaras.js` (327) | Cuerpo del jugador, 3.ª persona (F5) y cámara de cine. `crearCamaras:30` |
+| `mano.js` (252) | Mano en primera persona: brazo con la skin siempre visible y el objeto en la mano (7c-1, `AGARRE_1P`). `crearFabrica` (mallas por id, las comparte con el cuerpo) `crearMano` |
+| `pose-jugador.js` (201) | 7c-1: pose del cuerpo propio (F5) y de los demás jugadores: caminar/correr, golpe, objeto en la mano, comer, arco, escudo, sentado. `F` `codificarF` `decodificarF` (bits de `f` en `p`) `POSES` `AGARRE` `avanzar` `angulos` (puras) `posar` `ponerObjeto` `limpiar`. Prueba `mundo/tests/pose-jugador.mjs` |
+| `camaras.js` (372) | Cuerpo del jugador (pose con `pose-jugador.js`; con `cine.pose` o `cuerpoAjeno` solo camina), 3.ª persona (F5) y cámara de cine. `crearCamaras:31` · depuración `poseForzada`, `estadoPose` |
 | `skin.js` (245) | Skin del jugador y editor. `skinPorDefecto:32` `crearModelo:53` `crearEditorSkin:110` |
 | `sonidos.js` (104) / `musica.js` (299) | Efectos y música sintetizados con WebAudio. `sonidos:63` · `crearMusica:228` |
 | `interpolacion.js` (66) | Búfer de red a 2-5 Hz. `Bufer:14` `mezclar:61` |
@@ -87,7 +88,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
-| `coop.js` (829) | Hasta 8 jugadores por WebRTC en estrella. Ping (7e): `rttDe:310` `medirEco:332`, API `pingDe` `pingPropio` `relojAnfitrion` `desfaseAnfitrion`. `hospedar:123` `unirse:138` `hospedarLocal:174` `unirseLocal:185` `guardadoDeInvitado:203` `crearCoop:216` `actualizar:765` `salir:794` |
+| `coop.js` (852) | Hasta 8 jugadores por WebRTC en estrella. Cuerpo de los demás con `posar` (7c-1: bits de `f`, `i`/`i2` = manos, golpes a la hora del dibujo; `golpeo()`). Ping (7e): `rttDe:310` `medirEco:332`, API `pingDe` `pingPropio` `relojAnfitrion` `desfaseAnfitrion`. `hospedar:123` `unirse:138` `hospedarLocal:174` `unirseLocal:185` `guardadoDeInvitado:203` `crearCoop:216` `actualizar:765` `salir:794` |
 | `../online/ping.js` (118) | 7e, lógica pura del ping (sin DOM ni red): `nivelDeMs` `barrasDeMs` `rttDeEco` `rttDeStats` `Suave` `RelojAnfitrion` `Eco` `ecoDeLista` `ecoPropio`. Prueba `mundo/tests/ping.mjs` |
 | `ui-qr.js` (86) | Panel QR para jugar sin internet. `crearPanelQR:15` |
 

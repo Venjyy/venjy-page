@@ -29,6 +29,10 @@ Mide ~2 bloques. Mira hacia **+Z**; su derecha es **−X**. Pies en el origen de
 | `rz` | `cuerpo.rotation.z` | ladear todo el cuerpo | −0.15 … 0.15 |
 | `y` | `cuerpo.position.y` | subir el cuerpo (saltito, compensar) | −0.7 … 0.6 |
 
+⚠ El orden de Euler es XYZ: girar un brazo en `y` (`brazoD.rotation.y`) solo lo **retuerce sobre su
+propio eje** (la caja cuelga a lo largo de `y`); no cambia hacia dónde apunta. Para cruzar un brazo
+al centro usa `z` (`bDz` / `bIz`). (Lección de 7c-1: el arco y el escudo con `y` no se movían.)
+
 Regla de espejo: para que el brazo izquierdo haga lo mismo que el derecho, **mismo `x`, `z` con
 signo contrario** (`bIx = bDx`, `bIz = -bDz`).
 
