@@ -40,7 +40,7 @@ const DY = A.dy;
 if (A.decor.length <= creativo.decor.length) falla('la supervivencia no sumó decorados');
 
 // 3. Contenido
-const cs = A.caminos || [];
+const cs = (A.caminos || []).filter(c => c.tipo !== 'lugar');
 const mojones = cs.filter(c => c.tipo === 'mojon'), cruces = cs.filter(c => c.tipo === 'cruce');
 if (cruces.length !== RUTA.length - 2) falla(`cruces: ${cruces.length}, esperaba ${RUTA.length - 2}`);
 if (mojones.length < 10) falla(`pocos mojones: ${mojones.length}`);
@@ -84,7 +84,7 @@ for (const [n, ds] of porTramo) for (let i = 1; i < ds.length; i++) {
 // 2. Determinismo (hilo principal contra «worker»)
 if (JSON.stringify(A.caminos) !== JSON.stringify(B2.caminos)) falla('las señales no son iguales entre dos terrenos');
 const lista = [];
-const decorCam = A.decor.slice(creativo.decor.length);
+const decorCam = A.decor.slice(creativo.decor.length).filter(d => !d.motivo); // los de lugares-motivos van en lugares.mjs
 const chunksDe = new Set();
 for (const d of decorCam) {
     for (let i = 0; i < d.bloques.length; i += 4) chunksDe.add(Math.floor(d.bloques[i] / V.CHUNK) + ',' + Math.floor(d.bloques[i + 2] / V.CHUNK));

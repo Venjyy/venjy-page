@@ -66,6 +66,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `misiones-datos.js` (~300) | 3 misiones por amigo, kits y 3 jefes. `MISIONES:23` `KITS` `repartirKit` `JEFES:219` `TEXTOS_VENJY:240` |
 | `facilidades-datos.js` (~220) / `facilidades.js` (~130) | 7d-2: tabla `FACILIDADES` por misión, pesca, rumbo, `crearGarantia`, planos del huerto/grava/horno · cableado: decorados una vez por mundo, pista, marcas del minimapa y monstruo de la noche. `botinPesca` `elegirSitio` `planoHuerto` · `crearFacilidades` |
 | `caminos-carteles.js` (~40) + `mundo/caminos.js` (~140) | 7f-3 parte 1: mojones, carteles de cruce y faroles sobre los caminos. `colocarCaminos` (en `mundo/`, determinista, lo llama `prepararTerreno` solo en supervivencia y deja `terreno.caminos`; bloques como decorados) · `crearCartelesCamino` (texto a < 24 bloques) |
+| `mundo/lugares-motivos.js` (~50) | 7f-3 parte 3: cama y antorcha del molino y carteles de lugar (molino, portal). `colocarMotivos` (lo llama `prepararTerreno` solo en supervivencia; los carteles van en `terreno.caminos` con `tipo: 'lugar'`) · `CARTELES_LUGARES` |
 | `misiones.js` (499) | Panel de cada amigo y misión activa. `crearMisiones:38` `cumplida:114` `aceptar:273` `completar:284` `hablar:321` `hablarVenjy:343` |
 | `tienda-datos.js` (215) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `crearTienda:21` `comprar:110` `vender:123` |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
