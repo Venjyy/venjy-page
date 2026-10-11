@@ -415,6 +415,28 @@ body.con-tactil .nombre-objeto { bottom: calc(var(--pie) + 4px); }
 .cartas-postura { display: flex; flex: 1 1 260px; gap: 8px; }.cartas-postura .cartas-boton { flex: 1 1 0; }
 .cartas-reglas { margin-top: 8px; padding: 10px; background: #100010; border: 3px solid #2b0a6b; box-shadow: inset 2px 2px 0 #5a1fd1; }.cartas-reglas p { margin: 7px 0; font-size: .82rem; line-height: 1.3; }
 .cartas-fin { position: fixed; z-index: 1; left: 50%; top: 50%; width: min(430px, calc(100vw - 32px)); transform: translate(-50%, -50%); padding: 18px; text-align: center; background: #21170e; border: 4px solid #000; box-shadow: inset 3px 3px 0 #795b38, inset -3px -3px 0 #0c0704; }.cartas-fin p { color: var(--gris); }
+/* Mesa 3D del duelo (7h-2b, PR 4a: cartas-mesa.js): las cartas van en el mundo; aquí solo la capa de toques y el marcador */
+body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
+.cartas-mesa-capa { position: fixed; inset: 0; z-index: 56; touch-action: none; }
+.cartas-mesa-hud { position: fixed; inset: 0; z-index: 57; pointer-events: none; color: var(--blanco); font-family: PixelCraft, monospace; text-shadow: 2px 2px 0 #222; }
+.cartas-mesa-hud > * { pointer-events: auto; }
+.cartas-mesa-hud .cartas-inicio { min-height: 0; margin: max(8vh, 16px) auto 0; }
+.cartas-mesa-hud .cartas-fin { z-index: 2; }
+.cartas-mesa-marcador { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0; padding: 8px 14px; background: rgb(28 19 12 / 0.86); border-bottom: 4px solid #120c07; font-size: .9rem; }
+.cartas-mesa-marcador strong { color: var(--amarillo); font-weight: normal; }
+.cartas-mesa-aviso { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); margin: 0; padding: 4px 10px; background: rgb(0 0 0 / 0.5); font-size: .82rem; text-align: center; pointer-events: none; }
+.cartas-mesa-aviso:empty { display: none; }
+.cartas-mesa-botones { position: absolute; left: 12px; top: 50%; transform: translateY(-58%); display: flex; flex-direction: column; gap: 6px; width: 190px; }
+.cartas-mesa-botones .cartas-boton { min-height: 40px; font-size: .86rem; }
+.cartas-mesa-hud .cartas-reglas { position: absolute; left: 214px; top: 70px; width: min(420px, calc(100vw - 230px)); }
+.cartas-mesa-mini { position: fixed; z-index: 56; border: 4px solid #120c07; box-shadow: inset 0 0 0 2px #7a5a36; pointer-events: none; box-sizing: content-box; transform: translate(-4px, 4px); }
+@media (max-width: 700px) {
+    .cartas-mesa-marcador { flex-wrap: wrap; font-size: .7rem; padding: 6px 8px; }
+    .cartas-mesa-aviso { top: 64px; font-size: .7rem; }
+    .cartas-mesa-botones { width: 128px; left: 6px; top: 96px; transform: none; }
+    .cartas-mesa-botones .cartas-boton { min-height: 34px; font-size: .7rem; padding: 4px; }
+    .cartas-mesa-hud .cartas-reglas { left: 140px; top: 96px; width: calc(100vw - 150px); }
+}
 /* Cartas con arte (cartas-arte.js): lienzo de 50×76 píxeles escalado por enteros
    (--px = 2 en la mesa, 3 en la mano); los textos se colocan sobre las ZONAS del lienzo. */
 .carta-pixel.con-arte { --px: 2px; --f-nombre: 7px; --f-familia: 6px; --f-texto: 6px; --f-numero: 8px; position: relative; flex: 0 0 auto; width: calc(var(--px) * 50); height: calc(var(--px) * 76); min-height: 0; margin: 0 auto; padding: 0; gap: 0; overflow: visible; background: transparent no-repeat 0 0 / 100% 100%; border: 0; box-shadow: none; image-rendering: pixelated; filter: drop-shadow(0 var(--px) 0 rgb(0 0 0 / .55)); }

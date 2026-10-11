@@ -86,7 +86,7 @@ cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
 // Idioma
 // ---------------------------------------------------------
 let idioma = 'es';
-let panelCartas = null;
+let panelCartas = null, mesaCartas = null;
 try {
     const param = new URLSearchParams(location.search).get('lang');
     const guardado = localStorage.getItem('preferredLanguage');
@@ -102,6 +102,7 @@ function aplicarIdioma() {
     document.getElementById('volver').href = `index.html?lang=${idioma}`;
     document.getElementById('ir-creativo').href = `mundo.html?lang=${idioma}`;
     panelCartas?.setIdioma(idioma);
+    mesaCartas?.setIdioma(idioma);
 }
 aplicarIdioma();
 
@@ -778,6 +779,29 @@ async function arrancar(guardado, cx = null) {
         }).catch(err => { cargandoCartas = null; console.error('No se pudo cargar el duelo de cartas', err); return null; });
         return cargandoCartas;
     }
+    // Mesa 3D del duelo (7h-2b, PR 4a: cartas-mesa.js, con import() la primera vez); el panel 2D queda de respaldo
+    let cargandoMesa = null;
+    function cargarMesaCartas() {
+        if (!cargandoMesa) cargandoMesa = import('./cartas-mesa.js').then(m => {
+            mesaCartas = m.crearMesaCartas({
+                scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma,
+                tinte: materiales.solido.color,
+                lucho: () => amigos.lista.find(n => n.clave === 'lucho') || null,
+                alCerrar: liberarEscena,
+                alPanel: n => { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); }
+            });
+            return mesaCartas;
+        }).catch(err => { cargandoMesa = null; console.error('No se pudo cargar la mesa de cartas', err); return null; });
+        return cargandoMesa;
+    }
+    function abrirPanelCartas(n = 'facil') {
+        uiAbierta = true;
+        cargarPanelCartas().then(p => { if (p) p.abrir(n); else { uiAbierta = false; if (!vida.muerto) entrar(); } });
+    }
+    function abrirMesaCartas(n = 'facil') {
+        bloquearEscena(true);
+        cargarMesaCartas().then(m => { if (!m || !m.abrir(n)) { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); } });
+    }
     misiones.minijuego = {
         texto: clave => {
             if (clave === 'lucho') return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) };
@@ -792,11 +816,7 @@ async function arrancar(guardado, cx = null) {
             capaPanel.hidden = true; capaPanel.textContent = '';
             document.body.classList.remove('panel-lado');
             camaras.terminarCine();
-            if (clave === 'lucho') {
-                uiAbierta = true;
-                cargarPanelCartas().then(p => { if (p) p.abrir('facil'); else { uiAbierta = false; if (!vida.muerto) entrar(); } });
-                return;
-            }
+            if (clave === 'lucho') { abrirMesaCartas('facil'); return; }
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
@@ -892,6 +912,15 @@ async function arrancar(guardado, cx = null) {
         },
         medir: { mundo, jugador, minado, entidades, terreno, irA, hud, B, DY, chunkForzado } // /medir romper (7b-1)
     });
+    // /cartas [facil|medio] (7h-2b): abre la mesa del duelo sin pedir el mazo, para probarla
+    comandosDev['/cartas'] = {
+        ayuda: { es: '/cartas [facil|medio] (mesa del duelo con Lucho)', en: '/cartas [facil|medio] (card duel table with Lucho)' },
+        sugerir: () => ['facil', 'medio'],
+        fn: arg => { // la consola se cierra y pide el puntero antes: se abre un momento después
+            const n = String(arg || '').trim() === 'medio' ? 'medio' : 'facil';
+            setTimeout(() => { if (!uiAbierta && !vida.muerto && !camaras.enCine) abrirMesaCartas(n); }, 150);
+        }
+    };
     // Consola de comandos (T o /): /fly, /dia, /noche, /ayuda, /escenas, /escena <nombre>, /gamemode devenjy (+ comandos de desarrollo)
     const consola = crearConsola({
         jugador, dia, hud, idioma, dev: comandosDev,
@@ -1400,6 +1429,8 @@ async function arrancar(guardado, cx = null) {
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
         get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
+        // Mesa del duelo (7h-2b): abrirMesa('facil'|'medio') sin pedir el mazo; mesaCartas, para pruebas y el Estudio
+        get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };
@@ -1455,6 +1486,7 @@ async function arrancar(guardado, cx = null) {
         escenaCuello.actualizar(corre ? dt : 0);
         minijuegos.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
+        if (mesaCartas) mesaCartas.actualizar(corre ? dt : 0);
         ruleta.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         // Correr (7c-1): en primera persona el campo de visión sube un 10 % suave, como en Minecraft
@@ -1488,6 +1520,7 @@ async function arrancar(guardado, cx = null) {
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
         renderer.render(scene, camara);
+        if (mesaCartas) mesaCartas.dibujar(); // la mesa de cartas: vista de arriba (3.ª persona) y tu mano
         if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();
         const msCuadro = performance.now() - tBucle;
         cuadrosMs.agregar(msCuadro);
