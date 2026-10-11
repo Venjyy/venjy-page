@@ -31,6 +31,7 @@ import { crearAgricultura } from './agricultura.js';
 import { crearMinado } from './minado.js';
 import { crearVida, CAUSAS } from './vida.js';
 import { crearDia } from './dia.js';
+import { textoHora, textoDiaHora } from './reloj.js';
 import { vistaDesplazada } from './desplazado.js';
 import { iniciarTactilSupervivencia } from './tactil-supervivencia.js';
 import { crearMano } from './mano.js';
@@ -198,7 +199,7 @@ window.addEventListener('resize', () => {
 // Ajustes (se guardan en el navegador)
 // ---------------------------------------------------------
 const AJUSTES_CLAVE = 'venjy-supervivencia-ajustes';
-const ajustes = { distancia: 8, fov: 70, sens: 22 };
+const ajustes = { distancia: 8, fov: 70, sens: 22, hora: false };
 try { Object.assign(ajustes, JSON.parse(localStorage.getItem(AJUSTES_CLAVE) || '{}')); } catch (e) { /* sin almacenamiento */ }
 const guardarAjustes = () => { try { localStorage.setItem(AJUSTES_CLAVE, JSON.stringify(ajustes)); } catch (e) { /* sin almacenamiento */ } };
 
@@ -1245,6 +1246,21 @@ async function arrancar(guardado, cx = null) {
         entrar();
     });
 
+    // ---- Hora del mundo (7j-0): HUD opcional, línea de la pausa y objeto Reloj en la mano ----
+    const horaEl = $('hora'), relojManoEl = $('reloj-mano'), pausaHoraEl = $('pausa-hora');
+    let horaPintada = '';
+    function pintarHora(fuerza = false) {
+        const h = textoHora(dia.t), clave = h + '|' + dia.dias + '|' + idioma + '|' + (ajustes.hora ? 1 : 0) + '|' + inventario.idEnMano();
+        if (!fuerza && clave === horaPintada) return;
+        horaPintada = clave;
+        horaEl.hidden = !ajustes.hora;
+        if (ajustes.hora) horaEl.textContent = h;
+        const enMano = inventario.idEnMano() === O.RELOJ;
+        relojManoEl.hidden = !enMano;
+        if (enMano) relojManoEl.textContent = textoDiaHora(dia.dias, dia.t, idioma);
+        pausaHoraEl.textContent = textoDiaHora(dia.dias, dia.t, idioma);
+    }
+
     // Ajustes de la pausa
     function sincronizarAjustes() {
         $('aj-distancia').value = ajustes.distancia; $('aj-distancia-v').textContent = ajustes.distancia;
@@ -1252,6 +1268,8 @@ async function arrancar(guardado, cx = null) {
         $('aj-sens').value = ajustes.sens; $('aj-sens-v').textContent = ajustes.sens;
         $('aj-sonido').checked = !mundoSilenciado();
         $('aj-musica').checked = musica.encendida;
+        $('aj-hora').checked = !!ajustes.hora;
+        pintarHora(true);
     }
     $('aj-distancia').addEventListener('input', e => {
         ajustes.distancia = Number(e.target.value); $('aj-distancia-v').textContent = ajustes.distancia;
@@ -1263,6 +1281,7 @@ async function arrancar(guardado, cx = null) {
     $('aj-sens').addEventListener('input', e => { ajustes.sens = Number(e.target.value); $('aj-sens-v').textContent = ajustes.sens; jugador.sensibilidad = ajustes.sens / 10000; guardarAjustes(); });
     $('aj-sonido').addEventListener('change', e => silenciarMundo(!e.target.checked));
     $('aj-musica').addEventListener('change', e => musica.encender(e.target.checked));
+    $('aj-hora').addEventListener('change', e => { ajustes.hora = e.target.checked; guardarAjustes(); pintarHora(true); });
 
     // ---- Depuración ----
     window.__venjy = {
@@ -1361,6 +1380,7 @@ async function arrancar(guardado, cx = null) {
         if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine) mano.dibujar();
         if (medicion.activa && medicion.cuadros) medicion.cuadros.push(performance.now() - tBucle); // /medir romper
 
+        pintarHora(); // barato: solo escribe al cambiar el minuto, el día, el idioma o la mano
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {
             fpsEl.textContent = Math.round(cuadros / acumulado) + ' FPS';

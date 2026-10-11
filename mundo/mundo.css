@@ -205,3 +205,16 @@ html, body {
     .tactil .tactil-pausa { right: calc(env(safe-area-inset-right, 0px) + 190px); }
     .tactil .tactil-pantalla { right: calc(env(safe-area-inset-right, 0px) + 242px); }
 }
+
+/* Hora del mundo (7j-0): reloj opcional del HUD y la hora del objeto Reloj en la mano */
+.reloj-mano {
+    position: absolute;
+    right: 14px;
+    bottom: 84px;
+    padding: 4px 10px;
+    font-size: 1.1rem;
+    color: var(--amarillo);
+    background: rgb(0 0 0 / 0.55);
+    border: 2px solid #1a1a1a;
+    text-shadow: 2px 2px 0 #3f3f3f;
+}

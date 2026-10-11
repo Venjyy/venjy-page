@@ -24,7 +24,8 @@ No se usa en preguntas rápidas ni en charla.
    (por ejemplo, el bloque 6 y el bloque 7 se intercalan), recomienda una y nombra la otra.
 2. **Elegir el modelo** con la tabla «Elección de modelo» del CLAUDE.md global del dueño y la tabla
    «Parte | Modelo | Por qué» del bloque correspondiente. Di el modelo principal y, si aplica, el
-   subagente (animaciones: Haiku primero, §0 de la skill `animaciones-minecraft`).
+   subagente (animaciones: Haiku primero, §0 de la skill `animaciones-minecraft`). Añade siempre el
+   **effort** (low | medium | high | xhigh | max; ver la skill `ahorro` §2): el mínimo que alcance, porque gasta menos.
 3. **Revisar el estado de git**: rama actual, PR abierto o fusionado (número y enlace) y si `main` local
    está al día con `origin/main`. Si el siguiente chat debe partir de `main` actualizado, dilo en el prompt.
 4. **Artifact del trabajo** (obligatorio, antes del prompt): si este chat abrió un PR o escribió un plan y aún no
@@ -37,7 +38,7 @@ No se usa en preguntas rápidas ni en charla.
 ## Plantilla del prompt
 
 ````
-Modelo recomendado: <Opus | Sonnet | Haiku> [con subagente <Haiku | Sonnet>] — <por qué, en una línea>.
+Modelo recomendado: <Opus | Sonnet | Haiku> [con subagente <Haiku | Sonnet>] · Effort: <low | medium | high | xhigh | max> — <por qué, en una línea>.
 
 Proyecto venjy-page (portafolio con Minecraft 3D jugable). Sigue <parte, p. ej. «6c · Mapa de relaciones y escenas de pareja»> de `mundo/PENDIENTES.md`.
 

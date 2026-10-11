@@ -15,14 +15,16 @@
 import { TEMAS, OPINIONES, SALUDOS, REGALOS, GESTO_REGALO } from './dialogos-datos.js';
 import { NIVELES, FAVORITOS, relacion, cumple, nombreNivel, animacionesDe, NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
 import { GESTOS } from './escenas-skin.js';
+import { HORARIOS } from './horarios-datos.js';
+import { textoMinutos } from './reloj.js';
 import { TXT_AMISTAD } from './escena-amistad-datos.js';
 
 const TXT = {
     es: { cerrar: 'Cerrar', volver: 'Volver', opinaDe: n => `¿Qué opinas de ${n}?`, regalar: n => `Regalar: ${n}`, leGusta: l => `Le gusta: ${l}`, o: ' o ',
-        yaRegalo: 'Ya le regalaste algo hoy. Vuelve mañana.', amistad: 'Amistad', bloqueado: '???', carta: 'Entregar la carta de Venjy',
+        yaRegalo: 'Ya le regalaste algo hoy. Vuelve mañana.', amistad: 'Amistad', horario: (de, a, lugar) => `Horario: ${de}-${a} ${lugar}`, bloqueado: '???', carta: 'Entregar la carta de Venjy',
         req: { nivel: n => `Amistad: ${n}`, mision: t => `Misión: ${t}`, mj: t => t, jefe: t => `Jefe: ${t}` }, sinConocidos: 'No conoce a nadie más por aquí.' },
     en: { cerrar: 'Close', volver: 'Back', opinaDe: n => `What do you think of ${n}?`, regalar: n => `Give: ${n}`, leGusta: l => `Likes: ${l}`, o: ' or ',
-        yaRegalo: 'You already gave a gift today. Come back tomorrow.', amistad: 'Friendship', bloqueado: '???', carta: "Hand over Venjy's letter",
+        yaRegalo: 'You already gave a gift today. Come back tomorrow.', amistad: 'Friendship', horario: (de, a, lugar) => `Schedule: ${de}-${a} ${lugar}`, bloqueado: '???', carta: "Hand over Venjy's letter",
         req: { nivel: n => `Friendship: ${n}`, mision: t => `Quest: ${t}`, mj: t => t, jefe: t => `Boss: ${t}` }, sinConocidos: 'Knows nobody else around here.' }
 };
 const suave = u => u * u * (3 - 2 * u);
@@ -193,6 +195,12 @@ export function crearHablar(ctx) {
         el.className = 'panel-mision panel-hablar';
         const h = document.createElement('h2'); h.textContent = nombres[clave];
         el.append(h, ctx.pestanas(clave), barra(clave));
+        const hr = HORARIOS[clave];
+        if (hr) {
+            const p = document.createElement('p'); p.className = 'horario-amigo';
+            p.textContent = tx().horario(textoMinutos(hr.de * 60), textoMinutos(hr.a * 60), L(hr.lugar));
+            el.appendChild(p);
+        }
         // Saludo según el nivel (o la skin)
         if (!frase) {
             const s = SALUDOS[clave];
