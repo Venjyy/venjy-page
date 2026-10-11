@@ -607,7 +607,7 @@ async function arrancar(guardado, cx = null) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null, misiones = null, facilidades = null, caminosCarteles = null, cuaderno = null, jefes = null, escenas = null, escenaCuello = null;
+    let enemigos = null, misiones = null, facilidades = null, caminosCarteles = null, cuaderno = null, jefes = null, escenas = null, escenaCuello = null, fauna = null;
     let coop = null; // sala cooperativa (se crea más abajo, cuando ya existen todos los sistemas)
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
@@ -641,6 +641,8 @@ async function arrancar(guardado, cx = null) {
     caminosCarteles = crearCartelesCamino({ scene, camara, terreno, dy: DY, idioma });
     // Cuaderno de los Tomatitos (7f-3): 12 páginas escondidas; qué páginas lleva cada uno va en el inventario
     cuaderno = crearCuaderno({ scene, jugador, inventario, vida, hud, entidades, terreno, dy: DY, idioma, abrirPanel, cerrarPanel });
+    // Fauna de ambiente (7f-3): mariposas, abejas, peces que saltan y luciérnagas (tope 64, instanciada); se carga con import()
+    import('./fauna.js').then(m => { fauna = m.crearFauna({ scene, camara, jugador, dia, terreno, datos, dy: DY }); }).catch(() => {});
     jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
     function final() {
         guardado.completado = true;
@@ -1331,6 +1333,7 @@ async function arrancar(guardado, cx = null) {
             if (facilidades) facilidades.actualizar(dt);
             if (caminosCarteles) caminosCarteles.actualizar(dt);
             if (cuaderno) cuaderno.actualizar(dt);
+            if (fauna) fauna.actualizar(dt);
             jefes.actualizar(dt);
             proyectiles.actualizar(dt);
             particulas.actualizar(dt);
