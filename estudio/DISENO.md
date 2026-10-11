@@ -781,7 +781,7 @@ Reglas para los tres: no tocar `camaras.js`, `mano.js`, `skin.js` ni `coop.js`; 
   (`irA(1.45)`, una captura de cada uno); cambiar un golpe en el JSON y aplicarlo en vivo mueve la chispa; una escena `guion`
   de prueba (no se commitea) se juega con el comando; abrir el juego no suma pedidos (panel de red).
 
-**PR 5b · editor de línea de tiempo (pestaña Escenas)** · rama `estudio-fase5b` · depende de 5a
+**PR 5b · editor de línea de tiempo (pestaña Escenas)** · rama `estudio-fase5b` · depende de 5a · **hecho (2026-10-11)**: lo que cambió, en §14
 - `estudio/escenas.js` (nuevo) + `index.html` (habilitar la pestaña, con `data-seccion="juego"` como Posiciones) + `estudio.css`.
 - `estudio/escenas-modelo.mjs` (nuevo, puro): mover, estirar, encajar a 0,05 s y tope contra el vecino (un tramo nunca pisa
   al otro: se detiene), agregar y borrar tramos y marcas, deshacer. Lo prueba Node.
@@ -812,3 +812,40 @@ Reglas para los tres: no tocar `camaras.js`, `mano.js`, `skin.js` ni `coop.js`; 
 
 Modelo: los tres con **Sonnet** (instrucciones cerradas). 5b es el más largo; si no cabe en un chat, cortar después del modelo
 puro y su prueba.
+
+## 14. Fase 5 · PR 5b · lo que cambió al construirla (2026-10-11)
+
+- **Archivos**: `estudio/escenas-modelo.mjs` (puro: las cuentas de mover, estirar, encajar y los topes), `estudio/escenas.js` (editor),
+  `estudio/puntero-libre.js` (mouse suelto con cuenta, compartido con el gizmo), `mundo/tests/estudio-escenas-navegador.mjs`; pestaña y
+  panel en `index.html`, `estudio.js` y `estudio.css`.
+- **Pantalla**: la pestaña Escenas comparte la sección del juego (`data-seccion="juego"`). El juego se achica a 38 vh y la línea va debajo;
+  la lista de escenas, los números del elemento elegido, los avisos y Guardar van en el panel lateral (no a la izquierda, como decía el
+  §13). Una fila por actor (`n`, `j` y los extras declarados), una de frases (en carriles si se pisan) y dos de marcas (golpes: rombo
+  amarillo; corazones: corazón rojo, ambos en canvas de píxeles). Zoom con dos botones; clic en la regla salta la escena a ese instante.
+- **Modelo**: `moverTramo`, `estirarTramo`, `agregarTramo`, `borrarTramo`, `cambiarGesto`, `moverMarca`, `agregarMarca`, `borrarMarca`, `moverFrase`,
+  `estirarFrase`, `agregarFrase`, `borrarFrase`, `cambiarFrase`, `cambiarT`, `cambiarR`, `cambiarNivel`, `ponerActor`, `quitarActor`, `desdeCodigo`,
+  `escenaNueva`, `claveLibre`, `crearHistorial`. Todas devuelven `{ def, i, cambio }` sin tocar la escena que reciben. Encaja a 0,05 s,
+  un tramo se detiene contra su vecino y contra T, mínimos de 0,1 s (tramo) y 0,5 s (frase). La prueba hace 400 operaciones al azar
+  y exige que todo lo que salga cumpla el esquema y las reglas de `reglasEscenas`.
+- **Arrastre**: pointer events sobre el contenedor de la línea con `setPointerCapture`. Un arrastre parte siempre de la escena como estaba al
+  hacer clic (`base`), así los topes no se acumulan; el historial toma una sola foto por arrastre. El realce de la selección cambia
+  clases sin reconstruir el DOM (si no, el doble clic cae sobre un elemento que ya no existe); y como la línea captura el puntero, el
+  doble clic busca el elemento con `elementFromPoint`.
+- **Filas vacías**: una fila sin tramos queda `[]` y `golpes: []` en una escena `amistad`; si desaparecieran, `fusionar` devolvería lo del
+  código. En una escena `guion` la clave de marcas sí se borra.
+- **Mouse libre**: el juego captura el mouse al abrir el mundo y al empezar y terminar una escena (`bloquearEscena`, `entrar`). Con eso el
+  editor no recibe clics (la prueba de navegador lo mostró: no llegaba ni un pointerdown). Mensaje `escena { accion: 'puntero', v }`
+  → `puntero-libre.js` (`requestPointerLock` sin efecto, la pausa no se abre, `.clic-seguir` escondido). La pestaña lo pide al abrirse, al
+  quedar listo el juego y antes de cada Reproducir, y lo devuelve al salir. El gizmo usa el mismo módulo; con cuenta, los dos no se pisan.
+- **Mensajes**: `escena { accion: 'jugar' | 'pausa' | 'ir' | 'parar' | 'puntero', clave?, persona?, t?, v? }` → `{ tipo: 'ok', escena }`.
+  `jugar` usa `jugarGuion` si `clave` es una escena de guion de los datos vivos y, si no, `jugar(persona, clave)`; antes salta la que corra.
+  El Estudio manda los `datos` y espera su respuesta antes de jugar. Del juego, sin `id`: `escenaT { clave, persona, t, T, pausada }` cada 100 ms
+  mientras corre una escena (`clave` es la que lanzó el editor; si la lanzó otro, el nombre de la animación) y un último con `clave: null`.
+- **Gestos**: `import()` de `escenas-skin.js`, `moldes.js` y `reencuentros.js` al abrir la pestaña (41 nombres: `GESTOS`, `GESTOS_AMISTAD` y `MOLDES`).
+  Si falla, el editor sigue sin validar nombres. Un bloque con un gesto que no existe sale en rojo y `reglasEscenas` da el error.
+  Los gestos de `poses.json` se suman en la fase 6.
+- **Guardar**: `PUT /api/datos/escenas` con `If-Match`; el botón queda deshabilitado mientras haya errores de reglas. Mover un tramo cambia
+  una sola línea de `escenas.json` (la prueba lo comprueba con `formatear`).
+- **No hecho** (a propósito): crear escenas `amistad` nuevas (el juego solo conoce las de `ANIMACIONES`); borrar una escena; arrastrar un
+  tramo a otra fila; cámara (PR 5c).
+- **Medida**: sin `?estudio`, 106 archivos y 2633,5 KB antes y después (nada nuevo se carga con el juego).
