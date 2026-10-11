@@ -112,7 +112,7 @@ function fallo(codigo, mensaje) { return Object.assign(new Error(mensaje), { cod
 // Conexión previa al juego: los mensajes que llegan antes de que el mundo exista quedan en cola
 function conexionBase(sala, rol, extra) {
     const cx = { sala, rol, cola: [], manejar: null, presentes: new Map(), ...extra };
-    const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc'];
+    const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc', 'em'];
     for (const t of TIPOS) sala.en(t, m => (cx.manejar ? cx.manejar(t, m) : cx.cola.push([t, m])));
     sala.en('entra', m => { cx.presentes.set(m.id, m); cx.alEntrar && cx.alEntrar(m); });
     sala.en('actualiza', m => { cx.presentes.set(m.id, m); cx.alActualizar && cx.alActualizar(m); });

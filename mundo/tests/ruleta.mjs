@@ -261,6 +261,12 @@ function elegir(m, i) {
     g = G.recibirEm(g, '');
     ok(G.entradaGesto(g).sentado === false, 'remoto: `em` vacío lo levanta');
     ok(G.recibirEm(null, 'no-existe') === null, 'remoto: clave desconocida no hace nada');
+    // La sala solo entrega los tipos de la lista TIPOS de coop.js: sin `em` ahí, el otro nunca ve el gesto
+    const { readFileSync } = await import('node:fs');
+    const coop = readFileSync(resolve(raiz, 'mundo/supervivencia/coop.js'), 'utf8');
+    const tipos = (coop.match(/const TIPOS = \[([^\]]*)\]/) || [])[1] || '';
+    ok(/'em'/.test(tipos), 'coop.js: `em` está en TIPOS (la sala lo escucha)');
+    ok(coop.includes('em(m) {'),'coop.js: hay manejador para `em`');
 }
 
 performance.now = realNow;
