@@ -330,6 +330,14 @@ const PINTORES = {
         p.mascara(['', '......kkkk......', '.....k....k.....', '.....k....k.....', '....kkkkkkkk....', '....koyyyyok....', '....kyyoyyyk....', '....kyyoyyyk....', '....koyyyyok....', '....kkkkkkkk....'], { k: [60, 60, 66], y: [255, 190, 70], o: [255, 240, 170] });
         p.contornear();
     },
+    cuaderno(p) {
+        p.mascara(['', '', '...ccccccccc....', '..caaaaaaaaab...', '..caaaagaaaab...', '..caaarrrraab...', '..caarrrrrrab...', '..caaarrrraab...', '..caaaaaaaaab...', '..cwwwwwwwwwb...', '...bbbbbbbbb....'], { a: [196, 48, 40], b: [120, 22, 18], c: [236, 96, 80], w: [236, 230, 210], g: [70, 160, 50], r: [255, 150, 130] });
+        p.contornear();
+    },
+    tomate(p) {
+        p.mascara(['', '......gg........', '....ggggggg.....', '...rrrgggrrr....', '..rrrrrgrrrrb...', '.rcrrrrrrrrrrb..', '.rcrrrrrrrrrrb..', '.rrrrrrrrrrrrb..', '.rrrrrrrrrrrrb..', '.rrkkkkrkkkkrb..', '..rrkkrrrkkrb...', '...rrrrrrrrb....', '....bbbbbbb.....'], { r: [214, 48, 40], b: [140, 24, 20], c: [255, 140, 120], g: [70, 160, 50], k: [34, 22, 18] });
+        p.contornear();
+    },
     cartel(p) {
         p.mascara(['', '..tttttttttttt..', '..taaaaaaaaaat..', '..tabbbbbbbbat..', '..taaaaaaaaaat..', '..tabbbbbbaaat..', '..taaaaaaaaaat..', '..tttttttttttt..', '.......mm.......', '.......mm.......', '.......mm.......', '.......mm.......'], { t: [110, 78, 40], a: [196, 160, 100], b: [96, 66, 34], m: [137, 103, 59] });
         p.contornear();

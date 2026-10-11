@@ -51,20 +51,27 @@ function medirTramos(datos, ESCALA) {
     return salida;
 }
 
-export function colocarCaminos(t) {
+// ¿Se puede poner algo en la columna (x, z)? Fuera del borde, sin estructura, camino, tablones, agua ni bosque.
+// Lo comparten las señales de los caminos y las páginas del cuaderno (mundo/paginas-cuaderno.js).
+export function crearLibre(t) {
     const { BW, BD, HT, ES, SUP, datos, ESCALA, NIVEL_AGUA } = t;
     const { W, T } = datos;
-    const tramos = medirTramos(datos, ESCALA);
-    const carteles = [];
-    const decor = [];
-    const usados = []; // [x, z] de cada señal: no se apila una sobre otra
-
-    const libre = (x, z) => {
+    return (x, z) => {
         if (x < 3 || z < 3 || x >= BW - 3 || z >= BD - 3) return false;
         const o = z * BW + x;
         if (ES[o] || SUP[o] === B.CAMINO || SUP[o] === B.TABLONES || HT[o] < NIVEL_AGUA + 1) return false;
         return T[Math.floor(z / ESCALA) * W + Math.floor(x / ESCALA)] !== 'hojas';
     };
+}
+
+export function colocarCaminos(t) {
+    const { BW, BD, HT, ES, SUP, datos, ESCALA, NIVEL_AGUA } = t;
+    const tramos = medirTramos(datos, ESCALA);
+    const carteles = [];
+    const decor = [];
+    const usados = []; // [x, z] de cada señal: no se apila una sobre otra
+
+    const libre = crearLibre(t);
     // Punto del tramo a distancia `s` y su dirección (unitaria)
     const puntoEn = (tr, s) => {
         let i = 1;

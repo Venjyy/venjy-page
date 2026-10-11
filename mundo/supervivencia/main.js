@@ -43,6 +43,7 @@ import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
 import { crearFacilidades } from './facilidades.js';
 import { crearCartelesCamino } from './caminos-carteles.js';
+import { crearCuaderno } from './cuaderno.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
 import { crearEditorSkin, cargarSkin, BASES, caraDeSkin } from './skin.js';
@@ -605,7 +606,7 @@ async function arrancar(guardado, cx = null) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null, misiones = null, facilidades = null, caminosCarteles = null, jefes = null, escenas = null, escenaCuello = null;
+    let enemigos = null, misiones = null, facilidades = null, caminosCarteles = null, cuaderno = null, jefes = null, escenas = null, escenaCuello = null;
     let coop = null; // sala cooperativa (se crea más abajo, cuando ya existen todos los sistemas)
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
@@ -637,6 +638,8 @@ async function arrancar(guardado, cx = null) {
     minimapa.fijarMarcas(() => facilidades.marcas());
     // Señales de los caminos (7f-3): mojones, carteles de cruce y faroles; aquí solo se pinta su texto
     caminosCarteles = crearCartelesCamino({ scene, camara, terreno, dy: DY, idioma });
+    // Cuaderno de los Tomatitos (7f-3): 12 páginas escondidas; qué páginas lleva cada uno va en el inventario
+    cuaderno = crearCuaderno({ scene, jugador, inventario, vida, hud, entidades, terreno, dy: DY, idioma, abrirPanel, cerrarPanel });
     jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
     function final() {
         guardado.completado = true;
@@ -652,7 +655,7 @@ async function arrancar(guardado, cx = null) {
         const e = combate.entidadApuntada();
         return !!(e && e.animal && ganado.interactuar(e.animal));
     };
-    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : combate.usar(p));
+    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : combate.usar(p));
     minado.usarSinNada = () => combate.bloquearConMano2();
     minado.alSoltarDerecho = () => combate.soltarDerecho();
     minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
@@ -1308,6 +1311,7 @@ async function arrancar(guardado, cx = null) {
             enemigos.actualizar(dt);
             if (facilidades) facilidades.actualizar(dt);
             if (caminosCarteles) caminosCarteles.actualizar(dt);
+            if (cuaderno) cuaderno.actualizar(dt);
             jefes.actualizar(dt);
             proyectiles.actualizar(dt);
             particulas.actualizar(dt);
