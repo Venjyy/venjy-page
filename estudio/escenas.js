@@ -10,6 +10,7 @@
 import { formatear } from './formato.mjs';
 import * as M from './escenas-modelo.mjs';
 import { reglasEscenas } from '../mundo/datos/escenas.js';
+import { gestosDeDatos } from '../mundo/datos/gestos.js';
 import { ANIMACIONES, FRASES_AMISTAD, GESTOS_AMISTAD } from '../mundo/supervivencia/escena-amistad-datos.js';
 
 const NOMBRES = {
@@ -82,19 +83,20 @@ export async function montarEscenas(ctx) {
     const cambiada = clave => JSON.stringify(datos.escenas[clave]) !== JSON.stringify(original.escenas && original.escenas[clave]);
 
     // ---------- Gestos conocidos ----------
-    // Los mismos nombres que `validar`: GESTOS, GESTOS_AMISTAD y MOLDES. Se importan al abrir la pestaña
+    // Los mismos nombres que `validar`: GESTOS, GESTOS_AMISTAD, MOLDES y los gestos y poses de poses.json (fase 6). Se importan al abrir la pestaña
     // (solo el Estudio, en localhost: el sitio no baja nada de esto).
     async function cargarMotor() {
         if (motor) return motor;
         const nombres = new Set(Object.keys(GESTOS_AMISTAD));
         let dur = null, completo = false;
         try {
-            const [{ GESTOS }, { MOLDES }, re] = await Promise.all([
+            const [{ GESTOS }, { MOLDES }, re, poses] = await Promise.all([
                 import('../mundo/supervivencia/escenas-skin.js'),
                 import('../mundo/supervivencia/moldes.js'),
-                import('../mundo/supervivencia/reencuentros.js')
+                import('../mundo/supervivencia/reencuentros.js'),
+                fetch('../mundo/datos/poses.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null)
             ]);
-            for (const k of [...Object.keys(GESTOS), ...Object.keys(MOLDES)]) nombres.add(k);
+            for (const k of [...Object.keys(GESTOS), ...Object.keys(MOLDES), ...gestosDeDatos(poses).map(([g]) => g)]) nombres.add(k);
             dur = re.durLinea;
             completo = true;
         } catch (e) {

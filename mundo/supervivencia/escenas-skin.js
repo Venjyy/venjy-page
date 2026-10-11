@@ -25,6 +25,7 @@ import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { BASES } from './skin.js';
 import { CORTAS, VENJY, IGLU, DURACION_IGLU, TXT_ESCENA } from './escenas-datos.js';
 import { relacion, GRUPOS, grupoDe } from './amistad.js';
+import { registrarGestos } from '../datos/gestos.js';
 
 // Lugar de cada persona para la regla «uno por lugar» (los que están juntos comparten lugar)
 export const LUGAR = { hadad: 'fogata', andy: 'fogata', nacho: 'fogata', lalo: 'iglu', moises: 'iglu', boris: 'atalaya', lucho: 'atalaya',
@@ -93,6 +94,9 @@ export const GESTOS = {
     hachazo: (u, t) => { const c = (t % 1.3) / 1.3; const a = c < 0.6 ? lerp(-0.6, -2.9, suave(c / 0.6)) : lerp(-2.9, -1.2, tramo(c, 0.6, 0.72)); return { bDx: a, bIx: a, bDz: 0.32, bIz: -0.32, inc: c > 0.6 && c < 0.85 ? 0.12 : 0 }; },
     pasa: () => ({ bDx: -1.35, bDz: 0.1, cx: 0.1 })
 };
+// Estudio, fase 6: un gesto de mundo/datos/poses.json reemplaza al de aquí con el mismo nombre, y los nuevos (y las poses
+// fijas) se suman a esta tabla. main.js pide el JSON; sin archivo, roto o con ?sin-datos, queda todo como está arriba.
+registrarGestos(GESTOS, 'skin', { principal: true });
 const CAMPOS = ['cx', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y'];
 
 export function crearEscenasSkin(ctx) {
