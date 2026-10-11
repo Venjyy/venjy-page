@@ -30,6 +30,13 @@ export const CAMINOS = {
     separacion: 8      // distancia mínima entre dos señales
 };
 
+// Dónde se pinta el texto del mojón respecto del pilar (afinar en el navegador). El pilar mide 3 bloques
+// (de h+1 a h+3) y el sprite es un cuadro centrado en su posición: sin esto queda medio metido en el pilar.
+export const TEXTO_MOJON = {
+    arriba: 1.9,       // bloques sobre la cima del pilar hasta el centro del cuadro de texto
+    haciaCamino: 1.4   // bloques que se corre el cuadro hacia el camino, para que no lo tape el pilar
+};
+
 // Ruta partida en tramos con la longitud acumulada (en bloques) de cada punto
 function medirTramos(datos, ESCALA) {
     const salida = [];
@@ -84,7 +91,7 @@ export function colocarCaminos(t) {
             if (usados.some(([ux, uz]) => Math.hypot(ux - x, uz - z) < CAMINOS.separacion)) continue;
             const hs = cols.map(([cx, cz]) => HT[cz * BW + cx]);
             if (Math.max(...hs) - Math.min(...hs) > 2) continue;
-            return { cols, x, z, lado };
+            return { cols, x, z, lado, nx, nz };
         }
         return null;
     };
@@ -106,7 +113,7 @@ export function colocarCaminos(t) {
             usados.push([x, z]);
             const desde = Math.round(tr.inicio + m);
             carteles.push({
-                tipo: 'mojon', x: x + 0.5, y: h + 4.1, z: z + 0.5,
+                tipo: 'mojon', x: x + 0.5 - c.nx * TEXTO_MOJON.haciaCamino, y: h + 4 + TEXTO_MOJON.arriba, z: z + 0.5 - c.nz * TEXTO_MOJON.haciaCamino,
                 texto: { es: `Tramo ${s + 1}\n${desde} m`, en: `Section ${s + 1}\n${desde} m` }
             });
         }

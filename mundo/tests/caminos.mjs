@@ -40,7 +40,7 @@ const DY = A.dy;
 if (A.decor.length <= creativo.decor.length) falla('la supervivencia no sumó decorados');
 
 // 3. Contenido
-const cs = A.caminos || [];
+const cs = (A.caminos || []).filter(c => c.tipo !== 'lugar');
 const mojones = cs.filter(c => c.tipo === 'mojon'), cruces = cs.filter(c => c.tipo === 'cruce');
 if (cruces.length !== RUTA.length - 2) falla(`cruces: ${cruces.length}, esperaba ${RUTA.length - 2}`);
 if (mojones.length < 10) falla(`pocos mojones: ${mojones.length}`);
@@ -70,10 +70,21 @@ for (const [n, ds] of porTramo) for (let i = 1; i < ds.length; i++) {
     if (ds[i] - ds[i - 1] > 2.5 * CAMINOS.cadaMojon) falla(`hueco enorme entre mojones del tramo ${n}`);
 }
 
+// El texto del mojón queda sobre la cima del pilar y corrido hacia el camino (7f-3 ajuste de texto)
+{
+    const pilares = A.decor.slice(creativo.decor.length).filter(d => d.bloques.length === 12 && !d.ruina);
+    for (const c of mojones) {
+        const d = pilares.find(q => Math.hypot(q.cx + 0.5 - c.x, q.cz + 0.5 - c.z) < 2.5);
+        if (!d) { falla(`mojón sin pilar cerca en ${c.x}, ${c.z}`); continue; }
+        if (c.y < d.maxY + 1) falla(`texto del mojón metido en el pilar (y ${c.y}, cima ${d.maxY})`);
+        if (Math.hypot(d.cx + 0.5 - c.x, d.cz + 0.5 - c.z) < 1) falla('texto del mojón sin correr hacia el camino');
+    }
+}
+
 // 2. Determinismo (hilo principal contra «worker»)
 if (JSON.stringify(A.caminos) !== JSON.stringify(B2.caminos)) falla('las señales no son iguales entre dos terrenos');
 const lista = [];
-const decorCam = A.decor.slice(creativo.decor.length);
+const decorCam = A.decor.slice(creativo.decor.length).filter(d => !d.motivo && !d.ruina); // los de lugares-motivos van en lugares.mjs; los de ruinas, en ruinas.mjs
 const chunksDe = new Set();
 for (const d of decorCam) {
     for (let i = 0; i < d.bloques.length; i += 4) chunksDe.add(Math.floor(d.bloques[i] / V.CHUNK) + ',' + Math.floor(d.bloques[i + 2] / V.CHUNK));
