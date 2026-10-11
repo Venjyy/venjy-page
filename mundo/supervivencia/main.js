@@ -42,6 +42,7 @@ import { crearCombate } from './combate.js';
 import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
 import { crearFacilidades } from './facilidades.js';
+import { crearCartelesCamino } from './caminos-carteles.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
 import { crearEditorSkin, cargarSkin, BASES, caraDeSkin } from './skin.js';
@@ -604,7 +605,7 @@ async function arrancar(guardado, cx = null) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null, misiones = null, facilidades = null, jefes = null, escenas = null, escenaCuello = null;
+    let enemigos = null, misiones = null, facilidades = null, caminosCarteles = null, jefes = null, escenas = null, escenaCuello = null;
     let coop = null; // sala cooperativa (se crea más abajo, cuando ya existen todos los sistemas)
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
@@ -634,6 +635,8 @@ async function arrancar(guardado, cx = null) {
     facilidades.cargar();
     misiones.facilidades = facilidades;
     minimapa.fijarMarcas(() => facilidades.marcas());
+    // Señales de los caminos (7f-3): mojones, carteles de cruce y faroles; aquí solo se pinta su texto
+    caminosCarteles = crearCartelesCamino({ scene, camara, terreno, dy: DY, idioma });
     jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
     function final() {
         guardado.completado = true;
@@ -1304,6 +1307,7 @@ async function arrancar(guardado, cx = null) {
             ganado.actualizar(dt);
             enemigos.actualizar(dt);
             if (facilidades) facilidades.actualizar(dt);
+            if (caminosCarteles) caminosCarteles.actualizar(dt);
             jefes.actualizar(dt);
             proyectiles.actualizar(dt);
             particulas.actualizar(dt);

@@ -10,6 +10,7 @@ import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
 import { actualizarLuz, campoChunk, ABORTAR } from './luz-incremental.js';
 import { llenarSubsuelo } from './supervivencia/subsuelo.js';
 import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } from './construcciones.js';
+import { colocarCaminos } from './caminos.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -58,8 +59,13 @@ export function prepararTerreno(datos, opciones = {}) {
     const terreno = prepararTerrenoBase(datos);
     // Supervivencia: el mapa entero sube `dy` bloques (todo lo de arriba se calcula igual que en creativo,
     // en coordenadas del creativo, y se desplaza al llenar la ventana); debajo va el subsuelo
-    if (opciones.supervivencia) { terreno.supervivencia = true; terreno.dy = DESNIVEL_SUPERVIVENCIA; }
-    else terreno.dy = 0;
+    if (opciones.supervivencia) {
+        terreno.supervivencia = true; terreno.dy = DESNIVEL_SUPERVIVENCIA;
+        // Señales de los caminos (7f-3): solo supervivencia; el creativo no cambia (paridad.mjs)
+        const cam = colocarCaminos({ BW: terreno.BW, BD: terreno.BD, HT: terreno.HT, SUP: terreno.SUP, ES: terreno.ES, datos, ESCALA, NIVEL_AGUA });
+        terreno.caminos = cam.carteles;
+        for (const d of cam.decor) { terreno.decor.push(d); if (d.farol) terreno.zonasLuz.push(d.luz); }
+    } else terreno.dy = 0;
     return terreno;
 }
 
