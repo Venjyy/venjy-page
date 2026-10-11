@@ -258,6 +258,7 @@ function filasEscenas(d, filtro, op) {
         const frases = e.tipo === 'guion' ? `${e.lineas.length} frases` : `linea ${e.linea.map(num).join('+')}`;
         let texto = `${e.tipo} T ${num(e.T)} r ${num(e.r)} actores ${actores.join(',')} ${tramos} tramos ${frases}${marcas.length ? ' ' + marcas.join(' ') : ''}`;
         if (e.tipo === 'amistad') texto += ` nivel ${e.nivel}`;
+        if (e.camara) texto += ` camara ${Array.isArray(e.camara.planos) ? e.camara.planos.length + ' planos propios' : e.camara.planos}`;
         filas.push({ clave: k, texto, extra: pista });
         if (e.tipo === 'guion') {
             e.lineas.forEach((l, i) => filas.push({ clave: `${k}.${i + 1}`, texto: `${l.q} ${num(l.a)}${l.d !== undefined ? '+' + num(l.d) : ''} ${lado(l.texto, idioma)}`, extra: l.texto.revisado ? '' : '[sin revisar]' }));

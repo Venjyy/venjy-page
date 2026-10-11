@@ -81,7 +81,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `venjys-datos.js` (338) | 7f-1: lo que dicen los Venjy en la supervivencia: pistas, brújula, progreso, skin, amistad, carta, hora, chistes; `crearSelector` (`import()` al primer globo). `brujula` `progreso` `amistadFrase` `paraDe` `crearSelector` |
 | `escenas-datos.js` (174) | Diálogos de las escenas de skin. `CORTAS:12` `VENJY:68` `IGLU:162` |
 | `escenas-skin.js` (626) | Escena al acercarte con skin de un amigo. `crearEscenasSkin:90` `iniciar:187` `terminar:254` |
-| `escena-amistad-datos.js` (183) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105` |
+| `escena-amistad-datos.js` (210) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105`; al final `PLANOS_AMISTAD`, `PLANOS_GRUPO`, `PLANOS_GRUPO_TECHO` (los lee `mundo/datos/escenas.js` → `planosDe`) |
 | `escena-amistad.js` (653) | Motor de guiones de amistad, bienvenidas y reencuentros. Lee `mundo/datos/escenas.json` al importarse (`await cargarDatos`; `aplicarDatosVivos:50` para el Estudio) y fusiona sus escenas `amistad` con `ANIMACIONES` en `guionGenerico`; `jugarGuion:585` juega las de tipo `guion`. `crearEscenaAmistad:98` `iniciar:247` `terminar:312` `aplicar:361` |
 | `moldes.js` (158) | Piezas de movimiento 6c. `ruta:29` `MOLDES:40` `molde:82` `fusion:91` `espejo:108` |
 | `reencuentros.js` (226) | Escenas entre amigos 6c-1. `REENCUENTROS:23` `reencuentro:212` |

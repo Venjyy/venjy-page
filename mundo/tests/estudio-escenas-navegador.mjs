@@ -1,12 +1,14 @@
-// Prueba de navegador del Estudio, fase 5 (PR 5b): pestaña Escenas, línea de tiempo, puente y guardado, con un Chromium real.
+// Prueba de navegador del Estudio, fase 5 (PR 5b y 5c): pestaña Escenas, línea de tiempo, puente, guardado y planos de cámara,
+// con un Chromium real.
 // node mundo/tests/estudio-escenas-navegador.mjs   (necesita Playwright: variable PLAYWRIGHT o npm global; si no hay, se omite)
 // Toca mundo/datos/escenas.json un momento y lo deja como estaba (aunque falle).
-// CAPTURA=ruta.png guarda una captura de la pestaña (para el Artifact).
+// CAPTURA=ruta.png guarda una captura de la pestaña (para el Artifact); CAPTURA_CAMARA=ruta.png, la del panel de cámara con «Ver».
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { iniciar } from '../../estudio/servidor.mjs';
 import { cargarPlaywright, lanzarNavegador } from '../../estudio/playwright.mjs';
+import { PLANOS_AMISTAD } from '../supervivencia/escena-amistad-datos.js';
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 let chromium;
@@ -168,6 +170,60 @@ try {
     await pag.click('#es-parar');
     await pag.waitForTimeout(500);
     ok(await marco.evaluate(() => !window.__venjy.amistadEscena.activa), 'Parar termina la escena');
+
+    // PR 5c · cámara: lista de planos, «Usar juego», «Ver» (solo ese plano) y vuelta a lo de siempre
+    await pag.click('#es-lista button[data-clave="punos"]');
+    const camDatos = () => pag.evaluate(() => { const c = window.__estudioEscenas.datos.escenas.punos.camara; return c ? JSON.parse(JSON.stringify(c)) : null; });
+    const nPlanos = () => pag.locator('.es-plano').count();
+    const planoJuego = () => marco.evaluate(() => window.__venjy.camaras.planoNombre);
+    ok(/Sin cámara propia/.test(await pag.textContent('#es-camara-estado')) && await nPlanos() === 0 && await camDatos() === null, 'punos sin camara: el panel lo dice y no hay planos');
+    await pag.click('#es-camara [data-juego="grupo"]');
+    let cam = await camDatos();
+    ok(cam && cam.planos === 'grupo' && await nPlanos() === 5, 'Usar juego: grupo guarda el nombre y enseña sus 5 planos: ' + JSON.stringify(cam));
+    ok(await pag.inputValue('.es-plano[data-i="0"] input[data-campo="nombre"]') === 'grupo de lado' && await pag.inputValue('.es-plano[data-i="0"] input[data-campo="dist"]') === '6.2', 'los campos traen los números del juego');
+    await pag.fill('.es-plano[data-i="0"] input[data-campo="dist"]', '7');
+    await pag.dispatchEvent('.es-plano[data-i="0"] input[data-campo="dist"]', 'change');
+    cam = await camDatos();
+    ok(Array.isArray(cam.planos) && cam.planos.length === 5 && cam.planos[0].dist === 7 && cam.planos[1].dist === 6.4, 'editar un plano copia la lista del juego a una propia: ' + JSON.stringify(cam).slice(0, 120));
+    await pag.click('#es-plano-agregar');
+    await pag.fill('.es-plano[data-i="5"] input[data-campo="nombre"]', 'cenital');
+    await pag.dispatchEvent('.es-plano[data-i="5"] input[data-campo="nombre"]', 'change');
+    await pag.fill('.es-plano[data-i="5"] input[data-campo="alto"]', '5');
+    await pag.dispatchEvent('.es-plano[data-i="5"] input[data-campo="alto"]', 'change');
+    cam = await camDatos();
+    ok(cam.planos.length === 6 && cam.planos[5].nombre === 'cenital' && cam.planos[5].alto === 5, 'Agregar plano y editar su nombre y alto');
+    await pag.click('.es-plano[data-i="5"] [data-accion="subir"]');
+    cam = await camDatos();
+    ok(cam.planos[4].nombre === 'cenital' && cam.planos[5].nombre === 'grupo, picado', 'Subir cambia el orden');
+    // «Ver»: la escena corre con solo ese plano
+    await pag.click('.es-plano[data-i="4"] [data-accion="ver"]');
+    await espera(() => /Reproduciendo|Playing|No pud|could|Error|necesita|error/i.test(document.getElementById('es-mensaje').textContent), null, 60000);
+    let nombre = null;
+    for (let i = 0; i < 40 && nombre === null; i++) { nombre = await planoJuego(); if (nombre === null) await pag.waitForTimeout(250); }
+    ok(nombre === 'cenital', 'Ver: la cámara del juego usa solo el plano elegido («cenital»), vio ' + nombre);
+    if (process.env.CAPTURA_CAMARA) { await pag.screenshot({ path: process.env.CAPTURA_CAMARA, fullPage: true }); }
+    await pag.click('#es-parar');
+    await pag.waitForTimeout(500);
+    ok(await marco.evaluate(() => !window.__venjy.amistadEscena.activa), 'Parar termina la vista del plano');
+    // Después de «Ver» el juego vuelve a la lista completa: la próxima reproducción usa los 6 planos
+    await pag.click('#es-jugar');
+    await espera(() => /Reproduciendo|Playing/.test(document.getElementById('es-mensaje').textContent), null, 60000);
+    nombre = null;
+    for (let i = 0; i < 40 && nombre === null; i++) { nombre = await planoJuego(); if (nombre === null) await pag.waitForTimeout(250); }
+    const nombres = (await camDatos()).planos.map(p => p.nombre);
+    ok(nombre !== null && nombres.includes(nombre), 'Reproducir: usa un plano de la lista propia (' + nombre + ')');
+    await pag.click('#es-parar');
+    await pag.waitForTimeout(500);
+    // quitar todos los planos: la escena vuelve a la cámara de siempre (sin clave camara)
+    while (await nPlanos() > 0) await pag.click('.es-plano[data-i="0"] [data-accion="quitar"]');
+    ok(await camDatos() === null && /Sin cámara propia/.test(await pag.textContent('#es-camara-estado')), 'quitar el último plano elimina la camara');
+    await pag.click('#es-jugar');
+    await espera(() => /Reproduciendo|Playing/.test(document.getElementById('es-mensaje').textContent), null, 60000);
+    nombre = null;
+    for (let i = 0; i < 40 && nombre === null; i++) { nombre = await planoJuego(); if (nombre === null) await pag.waitForTimeout(250); }
+    ok(nombre !== null && PLANOS_AMISTAD.some(p => p.nombre === nombre), 'sin camara: el plano es uno de PLANOS_AMISTAD (' + nombre + ')');
+    await pag.click('#es-parar');
+    await pag.waitForTimeout(500);
 
     // una escena en código (abrazo): editarla la copia al JSON; deshacer la saca
     await pag.click('#es-lista button[data-clave="abrazo"]');
