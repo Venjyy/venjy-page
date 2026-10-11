@@ -782,8 +782,9 @@ async function arrancar(guardado, cx = null) {
     // Mesa 3D del duelo (7h-2b, PR 4a: cartas-mesa.js, con import() la primera vez); el panel 2D queda de respaldo
     let cargandoMesa = null;
     function cargarMesaCartas() {
-        if (!cargandoMesa) cargandoMesa = import('./cartas-mesa.js').then(m => {
+        if (!cargandoMesa) cargandoMesa = Promise.all([import('./cartas-mesa.js'), cargarDatos('cartas-mesa')]).then(([m, datos]) => {
             mesaCartas = m.crearMesaCartas({
+                datos: window.__venjy?.datosMesa || datos, // mundo/datos/cartas-mesa.json (o lo último que mandó el Estudio)
                 scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma,
                 tinte: materiales.solido.color,
                 lucho: () => amigos.lista.find(n => n.clave === 'lucho') || null,

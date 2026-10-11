@@ -1,0 +1,37 @@
+{
+  "$schema": "../../estudio/esquemas/cartas-mesa.schema.json",
+  "version": 1,
+  "nota": "Mesa del Duelo de Cartas junto a Lucho. mesa.giro (grados) = hacia dónde mira Lucho; dist y lado la mueven. terceras = cámaras de 3.ª persona (el botón Vista pasa por cada una; se pueden agregar). manoRival = las cartas que sostiene Lucho (z, alto, sep, inclina).",
+  "mesa": { "giro": 0, "dist": 0.75, "lado": 0, "ancho": 1.8, "fondo": 1, "alto": 0.8 },
+  "carta": { "ancho": 0.24 },
+  "zonas": { "sep": 0.42, "propia": 0.22, "rival": -0.22 },
+  "manoRival": { "sep": 0.1, "z": -0.6, "alto": 0.38, "inclina": 20 },
+  "mazo": { "x": 0.76, "z": 0.26 },
+  "asiento": { "dist": 0.45 },
+  "camara1": {
+    "alto": 1.62,
+    "atras": 0,
+    "mira": [0, 0.3, -0.45]
+  },
+  "enfoque": {
+    "alto": 1.25,
+    "z": 0.32,
+    "mira": [0, 0, -0.02]
+  },
+  "terceras": [
+    {
+      "alto": 2.5,
+      "atras": 2.4,
+      "lado": 1.9,
+      "mira": [0, 0.3, -0.4]
+    },
+    {
+      "alto": 2.2,
+      "atras": 2.2,
+      "lado": -2,
+      "mira": [0, 0.3, -0.4]
+    }
+  ],
+  "mini": { "ancho": 0.3, "max": 340, "alto": 1.7, "margen": 12 },
+  "mano": { "alto": 0.26, "max": 230, "solape": 0.72, "sube": 0.18 }
+}

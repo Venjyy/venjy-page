@@ -429,6 +429,9 @@ body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
 .cartas-mesa-botones { position: absolute; left: 12px; top: 50%; transform: translateY(-58%); display: flex; flex-direction: column; gap: 6px; width: 190px; }
 .cartas-mesa-botones .cartas-boton { min-height: 40px; font-size: .86rem; }
 .cartas-mesa-hud .cartas-reglas { position: absolute; left: 214px; top: 70px; width: min(420px, calc(100vw - 230px)); }
+.cartas-mesa-lector { position: absolute; left: 214px; top: 50%; transform: translateY(-58%); display: flex; flex-direction: column; gap: 6px; width: 210px; }
+.cartas-mesa-lector canvas { width: 100%; height: auto; image-rendering: pixelated; border: 3px solid #000; }
+.cartas-mesa-lector .cartas-boton { min-height: 34px; }
 .cartas-mesa-mini { position: fixed; z-index: 56; border: 4px solid #120c07; box-shadow: inset 0 0 0 2px #7a5a36; pointer-events: none; box-sizing: content-box; transform: translate(-4px, 4px); }
 @media (max-width: 700px) {
     .cartas-mesa-marcador { flex-wrap: wrap; font-size: .7rem; padding: 6px 8px; }
@@ -436,6 +439,7 @@ body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
     .cartas-mesa-botones { width: 128px; left: 6px; top: 96px; transform: none; }
     .cartas-mesa-botones .cartas-boton { min-height: 34px; font-size: .7rem; padding: 4px; }
     .cartas-mesa-hud .cartas-reglas { left: 140px; top: 96px; width: calc(100vw - 150px); }
+    .cartas-mesa-lector { left: 140px; top: 96px; transform: none; width: 130px; }
 }
 /* Cartas con arte (cartas-arte.js): lienzo de 50×76 píxeles escalado por enteros
    (--px = 2 en la mesa, 3 en la mano); los textos se colocan sobre las ZONAS del lienzo. */

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cartas-mesa.schema.json",
+  "title": "Mesa del Duelo de Cartas (mundo/datos/cartas-mesa.json)",
+  "description": "Medidas de la mesa 3D junto a Lucho y de sus cámaras (metros y grados; local de la mesa: x a tu derecha, z hacia ti, y hacia arriba). Lo que falte usa MESA de mundo/supervivencia/cartas-mesa-modelo.js. Los arreglos (terceras, mira) reemplazan enteros.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "mesa": { "$ref": "#/$defs/numeros" },
+    "carta": { "$ref": "#/$defs/numeros" },
+    "zonas": { "$ref": "#/$defs/numeros" },
+    "manoRival": { "$ref": "#/$defs/numeros" },
+    "mazo": { "$ref": "#/$defs/numeros" },
+    "asiento": { "$ref": "#/$defs/numeros" },
+    "camara1": { "$ref": "#/$defs/camara" },
+    "enfoque": { "$ref": "#/$defs/camara" },
+    "terceras": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/camara" } },
+    "mini": { "$ref": "#/$defs/numeros" },
+    "mano": { "$ref": "#/$defs/numeros" }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "numeros": {
+      "type": "object",
+      "properties": { "nota": { "$ref": "comun.schema.json#/$defs/nota" } },
+      "additionalProperties": { "type": "number" }
+    },
+    "camara": {
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "mira": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }], "minItems": 3, "maxItems": 3 }
+      },
+      "additionalProperties": { "type": "number" }
+    }
+  }
+}

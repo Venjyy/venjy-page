@@ -32,6 +32,11 @@ async function aplicar(nombre, datos) {
         if (!v || !v.amigos || !v.amigos.posiciones) throw new Error('el juego todavía no está listo');
         v.amigos.posiciones.aplicar(datos);
         if (gizmo) gizmo.sincronizar();
+    } else if (nombre === 'cartas-mesa') {
+        // La mesa del duelo: si ya se abrió alguna vez la rearma; si no, la próxima vez que se abra lee el archivo
+        const v = window.__venjy;
+        if (v && v.mesaCartas) v.mesaCartas.aplicarDatos(datos);
+        else if (v) v.datosMesa = datos;
     } else aplicarDatosVivos(nombre, datos);
 }
 const canal = new BroadcastChannel(CANAL);
