@@ -17,6 +17,7 @@ export const SELECTORES = {
     'sv-camara': '.tactil-boton.sv-camara',
     'sv-comando': '.tactil-boton.sv-comando',
     'sv-acariciar': '.tactil-boton.sv-acariciar',
+    'sv-gestos': '.tactil-boton.sv-gestos',
     mision: '#hud .mision-activa',
     minimapa: '#hud .mm-pequeno'
 };

@@ -50,6 +50,7 @@ import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
 import { crearEditorSkin, cargarSkin, BASES, caraDeSkin } from './skin.js';
 import { crearCamaras } from './camaras.js';
+import { crearRuleta } from './ruleta.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
 import { crearEscenasGatas } from './escenas-gatas.js';
@@ -672,13 +673,16 @@ async function arrancar(guardado, cx = null) {
     const mano = crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, combate, tinteMundo: materiales.solido.color });
     // Golpe (romper, atacar, usar): la mano, el cuerpo en F5 y los demás jugadores (bit 8 de `p`)
     minado.alGesto = () => { mano.golpear(); camaras.golpear(); if (coop) coop.golpeo(); };
-    // Lo que hace el jugador, para la pose del cuerpo (pose-jugador.js, 7c-1): tercera persona y red
+    // Lo que hace el jugador, para la pose del cuerpo (pose-jugador.js, 7c-1): tercera persona y red.
+    // Con un gesto de la ruleta (7c-2) se suma el gesto, sin objetos y con el giro congelado.
+    let ruleta = null;
     const entradaPose = () => {
         const id = inventario.idEnMano();
         return {
             corre: jugador.corre, golpe: minado.izquierdo, comiendo: minado.comiendo > 0,
             tensando: combate.tensando > 0, bloqueando: combate.bloqueando,
-            objeto: id, objeto2: inventario.mano2 ? inventario.mano2.id : 0, escudo: id === O.ESCUDO ? 1 : 0
+            objeto: id, objeto2: inventario.mano2 ? inventario.mano2.id : 0, escudo: id === O.ESCUDO ? 1 : 0,
+            ...(ruleta && ruleta.entrada())
         };
     };
     // Skin, tercera persona (F5) y cámara de cine con los amigos
@@ -866,7 +870,8 @@ async function arrancar(guardado, cx = null) {
         jugador, dia, hud, idioma, dev: comandosDev,
         extra: {
             '/escenas': { fn: () => recorrido.comando(''), ayuda: { es: '/escenas (todas, con skin de Venjy)', en: '/escenas (all, with the Venjy skin)' } },
-            '/escena': { fn: n => recorrido.comando(n), ayuda: { es: '/escena <nombre> (una)', en: '/escena <name> (one)' } }
+            '/escena': { fn: n => recorrido.comando(n), ayuda: { es: '/escena <nombre> (una)', en: '/escena <name> (one)' } },
+            '/gesto': { fn: n => ruleta && ruleta.comando(n), ayuda: { es: '/gesto <nombre|todos> (ruleta de gestos)', en: '/gesto <name|todos> (emote wheel)' } }
         },
         alAbrir: () => { uiAbierta = true; jugador.teclas.clear(); if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock(); },
         alCerrar: () => { uiAbierta = false; if (!vida.muerto) entrar(); }
@@ -1210,6 +1215,13 @@ async function arrancar(guardado, cx = null) {
     const tactil = iniciarTactil(jugador, { alEntrar: alActivo });
     const entrar = () => (tactil ? tactil.activar() : pedirPuntero());
     if (tactil) iniciarTactilSupervivencia({ tactil, minado, ventanas, inventario, idioma, camaras, consola, caricias });
+    // Ruleta de gestos (7c-2): B o el botón GESTOS; el cuerpo queda congelado y la cámara orbita
+    ruleta = crearRuleta({
+        jugador, camaras, vida, hud, idioma, tactil, coop: () => coop,
+        puede: () => jugador.activo && !uiAbierta && !vida.muerto && !camaras.enCine && !jefes.enCurso && !ronda.activa && !minijuegos.activo,
+        otroManda: () => uiAbierta
+    });
+    camaras.congelado = ruleta.congelado;
 
     document.addEventListener('keydown', e => {
         if (e.code === 'KeyE' && !e.repeat) {
@@ -1357,7 +1369,7 @@ async function arrancar(guardado, cx = null) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos, ruleta,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
         get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
@@ -1416,6 +1428,7 @@ async function arrancar(guardado, cx = null) {
         escenaCuello.actualizar(corre ? dt : 0);
         minijuegos.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
+        ruleta.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         // Correr (7c-1): en primera persona el campo de visión sube un 10 % suave, como en Minecraft
         {
@@ -1448,7 +1461,7 @@ async function arrancar(guardado, cx = null) {
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
         renderer.render(scene, camara);
-        if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine) mano.dibujar();
+        if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();
         const msCuadro = performance.now() - tBucle;
         cuadrosMs.agregar(msCuadro);
         if (medicion.activa && medicion.cuadros) medicion.cuadros.push(msCuadro); // /medir romper

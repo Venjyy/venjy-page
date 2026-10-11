@@ -492,6 +492,23 @@ body.en-escena-gata .saltar-gata { display: block; }
 .tactil-boton.sv-camara { width: 64px; height: 40px; font-size: 0.8rem; left: calc(12px + env(safe-area-inset-left, 0px)); top: calc(176px + env(safe-area-inset-top, 0px)); }
 body.con-tactil .mision-activa { top: 224px; }
 
+/* ---------- Ruleta de gestos (7c-2, ruleta.js): 8 botones de Minecraft en círculo ---------- */
+.ruleta { position: fixed; left: 50%; top: 50%; z-index: 57; width: 0; height: 0; pointer-events: none; font-family: 'PixelCraft', monospace; }
+.ruleta[hidden] { display: none; }
+.ruleta::before { content: ''; position: absolute; left: -185px; top: -185px; width: 370px; height: 370px; border-radius: 50%; background: rgb(0 0 0 / 0.35); }
+.ruleta-casilla {
+    position: absolute; left: 0; top: 0; width: 104px; padding: 7px 4px;
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(-142px) rotate(calc(-1 * var(--a)));
+    text-align: center; font-size: 0.78rem; color: #e0e0e0; text-shadow: 2px 2px 0 #3f3f3f;
+    background: var(--boton, #6f6f6f); border: 2px solid #000;
+    box-shadow: inset 2px 2px 0 var(--borde-claro, #8b8b8b), inset -2px -2px 0 var(--borde-oscuro, #3a3a3a);
+}
+.ruleta-casilla.elegida { color: #ffff7f; background: #7b8bc4; box-shadow: inset 2px 2px 0 #a6b2e0, inset -2px -2px 0 #4a568a; }
+.ruleta-centro { position: absolute; left: 0; top: 0; width: 120px; transform: translate(-50%, -50%); text-align: center; font-size: 0.72rem; line-height: 1.3; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; }
+@media (max-height: 460px) { .ruleta { transform: scale(0.78); } }
+.tactil-boton.sv-gestos { width: 76px; height: 40px; font-size: 0.8rem; right: calc(116px + env(safe-area-inset-right, 0px)); bottom: calc(var(--pie) + 176px); }
+@media (max-height: 460px) { .tactil-boton.sv-gestos { bottom: calc(var(--pie) + 156px); } }
+
 /* ---------- Consola de comandos ---------- */
 .consola { position: fixed; left: 12px; right: 12px; bottom: calc(var(--casilla) * 2.2 + 80px); z-index: 58; max-width: 640px; }
 .consola input {

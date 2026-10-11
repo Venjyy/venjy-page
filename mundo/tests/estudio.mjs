@@ -73,7 +73,9 @@ malo('poses', 'poses', d => { d.poses.neutral.canales.cx = 9; }, '9');
 
 // ---------- 4. CSS del layout ----------
 {
-    const css = cssLayout(json('ui-layout.json'));
+    // Copia fija del layout de antes (mundo/tests/ui-layout-fijo.json): el dueño mueve los botones del archivo vivo
+    // en el Estudio, y eso no debe romper esta prueba de cssLayout
+    const css = cssLayout(JSON.parse(fs.readFileSync(path.join(RAIZ, 'mundo', 'tests', 'ui-layout-fijo.json'), 'utf8')));
     const esperado = [
         'body.con-tactil.layout-datos{--pie:calc(var(--casilla) + 60px + env(safe-area-inset-bottom, 0px))}',
         'body.con-tactil.layout-datos .tactil-joy{left:calc(14px + env(safe-area-inset-left, 0px));right:auto;bottom:calc(var(--pie) + 0px);top:auto;width:116px;height:116px}',
@@ -211,7 +213,7 @@ try {
     const r = cli('resumen');
     ok(r.codigo === 0 && /^ui-layout +\d+ elementos \(normal\)/m.test(r.salida) && /^dialogos +\d+ temas/m.test(r.salida) && /^js:tienda /m.test(r.salida), 'resumen lista los archivos y las fuentes JS');
     ok(/^habla +reloj t +bDx -0\.9 ~0\.3@5/m.test(cli('resumen', 'poses', 'habla').salida), 'resumen poses habla');
-    ok(/^sv-romper +id 98,88 pie 76x76 \| baja id 88,82 pie 66x66/m.test(cli('resumen', 'ui-layout').salida), 'resumen ui-layout');
+    ok(/^sv-romper +id 98,88 pie 76x76 \| baja id \d+,\d+ pie \d+x\d+/m.test(cli('resumen', 'ui-layout').salida), 'resumen ui-layout'); // baja: la mueve el dueño
     ok(cli('resumen', 'dialogos', 'pony.quien').salida.includes('pony.quien'), 'resumen dialogos pony.quien');
     ok(cli('resumen', 'nada').codigo === 1, 'resumen de algo desconocido sale con 1');
     const v = cli('validar');
