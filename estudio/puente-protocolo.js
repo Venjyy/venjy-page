@@ -31,6 +31,7 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  juega, pausa, salta a un instante o detiene una escena de amistad (fase 5); `puntero` con v
 //                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
 //                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
+//   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
@@ -105,6 +106,13 @@ export function crearManejador(juego) {
                     if (!juego.pose) return error('este juego no sabe posar personas');
                     const r = await juego.pose({ clave: m.clave, canales });
                     return { ...base, tipo: 'ok', pose: r || null };
+                }
+                case 'mesa': {
+                    // Mesa del Duelo de Cartas (7h-2b): abrir, cerrar o cambiar de vista
+                    if (!['abrir', 'cerrar', 'vista'].includes(m.accion)) return error('accion de mesa no válida');
+                    if (!juego.mesa) return error('este juego no tiene la mesa de cartas');
+                    await juego.mesa({ accion: m.accion });
+                    return { ...base, tipo: 'ok' };
                 }
                 default:
                     return error(`mensaje desconocido: ${m.tipo}`);

@@ -16,6 +16,7 @@
             <button class="pestana" type="button" data-pestana="textos" data-es="Textos" data-en="Texts">Textos</button>
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
             <button class="pestana" type="button" data-pestana="escenas" data-seccion="juego" data-es="Escenas" data-en="Scenes">Escenas</button>
+            <button class="pestana" type="button" data-pestana="mesa" data-seccion="juego" data-es="Mesa" data-en="Table">Mesa</button>
             <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
@@ -246,6 +247,25 @@
                         <button id="ps-descargar" class="boton secundario" type="button" data-es="Descargar JSON" data-en="Download JSON">Descargar JSON</button>
                     </div>
                     <p id="ps-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-mesa" hidden>
+                <section class="panel">
+                    <h2 data-es="Mesa de cartas" data-en="Card table">Mesa de cartas</h2>
+                    <p class="mensaje" data-es="Abre la mesa en el juego y mueve los números: se ve al instante. Guardar escribe mundo/datos/cartas-mesa.json." data-en="Open the table in the game and move the numbers: it updates live. Save writes mundo/datos/cartas-mesa.json.">Abre la mesa en el juego y mueve los números: se ve al instante. Guardar escribe mundo/datos/cartas-mesa.json.</p>
+                    <div class="fila-botones">
+                        <button id="me-abrir" class="boton chico" type="button" data-es="Abrir la mesa" data-en="Open the table">Abrir la mesa</button>
+                        <button id="me-vista" class="boton chico" type="button" data-es="Cambiar vista" data-en="Switch view">Cambiar vista</button>
+                        <button id="me-cerrar" class="boton chico secundario" type="button" data-es="Cerrar la mesa" data-en="Close the table">Cerrar la mesa</button>
+                    </div>
+                </section>
+                <div id="me-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="me-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="me-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="me-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>

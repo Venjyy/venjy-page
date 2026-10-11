@@ -192,6 +192,15 @@ const responder = crearManejador({
     listo: juegoListo,
     idioma: () => document.documentElement.lang === 'en' ? 'en' : 'es',
     aplicarDatos: aplicar,
+    async mesa({ accion }) {
+        const v = window.__venjy;
+        if (!v || !v.abrirMesa) throw new Error('el juego todavía no está listo');
+        if (accion === 'abrir') {
+            if (!(v.mesaCartas && v.mesaCartas.activo)) v.abrirMesa('facil');
+        } else if (accion === 'cerrar') { if (v.mesaCartas) v.mesaCartas.cerrar(); }
+        else if (!v.mesaCartas || !v.mesaCartas.activo) throw new Error('primero abre la mesa');
+        else v.mesaCartas.cambiarVista();
+    },
     // Vista previa de un texto: el globo especial de misiones.js (el mismo de los diálogos únicos)
     globo(persona, texto) {
         const m = window.__venjy && window.__venjy.misiones;
