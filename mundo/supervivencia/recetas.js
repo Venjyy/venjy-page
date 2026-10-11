@@ -60,6 +60,18 @@ conForma(['WIW', 'WWW', ' W '], { W, I: O.LINGOTE_HIERRO }, O.ESCUDO);
 conForma(['  S', ' SH', 'S H'], { S, H: O.HILO }, O.CANA);
 conForma([' I ', 'IRI', ' I '], { I: O.LINGOTE_HIERRO, R: O.REDSTONE }, O.BRUJULA);
 
+// ---- 7f-2: útiles y de actividades ----
+conForma([' G ', 'GRG', ' G '], { G: O.LINGOTE_ORO, R: O.REDSTONE }, O.RELOJ);
+conForma(['PPP', 'PBP', 'PPP'], { P: O.PAPEL, B: O.BRUJULA }, O.MAPA);
+conForma(['I', 'T', 'I'], { I: O.LINGOTE_HIERRO, T: B.ANTORCHA }, O.FAROL_MANO);
+conForma(['WWW', 'WWW', ' S '], { W, S }, O.CARTEL, 3);
+conForma(['V V', ' V '], { V: B.VIDRIO }, O.BOTELLA, 3);
+sinForma([O.PAPEL, O.PAPEL, O.PAPEL, CARBONES], O.MAZO);
+conForma(['P', 'S', 'H'], { P: O.PLUMA, S, H: O.HILO }, O.PLUMA_JUGUETE);
+conForma(['  S', ' WH', 'WW '], { S, W, H: O.HILO }, O.GUITARRA);
+conForma(['CNC', 'WWW'], { C: B.CUARZO, N: B.NEGRO, W }, O.TECLADO);
+conForma(['CCC', 'WWW'], { C: O.CUERO, W }, O.TAMBOR);
+
 // ---- Comida ----
 conForma(['TTT'], { T: O.TRIGO }, O.PAN);
 conForma(['HHH', 'TTT'], { H: O.HUEVO, T: O.TRIGO }, O.PASTEL); // un queque sencillo

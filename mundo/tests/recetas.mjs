@@ -1,8 +1,10 @@
 // Prueba de recetas: node mundo/tests/recetas.mjs
 import { B } from '../texturas.js';
-import { O, nombreDe } from '../supervivencia/objetos.js';
+import { O, OBJETOS, nombreDe } from '../supervivencia/objetos.js';
 import { buscarReceta, FUNDICION, RECETAS, ingredientes } from '../supervivencia/recetas.js';
 
+import { readFileSync } from 'node:fs';
+const PINTORES_ICONOS = [...readFileSync(new URL('../supervivencia/iconos.js', import.meta.url), 'utf8').matchAll(/^    (\w+)\(p/gm)].map(m => m[1]);
 let fallos = 0;
 const ok = (cond, msg) => { if (!cond) { fallos++; console.log('FALLA:', msg); } };
 const da = (rej, ancho) => { const r = buscarReceta(rej, ancho); return r ? r.da : null; };
@@ -30,5 +32,24 @@ for (const r of RECETAS) {
     ok(r.da[0] && nombreDe(r.da[0]) !== '?', 'receta sin resultado válido');
     for (const g of ingredientes(r)) for (const id of [].concat(g.pedido)) ok(id && nombreDe(id) !== '?', 'ingrediente inválido en ' + nombreDe(r.da[0]));
 }
+// 7f-2: objetos nuevos (ícono pintado, par ES/EN, sin emojis) y recetas que no chocan con otras
+const NUEVOS = ['RELOJ', 'MAPA', 'FAROL_MANO', 'CARTEL', 'BOTELLA', 'MAZO', 'PLUMA_JUGUETE', 'GUITARRA', 'TECLADO', 'TAMBOR'];
+const ultimo = O.CARTA;
+for (const k of NUEVOS) {
+    const o = OBJETOS[O[k]];
+    ok(O[k] > ultimo && o && o.nombre.es && o.nombre.en && o.icono && PINTORES_ICONOS.includes(o.icono), `objeto nuevo ${k}: id al final, ES/EN e ícono pintado`);
+    ok(!/\p{Extended_Pictographic}/u.test(o.nombre.es + o.nombre.en), `${k}: sin emojis`);
+    ok(RECETAS.some(r => r.da[0] === O[k]), `${k}: tiene receta`);
+}
+ok(new Set(NUEVOS.map(k => OBJETOS[O[k]].nombre.es)).size === NUEVOS.length, 'nombres nuevos únicos');
+// cada receta se encuentra a sí misma en una rejilla de 3×3 (nada la tapa) y el reloj, el mapa y el mazo calzan
+for (const r of RECETAS.filter(r => NUEVOS.some(k => O[k] === r.da[0]))) {
+    const g = new Array(9).fill(0);
+    if (r.forma) r.forma.forEach((f, y) => [...f].forEach((ch, x) => { if (ch !== ' ') g[y * 3 + x] = [].concat(r.clave[ch])[0]; }));
+    else r.sin.forEach((p, i) => { g[i] = [].concat(p)[0]; });
+    ok(buscarReceta(g, 3) === r, `receta de ${nombreDe(r.da[0])} choca con otra`);
+}
+ok(igual(da([0, O.LINGOTE_ORO, 0, O.LINGOTE_ORO, O.REDSTONE, O.LINGOTE_ORO, 0, O.LINGOTE_ORO, 0], 3), [O.RELOJ, 1]), 'reloj');
+ok(igual(da([O.PAPEL, O.CARBON_VEGETAL, 0, O.PAPEL, O.PAPEL, 0, 0, 0, 0], 3), [O.MAZO, 1]), 'mazo sin forma con carbón vegetal');
 console.log(`${RECETAS.length} recetas · ${fallos ? fallos + ' fallas' : 'recetas OK'}`);
 process.exit(fallos ? 1 : 0);
