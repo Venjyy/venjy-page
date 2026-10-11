@@ -72,7 +72,7 @@ for (const [n, ds] of porTramo) for (let i = 1; i < ds.length; i++) {
 
 // El texto del mojón queda sobre la cima del pilar y corrido hacia el camino (7f-3 ajuste de texto)
 {
-    const pilares = A.decor.slice(creativo.decor.length).filter(d => d.bloques.length === 12);
+    const pilares = A.decor.slice(creativo.decor.length).filter(d => d.bloques.length === 12 && !d.ruina);
     for (const c of mojones) {
         const d = pilares.find(q => Math.hypot(q.cx + 0.5 - c.x, q.cz + 0.5 - c.z) < 2.5);
         if (!d) { falla(`mojón sin pilar cerca en ${c.x}, ${c.z}`); continue; }
@@ -84,7 +84,7 @@ for (const [n, ds] of porTramo) for (let i = 1; i < ds.length; i++) {
 // 2. Determinismo (hilo principal contra «worker»)
 if (JSON.stringify(A.caminos) !== JSON.stringify(B2.caminos)) falla('las señales no son iguales entre dos terrenos');
 const lista = [];
-const decorCam = A.decor.slice(creativo.decor.length).filter(d => !d.motivo); // los de lugares-motivos van en lugares.mjs
+const decorCam = A.decor.slice(creativo.decor.length).filter(d => !d.motivo && !d.ruina); // los de lugares-motivos van en lugares.mjs; los de ruinas, en ruinas.mjs
 const chunksDe = new Set();
 for (const d of decorCam) {
     for (let i = 0; i < d.bloques.length; i += 4) chunksDe.add(Math.floor(d.bloques[i] / V.CHUNK) + ',' + Math.floor(d.bloques[i + 2] / V.CHUNK));
