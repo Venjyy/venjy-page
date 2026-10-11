@@ -16,9 +16,9 @@
     },
     "posiciones": {
       "esquema": "posiciones",
-      "lee": null,
+      "lee": "mundo/criaturas/amigos.js",
       "fase": 4,
-      "que": "Dónde está cada persona, relativo a su lugar"
+      "que": "Dónde está parada cada persona al cargar el mundo, relativo a su lugar (ancla, desplazamiento y giro en grados); se mueve con el gizmo de supervivencia.html?estudio y se aplica en vivo"
     },
     "poses": {
       "esquema": "poses",

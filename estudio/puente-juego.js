@@ -13,14 +13,33 @@ const MUNDO = 'Estudio';
 
 // ui-layout y textos los aplica tactil-supervivencia.js; dialogos, la fachada de «Hablar» (con ?estudio el
 // módulo se carga aquí si todavía no estaba: hablar.js lee sus objetos al usarlos, así que ve el cambio)
+// posiciones: amigos.js ubica a las personas (y el gizmo, si está puesto, sigue al que quedó en otro sitio)
+let gizmo = null; // estudio/gizmo-juego.js, solo después del primer `elegir`
 async function aplicar(nombre, datos) {
     if (nombre === 'dialogos') {
         const m = await import('../mundo/supervivencia/dialogos-datos.js');
         m.aplicarDatosVivos(datos);
+    } else if (nombre === 'posiciones') {
+        const v = window.__venjy;
+        if (!v || !v.amigos || !v.amigos.posiciones) throw new Error('el juego todavía no está listo');
+        v.amigos.posiciones.aplicar(datos);
+        if (gizmo) gizmo.sincronizar();
     } else aplicarDatosVivos(nombre, datos);
 }
 const canal = new BroadcastChannel(CANAL);
 const decir = m => canal.postMessage({ de: 'juego', ...m });
+
+// Gizmo de posiciones: TransformControls (vendor/three-addons) se descarga la primera vez que se elige a alguien
+async function elegir(o) {
+    if (!juegoListo()) throw new Error('el juego todavía no está listo');
+    if (!gizmo) {
+        if (o.clave === null) return null;
+        const m = await import('./gizmo-juego.js');
+        gizmo = m.crearGizmo(window.__venjy, (clave, punto) => decir({ tipo: 'cambio', nombre: 'posiciones', ruta: `personas.${clave}`, valor: punto }));
+        window.__venjy.estudioGizmo = gizmo; // depuración y pruebas
+    }
+    return gizmo.elegir(o);
+}
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 
 async function esperar(cond, tope, paso = 100) {
@@ -78,7 +97,8 @@ const responder = crearManejador({
         if (!m || !m.decir) throw new Error('el juego todavía no está listo');
         m.decir(persona, texto);
     },
-    teletransportar
+    teletransportar,
+    elegir
 });
 
 canal.onmessage = async e => {

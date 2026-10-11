@@ -13,6 +13,13 @@ import {
 } from './cuerpo.js';
 import { pielDe, agregarExtras } from './pieles.js';
 import { crearCharla } from './charla.js';
+import { cargarDatos } from '../datos/cargador.js';
+import { resolverAncla, puntoAMundo, mundoAPunto } from '../datos/posiciones.js';
+
+// mundo/datos/posiciones.json: dónde está cada persona, relativo a su lugar. Si no llegó o le falta una clave, valen los
+// números del código (los de hoy). Llega por fetch: si tarda más que la generación del mundo, aplicarPosiciones() reubica.
+let datosPos = null;
+const cargaPos = cargarDatos('posiciones').then(d => { datosPos = d; return d; });
 
 const suave = u => u * u * (3 - 2 * u);
 const tramo = (u, a, b) => Math.max(0, Math.min(1, (u - a) / (b - a)));
@@ -93,7 +100,16 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     // ---------------------------------------------------------
     // Crear una persona con sus accesorios de volumen
     // ---------------------------------------------------------
+    // Sitio de una persona según posiciones.json, o null (sin archivo, sin entrada o sin esa ancla en este mundo)
+    function sitioDe(clave) {
+        const p = datosPos && datosPos.personas && datosPos.personas[clave];
+        if (!p || !Number.isFinite(p.dx) || !Number.isFinite(p.dz)) return null;
+        const A = resolverAncla(terreno, p.ancla);
+        return A ? { ...puntoAMundo(A, p), giro: Number.isFinite(p.giro) } : null;
+    }
     function nuevo(clave, x, y, z, yaw, semilla) {
+        const sitio = sitioDe(clave);
+        if (sitio) { x = sitio.x; y = sitio.y; z = sitio.z; if (sitio.giro) yaw = sitio.yaw; }
         const d = PERSONAS[clave];
         const piel = pielDe(d);
         const p = crearPersona(tinte, piel, semilla);
@@ -109,6 +125,45 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         lista.push(n);
         return n;
     }
+    // Hacia dónde miran los que no usan `giro` de posiciones.json: Moisés y Lalo se miran entre sí (con una inclinación
+    // fija) y Lucho mira a Boris. Se recalcula al crearlos y cada vez que se mueven.
+    // (dos funciones: el iglú se crea antes de que existan las `let` de la atalaya)
+    function miradaIglu() {
+        moises.yaw = Math.atan2(lalo.x - moises.x, lalo.z - moises.z) + 0.35;
+        lalo.yaw = Math.atan2(moises.x - lalo.x, moises.z - lalo.z) - 0.35;
+        moises.yawBase = moises.yaw; lalo.yawBase = lalo.yaw;
+    }
+    function miradaLucho() { lucho.yaw = Math.atan2(boris.x - lucho.x, boris.z - lucho.z); }
+    function calcularMiradas() {
+        if (moises && lalo) miradaIglu();
+        if (lucho && boris) miradaLucho();
+    }
+    // Estudio (fase 4): aplica posiciones.json a quienes ya existen. `datos` reemplaza al archivo cargado
+    function aplicarPosiciones(datos) {
+        if (datos) datosPos = datos;
+        for (const n of lista) {
+            const s = sitioDe(n.clave);
+            if (!s) continue;
+            n.x = s.x; n.z = s.z;
+            if (s.suelo) { if ('cargado' in n) n.cargado = false; } else n.y = s.y; // braulio y conejeros buscan su suelo
+            if (s.giro) n.yaw = s.yaw;
+        }
+        calcularMiradas();
+    }
+    // Posiciones: el punto del JSON de una persona tal como está ahora en el mundo (lo usa el gizmo del Estudio)
+    const posiciones = {
+        aplicar: aplicarPosiciones,
+        aplicarMiradas: calcularMiradas,
+        previo: clave => (datosPos && datosPos.personas && datosPos.personas[clave]) || null,
+        ancla(clave) {
+            const p = posiciones.previo(clave);
+            return p ? resolverAncla(terreno, p.ancla) : null;
+        },
+        punto(clave) {
+            const n = lista.find(q => q.clave === clave), p = posiciones.previo(clave), A = posiciones.ancla(clave);
+            return n && p && A ? mundoAPunto(A, { x: n.x, y: n.y, z: n.z, yaw: n.yaw }, p) : null;
+        }
+    };
     // Poses de base
     function sentadoEnTronco(p) { p.cuerpo.position.y = 0.25; p.piernaD.rotation.x = p.piernaI.rotation.x = -0.75; } // piernas colgando por delante del tronco
     function sentadoEnSuelo(p) { p.cuerpo.position.y = -0.6; p.piernaD.rotation.x = -Math.PI / 2; p.piernaI.rotation.x = -Math.PI / 2 + 0.1; }
@@ -368,9 +423,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     if (I) {
         moises = nuevo('moises', I.bx - 0.6, I.y, I.bz + 1.4, 0, 4400);
         lalo = nuevo('lalo', I.bx + 1.6, I.y, I.bz + 0.6, 0, 4500);
-        moises.yaw = Math.atan2(lalo.x - moises.x, lalo.z - moises.z) + 0.35;
-        lalo.yaw = Math.atan2(moises.x - lalo.x, moises.z - lalo.z) - 0.35;
-        moises.yawBase = moises.yaw; lalo.yawBase = lalo.yaw;
+        miradaIglu();
         sentadoEnSuelo(moises.p);
         // Dónde queda el bong cuando no lo usa: en el suelo (sentado) o en la mano izquierda (de pie)
         moises.reposoBong = [0.36, 0.6, 0.5];
@@ -554,7 +607,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const toconX = A.bx - 0.5, toconZ = A.bz + 5.5;
         boris = nuevo('boris', toconX, A.y, toconZ + 1.65, Math.PI, 4800);
         lucho = nuevo('lucho', A.bx + 2.3, A.y, A.bz + 6.5, 0, 4900);
-        lucho.yaw = Math.atan2(boris.x - lucho.x, boris.z - lucho.z);
+        miradaLucho();
         // Hacha: mango de madera y hoja de metal, en las manos (sale del brazo derecho)
         const hacha = new THREE.Group();
         const mango = caja(0.06, 0.85, 0.06, tinte.caras(tex(2, 8, 4801, [120, 84, 48])));
@@ -791,8 +844,11 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     for (const g of grupos) g.charla.setIdioma(idioma);
     const ANIMAR = { hadad: animarHadad, nacho: animarNacho, andy: animarAndy, moises: animarMoises, lalo: animarLalo, boris: animarBoris, lucho: animarLucho, braulio: animarBraulio, conejeros: animarConejeros };
     let tiempo = 0;
+    // posiciones.json llegó después de crear a todos: reubicar (casi nunca pasa; el mundo tarda más en generarse)
+    if (!datosPos) cargaPos.then(d => { if (d) aplicarPosiciones(); });
     return {
         lista,
+        posiciones,
         actualizar(dt, oculto = false) {
             tiempo += dt;
             dt = Math.min(dt, 0.05);

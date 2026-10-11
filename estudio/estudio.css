@@ -255,3 +255,13 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
     .tx-info, .tx-lado { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: 10px; }
 }
 #tx-resumen, #tx-elegido-meta, #tx-globo-nota { margin: 0 0 8px; overflow-wrap: anywhere; }
+
+/* ---------- Posiciones (fase 4): panel que comparte la sección del juego ---------- */
+#panel-posiciones[hidden] { display: none; }
+#panel-posiciones .campos { grid-template-columns: repeat(3, 1fr); }
+#panel-posiciones .campo input[type="text"] {
+    width: 100%; padding: 4px 6px; font: inherit; font-size: 0.9rem; color: var(--blanco); background: #000; border: 2px solid #6a6a6a;
+}
+#panel-posiciones .campo input[type="text"]:focus { outline: none; border-color: var(--blanco); }
+#panel-posiciones [data-modo].activo { border-color: var(--blanco); }
+#panel-posiciones .campo, #panel-posiciones .casilla-marca { margin-bottom: 8px; }

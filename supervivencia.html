@@ -202,6 +202,8 @@
 
     <!-- Estudio (estudio/DISENO.md §6): ?estudio carga el puente; ?estudio=tactil además fuerza los controles táctiles.
          Sin ?estudio no se descarga nada más. -->
+    <!-- Estudio (fase 4): TransformControls importa 'three' sin ruta; este mapa lo manda al mismo módulo que usa el juego (solo cambia algo con ?estudio) -->
+    <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
     <script>if (/[?&]estudio=tactil(&|$)/.test(location.search)) window.ontouchstart = null;</script>
     <script type="module" src="mundo/supervivencia/main.js"></script>
     <script type="module">if (new URLSearchParams(location.search).has('estudio')) import('./estudio/puente-juego.js').catch(e => console.warn('[estudio] sin puente:', e.message));</script>
