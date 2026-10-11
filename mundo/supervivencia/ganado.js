@@ -10,6 +10,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { B } from '../texturas.js';
 import { O } from './objetos.js';
 import { sonidos } from './sonidos.js';
+import { pila } from './inventario.js';
 
 const VIDA = { vaca: 10, cerdo: 10, oveja: 8, gallina: 4, conejo: 3, zorro: 10, caballo: 15 };
 const COMIDA = {
@@ -31,6 +32,7 @@ function drops(tipo, cocido) {
 const REAPARECE_S = 300;  // las manadas se reponen a los 5 minutos
 const CRECE_S = 240;       // una cría tarda 4 minutos en crecer
 const ENAMORADO_S = 30;
+const ORDENA_S = 120;      // una vaca vuelve a dar leche a los 2 minutos
 
 export function crearGanado({ animales, entidades, inventario, jugador, dy, scene, hud, idioma = 'es' }) {
     const base = animales.lista.slice(); // índice estable de los animales originales (para guardar)
@@ -40,7 +42,7 @@ export function crearGanado({ animales, entidades, inventario, jugador, dy, scen
 
     // Datos de supervivencia de cada animal
     function datos(a) {
-        if (!a.sv) a.sv = { vida: VIDA[a.tipo] || 6, enamorado: 0, esquilada: 0, cria: 0, invul: 0 };
+        if (!a.sv) a.sv = { vida: VIDA[a.tipo] || 6, enamorado: 0, esquilada: 0, ordenada: 0, cria: 0, invul: 0 };
         return a.sv;
     }
 
@@ -117,6 +119,19 @@ export function crearGanado({ animales, entidades, inventario, jugador, dy, scen
             sonidos.romper(B.LANA);
             return true;
         }
+        // Ordeñar: cubo o botella vacíos sobre una vaca adulta (se recupera a los 2 minutos)
+        if (a.tipo === 'vaca' && (p.id === O.CUBO || p.id === O.BOTELLA) && d.ordenada <= 0 && (a.escala || 1) >= 1) {
+            d.ordenada = ORDENA_S;
+            const leche = p.id === O.CUBO ? O.CUBO_LECHE : O.BOTELLA_LECHE;
+            if (p.n === 1) inventario.ponerEnMano(pila(leche, 1));
+            else {
+                inventario.gastarMano(1);
+                const resto = inventario.agregar(leche, 1);
+                if (resto) entidades.soltar(leche, 1, 0, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);
+            }
+            sonidos.salpicar();
+            return true;
+        }
         if ((COMIDA[a.tipo] || []).includes(p.id)) {
             if ((a.escala || 1) < 1) { d.cria = Math.min(CRECE_S, d.cria + CRECE_S * 0.1); inventario.gastarMano(1); sonidos.comer(); return true; }
             if (d.enamorado > 0) return true;
@@ -163,6 +178,7 @@ export function crearGanado({ animales, entidades, inventario, jugador, dy, scen
             if (!d) continue;
             d.invul = Math.max(0, d.invul - dt);
             if (d.esquilada > 0) d.esquilada -= dt;
+            if (d.ordenada > 0) d.ordenada -= dt;
             if (d.cria > 0) {
                 d.cria += dt;
                 a.escala = Math.min(1, 0.5 + 0.5 * d.cria / CRECE_S);

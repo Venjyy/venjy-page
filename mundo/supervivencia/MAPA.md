@@ -20,12 +20,12 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `objetos.js` (346) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
 | `recetas.js` (159) | Recetas con y sin forma, fundición. `RECETAS:16` `buscarReceta:122` `FUNDICION:152` |
 | `inventario.js` (173) | Datos puros: 36 casillas, armadura, mano. `Inventario:12` `clicCasilla:149` |
-| `objetos.js` (359) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
+| `objetos.js` (364) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
 | `recetas.js` (171) | Recetas con y sin forma, fundición. `RECETAS:16` `buscarReceta:122` `FUNDICION:152` |
 | `ui-inventario.js` (494) | Ventanas: inventario, mesa 3×3, horno, cofre. `crearVentanas:22` |
 | `hud.js` (169) | Barra rápida, corazones, hambre, mensajes. `crearHUD:39` |
 | `iconos.js` (477) | Íconos 16×16 y cubos isométricos. `crearAtlasObjetos:328` `icono:379` |
-| `minado.js` (432) | Romper, poner y usar bloques. `crearMinado:53` |
+| `minado.js` (437) | Romper, poner y usar bloques; beber leche (`terminarComer`). `crearMinado:53` |
 | `contenedores.js` (164) | Cofres, barriles y hornos por posición. `crearContenedores:15` |
 | `botin.js` (30) | Tablas de botín por lugar. `botinDe:21` |
 | `agricultura.js` (146) | Cultivos y brotes por registro. `crearAgricultura:26` |
@@ -54,7 +54,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `proyectiles.js` (128) | Flechas y bolas de fuego. `crearProyectiles:17` |
 | `enemigos.js` (637) | Zombi, esqueleto, araña, creeper, Trauco. `RETROCESO` `empujar` `suavizarVelocidad` (knockback, 7a) · `crearEnemigos:213` |
 | `jefes.js` (579) | Imbunche y demás jefes en altares. `crearJefes:34` |
-| `ganado.js` (231) | Caza y cría sobre `criaturas/animales.js`. `crearGanado:35` |
+| `ganado.js` (247) | Caza, cría y ordeño de vacas (cubo/botella → leche) sobre `criaturas/animales.js`. `crearGanado:35` |
 | `pesca.js` (120) | Caña y boya. `crearPesca:22` |
 
 ## supervivencia/ · amigos, misiones y escenas

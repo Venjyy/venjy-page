@@ -223,7 +223,7 @@ export function crearMinado(ctx) {
         const def = info(p.id);
         // Comida: se mantiene apretado (ver actualizar)
         if (def.comida) {
-            if (vida.hambre < 20) { estado.comiendo = 0.0001; return true; }
+            if (vida.hambre < 20 || def.efecto === 'leche') { estado.comiendo = 0.0001; return true; }
             return false;
         }
         // Semillas, zanahoria y papa: se plantan sobre tierra labrada
@@ -314,11 +314,16 @@ export function crearMinado(ctx) {
         const def = p && info(p.id);
         if (!def || !def.comida) return;
         vida.alimentar(def.comida[0], def.comida[1]);
+        if (def.efecto === 'leche') { vida.veneno = 0; vida.efectoHambre = 0; }
         if (def.efecto === 'veneno') { vida.veneno = 8; vida.efectoHambre = 15; }
         if (def.efecto === 'hambre' && Math.random() < 0.8) vida.efectoHambre = 30;
         if (def.efecto === 'hambre30' && Math.random() < 0.3) vida.efectoHambre = 30;
         inventario.gastarMano(1);
         if (p.id === O.ESTOFADO) inventario.agregar(O.CUENCO, 1);
+        if (def.devuelve && O[def.devuelve]) {
+            const resto = inventario.agregar(O[def.devuelve], 1);
+            if (resto) entidades.soltar(O[def.devuelve], 1, 0, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);
+        }
         sonidos.eructo();
         estado.alComer && estado.alComer(p.id);
     }

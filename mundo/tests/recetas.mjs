@@ -51,5 +51,38 @@ for (const r of RECETAS.filter(r => NUEVOS.some(k => O[k] === r.da[0]))) {
 }
 ok(igual(da([0, O.LINGOTE_ORO, 0, O.LINGOTE_ORO, O.REDSTONE, O.LINGOTE_ORO, 0, O.LINGOTE_ORO, 0], 3), [O.RELOJ, 1]), 'reloj');
 ok(igual(da([O.PAPEL, O.CARBON_VEGETAL, 0, O.PAPEL, O.PAPEL, 0, 0, 0, 0], 3), [O.MAZO, 1]), 'mazo sin forma con carbón vegetal');
+
+// 7f-2 leche: objetos al final, ícono pintado, par ES/EN, devuelven el recipiente y la vaca da leche una vez cada 2 min
+for (const k of ['CUBO_LECHE', 'BOTELLA_LECHE']) {
+    const o = OBJETOS[O[k]];
+    ok(O[k] > O.TAMBOR && o.nombre.es && o.nombre.en && PINTORES_ICONOS.includes(o.icono) && o.comida && o.efecto === 'leche', `${k}: objeto de leche`);
+    ok(!/\p{Extended_Pictographic}/u.test(o.nombre.es + o.nombre.en), `${k}: sin emojis`);
+}
+ok(OBJETOS[O.CUBO_LECHE].devuelve === 'CUBO' && OBJETOS[O.BOTELLA_LECHE].devuelve === 'BOTELLA' && O[OBJETOS[O.BOTELLA_LECHE].devuelve], 'la leche devuelve su recipiente');
+{
+    const { pila } = await import('../supervivencia/inventario.js');
+    globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, set fillStyle(v) {} }) }) };
+    globalThis.window = globalThis.window || { addEventListener() {} };
+    const { crearGanado } = await import('../supervivencia/ganado.js');
+    let mano = null; const mochila = []; const soltado = [];
+    const inventario = {
+        enMano: () => mano, ponerEnMano: p => { mano = p; },
+        gastarMano: n => { mano.n -= n; if (mano.n <= 0) mano = null; }, agregar: (id, n) => { mochila.push([id, n]); return 0; }
+    };
+    const vaca = { tipo: 'vaca', x: 0, y: 0, z: 0, escala: 1, g: { visible: true }, cargado: true };
+    const g = crearGanado({ animales: { lista: [vaca], quitar() {}, agregar() {}, asustar() {} }, entidades: { soltar: (...a) => soltado.push(a) }, inventario, jugador: { pos: { x: 0, y: 0, z: 0 } }, dy: 0, scene: { add() {}, remove() {} }, hud: {} });
+    mano = pila(O.CUBO, 1);
+    ok(g.interactuar(vaca) && mano.id === O.CUBO_LECHE, 'cubo + vaca → cubo de leche');
+    mano = pila(O.CUBO, 1);
+    ok(!g.interactuar(vaca) && mano.id === O.CUBO, 'vaca recién ordeñada no da más');
+    g.actualizar(121);
+    ok(g.interactuar(vaca) && mano.id === O.CUBO_LECHE, 'a los 2 minutos vuelve a dar');
+    vaca.escala = 0.5; vaca.sv.ordenada = 0; mano = pila(O.BOTELLA, 3);
+    ok(!g.interactuar(vaca) && mano.n === 3, 'la cría no se ordeña');
+    vaca.escala = 1; vaca.sv.ordenada = 0;
+    ok(g.interactuar(vaca) && mano.id === O.BOTELLA && mano.n === 2 && mochila.some(([id]) => id === O.BOTELLA_LECHE), 'botella (pila de 3) + vaca → botella de leche, quedan 2');
+    const oveja = { ...vaca, tipo: 'oveja' }; mano = pila(O.CUBO, 1);
+    ok(!g.interactuar(oveja), 'solo las vacas dan leche');
+}
 console.log(`${RECETAS.length} recetas · ${fallos ? fallos + ' fallas' : 'recetas OK'}`);
 process.exit(fallos ? 1 : 0);
