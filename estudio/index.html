@@ -16,7 +16,7 @@
             <button class="pestana" type="button" data-pestana="textos" data-es="Textos" data-en="Texts">Textos</button>
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
             <button class="pestana" type="button" data-pestana="escenas" data-seccion="juego" data-es="Escenas" data-en="Scenes">Escenas</button>
-            <button class="pestana" type="button" disabled data-es="Poses · fase 6" data-en="Poses · phase 6">Poses · fase 6</button>
+            <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
         <div class="idiomas" role="group" aria-label="Idioma">
@@ -136,6 +136,38 @@
                 </div>
                 <p class="ayuda" data-es="Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace."
                    data-en="Drag a block to move it and its edges to stretch it (snaps to 0.05 s and stops against its neighbour). Double-click an empty row to add; Del removes; click the ruler to jump to that moment. Ctrl+S saves, Ctrl+Z undoes.">Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace.</p>
+            </div>
+            <div id="po-zona" hidden>
+                <div class="fila-aparato po-barra">
+                    <div class="fila-botones po-botones" role="group" aria-label="Caso">
+                        <button class="boton chico activo" type="button" data-po-caso="" data-es="De pie" data-en="Standing">De pie</button>
+                        <button class="boton chico secundario" type="button" data-po-caso="sentado" data-es="Sentado" data-en="Seated">Sentado</button>
+                        <button class="boton chico secundario" type="button" data-po-caso="jugador" data-es="Jugador" data-en="Player">Jugador</button>
+                    </div>
+                    <button id="po-jugar" class="boton chico" type="button" data-es="Reproducir" data-en="Play">Reproducir</button>
+                    <label class="campo po-t"><span>t (s)</span><input id="po-t" type="range" min="0" max="3" step="0.01" value="0"></label>
+                    <label class="campo corto"><span data-es="Duración (s)" data-en="Length (s)">Duración (s)</span><input id="po-T" type="number" step="0.1" min="0.2" max="20" value="3"></label>
+                    <span id="po-tiempo" class="etiqueta-perfil">t 0.00 s</span>
+                </div>
+                <canvas id="po-vista" class="po-vista" width="960" height="330"></canvas>
+                <div class="fila-aparato po-barra">
+                    <label class="casilla-marca"><input id="po-medir" type="checkbox" checked><span data-es="Medir la punta de las manos" data-en="Measure the hand tips">Medir la punta de las manos</span></label>
+                    <span id="po-medida" class="po-medida"></span>
+                </div>
+                <div id="po-canales" class="po-canales"></div>
+                <div id="po-curva-zona" hidden>
+                    <div class="fila-aparato po-barra">
+                        <strong id="po-curva-titulo" class="po-titulo"></strong>
+                        <label class="campo corto" id="po-campo-interp"><span data-es="Interpolación" data-en="Interpolation">Interpolación</span>
+                            <select id="po-interp"><option value="suave" data-es="suave" data-en="smooth">suave</option><option value="lineal" data-es="lineal" data-en="linear">lineal</option><option value="paso" data-es="paso" data-en="step">paso</option></select>
+                        </label>
+                        <button id="po-osc-mas" class="boton chico secundario" type="button" data-es="+ oscilador" data-en="+ oscillator">+ oscilador</button>
+                    </div>
+                    <canvas id="po-curva" class="po-curva" width="960" height="180" tabindex="0"></canvas>
+                    <ul id="po-osc" class="po-osc"></ul>
+                </div>
+                <p class="ayuda" data-es="Mueve un slider para cambiar el canal; en un canal con claves, el slider pone una clave en el instante t. En la curva: arrastra una clave (encaja y se detiene antes de su vecina), doble clic agrega una, Supr borra la elegida y un clic en el fondo mueve t. Ctrl+S guarda, Ctrl+Z deshace."
+                   data-en="Move a slider to change the channel; on a keyed channel the slider sets a key at time t. On the curve: drag a key (it snaps and stops before its neighbour), double-click adds one, Del removes the picked one and a click on the background moves t. Ctrl+S saves, Ctrl+Z undoes.">Mueve un slider para cambiar el canal; en un canal con claves, el slider pone una clave en el instante t. En la curva: arrastra una clave (encaja y se detiene antes de su vecina), doble clic agrega una, Supr borra la elegida y un clic en el fondo mueve t. Ctrl+S guarda, Ctrl+Z deshace.</p>
             </div>
             <p class="ayuda" data-es="El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante."
                data-en="The game opens (or creates) the world “Estudio” on Peaceful. Click the game to play; Esc to get back. What you move in Layout shows up here instantly.">El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante.</p>
@@ -275,6 +307,49 @@
                         <button id="es-descargar" class="boton secundario" type="button" data-es="Descargar JSON" data-en="Download JSON">Descargar JSON</button>
                     </div>
                     <p id="es-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-poses" hidden>
+                <section class="panel">
+                    <h2 data-es="Poses y gestos" data-en="Poses and gestures">Poses y gestos</h2>
+                    <ul id="po-lista" class="lista-escenas po-lista"></ul>
+                    <div class="fila-botones">
+                        <button id="po-nueva-pose" class="boton chico" type="button" data-es="Pose nueva (este instante)" data-en="New pose (this moment)">Pose nueva (este instante)</button>
+                        <button id="po-nuevo-gesto" class="boton chico secundario" type="button" data-es="Gesto nuevo" data-en="New gesture">Gesto nuevo</button>
+                        <button id="po-borrar" class="boton chico secundario" type="button" data-es="Borrar" data-en="Delete">Borrar</button>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 id="po-elegido">…</h2>
+                    <p id="po-codigo" class="ayuda" hidden></p>
+                    <div id="po-gesto-campos" class="campos" hidden>
+                        <label class="campo"><span data-es="Reloj de las claves" data-en="Key clock">Reloj de las claves</span>
+                            <select id="po-reloj"><option value="u" data-es="u (0..1 del tramo)" data-en="u (0..1 of the span)">u (0..1 del tramo)</option><option value="t" data-es="t (s de la escena)" data-en="t (scene s)">t (s de la escena)</option><option value="local" data-es="local (s del tramo)" data-en="local (span s)">local (s del tramo)</option></select>
+                        </label>
+                        <label class="campo"><span data-es="Ciclo (s, vacío = sin)" data-en="Cycle (s, empty = none)">Ciclo (s, vacío = sin)</span><input id="po-ciclo" type="number" step="0.05" min="0.05"></label>
+                    </div>
+                    <label class="campo" id="po-campo-nota"><span data-es="Nota" data-en="Note">Nota</span><input id="po-nota" type="text" maxlength="200" autocomplete="off"></label>
+                </section>
+                <section class="panel">
+                    <h2 data-es="En el juego" data-en="In the game">En el juego</h2>
+                    <label class="campo"><span data-es="Persona que posa" data-en="Person who poses">Persona que posa</span><select id="po-persona"></select></label>
+                    <label class="casilla-marca"><input id="po-en-juego" type="checkbox"><span data-es="Posar en el juego (sigue a t)" data-en="Pose in the game (follows t)">Posar en el juego (sigue a t)</span></label>
+                    <div class="fila-botones">
+                        <button id="po-ir" class="boton chico secundario" type="button" data-es="Ir junto a la persona" data-en="Go next to the person">Ir junto a la persona</button>
+                    </div>
+                    <p id="po-juego-medida" class="mensaje"></p>
+                </section>
+                <section class="panel">
+                    <h2 data-es="Guardar" data-en="Save">Guardar</h2>
+                    <p id="po-resumen" class="mensaje"></p>
+                    <ul id="po-avisos" class="avisos avisos-textos"></ul>
+                    <div class="fila-botones">
+                        <button id="po-guardar" class="boton" type="button" data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="po-deshacer" class="boton chico secundario" type="button" data-es="Deshacer" data-en="Undo">Deshacer</button>
+                        <button id="po-descartar" class="boton chico secundario" type="button" data-es="Descartar" data-en="Discard">Descartar</button>
+                        <button id="po-descargar" class="boton chico secundario" type="button" data-es="Descargar" data-en="Download">Descargar</button>
+                    </div>
+                    <p id="po-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <section class="panel" id="panel-ir-a">

@@ -918,3 +918,31 @@ puro y su prueba.
 - **Guardar** con `PUT /api/datos/poses` e `If-Match`; deshabilitado con errores de `reglasPoses`. Mover una clave cambia una línea.
 - **Pruebas**: modelo puro en Node (como `escenas-modelo.mjs`) y una de navegador (slider → el juego, guardar, restaurar).
 - **Modelo**: Opus para el diseño de la pestaña y el modelo; Sonnet para la parte grande de UI una vez definida.
+
+## 17. Fase 6 · PR 6b · el editor de poses (2026-10-11)
+
+- **Archivos**: `estudio/poses.js` (pestaña), `estudio/poses-modelo.mjs` (puro), `index.html` / `estudio.css` / `estudio.js`
+  (pestaña con `data-seccion="juego"`, `#panel-poses` y `#po-zona`), `puente-protocolo.js` (`pose`, `CANALES_POSE`) y
+  `puente-juego.js` (`pose`). Una sola PR: el modelo y el panel numérico salieron chicos, así que no se dividió en 6b-1 y 6b-2.
+- **Modelo** (`poses-modelo.mjs`): toda operación devuelve `{ datos, i, cambio }` con una copia nueva, como `escenas-modelo.mjs`.
+  Una ruta `{ tipo: 'pose' | 'gesto', clave, variante? }` dice qué se edita; la variante escribe en `variantes.sentado|jugador`
+  y se borra si queda vacía. Valores a 0,001; tiempos encajan a 0,05 s (0,01 con reloj `u`); una clave se detiene a un paso
+  de su vecina (el orden de `k` no se rompe y `reglasPoses` no puede quejarse); un canal sin `k` ni `osc` vuelve a número;
+  `suave`, `fase: 0` y `env` vacío no se escriben. Pasar un número o una base a claves deja `[0, previo]` y la clave nueva
+  (lo de antes no cambia). Mover una clave cambia una línea del JSON (probado con `formatear`).
+- **Slider**: en un fijo o una base cambia el valor; en un canal con claves pone (o cambia) la clave en el instante t: el
+  flujo de cualquier programa de animación. Rangos de `rig.md` (`cy`, `salto` y `pz` no están en su tabla: rango propio) y
+  se ensanchan si el archivo trae un valor fuera.
+- **«En código»**: los gestos de `GESTOS`/`GESTOS_AMISTAD` que el JSON no reemplaza se llaman con su firma para la vista y no se
+  editan (no hay forma segura de saber si una función cabe en el esquema). «Pose nueva» y «Gesto nuevo» copian el instante
+  al JSON. `MOLDES` no se lista (son composiciones; siguen en Escenas) pero sus nombres cuentan para `reglasPoses`.
+- **Vista**: un `WebGLRenderer` con tres escenas (frente, 3/4, lado) y `crearModelo` de `skin.js` (solo se importa). La punta
+  de cada mano es una cajita colgada del brazo en (0, −0,75, 0). `puntaMano` del modelo hace la misma cuenta a mano (Euler
+  XYZ): la prueba de Node la compara con la tabla de `rig.md` y la de navegador con Three.js y con la mano del juego.
+- **`pose { clave, canales }`**: el juego usa el gancho `n.escena` de `criaturas/amigos.js` (el que ya reemplaza la animación
+  en las escenas) con una función propia que escribe los canales; si la persona está en otra escena, error. `canales: null`
+  la suelta y la deja neutral (su animación sigue el próximo cuadro). La respuesta trae `manoD` y `manoI` medidas en el juego.
+  El editor manda el instante a ~15 por segundo mientras se reproduce o se arrastra. Al salir de la pestaña, se suelta.
+- **Puntero**: como Escenas, la pestaña pide `escena { accion: 'puntero' }` para que el juego no se quede con el mouse.
+- **No hecho**: ver un gesto dentro de una escena desde esta pestaña (hoy: en vivo, o posando el instante); lo de 6a que
+  sigue pendiente (reloj `local`, extender el esquema).

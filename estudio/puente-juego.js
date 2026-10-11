@@ -144,6 +144,44 @@ setInterval(() => {
     else if (escenaViva) { escenaViva = false; pausada = false; escenaPropia = null; decir({ tipo: 'escenaT', clave: null }); }
 }, 100);
 
+// Poses del editor (fase 6b, pestaña Poses): deja quieta a una persona con los canales que manda el editor. Usa n.escena
+// (el gancho de las escenas de la supervivencia en criaturas/amigos.js: reemplaza la animación de ese cuadro) con una
+// función propia, y la suelta con canales null. Si la persona ya está en otra escena, no la toca.
+// Devuelve dónde quedó la punta de cada mano (en el marco de la persona, desde los pies), como `capturar.mjs --medir`.
+const posadas = new Map(); // clave -> { canales, f }
+const NEUTRO = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0, bIx: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, salto: 0, pz: 0 };
+function escribirPose(p, v) {
+    p.cuello.rotation.set(v.cx, v.cy, v.cz);
+    p.brazoD.rotation.x = v.bDx; p.brazoD.rotation.z = v.bDz; p.brazoI.rotation.x = v.bIx; p.brazoI.rotation.z = v.bIz;
+    p.piernaD.rotation.x = v.pDx; p.piernaI.rotation.x = v.pIx;
+    p.cuerpo.rotation.x = v.inc; p.cuerpo.rotation.z = v.rz; p.cuerpo.position.y = v.y + v.salto; p.cuerpo.position.z = v.pz;
+}
+async function pose(o) {
+    if (!juegoListo()) throw new Error('el juego todavía no está listo');
+    const v = window.__venjy;
+    const n = v.amigos && v.amigos.lista.find(q => q.clave === o.clave);
+    if (!n) throw new Error(`no hay una persona «${o.clave}» en este mundo`);
+    const previa = posadas.get(o.clave);
+    if (o.canales === null) {
+        if (previa && n.escena === previa.f) { n.escena = null; escribirPose(n.p, NEUTRO); }
+        posadas.delete(o.clave);
+        return { clave: o.clave, quieta: false };
+    }
+    if (n.escena && !(previa && n.escena === previa.f)) throw new Error(`${o.clave} está en una escena: espera a que termine o párala`);
+    const reg = previa || { canales: null, f: null };
+    reg.canales = { ...NEUTRO, ...o.canales };
+    if (!reg.f) reg.f = () => { escribirPose(n.p, reg.canales); };
+    n.escena = reg.f;
+    posadas.set(o.clave, reg);
+    // Se escribe ya (sin esperar al cuadro) para medir
+    const THREE = await import('../vendor/three.module.js');
+    escribirPose(n.p, reg.canales);
+    n.p.g.updateMatrixWorld(true);
+    const r3 = x => Math.round(x * 1000) / 1000;
+    const punta = b => { const w = n.p.g.worldToLocal(b.localToWorld(new THREE.Vector3(0, -0.75, 0))); return { adelante: r3(w.z), altura: r3(w.y), lado: r3(w.x) }; };
+    return { clave: o.clave, quieta: true, manoD: punta(n.p.brazoD), manoI: punta(n.p.brazoI) };
+}
+
 const juegoListo = () => !!(window.__venjy && window.__venjy.jugador && window.__venjy.consola);
 const responder = crearManejador({
     listo: juegoListo,
@@ -157,7 +195,8 @@ const responder = crearManejador({
     },
     teletransportar,
     elegir,
-    escena
+    escena,
+    pose
 });
 
 canal.onmessage = async e => {

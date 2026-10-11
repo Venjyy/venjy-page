@@ -354,3 +354,49 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 #es-gesto { width: 100%; text-align: left; }
 /* En Escenas el juego se achica para que la línea de tiempo quepa sin bajar la pantalla */
 .modo-escenas .marco-juego iframe { aspect-ratio: auto; height: 38vh; min-height: 240px; }
+
+/* ---------- Poses (fase 6b) ---------- */
+#panel-poses[hidden], #po-zona[hidden], #po-curva-zona[hidden] { display: none; }
+#po-zona { margin-top: 12px; }
+.modo-poses .marco-juego iframe { aspect-ratio: auto; height: 30vh; min-height: 200px; }
+.po-barra { flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.po-botones { flex: none; width: auto; }
+.po-botones .boton { flex: none; }
+.po-t { flex: 1; min-width: 160px; }
+.po-vista, .po-curva {
+    display: block; width: 100%; height: auto; margin: 8px 0;
+    border: 4px solid #000; box-shadow: inset 4px 4px 0 #3a2a1c, inset -4px -4px 0 #0c0704;
+    image-rendering: pixelated;
+}
+.po-curva { cursor: crosshair; touch-action: none; }
+.po-curva:focus-visible { outline: 2px solid var(--blanco); }
+.po-medida { font-size: 0.8rem; color: var(--amarillo); }
+.po-titulo { font-weight: normal; color: var(--amarillo); }
+.po-canales { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 4px; }
+.po-canal {
+    display: grid; grid-template-columns: 44px 1fr 64px auto; gap: 6px; align-items: center;
+    padding: 3px 6px; font-size: 0.75rem; background: rgb(0 0 0 / 0.35); border: 2px solid #000; cursor: pointer;
+}
+.po-canal.elegido { border-color: var(--amarillo); }
+.po-canal.ausente { opacity: 0.6; }
+.po-canal b { font-weight: normal; color: var(--blanco); }
+.po-canal small { grid-column: 1 / -1; color: var(--gris); }
+.po-canal input[type="number"] {
+    width: 100%; padding: 2px 4px; font: inherit; color: var(--blanco); background: rgb(0 0 0 / 0.5); border: 2px solid #000;
+}
+.po-canal input[type="range"] { width: 100%; accent-color: var(--verde); }
+.po-canal button {
+    padding: 1px 5px; font: inherit; font-size: 0.7rem; color: var(--blanco); background: rgb(0 0 0 / 0.5); border: 2px solid #000; cursor: pointer;
+}
+.po-canal button:hover { background: rgb(125 140 196 / 0.4); }
+.po-tipo { color: var(--gris); }
+.po-osc { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.po-osc li { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; padding: 4px 6px; background: rgb(0 0 0 / 0.35); border: 2px solid #000; }
+.po-osc .campo { width: 76px; }
+.po-osc .campo input, .po-osc .campo select { min-width: 0; }
+.po-lista { max-height: 260px; overflow: auto; }
+.po-lista button.codigo { color: var(--gris); }
+#panel-poses .campo, #panel-poses .casilla-marca { margin-bottom: 8px; }
+#panel-poses .campo input[type="text"] {
+    padding: 6px 8px; font: inherit; color: var(--blanco); background: rgb(0 0 0 / 0.5); border: 2px solid #000;
+}
