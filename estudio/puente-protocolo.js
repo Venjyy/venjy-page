@@ -10,6 +10,8 @@ export const VERSION = 1;
 export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
+// Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json
+export const CANALES_POSE = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'salto', 'pz'];
 
 const MAX_GLOBO = 400;
 const NOMBRE_DESTINO = /^[a-z0-9áéíóúüñ][a-z0-9áéíóúüñ _-]{0,40}$/i;
@@ -29,6 +31,8 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  juega, pausa, salta a un instante o detiene una escena de amistad (fase 5); `puntero` con v
 //                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
 //                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
+//   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
+//                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
 // Devuelve responder(mensaje) -> objeto de respuesta o null (si el mensaje no es para el juego).
 export function crearManejador(juego) {
@@ -85,6 +89,22 @@ export function crearManejador(juego) {
                     if (!juego.escena) return error('este juego no sabe jugar escenas');
                     const r = await juego.escena({ accion: m.accion, clave: m.clave, persona: m.persona, t: m.t, v: m.v });
                     return { ...base, tipo: 'ok', escena: r || null };
+                }
+                case 'pose': {
+                    if (typeof m.clave !== 'string' || !CLAVE_ESCENA.test(m.clave)) return error('clave de persona no válida');
+                    let canales = null;
+                    if (m.canales !== null && m.canales !== undefined) {
+                        if (!esObjeto(m.canales)) return error('canales tiene que ser un objeto o null');
+                        canales = {};
+                        for (const [k, v] of Object.entries(m.canales)) {
+                            if (!CANALES_POSE.includes(k)) return error(`canal desconocido: ${k}`);
+                            if (!esNum(v)) return error(`el canal ${k} tiene que ser un número`);
+                            canales[k] = v;
+                        }
+                    }
+                    if (!juego.pose) return error('este juego no sabe posar personas');
+                    const r = await juego.pose({ clave: m.clave, canales });
+                    return { ...base, tipo: 'ok', pose: r || null };
                 }
                 default:
                     return error(`mensaje desconocido: ${m.tipo}`);

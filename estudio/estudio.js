@@ -1,12 +1,14 @@
 // =========================================================
 // VENJY · Estudio · cáscara: idioma ES/EN, estado del servidor y pestañas
-// Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout. Fase 2: Juego. Fase 3: Textos.
+// Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout. Fase 2: Juego. Fase 3: Textos. Fase 4: Posiciones.
+// Fase 5: Escenas. Fase 6: Poses.
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
 import { montarTextos } from './textos.js';
 import { montarPosiciones } from './posiciones.js';
 import { montarEscenas } from './escenas.js';
+import { montarPoses } from './poses.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -65,6 +67,7 @@ montarJuego(ctx);
 await montarTextos(ctx);
 await montarPosiciones(ctx);
 await montarEscenas(ctx);
+await montarPoses(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
@@ -79,6 +82,9 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';
         document.getElementById('es-zona').hidden = ctx.pestana !== 'escenas';
         document.getElementById('seccion-juego').classList.toggle('modo-escenas', ctx.pestana === 'escenas');
+        document.getElementById('panel-poses').hidden = ctx.pestana !== 'poses';
+        document.getElementById('po-zona').hidden = ctx.pestana !== 'poses';
+        document.getElementById('seccion-juego').classList.toggle('modo-poses', ctx.pestana === 'poses');
         if (seccion === 'juego') ctx.juego.activar();
         if (anterior !== ctx.pestana) for (const f of ctx.alPestana) f(ctx.pestana);
         window.dispatchEvent(new Event('resize')); // el editor de layout mide la vista al volver
