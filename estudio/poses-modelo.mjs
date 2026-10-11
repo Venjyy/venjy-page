@@ -38,6 +38,18 @@ export const FORMAS = ['sin', 'abs', 'pos', 'neg'];
 export const VARIANTES = ['sentado', 'jugador'];
 // Neutral de pie (el de crearModelo): lo que vale un canal que la pose no nombra
 export const NEUTRAL = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0, bIx: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, salto: 0, pz: 0 };
+// Sentado en una silla (pose sentadoSilla de rig.md): la base de un gesto en el caso «sentado», como en el juego, donde las
+// piernas las pone la animación de la persona sentada y el gesto mueve lo suyo encima
+export const SENTADO = { pDx: -1.5, pIx: -1.5 };
+// Qué canal mueve cada hueso del muñeco al agarrarlo, por eje (Euler XYZ de Three.js)
+export const CANAL_HUESO = {
+    cuello: { x: 'cx', y: 'cy', z: 'cz' },
+    brazoD: { x: 'bDx', z: 'bDz' },
+    brazoI: { x: 'bIx', z: 'bIz' },
+    piernaD: { x: 'pDx' },
+    piernaI: { x: 'pIx' },
+    cuerpo: { x: 'inc', z: 'rz' }
+};
 
 const r3 = v => Math.round(v * 1000) / 1000;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -98,6 +110,7 @@ export function instante(datos, ruta, t, T = 3, info = {}) {
     const o = { ...NEUTRAL };
     if (!def) return o;
     if (ruta.tipo === 'pose') return Object.assign(o, def.canales);
+    if (info.s) Object.assign(o, SENTADO);
     const u = T > 0 ? lim(t / T, 0, 1) : 0;
     return evaluarGesto(def, u, t, { s: !!info.s, j: !!info.j, d: T }, o);
 }
@@ -299,6 +312,32 @@ export function cambiarCiclo(datos, clave, ciclo) {
 export function cambiarNota(datos, ruta, nota) {
     const n = String(nota || '').trim();
     return editar(datos, { ...ruta, variante: null }, (cs, def) => { if (n) def.nota = n; else delete def.nota; });
+}
+
+// Grabación (agarrar una extremidad con «Grabar»): las muestras [[x, valor]] (x en el reloj de las claves) reemplazan las
+// claves del canal en el tramo grabado; las de antes y después se quedan. Se guarda una clave cada `cada` (0,1 s; 0,03 con
+// reloj u) y siempre la última. Un número o una base pasan a claves con su valor en 0.
+export function grabarClaves(datos, ruta, c, muestras, cada) {
+    const def = defDe(datos, ruta);
+    if (!def || ruta.tipo !== 'gesto' || !NOMBRES_CANAL.includes(c) || !muestras || !muestras.length) return sinCambio(datos);
+    const p = pasoReloj(def), salto = cada || (def.reloj === 'u' ? 0.03 : 0.1);
+    const nuevas = [];
+    muestras.forEach(([x, v], i) => {
+        const xe = Math.max(0, encajarA(x, p)), ultima = nuevas[nuevas.length - 1];
+        if (!ultima || xe - ultima[0] >= salto - 1e-9) nuevas.push([xe, r3(v)]);
+        else if (i === muestras.length - 1) { if (xe > ultima[0] + 1e-9) nuevas.push([xe, r3(v)]); else ultima[1] = r3(v); }
+    });
+    const x0 = nuevas[0][0], x1 = nuevas[nuevas.length - 1][0];
+    return editar(datos, ruta, cs => {
+        let a = cs[c];
+        if (a === undefined || typeof a === 'number') a = cs[c] = { base: a === undefined ? 0 : a };
+        const viejas = (a.k || [[0, r3(a.base || 0)]]).filter(([x]) => x < x0 - p / 2 || x > x1 + p / 2);
+        const k = [...viejas, ...nuevas].sort((m, n) => m[0] - n[0]);
+        const { interp, osc, nota } = a;
+        for (const kk of Object.keys(a)) delete a[kk];
+        Object.assign(a, { k }, interp ? { interp } : {}, osc ? { osc } : {}, nota ? { nota } : {});
+        return k.indexOf(nuevas[0]);
+    });
 }
 
 // ---------- Entradas ----------

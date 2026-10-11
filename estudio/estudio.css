@@ -400,3 +400,6 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 #panel-poses .campo input[type="text"] {
     padding: 6px 8px; font: inherit; color: var(--blanco); background: rgb(0 0 0 / 0.5); border: 2px solid #000;
 }
+#po-grabar.grabando { background: #8b1a1a; color: var(--blanco); }
+.po-como { margin: 4px 0; }
+.po-caso-nota { margin: 4px 0; color: var(--amarillo); }

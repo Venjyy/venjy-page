@@ -48,7 +48,7 @@ try {
     ok(await pag.isVisible('#po-zona') && await pag.isVisible('#panel-poses'), 'la pestaña Poses enseña su zona y su panel');
 
     // 1. Lista: JSON y código
-    await espera(() => document.querySelectorAll('#po-lista button.codigo').length > 0, null, 60000);
+    await espera(() => document.querySelectorAll('#po-lista button.codigo').length > 0 && window.__estudioPoses.medirVista('D'), null, 60000);
     const lista = await pag.$$eval('#po-lista button', bs => bs.map(b => [b.dataset.tipo, b.dataset.clave]));
     ok(lista.some(([t, k]) => t === 'gesto' && k === 'habla') && lista.some(([t, k]) => t === 'pose' && k === 'doblarse'), 'la lista trae gestos y poses del JSON');
     ok(lista.some(([t, k]) => t === 'codigo' && k === 'baile'), 'y los del código que el JSON no reemplaza (baile)');
@@ -67,6 +67,41 @@ try {
     ok(await pag.evaluate(() => window.__estudioPoses.datos().poses.doblarse.canales.inc) === 0.4, 'el slider cambia el dato');
     ok(/1 pose/.test(await pag.textContent('#po-resumen')), 'el resumen cuenta el cambio');
 
+    // 3b. Agarrar el brazo derecho en la vista de lado y subirlo: bDx de la pose baja (adelante y arriba)
+    const antesBDx = await pag.evaluate(() => window.__estudioPoses.datos().poses.doblarse.canales.bDx);
+    const pb = await pag.evaluate(() => window.__estudioPoses.puntoHueso('brazoD', 2, -0.6));
+    await pag.mouse.move(pb.x, pb.y);
+    await pag.mouse.down();
+    for (let k = 1; k <= 6; k++) await pag.mouse.move(pb.x - k * 6, pb.y - k * 12);
+    await pag.mouse.up();
+    const despuesBDx = await pag.evaluate(() => window.__estudioPoses.datos().poses.doblarse.canales.bDx);
+    ok(despuesBDx < antesBDx - 0.2, `agarrar el brazo y subirlo cambia bDx: ${antesBDx} -> ${despuesBDx}`);
+
+    // 3c. Grabar: t = 0, Grabar y agarrar el brazo izquierdo en la vista de lado ~1 s: nace un gesto con claves de bIx
+    await pag.click('#po-cero');
+    await pag.click('#po-grabar');
+    const pi = await pag.evaluate(() => window.__estudioPoses.puntoHueso('brazoI', 2, -0.6));
+    await pag.mouse.move(pi.x, pi.y);
+    await pag.mouse.down();
+    for (let k = 1; k <= 10; k++) { await pag.mouse.move(pi.x - k * 9, pi.y - k * 3); await pag.waitForTimeout(100); }
+    await pag.mouse.up();
+    await pag.click('#po-grabar');
+    const grab = await pag.evaluate(() => { const e = window.__estudioPoses.elegido(); const g = window.__estudioPoses.datos().gestos[e.clave]; return { e, k: g && g.canales.bIx && g.canales.bIx.k }; });
+    ok(grab.e.tipo === 'gesto' && /Grabado/.test(grab.e.clave), 'grabar sobre una pose crea un gesto nuevo: ' + JSON.stringify(grab.e));
+    ok(Array.isArray(grab.k) && grab.k.length >= 5 && grab.k[grab.k.length - 1][1] < grab.k[0][1] - 0.2, 'la grabación deja claves de bIx que suben el brazo: ' + JSON.stringify(grab.k && grab.k.slice(-2)));
+    await pag.click('#po-deshacer');
+    await pag.click('#po-deshacer');
+    await pag.click(`#po-lista button[data-tipo="pose"][data-clave="doblarse"]`);
+
+    // 3d. Sentado: un gesto se ve sobre una silla con las piernas dobladas
+    await pag.click('#po-lista button[data-tipo="gesto"][data-clave="asiente"]');
+    await pag.click('[data-po-caso="sentado"]');
+    const sentado = await pag.evaluate(() => ({ pDx: window.__estudioPoses.canalesAhora().pDx, silla: window.__estudioPoses.silla(), nota: document.getElementById('po-caso-nota').textContent }));
+    ok(sentado.pDx === -1.5 && sentado.silla === true && /silla|chair/.test(sentado.nota), 'sentado se ve sentado: ' + JSON.stringify(sentado));
+    await pag.click('[data-po-caso=""]');
+    await pag.click(`#po-lista button[data-tipo="pose"][data-clave="doblarse"]`);
+    ok(await pag.isDisabled('[data-po-caso="sentado"]'), 'una pose no tiene casos');
+
     // 4. En el juego: Andy posa doblarse (inc 0.4) y se suelta
     await espera(() => { const e = document.getElementById('juego-estado'); return e.textContent.includes('listo') || e.className.includes('error'); }, null, 300000);
     ok(/Juego listo/.test(await pag.textContent('#juego-estado')), 'el juego queda listo: ' + await pag.textContent('#juego-estado'));
@@ -75,9 +110,9 @@ try {
     await pag.check('#po-en-juego');
     await espera(() => /mano D|right hand/i.test(document.getElementById('po-juego-medida').textContent) || /error/.test(document.getElementById('po-juego-medida').className), null, 30000);
     const enJuego = await marco.evaluate(() => { const n = window.__venjy.amigos.lista.find(q => q.clave === 'andy'); return { inc: n.p.cuerpo.rotation.x, bDx: n.p.brazoD.rotation.x, escena: typeof n.escena }; });
-    ok(cerca(enJuego.inc, 0.4, 1e-6) && cerca(enJuego.bDx, -0.55, 1e-6) && enJuego.escena === 'function', 'Andy posa doblarse con inc 0.4: ' + JSON.stringify(enJuego));
+    ok(cerca(enJuego.inc, 0.4, 1e-6) && cerca(enJuego.bDx, despuesBDx, 1e-6) && enJuego.escena === 'function', 'Andy posa doblarse con inc 0.4: ' + JSON.stringify(enJuego));
     const texto = await pag.textContent('#po-juego-medida');
-    const mj = puntaMano({ ...vista.canales, inc: 0.4 }, 'D');
+    const mj = puntaMano(await pag.evaluate(() => window.__estudioPoses.canalesAhora()), 'D');
     const [ja, jh] = (texto.match(/-?\d+\.\d+/g) || []).map(Number);
     ok(cerca(ja, mj.adelante, 0.006) && cerca(jh, mj.altura, 0.006), `la mano medida en el juego = modelo (${texto} / ${mj.adelante}, ${mj.altura})`);
     await pag.uncheck('#po-en-juego');

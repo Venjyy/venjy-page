@@ -944,5 +944,16 @@ puro y su prueba.
   la suelta y la deja neutral (su animación sigue el próximo cuadro). La respuesta trae `manoD` y `manoI` medidas en el juego.
   El editor manda el instante a ~15 por segundo mientras se reproduce o se arrastra. Al salir de la pestaña, se suelta.
 - **Puntero**: como Escenas, la pestaña pide `escena { accion: 'puntero' }` para que el juego no se quede con el mouse.
+- **Agarrar y grabar** (pedido del dueño tras probarla: lo directo antes que los números): en los muñecos se agarra cabeza,
+  brazo, pierna o tronco (raycast; `CANAL_HUESO` dice qué canal mueve cada hueso por eje) y gira en su articulación siguiendo
+  el ángulo del mouse alrededor del pivote, sobre el eje del hueso que más apunta a esa cámara (de frente, `z`; de lado y
+  3/4, `x`; Mayús + cabeza, `cy` arrastrando a los lados). **Grabar**: con el botón activo, agarrar hace correr el tiempo
+  desde t y `grabarClaves` reemplaza las claves de ese canal en el tramo grabado (una cada 0,1 s; 0,03 con reloj `u`; lo de
+  antes y después queda). Se graba una extremidad por pasada y se vuelve a `t = 0` para la siguiente. Grabar sobre una pose o
+  un gesto del código crea primero un gesto nuevo con el instante.
+- **Sentado**: la vista y `instante` ponen `SENTADO` (piernas −1,5, las de `sentadoSilla`) bajo el gesto y una silla; antes se
+  veía igual que de pie si el gesto no tenía variante. Las poses no tienen casos (botones deshabilitados).
+- **Otras escenas** (momentos, bienvenidas, reencuentros, grupos): no se listan en Escenas. Son JS con lógica y no se pueden
+  editar en la línea de tiempo; verlas sin poder editarlas no sirve. Para editarlas habría que pasarlas a JSON (fase aparte).
 - **No hecho**: ver un gesto dentro de una escena desde esta pestaña (hoy: en vivo, o posando el instante); lo de 6a que
   sigue pendiente (reloj `local`, extender el esquema).

@@ -179,6 +179,23 @@ ok(M.cambios(datos, r.datos).join() === 'poses.saludo,gestos.agita', 'cambios');
 r = M.borrarEntrada(r.datos, 'pose', 'saludo');
 ok(!r.datos.poses.saludo && M.cambios(datos, r.datos).join() === 'gestos.agita', 'borrar entrada');
 
+// ---------- Sentado y grabación ----------
+ok(M.instante(datos, G('habla'), 1, 3, { s: true }).pDx === -1.5 && M.instante(datos, G('habla'), 1, 3, {}).pDx === 0, 'sentado: piernas de silla bajo el gesto');
+ok(M.instante(datos, P('doblarse'), 1, 3, { s: true }).pDx === -0.6, 'una pose no cambia sentada');
+ok(M.CANAL_HUESO.brazoD.x === 'bDx' && M.CANAL_HUESO.cuerpo.z === 'rz', 'hueso -> canal');
+const muestrasG = []; for (let x = 0.5; x <= 1.5001; x += 0.02) muestrasG.push([x, -x]);
+r = M.grabarClaves(datos, G('habla'), 'bIz', muestrasG);
+let kk = r.datos.gestos.habla.canales.bIz.k;
+ok(kk[0][0] === 0 && kk[0][1] === -0.15 && kk[1][0] === 0.5 && kk[kk.length - 1][0] === 1.5 && kk[kk.length - 1][1] === -1.5, 'grabar sobre un fijo: [0, previo] + muestras: ' + JSON.stringify(kk.slice(0, 3)));
+ok(kk.every((q, i) => !i || q[0] > kk[i - 1][0]) && kk.length === 12, 'grabación ordenada, una clave cada 0,1 s: ' + kk.length);
+valido(r.datos, 'grabar');
+const r2 = M.grabarClaves(r.datos, G('habla'), 'bIz', [[0.8, 1], [0.9, 1], [1.0, 1]]);
+kk = r2.datos.gestos.habla.canales.bIz.k;
+ok(kk.filter(q => q[1] === 1).length === 3 && kk.some(q => q[0] === 0.5) && kk.some(q => q[0] === 1.5) && !kk.some(q => q[0] === 0.8 && q[1] !== 1), 'regrabar un tramo deja lo de antes y después');
+r = M.grabarClaves(datos, G('habla'), 'bDx', [[0, -1], [0.3, -2]]);
+ok(r.datos.gestos.habla.canales.bDx.osc.length === 1 && r.datos.gestos.habla.canales.bDx.k[0][0] === 0, 'grabar conserva los osciladores');
+ok(!M.grabarClaves(datos, P('doblarse'), 'inc', [[0, 1]]).cambio, 'una pose no se graba');
+
 // ---------- Medir: tabla de rig.md (inc 0) ----------
 for (const [a, adelante, altura] of [[-0.4, 0.29, 0.81], [-0.8, 0.54, 0.98], [-1.2, 0.70, 1.23], [-1.6, 0.75, 1.52], [-2.0, 0.68, 1.81]]) {
     const m = M.puntaMano({ bDx: a });

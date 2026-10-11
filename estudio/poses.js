@@ -40,17 +40,18 @@ export async function montarPoses(ctx) {
     const info = () => ({ s: caso === 'sentado', j: caso === 'jugador' });
 
     // ---------- El instante: canales de lo elegido en t ----------
+    let vivo = null; // { canal: valor } mientras se agarra una extremidad (manda sobre el dato)
     function canalesAhora() {
-        if (!elegido) return { ...M.NEUTRAL };
-        if (elegido.tipo !== 'codigo') return M.instante(datos, ruta(), tiempo, T, info());
+        if (!elegido) return { ...M.NEUTRAL, ...vivo };
+        if (elegido.tipo !== 'codigo') return { ...M.instante(datos, ruta(), tiempo, T, info()), ...vivo };
         const f = funciones[elegido.clave];
-        const o = { ...M.NEUTRAL };
+        const o = caso === 'sentado' ? { ...M.SENTADO } : {};
         try {
             const u = Math.min(1, tiempo / T);
             Object.assign(o, elegido.firma === 'amistad' ? f(u, tiempo, { ...info(), d: T }) : f(u, tiempo, caso === 'sentado', caso === 'jugador'));
         } catch (e) { /* un gesto del código que pide más contexto: se ve neutral */ }
         for (const k of Object.keys(o)) if (!M.NOMBRES_CANAL.includes(k) || !Number.isFinite(o[k])) delete o[k];
-        return { ...M.NEUTRAL, ...o };
+        return { ...M.NEUTRAL, ...o, ...vivo };
     }
 
     // ---------- Pintar ----------
@@ -85,10 +86,16 @@ export async function montarPoses(ctx) {
         $('po-campo-nota').hidden = !d;
         if (d && document.activeElement !== $('po-nota')) $('po-nota').value = d.nota || '';
         $('po-borrar').disabled = !d;
+        const esPose = !!elegido && elegido.tipo === 'pose';
         for (const b of document.querySelectorAll('[data-po-caso]')) {
             b.classList.toggle('activo', b.dataset.poCaso === caso);
             b.classList.toggle('secundario', b.dataset.poCaso !== caso);
+            b.disabled = esPose && b.dataset.poCaso !== '';
         }
+        $('po-caso-nota').textContent = esPose ? t('Una pose es fija: no tiene casos.', 'A pose is fixed: it has no cases.')
+            : caso === 'sentado' ? t('Sentado: el gesto sobre una persona sentada (las piernas son de la silla). Lo que cambies ahora vale solo sentado.', 'Seated: the gesture on a seated person (the legs come from the chair). What you change now applies only when seated.')
+            : caso === 'jugador' ? t('Jugador: el cuerpo del jugador cuando hace el gesto con un amigo (abrazo, puño). Lo que cambies ahora vale solo para el jugador.', 'Player: the player body when doing the gesture with a friend (hug, fist bump). What you change now applies only to the player.')
+            : t('De pie: el gesto normal.', 'Standing: the normal gesture.');
     }
     // Una fila por canal: nombre, slider, número y botones (+k, +osc, ×). En una pose, solo el slider y ×.
     function pintarCanales() {
@@ -323,12 +330,15 @@ export async function montarPoses(ctx) {
                 const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xff3030, depthTest: false }));
                 p.position.set(0, -0.75, 0); p.renderOrder = 9; b.add(p); return p;
             });
+            // silla para el caso sentado: bajo la cadera (0,75) y los muslos, que con pDx -1,5 quedan horizontales hacia adelante
+            const silla = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.62, 0.7), new THREE.MeshBasicMaterial({ color: 0x6b4a2b }));
+            silla.position.set(0, 0.31, 0.2); silla.visible = false; e.add(silla);
             const cam = new THREE.PerspectiveCamera(30, ancho / c.height, 0.1, 50);
             cam.position.set(Math.sin(giro) * 6.2, 1.3, Math.cos(giro) * 6.2);
             cam.lookAt(0, 1.0, Math.sin(giro) > 0.9 ? 0.3 : 0);
-            return { e, m, cam, puntas };
+            return { e, m, cam, puntas, silla };
         });
-        return { THREE, render, vistas, ancho, alto: c.height };
+        return { THREE, render, vistas, ancho, alto: c.height, rayo: new THREE.Raycaster() };
     }
     function dibujar() {
         const v = canalesAhora();
@@ -340,7 +350,9 @@ export async function montarPoses(ctx) {
         if (!vista) return;
         const { render, vistas, ancho, alto } = vista;
         render.setScissorTest(true);
-        vistas.forEach(({ e, m, cam, puntas }, i) => {
+        const sentado = caso === 'sentado' && !!elegido && elegido.tipo !== 'pose';
+        vistas.forEach(({ e, m, cam, puntas, silla }, i) => {
+            silla.visible = sentado;
             m.cuello.rotation.set(v.cx, v.cy, v.cz);
             m.brazoD.rotation.x = v.bDx; m.brazoD.rotation.z = v.bDz; m.brazoI.rotation.x = v.bIx; m.brazoI.rotation.z = v.bIz;
             m.piernaD.rotation.x = v.pDx; m.piernaI.rotation.x = v.pIx;
@@ -361,6 +373,130 @@ export async function montarPoses(ctx) {
         const r3 = x => Math.round(x * 1000) / 1000;
         return { adelante: r3(w.z), altura: r3(w.y), lado: r3(w.x) };
     }
+
+    // ---------- Agarrar una extremidad en los muñecos (y grabar) ----------
+    // Clic sobre cabeza, brazo, pierna o tronco y arrastrar: la extremidad gira en su articulación siguiendo al mouse, sobre
+    // el eje que mejor se ve en esa vista (de frente: a los lados; de lado y 3/4: adelante y atrás; con Mayús, la cabeza gira
+    // a los lados). Sin «Grabar» cambia el valor (en un canal con claves, la clave en t). Con «Grabar», el tiempo corre desde
+    // t mientras se arrastra y el movimiento queda como claves (una cada 0,1 s) hasta soltar o llegar al final; después se
+    // vuelve a t = 0 y se graba otra extremidad encima.
+    const lienzoVista = $('po-vista');
+    let grabarArmado = false, agarre = null;
+    function huesoBajo(e) {
+        if (!vista) return null;
+        const q = lienzoVista.getBoundingClientRect();
+        const px = (e.clientX - q.left) * lienzoVista.width / q.width, py = (e.clientY - q.top) * lienzoVista.height / q.height;
+        const i = Math.min(2, Math.max(0, Math.floor(px / vista.ancho)));
+        const v = vista.vistas[i];
+        vista.rayo.setFromCamera({ x: (px - i * vista.ancho) / vista.ancho * 2 - 1, y: -(py / vista.alto) * 2 + 1 }, v.cam);
+        const huesos = new Map(Object.keys(M.CANAL_HUESO).map(k => [v.m[k], k]));
+        for (const h of vista.rayo.intersectObject(v.m.g, true)) {
+            if (!h.object.visible || v.puntas.includes(h.object)) continue;
+            for (let o = h.object; o; o = o.parent) if (huesos.has(o)) return { nombre: huesos.get(o), hueso: o, v, px, py, i };
+        }
+        return null;
+    }
+    // El eje del hueso que más apunta a la cámara de esa vista (girar sobre él se ve como girar en la pantalla)
+    function ejeVisible(b, conMayus) {
+        const { THREE } = vista;
+        let ejes = Object.keys(M.CANAL_HUESO[b.nombre]).filter(k => k !== 'y');
+        if (conMayus && b.nombre === 'cuello') ejes = ['y'];
+        const pivote = b.hueso.getWorldPosition(new THREE.Vector3());
+        const haciaCam = b.v.cam.position.clone().sub(pivote).normalize();
+        const giro = new THREE.Quaternion();
+        b.hueso.parent.getWorldQuaternion(giro);
+        let mejor = null;
+        for (const k of ejes) {
+            const eje = new THREE.Vector3(k === 'x' ? 1 : 0, k === 'y' ? 1 : 0, k === 'z' ? 1 : 0).applyQuaternion(giro);
+            const d = eje.dot(haciaCam) * (k === 'x' ? 1.05 : 1);
+            if (!mejor || Math.abs(d) > Math.abs(mejor.d)) mejor = { k, d };
+        }
+        // con Mayús la cabeza gira sobre y: se mueve el mouse a los lados (signo: hacia donde se arrastra)
+        const ndc = pivote.project(b.v.cam);
+        return {
+            canal: M.CANAL_HUESO[b.nombre][mejor.k], signo: Math.sign(mejor.d) || 1, lineal: mejor.k === 'y',
+            cx: b.i * vista.ancho + (ndc.x + 1) / 2 * vista.ancho, cy: (1 - ndc.y) / 2 * vista.alto
+        };
+    }
+    const anguloDe = (a, x, y) => Math.atan2(-(y - a.cy), x - a.cx);
+    const puntoVista = e => { const q = lienzoVista.getBoundingClientRect(); return [(e.clientX - q.left) * lienzoVista.width / q.width, (e.clientY - q.top) * lienzoVista.height / q.height]; };
+    function editarCanal(c, valor) {
+        const rt = ruta(), v = M.canalDe(datos, rt, c);
+        if (M.tipoCanal(v) === 'claves') hacer(M.agregarClave(datos, rt, c, M.xActual(def(), tiempo, T), valor), c, true);
+        else hacer(M.ponerValor(datos, rt, c, valor), c, true);
+    }
+    lienzoVista.addEventListener('pointerdown', e => {
+        const b = huesoBajo(e);
+        if (!b) return;
+        if (!elegido || elegido.tipo === 'codigo' || (grabarArmado && elegido.tipo !== 'gesto')) {
+            // Un gesto del código no se edita; para grabar sobre una pose (o un gesto del código) se copia el instante a un gesto nuevo
+            if (elegido && elegido.tipo === 'codigo' && !grabarArmado) {
+                rotular('Es un gesto del código: «Gesto nuevo» o «Grabar» lo copian para editarlo.', 'It is a code gesture: «New gesture» or «Record» copy it to edit.', 'error');
+                return;
+            }
+            const clave = M.claveLibre(datos, elegido ? elegido.clave + 'Grabado' : 'gesto', new Set([...codigo.keys(), ...moldes]));
+            const res = M.nuevoGesto(datos, clave, canalesAhora());
+            hacer(res);
+            if (!res.cambio) return;
+            elegido = { tipo: 'gesto', clave };
+            pintar();
+        }
+        const eje = ejeVisible(b, e.shiftKey);
+        const c = eje.canal, v0 = canalesAhora()[c];
+        agarre = { ...eje, c, v0, x0: b.px, a0: anguloDe(eje, b.px, b.py), rango: M.rangoDe(c, M.canalDe(datos, ruta(), c)), grabando: grabarArmado, muestras: [], ultimo: 0, valor: v0 };
+        canal = c; iClave = -1;
+        lienzoVista.setPointerCapture(e.pointerId);
+        lienzoVista.style.cursor = 'grabbing';
+        if (agarre.grabando) { historial.push(JSON.stringify(datos)); jugar(false); requestAnimationFrame(cuadroGrabar); }
+        pintarCanalesMarca(); pintarCurva();
+    });
+    lienzoVista.addEventListener('pointermove', e => {
+        if (!agarre) { lienzoVista.style.cursor = huesoBajo(e) ? 'grab' : 'default'; return; }
+        const [px, py] = puntoVista(e);
+        let d;
+        if (agarre.lineal) d = (px - agarre.x0) / 120;
+        else { d = anguloDe(agarre, px, py) - agarre.a0; d = Math.atan2(Math.sin(d), Math.cos(d)) * agarre.signo; }
+        agarre.valor = Math.round(Math.max(agarre.rango[0], Math.min(agarre.rango[1], agarre.v0 + d)) * 1000) / 1000;
+        if (agarre.grabando) vivo = { [agarre.c]: agarre.valor };
+        else editarCanal(agarre.c, agarre.valor);
+        dibujar(); refrescarValores(); posarEnJuego();
+    });
+    function soltarAgarre() {
+        if (!agarre) return;
+        const a = agarre;
+        agarre = null; vivo = null;
+        lienzoVista.style.cursor = 'default';
+        if (a.grabando) {
+            const res = M.grabarClaves(datos, ruta(), a.c, a.muestras);
+            if (res.cambio) {
+                datos = res.datos; iClave = res.i; alJuego();
+                rotular(`Grabado ${a.c}: ${a.muestras.length} cuadros. Vuelve a t = 0 y graba otra extremidad, o Reproducir.`, `Recorded ${a.c}: ${a.muestras.length} frames. Go back to t = 0 and record another limb, or Play.`, 'ok');
+            } else historial.pop();
+        }
+        arrastreFin();
+        pintar();
+    }
+    lienzoVista.addEventListener('pointerup', soltarAgarre);
+    lienzoVista.addEventListener('pointercancel', soltarAgarre);
+    // Mientras se graba: el tiempo corre y cada cuadro guarda [x, valor] del canal agarrado
+    function cuadroGrabar(ahora) {
+        const a = agarre;
+        if (!a || !a.grabando) return;
+        const dt = a.ultimo ? (ahora - a.ultimo) / 1000 : 0;
+        a.ultimo = ahora;
+        a.muestras.push([def().reloj === 'u' ? tiempo / T : tiempo, a.valor]);
+        if (tiempo >= T) { soltarAgarre(); return; }
+        ponerTiempo(Math.min(T, tiempo + dt));
+        $('po-tiempo').textContent = `REC ${f2(tiempo)} / ${f2(T)} s`;
+        requestAnimationFrame(cuadroGrabar);
+    }
+    function pintarGrabar() {
+        const b = $('po-grabar');
+        b.classList.toggle('grabando', grabarArmado);
+        b.textContent = grabarArmado ? t('Grabar: activo (agarra una extremidad)', 'Record: on (grab a limb)') : t('Grabar', 'Record');
+    }
+    $('po-grabar').addEventListener('click', () => { grabarArmado = !grabarArmado; pintarGrabar(); });
+    $('po-cero').addEventListener('click', () => ponerTiempo(0));
 
     // ---------- Tiempo y reproducción ----------
     function ponerTiempo(nuevo) {
@@ -516,9 +652,10 @@ export async function montarPoses(ctx) {
                 for (const k of Object.keys(GESTOS_AMISTAD)) if (!codigo.has(k)) { codigo.set(k, 'amistad'); funciones[k] = GESTOS_AMISTAD[k]; }
                 moldes = new Set(Object.keys(MOLDES));
             } catch (e) { console.warn('[estudio] no se pudieron importar los gestos del juego', e); }
-            try { vista = await crearVista(); } catch (e) { console.warn('[estudio] sin vista 3D', e); }
+            // lo elegido por defecto antes de esperar a la vista: un clic en la lista mientras tanto no se pisa
             if (!elegido) { const p = M.entradas(datos, codigo)[0]; if (p) elegido = { tipo: p.tipo, clave: p.clave, firma: p.firma }; }
             pintar();
+            try { vista = await crearVista(); } catch (e) { console.warn('[estudio] sin vista 3D', e); }
             ponerTiempo(tiempo);
         })();
         return cargado;
@@ -541,8 +678,17 @@ export async function montarPoses(ctx) {
         if ((e.ctrlKey || e.metaKey) && k === 's') { e.preventDefault(); if (!btnGuardar.disabled) guardar(); }
         else if ((e.ctrlKey || e.metaKey) && k === 'z' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); if (historial.length) reemplazar(JSON.parse(historial.pop())); }
     });
-    ctx.alIdioma.push(() => pintar());
+    ctx.alIdioma.push(() => { pintar(); pintarGrabar(); });
     // Para las pruebas de navegador
-    window.__estudioPoses = { datos: () => datos, elegir, medirVista, canalesAhora, ponerTiempo, cargar };
+    // puntoHueso: dónde se ve la mitad de un hueso en la vista i, en coordenadas de la página (para agarrarlo con el mouse)
+    function puntoHueso(nombre, i, largo = -0.4) {
+        if (!vista) return null;
+        const v = vista.vistas[i];
+        v.m.g.updateMatrixWorld(true);
+        const p = v.m[nombre].localToWorld(new vista.THREE.Vector3(0, nombre === 'cuello' ? 0.25 : nombre === 'cuerpo' ? 1.1 : largo, 0)).project(v.cam);
+        const q = lienzoVista.getBoundingClientRect(), k = q.width / lienzoVista.width;
+        return { x: q.left + (i * vista.ancho + (p.x + 1) / 2 * vista.ancho) * k, y: q.top + (1 - p.y) / 2 * vista.alto * k };
+    }
+    window.__estudioPoses = { datos: () => datos, elegido: () => elegido, elegir, medirVista, canalesAhora, ponerTiempo, cargar, puntoHueso, silla: () => (vista ? vista.vistas[0].silla.visible : null) };
     pintarResumen();
 }
