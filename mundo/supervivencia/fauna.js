@@ -3,7 +3,7 @@
 // Mariposas y abejas de día junto a las flores, peces que saltan en los lagos y luciérnagas de noche en el
 // borde del bosque. Dónde hay fauna (anclas) y cómo se mueve cada bicho: mundo/fauna.js (puro, determinista).
 // Aquí solo se dibuja: un InstancedMesh por especie (4 llamadas de dibujo en total), tope de 64 bichos vivos
-// (TOPES) y solo cerca del jugador (anclas a < 40 bloques; se quitan pasados 48). No hay estado por bicho:
+// (TOPES) y solo cerca del jugador (anclas a < 56 bloques; se quitan pasados 64). No hay estado por bicho:
 // cada posición sale del tiempo, así que el costo por cuadro es ~64 posiciones y 64 matrices.
 // Es solo adorno de este cliente (no viaja por la red, no se guarda). Se carga con import() desde main.js.
 // =========================================================

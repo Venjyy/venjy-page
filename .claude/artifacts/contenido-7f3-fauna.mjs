@@ -19,8 +19,8 @@ export default {
     meta: 'Rama <code>fauna-7f3</code> · 2026-10-11 · Sonnet',
     hecho: [
         '<b>Mariposas y abejas</b> junto a flores de día, <b>peces</b> que saltan en los lagos, <b>luciérnagas</b> de noche en el borde del bosque.',
-        `<b>Tope ${TOPE_TOTAL}</b> (por especie en la tabla), 4 <code>InstancedMesh</code>, solo anclas a menos de ${FAUNA.activa} bloques.`,
-        '<b>Determinista</b>: 104 anclas que salen solo del terreno; cada bicho es una función del tiempo, sin estado.',
+        `<b>Tope ${TOPE_TOTAL}</b> (por especie en la tabla), 4 <code>InstancedMesh</code>, solo anclas a menos de ${FAUNA.activa} bloques (subido tras probarlo: costaba encontrarlas).`,
+        '<b>Determinista</b>: 860 anclas que salen solo del terreno; cada bicho es una función del tiempo, sin estado.',
         '<b>Seguro</b>: cada ancla tiene 6 bloques sin estructuras ni caminos y ningún bicho se aleja más que su vuelo.',
         'Se carga con <code>import()</code>; <code>prepararTerreno</code> y los workers no pagan nada.'
     ],
@@ -30,11 +30,11 @@ export default {
     },
     revisar: [
         '<b>Aspecto</b>: tamaños, texturas de 4-8 px pintadas a ojo, aleteo y brillo con la niebla.',
-        '<b>Cantidad visible</b>: una ancla cada ~20-28 bloques; si se ven pocos, subir <code>FAUNA.anclas</code>.'
+        '<b>Cantidad visible</b>: ya con 860 anclas (~5 cerca en promedio); si aún se ven pocas o muchas, ajustar <code>FAUNA.anclas</code> y <code>activa</code>.'
     ],
     decisiones: [
         ['Posición como función del tiempo, sin estado.', 'Cero memoria por bicho y mismo resultado en cualquier hilo.'],
-        ['La fauna no se calcula en <code>prepararTerreno</code>.', 'Los workers no la necesitan; se calcula una vez (~50-80 ms) al cargar el módulo.']
+        ['La fauna no se calcula en <code>prepararTerreno</code>.', 'Los workers no la necesitan; se calcula una vez (~120 ms) al cargar el módulo.']
     ],
     secciones: [{ h2: 'Especies', html: tabla(['Especie', 'Dónde', 'Cuándo', 'Por ancla', 'Tope', 'Vuelo (bloques)'], filas) }],
     medidas: {
@@ -42,5 +42,5 @@ export default {
         filas: [['<code>llenarChunk</code> (ms/chunk)', '2,43-2,49', '2,49-2,72 (ruido)'], ['Cuadro de la fauna (ms)', '0', '!0,007-0,018'], ['Llamadas de dibujo', '0', '+4']],
         como: 'Node, 54 chunks, mediana de 7 corridas, 3 pares alternados; el cuadro son 3000 llamadas a <code>actualizar</code> sin GPU.'
     },
-    pruebas: ['<code>node mundo/tests/fauna.mjs</code>: flor = chunk, anclas iguales entre terrenos, despeje, 765 000 muestras de movimiento, tope con 180 anclas apretadas, día/noche.', 'Pasan todas las de <code>mundo/tests/</code> salvo las <code>*-navegador</code>.']
+    pruebas: ['<code>node mundo/tests/fauna.mjs</code>: flor = chunk, anclas iguales entre terrenos, despeje, 7 millones muestras de movimiento, tope con 180 anclas apretadas, día/noche.', 'Pasan todas las de <code>mundo/tests/</code> salvo las <code>*-navegador</code>.']
 };

@@ -20,14 +20,14 @@ export const TOPE_TOTAL = TOPES.mariposa + TOPES.abeja + TOPES.pez + TOPES.lucie
 export const FAUNA = {
     porAncla: { mariposa: 4, abeja: 2, pez: 2, luciernaga: 4 },
     // Anclas distintas por tipo (más que las activas a la vez: solo se muestran las cercanas)
-    anclas: { flores: 48, lago: 20, bosque: 36 },
-    separacion: { flores: 20, lago: 28, bosque: 20 },
+    anclas: { flores: 500, lago: 60, bosque: 300 },
+    separacion: { flores: 14, lago: 20, bosque: 16 },
     vuelo: { mariposa: 3, abeja: 1.8, pez: 1.5, luciernaga: 3.6 }, // radio máximo desde el ancla (horizontal)
     despeje: 6,         // radio sin estructuras ni caminos alrededor de cada ancla (mayor que todo `vuelo`)
     lejosDeLugar: 6,    // sobre el radio de cada lugar y de cada obra
-    minFlores: 3,       // flores (no pasto alto) en 7×7 columnas para que una zona cuente como «con flores»
-    activa: 40,         // distancia a la que se muestran las anclas
-    inactiva: 48        // y a la que se quitan (histéresis, para que no parpadeen en el borde)
+    minFlores: 2,       // flores (no pasto alto) en 7×7 columnas para que una zona cuente como «con flores»
+    activa: 56,         // distancia a la que se muestran las anclas
+    inactiva: 64        // y a la que se quitan (histéresis, para que no parpadeen en el borde)
 };
 
 const SEMILLA = 0x7f35;
