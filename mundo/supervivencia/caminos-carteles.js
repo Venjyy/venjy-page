@@ -27,7 +27,7 @@ export function crearCartelesCamino({ scene, camara, terreno, dy, idioma = 'es' 
                     hechos.add(i);
                     carteles.agregar({
                         x: c.x, y: c.y + dy, z: c.z, texto: c.texto, distancia: VE,
-                        ancho: c.tipo === 'cruce' ? 4.2 : 2.2, tamano: c.tipo === 'cruce' ? 24 : 26
+                        ancho: c.tipo === 'lugar' ? 5.2 : c.tipo === 'cruce' ? 4.2 : 2.2, tamano: c.tipo === 'lugar' ? 22 : c.tipo === 'cruce' ? 24 : 26
                     });
                 });
             }

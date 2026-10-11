@@ -11,6 +11,7 @@ import { actualizarLuz, campoChunk, ABORTAR } from './luz-incremental.js';
 import { llenarSubsuelo } from './supervivencia/subsuelo.js';
 import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } from './construcciones.js';
 import { colocarCaminos } from './caminos.js';
+import { colocarMotivos } from './lugares-motivos.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -64,6 +65,10 @@ export function prepararTerreno(datos, opciones = {}) {
         // Señales de los caminos (7f-3): solo supervivencia; el creativo no cambia (paridad.mjs)
         const cam = colocarCaminos({ BW: terreno.BW, BD: terreno.BD, HT: terreno.HT, SUP: terreno.SUP, ES: terreno.ES, datos, ESCALA, NIVEL_AGUA });
         terreno.caminos = cam.carteles;
+        // Motivos para ir a los lugares sin amigos (7f-3): cama del molino, historia del portal
+        const mot = colocarMotivos(terreno);
+        terreno.caminos.push(...mot.carteles);
+        for (const d of mot.decor) terreno.decor.push(d);
         for (const d of cam.decor) { terreno.decor.push(d); if (d.farol) terreno.zonasLuz.push(d.luz); }
     } else terreno.dy = 0;
     return terreno;
