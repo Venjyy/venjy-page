@@ -37,6 +37,12 @@
       "lee": null,
       "fase": 3,
       "que": "Ofertas nuevas de la tienda por nombre de objeto (como /dar); las de hoy siguen en tienda-datos.js"
+    },
+    "escenas": {
+      "esquema": "escenas",
+      "lee": null,
+      "fase": 5,
+      "que": "Escenas cortas con guion (T, r, frases, golpes, corazones y una pista de gestos por actor); hoy: punos y pareja de ANIMACIONES como piloto con paridad exacta. Lo leerá escena-amistad.js (PR 5a)"
     }
   }
 }

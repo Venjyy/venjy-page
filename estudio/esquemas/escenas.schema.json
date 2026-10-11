@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "escenas.schema.json",
+  "title": "Escenas con guion (mundo/datos/escenas.json)",
+  "description": "Escenas cortas de cine del motor de escena-amistad.js, como datos. Dos tipos: «amistad» (las animaciones por nivel de ANIMACIONES en escena-amistad-datos.js; la frase sale de FRASES_AMISTAD) y «guion» (escena nueva y simple con sus propias frases ES/EN). Tiempos en segundos de escena, distancias en bloques. Los gestos se buscan por nombre como en el juego: MOLDES, GESTOS_AMISTAD, GESTOS y los gestos de poses.json. Lo que necesita lógica (moldes compuestos, fusion, espejo, desplazar, reparto, yaw, escenas de grupo, objetos y efectos) sigue en JS: ver estudio/DISENO.md §13.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "escenas": {
+      "description": "Nombre de la escena -> definición. Con tipo «amistad» el nombre es el de ANIMACIONES (punos, abrazo, secreto, pareja) y el juego fusiona código ← JSON por clave.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "anyOf": [
+          { "$ref": "#/$defs/amistad" },
+          { "$ref": "#/$defs/guion" }
+        ]
+      }
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "segundo": {
+      "description": "Instante en el reloj de la escena (0 = empieza).",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 120
+    },
+    "actor": {
+      "description": "Quién: 'n' el amigo de la escena, 'j' el jugador o la clave de un actor extra declarado en `actores`.",
+      "$ref": "comun.schema.json#/$defs/clave"
+    },
+    "tramo": {
+      "description": "[gesto, desde, hasta]: el gesto (por nombre) suena entre desde y hasta, con rampas de entrada y salida de min(0,3 s, un tercio del tramo). u = 0..1 dentro del tramo.",
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "comun.schema.json#/$defs/clave" },
+        { "$ref": "#/$defs/segundo" },
+        { "$ref": "#/$defs/segundo" }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "pista": {
+      "description": "Una fila por actor: tramos en orden, sin superponerse (validar lo revisa). Si un actor no tiene fila, se queda en su pose neutral.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/actor" },
+      "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/tramo" } }
+    },
+    "marcas": {
+      "description": "Instantes en orden creciente.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/segundo" }
+    },
+    "camara": {
+      "description": "Planos de cámara (PR 5c; hasta entonces el juego la ignora y usa los de dos personajes). Un nombre de juego de planos de escena-amistad.js o una lista propia, que se recorre en orden y cambia con cada frase (como hoy).",
+      "type": "object",
+      "properties": {
+        "planos": {
+          "anyOf": [
+            { "enum": ["amistad", "grupo", "grupo-techo"] },
+            { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/plano" } }
+          ]
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["planos"],
+      "additionalProperties": false
+    },
+    "plano": {
+      "description": "Igual que PLANOS_AMISTAD: ang 0 = detrás del jugador (radianes), dist y alto en bloques desde el punto medio, orbita (rad/s) y dolly (bloques que se acerca durante el plano). nombre es interno (depuración), no visible.",
+      "type": "object",
+      "properties": {
+        "nombre": { "type": "string", "minLength": 1 },
+        "ang": { "type": "number", "minimum": -3.2, "maximum": 3.2 },
+        "dist": { "type": "number", "minimum": 0.5, "maximum": 12 },
+        "alto": { "type": "number", "minimum": 0, "maximum": 8 },
+        "orbita": { "type": "number", "minimum": -0.5, "maximum": 0.5 },
+        "dolly": { "type": "number", "minimum": -3, "maximum": 3 }
+      },
+      "required": ["nombre", "ang", "dist", "alto"],
+      "additionalProperties": false
+    },
+    "amistad": {
+      "description": "Animación por nivel (como ANIMACIONES). La frase es la de FRASES_AMISTAD[personaje][nombre] y la dice 'n' en `linea`.",
+      "type": "object",
+      "properties": {
+        "tipo": { "const": "amistad" },
+        "nivel": { "description": "Nivel de amistad que la desbloquea (2 Amigo, 3 Buen amigo, 4 Íntimo).", "type": "integer", "minimum": 1, "maximum": 4 },
+        "T": { "description": "Duración total (s).", "type": "number", "minimum": 1, "maximum": 120 },
+        "r": { "description": "Distancia entre el jugador y el amigo (bloques) para que las manos se toquen.", "type": "number", "minimum": 0.5, "maximum": 4 },
+        "linea": {
+          "description": "[desde, dura] de la frase única del amigo.",
+          "type": "array",
+          "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "type": "number", "minimum": 0.5, "maximum": 10 }],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "golpes": { "description": "Contactos: sonido y chispas.", "$ref": "#/$defs/marcas" },
+        "corazones": { "description": "Corazones que suben (pareja).", "$ref": "#/$defs/marcas" },
+        "pista": { "$ref": "#/$defs/pista" },
+        "camara": { "$ref": "#/$defs/camara" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["tipo", "nivel", "T", "r", "linea", "pista"],
+      "additionalProperties": false
+    },
+    "guion": {
+      "description": "Escena nueva y simple: frases propias, sin lógica. La lanza el comando /amistad o el Estudio; quién la dispara en el juego se decide aparte (en JS).",
+      "type": "object",
+      "properties": {
+        "tipo": { "const": "guion" },
+        "T": { "description": "Duración total (s).", "type": "number", "minimum": 1, "maximum": 120 },
+        "r": { "description": "Distancia entre el jugador y el amigo (bloques).", "type": "number", "minimum": 0.5, "maximum": 4 },
+        "actores": {
+          "description": "Actores extra (además de 'n' y 'j'): q -> clave del personaje, o { clave, radio } si es opcional (solo actúa si está a menos de radio bloques).",
+          "type": "object",
+          "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+          "additionalProperties": {
+            "anyOf": [
+              { "$ref": "comun.schema.json#/$defs/clave" },
+              {
+                "type": "object",
+                "properties": {
+                  "clave": { "$ref": "comun.schema.json#/$defs/clave" },
+                  "radio": { "type": "number", "minimum": 1, "maximum": 20 }
+                },
+                "required": ["clave"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "lineas": {
+          "description": "Frases en orden: q (actor o 'todos'), a (empieza), d (dura; si falta, durLinea(texto) de reencuentros.js: lo que se alcanza a leer) y texto ES/EN.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "q": { "$ref": "#/$defs/actor" },
+              "a": { "$ref": "#/$defs/segundo" },
+              "d": { "type": "number", "minimum": 0.5, "maximum": 10 },
+              "texto": { "$ref": "comun.schema.json#/$defs/texto" }
+            },
+            "required": ["q", "a", "texto"],
+            "additionalProperties": false
+          }
+        },
+        "golpes": { "description": "Contactos: sonido y chispas.", "$ref": "#/$defs/marcas" },
+        "corazones": { "description": "Corazones que suben.", "$ref": "#/$defs/marcas" },
+        "pista": { "$ref": "#/$defs/pista" },
+        "camara": { "$ref": "#/$defs/camara" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["tipo", "T", "r", "lineas", "pista"],
+      "additionalProperties": false
+    }
+  }
+}

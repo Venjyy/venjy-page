@@ -1,0 +1,31 @@
+{
+  "$schema": "../../estudio/esquemas/escenas.schema.json",
+  "version": 1,
+  "nota": "Piloto de la fase 5 del Estudio: punos y pareja copiados de ANIMACIONES (escena-amistad-datos.js), paridad exacta en mundo/tests/estudio-escenas.mjs. Las otras dos (abrazo, secreto) siguen en el código. Las pistas nombran gestos de GESTOS_AMISTAD y GESTOS; la frase de cada personaje sigue en FRASES_AMISTAD.",
+  "escenas": {
+    "punos": {
+      "tipo": "amistad",
+      "nivel": 2,
+      "T": 5.6,
+      "r": 1.25,
+      "linea": [2.3, 3],
+      "golpes": [1.45],
+      "pista": {
+        "n": [["puno", 0.45, 2.4], ["risa", 2.5, 3.6], ["habla", 3.6, 5.3]],
+        "j": [["puno", 0.45, 2.4], ["asiente", 2.6, 4.4]]
+      }
+    },
+    "pareja": {
+      "tipo": "amistad",
+      "nivel": 4,
+      "T": 8.6,
+      "r": 0.9,
+      "linea": [4.6, 3.6],
+      "corazones": [3.2, 4.2, 5.4],
+      "pista": {
+        "n": [["pareja", 0.4, 6.4], ["habla", 6.5, 8.2]],
+        "j": [["pareja", 0.4, 6.4]]
+      }
+    }
+  }
+}

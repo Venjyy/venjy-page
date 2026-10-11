@@ -102,7 +102,7 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
 | `mundo/datos/cargador.js` (58) | Navegador: `cargarDatos:21` (fetch con tope 3 s, caché, `?sin-datos`), `fusionar:46`, `texto:55` |
-| `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego) y `poses` (referencia); `indice.json` dice quién lee qué |
+| `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `poses` y `escenas` (referencia; `escenas` lo leerá `escena-amistad.js`, ver `estudio/DISENO.md` §13); `indice.json` dice quién lee qué |
 | `mundo/datos/posiciones.js` (84) | Fase 4, sin DOM: `resolverAncla` (lugares, `escenario`, `faro`), `puntoAMundo` y `mundoAPunto` (la inversa que usa el gizmo), `GIRO_CALCULADO` |
 | `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |
