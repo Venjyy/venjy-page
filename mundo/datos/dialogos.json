@@ -1,0 +1,1605 @@
+{
+  "$schema": "../../estudio/esquemas/dialogos.schema.json",
+  "version": 1,
+  "temas": {
+    "venjy": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Soy Venjy, o Benjamín. Estudio Ingeniería en Informática y armé este mundo bloque por bloque.",
+          "en": "I'm Venjy, or Benjamín. I study Computer Engineering and built this world block by block."
+        },
+        "g": "yo",
+        "skin": {
+          "pony": {
+            "es": "¿Cómo que quién soy, Pony? Agáchate un poco para verme... ah, no, si ya estás abajo.",
+            "en": "What do you mean who am I, Pony? Crouch a little to see me... oh wait, you are already down there."
+          },
+          "boris": {
+            "es": "¿Tú preguntándome quién soy? Si eres el que me va a buscar en auto a Linares.",
+            "en": "You're asking who I am? You're the one who picks me up by car in Linares."
+          },
+          "moises": {
+            "es": "Moisés, nos conocemos desde Coyhaique, cuando teníamos trece. No me vengas con esa.",
+            "en": "Moisés, we've known each other since Coyhaique, when we were thirteen. Don't give me that."
+          },
+          "lalo": {
+            "es": "¿Lalo? ¿En serio? Desde los trece en Coyhaique y ahora me preguntas quién soy.",
+            "en": "Lalo? Seriously? Since we were thirteen in Coyhaique and now you ask who I am."
+          },
+          "salonas": {
+            "es": "Socio, soy el otro que se desvela con ProcedimientoSeguro. El del café.",
+            "en": "Partner, I'm the other one losing sleep over ProcedimientoSeguro. The coffee guy."
+          },
+          "lona": {
+            "es": "Soy tu pololo, Lona. El que le abre la puerta a las gatas a las cuatro de la mañana.",
+            "en": "I'm your boyfriend, Lona. The one who opens the door for the cats at four in the morning."
+          },
+          "braulio": {
+            "es": "Braulio, soy Venjy. El que siempre te pide que muestres el dedo doble.",
+            "en": "Braulio, I'm Venjy. The one who always asks you to show the double finger."
+          },
+          "lucho": {
+            "es": "Primo, soy tu primo. Bueno, el hijo de tu prima. Da lo mismo, jugamos Apex igual.",
+            "en": "Cousin, I'm your cousin. Well, your cousin's son. Doesn't matter, we play Apex anyway."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Cuido el Inicio y reparto las peleas de jefe. Alguien tiene que hacer de anfitrión.",
+          "en": "I look after the Start and hand out the boss fights. Somebody has to be the host."
+        }
+      },
+      {
+        "id": "mundo",
+        "p": { "es": "¿Qué es este lugar?", "en": "What is this place?" },
+        "r": {
+          "es": "Es mi portafolio, pero en bloques. Cada zona es algo que hice o alguien que quiero.",
+          "en": "It's my portfolio, but in blocks. Every zone is something I made or someone I love."
+        },
+        "g": "tu"
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "proyectos",
+        "p": { "es": "¿Qué estás construyendo ahora?", "en": "What are you building now?" },
+        "r": {
+          "es": "Ahora mismo, este juego. Antes, ProcedimientoSeguro con Salonas. Mañana, quién sabe.",
+          "en": "Right now, this game. Before that, ProcedimientoSeguro with Salonas. Tomorrow, who knows."
+        },
+        "req": { "nivel": 2 },
+        "g": "rasca"
+      },
+      {
+        "id": "imbunche",
+        "p": { "es": "¿Cómo inventaste al Imbunche?", "en": "How did you come up with the Imbunche?" },
+        "r": {
+          "es": "Lo dibujé en papel antes de programarlo. En papel daba menos miedo, te lo juro.",
+          "en": "I drew it on paper before coding it. On paper it was less scary, I swear."
+        },
+        "req": { "jefe": "jefe1" },
+        "g": "risa"
+      },
+      {
+        "id": "caleuche",
+        "p": { "es": "¿Y ahora qué hacemos?", "en": "So what do we do now?" },
+        "r": {
+          "es": "Ahora nada: lo salvaste todo. Pásate a la fogata, que allá celebran mejor que yo.",
+          "en": "Now nothing: you saved it all. Go by the campfire, they celebrate better than I do."
+        },
+        "req": { "jefe": "jefe3" },
+        "g": "brazosArriba"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "Hay un bloque en este mapa que puse solo porque me gustó el color. No te voy a decir cuál.",
+          "en": "There's a block in this map I placed only because I liked the color. I won't tell you which one."
+        },
+        "req": { "nivel": 3 },
+        "g": "rasca"
+      }
+    ],
+    "pony": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Soy el Pony. Pescador de muelle y, según todos, el más chico del grupo. Mentira, el Braulio es más chico.",
+          "en": "I'm Pony. Dock fisherman and, according to everyone, the shortest of the group. Lies, Braulio is shorter."
+        },
+        "g": "yo",
+        "skin": {
+          "salonas": {
+            "es": "¿Me estás preguntando quién soy, waton klo? Anda a tocar tu bajo.",
+            "en": "Are you asking who I am, you big goof? Go play your bass."
+          },
+          "hadad": {
+            "es": "Hadad, si vienes a venderme papas fritas de bolsa como en tu comercial, me tiro al mar.",
+            "en": "Hadad, if you came to sell me bagged potato chips like in your ad, I'm jumping into the sea."
+          },
+          "andy": {
+            "es": "Andy, soy yo, tu ex compañero de trabajos. Ya sé, ya sé, te webiaba demasiado.",
+            "en": "Andy, it's me, your old project partner. I know, I know, I goofed around too much."
+          },
+          "nacho": {
+            "es": "Nacho, me conoces de sobra. Ríete primero y después pregunto yo.",
+            "en": "Nacho, you know me well enough. Laugh first and then I ask."
+          },
+          "braulio": {
+            "es": "Braulio, antes de preguntar ponte espalda con espalda conmigo. A ver quién es más chico.",
+            "en": "Braulio, before asking, stand back to back with me. Let's see who's shorter."
+          },
+          "conejeros": {
+            "es": "Mira quién llegó, mi enemigo favorito. Ya sabes quién soy, no te hagai.",
+            "en": "Look who showed up, my favorite enemy. You know who I am, don't play dumb."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Pesco. Bueno, espero que piquen, que es casi lo mismo pero con más paciencia.",
+          "en": "I fish. Well, I wait for bites, which is almost the same but with more patience."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "En la U, estudiando Informática. Somos del grupo Tomatitos, y desde el primer día Venjy me dice que soy chico.",
+          "en": "At uni, studying Computer Engineering. We're in the Tomatitos group, and since day one Venjy has called me short."
+        },
+        "g": "rasca",
+        "skin": {
+          "venjy": {
+            "es": "¿Me preguntai cómo te conocí? En la U, y al toque me dijiste chico. Tomatitos hasta el final.",
+            "en": "You're asking how I met you? At uni, and right away you called me short. Tomatitos till the end."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "abuelo",
+        "p": { "es": "¿Quién te enseñó a pescar?", "en": "Who taught you to fish?" },
+        "r": {
+          "es": "Mi abuelo de Tomé, el de los bacalaos. Me dijo que el mar no se apura y que yo tampoco.",
+          "en": "My grandpa from Tomé, the cod one. He told me the sea is never in a hurry and neither should I be."
+        },
+        "req": { "nivel": 2 }
+      },
+      {
+        "id": "karly",
+        "p": { "es": "¿Y la Profe Karly?", "en": "And Teacher Karly?" },
+        "r": {
+          "es": "Ya te conté su historia completa, ¿qué más quieres? La próxima vez que pesquemos te cuento otra.",
+          "en": "I already told you her whole story, what else do you want? Next time we fish I will tell you another."
+        },
+        "req": { "mj": "pesca" },
+        "g": "risa"
+      },
+      {
+        "id": "caleuche",
+        "p": { "es": "¿Viste caer el Caleuche?", "en": "Did you see the Caleuche go down?" },
+        "r": {
+          "es": "Lo vi hundirse desde el muelle. Te juro que un pez saltó a aplaudir.",
+          "en": "I watched it sink from the dock. I swear a fish jumped out to applaud."
+        },
+        "req": { "jefe": "jefe3" },
+        "g": "sorpresa"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "A veces no le pongo carnada al anzuelo. Me gusta sentarme acá aunque no pique nada.",
+          "en": "Sometimes I don't bait the hook. I just like sitting here even if nothing bites."
+        },
+        "req": { "nivel": 3 }
+      }
+    ],
+    "salonas": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Salonas, bajista de cinco cuerdas. Si suena raro, es a propósito.",
+          "en": "Salonas, five-string bassist. If it sounds weird, it's on purpose."
+        },
+        "g": "cabecea",
+        "skin": {
+          "pony": {
+            "es": "¿Quién soy yo? ¿Y quién eres tú, waton klo? Ah, ya sé: el Pony.",
+            "en": "Who am I? And who are you, you big goof? Oh right: Pony."
+          },
+          "andy": {
+            "es": "Andy, soy el del bajo. Tú pon el baile y yo pongo el ritmo.",
+            "en": "Andy, I'm the bass guy. You bring the dance and I bring the rhythm."
+          },
+          "braulio": {
+            "es": "Braulio, soy yo, compadre. Pasa, que para ti hay primera fila.",
+            "en": "Braulio, it's me, mate. Come in, there's a front row seat for you."
+          },
+          "conejeros": {
+            "es": "¿Me estás webeando, Conejeros? Si ayer dibujamos juntos un caballo con cara de Pony.",
+            "en": "Are you messing with me, Conejeros? Yesterday we drew a horse with Pony's face together."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Ensayo. El escenario es mío hasta que los vecinos digan lo contrario.",
+          "en": "Rehearsing. The stage is mine until the neighbors say otherwise."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "Con Venjy somos socios. Armamos ProcedimientoSeguro juntos: él la programó entera y yo lo mantengo despierto.",
+          "en": "Venjy and I are partners. We built ProcedimientoSeguro together: he coded all of it and I keep him awake."
+        },
+        "g": "tu",
+        "skin": {
+          "venjy": {
+            "es": "¿Cómo te conocí? Socio, tenemos una empresa juntos. Pregúntale a tu café.",
+            "en": "How did I meet you? Partner, we run a company together. Ask your coffee."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "primus",
+        "p": { "es": "¿Por qué gritas «Primus sucks»?", "en": "Why do you shout \"Primus sucks\"?" },
+        "r": {
+          "es": "Así saludan los fans a Primus. Gritarles que apestan es la mayor muestra de cariño.",
+          "en": "That's how fans greet Primus. Yelling that they suck is the highest form of love."
+        },
+        "req": { "mision": "salonas1" },
+        "g": "brazosArriba"
+      },
+      {
+        "id": "proyecto",
+        "p": { "es": "¿Qué es ProcedimientoSeguro?", "en": "What is ProcedimientoSeguro?" },
+        "r": {
+          "es": "Una app para que los funcionarios hagan sus actas desde el celular y las bajen en PDF. Se usa de verdad, eso es lo mejor.",
+          "en": "An app so officers can write their reports from their phone and download them as PDF. People actually use it, that is the best part."
+        },
+        "req": { "nivel": 2 },
+        "g": "habla"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "El riff que más te gusta lo saqué de un error. Toqué la cuerda equivocada y sonó mejor.",
+          "en": "The riff you like the most came from a mistake. I hit the wrong string and it sounded better."
+        },
+        "req": { "nivel": 3 },
+        "g": "rasca"
+      }
+    ],
+    "lona": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Soy Lona. Bueno, soy la que les abre las latas a Mila y Gala; ellas mandan.",
+          "en": "I'm Lona. Well, I'm the one who opens the cans for Mila and Gala; they're the bosses."
+        },
+        "g": "yo",
+        "skin": {
+          "venjy": {
+            "es": "¿Cómo que quién soy? Tu polola, tonto. La que te robó la mitad de la cama; las gatas tienen la otra mitad.",
+            "en": "What do you mean who am I? Your girlfriend, silly. I stole half your bed; the cats have the other half."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Cuido la gatera. Mila y Gala tienen casa propia, que es más de lo que tengo yo.",
+          "en": "I look after the cat house. Mila and Gala have their own house, which is more than I have."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "Venjy es mi pololo. Lo demás es privado, pero las gatas lo aprueban, que es lo importante.",
+          "en": "Venjy is my boyfriend. The rest is private, but the cats approve, which is what matters."
+        },
+        "g": "risa",
+        "skin": {
+          "venjy": {
+            "es": "¿Que cómo te conocí? Ah, no, eso no te lo cuento delante de las gatas.",
+            "en": "How I met you? Oh no, I am not telling that in front of the cats."
+          }
+        }
+      },
+      {
+        "id": "gatas",
+        "p": { "es": "¿Cómo son Mila y Gala?", "en": "What are Mila and Gala like?" },
+        "r": {
+          "es": "Mila es un amor y come de todo; Gala es la que manda y bota cosas de la mesa mirándote a los ojos.",
+          "en": "Mila is a sweetheart and eats anything; Gala is the boss and knocks things off the table while looking you in the eye."
+        },
+        "g": "habla"
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "cuello",
+        "p": { "es": "¿A Gala le gustó el cuello?", "en": "Did Gala like the collar?" },
+        "r": {
+          "es": "Se lo sacó dos veces y después se durmió con él puesto. En idioma gata eso es «me encanta».",
+          "en": "She took it off twice and then fell asleep wearing it. In cat language that means \"I love it\"."
+        },
+        "req": { "mision": "lona3" },
+        "g": "risa"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "Cuando nadie mira, les hablo a las gatas con voz de guagua. Si lo cuentas, lo niego.",
+          "en": "When nobody is looking, I talk to the cats in a baby voice. If you tell anyone, I will deny it."
+        },
+        "req": { "nivel": 3 },
+        "g": "ojos"
+      }
+    ],
+    "hadad": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Hadad. El de la barba, el que trae la leña y los chistes malos.",
+          "en": "Hadad. The bearded one, who brings the firewood and the bad jokes."
+        },
+        "g": "yo",
+        "skin": {
+          "pony": {
+            "es": "Pony, soy el de las papas fritas de bolsa. La imagen era de IA, pero la fama fue real.",
+            "en": "Pony, I'm the bagged chips guy. The picture was AI, but the fame was real."
+          },
+          "andy": {
+            "es": "Andy, si no sabes quién soy, sal del Discord y vuelve a entrar.",
+            "en": "Andy, if you don't know who I am, leave the Discord and join again."
+          },
+          "nacho": {
+            "es": "Nacho, soy el que te revive cuando caes en Tilted. O sea, siempre.",
+            "en": "Nacho, I'm the one who revives you when you drop at Tilted. So, always."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Cuido la fogata y el lobby. Cuando esté todo listo, partimos la partida.",
+          "en": "I watch the fire and the lobby. When everything's ready, we start the match."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "En la U, estudiando Ingeniería Informática. Somos del grupo Tomatitos, aunque con él hablo menos que con Andy y Nacho.",
+          "en": "At uni, studying Computer Engineering. We're in the Tomatitos group, though I talk to him less than to Andy and Nacho."
+        },
+        "skin": {
+          "venjy": {
+            "es": "Venjy, de la U. No hablamos tanto, pero en el grupo Tomatitos siempre estás. Eso cuenta.",
+            "en": "Venjy, from uni. We don't talk that much, but you're always there in the Tomatitos group. That counts."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "papas",
+        "p": { "es": "¿Qué pasó con lo de las papas fritas?", "en": "What happened with the potato chips thing?" },
+        "r": {
+          "es": "Alguien hizo una imagen con IA donde salgo promocionando papas fritas de bolsa. Desde entonces soy la cara de la marca.",
+          "en": "Someone made an AI image of me advertising bagged potato chips. Since then I'm the face of the brand."
+        },
+        "req": { "nivel": 2 },
+        "g": "risa"
+      },
+      {
+        "id": "asado",
+        "p": { "es": "¿Qué tal el asado?", "en": "How was the barbecue?" },
+        "r": {
+          "es": "Cuando sale bien, se nota. Cuando sale quemado, también, pero de otra forma.",
+          "en": "When it turns out well, you can tell. When it burns, you can tell too, just differently."
+        },
+        "req": { "mj": "asado" },
+        "g": "rasca"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "A veces pierdo a propósito en Fortnite para que los chiquillos se rían. Bueno, a veces no es a propósito.",
+          "en": "Sometimes I lose in Fortnite on purpose so the guys laugh. Well, sometimes it is not on purpose."
+        },
+        "req": { "nivel": 3 }
+      }
+    ],
+    "andy": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Andy. El del polerón azul y el baile de victoria, aunque ganemos poco.",
+          "en": "Andy. Blue hoodie, victory dance, even if we rarely win."
+        },
+        "g": "yo",
+        "skin": {
+          "pony": {
+            "es": "¿Pony? ¿Me preguntas quién soy después de todos los trabajos que hice yo solo?",
+            "en": "Pony? You ask who I am after all the projects I did alone?"
+          },
+          "salonas": {
+            "es": "Salonas, soy el que te aplaude en primera fila. El que no sabe bailar en 7/8.",
+            "en": "Salonas, I'm the one clapping in the front row. The one who can't dance in 7/8."
+          },
+          "hadad": {
+            "es": "Hadad, soy tu dúo. Pásame los materiales y deja de preguntar tonteras.",
+            "en": "Hadad, I'm your duo. Pass me the materials and stop asking silly things."
+          },
+          "nacho": {
+            "es": "Nacho, soy tu compañero de trabajos. Y de desvelos. Y de Fortnite.",
+            "en": "Nacho, I'm your project partner. And all-nighter partner. And Fortnite partner."
+          },
+          "braulio": {
+            "es": "Braulio, soy Andy, ¡el de siempre! Pasa a la fogata, que hay espacio.",
+            "en": "Braulio, it's Andy, same as always! Come to the fire, there's room."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Defiendo la base. O sea, estoy sentado junto al fuego, pero en modo alerta.",
+          "en": "I defend the base. I mean, I'm sitting by the fire, but on alert."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "De la U, estudiando Informática. Estamos en el grupo Tomatitos; él pregunta harto y siempre trae alguna idea nueva.",
+          "en": "From uni, studying Computer Engineering. We're in the Tomatitos group; he asks a lot and always brings a new idea."
+        },
+        "skin": {
+          "venjy": {
+            "es": "Venjy, compañero de la U y de los Tomatitos. Me gusta tu mapa: bailé en cada zona, para que sepas.",
+            "en": "Venjy, my uni and Tomatitos buddy. I like your map: I danced in every zone, just so you know."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "baile",
+        "p": { "es": "¿Me enseñas el baile?", "en": "Will you teach me the dance?" },
+        "r": {
+          "es": "Brazo arriba, brazo abajo y cara de que ganaste, aunque hayas quedado décimo.",
+          "en": "Arm up, arm down, and a face like you won, even if you came tenth."
+        },
+        "req": { "nivel": 2 },
+        "g": "baile"
+      },
+      {
+        "id": "trabajos",
+        "p": { "es": "¿Cómo van los trabajos de la U?", "en": "How are your uni projects going?" },
+        "r": {
+          "es": "Con el Nacho vamos al día. Desde que el Pony no está en el grupo, hasta entregamos antes.",
+          "en": "Nacho and I are on track. Since Pony left the group, we even hand things in early."
+        },
+        "req": { "mision": "andy2" },
+        "g": "risa"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "El creeper que me voló la torre... yo le pegué primero. No le digas a nadie, que quedé de víctima.",
+          "en": "The creeper that blew up my tower... I hit it first. Don't tell anyone, I came out as the victim."
+        },
+        "req": { "nivel": 3 },
+        "g": "rasca"
+      }
+    ],
+    "nacho": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Nacho. El que se ríe de todo y cae en Tilted aunque le digan que no.",
+          "en": "Nacho. The one who laughs at everything and drops at Tilted even when told not to."
+        },
+        "g": "risa",
+        "skin": {
+          "pony": {
+            "es": "Jajaja, Pony, ¿quién soy? El que se ríe cuando dices que no eres chico.",
+            "en": "Haha, Pony, who am I? The one who laughs when you say you're not short."
+          },
+          "hadad": {
+            "es": "Hadad, jajaja, soy el que se ríe de tus chistes. El único, ojo.",
+            "en": "Hadad, haha, I'm the one who laughs at your jokes. The only one, mind you."
+          },
+          "andy": {
+            "es": "Andy, soy tu compañero de trabajos. Entrega el viernes, por si se te olvidó.",
+            "en": "Andy, I'm your project partner. Due Friday, in case you forgot."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Cuido la fogata y el asado. Bueno, más el asado que la fogata.",
+          "en": "I watch the fire and the barbecue. Well, the barbecue more than the fire."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "De la U, jajaja. Estamos en el grupo Tomatitos y cada vez que me ve me pregunta por Tilted.",
+          "en": "From uni, haha. We're in the Tomatitos group and every time he sees me he asks about Tilted."
+        },
+        "g": "risa",
+        "skin": {
+          "venjy": {
+            "es": "Jajaja, ¿cómo te conocí? En la U. Y en los Tomatitos me preguntaste altiro si había caído en Tilted.",
+            "en": "Haha, how did I meet you? At uni. And in the Tomatitos group you asked right away if I had dropped at Tilted."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "tilted",
+        "p": { "es": "¿Por qué siempre caes en Tilted?", "en": "Why do you always drop at Tilted?" },
+        "r": {
+          "es": "Porque es lo más bonito del mapa. Muero en diez segundos, pero bonito.",
+          "en": "Because it is the prettiest part of the map. I die in ten seconds, but prettily."
+        },
+        "req": { "nivel": 2 },
+        "g": "risa"
+      },
+      {
+        "id": "asado",
+        "p": { "es": "¿Quién asa mejor?", "en": "Who grills best?" },
+        "r": {
+          "es": "Mi tío en septiembre, jajaja. Pero tú vas segundo, y eso es mucho decir.",
+          "en": "My uncle in September, haha. But you're second, and that's saying a lot."
+        },
+        "req": { "mj": "asado" },
+        "g": "tu"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "Jajaja, mi risa es de nervios la mitad de las veces. La otra mitad es porque Hadad contó un chiste.",
+          "en": "Haha, half the time my laugh is nerves. The other half is because Hadad told a joke."
+        },
+        "req": { "nivel": 3 },
+        "g": "risa"
+      }
+    ],
+    "moises": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Moisés. Pelo largo, iglú propio y paciencia de sobra.",
+          "en": "Moisés. Long hair, my own igloo and patience to spare."
+        },
+        "g": "yo",
+        "skin": {
+          "lalo": {
+            "es": "¿Lalo? ¿En serio? Vivimos juntos, hermano. Ayer te comiste mi pan.",
+            "en": "Lalo? Seriously? We live together, bro. Yesterday you ate my bread."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Vivo acá con Lalo. Miramos la aurora, conversamos y no nos apuramos por nada.",
+          "en": "I live here with Lalo. We watch the aurora, we talk and we're never in a rush."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "Con Venjy nos conocemos desde Coyhaique, cuando teníamos trece o catorce. Desde ahí, amigos.",
+          "en": "Venjy and I met in Coyhaique, when we were thirteen or fourteen. Friends ever since."
+        },
+        "skin": {
+          "venjy": {
+            "es": "Hermano, desde los trece en Coyhaique. ¿Te acuerdas de la nieve hasta las rodillas? Yo sí.",
+            "en": "Bro, since thirteen in Coyhaique. Remember the knee-deep snow? I do."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "coyhaique",
+        "p": { "es": "¿Cómo era Coyhaique?", "en": "What was Coyhaique like?" },
+        "r": {
+          "es": "Frío, verde y tranquilo. Por eso este iglú se siente como casa.",
+          "en": "Cold, green and calm. That is why this igloo feels like home."
+        },
+        "req": { "nivel": 2 }
+      },
+      {
+        "id": "aurora",
+        "p": { "es": "¿Viste la aurora?", "en": "Did you see the aurora?" },
+        "r": {
+          "es": "Desde las ventanas nuevas se ve entera. Lalo dice que es el humo; yo digo que es magia.",
+          "en": "From the new windows you see all of it. Lalo says it's the smoke; I say it's magic."
+        },
+        "req": { "mision": "moises2" },
+        "g": "ojos"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "El ¡YIAAAAAA! lo inventamos con Lalo una noche cualquiera. Nadie sabe qué significa, ni nosotros.",
+          "en": "Lalo and I made up the YIAAAAAA! on a random night. Nobody knows what it means, not even us."
+        },
+        "req": { "nivel": 3 },
+        "g": "brazosArriba"
+      }
+    ],
+    "lalo": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Lalo, ahya. Sombrero de paja, Jordan limpias y buena onda garantizada.",
+          "en": "Lalo, ahya. Straw hat, clean Jordans and good vibes guaranteed."
+        },
+        "g": "yo",
+        "skin": {
+          "moises": {
+            "es": "Moisés, hermano, ¿te pegó fuerte el bong? Soy Lalo, vivo contigo.",
+            "en": "Moisés, bro, did the bong hit you hard? I'm Lalo, I live with you."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Cocino, converso y cuido que el pito no se apague. Lo importante, digamos.",
+          "en": "I cook, I chat and I make sure the joint stays lit. The important stuff, let's say."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "Venjy es mi hermano de Coyhaique. Nos conocimos chicos y todavía nos reímos de lo mismo.",
+          "en": "Venjy is my brother from Coyhaique. We met as kids and still laugh at the same things."
+        },
+        "g": "risa",
+        "skin": {
+          "venjy": {
+            "es": "¿Me preguntai eso a mí? Hermano, desde Coyhaique. Tú, yo y Moisés, ahya.",
+            "en": "You are asking me that? Bro, since Coyhaique. You, me and Moisés, ahya."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "cazuela",
+        "p": { "es": "¿Te salió la cazuela?", "en": "Did the stew turn out?" },
+        "r": {
+          "es": "Igualita a la de mi mamá, o casi. Le falta su mano, pero el olor es el mismo.",
+          "en": "Just like my mom's, or almost. It lacks her touch, but it smells the same."
+        },
+        "req": { "mision": "lalo2" }
+      },
+      {
+        "id": "trauco",
+        "p": { "es": "¿Le tienes miedo al Trauco?", "en": "Are you afraid of the Trauco?" },
+        "r": {
+          "es": "Desde que los sacaste del bosque, no. Antes dormía con el sombrero puesto, por si acaso.",
+          "en": "Since you cleared them from the forest, no. Before, I slept with my hat on, just in case."
+        },
+        "req": { "mision": "lalo3" },
+        "g": "rasca"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "A veces me pongo las Jordan solo para estar en el iglú. Nadie las ve, pero yo sé que están limpias.",
+          "en": "Sometimes I wear the Jordans just to sit in the igloo. Nobody sees them, but I know they are clean."
+        },
+        "req": { "nivel": 3 }
+      }
+    ],
+    "boris": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Boris. Leña, camisa a cuadros y un hacha que no se cansa.",
+          "en": "Boris. Firewood, plaid shirt and an axe that never gets tired."
+        },
+        "g": "yo",
+        "skin": {
+          "lucho": {
+            "es": "Lucho, ¿me estás webeando? Desde la media que me conoces.",
+            "en": "Lucho, are you messing with me? You've known me since high school."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Corto leña. Alguien tiene que mantener encendido el campamento.",
+          "en": "I chop wood. Somebody has to keep the camp going."
+        },
+        "g": "hachazo"
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "Venjy es de los míos. Cuando viene a Linares lo voy a buscar en auto, nos tomamos unas chelas y jugamos LoL en mi PC.",
+          "en": "Venjy is one of mine. When he comes to Linares I pick him up by car, we have a few beers and play LoL on my PC."
+        },
+        "skin": {
+          "venjy": {
+            "es": "Te conozco de memoria. Avísame cuándo llegas a Linares y te voy a buscar, como siempre.",
+            "en": "I know you by heart. Tell me when you get to Linares and I will pick you up, as always."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "linares",
+        "p": { "es": "¿Cómo es Linares?", "en": "What is Linares like?" },
+        "r": {
+          "es": "Tranquilo. Uno maneja, pone música y llega donde los amigos. Así me gusta.",
+          "en": "Quiet. You drive, put on some music and get to your friends. That is how I like it."
+        },
+        "req": { "nivel": 2 }
+      },
+      {
+        "id": "revancha",
+        "p": { "es": "¿Quieres la revancha?", "en": "Want a rematch?" },
+        "r": {
+          "es": "Cuando quieras. Esta vez afilo el hacha antes, que la otra vez fue culpa del hacha.",
+          "en": "Whenever you want. This time I sharpen the axe first, last time it was the axe's fault."
+        },
+        "req": { "mj": "lena" },
+        "g": "tu"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "No le digas a Lucho, pero sigo encontrando que Nana es muy tonta. Él se enoja cada vez.",
+          "en": "Don't tell Lucho, but I still think Nana is really dumb. He gets mad every time."
+        },
+        "req": { "nivel": 3 },
+        "g": "risa"
+      }
+    ],
+    "lucho": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Lucho. Jugador de ranked, enemigo de las arañas y primo de Venjy, más o menos.",
+          "en": "Lucho. Ranked player, enemy of spiders and Venjy's cousin, more or less."
+        },
+        "g": "yo",
+        "skin": {
+          "boris": {
+            "es": "Boris, compadre, ¿quién soy? El que te conoce desde la media y te arbitra los duelos.",
+            "en": "Boris, mate, who am I? The one who has known you since high school and referees your duels."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Arbitro los duelos de hacha de Boris y espero que se abra la cola.",
+          "en": "I referee Boris's axe duels and wait for the queue to pop."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "Venjy es mi primo. Bueno, es hijo de mi prima, pero tenemos casi la misma edad y nos presentaron como primos. Y quedó.",
+          "en": "Venjy is my cousin. Well, he's my cousin's son, but we're almost the same age so we were introduced as cousins. It stuck."
+        },
+        "g": "rasca",
+        "skin": {
+          "venjy": {
+            "es": "Primo, me preguntas eso y te saco de la party de Apex.",
+            "en": "Cousin, ask me that again and I kick you from the Apex party."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "ranked",
+        "p": { "es": "¿Cómo va la ranked?", "en": "How is ranked going?" },
+        "r": {
+          "es": "Subiendo, bajando y volviendo a subir. Como todo en la vida, pero con más gritos.",
+          "en": "Up, down and up again. Like everything in life, but with more yelling."
+        },
+        "req": { "nivel": 2 }
+      },
+      {
+        "id": "aranas",
+        "p": { "es": "¿Por qué odias las arañas?", "en": "Why do you hate spiders?" },
+        "r": {
+          "es": "Tienen ocho patas y cero modales. Gracias por sacarlas de la leñera, de verdad.",
+          "en": "Eight legs and zero manners. Thanks for clearing them from the woodpile, really."
+        },
+        "req": { "mision": "lucho1" },
+        "g": "ojos"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "Cuando Boris no mira, practico con su hacha. Todavía no le gano, pero algún día.",
+          "en": "When Boris isn't looking, I practice with his axe. I can't beat him yet, but someday."
+        },
+        "req": { "nivel": 3 }
+      }
+    ],
+    "braulio": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Braulio. De Arica, aunque nadie me cree por lo blanco. Y sí, tengo el dedo doble.",
+          "en": "Braulio. From Arica, though nobody believes it because I am so pale. And yes, I have the double finger."
+        },
+        "g": "yo",
+        "skin": {
+          "pony": {
+            "es": "Pony, tú sabes quién soy: el que te gana en altura. Por poquito, pero gana.",
+            "en": "Pony, you know who I am: the one who beats you in height. Barely, but still."
+          },
+          "salonas": {
+            "es": "Salonas, soy el de la primera fila. El único que no te pide covers.",
+            "en": "Salonas, I'm the front row guy. The only one who never asks you for covers."
+          },
+          "andy": {
+            "es": "Andy, soy Braulio, el de las curiosidades. Te guardé una concha bonita.",
+            "en": "Andy, I'm Braulio, the curiosities guy. I saved you a pretty shell."
+          },
+          "conejeros": {
+            "es": "Conejeros, ¿quién soy yo? El único que entiende tus chistes. Bueno, casi.",
+            "en": "Conejeros, who am I? The only one who gets your jokes. Well, almost."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Vigilo el naufragio y junto lo que trae el mar. Huesos, botellas, de todo.",
+          "en": "I keep watch over the shipwreck and collect what the sea brings. Bones, bottles, everything."
+        }
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "De la U, estudiando Informática. Somos del grupo Tomatitos, y siempre me pide que le muestre el dedo doble.",
+          "en": "From uni, studying Computer Engineering. We're in the Tomatitos group, and he always asks me to show him the double finger."
+        },
+        "g": "dedo",
+        "skin": {
+          "venjy": {
+            "es": "En la U, eh. Lo primero que miraste fue mi dedo; lo segundo, que soy blanco para ser de Arica.",
+            "en": "At uni, okay? The first thing you looked at was my finger; the second, how pale I am for someone from Arica."
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "dedo",
+        "p": { "es": "¿Me muestras el dedo doble?", "en": "Will you show me the double finger?" },
+        "r": {
+          "es": "Mira: uno, dos... y el doble. Sí, se mueve. No, no duele.",
+          "en": "Look: one, two... and the double. Yes, it moves. No, it does not hurt."
+        },
+        "req": { "nivel": 2 },
+        "g": "dedo"
+      },
+      {
+        "id": "caleuche",
+        "p": { "es": "¿El Caleuche se hundió de verdad?", "en": "Did the Caleuche really sink?" },
+        "r": {
+          "es": "Sí, y quedó una tabla en la orilla. La guardé con mis huesos, que es lo más valioso que tengo.",
+          "en": "Yes, and a plank washed up on shore. I keep it with my bones, my most valuable things."
+        },
+        "req": { "jefe": "jefe3" },
+        "g": "sorpresa"
+      },
+      {
+        "id": "arica",
+        "p": { "es": "¿De verdad eres de Arica?", "en": "Are you really from Arica?" },
+        "r": {
+          "es": "De Arica, eh. El sol de allá nunca me encontró, eso es todo.",
+          "en": "From Arica, okay? The sun up there just never found me, that is all."
+        },
+        "req": { "nivel": 3 },
+        "g": "rasca"
+      }
+    ],
+    "conejeros": [
+      {
+        "id": "quien",
+        "p": { "es": "¿Quién eres?", "en": "Who are you?" },
+        "r": {
+          "es": "Conejeros. De San Rosendo, fan de los conejos y del bajo del Salonas.",
+          "en": "Conejeros. From San Rosendo, fan of rabbits and of Salonas's bass."
+        },
+        "g": "cabecea",
+        "skin": {
+          "pony": {
+            "es": "¿Quién soy? Tu peor pesadilla, Pony. Y el que te hizo un queque, ojo.",
+            "en": "Who am I? Your worst nightmare, Pony. And the one who baked you a cake, mind you."
+          },
+          "salonas": {
+            "es": "Salonas, soy tu compañero de dibujos. Me debes la mitad del cuaderno.",
+            "en": "Salonas, I'm your drawing buddy. You owe me half the notebook."
+          },
+          "braulio": {
+            "es": "Braulio, soy yo. El que se ríe de tus chistes aunque no sean tan .exe como los míos.",
+            "en": "Braulio, it's me. The one who laughs at your jokes even if they're not as .exe as mine."
+          }
+        }
+      },
+      {
+        "id": "aqui",
+        "p": { "es": "¿Qué haces aquí?", "en": "What are you doing here?" },
+        "r": {
+          "es": "Cabeceo en primera fila. Es un trabajo duro, pero alguien tiene que hacerlo.",
+          "en": "I headbang in the front row. It's hard work, but someone has to do it."
+        },
+        "g": "cabecea"
+      },
+      {
+        "id": "venjy",
+        "p": { "es": "¿Cómo conociste a Venjy?", "en": "How did you meet Venjy?" },
+        "r": {
+          "es": "De la U, de Informática. Estamos en el grupo Tomatitos y siempre pregunta por el Pony, igual que yo.",
+          "en": "From uni, Computer Engineering. We're in the Tomatitos group and he always asks about Pony, same as me."
+        },
+        "skin": {
+          "venjy": {
+            "es": "Venjy, compañero Tomatito. Nos conocemos de la U; ¿vamos a molestar al Pony?",
+            "en": "Venjy, fellow Tomatito. We know each other from uni; shall we go bug Pony?"
+          }
+        }
+      },
+      {
+        "id": "opina",
+        "p": { "es": "¿Qué opinas de...?", "en": "What do you think of...?" },
+        "req": { "nivel": 1 }
+      },
+      {
+        "id": "dibujos",
+        "p": { "es": "¿Qué dibujan con Salonas?", "en": "What do you and Salonas draw?" },
+        "r": {
+          "es": "Tonteras: un conejo con lentes, el Pony montado en un pez, un Imbunche con corbata. Arte.",
+          "en": "Nonsense: a rabbit with glasses, Pony riding a fish, an Imbunche in a tie. Art."
+        },
+        "req": { "nivel": 2 },
+        "g": "risa"
+      },
+      {
+        "id": "queque",
+        "p": { "es": "¿Le gustó el queque al Pony?", "en": "Did Pony like the cake?" },
+        "r": {
+          "es": "Se lo comió entero y dijo que estaba seco. Clásico Pony: enemigos hasta en el postre.",
+          "en": "He ate the whole thing and said it was dry. Classic Pony: enemies even at dessert."
+        },
+        "req": { "mision": "conejeros1" },
+        "g": "risa"
+      },
+      {
+        "id": "secreto",
+        "p": { "es": "Cuéntame algo que nadie sepa", "en": "Tell me something nobody knows" },
+        "r": {
+          "es": "No soy tan .exe como parezco. Bueno, sí. Pero ensayo los chistes antes.",
+          "en": "I'm not as .exe as I look. Well, I am. But I rehearse the jokes first."
+        },
+        "req": { "nivel": 3 },
+        "g": "rasca"
+      }
+    ]
+  },
+  "opiniones": {
+    "venjy": {
+      "pony": {
+        "es": "El Pony es terrible weón, pero es nuestro weón. Y es chico, eso no se discute.",
+        "en": "Pony is a total goof, but he's our goof. And he's short, that's not up for debate."
+      },
+      "boris": {
+        "es": "Boris es de los buenos: me va a buscar a Linares, compartimos unas chelas y terminamos jugando LoL en su PC.",
+        "en": "Boris is one of the good ones: he picks me up in Linares, we share some beers and end up playing LoL on his PC."
+      },
+      "moises": {
+        "es": "Con Moisés nos conocemos desde Coyhaique, a los trece. Le cambió el pelo, no la buena onda.",
+        "en": "Moisés and I go back to Coyhaique, at thirteen. His hair changed, his good vibes didn't."
+      },
+      "lalo": {
+        "es": "Lalo es hermano de la vida. Desde Coyhaique, igual que Moisés, y ahora viven juntos en el iglú.",
+        "en": "Lalo is a brother for life. Since Coyhaique, like Moisés, and now they live together in the igloo."
+      },
+      "salonas": {
+        "es": "Salonas es mi socio. Sacamos ProcedimientoSeguro juntos, a punta de café y conversaciones a medianoche.",
+        "en": "Salonas is my partner. We launched ProcedimientoSeguro together, fueled by coffee and midnight talks."
+      },
+      "lona": {
+        "es": "Lona es mi polola. Y la jefa de Mila y Gala, que es el cargo más alto de este mundo.",
+        "en": "Lona is my girlfriend. And the boss of Mila and Gala, the highest rank in this world."
+      },
+      "hadad": {
+        "es": "Hadad me cae bien. No nos vemos tanto, pero cuando nos vemos es buena conversa.",
+        "en": "I like Hadad. We don't see each other much, but when we do, the talk is good."
+      },
+      "andy": {
+        "es": "Andy es buena onda. Si oyes música y alguien bailando, es él celebrando algo.",
+        "en": "Andy is cool. If you hear music and someone dancing, it's him celebrating something."
+      },
+      "nacho": {
+        "es": "El Nacho siempre se está riendo. Es imposible estar de mal humor al lado de él.",
+        "en": "Nacho is always laughing. It's impossible to be in a bad mood next to him."
+      },
+      "braulio": {
+        "es": "Braulio es de Arica y es más blanco que yo, que soy del sur. Y ese dedo doble, no lo supero.",
+        "en": "Braulio is from Arica and paler than me, and I'm from the south. And that double finger, I'm still not over it."
+      },
+      "lucho": {
+        "es": "Lucho es mi primo... técnicamente primo de mi mamá, pero tenemos casi la misma edad. Compañero de Apex.",
+        "en": "Lucho is my cousin... technically my mom's cousin, but we're almost the same age. My Apex teammate."
+      },
+      "conejeros": {
+        "es": "Conejeros es simpático. Con Salonas dibujan unas tonteras que deberían estar en un museo.",
+        "en": "Conejeros is nice. He and Salonas draw nonsense that belongs in a museum."
+      }
+    },
+    "pony": {
+      "venjy": {
+        "es": "El Venjy dice que soy weón y que soy chico. Lo segundo lo discuto; lo primero... también.",
+        "en": "Venjy says I'm a goof and that I'm short. I dispute the second; the first... too."
+      },
+      "salonas": {
+        "es": "El Salonas es un waton klo. Y él dice que yo también. Empate técnico.",
+        "en": "Salonas is a big goof. And he says I am too. A technical draw."
+      },
+      "hadad": {
+        "es": "Hadad es la cara de las papas fritas de bolsa, gracias a una imagen de IA. Cada vez que abro una bolsa, me mira.",
+        "en": "Hadad is the face of bagged potato chips, thanks to an AI image. Every time I open a bag, he's staring at me."
+      },
+      "andy": {
+        "es": "El Andy es mi yunta. Hacíamos los trabajos juntos hasta que me echó por webiar. Ahora los hace con el Nacho.",
+        "en": "Andy is my best bud. We did projects together until he kicked me out for goofing off. Now he does them with Nacho."
+      },
+      "nacho": {
+        "es": "El Nacho es buena onda. Se ríe de todo, hasta de cuando no pica nada.",
+        "en": "Nacho is cool. He laughs at everything, even when nothing's biting."
+      },
+      "braulio": {
+        "es": "El Braulio dice que es más alto que yo. Falso. Hay que medirnos con una regla de verdad.",
+        "en": "Braulio says he's taller than me. False. We need to measure with a real ruler."
+      },
+      "conejeros": {
+        "es": "El Conejeros es mi enemigo jurado. Bueno, enemigo con el que me junto todas las semanas.",
+        "en": "Conejeros is my sworn enemy. Well, an enemy I hang out with every week."
+      }
+    },
+    "salonas": {
+      "venjy": {
+        "es": "Venjy es mi socio. Si ProcedimientoSeguro funciona, es porque nos turnamos para no dormir.",
+        "en": "Venjy is my partner. If ProcedimientoSeguro works, it's because we take turns not sleeping."
+      },
+      "pony": {
+        "es": "El Pony es un waton klo. Pero si alguien más se lo dice, me enojo yo.",
+        "en": "Pony is a big goof. But if anyone else calls him that, I get mad."
+      },
+      "hadad": {
+        "es": "Con Hadad nos saludamos y todo bien. Ni fu ni fa, pero tranquilo.",
+        "en": "Hadad and I say hi and all good. Neither here nor there, but chill."
+      },
+      "andy": {
+        "es": "Andy es cordial, buena persona. Siempre aplaude aunque el compás esté chueco.",
+        "en": "Andy is friendly, a good guy. He always claps even when the beat is crooked."
+      },
+      "nacho": {
+        "es": "Al Nacho lo conozco poco. Se ríe harto, y eso ya es buena señal.",
+        "en": "I don't know Nacho much. He laughs a lot, which is already a good sign."
+      },
+      "braulio": {
+        "es": "Braulio es amigo. Viene a los ensayos y nunca pide nada de Primus, cosa rara.",
+        "en": "Braulio is a friend. He comes to rehearsals and never asks for Primus, which is rare."
+      },
+      "conejeros": {
+        "es": "El Conejeros es mi compañero de tonteras. Mismo humor y un cuaderno lleno de dibujos que nadie debe ver.",
+        "en": "Conejeros is my partner in nonsense. Same humor, and a notebook full of drawings nobody should see."
+      }
+    },
+    "lona": {
+      "venjy": {
+        "es": "Venjy es mi pololo, y el único que logra que Gala se le eche en la pierna.",
+        "en": "Venjy is my boyfriend, and the only one Gala lies down on."
+      },
+      "moises": {
+        "es": "A Moisés lo conozco por Venjy. Simpático, siempre me saluda desde la puerta del iglú.",
+        "en": "I know Moisés through Venjy. Nice guy, always waves at me from the igloo door."
+      },
+      "lalo": {
+        "es": "Lalo es amigo de Venjy de toda la vida. Lo conozco poco, pero me cae bien.",
+        "en": "Lalo is a lifelong friend of Venjy. I don't know him much, but I like him."
+      }
+    },
+    "hadad": {
+      "venjy": {
+        "es": "Venjy es buena onda. No lo veo tanto, pero cuando aparece trae algo nuevo que mostrar.",
+        "en": "Venjy is cool. I don't see him much, but when he shows up he has something new to show."
+      },
+      "pony": {
+        "es": "El Pony todavía me manda la imagen de IA de las papas fritas. Cada semana, sin falta.",
+        "en": "Pony still sends me the AI potato chips picture. Every week, without fail."
+      },
+      "salonas": {
+        "es": "Salonas, cordial. Nos saludamos y cada uno vuelve a lo suyo.",
+        "en": "Salonas, friendly. We say hi and each goes back to his own thing."
+      },
+      "andy": {
+        "es": "Andy es de mis mejores amigos. Fortnite, Discord hasta tarde y cero rencor cuando perdemos.",
+        "en": "Andy is one of my best friends. Fortnite, Discord until late and zero grudges when we lose."
+      },
+      "nacho": {
+        "es": "El Nacho es familia. Si estamos en el Discord, él es el que se ríe más fuerte.",
+        "en": "Nacho is family. If we're on Discord, he's the one laughing the loudest."
+      },
+      "braulio": {
+        "es": "Braulio es cordial, nos llevamos bien. Algún día me muestra el dedo doble.",
+        "en": "Braulio is friendly, we get along. Someday he will show me the double finger."
+      },
+      "conejeros": {
+        "es": "Conejeros, cordial también. Humor raro, pero buena gente.",
+        "en": "Conejeros, friendly too. Weird humor, but good people."
+      }
+    },
+    "andy": {
+      "venjy": {
+        "es": "Venjy es buena onda. Si alguna vez juega Fortnite con nosotros, le enseño el baile.",
+        "en": "Venjy is cool. If he ever plays Fortnite with us, I will teach him the dance."
+      },
+      "pony": {
+        "es": "El Pony es mi amigo del alma. Lo saqué del grupo de trabajos porque webiaba mucho, pero lo sigo queriendo.",
+        "en": "Pony is my soul friend. I took him out of the project group because he goofed around too much, but I still love him."
+      },
+      "salonas": {
+        "es": "Salonas es cordial y toca bacán. Le aplaudo aunque no entienda los compases.",
+        "en": "Salonas is friendly and plays great. I clap even though I don't get the time signatures."
+      },
+      "hadad": {
+        "es": "Hadad es mi partner de Fortnite. Horas en el Discord y todavía no nos aburrimos.",
+        "en": "Hadad is my Fortnite partner. Hours on Discord and we're still not bored."
+      },
+      "nacho": {
+        "es": "El Nacho es mi yunta: hacemos los trabajos de la U juntos y después jugamos hasta tarde.",
+        "en": "Nacho is my best bud: we do our uni projects together and then play until late."
+      },
+      "braulio": {
+        "es": "Braulio es amigo, cordial. Siempre llega con alguna cosa rara de la playa.",
+        "en": "Braulio is a friend, friendly. He always shows up with some odd thing from the beach."
+      },
+      "conejeros": {
+        "es": "Conejeros, cordial. Su humor no lo entiendo del todo, pero me río igual.",
+        "en": "Conejeros, friendly. I don't fully get his humor, but I laugh anyway."
+      }
+    },
+    "nacho": {
+      "venjy": {
+        "es": "Venjy es simpático. Se ríe conmigo, que es lo único que pido.",
+        "en": "Venjy is nice. He laughs with me, which is all I ask."
+      },
+      "pony": {
+        "es": "El Pony es buena onda, jajaja. Chico, pero buena onda.",
+        "en": "Pony is cool, haha. Short, but cool."
+      },
+      "salonas": {
+        "es": "Salonas toca bien. Lo conozco poco, pero cada riff me deja moviendo la pata.",
+        "en": "Salonas plays well. I don't know him much, but every riff gets my foot tapping."
+      },
+      "hadad": {
+        "es": "Hadad es como un hermano. Si se cae el Discord, lo llamo por teléfono, jajaja.",
+        "en": "Hadad is like a brother. If Discord goes down, I call him on the phone, haha."
+      },
+      "andy": {
+        "es": "Andy y yo somos equipo: trabajos de la U de día y Fortnite de noche.",
+        "en": "Andy and I are a team: uni projects by day and Fortnite by night."
+      },
+      "braulio": {
+        "es": "Braulio, cordial. Un día me mostró el dedo doble y no dormí, jajaja.",
+        "en": "Braulio, friendly. One day he showed me the double finger and I could not sleep, haha."
+      },
+      "conejeros": {
+        "es": "Conejeros, cordial. Tiene un humor raro que igual me hace reír.",
+        "en": "Conejeros, friendly. He has a weird humor that still makes me laugh."
+      }
+    },
+    "moises": {
+      "venjy": {
+        "es": "Venjy es amigo de los de antes. Nos vemos y es como si no hubiera pasado el tiempo.",
+        "en": "Venjy is an old-school friend. We meet and it's like no time has passed."
+      },
+      "lalo": {
+        "es": "Lalo es mi mejor amigo. Vivimos juntos y lo quiero mucho, aunque deje la loza para mañana.",
+        "en": "Lalo is my best friend. We live together and I love him a lot, even if he leaves the dishes for tomorrow."
+      },
+      "lona": {
+        "es": "A Lona la conozco por Venjy. Buena onda, y las gatas la adoran, eso dice harto.",
+        "en": "I know Lona through Venjy. Good vibes, and the cats adore her, that says a lot."
+      }
+    },
+    "lalo": {
+      "venjy": {
+        "es": "Venjy es de los mejores. Siempre vuelve al iglú, aunque esté lleno de proyectos.",
+        "en": "Venjy is one of the best. He always comes back to the igloo, even when he is full of projects."
+      },
+      "moises": {
+        "es": "Moisés es mi mejor amigo y mi compañero de casa. Lo quiero un montón, hermano.",
+        "en": "Moisés is my best friend and my housemate. I love him a ton, bro."
+      },
+      "lona": {
+        "es": "Lona, la polola de Venjy. La conozco poco, pero es buena onda, ahya.",
+        "en": "Lona, Venjy's girlfriend. I don't know her much, but she's cool, ahya."
+      }
+    },
+    "boris": {
+      "venjy": {
+        "es": "Venjy es mi amigo de verdad. Viene poco a Linares, pero cuando viene no paramos.",
+        "en": "Venjy is a true friend. He rarely comes to Linares, but when he does we don't stop."
+      },
+      "lucho": {
+        "es": "Lucho es mi amigo desde la media. Me dice negro de cariño y yo lo dejo, porque es Lucho.",
+        "en": "Lucho has been my friend since high school. He calls me \"negro\" with affection and I let him, because it's Lucho."
+      }
+    },
+    "lucho": {
+      "venjy": {
+        "es": "Venjy es mi primo y mi compañero de Apex. Cuando juega concentrado, no se le habla.",
+        "en": "Venjy is my cousin and my Apex teammate. When he is focused, you do not talk to him."
+      },
+      "boris": {
+        "es": "El negro Boris, de cariño. Amigos desde la media y todavía me aguanta.",
+        "en": "Good old Boris, \"negro\" with love. Friends since high school and he still puts up with me."
+      }
+    },
+    "braulio": {
+      "venjy": {
+        "es": "Venjy me cae bien. Se sorprende con el dedo doble como si fuera la primera vez, cada vez.",
+        "en": "I like Venjy. He is amazed by the double finger like it is the first time, every time."
+      },
+      "pony": {
+        "es": "El Pony dice que es más alto que yo. Mentira, eh. Tráiganme una huincha.",
+        "en": "Pony says he is taller than me. Lies, okay? Bring me a tape measure."
+      },
+      "salonas": {
+        "es": "Salonas es amigo. Toca bien y presta los lentes para la foto.",
+        "en": "Salonas is a friend. He plays well and lends his shades for the photo."
+      },
+      "hadad": {
+        "es": "Hadad, cordial. Nos saludamos de lejos, como los barcos.",
+        "en": "Hadad, friendly. We greet each other from afar, like ships."
+      },
+      "andy": {
+        "es": "Andy es amigo, cordial. Una vez me guardó un pedazo de pollo asado. Eso no se olvida.",
+        "en": "Andy is a friend, friendly. Once he saved me a piece of roast chicken. You don't forget that."
+      },
+      "nacho": {
+        "es": "Al Nacho lo conozco poco. Se ríe de mi dedo, pero con cariño.",
+        "en": "I don't know Nacho much. He laughs at my finger, but kindly."
+      },
+      "conejeros": {
+        "es": "Conejeros es amigo. Tenemos humor parecido, solo que yo no soy tan .exe.",
+        "en": "Conejeros is a friend. We have a similar humor, I'm just not as .exe."
+      }
+    },
+    "conejeros": {
+      "venjy": {
+        "es": "Venjy es simpático. Le gusta el pixel art, así que somos del mismo club.",
+        "en": "Venjy is nice. He likes pixel art, so we are in the same club."
+      },
+      "pony": {
+        "es": "El Pony es mi enemigo oficial. Lo molesto, me molesta, y después compartimos el queque.",
+        "en": "Pony is my official enemy. I bug him, he bugs me, and then we share the cake."
+      },
+      "salonas": {
+        "es": "El Salonas es mi compañero de tonteras. Mismo humor, mismos dibujos ridículos. El mejor.",
+        "en": "Salonas is my partner in nonsense. Same humor, same ridiculous drawings. The best."
+      },
+      "hadad": {
+        "es": "Hadad, cordial. Buen tipo, aunque se ríe raro de mis chistes.",
+        "en": "Hadad, friendly. Good guy, though he laughs oddly at my jokes."
+      },
+      "andy": {
+        "es": "Andy, cordial. Baila mejor de lo que admite.",
+        "en": "Andy, friendly. He dances better than he admits."
+      },
+      "nacho": {
+        "es": "Nacho, cordial. Se ríe de todo, así que conmigo se ríe el doble.",
+        "en": "Nacho, friendly. He laughs at everything, so with me he laughs twice as much."
+      },
+      "braulio": {
+        "es": "Braulio es amigo: humor parecido al mío, pero más tranquilo. Menos .exe, dice él.",
+        "en": "Braulio is a friend: humor like mine, but calmer. Less .exe, he says."
+      }
+    }
+  },
+  "saludos": {
+    "venjy": {
+      "bajo": {
+        "es": "Hola, bienvenido al Inicio. Aquí empieza todo, incluido mi portafolio.",
+        "en": "Hi, welcome to the Start. Everything begins here, my portfolio included."
+      },
+      "alto": {
+        "es": "¡Volviste! Ya te estaba guardando un lugar en el Inicio.",
+        "en": "You came back! I was saving you a spot at the Start."
+      },
+      "skin": {
+        "lona": {
+          "es": "¡Lona! ¿Te escapaste de las gatas para venir a verme?",
+          "en": "Lona! Did you escape the cats to come see me?"
+        }
+      }
+    },
+    "pony": {
+      "bajo": {
+        "es": "Shh, que espantas a los peces. Ya, dime.",
+        "en": "Shh, you are scaring the fish. Okay, tell me."
+      },
+      "alto": {
+        "es": "¡Llegaste! Siéntate, que hoy los peces andan conversadores.",
+        "en": "You made it! Sit down, the fish are chatty today."
+      }
+    },
+    "salonas": {
+      "bajo": { "es": "Wena. Estoy afinando, dame un compás.", "en": "Hey. I am tuning, give me a bar." },
+      "alto": {
+        "es": "¡Compadre! Llegaste justo para el solo de bajo.",
+        "en": "Mate! You came right in time for the bass solo."
+      }
+    },
+    "lona": {
+      "bajo": {
+        "es": "Hola. Cuidado dónde pisas, que alguna gata anda por ahí.",
+        "en": "Hi. Watch your step, there is a cat around somewhere."
+      },
+      "alto": {
+        "es": "¡Hola! Mila te reconoció antes que yo, mira cómo te mira.",
+        "en": "Hi! Mila recognized you before I did, look at her staring."
+      },
+      "skin": {
+        "venjy": {
+          "es": "¡Amor! Llegaste justo, Gala te estaba esperando en la puerta.",
+          "en": "Love! Right on time, Gala was waiting for you at the door."
+        }
+      }
+    },
+    "hadad": {
+      "bajo": {
+        "es": "Buenas. Siéntate si quieres, el fuego es de todos.",
+        "en": "Hey there. Sit if you want, the fire belongs to everyone."
+      },
+      "alto": {
+        "es": "¡Compa! Justo íbamos a armar partida. ¿Te prendes?",
+        "en": "Buddy! We were just about to start a match. You in?"
+      }
+    },
+    "andy": {
+      "bajo": {
+        "es": "Hola, hola. Estoy en el lobby, pero te escucho.",
+        "en": "Hey, hey. I am in the lobby, but I am listening."
+      },
+      "alto": {
+        "es": "¡Eh! Llegó mi dúo favorito. Bueno, después del Nacho.",
+        "en": "Hey! My favorite duo is here. Well, after Nacho."
+      }
+    },
+    "nacho": {
+      "bajo": {
+        "es": "Jajaja, hola. Perdón, me estaba acordando de algo.",
+        "en": "Haha, hi. Sorry, I was remembering something."
+      },
+      "alto": {
+        "es": "¡Jajaja, volviste! Siéntate, que se viene el cuento bueno.",
+        "en": "Haha, you are back! Sit down, the good story is coming."
+      }
+    },
+    "moises": {
+      "bajo": {
+        "es": "Hola, hermano. Pasa, pero cierra que se escapa el frío.",
+        "en": "Hi, bro. Come in, but close it so the cold stays in."
+      },
+      "alto": {
+        "es": "¡Hermano! Pasa, pasa, que el iglú está tibiecito, ahya.",
+        "en": "Bro! Come in, come in, the igloo is nice and cozy, ahya."
+      }
+    },
+    "lalo": {
+      "bajo": { "es": "Ahya, ¿qué tal? Pasa nomás.", "en": "Ahya, how is it going? Come on in." },
+      "alto": { "es": "¡Ahya, hermano! Llegaste justo para la ronda.", "en": "Ahya, bro! Right on time for the round." }
+    },
+    "boris": {
+      "bajo": {
+        "es": "Hola. Si vas a mirar, que sea de lejos, que vuelan astillas.",
+        "en": "Hi. If you are watching, do it from afar, chips fly."
+      },
+      "alto": {
+        "es": "¡Wena! Deja el hacha ahí, que hoy corto yo.",
+        "en": "Hey! Leave the axe there, I am chopping today."
+      }
+    },
+    "lucho": {
+      "bajo": {
+        "es": "¿Qué onda? Estoy esperando cola, habla nomás.",
+        "en": "What is up? I am waiting in queue, go ahead and talk."
+      },
+      "alto": { "es": "¡Primo! O casi primo. Pasa, pasa.", "en": "Cousin! Or almost cousin. Come in, come in." }
+    },
+    "braulio": {
+      "bajo": {
+        "es": "Hola, eh. Cuidado con la arena, que se mete en todo.",
+        "en": "Hi, okay. Careful with the sand, it gets everywhere."
+      },
+      "alto": {
+        "es": "¡Eh, volviste! Encontré otra cosa rara en la orilla, mira.",
+        "en": "Hey, you are back! I found another odd thing on the shore, look."
+      }
+    },
+    "conejeros": {
+      "bajo": {
+        "es": "Hola. Escucha ese bajo, después hablamos.",
+        "en": "Hi. Listen to that bass, we will talk later."
+      },
+      "alto": {
+        "es": "¡Compadre! Ven a cabecear, que el Salonas está inspirado.",
+        "en": "Mate! Come headbang, Salonas is inspired today."
+      }
+    }
+  },
+  "regalos": {
+    "venjy": {
+      "es": "¡Un pastel! Lo partimos en el Inicio y le guardamos un pedazo a Lona.",
+      "en": "A cake! We cut it at the Start and save a slice for Lona."
+    },
+    "pony": {
+      "es": "Pescado ya cocinado... me ahorraste la fogata. Esto sí que es amistad.",
+      "en": "Fish already cooked... you saved me the fire. Now that is friendship."
+    },
+    "salonas": {
+      "es": "Con esto me alcanza para otro pedal o para otro dibujo ridículo. Gracias, compadre.",
+      "en": "This is enough for another pedal or another ridiculous drawing. Thanks, mate."
+    },
+    "lona": {
+      "es": "¡Lana! Ya sé qué le voy a tejer a Mila para que no le tenga envidia a Gala.",
+      "en": "Wool! I know what I will knit for Mila so she is not jealous of Gala."
+    },
+    "hadad": {
+      "es": "Una papa asada. No viene en bolsa, pero igual le haría un comercial. Gracias.",
+      "en": "A baked potato. It doesn't come in a bag, but I'd still do an ad for it. Thanks."
+    },
+    "andy": {
+      "es": "¡Pollo asado! Winner winner, chicken dinner. Bailo por ti.",
+      "en": "Roast chicken! Winner winner, chicken dinner. I dance for you."
+    },
+    "nacho": {
+      "es": "Jajaja, ¡carne para la parrilla! Te ganaste un puesto fijo en el asado.",
+      "en": "Haha, meat for the grill! You earned a permanent seat at the barbecue."
+    },
+    "moises": {
+      "es": "Estofado calentito... justo lo que pide el iglú. Gracias, hermano.",
+      "en": "Warm stew... just what the igloo needs. Thanks, bro."
+    },
+    "lalo": {
+      "es": "Pan amasado, ahya. Lo partimos con Moisés y te guardamos la punta.",
+      "en": "Homemade bread, ahya. Moisés and I split it and save you the end piece."
+    },
+    "boris": {
+      "es": "Una manzana para la pega. Me la como entre hachazo y hachazo.",
+      "en": "An apple for the job. I will eat it between swings."
+    },
+    "lucho": {
+      "es": "Una galleta para la cola de ranked. Si gano, es gracias a ti.",
+      "en": "A cookie for the ranked queue. If I win, it is thanks to you."
+    },
+    "braulio": {
+      "es": "¡Un hueso para la colección! Le pongo tu nombre en la etiqueta.",
+      "en": "A bone for the collection! I will put your name on the label."
+    },
+    "conejeros": {
+      "es": "Zanahoria o papel, igual sirve: o se la comen los conejos o la dibujamos.",
+      "en": "Carrot or paper, either works: the rabbits eat it or we draw on it."
+    }
+  },
+  "gestoRegalo": { "andy": "baile", "lona": "brazosArriba", "braulio": "sorpresa" }
+}

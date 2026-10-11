@@ -209,7 +209,7 @@ try {
         catch (e) { return { codigo: e.status, salida: String(e.stdout) }; }
     };
     const r = cli('resumen');
-    ok(r.codigo === 0 && /^ui-layout +\d+ elementos \(normal\)/m.test(r.salida) && /^js:dialogos /m.test(r.salida), 'resumen lista los archivos y las fuentes JS');
+    ok(r.codigo === 0 && /^ui-layout +\d+ elementos \(normal\)/m.test(r.salida) && /^dialogos +\d+ temas/m.test(r.salida) && /^js:tienda /m.test(r.salida), 'resumen lista los archivos y las fuentes JS');
     ok(/^habla +reloj t +bDx -0\.9 ~0\.3@5/m.test(cli('resumen', 'poses', 'habla').salida), 'resumen poses habla');
     ok(/^sv-romper +id 98,88 pie 76x76 \| baja id 88,82 pie 66x66/m.test(cli('resumen', 'ui-layout').salida), 'resumen ui-layout');
     ok(cli('resumen', 'dialogos', 'pony.quien').salida.includes('pony.quien'), 'resumen dialogos pony.quien');

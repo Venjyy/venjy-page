@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dialogos.schema.json",
+  "title": "Diálogos de «Hablar» (mundo/datos/dialogos.json)",
+  "description": "Lo que dicen los 13 personajes en la pestaña «Hablar» de la supervivencia: temas (pregunta y respuesta), opiniones de unos sobre otros, saludos al abrir y reacción a su regalo favorito. Mismas claves que tenía mundo/supervivencia/dialogos-datos.js, que ahora es una fachada que importa este archivo. Cada texto es un par es/en (comun.schema.json#/$defs/texto); `revisado: true` lo marca el dueño al aprobarlo (son personas reales).",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "temas": {
+      "description": "persona -> lista de temas, en el orden en que aparecen los botones. La clave `opina` (sin `r`) abre la lista de `opiniones`.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/tema" }
+      }
+    },
+    "opiniones": {
+      "description": "persona -> de quién opina -> texto. Solo aparecen las de quienes conoce (tabla de relaciones de amistad.js).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+        "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+      }
+    },
+    "saludos": {
+      "description": "persona -> lo primero que dice al abrir «Hablar»: `bajo` (nivel < Amigo), `alto` (Amigo o más) y `skin` (por base de tu skin, opcional).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "bajo": { "$ref": "comun.schema.json#/$defs/texto" },
+          "alto": { "$ref": "comun.schema.json#/$defs/texto" },
+          "skin": { "$ref": "#/$defs/porSkin" }
+        },
+        "required": ["bajo", "alto"],
+        "additionalProperties": false
+      }
+    },
+    "regalos": {
+      "description": "persona -> lo que dice al recibir su objeto favorito (FAVORITOS en amistad.js).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+    },
+    "gestoRegalo": {
+      "description": "persona -> gesto al recibir el regalo (por defecto, risa).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "comun.schema.json#/$defs/clave" }
+    }
+  },
+  "required": ["version", "temas", "opiniones", "saludos", "regalos"],
+  "additionalProperties": false,
+  "$defs": {
+    "porSkin": {
+      "description": "Respuesta distinta si tu skin parte de esa base (tipoSkin en escenas-skin.js): clave de la base -> texto.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+    },
+    "requisito": {
+      "description": "Qué hace falta para que el tema aparezca. Uno solo: nivel de amistad (0-4), misión cerrada, minijuego jugado o jefe vencido.",
+      "anyOf": [
+        { "type": "object", "properties": { "nivel": { "type": "integer", "minimum": 0, "maximum": 4 } }, "required": ["nivel"], "additionalProperties": false },
+        { "type": "object", "properties": { "mision": { "$ref": "comun.schema.json#/$defs/clave" } }, "required": ["mision"], "additionalProperties": false },
+        { "type": "object", "properties": { "mj": { "$ref": "comun.schema.json#/$defs/clave" } }, "required": ["mj"], "additionalProperties": false },
+        { "type": "object", "properties": { "jefe": { "$ref": "comun.schema.json#/$defs/clave" } }, "required": ["jefe"], "additionalProperties": false }
+      ]
+    },
+    "tema": {
+      "type": "object",
+      "properties": {
+        "id": { "description": "Identificador del tema, único por persona (amistad.mjs lo comprueba).", "$ref": "comun.schema.json#/$defs/clave" },
+        "p": { "description": "La pregunta, tal como se lee en el botón.", "$ref": "comun.schema.json#/$defs/texto" },
+        "r": { "description": "La respuesta. Falta en `opina`, que abre las opiniones.", "$ref": "comun.schema.json#/$defs/texto" },
+        "g": { "description": "Gesto que hace al responder (clave de GESTOS).", "$ref": "comun.schema.json#/$defs/clave" },
+        "req": { "$ref": "#/$defs/requisito" },
+        "skin": { "$ref": "#/$defs/porSkin" }
+      },
+      "required": ["id", "p"],
+      "additionalProperties": false
+    }
+  }
+}

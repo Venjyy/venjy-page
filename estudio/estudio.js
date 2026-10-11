@@ -1,9 +1,10 @@
 // =========================================================
 // VENJY · Estudio · cáscara: idioma ES/EN, estado del servidor y pestañas
-// Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout.
+// Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout. Fase 2: Juego. Fase 3: Textos.
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
+import { montarTextos } from './textos.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -57,6 +58,7 @@ aplicarIdioma(idiomaGuardado());
 await buscarServidor();
 await montarLayout(ctx);
 montarJuego(ctx);
+await montarTextos(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez)
 for (const b of document.querySelectorAll('.pestana[data-pestana]')) {

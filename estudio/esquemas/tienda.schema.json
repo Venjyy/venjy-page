@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tienda.schema.json",
+  "title": "Ofertas nuevas de la tienda (mundo/datos/tienda.json)",
+  "description": "Ofertas y compras NUEVAS de la tienda de cada amigo, con los objetos por su nombre (el mismo de /dar: esmeralda, bacalao, piedra_luminosa), nunca por id numérico: los ids de objetos.js cambian al agregar objetos. Las ofertas de hoy siguen en mundo/supervivencia/tienda-datos.js; este archivo solo suma. Hoy es referencia (`lee: null` en indice.json): nadie lo lee todavía, pero `validar` ya comprueba que cada nombre exista y que los precios no rompan mundo/tests/tienda.mjs.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "tiendas": {
+      "description": "amigo -> sus ofertas nuevas. La clave es la del amigo (pony, salonas, lona...).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "ofertas": {
+            "description": "Lo que el amigo te da a cambio de lo que pide (esmeraldas o trueque). Se muestran después de las de hoy.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/oferta" }
+          },
+          "compra": {
+            "description": "Lo que el amigo te recibe a cambio de esmeraldas.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/compra" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["version", "tiendas"],
+  "additionalProperties": false,
+  "$defs": {
+    "nombreObjeto": {
+      "description": "Nombre del objeto o bloque, en minúsculas, igual que en /dar (clave de O o de B en objetos.js y texturas.js).",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "cantidad": { "type": "integer", "minimum": 1, "maximum": 64 },
+    "pila": {
+      "description": "[nombre, cantidad]",
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/nombreObjeto" }, { "$ref": "#/$defs/cantidad" }],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "oferta": {
+      "type": "object",
+      "properties": {
+        "da": { "description": "Lo que recibes.", "type": "array", "items": { "$ref": "#/$defs/pila" }, "minItems": 1 },
+        "pide": { "description": "Lo que pagas.", "type": "array", "items": { "$ref": "#/$defs/pila" }, "minItems": 1 },
+        "req": { "description": "Misión de ese amigo que debe estar completada (id, como en misiones-datos.js).", "$ref": "comun.schema.json#/$defs/clave" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["da", "pide"],
+      "additionalProperties": false
+    },
+    "compra": {
+      "type": "object",
+      "properties": {
+        "da": { "description": "Lo que el amigo te recibe: [nombre, cantidad].", "$ref": "#/$defs/pila" },
+        "esm": { "description": "Esmeraldas que te paga.", "$ref": "#/$defs/cantidad" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["da", "esm"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -545,7 +545,7 @@ export async function montarLayout(ctx) {
     window.addEventListener('keydown', e => {
         const t = e.target;
         const escribiendo = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !escribiendo) { e.preventDefault(); deshacer(); return; }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !escribiendo && !$('seccion-layout').hidden) { e.preventDefault(); deshacer(); return; }
         if (escribiendo || !elegido || !/^Arrow/.test(e.key)) return;
         e.preventDefault();
         const paso = e.shiftKey ? 10 : 1;

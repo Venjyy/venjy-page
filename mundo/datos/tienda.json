@@ -1,0 +1,6 @@
+{
+  "$schema": "../../estudio/esquemas/tienda.schema.json",
+  "version": 1,
+  "nota": "Ofertas nuevas por nombre de objeto (como /dar). Las de hoy siguen en mundo/supervivencia/tienda-datos.js. Referencia: el juego todavía no lo lee.",
+  "tiendas": {}
+}

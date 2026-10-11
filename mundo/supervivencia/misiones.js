@@ -559,6 +559,8 @@ export function crearMisiones(ctx) {
 
     return {
         estado, interactuar, hablar, conversar, abrirCon, actualizar, serializar, cargar, alMatar, alDormir, alMorir, jefeDerrotado, misionDe, amigasHechas, alMinijuego, amistad,
+        // Globo especial sobre un amigo (el editor del Estudio lo usa para ver un texto: estudio/puente-juego.js)
+        decir: decirEspecial,
         get activa() { return misionDe(estado.activa); },
         get hablarUI() { return hablarUI; },
         setIdioma(l) { idioma = l; firma = ''; tienda.setIdioma(l); if (hablarUI) hablarUI.setIdioma(l); },
