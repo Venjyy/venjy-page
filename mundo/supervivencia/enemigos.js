@@ -329,6 +329,32 @@ export function crearEnemigos(ctx) {
         }
     }
 
+    // 7d-2 · Monstruo garantizado por noche (misiones que piden matar): un intento extra con el tipo pedido, en
+    // la superficie, fuera de la zona segura y con poca luz. `def` = { mob, bosque?, piso? } (facilidades-datos.js).
+    // Devuelve true si apareció. Cada jugador lo hace para sí, como el resto de los monstruos.
+    function garantizar(def) {
+        if (!dificultad() || !def || !DEF[def.mob]) return false;
+        for (let intento = 0; intento < 10; intento++) {
+            const ang = Math.random() * Math.PI * 2, dist = 22 + Math.random() * 34;
+            const x = Math.floor(jugador.pos.x + Math.cos(ang) * dist) + 0.5, z = Math.floor(jugador.pos.z + Math.sin(ang) * dist) + 0.5;
+            if (enZonaSegura(x, z, 6) || (def.bosque && !esBosque(x, z))) continue;
+            const y0 = Math.floor(jugador.pos.y);
+            for (let k = 0; k < 40; k++) {
+                const y = y0 + 16 - k;
+                if (y < 2) break;
+                const piso = mundo.bloque(x, y - 1, z), a = mundo.bloque(x, y, z), b = mundo.bloque(x, y + 1, z);
+                if (piso === -1) break;
+                if (TIPO[piso] !== 1 || a !== 0 || b !== 0 || piso === B.TIERRA_LABRADA || piso === B.TIERRA_LABRADA_HUMEDA) continue;
+                if ((mundo.nivelLuz(x, y, z) >> 4) < 10 || luzEfectiva(x, y, z) > 7) break; // solo al aire libre y a oscuras
+                if (def.piso && piso !== def.piso) break;
+                if (def.mob === 'arana' && (solidoEn(mundo, x + 1, y, z) || solidoEn(mundo, x - 1, y, z))) break;
+                crear(def.mob, x, y, z);
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ---------- Daño ----------
     function golpear(e, dano, origen = null) {
         if (e.invul > 0) return false;
@@ -613,7 +639,7 @@ export function crearEnemigos(ctx) {
     }
 
     return {
-        lista, fantasmas, crear, quitar, golpear, objetivos, explotar, fantasma, quitarFantasma, moverFantasma, api,
+        lista, fantasmas, crear, quitar, garantizar, golpear, objetivos, explotar, fantasma, quitarFantasma, moverFantasma, api,
         masCercano, distJugadores, danarA,
         // ¿Hay monstruos cerca? (no se puede dormir)
         cerca(x, y, z, r = 8) {

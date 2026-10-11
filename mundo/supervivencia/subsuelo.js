@@ -186,3 +186,43 @@ function protegidoCerca(terreno, x, z) {
     }
     return false;
 }
+
+// ---------------------------------------------------------
+// Pistas de misión (7d-2): el punto más cercano con cierta mena o piedra luminosa, buscado una sola vez
+// con la misma generación determinista de arriba (sin cargar chunks). Devuelve { x, y, z, d } con (x, z)
+// en el mapa original y la y del mundo, o null si no hay nada a `radio` bloques.
+//   opc.id      mena (B.MENA_*) o B.PIEDRA_LUMINOSA
+//   opc.y0/y1   rango de y del mundo (por defecto el de la mena)
+//   opc.cerca   solo menas a ≤ `cerca` bloques bajo la superficie (carbón «en superficie»)
+// ---------------------------------------------------------
+export function buscarSubsuelo(terreno, opc, cx, cz, radio = 64) {
+    const { BW, BD, HT, ES } = terreno;
+    const dy = terreno.dy || 0;
+    const mena = MENAS.find(m => m.id === opc.id);
+    const luminosa = opc.id === B.PIEDRA_LUMINOSA;
+    if (!mena && !luminosa) return null;
+    const y0 = Math.max(luminosa ? 12 : 5, opc.y0 ?? (mena ? mena.y0 : 12));
+    const y1 = Math.min(luminosa ? 35 : 110, opc.y1 ?? (mena ? mena.y1 : 35));
+    const wx0 = Math.floor(cx) - radio, wz0 = Math.floor(cz) - radio, ancho = radio * 2 + 1;
+    const g = prepararRejilla(wx0, wz0, ancho, y1 + 2);
+    let mejor = null, dMejor = Infinity;
+    for (let z = Math.max(0, wz0); z < Math.min(BD, wz0 + ancho); z++) {
+        for (let x = Math.max(0, wx0); x < Math.min(BW, wx0 + ancho); x++) {
+            const o = z * BW + x;
+            if (ES[o]) continue;
+            const dh = Math.hypot(x - cx, z - cz);
+            if (dh > radio || dh >= dMejor) continue; // ya hay uno más cerca en horizontal
+            const sup = HT[o] + dy;
+            for (let y = y0; y <= y1; y++) {
+                if (luminosa ? y >= sup - 8 : y > sup - 4) break;
+                if (opc.cerca != null && y < sup - opc.cerca) continue;
+                if (luminosa) {
+                    if (menaEn(x, y, z) || hash3(x, y, z, 5151) >= 0.012 || esCueva(g, x, y, z) || !esCueva(g, x, y - 1, z)) continue;
+                } else if (menaEn(x, y, z) !== opc.id || esCueva(g, x, y, z)) continue;
+                dMejor = dh; mejor = { x, y, z, d: dh };
+                break;
+            }
+        }
+    }
+    return mejor;
+}

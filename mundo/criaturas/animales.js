@@ -332,6 +332,22 @@ function elegirManadas(terreno) {
     return manadas;
 }
 
+// Corrales extra para las misiones de 7d-2 (ovejas de salonas1/lona2/lona3, gallinas de conejeros1 y lucho2):
+// junto al escenario y la atalaya. Van al final de `lista`, después de la pradera del campamento.
+export const CORRALES_EXTRA = [
+    { lugar: 'escenario', tipo: 'oveja', n: 4 },
+    { lugar: 'escenario', tipo: 'gallina', n: 3 },
+    { lugar: 'atalaya', tipo: 'gallina', n: 4 }
+];
+export function sitiosExtra(terreno) {
+    const sitios = {};
+    const esc = terreno.escenario;
+    if (esc) sitios.escenario = praderaJunto(terreno, { bx: Math.floor(esc.x), bz: Math.floor(esc.z) });
+    const ata = (terreno.lugares || []).find(l => l.clave === 'atalaya');
+    if (ata) sitios.atalaya = praderaJunto(terreno, ata);
+    return CORRALES_EXTRA.filter(c => sitios[c.lugar]).map(c => ({ ...c, x: sitios[c.lugar].x, z: sitios[c.lugar].z }));
+}
+
 // Pasto parejo a 15–25 bloques de un lugar (fuera de sus construcciones), el más cercano que sirva
 function praderaJunto(terreno, L) {
     const { BW, BD, HT, ES, SUP } = terreno;
@@ -403,6 +419,10 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
     if (prado) {
         const zona = { x: prado.x, z: prado.z, radio: 9 };
         for (const tipo of ['vaca', 'vaca', 'cerdo', 'cerdo', 'gallina', 'gallina', 'gallina']) agregar(tipo, prado.x + (r() - 0.5) * 8, prado.z + (r() - 0.5) * 8, zona);
+    }
+    for (const c of sitiosExtra(terreno)) {
+        const zona = { x: c.x, z: c.z, radio: 7 };
+        for (let k = 0; k < c.n; k++) agregar(c.tipo, c.x + (r() - 0.5) * 6, c.z + (r() - 0.5) * 6, zona);
     }
 
     // ¿Puede pisar (x, z)? Devuelve la y, null o undefined (chunk sin cargar)
