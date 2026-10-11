@@ -5,7 +5,7 @@ import { partidaNivel, jugadas, aplicar, jugadaIA, atkDe, defDe } from './cartas
 
 export function crearPanelCartas(ctx = {}) {
     let idioma = ctx.idioma || 'es', e = null, nivel = 'facil', eleccion = null, timer = 0, abierto = false;
-    let registro = [], mostrandoReglas = false;
+    let registro = [], mostrandoReglas = false, postura = 'ata';
     const L = o => (o && (o[idioma] || o.es)) || '';
     const raiz = document.createElement('section');
     raiz.className = 'cartas-capa'; raiz.hidden = true;
@@ -27,7 +27,7 @@ export function crearPanelCartas(ctx = {}) {
         el.addEventListener('keydown', ev => { if (ev.code === 'Enter' || ev.code === 'Space') { ev.preventDefault(); fn(); } });
     };
     function iniciar(n) {
-        nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel); eleccion = null; registro = []; mostrandoReglas = false;
+        nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel); eleccion = null; registro = []; mostrandoReglas = false; postura = 'ata';
         pintar(); programar();
     }
     function cerrar() {
@@ -61,6 +61,11 @@ export function crearPanelCartas(ctx = {}) {
     function elegirCarta(m) {
         const a = acciones().filter(x => x.m === m && (x.t === 'invocar' || x.t === 'hechizo'));
         if (!a.length || e.turno !== 0) return;
+        const d = CARTAS[e.jug[0].mano[m]];
+        if (d.tipo === 'criatura') {
+            postura = 'ata';
+            eleccion = { tipo: 'carta', m, modo: postura, acciones: a.filter(x => x.modo === postura) }; pintar(); return;
+        }
         if (a.length === 1 && a[0].z === undefined && a[0].obj === undefined && a[0].obj2 === undefined) return ejecutar(a[0]);
         eleccion = { tipo: 'carta', m, acciones: a }; pintar();
     }
@@ -72,8 +77,16 @@ export function crearPanelCartas(ctx = {}) {
                 ? (j === 0 ? eleccion.acciones.filter(x => x.z === z) : [])
                 : eleccion.acciones.filter(x => ladoObjetivo(x) === j && x.obj === z);
             if (!a.length) return;
+            const d = CARTAS[e.jug[0].mano[eleccion.m]];
+            if (d.efecto === 'abrazo' && !usaZona) { eleccion = { tipo: 'abrazo', acciones: a, primero: z }; pintar(); return; }
             if (a.length === 1 && a[0].obj === undefined && a[0].obj2 === undefined) return ejecutar(a[0]);
             eleccion = { tipo: 'objetivo', acciones: a, zona: z }; pintar(); return;
+        }
+        if (eleccion && eleccion.tipo === 'abrazo') {
+            if (z === eleccion.primero) return;
+            const a = eleccion.acciones.find(x => x.obj === eleccion.primero && x.obj2 === z);
+            if (a) ejecutar(a);
+            return;
         }
         if (eleccion && eleccion.tipo === 'objetivo') {
             const a = eleccion.acciones.find(x => ladoObjetivo(x) === j && (x.obj === z || x.obj2 === z));
@@ -81,10 +94,10 @@ export function crearPanelCartas(ctx = {}) {
             return;
         }
         if (j === 0 && e.jug[0].zonas[z]) {
-            const a = acciones().filter(x => x.t === 'atacar' && x.z === z);
-            if (a.length) { eleccion = { tipo: 'atacar', z, acciones: a }; pintar(); }
+            const a = acciones().filter(x => (x.t === 'atacar' || x.t === 'modo') && x.z === z);
+            if (a.length) { eleccion = { tipo: 'propia', z, acciones: a }; pintar(); }
         }
-        if (eleccion && eleccion.tipo === 'atacar' && j === 1) {
+        if (eleccion && (eleccion.tipo === 'propia' || eleccion.tipo === 'atacar') && j === 1) {
             const a = eleccion.acciones.find(x => x.obj === z); if (a) ejecutar(a);
         }
     }
@@ -111,6 +124,8 @@ export function crearPanelCartas(ctx = {}) {
                 const usaZona = eleccion.acciones.some(a => a.z !== undefined);
                 return usaZona ? j === 0 && eleccion.acciones.some(a => a.z === z) : eleccion.acciones.some(a => ladoObjetivo(a) === j && a.obj === z);
             }
+            if (eleccion.tipo === 'abrazo') return eleccion.acciones.some(a => a.obj === eleccion.primero && a.obj2 === z);
+            if (eleccion.tipo === 'propia' || eleccion.tipo === 'atacar') return eleccion.acciones.some(a => ladoObjetivo(a) === j && a.obj === z);
             return eleccion.acciones.some(a => ladoObjetivo(a) === j && (a.obj === z || a.obj2 === z));
         })());
         if (marca) el.classList.add('valida');
@@ -136,10 +151,19 @@ export function crearPanelCartas(ctx = {}) {
         fila.append(
             boton(L(TXT_CARTAS.robar), () => ejecutar(legales.find(a => a.t === 'robar')), '', !propia || e.fase !== 'robo'),
             boton(L(TXT_CARTAS.terminar), () => ejecutar(legales.find(a => a.t === 'terminar')), '', !propia || !legales.some(a => a.t === 'terminar')),
-            boton(L(TXT_CARTAS.cambiar), () => { if (eleccion && eleccion.tipo === 'atacar') ejecutar(legales.find(a => a.t === 'modo' && a.z === eleccion.z)); }, '', !propia || !eleccion || eleccion.tipo !== 'atacar' || !legales.some(a => a.t === 'modo' && a.z === eleccion.z)),
+            boton(L(TXT_CARTAS.cambiar), () => { if (eleccion && eleccion.tipo === 'propia') ejecutar(legales.find(a => a.t === 'modo' && a.z === eleccion.z)); }, '', !propia || !eleccion || eleccion.tipo !== 'propia' || !legales.some(a => a.t === 'modo' && a.z === eleccion.z)),
             boton('?', () => { mostrandoReglas = !mostrandoReglas; pintar(); }, 'cartas-ayuda')
         );
-        if (eleccion && eleccion.tipo === 'atacar' && eleccion.acciones.some(a => a.obj === -1)) fila.appendChild(boton(L(TXT_CARTAS.directo), () => ejecutar(eleccion.acciones.find(a => a.obj === -1)), 'cartas-directo'));
+        if (eleccion && (eleccion.tipo === 'propia' || eleccion.tipo === 'atacar') && eleccion.acciones.some(a => a.obj === -1)) fila.appendChild(boton(L(TXT_CARTAS.directo), () => ejecutar(eleccion.acciones.find(a => a.obj === -1)), 'cartas-directo'));
+        if (eleccion && eleccion.tipo === 'carta' && CARTAS[e.jug[0].mano[eleccion.m]].tipo === 'criatura') {
+            const selector = document.createElement('div'); selector.className = 'cartas-postura';
+            for (const modo of ['ata', 'def']) {
+                const b = boton(L(modo === 'ata' ? TXT_CARTAS.ataque : TXT_CARTAS.defensa), () => {
+                    postura = modo; eleccion.modo = modo; eleccion.acciones = acciones().filter(a => a.m === eleccion.m && a.modo === modo); pintar();
+                }, modo === postura ? 'elegido' : ''); selector.appendChild(b);
+            }
+            fila.appendChild(selector);
+        }
         return fila;
     }
     function pintarInicio() {

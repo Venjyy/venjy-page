@@ -13,6 +13,13 @@ export const TXT_MJ = {
     en: { saltar: 'Skip', rendirse: 'Give up', recibes: 'You get:', tecla: 'SPACE', nada: 'No prize this time.' }
 };
 
+// Botón del duelo de Lucho (se mantiene junto a los demás textos de minijuegos para no cargar
+// los datos completos de cartas al abrir el mundo).
+export const TXT_CARTAS_BOTON = {
+    boton: t('Jugar a las cartas', 'Play cards'),
+    faltaMazo: t('Necesitas un Mazo de cartas (3 papeles + carbón)', 'You need a Card Deck (3 paper + coal)')
+};
+
 // Requisitos de la tienda que se cumplen con un minijuego (tienda-datos.js usa la clave como `req`)
 export const REQ_MINIJUEGOS = {
     'mj-boris': { titulo: t('Ganarle a Boris cortando leña', 'Beat Boris at chopping wood') },

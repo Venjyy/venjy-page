@@ -144,8 +144,6 @@ export const TUTORIAL = {
 // ---------------------------------------------------------
 export const TXT_CARTAS = {
     titulo: t('Duelo de Cartas Pixel', 'Pixel Card Duel'),
-    boton: t('Jugar a las cartas', 'Play cards'),
-    faltaMazo: t('Necesitas un Mazo de cartas (3 papeles + carbón)', 'You need a Card Deck (3 paper + coal)'),
     botonTuto: t('Repasar el tutorial', 'Replay the tutorial'),
     elegirNivel: t('Elige tu desafío', 'Choose your challenge'),
     salir: t('Salir del duelo', 'Leave duel'),

@@ -64,7 +64,7 @@ import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
 import { crearComandosDev } from './comandos-dev.js';
-import { TXT_CARTAS } from './cartas-datos.js';
+import { TXT_CARTAS_BOTON } from './minijuegos-datos.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { crearCofresCompaneros } from './cofres-companeros.js';
@@ -86,6 +86,7 @@ cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
 // Idioma
 // ---------------------------------------------------------
 let idioma = 'es';
+let panelCartas = null;
 try {
     const param = new URLSearchParams(location.search).get('lang');
     const guardado = localStorage.getItem('preferredLanguage');
@@ -100,6 +101,7 @@ function aplicarIdioma() {
     });
     document.getElementById('volver').href = `index.html?lang=${idioma}`;
     document.getElementById('ir-creativo').href = `mundo.html?lang=${idioma}`;
+    panelCartas?.setIdioma(idioma);
 }
 aplicarIdioma();
 
@@ -767,7 +769,7 @@ async function arrancar(guardado, cx = null) {
         bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
-    let panelCartas = null, cargandoCartas = null;
+    let cargandoCartas = null;
     const textoCartas = o => (o && (o[idioma] || o.es)) || '';
     function cargarPanelCartas() {
         if (!cargandoCartas) cargandoCartas = import('./cartas-panel.js').then(m => {
@@ -778,13 +780,13 @@ async function arrancar(guardado, cx = null) {
     }
     misiones.minijuego = {
         texto: clave => {
-            if (clave === 'lucho') return { texto: textoCartas(TXT_CARTAS.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS.faltaMazo) };
+            if (clave === 'lucho') return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) };
             return minijuegos.botonPara(clave);
         },
         // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
         jugar: clave => {
             const b = clave === 'lucho'
-                ? { texto: textoCartas(TXT_CARTAS.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS.faltaMazo) }
+                ? { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) }
                 : minijuegos.botonPara(clave);
             if (!b || b.motivo) return;
             capaPanel.hidden = true; capaPanel.textContent = '';
