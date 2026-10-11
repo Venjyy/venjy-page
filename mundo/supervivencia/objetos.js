@@ -142,6 +142,10 @@ obj('GUITARRA', 'Guitarra', 'Guitar', { icono: 'guitarra', apila: 1, combustible
 obj('TECLADO', 'Teclado', 'Keyboard', { icono: 'teclado', apila: 1 });
 obj('TAMBOR', 'Tambor', 'Drum', { icono: 'tambor', apila: 1 });
 
+// ---- 7f-2: leche (cubo o botella + vaca adulta; se bebe y quita veneno y hambre) ----
+obj('CUBO_LECHE', 'Cubo de leche', 'Milk Bucket', { icono: 'cubo', color: 'leche', apila: 1, comida: [2, 1.2], efecto: 'leche', devuelve: 'CUBO' });
+obj('BOTELLA_LECHE', 'Botella de leche', 'Milk Bottle', { icono: 'botella', color: 'leche', apila: 16, comida: [2, 1.2], efecto: 'leche', devuelve: 'BOTELLA' });
+
 // ---- Objetos de los jefes (los entrega Venjy; se usan en su altar) ----
 obj('AMULETO_MINA', 'Amuleto de la mina', 'Mine Amulet', { icono: 'amuleto', apila: 1, jefe: 'imbunche' });
 obj('PLUMA_CHONCHON', 'Pluma del Chonchon', 'Chonchon Feather', { icono: 'pluma_negra', apila: 1, jefe: 'chonchon' });
@@ -355,5 +359,6 @@ export const COLORES = {
     cocido: ['#b07a46', '#6a4422', '#e0b47a'],
     asada: ['#c89a4a', '#7a5622', '#ecc87e'],
     agua: ['#2f5fd0', '#1a3a8a', '#7aa2f0'],
-    lava: ['#ec7818', '#a03a0a', '#ffd25a']
+    lava: ['#ec7818', '#a03a0a', '#ffd25a'],
+    leche: ['#f4f2ea', '#c8c6bc', '#ffffff']
 };

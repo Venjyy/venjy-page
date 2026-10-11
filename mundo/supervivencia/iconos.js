@@ -334,8 +334,8 @@ const PINTORES = {
         p.mascara(['', '..tttttttttttt..', '..taaaaaaaaaat..', '..tabbbbbbbbat..', '..taaaaaaaaaat..', '..tabbbbbbaaat..', '..taaaaaaaaaat..', '..tttttttttttt..', '.......mm.......', '.......mm.......', '.......mm.......', '.......mm.......'], { t: [110, 78, 40], a: [196, 160, 100], b: [96, 66, 34], m: [137, 103, 59] });
         p.contornear();
     },
-    botella(p) {
-        p.mascara(['', '......kk........', '......cc........', '......cc........', '.....cccc.......', '....cwwwwc......', '...cwwwwwwc.....', '...cwwwwwwc.....', '...cwwwwwwc.....', '...cwwwwwwc.....', '....cccccc......'], { k: [137, 103, 59], c: [170, 210, 220], w: [210, 235, 245] });
+    botella(p, cols) {
+        p.mascara(['', '......kk........', '......cc........', '......cc........', '.....cccc.......', '....cwwwwc......', '...cwwwwwwc.....', '...cwwwwwwc.....', '...cwwwwwwc.....', '...cwwwwwwc.....', '....cccccc......'], { k: [137, 103, 59], c: [170, 210, 220], w: cols ? cols[0] : [210, 235, 245] });
         p.contornear([60, 90, 100]);
     },
     mazo(p) {
