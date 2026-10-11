@@ -45,6 +45,13 @@ const hash = (x, z, s) => {
     return (h ^ (h >>> 16)) >>> 0;
 };
 
+// Planta (pasto alto o flor) que crece sobre el pasto en la columna (bx, bz), o 0. La fauna de ambiente
+// (mundo/fauna.js) la usa para saber dónde hay flores sin tocar chunks.
+export const plantaEn = (bx, bz) => {
+    const q = hash(bx, bz, 11) % 1000;
+    return q < 80 ? B.PASTO_ALTO : q < 88 ? B.FLOR_ROJA : q < 96 ? B.FLOR_AMARILLA : q < 102 ? B.FLOR_AZUL : 0;
+};
+
 const vh = e => Math.round(NIVEL_AGUA + (e - NIVEL_AGUA) * FACTOR_Y);
 export const BASE_ESTRUCTURA = vh(18);
 const ALTO_LETRAS = 18; // las letras del título se elevan para leerse mejor
@@ -568,9 +575,8 @@ function llenarBase(terreno, wx0, wz0, ancho, destino, conEdiciones) {
             }
             if (hueco === 4 && tope + 1 < ALTO) vox[((tope + 1) * VENT + lz) * VENT + lx] = B.TRIGO;
             else if (es === 0 && sup === B.PASTO && tope > NIVEL_AGUA && tope + 1 < ALTO) {
-                const q = hash(bx, bz, 11) % 1000;
-                const planta = q < 80 ? B.PASTO_ALTO : q < 88 ? B.FLOR_ROJA : q < 96 ? B.FLOR_AMARILLA : q < 102 ? B.FLOR_AZUL : 0;
-                if (planta) vox[((tope + 1) * VENT + lz) * VENT + lx] = planta;
+                const planta = plantaEn(bx, bz);
+                if (planta)vox[((tope + 1) * VENT + lz) * VENT + lx] = planta;
             }
             if (es !== 2) for (let y = tope + 1; y <= NIVEL_AGUA; y++) vox[(y * VENT + lz) * VENT + lx] = B.AGUA;
             if (Math.max(tope, NIVEL_AGUA) > maxY) maxY = Math.max(tope, NIVEL_AGUA);
