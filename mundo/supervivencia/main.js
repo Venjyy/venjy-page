@@ -64,6 +64,7 @@ import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
 import { crearComandosDev } from './comandos-dev.js';
+import { TXT_CARTAS } from './cartas-datos.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { crearCofresCompaneros } from './cofres-companeros.js';
@@ -766,14 +767,34 @@ async function arrancar(guardado, cx = null) {
         bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
+    let panelCartas = null, cargandoCartas = null;
+    const textoCartas = o => (o && (o[idioma] || o.es)) || '';
+    function cargarPanelCartas() {
+        if (!cargandoCartas) cargandoCartas = import('./cartas-panel.js').then(m => {
+            panelCartas = m.crearPanelCartas({ idioma, alCerrar: () => { document.body.classList.remove('panel-lado'); uiAbierta = false; if (!vida.muerto) entrar(); } });
+            return panelCartas;
+        }).catch(err => { cargandoCartas = null; console.error('No se pudo cargar el duelo de cartas', err); return null; });
+        return cargandoCartas;
+    }
     misiones.minijuego = {
-        texto: clave => minijuegos.botonPara(clave),
+        texto: clave => {
+            if (clave === 'lucho') return { texto: textoCartas(TXT_CARTAS.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS.faltaMazo) };
+            return minijuegos.botonPara(clave);
+        },
         // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
         jugar: clave => {
-            const b = minijuegos.botonPara(clave);
+            const b = clave === 'lucho'
+                ? { texto: textoCartas(TXT_CARTAS.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS.faltaMazo) }
+                : minijuegos.botonPara(clave);
             if (!b || b.motivo) return;
             capaPanel.hidden = true; capaPanel.textContent = '';
+            document.body.classList.remove('panel-lado');
             camaras.terminarCine();
+            if (clave === 'lucho') {
+                uiAbierta = true;
+                cargarPanelCartas().then(p => { if (p) p.abrir('facil'); else { uiAbierta = false; if (!vida.muerto) entrar(); } });
+                return;
+            }
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
