@@ -800,7 +800,7 @@ Reglas para los tres: no tocar `camaras.js`, `mano.js`, `skin.js` ni `coop.js`; 
   sin él) arrastra un tramo, guarda, comprueba que cambió **una línea** de `escenas.json` y reproduce en el iframe viendo que
   `t` avanza; el JSON vuelve a como estaba aunque la prueba falle; una captura del editor.
 
-**PR 5c · planos de cámara** · rama `estudio-fase5c` · depende de 5a (puede ir antes o después de 5b)
+**PR 5c · planos de cámara** · rama `estudio-fase5c` · depende de 5a (puede ir antes o después de 5b) · **hecho (2026-10-11)**: lo que cambió, en §15
 - Mover `PLANOS_AMISTAD`, `PLANOS_GRUPO` y `PLANOS_GRUPO_TECHO` de `escena-amistad.js` a `escena-amistad-datos.js` (puro,
   exportados, mismos números). `escenas.js`: `planosDe(camara)` (nombre → la constante; lista → tal cual).
 - `escena-amistad.js` (la línea `let cam = …`): si el guion trae `camara`, usa `planosDe(camara)`; `minDist`, `evitarDist` y
@@ -849,3 +849,11 @@ puro y su prueba.
 - **No hecho** (a propósito): crear escenas `amistad` nuevas (el juego solo conoce las de `ANIMACIONES`); borrar una escena; arrastrar un
   tramo a otra fila; cámara (PR 5c).
 - **Medida**: sin `?estudio`, 106 archivos y 2633,5 KB antes y después (nada nuevo se carga con el juego).
+
+## 15. Fase 5 · PR 5c · lo que cambió al construirla (2026-10-11)
+
+- **Archivos**: constantes `PLANOS_*` en `mundo/supervivencia/escena-amistad-datos.js`; `planosDe`, `opcionesCamara` y `JUEGOS_PLANOS` en `mundo/datos/escenas.js`; operaciones de cámara en `estudio/escenas-modelo.mjs`; panel **Cámara** en `index.html`, `escenas.js` y `estudio.css`.
+- **Cámara del motor**: `opcionesCamara(camara)` junto con las distancias de la familia. `amistad` y lista propia: `minDist 1.8, evitarDist 2.4, holgura 0.7, sinTerceros`; `grupo`: `1.6, 2.0, 0.5`; `grupo-techo`: `1, 1.2, 0`. Si hay `camara` manda sobre lo que el motor elegía (planos del iglú bajo techo, planos de grupo con `centro`); en una escena con `centro` se conserva `centro` y se quita `sinTerceros`.
+- **Panel Cámara** (va en el lateral, como el resto de la pestaña; no es una fila de la línea de tiempo: una lista de campos numéricos no cabe en una pista): estado, tres botones «Usar juego», una tarjeta por plano (nombre, ang, dist, alto, órbita, dolly; Ver, Subir, Bajar, Quitar) y Agregar (tope 8, el del esquema). Los números se recortan a los límites del esquema.
+- **Ver**: el editor manda `datos` con una copia de la escena con `camara: { planos: [ese] }` y juega; cuando el juego avisa que terminó (`escenaT` con `clave: null`) manda otra vez los datos reales. Sin mensaje nuevo en el puente.
+- **Sin cambios**: `escenas.json`, el esquema (ya traía `camara` y `plano`; solo se actualizó su texto), `camaras.js`.

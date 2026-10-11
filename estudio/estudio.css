@@ -172,6 +172,15 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 }
 .panel h2 { margin: 0 0 8px; font-size: 1rem; font-weight: normal; color: var(--amarillo); text-shadow: 2px 2px 0 #3f3f15; }
 .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+/* Planos de cámara de una escena (pestaña Escenas) */
+.es-juegos { flex-wrap: wrap; margin-bottom: 8px; }
+.es-juegos .boton.activo { border-color: var(--blanco); }
+.es-planos { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.es-plano { border: 2px solid var(--borde, #555); padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.es-plano .campos { grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
+.es-plano .es-plano-nombre { width: 100%; padding: 4px 6px; font: inherit; font-size: 0.9rem; color: var(--blanco); background: #000; border: 2px solid #6a6a6a; box-sizing: border-box; }
+.es-plano .es-plano-nombre:focus { outline: none; border-color: var(--blanco); }
+.es-plano .fila-botones { flex-wrap: wrap; }
 .campos .campo.ancho { grid-column: 1 / -1; }
 .campos[hidden] { display: none; }
 

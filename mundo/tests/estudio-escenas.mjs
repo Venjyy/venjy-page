@@ -3,15 +3,16 @@
 // piloto con ANIMACIONES (los datos y, cuadro a cuadro, qué gesto suena, su u y su peso, con la misma cuenta que
 // gestoDe de escena-amistad.js); las reglas que el esquema no expresa (estudio/DISENO.md §13, mundo/datos/escenas.js,
 // las mismas de `cli.mjs validar`); y el PR 5a: el motor real fusiona los datos (y sin ellos usa el código) y una
-// escena de guion se completa con durLinea y se juega con jugarGuion.
+// escena de guion se completa con durLinea y se juega con jugarGuion; y el PR 5c: planosDe, la cámara que llega a
+// iniciarCine (sin `camara`, igual que antes) y las operaciones de cámara del modelo.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatear } from '../../estudio/formato.mjs';
 import { validar } from '../../estudio/validar.mjs';
-import { ANIMACIONES, GESTOS_AMISTAD } from '../supervivencia/escena-amistad-datos.js';
+import { ANIMACIONES, GESTOS_AMISTAD, PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from '../supervivencia/escena-amistad-datos.js';
 import { fusionar } from '../datos/cargador.js';
-import { animacionDeDatos, guionDeDatos, reglasEscenas } from '../datos/escenas.js';
+import { animacionDeDatos, guionDeDatos, reglasEscenas, planosDe, opcionesCamara } from '../datos/escenas.js';
 import * as M from '../../estudio/escenas-modelo.mjs';
 import { crearManejador } from '../../estudio/puente-protocolo.js';
 // escenas-skin.js (GESTOS) trae cuerpo.js, que escucha eventos de `window`: basta un objeto mínimo (como amistad.mjs)
@@ -158,7 +159,8 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     const g = guionDeDatos(def, { durLinea, moldes: MOLDES });
     ok(g.lineas[0].d === durLinea(def.lineas[0].texto) && g.lineas[1].d === 2.2, 'guionDeDatos: d que falta vale durLinea(texto)');
     ok(g.gestos === MOLDES && igual(g.actores, def.actores) && igual(g.pista, def.pista) && g.T === 9 && g.r === 1.3, 'guionDeDatos: gestos, actores, pista, T y r');
-    ok(!('camara' in g) && !('nota' in g) && g.tipo === 'guion', 'guionDeDatos: sin camara ni nota');
+    ok(igual(g.camara, def.camara) && !('nota' in g) && g.tipo === 'guion', 'guionDeDatos: conserva camara (PR 5c), sin nota');
+    ok(!('camara' in guionDeDatos({ ...def, camara: undefined }, { durLinea })), 'guionDeDatos: sin camara no agrega la clave');
     ok(durLinea(def.lineas[0].texto) >= 2.3 && durLinea(def.lineas[0].texto) <= 3.6, 'durLinea en su rango');
 }
 // El motor real (escena-amistad.js) con un DOM mínimo y personas de cajas: la misma base de amistad.mjs
@@ -176,7 +178,8 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     };
     const personas = [{ clave: 'pony', x: 10, y: 25, z: 10, yaw: 0, p: rig() }, { clave: 'andy', x: 40, y: 25, z: 40, yaw: 0, p: rig() }];
     const jugador = { pos: { x: 12, y: 73, z: 10 }, yaw: 0, pitch: 0, colocar(x, y, z) { this.pos.x = x; this.pos.y = y; this.pos.z = z; } };
-    const camaras = { cuerpo: rig(), iniciarCine() {}, terminarCine() {}, nuevaLinea() {}, enfocar() {}, set pose(f) {}, set manual(f) {} };
+    let ultimaCine = null;
+    const camaras = { cuerpo: rig(), iniciarCine(a, o) { ultimaCine = o; }, terminarCine() {}, nuevaLinea() {}, enfocar() {}, set pose(f) {}, set manual(f) {} };
     const motor = crearEscenaAmistad({ grupo: new THREE.Group(), dy: 48, mundo: { bloque: () => 0 }, jugador, camara: new THREE.PerspectiveCamera(), camaras, misiones: {},
         personas: () => personas, personaDe: c => personas.find(n => n.clave === c) || null, bloquear() {}, liberar() {} });
     // Juega, lee T y tipo y salta: la siguiente prueba empieza limpia
@@ -209,6 +212,36 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     ok(r.r === true, 'jugarGuion con persona: empieza');
     ok((await jugar(async () => motor.jugarGuion('noexiste'))).r === false, 'jugarGuion de una clave que no existe: false');
     ok((await jugar(async () => motor.jugarGuion('punos'))).r === false, 'jugarGuion no juega una escena de tipo amistad');
+    // PR 5c: la cámara que llega a iniciarCine
+    aplicarDatosVivos(null);
+    ultimaCine = null;
+    await jugar(async () => motor.jugar('pony', 'punos'));
+    ok(ultimaCine && ultimaCine.planos === PLANOS_AMISTAD && ultimaCine.minDist === 1.8 && ultimaCine.evitarDist === 2.4 && ultimaCine.holgura === 0.7 && ultimaCine.sinTerceros === true,
+        'sin camara: los planos y distancias de siempre (PLANOS_AMISTAD)');
+    ultimaCine = null;
+    aplicarDatosVivos(datos); // el archivo real: punos sin camara
+    await jugar(async () => motor.jugar('pony', 'punos'));
+    ok(ultimaCine && ultimaCine.planos === PLANOS_AMISTAD, 'escenas.json de hoy (sin camara): PLANOS_AMISTAD');
+    const conCamara = structuredClone(datos);
+    conCamara.escenas.punos.camara = { planos: 'grupo' };
+    aplicarDatosVivos(conCamara);
+    await jugar(async () => motor.jugar('pony', 'punos'));
+    ok(ultimaCine.planos === PLANOS_GRUPO && ultimaCine.minDist === 1.6 && ultimaCine.evitarDist === 2.0 && ultimaCine.holgura === 0.5 && !ultimaCine.sinTerceros,
+        'escena amistad con camara «grupo»: PLANOS_GRUPO y distancias de grupo');
+    conCamara.escenas.punos.camara = { planos: 'grupo-techo' };
+    aplicarDatosVivos(conCamara);
+    await jugar(async () => motor.jugar('pony', 'punos'));
+    ok(ultimaCine.planos === PLANOS_GRUPO_TECHO && ultimaCine.minDist === 1 && ultimaCine.holgura === 0, 'camara «grupo-techo»: PLANOS_GRUPO_TECHO');
+    const propios = [{ nombre: 'frontal', ang: 3, dist: 3, alto: 1.7, orbita: 0, dolly: 0 }, { nombre: 'alto', ang: 0.5, dist: 5, alto: 4 }];
+    const conLista = structuredClone(datos);
+    conLista.escenas.prueba = { tipo: 'guion', T: 6, r: 1.3, camara: { planos: propios }, lineas: [{ q: 'n', a: 0.6, texto: { es: 'Hola, ¿cómo estás hoy?', en: 'Hi, how are you today?' } }], pista: { n: [['saluda', 0.4, 2]], j: [] } };
+    aplicarDatosVivos(conLista);
+    await jugar(async () => motor.jugarGuion('prueba'));
+    ok(igual(ultimaCine.planos, propios) && ultimaCine.minDist === 1.8 && ultimaCine.sinTerceros === true, 'guion con lista propia: esos planos y las distancias de amistad');
+    delete conLista.escenas.prueba.camara;
+    aplicarDatosVivos(conLista);
+    await jugar(async () => motor.jugarGuion('prueba'));
+    ok(ultimaCine.planos === PLANOS_AMISTAD, 'guion sin camara: PLANOS_AMISTAD');
     aplicarDatosVivos(null);
 }
 
@@ -366,6 +399,60 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     }
     const sin = await crearManejador({ idioma: () => 'es', aplicarDatos() {} })({ de: 'estudio', id: 2, tipo: 'escena', accion: 'parar' });
     ok(sin.tipo === 'error', 'puente: un juego sin escena() contesta error');
+}
+
+// ---------- PR 5c: planos de cámara ----------
+{
+    ok(planosDe({ planos: 'amistad' }) === PLANOS_AMISTAD && planosDe({ planos: 'grupo' }) === PLANOS_GRUPO && planosDe({ planos: 'grupo-techo' }) === PLANOS_GRUPO_TECHO,
+        'planosDe(nombre) devuelve la constante del juego');
+    ok(PLANOS_AMISTAD.length === 5 && PLANOS_GRUPO.length === 5 && PLANOS_GRUPO_TECHO.length === 4, 'las constantes mantienen su cantidad de planos');
+    // Los mismos números de siempre (se movieron de escena-amistad.js sin cambiarlos)
+    ok(PLANOS_AMISTAD[0].dist === 3.6 && PLANOS_AMISTAD[4].alto === 2.5 && PLANOS_GRUPO[4].dist === 7.0 && PLANOS_GRUPO_TECHO[3].dist === 2.8, 'las constantes conservan sus números');
+    const lista = [{ nombre: 'a', ang: 1, dist: 4, alto: 2 }];
+    ok(planosDe({ planos: lista }) === lista, 'planosDe(lista) la devuelve tal cual');
+    ok(planosDe(undefined) === null && planosDe({}) === null && planosDe({ planos: 'otro' }) === null && planosDe({ planos: [] }) === null, 'planosDe sin camara o con nombre que no existe: null');
+    ok(opcionesCamara(undefined) === null && opcionesCamara({ planos: 'otro' }) === null, 'opcionesCamara sin camara: null');
+    const og = opcionesCamara({ planos: 'grupo' });
+    ok(og.planos === PLANOS_GRUPO && og.minDist === 1.6 && og.holgura === 0.5 && !('sinTerceros' in og), 'opcionesCamara(grupo)');
+
+    // El esquema y el modelo
+    const base = structuredClone(datos.escenas.punos);
+    const copia = JSON.stringify(base);
+    ok(validar({ version: 1, escenas: { punos: { ...base, camara: { planos: 'grupo' } } } }, 'escenas').length === 0, 'esquema: camara con nombre');
+    ok(validar({ version: 1, escenas: { punos: { ...base, camara: { planos: [{ nombre: 'x', ang: 0, dist: 3, alto: 1 }] } } } }, 'escenas').length === 0, 'esquema: camara con lista');
+    ok(validar({ version: 1, escenas: { punos: { ...base, camara: { planos: [{ nombre: 'x', ang: 9, dist: 3, alto: 1 }] } } } }, 'escenas').length > 0, 'esquema rechaza ang fuera de rango');
+    ok(validar({ version: 1, escenas: { punos: { ...base, camara: { planos: 'techo' } } } }, 'escenas').length > 0, 'esquema rechaza un nombre de juego desconocido');
+
+    let r = M.usarJuego(base, 'grupo');
+    ok(r.cambio && r.def.camara.planos === 'grupo' && M.juegoDeCamara(r.def) === 'grupo', 'usarJuego(grupo)');
+    ok(!M.usarJuego(r.def, 'grupo').cambio && !M.usarJuego(base, 'no-existe').cambio, 'usarJuego repetido o desconocido: sin cambio');
+    ok(igual(M.planosDeEscena(r.def), PLANOS_GRUPO) && M.planosDeEscena(r.def)[0] !== PLANOS_GRUPO[0], 'planosDeEscena: copia de los números del juego');
+    // editar un plano de un juego con nombre lo copia a lista propia, sin tocar la constante
+    r = M.cambiarPlano(r.def, 1, 'dist', 5.5);
+    ok(r.cambio && Array.isArray(r.def.camara.planos) && r.def.camara.planos[1].dist === 5.5 && r.def.camara.planos.length === 5, 'cambiarPlano copia la lista del juego');
+    ok(PLANOS_GRUPO[1].dist === 6.4, 'las constantes del juego no se modifican');
+    ok(validar({ version: 1, escenas: { punos: r.def } }, 'escenas').length === 0, 'lo que sale del modelo cumple el esquema');
+    // tope de números a los límites del esquema; nombre vacío no cambia
+    ok(M.cambiarPlano(r.def, 0, 'ang', 50).def.camara.planos[0].ang === 3.2 && M.cambiarPlano(r.def, 0, 'alto', -4).def.camara.planos[0].alto === 0, 'cambiarPlano recorta a los límites');
+    ok(!M.cambiarPlano(r.def, 0, 'nombre', '   ').cambio && !M.cambiarPlano(r.def, 0, 'dist', NaN).cambio && !M.cambiarPlano(r.def, 9, 'dist', 3).cambio, 'cambiarPlano rechaza vacío, NaN y fuera de lista');
+    // agregar hasta el tope, orden y quitar
+    let d = M.usarJuego(base, 'amistad').def;
+    for (let n = 5; n < M.MAX_PLANOS; n++) { const a = M.agregarPlano(d); ok(a && a.i === n, 'agregarPlano #' + (n + 1)); d = a.def; }
+    ok(M.agregarPlano(d) === null, 'agregarPlano: tope de ' + M.MAX_PLANOS);
+    ok(new Set(d.camara.planos.map(p => p.nombre)).size === M.MAX_PLANOS, 'los planos agregados tienen nombres distintos');
+    ok(validar({ version: 1, escenas: { punos: d } }, 'escenas').length === 0, '8 planos cumplen el esquema');
+    const antes = d.camara.planos.map(p => p.nombre);
+    r = M.moverPlano(d, 0, 1);
+    ok(r.cambio && r.i === 1 && r.def.camara.planos[1].nombre === antes[0] && r.def.camara.planos[0].nombre === antes[1], 'moverPlano baja uno');
+    ok(!M.moverPlano(d, 0, -1).cambio && !M.moverPlano(d, M.MAX_PLANOS - 1, 1).cambio, 'moverPlano en el borde: sin cambio');
+    r = M.quitarPlano(d, 2);
+    ok(r.cambio && r.def.camara.planos.length === 7 && !r.def.camara.planos.some(p => p.nombre === antes[2]), 'quitarPlano');
+    // quitar el último deja la escena sin camara propia
+    let u = M.agregarPlano(base);
+    ok(u.cambio && u.def.camara.planos.length === 1, 'agregarPlano en una escena sin camara empieza una lista');
+    u = M.quitarPlano(u.def, 0);
+    ok(u.cambio && !('camara' in u.def), 'quitar el único plano elimina camara');
+    ok(JSON.stringify(base) === copia, 'el modelo no toca la escena que recibe');
 }
 
 console.log(`escenas: ${pilotos.length} pilotos, ${comparaciones} comparaciones, diferencia máxima ${difMax}`);

@@ -63,6 +63,7 @@ export async function montarEscenas(ctx) {
     let activa = false, pausada = false, tCab = 0;
     let arrastre = null;
     let alElegirGesto = null;
+    let verPlano = false;     // el juego tiene datos temporales con un solo plano (botón «Ver»)
 
     const durLinea = () => (motor && motor.durLinea) || durLineaCopia;
     const personas = Object.keys(FRASES_AMISTAD);
@@ -346,6 +347,99 @@ export async function montarEscenas(ctx) {
         $('es-borrar').disabled = sel.k === 'frase' && (d.tipo !== 'guion' || (d.lineas || []).length <= 1);
     }
 
+    // ---------- Cámara: lista de planos ----------
+    const CAMPOS_PLANO = [
+        ['ang', 'ang', 'ang', 0.05],
+        ['dist', 'dist', 'dist', 0.1],
+        ['alto', 'alto', 'height', 0.1],
+        ['orbita', 'órbita', 'orbit', 0.01],
+        ['dolly', 'dolly', 'dolly', 0.05]
+    ];
+    function pintarCamara() {
+        const d = defActual();
+        const sec = $('es-camara'), ol = $('es-planos');
+        sec.hidden = !d;
+        ol.textContent = '';
+        if (!d) return;
+        const juego = M.juegoDeCamara(d);
+        const lista = M.planosDeEscena(d);
+        const estado = $('es-camara-estado');
+        if (!d.camara) estado.textContent = t('Sin cámara propia: el juego usa sus planos de dos personajes (o los del iglú, si hay techo).', 'No camera of its own: the game uses its two-person shots (or the igloo ones under a roof).');
+        else if (juego) estado.textContent = t(`Usa los planos del juego «${juego}» (${lista.length}). Editar uno los copia a una lista propia.`, `Uses the game's “${juego}” shots (${lista.length}). Editing one copies them into a list of its own.`);
+        else estado.textContent = t(`Lista propia: ${lista.length} de ${M.MAX_PLANOS} planos.`, `Own list: ${lista.length} of ${M.MAX_PLANOS} shots.`);
+        for (const b of sec.querySelectorAll('[data-juego]')) b.classList.toggle('activo', b.dataset.juego === juego);
+        $('es-plano-agregar').disabled = lista.length >= M.MAX_PLANOS;
+        lista.forEach((p, i) => {
+            const li = document.createElement('li');
+            li.className = 'es-plano';
+            li.dataset.i = String(i);
+            const nombre = document.createElement('input');
+            nombre.type = 'text'; nombre.className = 'es-plano-nombre'; nombre.maxLength = 40; nombre.value = p.nombre;
+            nombre.autocomplete = 'off'; nombre.spellcheck = false;
+            nombre.dataset.campo = 'nombre';
+            nombre.setAttribute('aria-label', t('Nombre del plano', 'Shot name'));
+            li.appendChild(nombre);
+            const campos = document.createElement('div');
+            campos.className = 'campos';
+            for (const [clave, es, en, paso] of CAMPOS_PLANO) {
+                const lab = document.createElement('label');
+                lab.className = 'campo';
+                const sp = document.createElement('span');
+                sp.textContent = t(es, en);
+                const inp = document.createElement('input');
+                inp.type = 'number'; inp.step = String(paso);
+                inp.min = String(M.LIMITES_PLANO[clave][0]); inp.max = String(M.LIMITES_PLANO[clave][1]);
+                inp.value = String(p[clave] ?? 0);
+                inp.dataset.campo = clave;
+                lab.append(sp, inp);
+                campos.appendChild(lab);
+            }
+            li.appendChild(campos);
+            const fila = document.createElement('div');
+            fila.className = 'fila-botones';
+            const boton = (accion, es, en, extra = 'secundario') => {
+                const b = document.createElement('button');
+                b.type = 'button'; b.className = 'boton chico ' + extra; b.dataset.accion = accion;
+                b.textContent = t(es, en);
+                if ((accion === 'subir' && i === 0) || (accion === 'bajar' && i === lista.length - 1)) b.disabled = true;
+                if (accion === 'ver') b.disabled = !listoElJuego();
+                fila.appendChild(b);
+            };
+            boton('ver', 'Ver', 'View', '');
+            boton('subir', 'Subir', 'Up');
+            boton('bajar', 'Bajar', 'Down');
+            boton('quitar', 'Quitar', 'Remove');
+            li.appendChild(fila);
+            ol.appendChild(li);
+        });
+    }
+    function cambioCamara(res) {
+        if (!aplicar(res)) pintarCamara();
+    }
+    $('es-camara').addEventListener('click', ev => {
+        const d = defActual();
+        if (!d) return;
+        const j = ev.target.closest('[data-juego]');
+        if (j) { cambioCamara(M.usarJuego(d, j.dataset.juego)); return; }
+        if (ev.target.closest('#es-plano-agregar')) { const r = M.agregarPlano(d); if (r) cambioCamara(r); return; }
+        const b = ev.target.closest('[data-accion]');
+        const li = ev.target.closest('.es-plano');
+        if (!b || !li) return;
+        const i = Number(li.dataset.i);
+        if (b.dataset.accion === 'quitar') cambioCamara(M.quitarPlano(d, i));
+        else if (b.dataset.accion === 'subir') cambioCamara(M.moverPlano(d, i, -1));
+        else if (b.dataset.accion === 'bajar') cambioCamara(M.moverPlano(d, i, 1));
+        else if (b.dataset.accion === 'ver') { const p = M.planosDeEscena(d)[i]; if (p) reproducir(p); }
+    });
+    $('es-camara').addEventListener('change', ev => {
+        const d = defActual();
+        const inp = ev.target.closest('input[data-campo]');
+        const li = ev.target.closest('.es-plano');
+        if (!d || !inp || !li) return;
+        const i = Number(li.dataset.i), campo = inp.dataset.campo;
+        cambioCamara(M.cambiarPlano(d, i, campo, campo === 'nombre' ? inp.value : inp.valueAsNumber));
+    });
+
     // ---------- Avisos y resumen ----------
     function reglas(def, clave) {
         return reglasEscenas({ escenas: { [clave]: def } }, {
@@ -385,7 +479,7 @@ export async function montarEscenas(ctx) {
         $('es-descartar').disabled = !sucio();
     }
     function pintar() {
-        pintarLista(); pintarBarra(); pintarLinea(); pintarCampos(); pintarAvisos(); pintarResumen();
+        pintarLista(); pintarBarra(); pintarLinea(); pintarCampos(); pintarCamara(); pintarAvisos(); pintarResumen();
     }
 
     // ---------- Selector de gesto (filtrable) ----------
@@ -605,7 +699,8 @@ export async function montarEscenas(ctx) {
         if (!activa || !listoElJuego()) return;
         try { await puente.enviar('escena', { accion: 'ir', t: tCab }); } catch (e) { rotular(e.message, e.message, 'error'); }
     }
-    async function reproducir() {
+    // `soloPlano`: reproduce con la cámara de ese único plano (botón «Ver»); los datos del juego vuelven a lo real al terminar
+    async function reproducir(soloPlano) {
         const d = defActual();
         if (!d) return;
         if (!listoElJuego()) { rotular('El juego todavía no está listo: espera a que cargue el mundo.', 'The game is not ready yet: wait for the world to load.', 'error'); return; }
@@ -613,7 +708,14 @@ export async function montarEscenas(ctx) {
         if (d.tipo === 'amistad' && !persona) { rotular('Elige una persona para esta escena.', 'Pick a person for this scene.', 'error'); return; }
         rotular('Preparando la escena…', 'Getting the scene ready…');
         try {
-            await puente.enviar('datos', { nombre: 'escenas', datos });
+            if (soloPlano && typeof soloPlano.ang === 'number') {
+                const temporal = { ...datos, escenas: { ...datos.escenas, [actual]: { ...d, camara: { planos: [soloPlano] } } } };
+                await puente.enviar('datos', { nombre: 'escenas', datos: temporal });
+                verPlano = true;
+            } else {
+                await puente.enviar('datos', { nombre: 'escenas', datos });
+                verPlano = false;
+            }
             await punteroLibre(true);
             if (persona && $('es-ir-junto').checked) {
                 try { await puente.tp(persona); await dormir(500); } catch (e) { /* sin destino: la escena lo acerca sola */ }
@@ -626,7 +728,7 @@ export async function montarEscenas(ctx) {
             rotular(e.message, e.message, 'error');
         }
     }
-    $('es-jugar').addEventListener('click', reproducir);
+    $('es-jugar').addEventListener('click', () => reproducir());
     $('es-pausa').addEventListener('click', async () => {
         try { await puente.enviar('escena', { accion: 'pausa', v: !pausada }); pausada = !pausada; pintarBarra(); } catch (e) { rotular(e.message, e.message, 'error'); }
     });
@@ -636,14 +738,18 @@ export async function montarEscenas(ctx) {
     // El juego avisa dónde va la escena (10 veces por segundo) y cuando termina
     puente.alMensaje(m => {
         if (m.tipo === 'escenaT') {
-            if (m.clave === null) { activa = false; pausada = false; ponerCabezal(); pintarBarra(); return; }
+            if (m.clave === null) {
+                activa = false; pausada = false; ponerCabezal(); pintarBarra();
+                if (verPlano) { verPlano = false; enviarAlJuego(); } // «Ver» mandó una cámara temporal: el juego vuelve a los datos reales
+                return;
+            }
             if (m.clave !== actual) return;
             const antes = activa;
             activa = true; pausada = !!m.pausada; tCab = m.t;
             ponerCabezal();
             if (!antes) pintarBarra();
         } else if (m.tipo === 'listo' || m.tipo === 'estado' || m.tipo === 'error') {
-            pintarBarra();
+            pintarBarra(); pintarCamara();
             if (m.tipo === 'listo' && ctx.pestana === 'escenas') punteroLibre(true);
         }
     });

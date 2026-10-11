@@ -36,12 +36,12 @@ import * as THREE from '../../vendor/three.module.js';
 import { TIPO, B } from '../texturas.js';
 import { crearGlobo, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { GESTOS } from './escenas-skin.js';
-import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD } from './escena-amistad-datos.js';
+import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD, PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from './escena-amistad-datos.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { sonidos } from './sonidos.js';
 import { PERSONAJES, relacion, GRUPOS } from './amistad.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
-import { animacionDeDatos, guionDeDatos } from '../datos/escenas.js';
+import { animacionDeDatos, guionDeDatos, opcionesCamara } from '../datos/escenas.js';
 
 // Estudio, fase 5: mundo/datos/escenas.json (escenas «amistad» reemplazan a ANIMACIONES por clave; las de «guion» solo
 // se juegan con jugarGuion). Se pide al importar este módulo, que ya se carga solo al usarlo: la carga inicial no cambia.
@@ -60,31 +60,6 @@ const envolvente = (t, a, b, r) => suave(Math.min(tramo(t, a, a + r), 1 - tramo(
 // Huesos que mueve la escena (nombres cortos de la skill); pz = cuerpo.position.z (un paso adelante)
 const CAMPOS = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'pz'];
 const NEUTRAL = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0.05, bIx: 0, bIz: -0.05, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, pz: 0 };
-
-// Planos propios (camaras.js, opción `planos`): los de dos personajes sin los de sobre el hombro, que con los dos tan
-// cerca dejaban la cabeza del jugador tapando las manos y los objetos. ang 0 = detrás del jugador; dist desde el punto medio.
-const PLANOS_AMISTAD = [
-    { nombre: 'de lado', ang: Math.PI / 2, dist: 3.6, alto: 1.75, orbita: 0.1, dolly: -0.4 },
-    { nombre: 'tres cuartos, lado del jugador', ang: 0.85, dist: 4.0, alto: 1.9, orbita: 0.08, dolly: -0.3 },
-    { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.6, alto: 1.7, orbita: -0.1, dolly: -0.4 },
-    { nombre: 'tres cuartos, lado del amigo', ang: Math.PI - 0.85, dist: 4.0, alto: 1.9, orbita: -0.08, dolly: -0.3 },
-    { nombre: 'general', ang: -1.15, dist: 5.6, alto: 2.5, orbita: 0.14, dolly: -0.6 }
-];
-// Escenas de grupo (6c-2): giran en torno al centro del grupo (4-5 personas), más abiertos; ang 0 = detrás del jugador
-const PLANOS_GRUPO = [
-    { nombre: 'grupo de lado', ang: Math.PI / 2, dist: 6.2, alto: 3.1, orbita: 0.08, dolly: -0.4 },
-    { nombre: 'grupo, tres cuartos', ang: 0.75, dist: 6.4, alto: 3.2, orbita: 0.06, dolly: -0.3 },
-    { nombre: 'grupo, frente al jugador', ang: Math.PI - 0.6, dist: 6.0, alto: 2.9, orbita: -0.07, dolly: -0.4 },
-    { nombre: 'grupo, otro lado', ang: -Math.PI / 2 - 0.2, dist: 6.2, alto: 3.1, orbita: -0.08, dolly: -0.4 },
-    { nombre: 'grupo, picado', ang: -0.6, dist: 7.0, alto: 4.4, orbita: 0.1, dolly: -0.5 }
-];
-// Bajo techo (el iglú): más cerca y a la altura de las cabezas
-const PLANOS_GRUPO_TECHO = [
-    { nombre: 'iglú, de lado', ang: Math.PI / 2, dist: 2.6, alto: 1.6, orbita: 0.05, dolly: -0.2 },
-    { nombre: 'iglú, frente al jugador', ang: Math.PI - 0.5, dist: 2.6, alto: 1.6, orbita: -0.05, dolly: -0.2 },
-    { nombre: 'iglú, otro lado', ang: -Math.PI / 2, dist: 2.6, alto: 1.5, orbita: -0.05, dolly: -0.2 },
-    { nombre: 'iglú, tres cuartos', ang: 0.7, dist: 2.8, alto: 1.7, orbita: 0.04, dolly: -0.2 }
-];
 
 // Texturas píxel a píxel de los efectos (corazón como el de ganado.js y una chispa de cuatro puntas)
 function texturaPixeles(filas, colores) {
@@ -232,7 +207,9 @@ export function crearEscenaAmistad(ctx) {
         const base = ANIMACIONES[tipo];
         const a = base && d && d.tipo === 'amistad' ? fusionar(base, animacionDeDatos(d)) : base, f = FRASES_AMISTAD[clave] && FRASES_AMISTAD[clave][tipo];
         if (!a || !f) return null;
-        return { ...a, tipo, lineas: [{ q: 'n', texto: f, a: a.linea[0], d: a.linea[1] }] };
+        // `camara` de escenas.json (PR 5c): animacionDeDatos la quita para que la fusión con ANIMACIONES siga exacta, aquí se agrega
+        const camara = base && d && d.tipo === 'amistad' && d.camara ? { camara: d.camara } : {};
+        return { ...a, ...camara, tipo, lineas: [{ q: 'n', texto: f, a: a.linea[0], d: a.linea[1] }] };
     }
 
     // Frases, pistas y giros por personaje: con guion.reparto ({ pony: 'j', andy: 'n' }) pasan a su papel en la escena
@@ -294,6 +271,9 @@ export function crearEscenaAmistad(ctx) {
         let cam = techo ? { sinTerceros: true } : { planos: PLANOS_AMISTAD, minDist: 1.8, evitarDist: 2.4, holgura: 0.7, sinTerceros: true };
         // En grupo hay siempre alguien más cerca de la cámara que el centro: sin la regla de terceros, planos más abiertos
         if (e.centro) cam = { planos: techo ? PLANOS_GRUPO_TECHO : PLANOS_GRUPO, minDist: techo ? 1 : 1.6, evitarDist: techo ? 1.2 : 2.0, holgura: techo ? 0 : 0.5, centro: centroCamara };
+        // Estudio, fase 5c: la `camara` de escenas.json (nombre de un juego de planos o lista propia) manda sobre lo de arriba
+        const propia = guion.camara ? opcionesCamara(guion.camara) : null;
+        if (propia) { cam = propia; if (e.centro) { delete cam.sinTerceros; cam.centro = centroCamara; } }
         camaras.iniciarCine(n, { escena: true, ...cam, esperarLinea: true, fundido: 0.45, validarTexto, evitar: [n, ...extras, ...cerca], visibles: [n, ...extras, ...cerca] });
         // Los de al lado siguen con lo suyo, pero callados (con `n.escena` se apagan su globo y su charla)
         // (hasta 30 bloques: los globos y las charlas se ven de lejos, como el clon de Venjy cerca de la atalaya)

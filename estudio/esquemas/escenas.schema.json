@@ -56,7 +56,7 @@
       "items": { "$ref": "#/$defs/segundo" }
     },
     "camara": {
-      "description": "Planos de cámara (PR 5c; hasta entonces el juego la ignora y usa los de dos personajes). Un nombre de juego de planos de escena-amistad.js o una lista propia, que se recorre en orden y cambia con cada frase (como hoy).",
+      "description": "Planos de cámara. Un nombre de juego de planos (los PLANOS_* de escena-amistad-datos.js) o una lista propia, que se recorre en orden y cambia con cada frase (como hoy). Sin camara, el juego usa los de dos personajes (o los del iglú bajo techo).",
       "type": "object",
       "properties": {
         "planos": {

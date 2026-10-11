@@ -8,9 +8,13 @@
 //   - los tiempos encajan a 0,05 s;
 //   - un tramo nunca pisa a su vecino de fila: se detiene contra él (las frases sí pueden pisarse: solo es aviso);
 //   - nada pasa de T; un tramo dura al menos 0,1 s y una frase al menos 0,5 s (mínimos del esquema);
+//   - la cámara (PR 5c): usarJuego, agregarPlano, quitarPlano, moverPlano y cambiarPlano trabajan sobre `camara.planos`; editar un
+//     juego con nombre lo copia a lista propia y quitar el último plano borra `camara`;
 //   - una fila vacía queda como [] (no se borra la clave): en una escena «amistad» el juego fusiona por fila y, si la
 //     clave faltara, volvería la fila del código.
 // =========================================================
+import { planosDe, JUEGOS_PLANOS } from '../mundo/datos/escenas.js';
+
 export const PASO = 0.05;
 export const MIN_TRAMO = 0.1;
 export const MIN_FRASE = 0.5;
@@ -256,6 +260,80 @@ export function quitarActor(def, q) {
     if (!Object.keys(d.actores).length) delete d.actores;
     if (d.pista) delete d.pista[q];
     return nuevo(d, -1);
+}
+
+// ---------- Cámara (PR 5c) ----------
+// `camara` = { planos: 'amistad' | 'grupo' | 'grupo-techo' | [plano, ...] } (escenas.schema.json). Sin camara, el juego usa sus
+// planos de siempre. Editar un plano de un juego con nombre lo convierte en lista propia (copia de los números del juego).
+export const MAX_PLANOS = 8;
+export const LIMITES_PLANO = { ang: [-3.2, 3.2], dist: [0.5, 12], alto: [0, 8], orbita: [-0.5, 0.5], dolly: [-3, 3] };
+const r3 = v => Math.round(v * 1000) / 1000;
+
+// Lista de planos que el juego usaría con esta escena (copia; [] si no hay camara)
+export function planosDeEscena(def) {
+    const p = planosDe(def.camara);
+    return p ? clonar(p) : [];
+}
+export const juegoDeCamara = def => (def.camara && typeof def.camara.planos === 'string' ? def.camara.planos : null);
+
+function conPlanos(def, lista) {
+    const d = clonar(def);
+    if (!lista.length) delete d.camara;
+    else d.camara = { ...(d.camara && d.camara.nota ? { nota: d.camara.nota } : {}), planos: lista };
+    return d;
+}
+
+// Usa uno de los tres juegos del juego tal cual
+export function usarJuego(def, nombre) {
+    if (!JUEGOS_PLANOS[nombre] || juegoDeCamara(def) === nombre) return sinCambio(def);
+    const d = clonar(def);
+    d.camara = { ...(d.camara && d.camara.nota ? { nota: d.camara.nota } : {}), planos: nombre };
+    return nuevo(d, -1);
+}
+
+// Agrega un plano al final (si la camara era un nombre, primero se copia su lista). null si ya hay MAX_PLANOS.
+export function agregarPlano(def) {
+    const lista = planosDeEscena(def);
+    if (lista.length >= MAX_PLANOS) return null;
+    const usados = new Set(lista.map(p => p.nombre));
+    let n = lista.length + 1;
+    while (usados.has(`plano ${n}`)) n++;
+    lista.push({ nombre: `plano ${n}`, ang: 0.85, dist: 4, alto: 1.9, orbita: 0.08, dolly: -0.3 });
+    return nuevo(conPlanos(def, lista), lista.length - 1);
+}
+
+// Quitar el último plano deja la escena sin camara propia (vuelve a los planos del juego)
+export function quitarPlano(def, i) {
+    const lista = planosDeEscena(def);
+    if (!lista[i]) return sinCambio(def, i);
+    lista.splice(i, 1);
+    return nuevo(conPlanos(def, lista), Math.min(i, lista.length - 1));
+}
+
+export function moverPlano(def, i, delta) {
+    const lista = planosDeEscena(def);
+    const j = i + delta;
+    if (!lista[i] || !lista[j]) return sinCambio(def, i);
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+    return nuevo(conPlanos(def, lista), j);
+}
+
+// campo: nombre, ang, dist, alto, orbita o dolly. Los números se recortan a los límites del esquema.
+export function cambiarPlano(def, i, campo, valor) {
+    const lista = planosDeEscena(def);
+    const p = lista[i];
+    if (!p) return sinCambio(def, i);
+    if (campo === 'nombre') {
+        const v = String(valor).trim().slice(0, 40);
+        if (!v || v === p.nombre) return sinCambio(def, i);
+        p.nombre = v;
+    } else if (LIMITES_PLANO[campo]) {
+        if (!Number.isFinite(valor)) return sinCambio(def, i);
+        const v = r3(lim(valor, LIMITES_PLANO[campo][0], LIMITES_PLANO[campo][1]));
+        if (v === p[campo]) return sinCambio(def, i);
+        p[campo] = v;
+    } else return sinCambio(def, i);
+    return nuevo(conPlanos(def, lista), i);
 }
 
 // ---------- Escenas nuevas y copias del código ----------

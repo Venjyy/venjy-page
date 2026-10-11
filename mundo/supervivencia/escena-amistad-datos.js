@@ -181,3 +181,30 @@ export const TXT_AMISTAD = {
     en: { titulo: 'Friend greetings', punos: 'Fist bump', abrazo: 'Hug', secreto: 'Secret handshake', pareja: 'Hug and kiss', saltar: 'Skip (Esc)', bloqueado: '???', tu: 'You',
         momento: 'Special moment', momentoFalta: p => `Special moment: friendship ${p}/100`, grupo: 'Group greeting', todos: 'Everyone' }
 };
+
+// Planos de cámara de las escenas de amistad (camaras.js, opción `planos`). Viven aquí, puros, para que el Estudio (escenas.json,
+// `camara`) y el CLI los lean sin cargar el motor. Antes estaban en escena-amistad.js; los números son los mismos.
+// Planos propios (camaras.js, opción `planos`): los de dos personajes sin los de sobre el hombro, que con los dos tan
+// cerca dejaban la cabeza del jugador tapando las manos y los objetos. ang 0 = detrás del jugador; dist desde el punto medio.
+export const PLANOS_AMISTAD = [
+    { nombre: 'de lado', ang: Math.PI / 2, dist: 3.6, alto: 1.75, orbita: 0.1, dolly: -0.4 },
+    { nombre: 'tres cuartos, lado del jugador', ang: 0.85, dist: 4.0, alto: 1.9, orbita: 0.08, dolly: -0.3 },
+    { nombre: 'de lado, otro lado', ang: -Math.PI / 2, dist: 3.6, alto: 1.7, orbita: -0.1, dolly: -0.4 },
+    { nombre: 'tres cuartos, lado del amigo', ang: Math.PI - 0.85, dist: 4.0, alto: 1.9, orbita: -0.08, dolly: -0.3 },
+    { nombre: 'general', ang: -1.15, dist: 5.6, alto: 2.5, orbita: 0.14, dolly: -0.6 }
+];
+// Escenas de grupo (6c-2): giran en torno al centro del grupo (4-5 personas), más abiertos; ang 0 = detrás del jugador
+export const PLANOS_GRUPO = [
+    { nombre: 'grupo de lado', ang: Math.PI / 2, dist: 6.2, alto: 3.1, orbita: 0.08, dolly: -0.4 },
+    { nombre: 'grupo, tres cuartos', ang: 0.75, dist: 6.4, alto: 3.2, orbita: 0.06, dolly: -0.3 },
+    { nombre: 'grupo, frente al jugador', ang: Math.PI - 0.6, dist: 6.0, alto: 2.9, orbita: -0.07, dolly: -0.4 },
+    { nombre: 'grupo, otro lado', ang: -Math.PI / 2 - 0.2, dist: 6.2, alto: 3.1, orbita: -0.08, dolly: -0.4 },
+    { nombre: 'grupo, picado', ang: -0.6, dist: 7.0, alto: 4.4, orbita: 0.1, dolly: -0.5 }
+];
+// Bajo techo (el iglú): más cerca y a la altura de las cabezas
+export const PLANOS_GRUPO_TECHO = [
+    { nombre: 'iglú, de lado', ang: Math.PI / 2, dist: 2.6, alto: 1.6, orbita: 0.05, dolly: -0.2 },
+    { nombre: 'iglú, frente al jugador', ang: Math.PI - 0.5, dist: 2.6, alto: 1.6, orbita: -0.05, dolly: -0.2 },
+    { nombre: 'iglú, otro lado', ang: -Math.PI / 2, dist: 2.6, alto: 1.5, orbita: -0.05, dolly: -0.2 },
+    { nombre: 'iglú, tres cuartos', ang: 0.7, dist: 2.8, alto: 1.7, orbita: 0.04, dolly: -0.2 }
+];

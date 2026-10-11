@@ -5,10 +5,13 @@
 //   animacionDeDatos(def)          escena «amistad» -> fila de ANIMACIONES (el juego la fusiona por clave)
 //   guionDeDatos(def, { durLinea, moldes })   escena «guion» -> guion de ejecución
 //   reglasEscenas(datos, nombres)  las reglas que el esquema no expresa -> [{ tipo: 'error' | 'aviso', texto }]
+//   planosDe(camara)               `camara` de una escena -> lista de planos (nombre de juego o lista propia), null si no hay
+//   opcionesCamara(camara)         lo mismo con las distancias de la familia, listo para camaras.iniciarCine
 // =========================================================
+import { PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from '../supervivencia/escena-amistad-datos.js';
 
 // Una escena «amistad» del JSON, sin tipo, camara ni nota, es exactamente la entrada de ANIMACIONES
-// (la prueba mundo/tests/estudio-escenas.mjs lo comprueba con paridad exacta). La cámara llega en el PR 5c.
+// (la prueba mundo/tests/estudio-escenas.mjs lo comprueba con paridad exacta). La cámara va aparte: planosDe / opcionesCamara.
 export function animacionDeDatos(def) {
     const { tipo, camara, nota, ...resto } = def;
     return resto;
@@ -21,10 +24,34 @@ export function guionDeDatos(def, { durLinea, moldes } = {}) {
     const { tipo, camara, nota, lineas, ...resto } = def;
     return {
         ...resto,
+        ...(camara ? { camara } : {}),
         tipo: 'guion',
         lineas: (lineas || []).map(l => ({ q: l.q, a: l.a, d: l.d !== undefined ? l.d : durLinea ? durLinea(l.texto) : 3, texto: l.texto })),
         gestos: moldes || {}
     };
+}
+
+// Los tres juegos de planos que trae el juego, por el nombre que usa escenas.json (esquema: camara.planos)
+export const JUEGOS_PLANOS = { amistad: PLANOS_AMISTAD, grupo: PLANOS_GRUPO, 'grupo-techo': PLANOS_GRUPO_TECHO };
+
+// `camara` = { planos: 'amistad' | 'grupo' | 'grupo-techo' | [plano, ...] }. Nombre -> el mismo arreglo que usa el juego
+// (mismos números); lista -> tal cual. Sin camara, o con un nombre que no existe: null (el juego usa los suyos de siempre).
+export function planosDe(camara) {
+    const p = camara && camara.planos;
+    if (Array.isArray(p)) return p.length ? p : null;
+    return typeof p === 'string' && Object.prototype.hasOwnProperty.call(JUEGOS_PLANOS, p) ? JUEGOS_PLANOS[p] : null;
+}
+
+// Opciones para camaras.iniciarCine: planosDe + las distancias de la familia. grupo*: las de las escenas de grupo (con
+// grupo-techo, las del iglú); nombre «amistad» o lista propia: las de dos personajes (`sinTerceros`: la cámara no se
+// queda con alguien más entre medio). Los mismos números que escena-amistad.js tenía en línea.
+export function opcionesCamara(camara) {
+    const planos = planosDe(camara);
+    if (!planos) return null;
+    const nombre = camara.planos;
+    if (nombre === 'grupo') return { planos, minDist: 1.6, evitarDist: 2.0, holgura: 0.5 };
+    if (nombre === 'grupo-techo') return { planos, minDist: 1, evitarDist: 1.2, holgura: 0 };
+    return { planos, minDist: 1.8, evitarDist: 2.4, holgura: 0.7, sinTerceros: true };
 }
 
 const r3 = v => Math.round(v * 1000) / 1000;
