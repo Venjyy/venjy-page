@@ -43,7 +43,7 @@ import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
-import { crearEditorSkin, cargarSkin, coloresMano, BASES, caraDeSkin } from './skin.js';
+import { crearEditorSkin, cargarSkin, BASES, caraDeSkin } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
@@ -648,16 +648,26 @@ async function arrancar(guardado, cx = null) {
     minado.alSoltarDerecho = () => combate.soltarDerecho();
     minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
     const mano = crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, inventario, minado, combate, tinteMundo: materiales.solido.color });
-    minado.alGesto = () => mano.golpear();
+    // Golpe (romper, atacar, usar): la mano, el cuerpo en F5 y los demás jugadores (bit 8 de `p`)
+    minado.alGesto = () => { mano.golpear(); camaras.golpear(); if (coop) coop.golpeo(); };
+    // Lo que hace el jugador, para la pose del cuerpo (pose-jugador.js, 7c-1): tercera persona y red
+    const entradaPose = () => {
+        const id = inventario.idEnMano();
+        return {
+            corre: jugador.corre, golpe: minado.izquierdo, comiendo: minado.comiendo > 0,
+            tensando: combate.tensando > 0, bloqueando: combate.bloqueando,
+            objeto: id, objeto2: inventario.mano2 ? inventario.mano2.id : 0, escudo: id === O.ESCUDO ? 1 : 0
+        };
+    };
     // Skin, tercera persona (F5) y cámara de cine con los amigos
     const skinInicial = cargarSkin();
-    const camaras = crearCamaras({ scene, camara, mundo, jugador, skin: skinInicial, tinteMundo: materiales.solido.color, dy: DY });
+    const camaras = crearCamaras({ scene, camara, mundo, jugador, skin: skinInicial, tinteMundo: materiales.solido.color, dy: DY, fabrica: mano.fabrica, entradaPose });
     // ponerSkin acepta la descripción o la clave de una base ('pony', 'venjy'…) para probar
     let skinActual = skinInicial;
     const ponerSkin = d => {
         if (typeof d === 'string') { const b = BASES.find(x => x.clave === d); if (!b) return null; d = { ...JSON.parse(JSON.stringify(b)), base: b.clave }; }
         skinActual = d;
-        camaras.ponerSkin(d); const c = coloresMano(d); mano.ponerColores(c.piel, c.manga);
+        camaras.ponerSkin(d); mano.ponerSkin(d);
         if (coop) coop.anunciarSkin(d);
         return d;
     };
@@ -717,6 +727,7 @@ async function arrancar(guardado, cx = null) {
         bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
+    camaras.cuerpoAjeno = () => ronda.activa; // sentado en el iglú: la ronda mueve el cuerpo
     // Minijuegos (duelo de hachas con Boris, pesca con Pony, asado en la fogata): botón en el panel del amigo
     const minijuegos = crearMinijuegos({
         grupo: vista.grupo, dy: DY, mundo, jugador, camara, camaras, misiones, amigos, npcs, terreno, inventario, entidades, hud, particulas, idioma,
@@ -870,7 +881,7 @@ async function arrancar(guardado, cx = null) {
     if (cx) {
         coop = crearCoop(cx, {
             scene, mundo, jugador, vida, dia, inventario, entidades, contenedores, agricultura, enemigos, jefes, proyectiles, misiones, hud, particulas, idioma,
-            ventanasBase, jugadoresGuardados: guardado.jugadores || {},
+            ventanasBase, jugadoresGuardados: guardado.jugadores || {}, fabrica: mano.fabrica, entradaPose,
             skin: () => skinActual,
             estadoActual: () => estadoActual(),
             amanecerLocal, iluminar: iluminarCaja,
@@ -1260,7 +1271,7 @@ async function arrancar(guardado, cx = null) {
     if (vida.muerto) { $('causa-muerte').textContent = ''; mostrar('muerte'); }
     entrar();
 
-    let anterior = performance.now(), cuadros = 0, acumulado = 0, relojAgua = 0, cuadroAgua = 0;
+    let anterior = performance.now(), cuadros = 0, acumulado = 0, relojAgua = 0, cuadroAgua = 0, fovCorrer = 0;
     const fpsEl = $('fps'), coordsEl = $('coords');
     function bucle(ahora) {
         requestAnimationFrame(bucle);
@@ -1301,6 +1312,13 @@ async function arrancar(guardado, cx = null) {
         minijuegos.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
+        // Correr (7c-1): en primera persona el campo de visión sube un 10 % suave, como en Minecraft
+        {
+            const k = camaras.vista === 0 && !camaras.enCine && corre ? mano.correr : 0;
+            fovCorrer += (k - fovCorrer) * Math.min(1, dt * 8);
+            const fov = ajustes.fov * (1 + 0.1 * fovCorrer);
+            if (Math.abs(camara.fov - fov) > 0.01) { camara.fov = fov; camara.updateProjectionMatrix(); }
+        }
         ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
