@@ -13,6 +13,7 @@ import {
     crearNombre, crearGlobo, COLOR_GLOBO, suelo, sonando
 } from './cuerpo.js';
 import { crearBajo } from './bajo.js';
+import { pasoLejano } from './lod.js';
 
 // ---------------------------------------------------------
 // Pintores de piel
@@ -824,9 +825,13 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
             tiempo += dt;
             dt = Math.min(dt, 0.05);
             tinte.aplicar(materiales.solido.color);
+            const dtBase = dt;
             for (const n of lista) {
+                dt = dtBase;
                 n.t += dt;
                 const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
+                dt = pasoLejano(n, dJ, dtBase); // 7b-2: lejos, 1 de cada N cuadros (LOD.salto)
+                if (dt === 0) continue;
                 n.p.g.visible = !oculto && dJ < RADIO_VISIBLE;
                 if (!n.p.g.visible) {
                     if (n === salonas) bajo.actualizar(999, 0); // lejos o en la arena: se apaga la música

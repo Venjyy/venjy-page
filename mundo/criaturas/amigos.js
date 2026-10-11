@@ -13,6 +13,7 @@ import {
 } from './cuerpo.js';
 import { pielDe, agregarExtras } from './pieles.js';
 import { crearCharla } from './charla.js';
+import { pasoLejano } from './lod.js';
 import { cargarDatos } from '../datos/cargador.js';
 import { resolverAncla, puntoAMundo, mundoAPunto } from '../datos/posiciones.js';
 
@@ -869,9 +870,13 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             if (fg && !oculto && Math.hypot(fg.x - jugador.pos.x, fg.z - jugador.pos.z) < 80 && Math.random() < dt * 4) {
                 emitir(fg.fuego.x, fg.fuego.y, fg.fuego.z, { s: 0.3, dur: 3, vy: 0.9, color: 0xb8b8b8 });
             }
+            const dtBase = dt;
             for (const n of lista) {
+                dt = dtBase;
                 n.t += dt;
                 const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
+                dt = pasoLejano(n, dJ, dtBase); // 7b-2: lejos, 1 de cada N cuadros (LOD.salto)
+                if (dt === 0) continue;
                 let visible = !oculto && dJ < RADIO_VISIBLE;
                 // n.escena (escenas de la supervivencia) reemplaza la animación; recibe la normal por si quiere usarla
                 if (visible) {
@@ -911,6 +916,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 n.globo.actualizar(dt, !!texto && dJ < 16 && seVe(mundo, jugador.camara, n.x, n.y + alto * 0.8, n.z), n.x, yGlobo, n.z);
                 n.nombre.actualizar(dt, jugador.camara, mundo, !texto && !n.escena && !calladas.has(n.charla), n.x, n.y + alto + 0.2, n.z, n.x, n.y + 1.2 * n.escala, n.z);
             }
+            dt = dtBase;
             // Astillas
             for (const a of astillas) {
                 if (!a.m.visible) continue;

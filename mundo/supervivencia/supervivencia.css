@@ -76,6 +76,13 @@
 .ajustes-pausa label.opcion { display: flex; color: var(--blanco); }
 .ajustes-pausa b { font-weight: normal; color: var(--amarillo); text-align: right; }
 .ajustes-pausa input[type="range"] { width: 100%; accent-color: #7d8cc4; }
+/* Menú «Rendimiento» (7b-2) */
+.rendimiento { margin: 8px 0; text-align: left; }
+.rendimiento summary { cursor: pointer; color: var(--amarillo); padding: 6px 0; }
+.rend-fila { display: grid; gap: 6px; }
+.rend-op { display: flex; flex-wrap: wrap; gap: 6px; }
+.rend-op button { flex: 1 1 0; width: auto; min-width: 3.2em; margin: 0; }
+.rend-op button.activo { background: #7d8cc4; color: #1a1a1a; }
 
 .panel.muerte { background: rgb(80 0 0 / 0.72); }
 .panel.muerte h1 { color: #ff5555; text-shadow: 3px 3px 0 #3f0000; }

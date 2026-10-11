@@ -8,6 +8,8 @@ import { BLOQUES, TAM, COLS } from '../texturas.js';
 import { marcar } from '../voxeles.js';
 
 const MAX = 600;
+// Menú «Rendimiento» (7b-2): fracción de partículas que se emiten (1 = todas, 0,4 = pocas, 0,12 = mínimas)
+let factor = 1;
 
 export function crearParticulas({ scene, atlasLienzo }) {
     const geo = new THREE.BoxGeometry(1, 1, 1);
@@ -39,12 +41,15 @@ export function crearParticulas({ scene, atlasLienzo }) {
     }
 
     function emitir(x, y, z, vx, vy, vz, color, tam, vida, grav = 16) {
+        if (factor < 1 && Math.random() > factor) return;
         if (p.length >= MAX) p.shift();
         p.push({ x, y, z, vx, vy, vz, c: color, tam, vida, max: vida, grav });
     }
     const az = (a) => (Math.random() - 0.5) * a;
 
     return {
+        set factor(v) { factor = Math.max(0, Math.min(1, v)); },
+        get factor() { return factor; },
         romper(id, x, y, z) {
             const t0 = performance.now();
             const c = colorBloque(id);

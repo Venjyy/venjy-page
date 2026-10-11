@@ -12,6 +12,7 @@ import { B } from '../texturas.js';
 import {
     ajustar, lerp, angulo, crearTinte, caja, textura, suelo, audioMundo, sonando, bufferRuido
 } from './cuerpo.js';
+import { LOD } from './lod.js';
 
 const RADIO_ANIMAL = 120;    // más lejos no se dibujan
 const RADIO_DETALLE = 60;    // más lejos se actualizan a menos cuadros por segundo
@@ -636,9 +637,9 @@ export function crearAnimales(scene, { terreno, mundo, jugador, materiales }) {
                 const dJ = Math.hypot(a.x - jugador.pos.x, a.z - jugador.pos.z);
                 const visible = !oculto && dJ < RADIO_ANIMAL;
                 if (!visible) { a.g.visible = false; continue; }
-                // Lejos: se actualiza uno de cada 4 cuadros con el tiempo acumulado
+                // Lejos: se actualiza uno de cada LOD.animales cuadros (4 por defecto) con el tiempo acumulado
                 a.acum += dt;
-                if (dJ > RADIO_DETALLE && (cuadro + a.cuadro) % 4 !== 0) continue;
+                if (dJ > RADIO_DETALLE && (cuadro + a.cuadro) % LOD.animales !== 0) continue;
                 actualizarAnimal(a, Math.min(a.acum, 0.2), tiempo, dJ);
                 a.acum = 0;
                 if (a.cargado) a.g.visible = true;
