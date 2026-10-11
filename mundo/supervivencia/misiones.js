@@ -43,8 +43,10 @@ export function crearMisiones(ctx) {
     // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
     // minijuegos: juegos jugados y marcas como 'mj-boris' (minijuego.js)
     // carta: el encargo diario del Venjy del correo ({ dia, para, entregada } o null; 7f-1)
-    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null, kits: new Set() };
+    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null, kits: new Set(),
+        fac: { deco: new Set(), pista: null, noche: null } }; // 7d-2: decorados puestos, pista de la misión activa, monstruo de la noche (facilidades.js)
     let ocultarMarcas = false;
+    let facilidades = null; // 7d-2: { textoSeguimiento() } (main.js lo conecta con facilidades.js)
     let botonMinijuego = null; // clave -> { texto, motivo } o null (lo pone minijuego.js con `misiones.minijuego`)
     let escenaAmistad = null; // { jugar(clave, tipo), momento(clave) } (bloque 6b: main.js carga escena-amistad.js con import() al usarla)
 
@@ -191,9 +193,17 @@ export function crearMisiones(ctx) {
             default: return false; // jefes: los marca jefes.js
         }
     }
+    // 7d-2: el rumbo de la pista (facilidades.js) se suma al objetivo mientras no se cumple
+    const conPista = (m, texto) => {
+        const pista = facilidades && !cumplida(m) ? facilidades.textoSeguimiento() : '';
+        return pista ? `${texto} · ${pista}` : texto;
+    };
     function textoObjetivo(m) {
         if (!m) return '';
         if (m.jefe) return tx().usarAltar;
+        return conPista(m, textoBase(m));
+    }
+    function textoBase(m) {
         switch (m.tipo) {
             case 'entregar': return m.pide.map(([p, n]) => `${nombreDe([].concat(p)[0], idioma)} ${Math.min(cuenta(p), n)}/${n}`).join(' · ');
             case 'matar': return tx().matar(m.mob === '*' ? tx().cualquiera : L(NOMBRES_MOB[m.mob]), m.n) + (m.noche ? tx().deNoche : '') + `  ${Math.min(estado.progreso, m.n)}/${m.n}`;
@@ -547,7 +557,7 @@ export function crearMisiones(ctx) {
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, kits: [...estado.kits], amistad: amistad.serializar() };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, kits: [...estado.kits], fac: { deco: [...estado.fac.deco], pista: estado.fac.pista, noche: estado.fac.noche }, amistad: amistad.serializar() };
     }
     function cargar(o) {
         if (!o) return;
@@ -561,6 +571,8 @@ export function crearMisiones(ctx) {
         estado.escenasSkin = new Set(o.escenasSkin || []);
         estado.minijuegos = new Set(o.minijuegos || []);
         estado.kits = new Set(o.kits || []);
+        const fc = o.fac || {};
+        estado.fac = { deco: new Set(fc.deco || []), pista: fc.pista || null, noche: fc.noche || null };
         estado.carta = o.carta && typeof o.carta.para === 'string' ? { dia: o.carta.dia | 0, para: o.carta.para, entregada: !!o.carta.entregada } : null;
         amistad.cargar(o.amistad); // guardado viejo (sin amistad): parte en blanco, con la amistad inicial de tu skin
         vida.vidaMax = 20 + estado.vidaExtra;
@@ -574,6 +586,7 @@ export function crearMisiones(ctx) {
         get hablarUI() { return hablarUI; },
         setIdioma(l) { idioma = l; firma = ''; tienda.setIdioma(l); if (hablarUI) hablarUI.setIdioma(l); },
         set ocultarMarcas(v) { ocultarMarcas = v; },
+        set facilidades(f) { facilidades = f; firma = ''; },
         // { texto(clave) -> { texto, motivo } | null, jugar(clave) } (main.js lo conecta con minijuego.js)
         set minijuego(o) { botonMinijuego = o; },
         // { jugar(clave, tipo), momento(clave), grupo(clave) } (main.js: animaciones de amistad, momentos especiales y saludo del grupo)

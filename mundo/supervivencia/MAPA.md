@@ -32,7 +32,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `entidades.js` (215) | Objetos tirados; se juntan los iguales a < 1 bloque también al soltar (7b-1). `crearEntidades:69` |
 | `particulas.js` (95) | Partículas con un InstancedMesh. `crearParticulas:11` |
 | `dia.js` (41) | Día de 10 min. `crearDia:15` |
-| `subsuelo.js` (188) | Roca madre, cuevas, lava, menas. `llenarSubsuelo:128` |
+| `subsuelo.js` (~230) | Roca madre, cuevas, lava, menas. `llenarSubsuelo:128` · `buscarSubsuelo` (pistas de 7d-2: mena o piedra luminosa más cercana con la misma generación) |
 | `desplazado.js` (41) | Vista con el mapa subido `dy` para las criaturas. `vistaDesplazada:20` |
 | `mano.js` (252) | Mano en primera persona: brazo con la skin siempre visible y el objeto en la mano (7c-1, `AGARRE_1P`). `crearFabrica` (mallas por id, las comparte con el cuerpo) `crearMano` |
 | `pose-jugador.js` (201) | 7c-1: pose del cuerpo propio (F5) y de los demás jugadores: caminar/correr, golpe, objeto en la mano, comer, arco, escudo, sentado. `F` `codificarF` `decodificarF` (bits de `f` en `p`) `POSES` `AGARRE` `avanzar` `angulos` (puras) `posar` `ponerObjeto` `limpiar`. Prueba `mundo/tests/pose-jugador.mjs` |
@@ -52,16 +52,17 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 |---|---|
 | `combate.js` (135) | Golpe con carga, crítico, arco. `crearCombate:16` |
 | `proyectiles.js` (128) | Flechas y bolas de fuego. `crearProyectiles:17` |
-| `enemigos.js` (637) | Zombi, esqueleto, araña, creeper, Trauco. `RETROCESO` `empujar` `suavizarVelocidad` (knockback, 7a) · `crearEnemigos:213` |
+| `enemigos.js` (~660) | Zombi, esqueleto, araña, creeper, Trauco. `RETROCESO` `empujar` `suavizarVelocidad` (knockback, 7a) · `crearEnemigos:213` · `garantizar` (monstruo de la noche, 7d-2) |
 | `jefes.js` (579) | Imbunche y demás jefes en altares. `crearJefes:34` |
 | `ganado.js` (231) | Caza y cría sobre `criaturas/animales.js`. `crearGanado:35` |
-| `pesca.js` (120) | Caña y boya. `crearPesca:22` |
+| `pesca.js` (~120) | Caña y boya; el botín sale de `botinPesca` con los multiplicadores de la misión. `crearPesca:22` |
 
 ## supervivencia/ · amigos, misiones y escenas
 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
 | `misiones-datos.js` (~300) | 3 misiones por amigo, kits y 3 jefes. `MISIONES:23` `KITS` `repartirKit` `JEFES:219` `TEXTOS_VENJY:240` |
+| `facilidades-datos.js` (~220) / `facilidades.js` (~130) | 7d-2: tabla `FACILIDADES` por misión, pesca, rumbo, `crearGarantia`, planos del huerto/grava/horno · cableado: decorados una vez por mundo, pista, marcas del minimapa y monstruo de la noche. `botinPesca` `elegirSitio` `planoHuerto` · `crearFacilidades` |
 | `misiones.js` (499) | Panel de cada amigo y misión activa. `crearMisiones:38` `cumplida:114` `aceptar:273` `completar:284` `hablar:321` `hablarVenjy:343` |
 | `tienda-datos.js` (215) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `crearTienda:21` `comprar:110` `vender:123` |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |

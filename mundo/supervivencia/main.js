@@ -41,6 +41,7 @@ import { crearEnemigos } from './enemigos.js';
 import { crearCombate } from './combate.js';
 import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
+import { crearFacilidades } from './facilidades.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
 import { crearEditorSkin, cargarSkin, BASES, caraDeSkin } from './skin.js';
@@ -603,7 +604,7 @@ async function arrancar(guardado, cx = null) {
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
-    let enemigos = null, misiones = null, jefes = null, escenas = null, escenaCuello = null;
+    let enemigos = null, misiones = null, facilidades = null, jefes = null, escenas = null, escenaCuello = null;
     let coop = null; // sala cooperativa (se crea más abajo, cuando ya existen todos los sistemas)
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
@@ -617,7 +618,7 @@ async function arrancar(guardado, cx = null) {
     });
     const minado = crearMinado({ scene, camara, mundo, jugador, inventario, entidades, contenedores, agricultura, vida, ventanas, hud, idioma });
     const combate = crearCombate({ camara, mundo, jugador, inventario, vida, proyectiles, particulas, hud, objetivos: objetivosTodos, idioma });
-    const pesca = crearPesca({ scene, camara, mundo, jugador, inventario, entidades, particulas });
+    const pesca = crearPesca({ scene, camara, mundo, jugador, inventario, entidades, particulas, multiplicadores: () => facilidades && facilidades.multiplicadores() });
     minado.alClicIzquierdo = () => combate.atacar();
     // Misiones y jefes
     misiones = crearMisiones({
@@ -628,6 +629,11 @@ async function arrancar(guardado, cx = null) {
         alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
     });
     misiones.cargar(guardado.misiones);
+    // Facilidades de misión (7d-2): huerto, horno y grava puestos, pistas, monstruo de la noche y pesca. El invitado no edita el mundo del anfitrión
+    facilidades = crearFacilidades({ mundo, terreno, dy: DY, jugador, dia, enemigos, agricultura, misiones, idioma, colocar: !invitado });
+    facilidades.cargar();
+    misiones.facilidades = facilidades;
+    minimapa.fijarMarcas(() => facilidades.marcas());
     jefes = crearJefes({ scene, mundo, jugador, camara, terreno, dy: DY, vida, inventario, entidades, enemigos, proyectiles, particulas, hud, misiones, idioma, tinteMundo: materiales.solido.color, alFinal: () => final() });
     function final() {
         guardado.completado = true;
@@ -1297,6 +1303,7 @@ async function arrancar(guardado, cx = null) {
             if (corre) { combate.actualizar(dt, minado.derecho); pesca.actualizar(dt); }
             ganado.actualizar(dt);
             enemigos.actualizar(dt);
+            if (facilidades) facilidades.actualizar(dt);
             jefes.actualizar(dt);
             proyectiles.actualizar(dt);
             particulas.actualizar(dt);

@@ -9,17 +9,17 @@ import * as THREE from '../../vendor/three.module.js';
 import { B, TIPO } from '../texturas.js';
 import { O } from './objetos.js';
 import { sonidos } from './sonidos.js';
+import { botinPesca } from './facilidades-datos.js';
 
-function botin() {
-    const r = Math.random();
-    if (r < 0.6) return [O.BACALAO, 1];
-    if (r < 0.85) return [O.SALMON, 1];
-    if (r < 0.98) return [O.PEZ_GLOBO, 1];
+// `mult`: multiplicadores de la misión activa (facilidades-datos.js; pony2 sube el pez globo y el salmón)
+function botin(mult) {
+    const id = botinPesca(Math.random(), mult);
+    if (id) return [id, 1];
     const tesoros = [[O.LINGOTE_ORO, 2], [O.ESMERALDA, 1], [O.ARCO, 1], [O.CANA, 1], [O.HUESO, 3], [O.CUERO, 2]];
     return tesoros[Math.floor(Math.random() * tesoros.length)];
 }
 
-export function crearPesca({ scene, camara, mundo, jugador, inventario, entidades, particulas, alPescar }) {
+export function crearPesca({ scene, camara, mundo, jugador, inventario, entidades, particulas, alPescar, multiplicadores }) {
     let boya = null;
     const malla = new THREE.Group();
     const roja = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.16), new THREE.MeshBasicMaterial({ color: 0xd02020 }));
@@ -50,7 +50,7 @@ export function crearPesca({ scene, camara, mundo, jugador, inventario, entidade
         if (!boya) return;
         let desgaste = 1;
         if (boya.estado === 'pica') {
-            const [id, n] = botin();
+            const [id, n] = botin(multiplicadores && multiplicadores());
             // La captura va directo al inventario (como si la tiraras hacia ti); si no cabe, cae a tus pies
             const resto = inventario.agregar(id, n);
             if (resto) entidades.soltar(id, resto, 0, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);

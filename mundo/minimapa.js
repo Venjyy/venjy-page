@@ -200,6 +200,43 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
         }
     }
 
+    // Marcas de misión (7d-2): pistas ('pista', rombo) y lugares sin visitar ('lugar', «?»). En el mapa
+    // chico, si quedan fuera, se pegan al borde como flecha hacia donde hay que ir.
+    let fuenteMarcas = () => [];
+    const GLIFOS = {
+        lugar: ['.###.', '#...#', '....#', '...#.', '..#..', '.....', '..#..'],
+        pista: ['..#..', '.###.', '#####', '.###.', '..#..']
+    };
+    const COLORES = { lugar: '#ffe060', pista: '#60e0ff' };
+    function glifo(ctx, tipo, x, y, px) {
+        const g = GLIFOS[tipo], w = g[0].length, h = g.length;
+        for (const [c, ox, oy] of [['#000', 1, 1], ['#000', -1, 0], ['#000', 1, 0], ['#000', 0, -1], ['#000', 0, 1], [COLORES[tipo], 0, 0]]) {
+            ctx.fillStyle = c;
+            for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+                if (g[j][i] === '#') ctx.fillRect(Math.round(x + (i - w / 2) * px + ox * px), Math.round(y + (j - h / 2) * px + oy * px), px, px);
+            }
+        }
+    }
+    function dibujarMarcas(ctx, k, ox, oz, borde) {
+        const tam = ctx.canvas.width, px = Math.max(2, Math.round(tam / (borde ? 80 : 280)));
+        for (const m of fuenteMarcas()) {
+            let x = (m.x / escala - ox) * k, y = (m.z / escala - oz) * k;
+            if (borde && (x < 0 || y < 0 || x > tam || y > tam)) {
+                // Flecha en el borde, hacia la marca
+                const c = tam / 2, a = Math.atan2(y - c, x - c), r = c - px * 3;
+                x = c + Math.cos(a) * r; y = c + Math.sin(a) * r;
+                ctx.fillStyle = '#000';
+                ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+                ctx.fillRect(-px * 2, -px * 2, px * 4, px * 4);
+                ctx.fillStyle = COLORES[m.tipo]; ctx.fillRect(-px * 2 + 1, -px * 2 + 1, px * 4 - 2, px * 4 - 2);
+                ctx.fillStyle = '#000'; ctx.fillRect(px * 2, -px / 2, px * 2, px);
+                ctx.restore();
+                continue;
+            }
+            glifo(ctx, m.tipo, x, y, px);
+        }
+    }
+
     function dibujarPequeno() {
         const cx = px / escala, cz = pz / escala;
         const tam = cp.width;
@@ -215,6 +252,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
             ctxP.drawImage(base, ax, az, bx - ax, bz - az, (ax - sx0) * k, (az - sz0) * k, (bx - ax) * k, (bz - az) * k);
         }
         dibujarPersonas(ctxP, k, sx0, sz0, k * 1.7);
+        dibujarMarcas(ctxP, k, sx0, sz0, true);
         ctxP.save();
         ctxP.translate(tam / 2, tam / 2);
         ctxP.rotate(-yaw);
@@ -250,6 +288,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
             ctxG.fillText(t, tx, ty);
         }
         dibujarPersonas(ctxG, k, 0, 0, Math.max(3, k * 2.4));
+        dibujarMarcas(ctxG, k, 0, 0, false);
         ctxG.save();
         ctxG.translate(px / escala * k, pz / escala * k);
         ctxG.rotate(-yaw);
@@ -287,5 +326,7 @@ export function crearMinimapa(datos, contenedor, escala = 4) {
     dibujarPequeno();
     // fn() → [{ x, z }] en bloques
     function fijarPersonas(fn) { fuentePersonas = fn; ultimoGrupo = 0; }
-    return { actualizar, alternarGrande, fijarPersonas };
+    // fn() → [{ x, z, tipo: 'pista' | 'lugar' }] en bloques (misiones de 7d-2; el creativo no lo usa)
+    function fijarMarcas(fn) { fuenteMarcas = fn; }
+    return { actualizar, alternarGrande, fijarPersonas, fijarMarcas };
 }
