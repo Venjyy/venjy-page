@@ -9,8 +9,8 @@ const filas = Object.entries(CARTELES_LUGARES).map(([k, c]) => `<tr><td>${k}</td
 export default {
     titulo: 'Lugares con motivo 7f-3',
     h1: 'Bloque 7f-3 · ajuste de mojones y lugares con motivo',
-    estado: 'Dos PR abiertos, sin mergear. Sin probar en navegador: texto de los mojones, carteles de lugar y la cama dentro del molino.',
-    pr: { n: 65, url: 'https://github.com/Venjyy/venjy-page/pull/65' },
+    estado: 'Dos PR abiertos (65 y 66), sin mergear. Sin probar en navegador: texto de los mojones, carteles de lugar y la cama dentro del molino.',
+    pr: { n: 66, url: 'https://github.com/Venjyy/venjy-page/pull/66' },
     meta: 'Ramas <code>caminos-7f3-ajuste-texto</code> y <code>lugares-7f3-a</code> · 2026-10-11 · Sonnet',
     hecho: [
         '<b>Mojones</b> (PR 65): el cuadro de texto sube y se corre hacia el camino; constante <code>TEXTO_MOJON</code> para afinar.',
