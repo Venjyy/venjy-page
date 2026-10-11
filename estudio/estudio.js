@@ -6,6 +6,7 @@ import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
 import { montarTextos } from './textos.js';
 import { montarPosiciones } from './posiciones.js';
+import { montarEscenas } from './escenas.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -63,6 +64,7 @@ await montarLayout(ctx);
 montarJuego(ctx);
 await montarTextos(ctx);
 await montarPosiciones(ctx);
+await montarEscenas(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
@@ -74,6 +76,9 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         for (const sec of document.querySelectorAll('main.seccion')) sec.hidden = sec.id !== 'seccion-' + seccion;
         ctx.pestana = b.dataset.pestana;
         document.getElementById('panel-posiciones').hidden = ctx.pestana !== 'posiciones';
+        document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';
+        document.getElementById('es-zona').hidden = ctx.pestana !== 'escenas';
+        document.getElementById('seccion-juego').classList.toggle('modo-escenas', ctx.pestana === 'escenas');
         if (seccion === 'juego') ctx.juego.activar();
         if (anterior !== ctx.pestana) for (const f of ctx.alPestana) f(ctx.pestana);
         window.dispatchEvent(new Event('resize')); // el editor de layout mide la vista al volver

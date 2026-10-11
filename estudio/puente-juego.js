@@ -90,6 +90,56 @@ async function teletransportar(d) {
     return { x: r(p.x), y: r(p.y), z: r(p.z) };
 }
 
+// Escenas de amistad (fase 5, pestaña Escenas): juega una de escenas.json (o de ANIMACIONES), la pausa, salta a un
+// instante o la detiene. El editor manda antes los datos vivos (`datos`), así la escena que se juega es la que se ve.
+let pausada = false, punteroEditor = false, escenaPropia = null; // escenaPropia: la clave de escenas.json que el editor lanzó
+async function escena(o) {
+    if (!juegoListo()) throw new Error('el juego todavía no está listo');
+    if (o.accion === 'puntero') {
+        // El juego captura el mouse al abrir el mundo y al empezar o terminar una escena: con la línea de tiempo abierta
+        // eso se comería los clics del editor. puntero-libre.js (con cuenta, lo comparte con el gizmo) lo evita.
+        const pl = await import('./puntero-libre.js');
+        if (o.v === false) { if (punteroEditor) { punteroEditor = false; pl.devolver(window.__venjy); } }
+        else if (!punteroEditor) { punteroEditor = true; pl.liberar(window.__venjy); }
+        return { puntero: punteroEditor ? 'libre' : 'juego' };
+    }
+    const ea = await window.__venjy.cargarAmistad();
+    if (!ea) throw new Error('no se pudo cargar el motor de escenas');
+    if (o.accion === 'jugar') {
+        if (ea.activa) ea.saltar();
+        pausada = false;
+        ea.pausar(false);
+        let ok;
+        if (ea.guiones().includes(o.clave)) ok = await ea.jugarGuion(o.clave, o.persona || null);
+        else {
+            if (!o.persona) throw new Error('esta escena necesita una persona');
+            ok = ea.jugar(o.persona, o.clave);
+        }
+        if (!ok) throw new Error('la escena no pudo empezar (¿la persona está a la vista? ¿hay otra escena en curso?)');
+        escenaPropia = o.clave;
+        return { clave: o.clave, activa: true };
+    }
+    if (o.accion === 'pausa') {
+        pausada = o.v !== false;
+        ea.pausar(pausada);
+        return { pausada };
+    }
+    if (!ea.activa) throw new Error('no hay una escena en curso');
+    if (o.accion === 'ir') { ea.irA(o.t); return { t: o.t }; }
+    ea.saltar(); // parar
+    return { activa: false };
+}
+
+// El cabezal del editor: 10 veces por segundo mientras corre una escena, y un último aviso al terminar
+let escenaViva = false;
+setInterval(() => {
+    const ea = window.__venjy && window.__venjy.amistadEscena;
+    const s = ea && ea.escena;
+    // clave = la escena (la que lanzó el editor, o el nombre de la animación); persona = con quién se juega
+    if (s) { escenaViva = true; decir({ tipo: 'escenaT', clave: escenaPropia || s.tipo || s.clave, persona: s.clave, t: Math.round(s.t * 100) / 100, T: s.T, pausada }); }
+    else if (escenaViva) { escenaViva = false; pausada = false; escenaPropia = null; decir({ tipo: 'escenaT', clave: null }); }
+}, 100);
+
 const juegoListo = () => !!(window.__venjy && window.__venjy.jugador && window.__venjy.consola);
 const responder = crearManejador({
     listo: juegoListo,
@@ -102,7 +152,8 @@ const responder = crearManejador({
         m.decir(persona, texto);
     },
     teletransportar,
-    elegir
+    elegir,
+    escena
 });
 
 canal.onmessage = async e => {

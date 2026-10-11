@@ -12,6 +12,8 @@ import { validar } from '../../estudio/validar.mjs';
 import { ANIMACIONES, GESTOS_AMISTAD } from '../supervivencia/escena-amistad-datos.js';
 import { fusionar } from '../datos/cargador.js';
 import { animacionDeDatos, guionDeDatos, reglasEscenas } from '../datos/escenas.js';
+import * as M from '../../estudio/escenas-modelo.mjs';
+import { crearManejador } from '../../estudio/puente-protocolo.js';
 // escenas-skin.js (GESTOS) trae cuerpo.js, que escucha eventos de `window`: basta un objeto mínimo (como amistad.mjs)
 globalThis.window ??= { addEventListener() {} };
 const { GESTOS } = await import('../supervivencia/escenas-skin.js');
@@ -208,6 +210,162 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     ok((await jugar(async () => motor.jugarGuion('noexiste'))).r === false, 'jugarGuion de una clave que no existe: false');
     ok((await jugar(async () => motor.jugarGuion('punos'))).r === false, 'jugarGuion no juega una escena de tipo amistad');
     aplicarDatosVivos(null);
+}
+
+// ---------- PR 5b: modelo de la línea de tiempo (estudio/escenas-modelo.mjs) ----------
+{
+    const base = structuredClone(datos.escenas.punos);   // n: puno 0.45-2.4, risa 2.5-3.6, habla 3.6-5.3; j: puno 0.45-2.4, asiente 2.6-4.4; T 5.6
+    const nombres = { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES)]), animaciones: Object.keys(ANIMACIONES), durLinea };
+    const sinErrores = (def, k = 'punos') => reglasEscenas({ escenas: { [k]: def } }, nombres).filter(a => a.tipo === 'error');
+    const copiaIntacta = JSON.stringify(base);
+
+    // mover: encaja a 0,05 y se detiene contra el vecino y contra T
+    let r = M.moverTramo(base, 'n', 1, 2.83);                      // risa (1.1 s) entre puno (hasta 2.4) y habla (desde 3.6): solo cabe 2.5
+    ok(r.cambio === true && r.def.pista.n[1][1] === 2.5 && r.def.pista.n[1][2] === 3.6 || r.cambio === false, 'moverTramo: la risa queda pegada a sus vecinos');
+    ok(r.def.pista.n[1][1] === 2.5 && r.def.pista.n[1][2] === 3.6, 'moverTramo: la risa no se sale del hueco: ' + JSON.stringify(r.def.pista.n[1]));
+    r = M.moverTramo(base, 'j', 1, 3.02);                          // asiente 2.6-4.4 (1.8 s)
+    ok(r.cambio && r.def.pista.j[1][1] === 3 && r.def.pista.j[1][2] === 4.8, 'moverTramo: encaja a 0,05 y conserva la duración: ' + JSON.stringify(r.def.pista.j[1]));
+    r = M.moverTramo(base, 'j', 1, 9);
+    ok(r.def.pista.j[1][2] === 5.6 && r.def.pista.j[1][1] === 3.8, 'moverTramo: se detiene en T: ' + JSON.stringify(r.def.pista.j[1]));
+    r = M.moverTramo(base, 'j', 1, 0);
+    ok(r.def.pista.j[1][1] === 2.4 && r.def.pista.j[1][2] === 4.2, 'moverTramo: se detiene contra el vecino de la izquierda: ' + JSON.stringify(r.def.pista.j[1]));
+    r = M.moverTramo(base, 'n', 0, 0);
+    ok(r.def.pista.n[0][1] === 0 && r.def.pista.n[0][2] === 1.95, 'moverTramo: el primero llega a 0, no a negativo');
+    ok(JSON.stringify(base) === copiaIntacta, 'el modelo no modifica la escena que recibe');
+
+    // estirar
+    r = M.estirarTramo(base, 'n', 0, 'hasta', 3);
+    ok(r.def.pista.n[0][2] === 2.5 && r.def.pista.n[0][1] === 0.45, 'estirarTramo: tope contra el vecino (2.5): ' + JSON.stringify(r.def.pista.n[0]));
+    r = M.estirarTramo(base, 'n', 0, 'hasta', 0.2);
+    ok(Math.abs(r.def.pista.n[0][2] - 0.55) < 1e-9, 'estirarTramo: mínimo 0,1 s: ' + r.def.pista.n[0][2]);
+    r = M.estirarTramo(base, 'n', 2, 'hasta', 9);
+    ok(r.def.pista.n[2][2] === 5.6, 'estirarTramo: tope en T');
+    r = M.estirarTramo(base, 'j', 1, 'desde', 1.0);
+    ok(r.def.pista.j[1][1] === 2.4 && r.def.pista.j[1][2] === 4.4, 'estirarTramo: el borde izquierdo se detiene contra el vecino');
+
+    // agregar y borrar
+    r = M.agregarTramo(base, 'j', 'risa', 5.0, 2);
+    ok(r && r.def.pista.j[2] && r.def.pista.j[2][0] === 'risa' && r.def.pista.j[2][1] === 5 && r.def.pista.j[2][2] === 5.6, 'agregarTramo: recortado al hueco hasta T: ' + JSON.stringify(r && r.def.pista.j));
+    r = M.agregarTramo(base, 'j', 'risa', 1.0, 0.2);
+    ok(r && r.def.pista.j[1][1] === 2.4, 'agregarTramo: sobre otro tramo se coloca justo detrás de él: ' + JSON.stringify(r && r.def.pista.j));
+    r = M.agregarTramo({ ...base, T: 5.3 }, 'n', 'risa', 5.2, 1);
+    ok(r === null, 'agregarTramo: sin hueco da null');
+    r = M.borrarTramo(base, 'j', 1);
+    ok(r.def.pista.j.length === 1, 'borrarTramo');
+    r = M.borrarTramo(M.borrarTramo(base, 'j', 1).def, 'j', 0);
+    ok(Array.isArray(r.def.pista.j) && r.def.pista.j.length === 0, 'una fila vacía queda como [] (no se borra la clave)');
+    ok(M.cambiarGesto(base, 'n', 0, 'abrazo').def.pista.n[0][0] === 'abrazo', 'cambiarGesto');
+
+    // marcas
+    r = M.agregarMarca(base, 'golpes', 3.337);
+    ok(r && r.def.golpes.join() === '1.45,3.35' && r.i === 1, 'agregarMarca: encaja y queda en orden: ' + JSON.stringify(r && r.def.golpes));
+    r = M.agregarMarca(r.def, 'golpes', 0.5);
+    ok(r.def.golpes.join() === '0.5,1.45,3.35' && r.i === 0, 'agregarMarca antes de las demás');
+    ok(M.agregarMarca(base, 'golpes', 1.45) === null, 'agregarMarca: no repite un instante');
+    r = M.moverMarca(M.agregarMarca(base, 'golpes', 2).def, 'golpes', 0, 9);
+    ok(r.def.golpes[0] === 1.95, 'moverMarca: no pasa a la siguiente (queda 0,05 antes): ' + JSON.stringify(r.def.golpes));
+    r = M.moverMarca(base, 'golpes', 0, 99);
+    ok(r.def.golpes[0] === 5.55, 'moverMarca: tope T - 0,05');
+    r = M.borrarMarca(base, 'golpes', 0);
+    ok(Array.isArray(r.def.golpes) && r.def.golpes.length === 0, 'borrarMarca en una escena amistad deja [] (reemplaza la lista del código)');
+
+    // frases
+    r = M.moverFrase(base, 0, 4.9);
+    ok(r.def.linea[0] === 2.6 && r.def.linea[1] === 3, 'moverFrase: la frase no pasa de T: ' + JSON.stringify(r.def.linea));
+    r = M.estirarFrase(base, 0, 'hasta', 99);
+    ok(r.def.linea[1] === 3.3, 'estirarFrase: tope en T');
+    r = M.estirarFrase(base, 0, 'desde', 0);
+    ok(r.def.linea[0] === 0 && r.def.linea[1] === 5.3, 'estirarFrase desde el borde izquierdo: el final no se mueve');
+    r = M.cambiarT(base, 1.5, durLinea);
+    ok(r.def.T === 5.3 && r.cambio, 'cambiarT: no baja de donde llega lo que hay (5.3): ' + r.def.T);
+    ok(M.cambiarT(base, 7, durLinea).def.T === 7, 'cambiarT sube');
+    ok(M.finMinimo(base, durLinea) === 5.3, 'finMinimo: ' + M.finMinimo(base, durLinea));
+
+    // todo lo que sale del modelo cumple el esquema y las reglas (400 operaciones al azar con semilla fija)
+    {
+        let sem = 12345;
+        const rnd = () => (sem = (sem * 1664525 + 1013904223) % 4294967296) / 4294967296;
+        let d = structuredClone(datos.escenas.pareja);
+        let malas = 0, cambios = 0;
+        const filas = ['n', 'j'];
+        for (let n = 0; n < 400; n++) {
+            const q = filas[Math.floor(rnd() * 2)], f = d.pista[q], i = Math.floor(rnd() * Math.max(1, f.length)), v = rnd() * 10 - 0.5;
+            const op = Math.floor(rnd() * 7);
+            let res = null;
+            if (op === 0) res = M.moverTramo(d, q, i, v);
+            else if (op === 1) res = M.estirarTramo(d, q, i, rnd() < 0.5 ? 'desde' : 'hasta', v);
+            else if (op === 2) res = M.agregarTramo(d, q, 'saluda', v, 0.3 + rnd() * 2);
+            else if (op === 3 && f.length > 1) res = M.borrarTramo(d, q, i);
+            else if (op === 4) res = M.moverMarca(d, 'corazones', Math.floor(rnd() * 3), v);
+            else if (op === 5) res = M.moverFrase(d, 0, v);
+            else res = M.estirarFrase(d, 0, rnd() < 0.5 ? 'desde' : 'hasta', v);
+            if (!res || !res.cambio) continue;
+            cambios++;
+            d = res.def;
+            if (validar({ version: 1, escenas: { pareja: d } }, 'escenas').length || sinErrores(d, 'pareja').length) malas++;
+        }
+        ok(cambios > 100 && malas === 0, `400 operaciones al azar (${cambios} con cambio): todas cumplen esquema y reglas (${malas} malas)`);
+    }
+
+    // copia del código: editar abrazo/secreto lo lleva al JSON con la forma del piloto
+    const copia = M.desdeCodigo(ANIMACIONES.secreto);
+    ok(validar({ version: 1, escenas: { secreto: copia } }, 'escenas').length === 0, 'desdeCodigo: la copia de secreto cumple el esquema');
+    ok(JSON.stringify(Object.keys(copia)) === JSON.stringify(['tipo', 'nivel', 'T', 'r', 'linea', 'golpes', 'pista']), 'desdeCodigo: orden de claves como el piloto');
+    ok(JSON.stringify(fusionar(ANIMACIONES.secreto, animacionDeDatos(copia))) === JSON.stringify(ANIMACIONES.secreto), 'desdeCodigo: fusionada da lo mismo que el código');
+    ok(copia.pista !== ANIMACIONES.secreto.pista, 'desdeCodigo: copia profunda (no comparte la pista con el código)');
+
+    // escena de guion nueva: válida, y sus frases se editan con tope
+    {
+        const g = M.escenaNueva();
+        ok(validar({ version: 1, escenas: { nueva: g } }, 'escenas').length === 0, 'escenaNueva cumple el esquema');
+        let r2 = M.agregarFrase(g, 'j', 3);
+        ok(r2 && r2.def.lineas.length === 2 && r2.def.lineas[1].q === 'j', 'agregarFrase');
+        r2 = M.estirarFrase(r2.def, 1, 'hasta', 5.5, durLinea);
+        ok(r2.def.lineas[1].d === 2.5 && r2.i === 1, 'estirarFrase fija d cuando no estaba');
+        r2 = M.cambiarFrase(r2.def, 1, { es: 'Chao', en: 'Bye' });
+        ok(r2.def.lineas[1].texto.es === 'Chao' && r2.def.lineas[1].texto.en === 'Bye', 'cambiarFrase');
+        ok(M.borrarFrase(g, 0).cambio === false, 'no se borra la única frase');
+        ok(M.quitarActor(M.ponerActor(r2.def, 'b', 'andy').def, 'b').def.actores === undefined, 'ponerActor y quitarActor');
+        const usada = M.cambiarFrase(M.ponerActor(r2.def, 'b', 'andy').def, 1, { q: 'b' }).def;
+        ok(M.quitarActor(usada, 'b') === null, 'no se quita un actor que una frase usa');
+        ok(M.claveLibre(['escena', 'escena-2'], 'escena') === 'escena-3', 'claveLibre');
+    }
+
+    // historial
+    const h = M.crearHistorial(3);
+    for (const v of [1, 2, 3, 4]) h.meter({ v });
+    ok(h.largo === 3 && h.deshacer().v === 4 && h.deshacer().v === 3 && h.deshacer().v === 2 && h.deshacer() === null, 'historial: tope y orden');
+
+    // «una línea»: mover un tramo cambia una sola línea de escenas.json
+    {
+        const nuevoDatos = structuredClone(datos);
+        nuevoDatos.escenas.punos = M.moverTramo(datos.escenas.punos, 'j', 1, 3.0).def;
+        const a = formatear(datos).split('\n'), b = formatear(nuevoDatos).split('\n');
+        const dif = a.filter((l, i) => l !== b[i]).length;
+        ok(a.length === b.length && dif === 1, 'mover un tramo cambia una sola línea del archivo (' + dif + ')');
+    }
+}
+
+// ---------- PR 5b: mensaje `escena` del puente ----------
+{
+    const llamadas = [];
+    const responder = crearManejador({
+        idioma: () => 'es', aplicarDatos() {},
+        escena: async o => { llamadas.push(o); return { activa: true }; }
+    });
+    const m = x => responder({ de: 'estudio', id: 1, tipo: 'escena', ...x });
+    const r = await m({ accion: 'jugar', clave: 'punos', persona: 'andy' });
+    ok(r.tipo === 'ok' && r.escena.activa && llamadas[0].clave === 'punos' && llamadas[0].persona === 'andy', 'puente: escena jugar');
+    ok((await m({ accion: 'pausa', v: true })).tipo === 'ok' && llamadas[1].accion === 'pausa' && llamadas[1].v === true, 'puente: escena pausa');
+    ok((await m({ accion: 'ir', t: 1.45 })).tipo === 'ok' && llamadas[2].t === 1.45, 'puente: escena ir');
+    ok((await m({ accion: 'parar' })).tipo === 'ok', 'puente: escena parar');
+    for (const [x, que] of [[{ accion: 'bailar' }, 'acción desconocida'], [{ accion: 'jugar' }, 'jugar sin clave'], [{ accion: 'jugar', clave: 'a b' }, 'clave con espacio'],
+        [{ accion: 'ir' }, 'ir sin t'], [{ accion: 'ir', t: -1 }, 'ir con t negativo'], [{ accion: 'pausa', v: 'si' }, 'pausa con v no booleano'],
+        [{ accion: 'jugar', clave: 'punos', persona: '../x' }, 'persona no válida']]) {
+        ok((await m(x)).tipo === 'error', 'puente: rechaza ' + que);
+    }
+    const sin = await crearManejador({ idioma: () => 'es', aplicarDatos() {} })({ de: 'estudio', id: 2, tipo: 'escena', accion: 'parar' });
+    ok(sin.tipo === 'error', 'puente: un juego sin escena() contesta error');
 }
 
 console.log(`escenas: ${pilotos.length} pilotos, ${comparaciones} comparaciones, diferencia máxima ${difMax}`);
