@@ -15,7 +15,7 @@ import { NOMBRES_MOB } from './enemigos.js';
 import { sonidos } from './sonidos.js';
 import { crearTienda } from './tienda.js';
 import { REQ_MINIJUEGOS } from './minijuegos-datos.js';
-import { crearAmistad, precioAmigo, NIVELES, RADIO_PELEA } from './amistad.js';
+import { crearAmistad, precioAmigo, NIVELES, RADIO_PELEA, PERSONAJES } from './amistad.js';
 import { tipoSkin } from './escenas-skin.js';
 
 // Quiénes ganan amistad con cada minijuego y qué finales cuentan como ganar
@@ -42,7 +42,8 @@ export function crearMisiones(ctx) {
     const L = o => (o ? o[idioma] || o.es : '');
     // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
     // minijuegos: juegos jugados y marcas como 'mj-boris' (minijuego.js)
-    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set() };
+    // carta: el encargo diario del Venjy del correo ({ dia, para, entregada } o null; 7f-1)
+    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null };
     let ocultarMarcas = false;
     let botonMinijuego = null; // clave -> { texto, motivo } o null (lo pone minijuego.js con `misiones.minijuego`)
     let escenaAmistad = null; // { jugar(clave, tipo), momento(clave) } (bloque 6b: main.js carga escena-amistad.js con import() al usarla)
@@ -85,11 +86,79 @@ export function crearMisiones(ctx) {
                 saludar: (c, tipo) => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.jugar(c, tipo); },
                 momento: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.momento(c); },
                 grupo: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.grupo(c); },
+                carta: { para: cartaPara, entregar: entregarCarta },
                 tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
             });
             return hablarUI;
         }).catch(e => { cargandoHablar = null; console.error('No se pudo cargar «Hablar»', e); });
         return cargandoHablar;
+    }
+
+    // ---- Lo que dicen los Venjy y el encargo de la carta (7f-1): venjys-datos.js se carga con import() al primer globo ----
+    let venjysDatos = null, cargandoVenjys = null, selector = null;
+    function cargarVenjysDatos() {
+        if (!cargandoVenjys) cargandoVenjys = import('./venjys-datos.js').then(m => (venjysDatos = m)).catch(e => { cargandoVenjys = null; console.error('No se pudo cargar los dichos de Venjy', e); return null; });
+        return cargandoVenjys;
+    }
+    // Destinos para la brújula viva: los lugares para explorar y, de las zonas del portafolio, donde está su Venjy
+    const sitiosVenjys = () => [
+        ...(terreno.lugares || []).map(l => ({ clave: l.clave, x: l.x, z: l.z })),
+        ...venjys.lista.filter(n => n.cargado && n.lugar !== 'inicio').map(n => ({ clave: n.lugar, x: n.x, z: n.z }))
+    ];
+    const cartaPara = () => (estado.carta && !estado.carta.entregada && inventario.contar(O.CARTA) > 0 ? estado.carta.para : null);
+    function elegirDicho(n) {
+        if (!venjysDatos) { cargarVenjysDatos(); return null; } // mientras carga, los dichos de siempre
+        if (!selector) {
+            selector = venjysDatos.crearSelector({
+                pos: () => jugador.pos, sitios: sitiosVenjys, hechas: amigasHechas, jefes: () => estado.jefes,
+                personajes: () => PERSONAJES.filter(c => c !== 'venjy').map(c => ({ clave: c, puntos: amistad.puntos(c), nivel: amistad.nivel(c), ganados: amistad.ganados(c) })),
+                skin: () => { const s = ctx.skin && ctx.skin(); return s ? tipoSkin(s).base || 'propia' : null; },
+                dia: () => ({ dias: dia.dias || 0, esNoche: dia.esNoche, t: dia.t }),
+                carta: () => {
+                    const c = estado.carta, d = dia.dias || 0;
+                    return { tiene: inventario.contar(O.CARTA) > 0, para: c ? c.para : venjysDatos.paraDe(d), hoy: !!(c && c.dia === d) };
+                }
+            });
+        }
+        return selector.elegir(n);
+    }
+    for (const n of venjys.lista) n.frases = elegirDicho; // los dichos de siempre quedan en n.dichos
+
+    // Clic derecho al Venjy del correo: te pasa la carta del día (una por día de juego), o te recuerda a quién llevarla
+    function encargoCorreo() {
+        const v = venjys.lista.find(n => n.lugar === 'correo');
+        if (!v) return;
+        cargarVenjysDatos().then(m => {
+            if (!m) return;
+            const d = dia.dias || 0, c = estado.carta;
+            let f;
+            if (inventario.contar(O.CARTA) > 0) f = m.cartaTiene(c ? c.para : m.paraDe(d));
+            else if (!c || c.dia !== d) {
+                const para = m.paraDe(d);
+                estado.carta = { dia: d, para, entregada: false };
+                dar([[O.CARTA, 1]]);
+                f = m.CARTA_DA[para];
+                hud.mensaje(`${tx().recibes} ${nombreDe(O.CARTA, idioma)}`, 5);
+            } else f = m.CARTA_HOY;
+            sonidos.clic();
+            v.frase = f; v.cambioFrase = 9; v.fraseId = null;
+        });
+    }
+    // Entrega la carta a su destinatario (botón de «Hablar»): +2 de amistad (tope del día) y 1 esmeralda. Devuelve la respuesta (o null)
+    function entregarCarta(clave) {
+        if (cartaPara() !== clave) return Promise.resolve(null);
+        return cargarVenjysDatos().then(m => {
+            if (!m || cartaPara() !== clave) return null;
+            inventario.quitar(O.CARTA, 1);
+            estado.carta.entregada = true;
+            amistad.sumar(clave, 'carta');
+            dar([[O.ESMERALDA, m.CARTA_ESMERALDAS]]);
+            sonidos.nivel();
+            hud.mensaje(`${L(m.CARTA_ENTREGADA)} · ${tx().recibes} ${nombrePremio([[O.ESMERALDA, m.CARTA_ESMERALDAS]])}`, 5);
+            const frase = L(m.CARTA_RESPUESTA[clave]);
+            decirEspecial(clave, frase);
+            return frase;
+        });
     }
 
     // ---- Personas ----
@@ -365,7 +434,9 @@ export function crearMisiones(ctx) {
         camara.getWorldDirection(dir);
         const o = camara.position;
         let mejor = null, mejorT = limite;
-        for (const p of personas()) {
+        const blancos = personas(), correo = venjys.lista.find(n => n.lugar === 'correo');
+        if (correo) blancos.push({ clave: 'venjy@correo', n: correo });
+        for (const p of blancos) {
             if (!p.n.p.g.visible) continue;
             const c = cajaDe(p.n);
             if (Math.abs(c.x - o.x) > 6 || Math.abs(c.z - o.z) > 6) continue;
@@ -383,6 +454,7 @@ export function crearMisiones(ctx) {
         return !!((m && m.amigo === clave) || (libre && siguienteDe(clave)));
     }
     function abrirCon(clave) {
+        if (clave === 'venjy@correo') { encargoCorreo(); return; }
         if (ctx.antesDeHablar && ctx.antesDeHablar(clave)) return;
         if (tieneAviso(clave)) hablar(clave); else conversar(clave);
     }
@@ -467,7 +539,7 @@ export function crearMisiones(ctx) {
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], amistad: amistad.serializar() };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, amistad: amistad.serializar() };
     }
     function cargar(o) {
         if (!o) return;
@@ -480,6 +552,7 @@ export function crearMisiones(ctx) {
         estado.vidaExtra = o.vidaExtra || 0;
         estado.escenasSkin = new Set(o.escenasSkin || []);
         estado.minijuegos = new Set(o.minijuegos || []);
+        estado.carta = o.carta && typeof o.carta.para === 'string' ? { dia: o.carta.dia | 0, para: o.carta.para, entregada: !!o.carta.entregada } : null;
         amistad.cargar(o.amistad); // guardado viejo (sin amistad): parte en blanco, con la amistad inicial de tu skin
         vida.vidaMax = 20 + estado.vidaExtra;
     }

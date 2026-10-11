@@ -7,13 +7,13 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 `mundo/` es el portafolio 3D ya terminado (no se le harán más cambios); el desarrollo activo es
 `mundo/supervivencia/`. Base compartida del creativo en `mundo/*.js` (`voxeles`, `luz-incremental`, `texturas`, `jugador`, `cielo`, `gatas`,
 `construcciones`, `minimapa`, `ajustes`, …); red en `mundo/online/` (`red.js`, `sala-local.js`,
-`qr.js`, `config.js`). Aquí solo `mundo/supervivencia/` y `mundo/criaturas/`.
+`ping.js`, `qr.js`, `config.js`). Aquí solo `mundo/supervivencia/` y `mundo/criaturas/`.
 
 ## supervivencia/ · núcleo y sistemas
 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
-| `main.js` (1160) | Arranque, menús, cableado de todos los sistemas y bucle. `aplicarIdioma:82` `pintarMenu:199` `hospedarMundo:271` `jugar:387` `iniciarJuego:397` `arrancar:408` `estadoActual:926` `guardarYa:944` `bucle:1087` |
+| `main.js` (1344) | Arranque, menús, cableado de todos los sistemas y bucle. `aplicarIdioma:84` `hospedarMundo:287` `jugar:403` `iniciarJuego:413` `arrancar:424` `pintarCoop:887` `pintarPing:942` (barras de ms, lista de Tab, 7e) `estadoActual:1098` `guardarYa:1116` `bucle:1265` |
 | `guardado.js` (150) | Hasta 5 mundos en IndexedDB `venjy-supervivencia`. `listarMundos:42` `cargarMundo:49` `guardarMundo:50` `borrarMundo:51` `serializarEdiciones:60` `cargarEdiciones:72` `descargarMundo:98` `guardarCopiaConTope:121` (copia del coop con tope, almacén inyectado) |
 | `vida.js` (218) | Vida, hambre, aire, daño y armadura. `crearVida:23` |
 | `inventario.js` (173) | Datos puros: 36 casillas, armadura, mano. `Inventario:12` `clicCasilla:149` |
@@ -63,6 +63,8 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
 | `hablar.js` (332) | Pestaña «Hablar»; carga por `import()`. `crearHablar:38` `abrir:184` `regalar:282` `actualizar:316` |
 | `dialogos-datos.js` (50) | Fachada de `mundo/datos/dialogos.json` (Estudio, fase 3): `TEMAS` `OPINIONES` `SALUDOS` `REGALOS` `GESTO_REGALO` y `aplicarDatosVivos:40`; fetch en el navegador, `fs` en Node |
+| `dialogos-datos.js` (365) | `TEMAS:22` `OPINIONES:227` `SALUDOS:330` `REGALOS:349` |
+| `venjys-datos.js` (338) | 7f-1: lo que dicen los Venjy en la supervivencia: pistas, brújula, progreso, skin, amistad, carta, hora, chistes; `crearSelector` (`import()` al primer globo). `brujula` `progreso` `amistadFrase` `paraDe` `crearSelector` |
 | `escenas-datos.js` (174) | Diálogos de las escenas de skin. `CORTAS:12` `VENJY:68` `IGLU:162` |
 | `escenas-skin.js` (626) | Escena al acercarte con skin de un amigo. `crearEscenasSkin:90` `iniciar:187` `terminar:254` |
 | `escena-amistad-datos.js` (183) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105` |
@@ -85,7 +87,8 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
-| `coop.js` (763) | Hasta 8 jugadores por WebRTC en estrella. `hospedar:118` `unirse:133` `hospedarLocal:169` `unirseLocal:180` `guardadoDeInvitado:198` `crearCoop:211` `actualizar:706` `salir:733` |
+| `coop.js` (829) | Hasta 8 jugadores por WebRTC en estrella. Ping (7e): `rttDe:310` `medirEco:332`, API `pingDe` `pingPropio` `relojAnfitrion` `desfaseAnfitrion`. `hospedar:123` `unirse:138` `hospedarLocal:174` `unirseLocal:185` `guardadoDeInvitado:203` `crearCoop:216` `actualizar:765` `salir:794` |
+| `../online/ping.js` (118) | 7e, lógica pura del ping (sin DOM ni red): `nivelDeMs` `barrasDeMs` `rttDeEco` `rttDeStats` `Suave` `RelojAnfitrion` `Eco` `ecoDeLista` `ecoPropio`. Prueba `mundo/tests/ping.mjs` |
 | `ui-qr.js` (86) | Panel QR para jugar sin internet. `crearPanelQR:15` |
 
 ## Estudio · editor y datos (fases 1 y 2)
@@ -163,8 +166,8 @@ dinámico de `hablar.js` y `dialogos-datos.js`) y «Tienda» (`tienda.js`). Los 
 suma `amistad.js`; los datos viven en `misiones-datos.js` y `tienda-datos.js`.
 
 **Cooperativo**: `main.js` llama `hospedar`/`unirse` (o las `*Local` con QR, sin Supabase) y recibe
-`cx`; `iniciarJuego(guardado, cx):397` → `arrancar` crea `crearCoop(cx, ctx)` (`coop.js:211`).
-`coop.actualizar:706` envía posición a `HZ_POS`, aplica bloques y mobs del anfitrión e interpola con
+`cx`; `iniciarJuego(guardado, cx):413` → `arrancar` crea `crearCoop(cx, ctx)` (`coop.js:216`).
+`coop.actualizar:765` envía posición a `HZ_POS`, aplica bloques y mobs del anfitrión e interpola con
 `interpolacion.js`. El anfitrión simula hornos y cultivos; el invitado recibe.
 
 **Guardado**: `estadoActual:926` arma el objeto del mundo (jugador, vida, inventario, `ediciones` con
