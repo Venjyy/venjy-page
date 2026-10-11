@@ -22,6 +22,7 @@ const BOTONES = [
     ['sv-camara', 'Cámara', 'Camera'],
     ['sv-comando', 'Comando /', 'Command /'],
     ['sv-acariciar', 'Acariciar', 'Pet'],
+    ['sv-gestos', 'Gestos (ruleta)', 'Emotes (wheel)'],
     ['mision', 'Misión', 'Quest'],
     ['minimapa', 'Minimapa', 'Minimap']
 ];
@@ -37,6 +38,7 @@ const DEF = {
     'sv-romper': { ancla: 'id', desde: 'pie' },
     'sv-usar': { ancla: 'id', desde: 'pie' },
     'sv-acariciar': { ancla: 'id', desde: 'pie' },
+    'sv-gestos': { ancla: 'id', desde: 'pie' },
     'sv-inventario': { ancla: 'si' },
     'sv-soltar': { ancla: 'si' },
     'sv-camara': { ancla: 'si' },

@@ -18,7 +18,8 @@
 // soltado · ot pedir objeto · ok objeto concedido · m monstruos y jefe sueltos (sin uso: van dentro de p) · mf monstruo fuera ·
 // g golpe a monstruo · gj golpe a jefe · d daño a jugador · x explosión · pr proyectil · mk muerte
 // para misiones · jv jefe vencido · ry rayo · h hora · z en cama · am amanecer · pf perfil ·
-// pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado.
+// pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado ·
+// em gesto de la ruleta { k } (7c-2; k vacío = terminó antes; máx. 1/s, gestos-jugador.js).
 // Ping (7e, ver online/ping.js): sin mensajes nuevos. Directo: getStats() en SalaDirecta. Respaldo: `p` lleva `ec`
 // (invitado: [t del último p del anfitrión, ms retenido]; anfitrión: [[id corto, t, retenido], …] solo para los
 // invitados de respaldo) y `h` lleva `pg` (ms de cada invitado, para que todos vean la lista).
@@ -43,6 +44,7 @@ import { marcar } from '../voxeles.js';
 import { crearModelo } from './skin.js';
 import { infoBloque, O } from './objetos.js';
 import { crearEstado, posar, codificarF, iluminarObjetos } from './pose-jugador.js';
+import { recibirEm, pasoRemoto, entradaGesto } from './gestos-jugador.js';
 import { etapasDe } from './agricultura.js';
 import { Bufer, RETRASO, mezclar, mezclarAngulo } from './interpolacion.js';
 import { sonidos } from './sonidos.js';
@@ -356,7 +358,8 @@ export function crearCoop(cx, ctx) {
         const r = n => Math.round(n * 100) / 100;
         const ent = entradaPose ? entradaPose() : {};
         const f = codificarF({ ...ent, agachado: jugador.agachado, muerto: vida.muerto, golpe: golpePend || ent.golpe });
-        const m = { t: Math.round(t), x: r(jugador.pos.x), y: r(jugador.pos.y), z: r(jugador.pos.z), a: r(jugador.yaw), b: r(jugador.pitch), f };
+        // Con un gesto de la ruleta el cuerpo va congelado (la cámara orbita): se manda hacia dónde mira el cuerpo
+        const m = { t: Math.round(t), x: r(jugador.pos.x), y: r(jugador.pos.y), z: r(jugador.pos.z), a: r(ent.yawFijo ?? jugador.yaw), b: r(ent.pitchFijo ?? jugador.pitch), f };
         const i = ent.objeto || 0, i2 = ent.objeto2 || 0;
         if (!manos || manos[0] !== i || manos[1] !== i2) { manos = [i, i2]; repetirManos = 3; }
         const u = ultimaPos;
@@ -713,6 +716,7 @@ export function crearCoop(cx, ctx) {
         'pf?'(m) { if (esAnfitrion) mandarFoto(m.de); },
         fl() { /* lo usa unirse() */ },
         fin() { if (!esAnfitrion) ctx.alCerrar && ctx.alCerrar('anfitrion'); },
+        em(m) { const r = remotoPorId(m.de); if (r) r.gesto = recibirEm(r.gesto, m.k); },
         pc(m) {
             const p = perfiles.get(m.disp);
             if (p && m.inv) { p.inv = m.inv; ctx.alPerfil && ctx.alPerfil(m.disp, p); }
@@ -749,9 +753,11 @@ export function crearCoop(cx, ctx) {
             const c = r.modelo;
             c.g.position.set(x, y - (agachado ? 0.2 : 0), z);
             c.g.rotation.y = yaw + Math.PI;
+            r.gesto = pasoRemoto(r.gesto, dt, mov); // ruleta (7c-2)
+            const eg = entradaGesto(r.gesto);
             posar(c, r.pose, {
                 mov, pitch: pit, agachado, golpe, corre: !!(b.f & 4), comiendo: !!(b.f & 16), tensando: !!(b.f & 32), bloqueando: !!(b.f & 64),
-                objeto: r.objeto, objeto2: r.objeto2
+                objeto: eg ? 0 : r.objeto, objeto2: eg ? 0 : r.objeto2, ...eg
             }, dt, fabrica, r.objeto === O.ESCUDO ? 1 : 0);
             ctx.iluminar(r.luz, x, y, z);
             r.nombreSp.position.set(x, y + 2.2, z);
@@ -828,6 +834,8 @@ export function crearCoop(cx, ctx) {
         esAnfitrion, codigo: cx.codigo, local: !!cx.local, perfiles, actualizar, salir, acostarse, jugadoresParaGuardar, conectados, enviarPerfil,
         // 7c-1: golpeaste (romper, atacar, usar): sale como bit 8 en el próximo `p`
         golpeo() { golpePend = true; },
+        // 7c-2: gesto de la ruleta (gestos-jugador.js ya respeta 1 por segundo)
+        gesto(k) { sala.enviar('em', { k }); },
         get total() { return 1 + remotos.size; },
         get remotos() { return remotos; },
         get compartido() { return compartido; },

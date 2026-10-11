@@ -11,6 +11,8 @@
 //    lugar libre para el globo de la línea actual/siguiente (con el foco que tendrá la cámara en cada una); si ninguno sirve, queda el de menor solape.
 //  · Escenas de skin (escenas-skin.js): la misma cámara sin panel; encuadra a los dos al centro,
 //    se inclina hacia quien habla (`enfocar`) y deja que la escena mueva el cuerpo (`pose`).
+//  · Gesto de la ruleta (7c-2, `congelado`): el cuerpo queda quieto mirando a donde miraba y la cámara
+//    orbita libre a su alrededor con el mouse o el dedo (en cualquier vista; al terminar vuelve la de antes).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { TIPO } from '../texturas.js';
@@ -38,6 +40,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     // Pose (7c-1, pose-jugador.js): golpe, correr, objeto en la mano, comer, arco y escudo.
     // Si una escena mueve el cuerpo (cine.pose, la ronda del iglú: `cuerpoAjeno`), solo camina, como antes.
     let estadoPose = crearEstado(), golpePend = false, ajenoAntes = false, cuerpoAjeno = null, poseForzada = null;
+    // Ruleta (7c-2): () => { yaw, pitch } del cuerpo congelado, o null
+    let congelado = null;
     function ponerSkin(d) {
         scene.remove(cuerpo.g);
         cuerpo = crearModelo(d);
@@ -45,12 +49,12 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         scene.add(cuerpo.g);
         estadoPose = crearEstado();
     }
-    function actualizarCuerpo(dt, visible) {
+    function actualizarCuerpo(dt, visible, fijo = null) {
         cuerpo.g.visible = visible;
         if (!visible) { golpePend = false; return; }
         const p = jugador.pos;
         cuerpo.g.position.set(p.x, p.y - (jugador.agachado ? 0.2 : 0), p.z);
-        cuerpo.g.rotation.y = jugador.yaw + Math.PI;
+        cuerpo.g.rotation.y = (fijo ? fijo.yaw : jugador.yaw) + Math.PI;
         const mov = ultima ? Math.hypot(p.x - ultima.x, p.z - ultima.z) / Math.max(dt, 0.001) : 0;
         ultima = { x: p.x, z: p.z };
         const ajeno = !!cine.pose || !!(cuerpoAjeno && cuerpoAjeno());
@@ -62,7 +66,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             cuerpo.cuerpo.rotation.x = jugador.agachado ? 0.35 : 0;
             golpePend = false;
         } else {
-            const ent = { ...entradaPose(), mov, pitch: jugador.pitch, agachado: jugador.agachado };
+            const ent = { ...entradaPose(), mov, pitch: fijo ? fijo.pitch : jugador.pitch, agachado: jugador.agachado };
             ent.golpe = ent.golpe || golpePend;
             golpePend = false;
             if (poseForzada) Object.assign(ent, poseForzada);
@@ -93,6 +97,15 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         while (d > 0.6) { pos.copy(ojo).addScaledVector(dir, signo * d); if (libre(mundo, ojo, pos)) break; d -= 0.25; }
         camara.position.copy(pos);
         if (vista === 2) camara.lookAt(ojo);
+    }
+    // Órbita del gesto: la cámara mira al pecho del cuerpo desde donde apunta la mirada del jugador
+    const ORBITA = { alto: 1.2, dist: 3.4 };
+    function orbitar() {
+        ojo.set(jugador.pos.x, jugador.pos.y + ORBITA.alto, jugador.pos.z);
+        camara.getWorldDirection(dir);
+        let d = ORBITA.dist;
+        while (d > 0.6) { pos.copy(ojo).addScaledVector(dir, -d); if (libre(mundo, ojo, pos)) break; d -= 0.25; }
+        camara.position.copy(pos);
     }
 
     // ---------- Escena de cine ----------
@@ -320,6 +333,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
             return;
         }
         fundidoEl.style.opacity = '0';
+        const fijo = congelado && congelado();
+        if (fijo) { orbitar(); actualizarCuerpo(dt, true, fijo); return; }
         if (vista > 0) terceraPersona();
         actualizarCuerpo(dt, vista > 0);
     }
@@ -329,6 +344,9 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         // 7c-1: golpe del cuerpo (romper, atacar, usar); quién más mueve el cuerpo; depuración de poses
         golpear() { golpePend = true; },
         set cuerpoAjeno(f) { cuerpoAjeno = f; },
+        // 7c-2: gesto de la ruleta en curso (cuerpo congelado y cámara en órbita)
+        set congelado(f) { congelado = f; },
+        get enOrbita() { return !cine.activa && !!(congelado && congelado()); },
         // Capturas: { golpeEn: 0..1, corre, comiendo, tensando, bloqueando, objeto, fase, amp, … } o null
         set poseForzada(o) { poseForzada = o; },
         get estadoPose() { return estadoPose; },

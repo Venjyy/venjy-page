@@ -1,0 +1,82 @@
+[
+ {
+  "nombre": "base",
+  "msMundo": 1858,
+  "kbJsInicial": 1345.2,
+  "archivosJs": 107,
+  "primera": {
+   "n": 69,
+   "p50": 96.8,
+   "p95": 155
+  },
+  "tercera": {
+   "modo": "F5 por detrás",
+   "n": 37,
+   "p50": 48.1,
+   "p95": 204
+  },
+  "errores": []
+ },
+ {
+  "nombre": "rama",
+  "msMundo": 1166,
+  "kbJsInicial": 688.6,
+  "archivosJs": 109,
+  "primera": {
+   "n": 59,
+   "p50": 103.2,
+   "p95": 158
+  },
+  "tercera": {
+   "modo": "gesto baile, órbita",
+   "n": 45,
+   "p50": 55.5,
+   "p95": 151
+  },
+  "kbJsTrasGesto": 802.2,
+  "errores": []
+ },
+ {
+  "nombre": "base",
+  "msMundo": 974,
+  "kbJsInicial": 772.1,
+  "archivosJs": 107,
+  "primera": {
+   "n": 57,
+   "p50": 103.4,
+   "p95": 163.6
+  },
+  "tercera": {
+   "modo": "F5 por detrás",
+   "n": 28,
+   "p50": 53.4,
+   "p95": 187.5
+  },
+  "errores": []
+ },
+ {
+  "nombre": "rama",
+  "msMundo": 1137,
+  "kbJsInicial": 494.4,
+  "archivosJs": 109,
+  "primera": {
+   "n": 50,
+   "p50": 108.8,
+   "p95": 207
+  },
+  "tercera": {
+   "modo": "gesto baile, órbita",
+   "n": 42,
+   "p50": 100.7,
+   "p95": 200.9
+  },
+  "kbJsTrasGesto": 563.6,
+  "errores": [],
+  "trasSoltar": false,
+  "cuerpoQuieto": true,
+  "trasW": {
+   "activo": false,
+   "congelado": false
+  }
+ }
+]

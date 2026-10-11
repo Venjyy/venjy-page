@@ -45,6 +45,7 @@
             "sv-camara": { "$ref": "#/$defs/boton" },
             "sv-comando": { "$ref": "#/$defs/boton" },
             "sv-acariciar": { "$ref": "#/$defs/boton" },
+            "sv-gestos": { "$ref": "#/$defs/boton", "description": ".tactil-boton.sv-gestos (GESTOS: abre la ruleta, 7c-2). Hoy id, x 116, y 176 desde pie, 76x40." },
             "mision": { "$ref": "#/$defs/boton", "description": "#hud .mision-activa (misión en curso). Sin w ni h: su tamaño es el del texto." },
             "minimapa": { "$ref": "#/$defs/boton", "description": "#hud .mm-pequeno (minimapa de la esquina). Hoy sd, x 12, y 10, seguro false, 160x160 (110x110 con ancho <= 600). Pausa y pantalla bajan bajo él por mundo.css: si lo mueves, muévelas también." }
           },

@@ -9,6 +9,8 @@
 //  · `posar(modelo, estado, entrada, dt)` escribe los huesos del rig (referencia/rig.md de la
 //    skill animaciones-minecraft) y pone el objeto en la mano con `ponerObjeto`.
 //  · Red: el estado viaja en el mensaje `p` (sin mensajes nuevos): bits en `f` (`codificarF`).
+//  · Ruleta (7c-2): `entrada.gesto` = { meta, w } mezcla un gesto ya existente (gestos-jugador.js) sobre el
+//    cuerpo quieto; `entrada.sentado` sirve para «sentarse».
 // Las escenas y minijuegos que mueven el cuerpo siguen mandando: camaras.js no llama a `posar`
 // mientras hay cine, `cine.pose` o la ronda del iglú.
 // =========================================================
@@ -72,10 +74,12 @@ export function avanzar(e, ent, dt) {
 }
 
 const mezcla = (a, b, k) => a + (b - a) * k;
+// Campos de un gesto que reemplazan a los del cuerpo (pz: paso adelante de los abrazos de 6b)
+const CAMPOS_GESTO = ['cx', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'pz'];
 
 // Ángulos del cuadro (puro). Devuelve los campos de rig.md más ry (giro del torso) y bDy/bIy.
 export function angulos(e, ent, escudo = 0) {
-    const a = { cx: 0, cy: 0, bDx: 0, bDy: 0, bDz: 0, bIx: 0, bIy: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, ry: 0, y: 0 };
+    const a = { cx: 0, cy: 0, cz: 0, bDx: 0, bDy: 0, bDz: 0, bIx: 0, bIy: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, ry: 0, rz: 0, y: 0, pz: 0 };
     // Caminar / correr
     const b = Math.sin(e.fase) * e.amp;
     a.pDx = b; a.pIx = -b;
@@ -123,26 +127,35 @@ export function angulos(e, ent, escudo = 0) {
         a.inc = mezcla(a.inc, s.inc, e.sentado);
         if (e.golpe < 0 && e.comer < 0.5) { a.bDx = mezcla(a.bDx, s.bDx, e.sentado); a.bIx = mezcla(a.bIx, s.bIx, e.sentado); }
     }
+    // Gesto de la ruleta (7c-2): las metas del gesto (nombres de rig.md) con su peso; cy y salto se suman
+    if (ent.gesto && ent.gesto.w > 0.001) {
+        const { meta, w } = ent.gesto;
+        for (const k of CAMPOS_GESTO) if (meta[k] !== undefined) a[k] = mezcla(a[k], meta[k], w);
+        if (meta.cy) a.cy += meta.cy * w;
+        if (meta.salto) a.y += meta.salto * w;
+    }
     a.bDx = lim(a.bDx, -2.9, 0.9); a.bIx = lim(a.bIx, -2.9, 0.9);
     return a;
 }
 
 // Escribe los ángulos en el rig (huesos de crearPersona)
 export function aplicarAngulos(m, a) {
-    m.cuello.rotation.set(a.cx, a.cy, 0);
+    m.cuello.rotation.set(a.cx, a.cy, a.cz || 0);
     m.brazoD.rotation.set(a.bDx, a.bDy, a.bDz);
     m.brazoI.rotation.set(a.bIx, a.bIy, a.bIz);
     m.piernaD.rotation.set(a.pDx, 0, 0);
     m.piernaI.rotation.set(a.pIx, 0, 0);
-    m.cuerpo.rotation.set(a.inc, a.ry, 0);
+    m.cuerpo.rotation.set(a.inc, a.ry, a.rz || 0);
     m.cuerpo.position.y = a.y;
+    m.cuerpo.position.z = a.pz || 0;
 }
 
 // Deja el rig como lo dejaba la caminata de antes (para escenas: cine.pose, ronda, minijuegos)
 export function limpiar(m) {
     for (const h of [m.brazoD, m.brazoI, m.piernaD, m.piernaI]) { h.rotation.y = 0; h.rotation.z = 0; }
     m.cuerpo.rotation.set(0, 0, 0);
-    m.cuerpo.position.y = 0;
+    m.cuerpo.position.y = 0; m.cuerpo.position.z = 0;
+    m.cuello.rotation.z = 0;
     ocultarObjetos(m);
 }
 
