@@ -26,7 +26,9 @@
 //   ir por personaje ('pony', 'andy'): la misma escena sirve en las dos direcciones. Un actor con `radio` es
 //   opcional (tu clon: solo actúa si está a menos de `radio` bloques); sus pistas se ignoran si no está.
 //   api.mover(q, x, y, z) mueve a un actor (coordenadas del grupo) y al terminar o saltar vuelve a su sitio.
-// Depuración: __venjy.amistadEscena (jugar(clave, tipo), momento(clave), bienvenida(base), reencuentro(base, clave),
+// Estudio, fase 5: las animaciones genéricas salen de ANIMACIONES fusionadas con mundo/datos/escenas.json; jugarGuion(clave,
+//   persona) juega una escena de tipo «guion» del JSON (/amistad guion <clave> [persona]).
+// Depuración: __venjy.amistadEscena (jugar(clave, tipo), jugarGuion(clave, persona), momento(clave), bienvenida(base), reencuentro(base, clave),
 //   pausar(v), irA(s), saltar(), escena).
 // Para revisarlas en el juego: /amistad (comandos-dev.js, con /gamemode devenjy).
 // =========================================================
@@ -38,6 +40,15 @@ import { ANIMACIONES, GESTOS_AMISTAD, FRASES_AMISTAD, TXT_AMISTAD } from './esce
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { sonidos } from './sonidos.js';
 import { PERSONAJES, relacion, GRUPOS } from './amistad.js';
+import { cargarDatos, fusionar } from '../datos/cargador.js';
+import { animacionDeDatos, guionDeDatos } from '../datos/escenas.js';
+
+// Estudio, fase 5: mundo/datos/escenas.json (escenas «amistad» reemplazan a ANIMACIONES por clave; las de «guion» solo
+// se juegan con jugarGuion). Se pide al importar este módulo, que ya se carga solo al usarlo: la carga inicial no cambia.
+// Sin archivo, roto o con ?sin-datos: el código. aplicarDatosVivos lo cambia sin recargar (puente del Estudio).
+let datosEscenas = await cargarDatos('escenas');
+export function aplicarDatosVivos(nuevo) { datosEscenas = nuevo || null; }
+const defDatos = clave => { const d = datosEscenas && datosEscenas.escenas && datosEscenas.escenas[clave]; return d && typeof d === 'object' ? d : null; };
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -216,7 +227,10 @@ export function crearEscenaAmistad(ctx) {
 
     // Guion de una animación genérica: su tiempo, sus pistas y la frase única del personaje
     function guionGenerico(clave, tipo) {
-        const a = ANIMACIONES[tipo], f = FRASES_AMISTAD[clave] && FRASES_AMISTAD[clave][tipo];
+        const d = defDatos(tipo);
+        // Una fila de actor del JSON reemplaza la fila entera de pista (fusionar reemplaza los arreglos); la que falta queda la del código
+        const base = ANIMACIONES[tipo];
+        const a = base && d && d.tipo === 'amistad' ? fusionar(base, animacionDeDatos(d)) : base, f = FRASES_AMISTAD[clave] && FRASES_AMISTAD[clave][tipo];
         if (!a || !f) return null;
         return { ...a, tipo, lineas: [{ q: 'n', texto: f, a: a.linea[0], d: a.linea[1] }] };
     }
@@ -566,6 +580,26 @@ export function crearEscenaAmistad(ctx) {
             if (ok && alTerminar) e.alTerminar = alTerminar;
             return ok;
         },
+        // Escena «guion» de mundo/datos/escenas.json (Estudio, fase 5): nadie la dispara sola, solo /amistad guion y el Estudio.
+        // Sin persona, la más cercana al jugador. Promesa con true si empezó (moldes.js y reencuentros.js se cargan al usarla).
+        async jugarGuion(clave, persona, alTerminar) {
+            const def = defDatos(clave);
+            if (e || !def || def.tipo !== 'guion') return false;
+            let quien = persona;
+            if (!quien) {
+                const libres = (ctx.personas ? ctx.personas() : []).filter(n => n.p && n.p.g.visible && !n.escena);
+                const cerca = libres.sort((a, b) => Math.hypot(a.x - jugador.pos.x, a.z - jugador.pos.z) - Math.hypot(b.x - jugador.pos.x, b.z - jugador.pos.z))[0];
+                quien = cerca && cerca.clave;
+            }
+            if (!quien) return false;
+            try {
+                const [{ MOLDES }, { durLinea }] = await Promise.all([import('./moldes.js'), import('./reencuentros.js')]);
+                if (e) return false; // otra escena empezó mientras cargaban los módulos
+                const ok = iniciar(quien, guionDeDatos(defDatos(clave) || def, { durLinea, moldes: MOLDES }));
+                if (ok && alTerminar) e.alTerminar = alTerminar;
+                return ok;
+            } catch (err) { console.error('No se pudo jugar la escena de guion', err); return false; }
+        },
         // Momento especial (6b-2): carga momentos/<clave>.js la primera vez y lo corre; devuelve una promesa con true si empezó
         // op.base fuerza la base de la skin (el /amistad de desarrollo muestra la variante de pareja sin cambiar de skin)
         momento(clave, alTerminar, op = {}) {
@@ -606,6 +640,8 @@ export function crearEscenaAmistad(ctx) {
                 return ok;
             }).catch(err => { console.error('No se pudo cargar la escena de grupo', err); return false; });
         },
+        // Claves de las escenas de tipo «guion» de escenas.json (las que se juegan con jugarGuion)
+        guiones() { return Object.entries((datosEscenas && datosEscenas.escenas) || {}).filter(([, d]) => d && d.tipo === 'guion').map(([k]) => k); },
         get activa() { return !!e; },
         get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, base: e.guion.base || null, grupo: e.guion.grupo || null, t: e.t, T: e.T }; },
         setIdioma(l) { idioma = l; boton.textContent = tx().saltar; for (const [q, g] of globos) if (q === 'j' || q === 'todos') g.etiqueta = { nombre: q === 'j' ? tx().tu : tx().todos, color: COLOR_GLOBO.j }; },

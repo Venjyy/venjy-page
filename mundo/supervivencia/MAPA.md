@@ -76,7 +76,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `escenas-datos.js` (174) | Diálogos de las escenas de skin. `CORTAS:12` `VENJY:68` `IGLU:162` |
 | `escenas-skin.js` (626) | Escena al acercarte con skin de un amigo. `crearEscenasSkin:90` `iniciar:187` `terminar:254` |
 | `escena-amistad-datos.js` (183) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105` |
-| `escena-amistad.js` (537) | Motor de guiones de amistad, bienvenidas y reencuentros. `crearEscenaAmistad:68` `iniciar:213` `terminar:265` `aplicar:313` |
+| `escena-amistad.js` (653) | Motor de guiones de amistad, bienvenidas y reencuentros. Lee `mundo/datos/escenas.json` al importarse (`await cargarDatos`; `aplicarDatosVivos:50` para el Estudio) y fusiona sus escenas `amistad` con `ANIMACIONES` en `guionGenerico`; `jugarGuion:585` juega las de tipo `guion`. `crearEscenaAmistad:98` `iniciar:247` `terminar:312` `aplicar:361` |
 | `moldes.js` (158) | Piezas de movimiento 6c. `ruta:29` `MOLDES:40` `molde:82` `fusion:91` `espejo:108` |
 | `reencuentros.js` (226) | Escenas entre amigos 6c-1. `REENCUENTROS:23` `reencuentro:212` |
 | `bienvenidas/*.js` (13 archivos) | Guion del Venjy del Inicio por amigo; `comun.js` trae piezas (`encadenar:18` `abrazo:36`). Cada uno: `LINEAS` y `bienvenida` |
@@ -106,7 +106,8 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
 | `mundo/datos/cargador.js` (58) | Navegador: `cargarDatos:21` (fetch con tope 3 s, caché, `?sin-datos`), `fusionar:46`, `texto:55` |
-| `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `poses` y `escenas` (referencia; `escenas` lo leerá `escena-amistad.js`, ver `estudio/DISENO.md` §13); `indice.json` dice quién lee qué |
+| `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `escenas` (lo lee `escena-amistad.js`, fase 5) y `poses` (referencia; ver `estudio/DISENO.md` §13); `indice.json` dice quién lee qué |
+| `mundo/datos/escenas.js` (92) | Fase 5, sin DOM: `animacionDeDatos` (escena `amistad` → fila de `ANIMACIONES`), `guionDeDatos` (escena `guion` → guion de ejecución, `d` = `durLinea(texto)` si falta) y `reglasEscenas` (las reglas que el esquema no expresa; las usa `cli.mjs validar` y la prueba) |
 | `mundo/datos/posiciones.js` (84) | Fase 4, sin DOM: `resolverAncla` (lugares, `escenario`, `faro`), `puntoAMundo` y `mundoAPunto` (la inversa que usa el gizmo), `GIRO_CALCULADO` |
 | `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |

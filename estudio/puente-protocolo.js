@@ -6,8 +6,8 @@
 // =========================================================
 export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
-// Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones). Fase siguiente: poses.
-export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones'];
+// Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas). Fase siguiente: poses.
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 
 const MAX_GLOBO = 400;

@@ -16,6 +16,7 @@ import { validar } from './validar.mjs';
 import { FUENTES } from './fuentes.mjs';
 import { avisosDeTexto, esPar } from './avisos-textos.js';
 import { leerGlifos, tablaDeRangos } from './glifos.mjs';
+import { reglasEscenas } from '../mundo/datos/escenas.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATOS = path.join(RAIZ, 'mundo', 'datos');
@@ -87,7 +88,12 @@ const RESUMEN_JSON = {
         return `${n} tienda${n === 1 ? '' : 's'} con ofertas nuevas, ${o} ofertas`;
     },
     posiciones: d => `${Object.keys(d.personas || {}).length} personas`,
-    poses: d => `${Object.keys(d.poses || {}).length} poses, ${Object.keys(d.gestos || {}).length} gestos`
+    poses: d => `${Object.keys(d.poses || {}).length} poses, ${Object.keys(d.gestos || {}).length} gestos`,
+    escenas: d => {
+        const e = Object.values(d.escenas || {});
+        const g = e.filter(x => x.tipo === 'guion').length;
+        return `${e.length} escenas (${e.length - g} de amistad, ${g} de guion)`;
+    }
 };
 
 // Cuenta temas, variantes y pares ES/EN de dialogos.json, y cuántos no tienen «revisado»
@@ -237,7 +243,30 @@ function filasPoses(d, filtro) {
     return filas;
 }
 
-const FILAS_JSON = { 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses };
+// Una fila por escena: clave, tipo, T, actores, tramos de gesto y marcas (golpes y corazones)
+function filasEscenas(d, filtro, op) {
+    const idioma = op.idioma || 'es';
+    const filas = [];
+    for (const [k, e] of Object.entries(d.escenas || {})) {
+        if (filtro && !k.startsWith(filtro)) continue;
+        const actores = ['n', 'j', ...Object.keys(e.actores || {})];
+        const pista = Object.entries(e.pista || {}).map(([q, tr]) => `${q}: ${tr.map(([g, a, b]) => `${g} ${num(a)}-${num(b)}`).join(', ')}`).join(' | ');
+        const tramos = Object.values(e.pista || {}).reduce((s, tr) => s + tr.length, 0);
+        const marcas = [];
+        if (e.golpes && e.golpes.length) marcas.push(`golpes ${e.golpes.map(num).join(',')}`);
+        if (e.corazones && e.corazones.length) marcas.push(`corazones ${e.corazones.map(num).join(',')}`);
+        const frases = e.tipo === 'guion' ? `${e.lineas.length} frases` : `linea ${e.linea.map(num).join('+')}`;
+        let texto = `${e.tipo} T ${num(e.T)} r ${num(e.r)} actores ${actores.join(',')} ${tramos} tramos ${frases}${marcas.length ? ' ' + marcas.join(' ') : ''}`;
+        if (e.tipo === 'amistad') texto += ` nivel ${e.nivel}`;
+        filas.push({ clave: k, texto, extra: pista });
+        if (e.tipo === 'guion') {
+            e.lineas.forEach((l, i) => filas.push({ clave: `${k}.${i + 1}`, texto: `${l.q} ${num(l.a)}${l.d !== undefined ? '+' + num(l.d) : ''} ${lado(l.texto, idioma)}`, extra: l.texto.revisado ? '' : '[sin revisar]' }));
+        }
+    }
+    return filas;
+}
+
+const FILAS_JSON = { 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {
@@ -336,9 +365,31 @@ async function referenciasDePosiciones() {
     return { anclas: new Set([...LUGARES.map(l => l.clave), ...ANCLAS_ESCENARIO, ...ANCLAS_PUNTO]), personas, giroCalculado: GIRO_CALCULADO };
 }
 
+// Lo que el juego resuelve para escenas.json: los gestos (GESTOS, GESTOS_AMISTAD y MOLDES), las claves de ANIMACIONES y
+// durLinea. moldes.js y reencuentros.js traen cuerpo.js, que escucha eventos de `window`: basta un objeto mínimo.
+async function nombresDeEscenas() {
+    globalThis.window ??= { addEventListener() {} };
+    // amigos.js (por reencuentros.js) pide posiciones.json con fetch al importarse: en Node falla y avisa; aquí no importa
+    const aviso = console.warn;
+    console.warn = (...m) => { if (!String(m[0]).startsWith('[datos]')) aviso(...m); };
+    try {
+        return await nombresDeEscenasImport();
+    } finally { console.warn = aviso; }
+}
+async function nombresDeEscenasImport() {
+    const { GESTOS } = await import('../mundo/supervivencia/escenas-skin.js');
+    const { ANIMACIONES, GESTOS_AMISTAD } = await import('../mundo/supervivencia/escena-amistad-datos.js');
+    const { MOLDES } = await import('../mundo/supervivencia/moldes.js');
+    const { durLinea } = await import('../mundo/supervivencia/reencuentros.js');
+    return { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES)]), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
+}
+
 // Reglas de contenido que el esquema no expresa
-function revisarSemantica(nombre, datos, problemas, arch, objetos, refs) {
+function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas) {
     const mal = texto => problemas.push({ archivo: arch, tipo: 'error', texto });
+    if (nombre === 'escenas' && escenas) {
+        for (const r of reglasEscenas(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
+    }
     if (nombre === 'posiciones' && refs) {
         for (const [grupo, puntos] of Object.entries({ personas: datos.personas, objetos: datos.objetos, poi: datos.poi })) {
             for (const [clave, p] of Object.entries(puntos || {})) {
@@ -402,6 +453,7 @@ async function validarCmd(pos, op) {
     const rangos = leerRangos();
     const objetos = nombres.includes('tienda') ? await nombresDeObjetos() : null;
     const refs = nombres.includes('posiciones') ? await referenciasDePosiciones() : null;
+    const escenas = nombres.includes('escenas') ? await nombresDeEscenas() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
 
     for (const nombre of nombres) {
@@ -424,7 +476,7 @@ async function validarCmd(pos, op) {
             if (aviso) problemas.push({ archivo: arch, tipo: nivel === 'aviso' ? 'aviso' : 'error', texto: `${ruta}: ${aviso}` });
             else if (EMOJI.test(valor)) problemas.push({ archivo: arch, tipo: 'error', texto: `${ruta}: emoji en «${valor}» (los íconos se dibujan, no se escriben)` });
         }, rangos);
-        revisarSemantica(nombre, datos, problemas, arch, objetos, refs);
+        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas);
         if (op.contra) {
             const viejo = enHEAD(op.contra, nombre);
             if (viejo) {
