@@ -16,6 +16,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { TIPO } from '../texturas.js';
 import { caminar } from '../criaturas/cuerpo.js';
 import { crearModelo } from './skin.js';
+import { crearEstado, avanzar, angulos, aplicarAngulos, ponerObjeto, iluminarObjetos, limpiar } from './pose-jugador.js';
 
 const opaco = (mundo, x, y, z) => { const id = mundo.bloque(x, y, z); return id > 0 && (TIPO[id] === 1 || TIPO[id] === 6); };
 function libre(mundo, a, b) {
@@ -27,36 +28,58 @@ function libre(mundo, a, b) {
     return !opaco(mundo, b.x, b.y, b.z);
 }
 
-export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, dy }) {
+export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, dy, fabrica = null, entradaPose = null }) {
     // ---------- Cuerpo ----------
     let cuerpo = crearModelo(skin);
     cuerpo.g.visible = false;
     scene.add(cuerpo.g);
     let fase = 0, ultima = null;
     const luz = new THREE.Color();
+    // Pose (7c-1, pose-jugador.js): golpe, correr, objeto en la mano, comer, arco y escudo.
+    // Si una escena mueve el cuerpo (cine.pose, la ronda del iglú: `cuerpoAjeno`), solo camina, como antes.
+    let estadoPose = crearEstado(), golpePend = false, ajenoAntes = false, cuerpoAjeno = null, poseForzada = null;
     function ponerSkin(d) {
         scene.remove(cuerpo.g);
         cuerpo = crearModelo(d);
         cuerpo.g.visible = false;
         scene.add(cuerpo.g);
+        estadoPose = crearEstado();
     }
     function actualizarCuerpo(dt, visible) {
         cuerpo.g.visible = visible;
-        if (!visible) return;
+        if (!visible) { golpePend = false; return; }
         const p = jugador.pos;
         cuerpo.g.position.set(p.x, p.y - (jugador.agachado ? 0.2 : 0), p.z);
         cuerpo.g.rotation.y = jugador.yaw + Math.PI;
         const mov = ultima ? Math.hypot(p.x - ultima.x, p.z - ultima.z) / Math.max(dt, 0.001) : 0;
         ultima = { x: p.x, z: p.z };
-        fase += mov * dt * 2.6;
-        caminar(cuerpo, fase, Math.min(0.8, mov * 0.18));
-        cuerpo.cuello.rotation.x = Math.max(-0.8, Math.min(0.8, -jugador.pitch * 0.8));
-        cuerpo.cuerpo.rotation.x = jugador.agachado ? 0.35 : 0;
+        const ajeno = !!cine.pose || !!(cuerpoAjeno && cuerpoAjeno());
+        if (ajeno || !entradaPose) {
+            if (!ajenoAntes && ajeno) limpiar(cuerpo);
+            fase += mov * dt * 2.6;
+            caminar(cuerpo, fase, Math.min(0.8, mov * 0.18));
+            cuerpo.cuello.rotation.x = Math.max(-0.8, Math.min(0.8, -jugador.pitch * 0.8));
+            cuerpo.cuerpo.rotation.x = jugador.agachado ? 0.35 : 0;
+            golpePend = false;
+        } else {
+            const ent = { ...entradaPose(), mov, pitch: jugador.pitch, agachado: jugador.agachado };
+            ent.golpe = ent.golpe || golpePend;
+            golpePend = false;
+            if (poseForzada) Object.assign(ent, poseForzada);
+            avanzar(estadoPose, ent, dt);
+            if (poseForzada && poseForzada.golpeEn != null) estadoPose.golpe = poseForzada.golpeEn;
+            if (poseForzada && poseForzada.fase != null) { estadoPose.fase = poseForzada.fase; estadoPose.amp = poseForzada.amp ?? estadoPose.amp; }
+            aplicarAngulos(cuerpo, angulos(estadoPose, ent, ent.escudo || 0));
+            ponerObjeto(cuerpo, ent.objeto || 0, fabrica, 0);
+            ponerObjeto(cuerpo, ent.objeto2 || 0, fabrica, 1);
+        }
+        ajenoAntes = ajeno;
         const l = mundo.nivelLuz(p.x, p.y + 1, p.z);
         const c = Math.pow(l >= 0 ? (l >> 4) / 15 : 1, 1.6), b = Math.pow(l >= 0 ? (l & 15) / 15 : 0, 1.6);
         luz.copy(tinteMundo).multiplyScalar(c);
         luz.setRGB(Math.max(luz.r, b, 0.08), Math.max(luz.g, b * 0.85, 0.08), Math.max(luz.b, b * 0.6, 0.08));
         cuerpo.tinte.aplicar(luz);
+        iluminarObjetos(cuerpo, luz);
     }
 
     // ---------- Tercera persona ----------
@@ -303,6 +326,12 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
 
     return {
         actualizar, ponerSkin,
+        // 7c-1: golpe del cuerpo (romper, atacar, usar); quién más mueve el cuerpo; depuración de poses
+        golpear() { golpePend = true; },
+        set cuerpoAjeno(f) { cuerpoAjeno = f; },
+        // Capturas: { golpeEn: 0..1, corre, comiendo, tensando, bloqueando, objeto, fase, amp, … } o null
+        set poseForzada(o) { poseForzada = o; },
+        get estadoPose() { return estadoPose; },
         get vista() { return vista; },
         get enCine() { return cine.activa; },
         get cuerpo() { return cuerpo; },

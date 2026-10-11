@@ -41,8 +41,8 @@ import { SalaLocal } from '../online/sala-local.js';
 import { B } from '../texturas.js';
 import { marcar } from '../voxeles.js';
 import { crearModelo } from './skin.js';
-import { caminar } from '../criaturas/cuerpo.js';
-import { infoBloque } from './objetos.js';
+import { infoBloque, O } from './objetos.js';
+import { crearEstado, posar, codificarF, iluminarObjetos } from './pose-jugador.js';
 import { etapasDe } from './agricultura.js';
 import { Bufer, RETRASO, mezclar, mezclarAngulo } from './interpolacion.js';
 import { sonidos } from './sonidos.js';
@@ -214,7 +214,7 @@ export function guardadoDeInvitado(cx) {
 // Durante el juego
 // ---------------------------------------------------------
 export function crearCoop(cx, ctx) {
-    const { scene, mundo, jugador, vida, dia, inventario, entidades, contenedores, agricultura, enemigos, jefes, proyectiles, misiones, hud, particulas, idioma = 'es' } = ctx;
+    const { scene, mundo, jugador, vida, dia, inventario, entidades, contenedores, agricultura, enemigos, jefes, proyectiles, misiones, hud, particulas, idioma = 'es', fabrica = null, entradaPose = null } = ctx;
     const sala = cx.sala;
     const yoId = sala.id;
     const esAnfitrion = cx.rol === 'anfitrion';
@@ -261,11 +261,11 @@ export function crearCoop(cx, ctx) {
         modelo.g.visible = false;
         scene.add(modelo.g);
         if (!r) {
-            r = { id, bufer: new Bufer(), fase: 0, previo: null, vivo: true, nombreSp: nombreSprite(m.nombre || '?') };
+            r = { id, bufer: new Bufer(), luz: { aplicar: l => { r.modelo.tinte.aplicar(l); iluminarObjetos(r.modelo, l); } }, pose: crearEstado(), golpes: [], objeto: 0, objeto2: 0, previo: null, vivo: true, nombreSp: nombreSprite(m.nombre || '?') };
             r.objetivo = { id, pos: new THREE.Vector3(), get vivo() { return r.vivo && !r.bufer.vacio; } };
             remotos.set(id, r);
         }
-        Object.assign(r, { nombre: m.nombre, disp: m.disp, skin: m.skin, skinTxt, modelo, anf: !!m.anf });
+        Object.assign(r, { nombre: m.nombre, disp: m.disp, skin: m.skin, skinTxt, modelo, anf: !!m.anf, pose: crearEstado() });
         return r;
     }
     function quitarRemoto(id) {
@@ -345,16 +345,30 @@ export function crearCoop(cx, ctx) {
 
     // ---------- Posición propia (y monstruos y jefe propios en el mismo mensaje) ----------
     let ultimoTick = 0, ultimoPos = 0, ultimaPos = null;
+    // 7c-1: el cuerpo viaja en `p`: bits de `f` (pose-jugador.js: 4 corre, 8 golpeó desde el último
+    // tick, 16 come, 32 tensa, 64 bloquea) e `i`/`i2` = lo que tienes en cada mano, solo al cambiar
+    // (repetido en los 2 ticks siguientes: el canal de `p` no reintenta) y cada 5 s para quien entra tarde
+    let golpePend = false, manos = null, repetirManos = 0, ultimasManos = 0;
     function enviarPosicion() {
         const t = ahora();
         if (t - ultimoTick < 1000 / HZ_POS) return;
         ultimoTick = t;
         const r = n => Math.round(n * 100) / 100;
-        const m = { t: Math.round(t), x: r(jugador.pos.x), y: r(jugador.pos.y), z: r(jugador.pos.z), a: r(jugador.yaw), b: r(jugador.pitch), f: (jugador.agachado ? 1 : 0) | (vida.muerto ? 2 : 0) };
+        const ent = entradaPose ? entradaPose() : {};
+        const f = codificarF({ ...ent, agachado: jugador.agachado, muerto: vida.muerto, golpe: golpePend || ent.golpe });
+        const m = { t: Math.round(t), x: r(jugador.pos.x), y: r(jugador.pos.y), z: r(jugador.pos.z), a: r(jugador.yaw), b: r(jugador.pitch), f };
+        const i = ent.objeto || 0, i2 = ent.objeto2 || 0;
+        if (!manos || manos[0] !== i || manos[1] !== i2) { manos = [i, i2]; repetirManos = 3; }
         const u = ultimaPos;
         const igual = u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02 && Math.abs(u.a - m.a) < 0.02 && Math.abs(u.b - m.b) < 0.02 && u.f === m.f;
         const mobs = mobsDelTick(t);
-        if (igual && !mobs && t - ultimoPos < 1000) return;
+        if (igual && !mobs && !repetirManos && !(f & 8) && t - ultimoPos < 1000) return; // un golpe siempre sale (minar quieto)
+        golpePend = false;
+        if (repetirManos || t - ultimasManos >= 5000) {
+            m.i = i; if (i2 || repetirManos) m.i2 = i2;
+            if (repetirManos) repetirManos--;
+            ultimasManos = t;
+        }
         if (mobs) Object.assign(m, mobs);
         const ec = ecoSaliente(t);
         if (ec) m.ec = ec;
@@ -604,6 +618,9 @@ export function crearCoop(cx, ctx) {
             if (!r) return;
             r.bufer.agregar(m.t, { x: m.x, y: m.y, z: m.z, yaw: m.a, pit: m.b, f: m.f });
             r.vivo = !(m.f & 2);
+            if (m.i !== undefined) r.objeto = m.i;
+            if (m.i2 !== undefined) r.objeto2 = m.i2;
+            if (m.f & 8) { r.golpes.push(m.t); if (r.golpes.length > 8) r.golpes.shift(); }
             r.objetivo.pos.set(m.x, m.y, m.z);
             if (m.l || m.j) manejadores.m(m);
         },
@@ -725,14 +742,18 @@ export function crearCoop(cx, ctx) {
             const agachado = !!(b.f & 1);
             const mov = r.previo ? Math.hypot(x - r.previo.x, z - r.previo.z) / Math.max(dt, 1e-3) : 0;
             r.previo = { x, z };
-            r.fase += Math.min(8, mov) * dt * 2.6;
+            // Golpes: se ven cuando el dibujo (que va RETRASO ms atrás) llega a la hora en que ocurrieron
+            const tDibujo = t - r.bufer.desfase - r.bufer.retraso;
+            let golpe = false;
+            while (r.golpes.length && r.golpes[0] <= tDibujo) { r.golpes.shift(); golpe = true; }
             const c = r.modelo;
             c.g.position.set(x, y - (agachado ? 0.2 : 0), z);
             c.g.rotation.y = yaw + Math.PI;
-            caminar(c, r.fase, Math.min(0.8, mov * 0.18));
-            c.cuello.rotation.x = Math.max(-0.8, Math.min(0.8, -pit * 0.8));
-            c.cuerpo.rotation.x = agachado ? 0.35 : 0;
-            ctx.iluminar(c.tinte, x, y, z);
+            posar(c, r.pose, {
+                mov, pitch: pit, agachado, golpe, corre: !!(b.f & 4), comiendo: !!(b.f & 16), tensando: !!(b.f & 32), bloqueando: !!(b.f & 64),
+                objeto: r.objeto, objeto2: r.objeto2
+            }, dt, fabrica, r.objeto === O.ESCUDO ? 1 : 0);
+            ctx.iluminar(r.luz, x, y, z);
             r.nombreSp.position.set(x, y + 2.2, z);
             const d = Math.hypot(jugador.pos.x - x, jugador.pos.z - z);
             const esc = Math.max(1, Math.min(4, d / 14));
@@ -805,6 +826,8 @@ export function crearCoop(cx, ctx) {
 
     return {
         esAnfitrion, codigo: cx.codigo, local: !!cx.local, perfiles, actualizar, salir, acostarse, jugadoresParaGuardar, conectados, enviarPerfil,
+        // 7c-1: golpeaste (romper, atacar, usar): sale como bit 8 en el próximo `p`
+        golpeo() { golpePend = true; },
         get total() { return 1 + remotos.size; },
         get remotos() { return remotos; },
         get compartido() { return compartido; },
