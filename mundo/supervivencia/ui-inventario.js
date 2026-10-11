@@ -9,7 +9,7 @@
 import { icono } from './iconos.js';
 import { info, nombreDe, apilaDe, combustibleDe } from './objetos.js';
 import { buscarReceta, RECETAS, ingredientes, anchoDe, FUNDICION } from './recetas.js';
-import { clicCasilla, pila } from './inventario.js';
+import { clicCasilla, pila, nombrePila } from './inventario.js';
 import { sonidos } from './sonidos.js';
 
 const TXT = {
@@ -87,7 +87,7 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
         const p = cas.get();
         if (!p || esTactil()) { tip.hidden = true; return; }
         const i = info(p.id);
-        let texto = nombreDe(p.id, idioma);
+        let texto = nombrePila(p, idioma);
         if (i && i.durabilidad) texto += `  ${i.durabilidad - p.d}/${i.durabilidad}`;
         tip.textContent = texto;
         tip.hidden = false;
@@ -96,7 +96,7 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
 
     function pintarCasilla(cas) {
         const p = cas.get();
-        const f = p ? p.id + ':' + p.n + ':' + p.d : '';
+        const f = p ? p.id + ':' + p.n + ':' + p.d + ':' + (p.p || '') : '';
         if (f === cas.firma) return;
         cas.firma = f;
         const ctx = cas.c.getContext('2d');
@@ -248,8 +248,8 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
     function devolverRejilla() {
         abierta.rejilla.forEach((p, i) => {
             if (!p) return;
-            const resto = inventario.agregar(p.id, p.n, p.d);
-            if (resto) soltar(p.id, resto, p.d);
+            const resto = inventario.agregar(p.id, p.n, p.d, p.p);
+            if (resto) soltar(p.id, resto, p.d, p.p);
             abierta.rejilla[i] = null;
         });
     }
@@ -429,7 +429,7 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
         if (!abierta || !cursor) return;
         if (e.target.closest('.ventana-panel, .libro-recetas')) return;
         const n = e.button === 2 ? 1 : cursor.n;
-        soltar(cursor.id, n, cursor.d);
+        soltar(cursor.id, n, cursor.d, cursor.p);
         cursor.n -= n;
         if (!cursor.n) cursor = null;
         refrescar();
@@ -461,8 +461,8 @@ export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'e
         if (!abierta) return;
         if (abierta.rejilla) devolverRejilla();
         if (cursor) {
-            const resto = inventario.agregar(cursor.id, cursor.n, cursor.d);
-            if (resto) soltar(cursor.id, resto, cursor.d);
+            const resto = inventario.agregar(cursor.id, cursor.n, cursor.d, cursor.p);
+            if (resto) soltar(cursor.id, resto, cursor.d, cursor.p);
             cursor = null;
         }
         abierta = null;

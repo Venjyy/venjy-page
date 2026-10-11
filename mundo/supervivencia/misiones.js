@@ -7,7 +7,7 @@
 // Coordenadas: los amigos viven en el mapa original (y sin desplazar) dentro de `grupo`.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
-import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO } from './misiones-datos.js';
+import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO, repartirKit } from './misiones-datos.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
 import { crearGlobo, zonasPantalla, COLOR_GLOBO } from '../criaturas/cuerpo.js';
@@ -27,12 +27,12 @@ const TXT = {
         ocupado: n => `Ya tienes una misión activa con ${n}. Termínala o abandónala primero.`, falta: 'Todavía te falta:', mision: 'Misión',
         matar: (m, n) => `Eliminar ${n} × ${m}`, cualquiera: 'monstruos', deNoche: ' (de noche)', visitar: n => `Visitar los ${n} lugares`, noche: 'Sobrevivir una noche sin dormir', hablar: 'Hablar con ella',
         completas: (n, t) => `Misiones: ${n}/${t}`, nueva: 'Nueva misión', listo: '¡Listo para entregar!', abandonada: 'Misión abandonada', recibes: 'Recibes:', jefe: 'Pelea de jefe',
-        usarAltar: 'Usa el objeto en el altar (clic derecho)', vidaExtra: '+1 corazón máximo', subeAmistad: (n, nv) => `Amistad con ${n}: ${nv}` },
+        usarAltar: 'Usa el objeto en el altar (clic derecho)', kitLleno: n => `Inventario lleno: ${n} quedó en el suelo`, kitRecibes: 'Kit de misión:', vidaExtra: '+1 corazón máximo', subeAmistad: (n, nv) => `Amistad con ${n}: ${nv}` },
     en: { aceptar: 'Accept', entregar: 'Hand in', cerrar: 'Close', abandonar: 'Abandon quest', premio: 'Reward', progreso: 'Progress',
         ocupado: n => `You already have an active quest with ${n}. Finish or abandon it first.`, falta: 'You still need:', mision: 'Quest',
         matar: (m, n) => `Defeat ${n} × ${m}`, cualquiera: 'monsters', deNoche: ' (at night)', visitar: n => `Visit the ${n} places`, noche: 'Survive a night without sleeping', hablar: 'Talk to her',
         completas: (n, t) => `Quests: ${n}/${t}`, nueva: 'New quest', listo: 'Ready to hand in!', abandonada: 'Quest abandoned', recibes: 'You get:', jefe: 'Boss fight',
-        usarAltar: 'Use the item on the altar (right click)', vidaExtra: '+1 max heart', subeAmistad: (n, nv) => `Friendship with ${n}: ${nv}` }
+        usarAltar: 'Use the item on the altar (right click)', kitLleno: n => `Inventory full: ${n} left on the ground`, kitRecibes: 'Quest kit:', vidaExtra: '+1 max heart', subeAmistad: (n, nv) => `Friendship with ${n}: ${nv}` }
 };
 
 export function crearMisiones(ctx) {
@@ -43,7 +43,7 @@ export function crearMisiones(ctx) {
     // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
     // minijuegos: juegos jugados y marcas como 'mj-boris' (minijuego.js)
     // carta: el encargo diario del Venjy del correo ({ dia, para, entregada } o null; 7f-1)
-    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null };
+    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null, kits: new Set() };
     let ocultarMarcas = false;
     let botonMinijuego = null; // clave -> { texto, motivo } o null (lo pone minijuego.js con `misiones.minijuego`)
     let escenaAmistad = null; // { jugar(clave, tipo), momento(clave) } (bloque 6b: main.js carga escena-amistad.js con import() al usarla)
@@ -225,6 +225,13 @@ export function crearMisiones(ctx) {
             if (resto) entidades.soltar(id, resto, 0, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);
         }
     }
+    // ---- Kit de la misión (7d): una sola vez por mundo, aunque se abandone y se vuelva a aceptar ----
+    function entregarKit(m) {
+        const sobran = repartirKit(m, estado.kits, inventario);
+        if (!sobran) return;
+        for (const [id, n, d, amigo] of sobran) entidades.soltar(id, n, d, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z, null, 0.5, null, amigo);
+        hud.mensaje(sobran.length ? tx().kitLleno(sobran.map(([id]) => nombreDe(id, idioma)).join(', ')) : `${tx().kitRecibes} ${nombrePremio(m.kit.map(([id, n]) => [id, n]))}`, 4);
+    }
     const nombrePremio = lista => lista.map(([id, n]) => `${n > 1 ? n + ' × ' : ''}${nombreDe(id, idioma)}`).join(', ');
 
     // ---- Globo especial (el diálogo único al completar) ----
@@ -344,6 +351,7 @@ export function crearMisiones(ctx) {
         estado.activa = m.id; estado.progreso = 0; estado.visitados.clear();
         estado.noche = m.tipo === 'noche' ? (dia.esNoche ? 'esperando' : 'esperando') : null;
         sonidos.clic();
+        entregarKit(m);
         if (m.jefe) { dar([[O[m.objeto], 1]]); ctx.alAceptarJefe && ctx.alAceptarJefe(m); }
         decirEspecial(m.amigo || 'venjy', L(m.aceptar));
         cerrarPanel();
@@ -539,7 +547,7 @@ export function crearMisiones(ctx) {
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, amistad: amistad.serializar() };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, kits: [...estado.kits], amistad: amistad.serializar() };
     }
     function cargar(o) {
         if (!o) return;
@@ -552,6 +560,7 @@ export function crearMisiones(ctx) {
         estado.vidaExtra = o.vidaExtra || 0;
         estado.escenasSkin = new Set(o.escenasSkin || []);
         estado.minijuegos = new Set(o.minijuegos || []);
+        estado.kits = new Set(o.kits || []);
         estado.carta = o.carta && typeof o.carta.para === 'string' ? { dia: o.carta.dia | 0, para: o.carta.para, entregada: !!o.carta.entregada } : null;
         amistad.cargar(o.amistad); // guardado viejo (sin amistad): parte en blanco, con la amistad inicial de tu skin
         vida.vidaMax = 20 + estado.vidaExtra;

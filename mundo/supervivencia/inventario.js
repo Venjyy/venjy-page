@@ -3,9 +3,13 @@
 // Datos puros (sin DOM): 36 casillas (0-8 = barra rápida), 4 de armadura y la mano secundaria.
 // Una pila es { id, n, d } (d = desgaste acumulado de herramientas y armaduras).
 // =========================================================
-import { info, apilaDe } from './objetos.js';
+import { info, apilaDe, nombreDe } from './objetos.js';
+import { NOMBRES_AMIGO } from './misiones-datos.js';
 
-export const pila = (id, n = 1, d = 0) => ({ id, n, d });
+// `p` = quién prestó el objeto (clave del amigo): marca de los kits de misión (7d). Solo herramientas y escudos.
+export const pila = (id, n = 1, d = 0, p = null) => (p ? { id, n, d, p } : { id, n, d });
+// Nombre con la marca: «Caña (de Pony)» / «Fishing Rod (from Pony)»
+export const nombrePila = (pl, idioma = 'es') => nombreDe(pl.id, idioma) + (pl.p ? (idioma === 'en' ? ` (from ${NOMBRES_AMIGO[pl.p] || pl.p})` : ` (de ${NOMBRES_AMIGO[pl.p] || pl.p})`) : '');
 const durabilidadDe = id => (info(id) && info(id).durabilidad) || 0;
 const iguales = (a, b) => a && b && a.id === b.id && !durabilidadDe(a.id);
 
@@ -22,7 +26,7 @@ export class Inventario {
 
     // Agrega n del id: primero completa pilas existentes (barra rápida primero), luego casillas vacías.
     // Devuelve lo que no cupo.
-    agregar(id, n = 1, d = 0) {
+    agregar(id, n = 1, d = 0, marca = null) {
         const max = apilaDe(id);
         if (max > 1 && !durabilidadDe(id)) {
             for (let i = 0; i < 36 && n > 0; i++) {
@@ -32,7 +36,7 @@ export class Inventario {
             if (this.mano2 && this.mano2.id === id && this.mano2.n < max) { const k = Math.min(n, max - this.mano2.n); this.mano2.n += k; n -= k; }
         }
         for (let i = 0; i < 36 && n > 0; i++) {
-            if (!this.casillas[i]) { const k = Math.min(n, max); this.casillas[i] = pila(id, k, d); n -= k; }
+            if (!this.casillas[i]) { const k = Math.min(n, max); this.casillas[i] = pila(id, k, d, marca); n -= k; }
         }
         this.cambio();
         return n;
@@ -49,10 +53,11 @@ export class Inventario {
         return libre >= n;
     }
 
+    // Los objetos prestados (marca `p`) no cuentan: ni para entregar, ni para vender, ni para recetas
     contar(id) {
         let n = 0;
-        for (const p of this.casillas) if (p && p.id === id) n += p.n;
-        if (this.mano2 && this.mano2.id === id) n += this.mano2.n;
+        for (const p of this.casillas) if (p && p.id === id && !p.p) n += p.n;
+        if (this.mano2 && this.mano2.id === id && !this.mano2.p) n += this.mano2.n;
         return n;
     }
 
@@ -61,9 +66,9 @@ export class Inventario {
         if (this.contar(id) < n) return false;
         for (let i = 35; i >= 0 && n > 0; i--) {
             const p = this.casillas[i];
-            if (p && p.id === id) { const k = Math.min(n, p.n); p.n -= k; n -= k; if (!p.n) this.casillas[i] = null; }
+            if (p && p.id === id && !p.p) { const k = Math.min(n, p.n); p.n -= k; n -= k; if (!p.n) this.casillas[i] = null; }
         }
-        if (n > 0 && this.mano2 && this.mano2.id === id) { this.mano2.n -= n; if (this.mano2.n <= 0) this.mano2 = null; }
+        if (n > 0 && this.mano2 && this.mano2.id === id && !this.mano2.p) { this.mano2.n -= n; if (this.mano2.n <= 0) this.mano2 = null; }
         this.cambio();
         return true;
     }
@@ -125,12 +130,12 @@ export class Inventario {
     }
 
     serializar() {
-        const s = p => (p ? [p.id, p.n, p.d] : 0);
+        const s = p => (p ? (p.p ? [p.id, p.n, p.d, p.p] : [p.id, p.n, p.d]) : 0);
         return { c: this.casillas.map(s), a: this.armadura.map(s), m: s(this.mano2), e: this.elegida };
     }
 
     cargar(o) {
-        const l = v => (v ? pila(v[0], v[1], v[2] || 0) : null);
+        const l = v => (v ? pila(v[0], v[1], v[2] || 0, typeof v[3] === 'string' ? v[3] : null) : null);
         if (!o) return;
         this.casillas = (o.c || []).map(l).concat(new Array(36).fill(null)).slice(0, 36);
         this.armadura = (o.a || []).map(l).concat(new Array(4).fill(null)).slice(0, 4);
@@ -162,12 +167,12 @@ export function clicCasilla(casilla, cursor, boton, acepta = () => true) {
     if (!cursor) {
         if (!casilla) return [null, null];
         const mitad = Math.ceil(casilla.n / 2);
-        const tomado = pila(casilla.id, mitad, casilla.d);
+        const tomado = pila(casilla.id, mitad, casilla.d, casilla.p);
         casilla.n -= mitad;
         return [casilla.n ? casilla : null, tomado];
     }
     if (!acepta(cursor)) return [casilla, cursor];
-    if (!casilla) { const una = pila(cursor.id, 1, cursor.d); cursor.n--; return [una, cursor.n ? cursor : null]; }
+    if (!casilla) { const una = pila(cursor.id, 1, cursor.d, cursor.p); cursor.n--; return [una, cursor.n ? cursor : null]; }
     if (iguales(casilla, cursor) && casilla.n < apilaDe(casilla.id)) { casilla.n++; cursor.n--; return [casilla, cursor.n ? cursor : null]; }
     return [cursor, casilla];
 }

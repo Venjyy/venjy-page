@@ -113,8 +113,8 @@ export function crearContenedores({ mundo, terreno }) {
         return [e.entrada, e.combustible, e.salida].filter(Boolean);
     }
 
-    const s = p => (p ? [p.id, p.n, p.d] : 0);
-    const l = v => (v ? pila(v[0], v[1], v[2] || 0) : null);
+    const s = p => (p ? (p.p ? [p.id, p.n, p.d, p.p] : [p.id, p.n, p.d]) : 0);
+    const l = v => (v ? pila(v[0], v[1], v[2] || 0, typeof v[3] === 'string' ? v[3] : null) : null);
     function serializarUno(k, e = estados.get(k)) {
         if (!e) return null;
         if (e.tipo === 'cofre') return [k, 'c', e.casillas.map(s)];

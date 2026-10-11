@@ -16,7 +16,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `main.js` (1362) | Arranque, menús, cableado de todos los sistemas y bucle. `aplicarIdioma:84` `hospedarMundo:287` `jugar:403` `iniciarJuego:413` `arrancar:424` `pintarCoop:887` `pintarPing:942` (barras de ms, lista de Tab, 7e) `estadoActual:1098` `guardarYa:1116` `bucle:1265` |
 | `guardado.js` (150) | Hasta 5 mundos en IndexedDB `venjy-supervivencia`. `listarMundos:42` `cargarMundo:49` `guardarMundo:50` `borrarMundo:51` `serializarEdiciones:60` `cargarEdiciones:72` `descargarMundo:98` `guardarCopiaConTope:121` (copia del coop con tope, almacén inyectado) |
 | `vida.js` (218) | Vida, hambre, aire, daño y armadura. `crearVida:23` |
-| `inventario.js` (173) | Datos puros: 36 casillas, armadura, mano. `Inventario:12` `clicCasilla:149` |
+| `inventario.js` (~180) | Datos puros: 36 casillas, armadura, mano; marca `p` de préstamo (`nombrePila`). `Inventario:12` `clicCasilla:149` |
 | `objetos.js` (346) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
 | `recetas.js` (159) | Recetas con y sin forma, fundición. `RECETAS:16` `buscarReceta:122` `FUNDICION:152` |
 | `ui-inventario.js` (494) | Ventanas: inventario, mesa 3×3, horno, cofre. `crearVentanas:22` |
@@ -58,7 +58,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
-| `misiones-datos.js` (244) | 3 misiones por amigo y 3 jefes. `MISIONES:23` `JEFES:219` `TEXTOS_VENJY:240` |
+| `misiones-datos.js` (~300) | 3 misiones por amigo, kits y 3 jefes. `MISIONES:23` `KITS` `repartirKit` `JEFES:219` `TEXTOS_VENJY:240` |
 | `misiones.js` (499) | Panel de cada amigo y misión activa. `crearMisiones:38` `cumplida:114` `aceptar:273` `completar:284` `hablar:321` `hablarVenjy:343` |
 | `tienda-datos.js` (215) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `crearTienda:21` `comprar:110` `vender:123` |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
