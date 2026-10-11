@@ -88,19 +88,19 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
 
     // Suelta una pila en (x, y, z). vel opcional; `demora` antes de poder recogerla (s).
     // `uid`: solo para objetos que llegan por la red (no se vuelven a difundir)
-    function soltar(id, n, d, x, y, z, vel = null, demora = 0.5, uid = null) {
+    function soltar(id, n, d, x, y, z, vel = null, demora = 0.5, uid = null, marca = null) {
         if (!id || n <= 0) return null;
         const t0 = performance.now();
         // Sin red: si ya hay una pila igual a menos de 1 bloque, se suma a ella (7b-1: una explosión no
         // crea decenas de mallas). Online no se juntan pilas (cada una tiene su uid).
-        if (!api.red && !uid && !d) {
-            const otra = lista.find(e => e.id === id && !e.d && e.edad > 0.2 && (e.pos.x - x) ** 2 + (e.pos.y - y) ** 2 + (e.pos.z - z) ** 2 < 1);
+        if (!api.red && !uid && !d && !marca) {
+            const otra = lista.find(e => e.id === id && !e.d && !e.p && e.edad > 0.2 && (e.pos.x - x) ** 2 + (e.pos.y - y) ** 2 + (e.pos.z - z) ** 2 < 1);
             if (otra) { otra.n += n; otra.edad = 0; otra.quieto = false; marcar('soltar', t0); return otra; }
         }
         if (lista.length >= MAX_OBJETOS) quitar(lista[0]);
         const e = {
             uid: uid || api.prefijo + (contador++).toString(36),
-            id, n, d: d || 0,
+            id, n, d: d || 0, p: marca || null,
             pos: new THREE.Vector3(x, y, z),
             vel: vel ? vel.clone() : new THREE.Vector3((Math.random() - 0.5) * 2, 3 + Math.random(), (Math.random() - 0.5) * 2),
             edad: 0, demora, fase: Math.random() * 6, quieto: false,
@@ -177,7 +177,7 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
             // Recoger
             // Online, el invitado pide el objeto al anfitrión y lo recibe al confirmarse (coop.js)
             if (e.edad > e.demora && d2 < RADIO_RECOGER * RADIO_RECOGER && jugador.vivo !== false && (!api.red || api.red.puedeTomar(e))) {
-                const resto = inventario.agregar(e.id, e.n, e.d);
+                const resto = inventario.agregar(e.id, e.n, e.d, e.p);
                 if (resto < e.n) {
                     sonidos.recoger();
                     alRecoger && alRecoger(e.id, e.n - resto);
@@ -201,12 +201,12 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     }
 
     function serializar() {
-        return lista.filter(e => e.edad < VIDA_OBJETO - 5).map(e => [e.id, e.n, e.d, +e.pos.x.toFixed(2), +e.pos.y.toFixed(2), +e.pos.z.toFixed(2), Math.round(e.edad), e.uid]);
+        return lista.filter(e => e.edad < VIDA_OBJETO - 5).map(e => [e.id, e.n, e.d, +e.pos.x.toFixed(2), +e.pos.y.toFixed(2), +e.pos.z.toFixed(2), Math.round(e.edad), e.uid, ...(e.p ? [e.p] : [])]);
     }
     function cargar(arr) {
         for (const e of lista.slice()) quitar(e);
-        for (const [id, n, d, x, y, z, edad, uid] of arr || []) {
-            const e = soltar(id, n, d, x, y, z, new THREE.Vector3(), 0, uid || null);
+        for (const [id, n, d, x, y, z, edad, uid, marca] of arr || []) {
+            const e = soltar(id, n, d, x, y, z, new THREE.Vector3(), 0, uid || null, typeof marca === 'string' ? marca : null);
             if (e) e.edad = edad || 0;
         }
     }

@@ -513,9 +513,9 @@ async function arrancar(guardado, cx = null) {
 
     // Ventanas: al abrir se libera el puntero sin mostrar la pausa; al cerrar se vuelve a jugar
     let uiAbierta = false;
-    const soltarDelante = (id, n, d) => {
+    const soltarDelante = (id, n, d, marca = null) => {
         const dir = new THREE.Vector3(); camara.getWorldDirection(dir);
-        entidades.soltar(id, n, d, jugador.pos.x + dir.x * 0.5, jugador.pos.y + 1.3, jugador.pos.z + dir.z * 0.5, dir.multiplyScalar(4).add(new THREE.Vector3(0, 1.5, 0)), 1.5);
+        entidades.soltar(id, n, d, jugador.pos.x + dir.x * 0.5, jugador.pos.y + 1.3, jugador.pos.z + dir.z * 0.5, dir.multiplyScalar(4).add(new THREE.Vector3(0, 1.5, 0)), 1.5, null, marca);
     };
     const ventanasBase = crearVentanas({
         inventario, contenedores, idioma, soltar: soltarDelante,
@@ -574,7 +574,7 @@ async function arrancar(guardado, cx = null) {
         alMorir: causa => {
             if (misiones) misiones.alMorir();
             if (jefes) jefes.alMorirJugador();
-            for (const p of inventario.vaciar()) entidades.soltar(p.id, p.n, p.d, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z);
+            for (const p of inventario.vaciar()) entidades.soltar(p.id, p.n, p.d, jugador.pos.x, jugador.pos.y + 1, jugador.pos.z, null, 0.5, null, p.p);
             ventanasBase.cerrar();
             $('causa-muerte').textContent = tx().muerteCausa(causa);
             if (tactil) tactil.desactivar(); else if (document.pointerLockElement) document.exitPointerLock();

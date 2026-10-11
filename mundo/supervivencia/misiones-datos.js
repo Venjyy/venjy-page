@@ -7,7 +7,7 @@
 // Cada misión trae sus textos en { es, en }: pedido, aceptar y completada (diálogo único).
 // =========================================================
 import { B } from '../texturas.js';
-import { O } from './objetos.js';
+import { O, info } from './objetos.js';
 
 const t = (es, en) => ({ es, en });
 const COCIDO = [O.FILETE, O.CHULETA, O.POLLO_ASADO, O.CORDERO_ASADO];
@@ -214,6 +214,66 @@ export const MISIONES = [
         aceptar: t('Cuando suene el riff de Gallo cósmico, sales a pelear.', 'When the Cosmic Rooster riff plays, go fight.'),
         completada: t('¡Qué noche! Ni un solo zombi en el mosh. Toma este casco de diamante: para cabecear sin miedo.', 'What a night! Not a single zombie in the mosh pit. Take this diamond helmet: to headbang without fear.') }
 ];
+
+// ---------------- Kits (7d) ----------------
+// Se entregan una sola vez por mundo al aceptar (`estado.kits`). [id, n] = provisión (se queda y se usa);
+// [id, 1, 'amigo'] = herramienta prestada: lleva la marca del amigo, media durabilidad y no cuenta para
+// entregar ni para vender. Regla: nada de lo que piden otras misiones o compran las tiendas (salvo semillas
+// para plantar) y valor ≤ 1/3 del premio (mundo/tests/misiones.mjs).
+export const KITS = {
+    pony1: [[O.CANA, 1, 'pony']],
+    pony2: [[O.GALLETA, 3]],
+    pony3: [[O.HILO, 2]],
+    salonas1: [[O.TIJERAS, 1, 'salonas']],
+    salonas2: [[O.PICO_PIEDRA, 1, 'salonas']],
+    salonas3: [[O.PAPA_ASADA, 6]],
+    lona1: [[O.CARBON, 4]],
+    lona2: [[O.TIJERAS, 1, 'lona']],
+    lona3: [[O.MANZANA, 3]],
+    hadad1: [[O.HACHA_PIEDRA, 1, 'hadad']],
+    hadad2: [[O.ESPADA_PIEDRA, 1, 'hadad'], [O.PAPA_ASADA, 3]],
+    hadad3: [[O.CARBON, 3]],
+    andy1: [[O.HACHA_MADERA, 1, 'andy']],
+    andy2: [[O.ESPADA_PIEDRA, 1, 'andy'], [O.GALLETA, 2]],
+    andy3: [[O.ESCUDO, 1, 'andy']],
+    nacho1: [[O.ESPADA_MADERA, 1, 'nacho'], [O.CARBON, 4]],
+    nacho2: [[O.PALO, 10]],
+    nacho3: [[O.LINGOTE_HIERRO, 1]],
+    moises1: [[O.PALA_MADERA, 1, 'moises']],
+    moises2: [[O.CARBON, 4]],
+    moises3: [[O.PICO_HIERRO, 1, 'moises']],
+    lalo1: [[O.AZADA_MADERA, 1, 'lalo'], [O.SEMILLAS, 6]],
+    lalo2: [[O.ZANAHORIA, 2], [O.PAPA, 2]],
+    lalo3: [[O.ESPADA_PIEDRA, 1, 'lalo'], [O.MANZANA, 3]],
+    boris1: [[O.PICO_MADERA, 1, 'boris']],
+    boris2: [[O.HACHA_PIEDRA, 1, 'boris']],
+    boris3: [[O.PICO_HIERRO, 1, 'boris']],
+    lucho1: [[O.ESPADA_PIEDRA, 1, 'lucho']],
+    lucho2: [[O.HILO, 3]],
+    lucho3: [[O.ESCUDO, 1, 'lucho']],
+    braulio1: [[O.ESPADA_PIEDRA, 1, 'braulio']],
+    braulio2: [[O.GALLETA, 4]],
+    braulio3: [[O.PICO_PIEDRA, 1, 'braulio']],
+    conejeros1: [[O.SEMILLAS, 4]],
+    conejeros2: [[O.AZADA_MADERA, 1, 'conejeros'], [O.SEMILLAS, 6]],
+    conejeros3: [[O.ESCUDO, 1, 'conejeros']]
+};
+for (const m of MISIONES) m.kit = KITS[m.id] || null;
+
+// Entrega el kit de la misión `m` una sola vez: `kits` es el Set de misiones cuyo kit ya se dio.
+// Devuelve null si ya se había dado, o la lista de lo que no cupo: [[id, n, d, amigo]].
+export function repartirKit(m, kits, inventario) {
+    if (!m.kit || kits.has(m.id)) return null;
+    kits.add(m.id);
+    const sobran = [];
+    for (const [id, n, amigo] of m.kit) {
+        const max = amigo && info(id).durabilidad;
+        const d = max ? Math.floor(max / 2) : 0; // prestadas: media durabilidad
+        const resto = inventario.agregar(id, n, d, amigo || null);
+        if (resto) sobran.push([id, resto, d, amigo || null]);
+    }
+    return sobran;
+}
 
 // Jefes: Venjy los entrega en orden cuando se cumplen `requiere` misiones de amigos
 export const JEFES = [

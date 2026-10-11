@@ -5,6 +5,7 @@
 // =========================================================
 import { icono } from './iconos.js';
 import { info, nombreDe } from './objetos.js';
+import { nombrePila } from './inventario.js';
 
 // Íconos de 9×9 (como Minecraft): 'k' contorno, 'a' color, 'b' brillo, 's' sombra
 const FORMAS = {
@@ -82,7 +83,7 @@ export function crearHUD({ inventario, idioma: idiomaIni = 'es' }) {
     function mostrarNombre() {
         const p = inventario.enMano();
         if (!p) { nombreEl.hidden = true; return; }
-        nombreEl.textContent = nombreDe(p.id, idioma);
+        nombreEl.textContent = nombrePila(p, idioma);
         nombreEl.hidden = false;
         clearTimeout(ocultarNombre);
         ocultarNombre = setTimeout(() => { nombreEl.hidden = true; }, 2000);

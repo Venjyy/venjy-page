@@ -330,7 +330,7 @@ export function crearMinado(ctx) {
         const n = todo ? p.n : 1;
         const dir = new THREE.Vector3();
         camara.getWorldDirection(dir);
-        entidades.soltar(p.id, n, p.d, jugador.pos.x + dir.x * 0.4, jugador.pos.y + 1.3, jugador.pos.z + dir.z * 0.4, dir.multiplyScalar(5).add(new THREE.Vector3(0, 1.5, 0)), 1.5);
+        entidades.soltar(p.id, n, p.d, jugador.pos.x + dir.x * 0.4, jugador.pos.y + 1.3, jugador.pos.z + dir.z * 0.4, dir.multiplyScalar(5).add(new THREE.Vector3(0, 1.5, 0)), 1.5, null, p.p);
         inventario.gastarMano(n);
     }
 

@@ -401,7 +401,7 @@ export function crearEnemigos(ctx) {
             if (!info || info.dureza < 0 || info.dureza >= 25) continue; // roca madre, obsidiana, altares
             lote.push([bx, by, bz, 0]);
             if (Math.random() < 0.3) for (const [s, n] of dropsDe(id, O.PICO_DIAMANTE)) entidades.soltar(s, n, 0, bx + 0.5, by + 0.5, bz + 0.5);
-            if (info.contenedor && ctx.contenedores) for (const p of ctx.contenedores.quitar(bx, by, bz)) entidades.soltar(p.id, p.n, p.d, bx + 0.5, by + 0.5, bz + 0.5);
+            if (info.contenedor && ctx.contenedores) for (const p of ctx.contenedores.quitar(bx, by, bz)) entidades.soltar(p.id, p.n, p.d, bx + 0.5, by + 0.5, bz + 0.5, null, 0.5, null, p.p);
         }
         if (lote.length) { mundo.editarLote(lote); mundo.procesarRemallado(12); }
         }
