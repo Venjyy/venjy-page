@@ -36,6 +36,7 @@ import { vistaDesplazada } from './desplazado.js';
 import { iniciarTactilSupervivencia } from './tactil-supervivencia.js';
 import { crearMano } from './mano.js';
 import { crearParticulas } from './particulas.js';
+import { CLAVE as CLAVE_REND, ESCALA as ESCALA_REND, FACTOR_PARTICULAS, normalizar as normalizarRend, presetDe, aplicarPreset, LimitadorFps, AutoDistancia, Cuadros, LOD } from './rendimiento.js';
 import { crearGanado } from './ganado.js';
 import { crearProyectiles } from './proyectiles.js';
 import { crearEnemigos } from './enemigos.js';
@@ -202,6 +203,12 @@ const AJUSTES_CLAVE = 'venjy-supervivencia-ajustes';
 const ajustes = { distancia: 8, fov: 70, sens: 22, hora: false };
 try { Object.assign(ajustes, JSON.parse(localStorage.getItem(AJUSTES_CLAVE) || '{}')); } catch (e) { /* sin almacenamiento */ }
 const guardarAjustes = () => { try { localStorage.setItem(AJUSTES_CLAVE, JSON.stringify(ajustes)); } catch (e) { /* sin almacenamiento */ } };
+// Rendimiento (7b-2): escala de render, partículas, nubes, animación lejana, límite de FPS, distancia automática
+const DPR = window.devicePixelRatio || 1;
+let rendCrudo = null;
+try { rendCrudo = JSON.parse(localStorage.getItem(CLAVE_REND)); } catch (e) { /* sin almacenamiento */ }
+const rend = normalizarRend(rendCrudo, DPR);
+const guardarRend = () => { try { localStorage.setItem(CLAVE_REND, JSON.stringify(rend)); } catch (e) { /* sin almacenamiento */ } };
 
 // ---------------------------------------------------------
 // Menú de mundos
@@ -1271,19 +1278,80 @@ async function arrancar(guardado, cx = null) {
         $('aj-sonido').checked = !mundoSilenciado();
         $('aj-musica').checked = musica.encendida;
         $('aj-hora').checked = !!ajustes.hora;
+        sincronizarRend();
         pintarHora(true);
     }
     $('aj-distancia').addEventListener('input', e => {
-        ajustes.distancia = Number(e.target.value); $('aj-distancia-v').textContent = ajustes.distancia;
-        mundo.distancia = ajustes.distancia; mundo.ultimo = null;
-        const b = ajustes.distancia * CHUNK; scene.fog.near = b * 0.55; scene.fog.far = b * 0.95;
-        guardarAjustes();
+        ajustes.distancia = Number(e.target.value);
+        fijarDistancia(ajustes.distancia); auto.reiniciar();
+        guardarAjustes(); sincronizarRend();
     });
     $('aj-fov').addEventListener('input', e => { ajustes.fov = Number(e.target.value); $('aj-fov-v').textContent = ajustes.fov; camara.fov = ajustes.fov; camara.updateProjectionMatrix(); guardarAjustes(); });
     $('aj-sens').addEventListener('input', e => { ajustes.sens = Number(e.target.value); $('aj-sens-v').textContent = ajustes.sens; jugador.sensibilidad = ajustes.sens / 10000; guardarAjustes(); });
     $('aj-sonido').addEventListener('change', e => silenciarMundo(!e.target.checked));
     $('aj-musica').addEventListener('change', e => musica.encender(e.target.checked));
     $('aj-hora').addEventListener('change', e => { ajustes.hora = e.target.checked; guardarAjustes(); pintarHora(true); });
+
+
+    // ---- Menú «Rendimiento» (7b-2) ----
+    const limitador = new LimitadorFps(rend.limite);
+    const auto = new AutoDistancia();
+    const cuadrosMs = new Cuadros(120);
+    const fpsEl = $('fps'), coordsEl = $('coords');
+    // Distancia efectiva: `ajustes.distancia` es el máximo elegido; la automática puede bajarla
+    function fijarDistancia(n) {
+        mundo.distancia = n; mundo.ultimo = null;
+        const b = n * CHUNK; scene.fog.near = b * 0.55; scene.fog.far = b * 0.95;
+        $('aj-distancia-v').textContent = n === ajustes.distancia ? n : `${n}/${ajustes.distancia}`;
+    }
+    function aplicarRend() {
+        renderer.setPixelRatio(rend.escala);
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        LOD.salto = rend.lejos; LOD.animales = rend.lejos;
+        particulas.factor = FACTOR_PARTICULAS[rend.particulas];
+        cielo.mostrarNubes(rend.nubes);
+        limitador.fijar(rend.limite);
+        auto.reiniciar();
+        fijarDistancia(ajustes.distancia);
+        fpsEl.style.display = rend.fps || rend.ms ? '' : 'none';
+    }
+    const rendEl = $('rendimiento');
+    const marcarGrupo = (grupo, valor) => {
+        for (const b of rendEl.querySelectorAll(`[data-rend="${grupo}"] button`)) {
+            const on = b.dataset.v === String(valor);
+            b.classList.toggle('activo', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+    };
+    function sincronizarRend() {
+        const p = presetDe({ ...rend, distancia: ajustes.distancia }, DPR);
+        marcarGrupo('preset', p);
+        $('rend-personalizado').hidden = p !== 'personalizado';
+        $('rend-escala').value = rend.escala; $('rend-escala-v').textContent = '×' + rend.escala.toFixed(2);
+        marcarGrupo('particulas', rend.particulas);
+        marcarGrupo('lejos', rend.lejos);
+        marcarGrupo('limite', rend.limite);
+        $('rend-nubes').checked = rend.nubes; $('rend-auto').checked = rend.auto;
+        $('rend-fps').checked = rend.fps; $('rend-ms').checked = rend.ms;
+    }
+    const cambioRend = () => { guardarRend(); aplicarRend(); sincronizarRend(); };
+    rendEl.addEventListener('click', e => {
+        const b = e.target.closest('button[data-v]');
+        if (!b) return;
+        const g = b.parentElement.dataset.rend, v = b.dataset.v;
+        if (g === 'preset') { aplicarPreset(rend, v, DPR); ajustes.distancia = rend.distancia; guardarAjustes(); $('aj-distancia').value = ajustes.distancia; }
+        else if (g === 'particulas') rend.particulas = v;
+        else if (g === 'lejos') rend.lejos = +v;
+        else if (g === 'limite') rend.limite = +v;
+        cambioRend();
+    });
+    $('rend-escala').min = ESCALA_REND.min; $('rend-escala').max = ESCALA_REND.max; $('rend-escala').step = ESCALA_REND.paso;
+    $('rend-escala').addEventListener('input', e => { rend.escala = +(+e.target.value).toFixed(2); cambioRend(); });
+    $('rend-nubes').addEventListener('change', e => { rend.nubes = e.target.checked; cambioRend(); });
+    $('rend-auto').addEventListener('change', e => { rend.auto = e.target.checked; cambioRend(); });
+    $('rend-fps').addEventListener('change', e => { rend.fps = e.target.checked; cambioRend(); });
+    $('rend-ms').addEventListener('change', e => { rend.ms = e.target.checked; cambioRend(); });
+    aplicarRend();
+    sincronizarRend();
 
     // ---- Depuración ----
     window.__venjy = {
@@ -1305,9 +1373,9 @@ async function arrancar(guardado, cx = null) {
     entrar();
 
     let anterior = performance.now(), cuadros = 0, acumulado = 0, relojAgua = 0, cuadroAgua = 0, fovCorrer = 0;
-    const fpsEl = $('fps'), coordsEl = $('coords');
     function bucle(ahora) {
         requestAnimationFrame(bucle);
+        if (!limitador.toca(ahora)) return; // límite de FPS (7b-2): el tiempo se acumula en el próximo cuadro
         const tBucle = performance.now();
         const dt = Math.min(0.1, (ahora - anterior) / 1000);
         anterior = ahora;
@@ -1381,12 +1449,19 @@ async function arrancar(guardado, cx = null) {
         mundo.procesar(5);
         renderer.render(scene, camara);
         if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine) mano.dibujar();
-        if (medicion.activa && medicion.cuadros) medicion.cuadros.push(performance.now() - tBucle); // /medir romper
+        const msCuadro = performance.now() - tBucle;
+        cuadrosMs.agregar(msCuadro);
+        if (medicion.activa && medicion.cuadros) medicion.cuadros.push(msCuadro); // /medir romper
 
         pintarHora(); // barato: solo escribe al cambiar el minuto, el día, el idioma o la mano
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {
-            fpsEl.textContent = Math.round(cuadros / acumulado) + ' FPS';
+            const fps = cuadros / acumulado;
+            fpsEl.textContent = [rend.fps ? Math.round(fps) + ' FPS' : '', rend.ms ? cuadrosMs.mediana.toFixed(1) + ' ms' : ''].filter(Boolean).join(' · ');
+            if (rend.auto) {
+                const nueva = auto.paso(fps, acumulado, { activo: jugador.activo, cargando: mundo.cola.length > 0, actual: mundo.distancia, max: ajustes.distancia, objetivo: rend.limite || 60 });
+                if (nueva !== null) fijarDistancia(nueva);
+            }
             cuadros = 0; acumulado = 0;
             coordsEl.textContent = `X ${jugador.pos.x.toFixed(1)}  Y ${jugador.pos.y.toFixed(1)}  Z ${jugador.pos.z.toFixed(1)}`;
         }

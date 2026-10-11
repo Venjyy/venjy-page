@@ -30,7 +30,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `botin.js` (30) | Tablas de botín por lugar. `botinDe:21` |
 | `agricultura.js` (146) | Cultivos y brotes por registro. `crearAgricultura:26` |
 | `entidades.js` (215) | Objetos tirados; se juntan los iguales a < 1 bloque también al soltar (7b-1). `crearEntidades:69` |
-| `particulas.js` (95) | Partículas con un InstancedMesh. `crearParticulas:11` |
+| `particulas.js` (~100) | Partículas con un InstancedMesh; `factor` (0-1) descarta emisiones (menú de rendimiento, 7b-2). `crearParticulas:11` |
 | `dia.js` (41) | Día de 10 min. `crearDia:15` |
 | `reloj.js` (19) | 7j-0, sin DOM: hora de reloj (24 h, 1 h = 25 s de media) desde `horaDe`. `minutosDe` `textoHora` `textoDiaHora` `enTramo`. Lo pinta `pintarHora` de `main.js` (HUD, pausa, Reloj en la mano) |
 | `horarios-datos.js` (22) | 7j-0: horario y lugar ES/EN de cada amigo con posición (`HORARIOS`); lo muestra `hablar.js`; lo leerán las rutinas de 6d |
@@ -45,6 +45,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `tactil-supervivencia.js` (70) | Botones táctiles; etiquetas y layout salen de `mundo/datos/` (`textos.json`, `ui-layout.json`) con el código como defecto. `aplicarDatosVivos:28` (Estudio, sin recargar) `iniciarTactilSupervivencia:36` |
 | `layout-datos.js` (112) | Estudio fase 1: genera un `<style id="layout-datos">` desde `ui-layout.json` solo con las claves presentes. `cssLayout:88` `aplicarLayout:97` |
 | `consola.js` (176) / `comandos-dev.js` (345) | Consola T o `/` y comandos de desarrollo (`/gamemode devenjy`). `crearConsola:40` · `crearComandosDev:95` |
+| `rendimiento.js` (~170) | 7b-2, sin DOM: menú «Rendimiento» de la pausa. `PRESETS` `normalizar` `presetDe` `aplicarPreset` `LimitadorFps` `AutoDistancia` (portada de `autoAjustar` del creativo) `Cuadros` (mediana/p95 de ms); reexporta `LOD` y `pasoLejano` de `../criaturas/lod.js`. Cableado en `main.js`: `aplicarRend` `fijarDistancia` `sincronizarRend`. Prueba `mundo/tests/rendimiento.mjs` |
 | `medir.js` (182) | 7b-1: `/medir romper [captura]` (devenjy, con `import()`): rompe 6×6×3 a 4 bloques/s en campo, campamento y base con antorchas; cuadro p50/p95/p99 y ms por fase (`marcar` de `voxeles.js`). `medirRomper:45` |
 | `creditos.js` (35) | Créditos al hundir el Caleuche. `mostrarCreditos:13` |
 
@@ -148,6 +149,7 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | `animales.js` (630) | Granja y manadas. `crearAnimales:360` |
 | `charla.js` (34) | Conversaciones de grupo. `crearCharla:9` |
 | `bajo.js` (251) | Bajo de Salonas (WebAudio). `RIFFS:15` `crearBajo:62` |
+| `lod.js` (~25) | 7b-2, sin imports: `LOD` (`salto` para personas, `animales`, `radio`) y `pasoLejano`, que `npcs.js`, `amigos.js` y `venjy.js` usan para actualizar a los lejanos 1 de cada N cuadros con el dt acumulado; `animales.js` lee `LOD.animales` (4 por defecto). El menú lo fija; sin menú todo queda como antes |
 
 ## Flujos clave
 

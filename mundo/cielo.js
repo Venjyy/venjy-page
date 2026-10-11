@@ -226,6 +226,8 @@ export function crearCielo(scene, anchoMundo, fondoMundo, materiales) {
         },
         // nubesLibres: con el ciclo pausado (la supervivencia maneja su propio reloj) las nubes siguen andando
         nubesLibres: false,
+        // Menú «Rendimiento» (7b-2): apaga las nubes (una malla menos); sigue corriendo su desfase
+        mostrarNubes(v) { nubes.visible = !!v; },
         actualizar(camara, dt) {
             if (!this.pausado) {
                 this.hora = (this.hora + dt / DURACION_DIA) % 1;

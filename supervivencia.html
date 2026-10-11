@@ -115,6 +115,21 @@
                 <label class="opcion"><input id="aj-hora" type="checkbox"> <span data-es="Mostrar la hora en pantalla" data-en="Show the time on screen">Mostrar la hora en pantalla</span></label>
                 <label class="opcion"><input id="aj-musica" type="checkbox"> <span data-es="Música" data-en="Music">Música</span></label>
             </div>
+            <details class="rendimiento" id="rendimiento">
+                <summary data-es="Rendimiento" data-en="Performance">Rendimiento</summary>
+                <div class="ajustes-pausa">
+                    <div class="rend-fila"><span data-es="Preajuste" data-en="Preset">Preajuste</span> <span class="rend-op" data-rend="preset"><button type="button" class="boton secundario chico" data-v="rapido" data-es="Rápido" data-en="Fast">Rápido</button><button type="button" class="boton secundario chico" data-v="equilibrado" data-es="Equilibrado" data-en="Balanced">Equilibrado</button><button type="button" class="boton secundario chico" data-v="bonito" data-es="Bonito" data-en="Pretty">Bonito</button></span></div>
+                    <p id="rend-personalizado" class="nota" hidden data-es="Personalizado: cambiaste algo del preajuste." data-en="Custom: you changed something from the preset.">Personalizado: cambiaste algo del preajuste.</p>
+                    <label><span data-es="Escala de render" data-en="Render scale">Escala de render</span> <input id="rend-escala" type="range" min="0.5" max="1.5" step="0.05"> <b id="rend-escala-v"></b></label>
+                    <div class="rend-fila"><span data-es="Partículas" data-en="Particles">Partículas</span> <span class="rend-op" data-rend="particulas"><button type="button" class="boton secundario chico" data-v="todas" data-es="Todas" data-en="All">Todas</button><button type="button" class="boton secundario chico" data-v="pocas" data-es="Pocas" data-en="Few">Pocas</button><button type="button" class="boton secundario chico" data-v="minimas" data-es="Mínimas" data-en="Minimal">Mínimas</button></span></div>
+                    <div class="rend-fila"><span data-es="Personajes lejanos: 1 de cada N cuadros" data-en="Far characters: 1 in every N frames">Personajes lejanos: 1 de cada N cuadros</span> <span class="rend-op" data-rend="lejos"><button type="button" class="boton secundario chico" data-v="1" data-es="1" data-en="1">1</button><button type="button" class="boton secundario chico" data-v="2" data-es="2" data-en="2">2</button><button type="button" class="boton secundario chico" data-v="4" data-es="4" data-en="4">4</button></span></div>
+                    <div class="rend-fila"><span data-es="Límite de FPS (ahorra batería)" data-en="FPS limit (saves battery)">Límite de FPS (ahorra batería)</span> <span class="rend-op" data-rend="limite"><button type="button" class="boton secundario chico" data-v="30" data-es="30" data-en="30">30</button><button type="button" class="boton secundario chico" data-v="60" data-es="60" data-en="60">60</button><button type="button" class="boton secundario chico" data-v="0" data-es="Libre" data-en="Free">Libre</button></span></div>
+                    <label class="opcion"><input id="rend-nubes" type="checkbox"> <span data-es="Nubes" data-en="Clouds">Nubes</span></label>
+                    <label class="opcion"><input id="rend-auto" type="checkbox"> <span data-es="Distancia automática (baja y sube sola)" data-en="Auto render distance (goes down and up by itself)">Distancia automática (baja y sube sola)</span></label>
+                    <label class="opcion"><input id="rend-fps" type="checkbox"> <span data-es="Mostrar FPS" data-en="Show FPS">Mostrar FPS</span></label>
+                    <label class="opcion"><input id="rend-ms" type="checkbox"> <span data-es="Mostrar ms por cuadro" data-en="Show frame ms">Mostrar ms por cuadro</span></label>
+                </div>
+            </details>
             <button id="cambiar-skin" class="boton secundario" type="button" data-es="Cambiar skin" data-en="Change skin">Cambiar skin</button>
             <button id="guardar" class="boton secundario" type="button" data-es="Guardar" data-en="Save">Guardar</button>
             <button id="salir-menu" class="boton secundario" type="button" data-es="Guardar y salir al menú" data-en="Save and quit to menu">Guardar y salir al menú</button>

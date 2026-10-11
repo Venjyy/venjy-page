@@ -12,6 +12,7 @@ import {
     crearNombre, crearGlobo, COLOR_GLOBO, suelo, audioMundo, sonando, bufferRuido
 } from './cuerpo.js';
 import { pielDe, agregarExtras } from './pieles.js';
+import { pasoLejano } from './lod.js';
 
 export const VENJY = {
     piel: [240, 212, 192], pelo: { color: [56, 34, 22], estilo: 'rulos' }, ojos: [74, 50, 30],
@@ -527,9 +528,13 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
             tiempo += dt;
             dt = Math.min(dt, 0.05);
             tinte.aplicar(materiales.solido.color);
+            const dtBase = dt;
             for (const n of lista) {
+                dt = dtBase;
                 n.t += dt;
                 const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
+                dt = pasoLejano(n, dJ, dtBase); // 7b-2: lejos, 1 de cada N cuadros (LOD.salto)
+                if (dt === 0) continue;
                 let visible = !oculto && dJ < RADIO_VISIBLE;
                 if (visible && !n.cargado) {
                     if (!n.candidatos || !ubicar(n)) visible = false;
@@ -571,6 +576,7 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
                 n.globo.actualizar(dt, !!texto && seVe(mundo, jugador.camara, n.x, n.y + (tumbado ? 0.4 : 1.6), n.z), n.x, yGlobo, n.z);
                 n.nombre.actualizar(dt, jugador.camara, mundo, !texto && !n.escena, n.x, n.y + alto + 0.2, n.z, n.x, n.y + (tumbado ? 0.3 : 1.2), n.z);
             }
+            dt = dtBase;
             for (const c of chispas) {
                 if (!c.m.visible) continue;
                 c.vida -= dt;
