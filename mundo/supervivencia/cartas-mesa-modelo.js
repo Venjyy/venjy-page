@@ -27,7 +27,13 @@ export const MESA = {
     mazo: { x: 0.76, z: 0.26 },                   // el tuyo a tu derecha y cerca; el de Lucho, al revés
     asiento: { dist: 0.45 },                      // desde tu borde de la mesa
     camara1: { alto: 1.62, atras: 0, mira: [0, 0.3, -0.45] },
-    camara3: { alto: 2.5, atras: 2.4, lado: 1.9, mira: [0, 0.3, -0.4] },
+    // Al elegir una carta en 1.ª persona la cámara sube sobre la mesa (tu mano no tapa las zonas)
+    enfoque: { alto: 1.25, z: 0.32, mira: [0, 0, -0.02] },
+    // Cámaras de 3.ª persona: el botón Vista pasa por 1.ª persona y luego por cada una de esta lista
+    terceras: [
+        { alto: 2.5, atras: 2.4, lado: 1.9, mira: [0, 0.3, -0.4] },
+        { alto: 2.2, atras: 2.2, lado: -2.0, mira: [0, 0.3, -0.4] }
+    ],
     mini: { ancho: 0.3, max: 340, alto: 1.7, margen: 12 }, // vista de arriba en una esquina (3.ª persona)
     mano: { alto: 0.26, max: 230, solape: 0.72, sube: 0.18 } // tu mano en pantalla (fracción del alto)
 };

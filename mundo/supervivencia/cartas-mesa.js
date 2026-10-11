@@ -22,6 +22,7 @@ const t = (es, en) => ({ es, en });
 export const TXT_MESA = {
     camara1: t('Vista: 1.ª persona', 'View: 1st person'),
     camara3: t('Vista: 3.ª persona', 'View: 3rd person'),
+    cerrarLector: t('Cerrar', 'Close'),
     panel: t('Panel 2D', '2D panel'),
     tocaCarta: t('Toca una carta de tu mano o una de tus criaturas', 'Tap a card in your hand or one of your creatures'),
     tocaZona: t('Toca una zona marcada', 'Tap a highlighted zone'),
@@ -34,7 +35,7 @@ const COLOR_MARCA = { libre: 0x1d1d1d, valida: 0x55ff55, elegida: 0xffd24a };
 export function crearMesaCartas(ctx) {
     const { scene, grupo, dy, camaras, renderer, jugador, tinte } = ctx;
     let idioma = ctx.idioma || 'es', L = fusionar(MESA, ctx.datos || null);
-    let abierto = false, e = null, nivel = 'facil', sel = null, postura = 'ata', reloj = 0, vista = 1;
+    let abierto = false, e = null, nivel = 'facil', sel = null, postura = 'ata', reloj = 0, vista = 1, tercera = 0, leida = null;
     let M = null, lucho = null, luchoAntes = null, aviso = '', encima = -1, mostrandoReglas = false;
     const Lx = o => (o && (o[idioma] || o.es)) || '';
 
@@ -210,12 +211,26 @@ export function crearMesaCartas(ctx) {
     const camMini = new THREE.PerspectiveCamera(48, 4 / 3, 0.05, 6);
     const v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
     const local = (x, y, z, v) => raiz.localToWorld(v.set(x, y, z));
-    function plano() {
-        const atras = L.mesa.fondo / 2 + L.asiento.dist, C = vista === 1 ? L.camara1 : L.camara3;
+    // La cámara va suave hacia su plano (1.ª persona, enfoque sobre la mesa al elegir, o la 3.ª persona elegida)
+    const pos = new THREE.Vector3(), mira = new THREE.Vector3(); let primera = true;
+    const terceraActual = () => L.terceras[tercera % Math.max(1, L.terceras.length)] || MESA.terceras[0];
+    function objetivoCamara() {
+        const atras = L.mesa.fondo / 2 + L.asiento.dist;
+        if (vista === 1 && sel && e && e.ganador === null) {
+            const F = L.enfoque;
+            local(0, L.mesa.alto + F.alto, F.z, v1); local(F.mira[0], L.mesa.alto + F.mira[1], F.mira[2], v2);
+            return;
+        }
+        const C = vista === 1 ? L.camara1 : terceraActual();
         local(vista === 1 ? 0 : C.lado, C.alto, atras + C.atras, v1);
         local(C.mira[0], L.mesa.alto + C.mira[1], C.mira[2], v2);
-        return { pos: v1, mira: v2 };
     }
+    function moverCamara(dt) {
+        objetivoCamara();
+        const k = primera ? 1 : Math.min(1, dt * 6);
+        pos.lerp(v1, k); mira.lerp(v2, k); primera = false;
+    }
+    const plano = () => ({ pos, mira });
     function rectMini() {
         renderer.getSize(tam);
         const w = Math.min(tam.x * L.mini.ancho, L.mini.max), h = w * 0.75;
@@ -263,12 +278,24 @@ export function crearMesaCartas(ctx) {
         if (B.directo) fila.appendChild(boton(Lx(TXT_CARTAS.directo), () => ejecutar(B.directo), 'cartas-directo'));
         if (B.postura) for (const modo of ['ata', 'def']) fila.appendChild(boton(Lx(modo === 'ata' ? TXT_CARTAS.ataque : TXT_CARTAS.defensa), () => { postura = modo; sel = elegirPostura(e, sel, modo); refrescarMesa(); }, modo === sel.modo ? 'elegido' : ''));
         fila.append(
-            boton(Lx(vista === 1 ? TXT_MESA.camara1 : TXT_MESA.camara3), cambiarVista),
+            boton(vista === 1 ? Lx(TXT_MESA.camara1) : `${Lx(TXT_MESA.camara3)}${L.terceras.length > 1 ? ` ${tercera + 1}/${L.terceras.length}` : ''}`, cambiarVista),
             boton('?', () => { mostrandoReglas = !mostrandoReglas; pintarHud(); }, 'cartas-ayuda'),
             boton(Lx(TXT_MESA.panel), () => { const n = nivel; cerrar(false); if (ctx.alPanel) ctx.alPanel(n); }, 'secundario'),
             boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario')
         );
         hud.append(arriba, guia, fila);
+        // Lector: la carta elegida de tu mano o la última de la mesa que tocaste, en grande para leerla
+        const id = sel && sel.tipo === 'carta' ? e.jug[0].mano[sel.m] : leida && e.jug[leida[0]].zonas[leida[1]]?.id;
+        if (id) {
+            const c = leida && !(sel && sel.tipo === 'carta') ? e.jug[leida[0]].zonas[leida[1]] : null, d = CARTAS[id];
+            const tx = c ? texturaCarta(id, atkDe(e, leida[0], c), defDe(e, leida[0], c)) : texturaCarta(id, d.atk ?? 0, d.def ?? 0);
+            const lector = document.createElement('div'); lector.className = 'cartas-mesa-lector';
+            const lz = document.createElement('canvas'); lz.width = tx.image.width; lz.height = tx.image.height;
+            lz.getContext('2d').drawImage(tx.image, 0, 0); lz.setAttribute('aria-label', `${Lx(d.nombre)} · ${Lx(d.texto)}`);
+            lector.appendChild(lz);
+            if (!sel || sel.tipo !== 'carta') lector.appendChild(boton(Lx(TXT_MESA.cerrarLector), () => { leida = null; pintarHud(); }, 'secundario'));
+            hud.appendChild(lector);
+        }
         if (mostrandoReglas) { const r = document.createElement('div'); r.className = 'cartas-reglas'; for (const l of TXT_CARTAS.reglas) { const p = document.createElement('p'); p.textContent = Lx(l); r.appendChild(p); } hud.appendChild(r); }
         if (e.ganador !== null) {
             const fin = document.createElement('div'); fin.className = 'cartas-fin';
@@ -316,6 +343,8 @@ export function crearMesaCartas(ctx) {
         else if (u.lucho) { const B = botonesMesa(e, sel); r = B.directo ? { sel: null, accion: B.directo } : { sel, accion: null }; }
         else if (u.mazo === 0) { const B = botonesMesa(e, sel); r = { sel, accion: B.robar }; }
         sel = r.sel;
+        // Tocar una carta de la mesa sin jugar la abre en el lector
+        leida = !r.accion && u.zona && e.jug[u.zona[0]].zonas[u.zona[1]] ? u.zona : null;
         if (r.accion) ejecutar(r.accion); else refrescarMesa();
     }
     function alMover(ev) {
@@ -351,7 +380,10 @@ export function crearMesaCartas(ctx) {
         nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel, { semilla: (Math.random() * 1e9) | 0 }); sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false;
         refrescarMesa();
     }
-    function cambiarVista() { vista = vista === 1 ? 3 : 1; pintarHud(); }
+    function cambiarVista() {
+        if (vista === 1) { vista = 3; tercera = 0; } else if (tercera + 1 < L.terceras.length) tercera++; else vista = 1;
+        pintarHud();
+    }
 
     // ---------- Abrir y cerrar ----------
     function colocar() {
@@ -372,6 +404,7 @@ export function crearMesaCartas(ctx) {
         luchoAntes = { yaw: lucho.yaw, escena: lucho.escena };
         lucho.escena = (dt, base) => { const r = base(dt); lucho.yaw = M.yawLucho; return r; };
         camaras.iniciarCine(lucho, { escena: true, fundido: 0.35 });
+        primera = true; moverCamara(0);
         camaras.manual = plano;
         camaras.pose = cuerpo => { cuerpo.g.visible = vista === 3; };
         capa.hidden = false; hud.hidden = false;
@@ -383,7 +416,7 @@ export function crearMesaCartas(ctx) {
     }
     function cerrar(avisar = true) {
         if (!abierto) return;
-        abierto = false; e = null; sel = null; encima = -1;
+        abierto = false; e = null; sel = null; encima = -1; leida = null;
         limpiarDinamicos(); pintarMano();
         grupo.remove(raiz);
         if (lucho && luchoAntes) { lucho.escena = luchoAntes.escena; lucho.yaw = luchoAntes.yaw; }
@@ -427,6 +460,7 @@ export function crearMesaCartas(ctx) {
             // Luz del mundo (día y noche); las cartas, algo más claras para que se lean de noche
             if (tinte) for (const m of mats) m.color.copy(luz.copy(tinte).lerp(BLANCO, 1 - m.userData.claro)).multiply(m.userData.base);
             colocarMano(Math.min(1, dt * 14));
+            moverCamara(dt);
             jugador.yaw = M.asiento.yaw; jugador.pitch = 0;
             if (!e || e.ganador !== null) return;
             if (e.fase === 'robo' || e.turno === 1) {

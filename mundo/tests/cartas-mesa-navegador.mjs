@@ -45,6 +45,10 @@ try {
         const antes = await pag.evaluate(() => JSON.stringify(window.__venjy.mesaCartas.estado.jug[0].zonas));
         await pag.mouse.click(p.x, p.y);
         await pag.waitForTimeout(200);
+        if (i === 0) {
+            ok(await pag.isVisible('.cartas-mesa-lector canvas'), 'la carta elegida se abre en el lector');
+            if (capturas) await pag.screenshot({ path: path.join(capturas, 'mesa-enfoque.png') });
+        }
         for (let z = 0; z < 3 && !jugo; z++) {
             const q = await pag.evaluate(z => window.__venjy.mesaCartas.pantallaZona(0, z), z);
             await pag.mouse.click(q.x, q.y);

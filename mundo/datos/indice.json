@@ -38,6 +38,12 @@
       "fase": 3,
       "que": "Ofertas nuevas de la tienda por nombre de objeto (como /dar); las de hoy siguen en tienda-datos.js"
     },
+    "cartas-mesa": {
+      "esquema": "cartas-mesa",
+      "lee": "mundo/supervivencia/cartas-mesa.js",
+      "fase": 7,
+      "que": "Mesa del Duelo de Cartas junto a Lucho: dónde queda, medidas, las cartas que sostiene Lucho y las cámaras (1.ª persona, enfoque sobre la mesa y la lista de 3.ª persona); se aplica en vivo con supervivencia.html?estudio si la mesa está abierta o ya se abrió"
+    },
     "escenas": {
       "esquema": "escenas",
       "lee": "mundo/supervivencia/escena-amistad.js",
