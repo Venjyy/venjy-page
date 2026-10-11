@@ -400,6 +400,7 @@ export function texto(t, idioma, vars) { /* … */ }
   - después, planos de cámara.
   Los guiones con lógica (moldes, `fusion`, `espejo`, grupos) siguen en JS. Solo las escenas nuevas
   y simples nacen en JSON.
+  **Diseño cerrado en §13** (esquema, piloto con paridad y partición en los PR 5a, 5b y 5c).
 - **Editor**: línea de tiempo con una fila por actor, bloques de gesto que se arrastran y estiran,
   marcas de golpe y de frase, y Reproducir, Pausa e Ir a con el puente. Los nombres de gesto se
   validan contra `GESTOS`, `GESTOS_AMISTAD`, `MOLDES` y `poses.json`.
@@ -674,3 +675,140 @@ entero.
   TransformControls, pero el editor es de escritorio); personas de `npcs.js` (Pony, Salonas, Lona y los Venjy no están en `posiciones.json`).
 - **Pruebas**: `node mundo/tests/estudio-posiciones.mjs` (Node) y `node mundo/tests/estudio-posiciones-navegador.mjs` (arrastre real con
   Playwright; toca `posiciones.json` y lo deja como estaba aunque falle).
+
+## 13. Fase 5 · diseño de escenas (2026-10-11)
+
+Solo diseño: esquema, piloto con paridad y partición en 3 PR para Sonnet. Nada del juego lee todavía `escenas.json`
+(`lee: null` en `indice.json`). Archivos: `estudio/esquemas/escenas.schema.json`, `mundo/datos/escenas.json`,
+`mundo/tests/estudio-escenas.mjs`.
+
+### Lo que dice el código
+
+- **Un solo motor**: `escena-amistad.js` corre las 4 genéricas de 6b, los momentos, las bienvenidas, los reencuentros y los
+  grupos. Todas terminan en el mismo **guion de ejecución** (cabecera de `escena-amistad.js`):
+  `{ T, r, lineas: [{ q, a, d, texto }], pista: { q: [[gesto, desde, hasta]] }, gestos, actores, reparto, yaw, golpes, corazones, extra }`.
+- **`ANIMACIONES` ya es datos puros**; `guionGenerico(clave, tipo)` solo le agrega la frase de `FRASES_AMISTAD[clave][tipo]`
+  como `lineas: [{ q: 'n', a: linea[0], d: linea[1] }]`.
+- **Las bienvenidas, momentos y grupos son código que fabrica el guion**: `encadenar()` pone los tiempos de las frases con
+  `durLinea`, los golpes salen de cuentas (`H = f(3) + 0.3`), los gestos propios son funciones (`tiembla` con senos,
+  `frotaJ = MOLDES.frota + pz`), `desplazar`, `reparto`, `yaw` por función, `centro`/`colocar`, `extra.iniciar/cuadro/terminar`,
+  objetos `PIX` y `SONIDOS`.
+- **Un gesto se busca por nombre** en `guion.gestos` → `GESTOS_AMISTAD` → `GESTOS` (`escena-amistad.js`, `aplicar`). `MOLDES`
+  solo existe si el guion lo pasa en `gestos` (las bienvenidas hacen `gestos: { ...MOLDES, … }`).
+- **Peso de un tramo**: `gestoDe` da `u = (t - desde) / (hasta - desde)` y rampas de `min(0,3, tramo / 3)`. Es todo lo que el
+  motor hace con la pista; por eso, con datos iguales, la paridad es exacta.
+- **Cámara**: `escena-amistad.js` elige `PLANOS_AMISTAD`, `PLANOS_GRUPO` o `PLANOS_GRUPO_TECHO` y los pasa a
+  `camaras.iniciarCine({ planos })`. `camaras.js` cambia de plano con cada frase, pero **salta los planos tapados**
+  (`siguientePlano`): qué plano sale en cada frase no se sabe sin el mundo. Los planos manuales (`camaras.manual`) piden
+  coordenadas del mundo.
+- **`escenas-skin.js`** (`CORTAS`, `VENJY`, `IGLU`) es otro motor (humo, objetos del iglú, globos propios). Queda fuera de la fase 5.
+
+### Decisiones
+
+1. **Un archivo, dos tipos.** `escenas.json` → `escenas.<clave>` con `tipo`:
+   - `amistad`: la misma forma que `ANIMACIONES` (`nivel`, `T`, `r`, `linea [desde, dura]`, `golpes`, `corazones`, `pista`).
+     Reemplaza por clave a la de `ANIMACIONES`. La frase sigue en `FRASES_AMISTAD` (13 personas × 4); no entra a este archivo.
+   - `guion`: escena nueva y simple con sus frases: `lineas [{ q, a, d?, texto {es, en, revisado?} }]`, `actores` extra
+     (`clave` o `{ clave, radio }`), `golpes`, `corazones`, `pista`.
+2. **El mismo vocabulario que el guion de ejecución.** Ningún nombre se traduce: el convertidor es casi la identidad y la
+   paridad es fácil de probar.
+3. **Tiempos absolutos** en segundos de escena. Nada de «después de la frase 3»: encadenar es lógica, y el editor arrastra
+   bloques en una línea de tiempo. En `guion`, `d` es opcional: si falta vale `durLinea(texto)` (`reencuentros.js`), lo que se
+   alcanza a leer (regla del dueño: no apurar frases).
+4. **Gestos solo por nombre.** Una escena no define gestos ni variantes (`frotaJ = frota + pz 0.4`). Un gesto nuevo va a `MOLDES`
+   (JS) o, desde la fase 6, a `poses.json`. Nombres válidos = los que el juego resuelve hoy: `GESTOS`, `GESTOS_AMISTAD` y
+   `MOLDES`. Los de `poses.json` se suman cuando la fase 6 le ponga `lee` (hoy los 11 también están en el código).
+5. **Fusión** (regla 2 de §3): `fusionar(ANIMACIONES[k], escenas[k])` sin `tipo`, `camara` ni `nota`. `pista` es objeto: una
+   fila de actor del JSON reemplaza la fila entera; una fila que falta queda la del código. Sin archivo, roto o con
+   `?sin-datos`: el código.
+6. **Cámara (después, PR 5c)**: `camara.planos` = `"amistad" | "grupo" | "grupo-techo"` o una lista propia de planos con la
+   forma de `PLANOS_AMISTAD` (`nombre`, `ang`, `dist`, `alto`, `orbita`, `dolly`). Se pasa tal cual a `iniciarCine`. **Sin
+   cortes por tiempo ni planos manuales** (pedirían tocar `camaras.js` y coordenadas del mundo). Ver un plano en el editor =
+   reproducir la escena con `planos: [ese]`.
+7. **Quién dispara una escena `guion`**: nadie, sola. Se juega con `/amistad guion <clave> [persona]` y desde el Estudio.
+   Conectarla a un evento (llegar a un lugar, subir de nivel) es JS y lo decide el dueño escena por escena.
+8. **Reglas que el esquema no expresa** (`cli.mjs validar`; errores salvo donde dice aviso):
+   - tramos de cada fila en orden, `desde < hasta ≤ T` y sin superponerse;
+   - cada fila de `pista` y cada `q` de `lineas` es `n`, `j` o un actor declarado (o `todos` en `lineas`);
+   - cada gesto existe (punto 4);
+   - `golpes` y `corazones` en orden creciente y `< T`; la frase (`linea` o cada línea) termina antes de `T`;
+   - **aviso**: dos frases que se pisan; `d < durLinea(texto)` (frase apurada); `texto` sin `revisado: true`; escena
+     `amistad` cuya clave no está en `ANIMACIONES` (el juego la ignoraría).
+   Hoy están en la sección 3 de `mundo/tests/estudio-escenas.mjs`.
+9. **El editor muestra también las 4 de `ANIMACIONES`**: las que no están en el JSON salen como «en código»; editarlas las
+   copia al JSON (añadir claves está permitido). Así el piloto no obliga a migrar a mano.
+
+### Qué queda en JS (y por qué)
+
+| Queda en JS | Por qué |
+|---|---|
+| `fusion`, `seguidos`, `espejo`, `con`, `desplazar` y los moldes compuestos | Son funciones de funciones; en datos serían un lenguaje nuevo |
+| Gestos propios de una escena (`tiembla`, `frotaJ`, `punoM`) | Senos, sumas y moldes corridos: van a `MOLDES` o, en la fase 6, a `poses.json` |
+| `reparto` y `yaw` | La misma escena en las dos direcciones y giros que dependen de dónde está cada uno |
+| Escenas de grupo (`centro`, `colocar`, `api.mover`, `api.camara`) | Dependen del lugar y de quién vino |
+| `extra` (`iniciar`, `cuadro`, `terminar`), objetos `PIX`, `SONIDOS`, efectos | Código por cuadro |
+| `encadenar` y tiempos derivados (`H = f(3) + 0.3`) | Lógica; en JSON se guarda el número ya calculado |
+| Bienvenidas, momentos y reencuentros | Usan todo lo anterior. Se migran solo si se tocan **y** caben en el esquema |
+| `escenas-skin.js` | Otro motor |
+
+### Piloto (hecho en esta fase)
+
+`punos` (golpe) y `pareja` (corazones) copiados de `ANIMACIONES`. `abrazo` y `secreto` siguen en el código (el editor los
+mostrará, decisión 9). `node mundo/tests/estudio-escenas.mjs`: formato estable, esquema, 7 casos inválidos que fallan, una
+escena `guion` de ejemplo válida, paridad de datos exacta y, cada 1/120 s, el mismo gesto con el mismo `u` y peso
+(3418 comparaciones, diferencia máxima 0), más las reglas del punto 8.
+
+### Partición para Sonnet (3 PR, en orden)
+
+Reglas para los tres: no tocar `camaras.js`, `mano.js`, `skin.js` ni `coop.js`; todo texto visible del Estudio con `data-es` /
+`data-en`; `escenas.json` solo gana claves (los valores del piloto no se cambian); PENDIENTES.md y MAPA.md al día.
+
+**PR 5a · el juego lee `escenas.json` (sin editor)** · rama `estudio-fase5a`
+- `mundo/datos/escenas.js` (nuevo, puro, sin DOM): `animacionDeDatos(def)` (quita `tipo`, `camara` y `nota`, como la prueba),
+  `guionDeDatos(def, { durLinea, moldes })` → guion de ejecución (`d` que falta = `durLinea(texto)`, `gestos: moldes`,
+  `actores` tal cual) y `reglasEscenas(datos, nombres)` → `[{ tipo: 'error' | 'aviso', texto }]` (punto 8).
+- `escena-amistad.js`: `cargarDatos('escenas')` al importar el módulo (ya se importa con `import()` solo al usarse: la carga
+  inicial no cambia). `guionGenerico` usa `fusionar(ANIMACIONES[tipo], animacionDeDatos(datos.escenas[tipo]))` solo si esa
+  escena es de tipo `amistad`. Función nueva `jugarGuion(clave, persona)` (sin persona: la más cercana): importa `moldes.js`
+  con `import()` y llama a `iniciar`. `__venjy.amistadEscena.jugarGuion`. `aplicarDatosVivos('escenas', datos)` para el Estudio.
+- `comandos-dev.js`: `/amistad guion <clave> [persona]`.
+- `estudio/puente-protocolo.js`: `escenas` en `DATOS_VIVOS`. `indice.json`: `lee: "mundo/supervivencia/escena-amistad.js"`.
+- `estudio/cli.mjs`: `resumen escenas` (una fila por escena: clave, tipo, T, actores, tramos, marcas) y `validar` con
+  `reglasEscenas`; los nombres de gestos salen de importar `moldes.js` (con el `window` mínimo de las pruebas).
+- `mundo/tests/estudio-escenas.mjs`: importa `escenas.js` en vez de la copia local; agrega que `guionGenerico` fusionado da
+  lo mismo que el original en las 4 animaciones y que `guionDeDatos` completa `d` con `durLinea`.
+- **Listo cuando**: todas las pruebas de `mundo/tests/` pasan; en el juego, `punos` da el mismo cuadro con y sin `?sin-datos`
+  (`irA(1.45)`, una captura de cada uno); cambiar un golpe en el JSON y aplicarlo en vivo mueve la chispa; una escena `guion`
+  de prueba (no se commitea) se juega con el comando; abrir el juego no suma pedidos (panel de red).
+
+**PR 5b · editor de línea de tiempo (pestaña Escenas)** · rama `estudio-fase5b` · depende de 5a
+- `estudio/escenas.js` (nuevo) + `index.html` (habilitar la pestaña, con `data-seccion="juego"` como Posiciones) + `estudio.css`.
+- `estudio/escenas-modelo.mjs` (nuevo, puro): mover, estirar, encajar a 0,05 s y tope contra el vecino (un tramo nunca pisa
+  al otro: se detiene), agregar y borrar tramos y marcas, deshacer. Lo prueba Node.
+- **Pantalla**: lista de escenas a la izquierda (JSON + las de `ANIMACIONES` «en código» + «Nueva escena»); arriba `T`, `r`,
+  selector de persona (las 13 claves) y Reproducir / Pausa / Ir a; al centro, regla 0..T con zoom y filas `n`, `j` y extras;
+  fila **frases** (bloques que se arrastran y estiran; ES y EN en el panel lateral, con el aviso de frase apurada); fila
+  **marcas** (golpe = rombo, corazón = corazón píxel en canvas, sin emojis); panel lateral con los números del elemento
+  elegido (como Layout). Doble clic en una fila vacía agrega un tramo con un selector filtrable de gestos; Supr borra.
+- **Nombres de gestos**: `import()` de `../mundo/supervivencia/moldes.js` al abrir la pestaña (solo localhost; no afecta al
+  sitio). La misma lista que `validar`.
+- **Puente**: mensaje `escena { accion: 'jugar' | 'pausa' | 'ir', clave, persona, t? }` → `puente-juego.js` manda los datos
+  vivos y llama a `jugarGuion` / `jugar`, `pausar`, `irA`. El juego responde `escenaT { t }` 10 veces por segundo mientras
+  corre (el cabezal del editor lo sigue). Sin iframe de Juego, esos botones quedan deshabilitados.
+- Guardar con `PUT` + `If-Match`; avisos en vivo con `reglasEscenas`.
+- **Listo cuando**: `estudio-escenas.mjs` prueba el modelo; `mundo/tests/estudio-escenas-navegador.mjs` (Playwright, se omite
+  sin él) arrastra un tramo, guarda, comprueba que cambió **una línea** de `escenas.json` y reproduce en el iframe viendo que
+  `t` avanza; el JSON vuelve a como estaba aunque la prueba falle; una captura del editor.
+
+**PR 5c · planos de cámara** · rama `estudio-fase5c` · depende de 5a (puede ir antes o después de 5b)
+- Mover `PLANOS_AMISTAD`, `PLANOS_GRUPO` y `PLANOS_GRUPO_TECHO` de `escena-amistad.js` a `escena-amistad-datos.js` (puro,
+  exportados, mismos números). `escenas.js`: `planosDe(camara)` (nombre → la constante; lista → tal cual).
+- `escena-amistad.js` (la línea `let cam = …`): si el guion trae `camara`, usa `planosDe(camara)`; `minDist`, `evitarDist` y
+  `holgura` son los de la familia (`grupo*`: los de grupo; lista propia: los de amistad). Sin `camara`, igual que hoy.
+- Editor: fila **cámara** con la lista de planos (campos numéricos, Agregar, Quitar, orden), «Usar juego: amistad / grupo /
+  grupo techo» y «Ver» (reproduce la escena con `planos: [ese]`). No se dibuja qué plano toca en cada frase (decisión 6).
+- **Listo cuando**: la prueba compara `planosDe('amistad')` con `PLANOS_AMISTAD` (y los otros dos); una escena con lista
+  propia muestra esos planos (`camaras.planoNombre` por `__venjy`); sin `camara`, los de siempre; captura de un plano propio.
+
+Modelo: los tres con **Sonnet** (instrucciones cerradas). 5b es el más largo; si no cabe en un chat, cortar después del modelo
+puro y su prueba.
