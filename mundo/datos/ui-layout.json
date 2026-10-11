@@ -22,9 +22,18 @@
     "baja": {
       "pie": 50,
       "botones": {
-        "sv-usar": { "y": 82, "w": 66, "h": 66 },
-        "sv-romper": { "x": 88, "y": 82, "w": 66, "h": 66 },
-        "sv-acariciar": { "y": 156 }
+        "sv-usar": { "y": 22, "w": 66, "h": 66, "x": 34 },
+        "sv-romper": { "y": 24, "w": 66, "h": 66, "x": 134 },
+        "sv-acariciar": { "x": 374, "y": -8 },
+        "mision": { "y": 10, "x": 0 },
+        "joy": { "x": 50, "y": -78, "w": 164, "h": 152 },
+        "sv-comando": { "x": 4, "w": 24, "y": 176, "h": 42 },
+        "sv-camara": { "x": 508, "y": 12, "w": 44, "h": 44 },
+        "sv-soltar": { "x": 2, "y": 128, "w": 66 },
+        "sv-inventario": { "x": 2, "h": 58, "y": 64 },
+        "bajar": { "y": -64, "x": 156 },
+        "saltar": { "y": -78, "x": 42, "w": 94, "h": 92 },
+        "minimapa": { "ancla": "sd", "seguro": false, "x": 24, "y": 10, "w": 134, "h": 120 }
       }
     }
   }
