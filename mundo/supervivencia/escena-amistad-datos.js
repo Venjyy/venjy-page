@@ -12,9 +12,11 @@
 //   u (0..1 en su tramo), t (reloj de la escena) e info { s, otroS (sentados; hoy siempre false: el amigo
 //   sentado se pone de pie para la escena), j: es el jugador, esc: escala del amigo }. Los que no están aquí se buscan en GESTOS de escenas-skin.js (habla, risa...).
 //   Campo extra `pz`: avanza el cuerpo hacia adelante (cuerpo.position.z), para acercarse a abrazar.
+//   Estudio, fase 6: un gesto de mundo/datos/poses.json con el mismo nombre (hoy puno) reemplaza al de aquí.
 // · FRASES_AMISTAD: la frase única de cada personaje en cada animación (con par ES/EN).
 // Son personas reales: siempre en buena onda; el dueño revisa los textos antes del merge.
 // =========================================================
+import { registrarGestos } from '../datos/gestos.js';
 const t = (es, en) => ({ es, en });
 
 export const ANIMACIONES = {
@@ -100,6 +102,7 @@ export const GESTOS_AMISTAD = {
         return { ...meta, cy: h.cy + 0.5 * k, cz: h.cz - 0.15 * k, cx: h.cx + 0.2 * k };
     }
 };
+registrarGestos(GESTOS_AMISTAD, 'amistad');
 
 // Frase única de cada personaje en cada animación
 export const FRASES_AMISTAD = {

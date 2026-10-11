@@ -15,6 +15,7 @@ const MUNDO = 'Estudio';
 // módulo se carga aquí si todavía no estaba: hablar.js lee sus objetos al usarlos, así que ve el cambio)
 // posiciones: amigos.js ubica a las personas (y el gizmo, si está puesto, sigue al que quedó en otro sitio)
 // escenas: escena-amistad.js (se carga aquí si todavía no estaba; la próxima escena que se juegue ya usa los datos nuevos)
+// poses: mundo/datos/gestos.js cambia GESTOS y GESTOS_AMISTAD en el lugar (el próximo cuadro ya usa el gesto nuevo)
 let gizmo = null; // estudio/gizmo-juego.js, solo después del primer `elegir`
 async function aplicar(nombre, datos) {
     if (nombre === 'dialogos') {
@@ -23,6 +24,9 @@ async function aplicar(nombre, datos) {
     } else if (nombre === 'escenas') {
         const m = await import('../mundo/supervivencia/escena-amistad.js');
         m.aplicarDatosVivos(datos);
+    } else if (nombre === 'poses') {
+        const m = await import('../mundo/datos/gestos.js');
+        m.aplicarPoses(datos);
     } else if (nombre === 'posiciones') {
         const v = window.__venjy;
         if (!v || !v.amigos || !v.amigos.posiciones) throw new Error('el juego todavía no está listo');

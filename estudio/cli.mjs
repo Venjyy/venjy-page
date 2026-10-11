@@ -17,6 +17,7 @@ import { FUENTES } from './fuentes.mjs';
 import { avisosDeTexto, esPar } from './avisos-textos.js';
 import { leerGlifos, tablaDeRangos } from './glifos.mjs';
 import { reglasEscenas } from '../mundo/datos/escenas.js';
+import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATOS = path.join(RAIZ, 'mundo', 'datos');
@@ -366,8 +367,8 @@ async function referenciasDePosiciones() {
     return { anclas: new Set([...LUGARES.map(l => l.clave), ...ANCLAS_ESCENARIO, ...ANCLAS_PUNTO]), personas, giroCalculado: GIRO_CALCULADO };
 }
 
-// Lo que el juego resuelve para escenas.json: los gestos (GESTOS, GESTOS_AMISTAD y MOLDES), las claves de ANIMACIONES y
-// durLinea. moldes.js y reencuentros.js traen cuerpo.js, que escucha eventos de `window`: basta un objeto mínimo.
+// Lo que el juego resuelve para escenas.json: los gestos (GESTOS, GESTOS_AMISTAD, MOLDES y, desde la fase 6, los gestos y
+// poses de poses.json), las claves de ANIMACIONES y durLinea. Para poses.json: codigo (GESTOS y GESTOS_AMISTAD) y moldes. moldes.js y reencuentros.js traen cuerpo.js, que escucha eventos de `window`: basta un objeto mínimo.
 async function nombresDeEscenas() {
     globalThis.window ??= { addEventListener() {} };
     // amigos.js (por reencuentros.js) pide posiciones.json con fetch al importarse: en Node falla y avisa; aquí no importa
@@ -382,7 +383,10 @@ async function nombresDeEscenasImport() {
     const { ANIMACIONES, GESTOS_AMISTAD } = await import('../mundo/supervivencia/escena-amistad-datos.js');
     const { MOLDES } = await import('../mundo/supervivencia/moldes.js');
     const { durLinea } = await import('../mundo/supervivencia/reencuentros.js');
-    return { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES)]), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
+    let poses = [];
+    try { poses = gestosDeDatos(JSON.parse(fs.readFileSync(path.join(DATOS, 'poses.json'), 'utf8'))).map(([k]) => k); } catch (e) { /* sin poses.json válido: solo el código */ }
+    const codigo = new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD)]);
+    return { gestos: new Set([...codigo, ...Object.keys(MOLDES), ...poses]), codigo, moldes: new Set(Object.keys(MOLDES)), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
 }
 
 // Reglas de contenido que el esquema no expresa
@@ -390,6 +394,9 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     const mal = texto => problemas.push({ archivo: arch, tipo: 'error', texto });
     if (nombre === 'escenas' && escenas) {
         for (const r of reglasEscenas(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
+    }
+    if (nombre === 'poses' && escenas) {
+        for (const r of reglasPoses(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
     if (nombre === 'posiciones' && refs) {
         for (const [grupo, puntos] of Object.entries({ personas: datos.personas, objetos: datos.objetos, poi: datos.poi })) {
@@ -454,7 +461,7 @@ async function validarCmd(pos, op) {
     const rangos = leerRangos();
     const objetos = nombres.includes('tienda') ? await nombresDeObjetos() : null;
     const refs = nombres.includes('posiciones') ? await referenciasDePosiciones() : null;
-    const escenas = nombres.includes('escenas') ? await nombresDeEscenas() : null;
+    const escenas = nombres.includes('escenas') || nombres.includes('poses') ? await nombresDeEscenas() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
 
     for (const nombre of nombres) {

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "poses.schema.json",
   "title": "Poses y gestos por hueso (mundo/datos/poses.json)",
-  "description": "Poses fijas y gestos de las personas de cajas, por canal (nombres cortos de .claude/skills/animaciones-minecraft/referencia/rig.md). Un canal vale: número fijo, o claves k interpoladas (o base) más osciladores. Equivale a las funciones de GESTOS (escenas-skin.js) y GESTOS_AMISTAD (escena-amistad-datos.js): ruta() es k con interp suave y Math.sin(t * f) es un oscilador. Lo que no se pueda expresar así (condiciones, composición como alHombro) sigue en JS; si un gesto no está aquí, el juego usa el del código.",
+  "description": "Poses fijas y gestos de las personas de cajas, por canal (nombres cortos de .claude/skills/animaciones-minecraft/referencia/rig.md). Un canal vale: número fijo, o claves k interpoladas (o base) más osciladores. Equivale a las funciones de GESTOS (escenas-skin.js) y GESTOS_AMISTAD (escena-amistad-datos.js): ruta() es k con interp suave y Math.sin(t * f) es un oscilador. Lo que no se pueda expresar así (condiciones, composición como alHombro) sigue en JS; si un gesto no está aquí, el juego usa el del código. Lo lee mundo/datos/gestos.js (fase 6): un gesto reemplaza por nombre al del código; los nuevos y las poses fijas se suman a GESTOS.",
   "type": "object",
   "properties": {
     "$schema": { "type": "string" },
@@ -87,7 +87,7 @@
       "type": "object",
       "properties": {
         "reloj": {
-          "description": "En qué tiempo están las claves k: t = reloj de la escena en s (como GESTOS_AMISTAD hoy) · local = s desde que empieza el tramo del gesto (lo recomendado para gestos nuevos) · u = 0..1 dentro del tramo.",
+          "description": "En qué tiempo están las claves k: t = reloj de la escena en s (como GESTOS_AMISTAD hoy) · local = s desde que empieza el tramo del gesto (necesita la duración del tramo; los motores de hoy no la pasan y el juego usa t: mejor u o t) · u = 0..1 dentro del tramo.",
           "enum": ["t", "local", "u"]
         },
         "ciclo": { "description": "Si está, el reloj de k se repite cada ciclo segundos (hachazo, martillo).", "type": "number", "minimum": 0.05 },
