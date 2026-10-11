@@ -415,6 +415,29 @@ body.con-tactil .nombre-objeto { bottom: calc(var(--pie) + 4px); }
 .cartas-postura { display: flex; flex: 1 1 260px; gap: 8px; }.cartas-postura .cartas-boton { flex: 1 1 0; }
 .cartas-reglas { margin-top: 8px; padding: 10px; background: #100010; border: 3px solid #2b0a6b; box-shadow: inset 2px 2px 0 #5a1fd1; }.cartas-reglas p { margin: 7px 0; font-size: .82rem; line-height: 1.3; }
 .cartas-fin { position: fixed; z-index: 1; left: 50%; top: 50%; width: min(430px, calc(100vw - 32px)); transform: translate(-50%, -50%); padding: 18px; text-align: center; background: #21170e; border: 4px solid #000; box-shadow: inset 3px 3px 0 #795b38, inset -3px -3px 0 #0c0704; }.cartas-fin p { color: var(--gris); }
+/* Cartas con arte (cartas-arte.js): lienzo de 50×76 píxeles escalado por enteros
+   (--px = 2 en la mesa, 3 en la mano); los textos se colocan sobre las ZONAS del lienzo. */
+.carta-pixel.con-arte { --px: 2px; --f-nombre: 7px; --f-familia: 6px; --f-texto: 6px; --f-numero: 8px; position: relative; flex: 0 0 auto; width: calc(var(--px) * 50); height: calc(var(--px) * 76); min-height: 0; margin: 0 auto; padding: 0; gap: 0; overflow: visible; background: transparent no-repeat 0 0 / 100% 100%; border: 0; box-shadow: none; image-rendering: pixelated; filter: drop-shadow(0 var(--px) 0 rgb(0 0 0 / .55)); }
+.carta-pixel.con-arte.en-mano { --px: 3px; --f-nombre: 8px; --f-familia: 8px; --f-texto: 8px; --f-numero: 11px; flex: 0 0 auto; min-height: 0; margin: 0; }
+.carta-pixel.con-arte > span { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; text-shadow: none; }
+.con-arte .carta-nombre { left: calc(var(--px) * 5); top: calc(var(--px) * 5); width: calc(var(--px) * 40); height: calc(var(--px) * 6); font-size: var(--f-nombre); line-height: 1; color: #fff; text-shadow: 1px 1px 0 #000; }
+.con-arte .carta-familia { left: calc(var(--px) * 10); top: calc(var(--px) * 42); width: calc(var(--px) * 37); height: calc(var(--px) * 4); font-size: var(--f-familia); line-height: 1; color: #fff; text-shadow: 1px 1px 0 rgb(0 0 0 / .7); }
+.con-arte .carta-texto { left: calc(var(--px) * 5); top: calc(var(--px) * 48); width: calc(var(--px) * 40); height: calc(var(--px) * 15); padding: 0 2px; font-size: var(--f-texto); line-height: 1.12; color: #2a1d10; }
+.carta-pixel.con-arte.nombre-largo { --f-nombre: 6px; }
+.carta-pixel.con-arte.en-mano.nombre-largo { --f-nombre: 7px; }
+.con-arte.es-hechizo .carta-texto { height: calc(var(--px) * 23); }
+.con-arte .carta-estadisticas { inset: auto 0 0 0; height: 100%; display: block; pointer-events: none; }
+.con-arte .carta-atk, .con-arte .carta-def { position: absolute; top: calc(var(--px) * 66); width: calc(var(--px) * 13); height: calc(var(--px) * 5); display: flex; align-items: center; justify-content: center; font-size: var(--f-numero); line-height: 1; text-shadow: 1px 1px 0 #000; }
+.con-arte .carta-atk { left: calc(var(--px) * 11); color: #ff5555; }
+.con-arte .carta-def { left: calc(var(--px) * 33); color: #55ffff; }
+.con-arte .carta-atk.sube, .con-arte .carta-def.sube { color: #55ff55; }
+.con-arte .carta-atk.baja, .con-arte .carta-def.baja { color: #ffaa00; }
+.cartas-zona:has(> .con-arte) { display: flex; align-items: center; justify-content: center; }
+.carta-pixel.con-arte.defensa { transform: rotate(90deg) scale(.7); margin: calc(var(--px) * -20.5) auto; }
+.carta-pixel.con-arte.en-mano:hover, .carta-pixel.con-arte.en-mano:focus-visible, .carta-pixel.con-arte.seleccionada { outline-offset: 2px; }
+.carta-reverso.con-arte { width: 50px; height: 76px; margin-left: -32px; background: transparent no-repeat 0 0 / 100% 100%; border: 0; box-shadow: none; image-rendering: pixelated; filter: drop-shadow(2px 0 0 rgb(0 0 0 / .5)); }
+.carta-reverso.con-arte:first-child { margin-left: 0; }
+.cartas-reversos:has(.con-arte) { min-height: 76px; }
 @media (max-width: 600px) { .cartas-capa { padding: 6px; }.cartas-tablero { padding: 8px; }.cartas-zonas { gap: 5px; }.cartas-zona { min-height: 104px; padding: 15px 3px 3px; }.carta-pixel { min-height: 84px; padding: 5px; font-size: .61rem; }.carta-pixel.en-mano { flex-basis: 126px; min-height: 126px; }.cartas-cabecera-mesa { font-size: .72rem; }.cartas-controles .cartas-boton { flex-basis: 132px; font-size: .86rem; } }
 .panel-mision {
     margin: auto;

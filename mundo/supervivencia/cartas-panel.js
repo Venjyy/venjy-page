@@ -2,6 +2,7 @@
 // Capa visual del motor puro: toda opción se obtiene de jugadas(e).
 import { CARTAS, FAMILIAS, NIVELES, PIDE_PROPIA, TXT_CARTAS } from './cartas-datos.js';
 import { partidaNivel, jugadas, aplicar, jugadaIA, atkDe, defDe } from './cartas.js';
+import { arteCarta, arteReverso } from './cartas-arte.js';
 
 export function crearPanelCartas(ctx = {}) {
     let idioma = ctx.idioma || 'es', e = null, nivel = 'facil', eleccion = null, timer = 0, abierto = false;
@@ -101,9 +102,33 @@ export function crearPanelCartas(ctx = {}) {
             const a = eleccion.acciones.find(x => x.obj === z); if (a) ejecutar(a);
         }
     }
+    // Carta con arte (cartas-arte.js): el lienzo va de fondo y los textos encima, en PixelCraft.
+    function cartaConArte(el, id, d, atk, def) {
+        el.classList.add('con-arte', d.tipo === 'hechizo' ? 'es-hechizo' : 'es-criatura');
+        if (L(d.nombre).length >= 26) el.classList.add('nombre-largo');
+        el.style.backgroundImage = `url(${arteCarta(id)})`;
+        el.innerHTML = `<span class="carta-nombre"></span><span class="carta-familia"></span><span class="carta-estadisticas"></span><span class="carta-texto"></span>`;
+        const familia = d.tipo === 'criatura' ? L(FAMILIAS[d.familia]) : L(TXT_CARTAS.hechizo);
+        el.children[0].textContent = L(d.nombre); el.children[1].textContent = familia; el.children[3].textContent = L(d.texto);
+        let resumen = `${L(d.nombre)} · ${familia}`;
+        if (d.tipo === 'criatura') {
+            const a = document.createElement('span'), b = document.createElement('span');
+            a.className = `carta-atk${atk > d.atk ? ' sube' : atk < d.atk ? ' baja' : ''}`; a.textContent = String(atk);
+            b.className = `carta-def${def > d.def ? ' sube' : def < d.def ? ' baja' : ''}`; b.textContent = String(def);
+            el.children[2].append(a, b);
+            resumen += ` · ${L(TXT_CARTAS.atk)} ${atk} / ${L(TXT_CARTAS.def)} ${def}`;
+        }
+        el.title = `${resumen} · ${L(d.texto)}`; el.setAttribute('aria-label', el.title);
+        return el;
+    }
     function carta(c, j, mano = false, m = null) {
         const d = CARTAS[mano ? c : c.id];
         const el = document.createElement('div'); el.className = `carta-pixel ${mano ? 'en-mano' : ''} ${!mano && c.modo === 'def' ? 'defensa' : ''}`;
+        const id = mano ? c : c.id;
+        if (arteCarta(id)) {
+            if (mano) { interaccion(el, () => elegirCarta(m)); if (eleccion && eleccion.m === m) el.classList.add('seleccionada'); }
+            return mano ? cartaConArte(el, id, d, d.atk, d.def) : cartaConArte(el, id, d, atkDe(e, j, c), defDe(e, j, c));
+        }
         if (mano || !c) {
             el.innerHTML = `<span class="carta-nombre"></span><span class="carta-familia"></span><span class="carta-estadisticas"></span><span class="carta-texto"></span>`;
             el.children[0].textContent = L(d.nombre); el.children[1].textContent = d.tipo === 'criatura' ? L(FAMILIAS[d.familia]) : L(TXT_CARTAS.hechizo);
@@ -141,7 +166,7 @@ export function crearPanelCartas(ctx = {}) {
         const vida = document.createElement('span'); vida.textContent = `${L(TXT_CARTAS.vida)} ${J.vida}`;
         const mazo = document.createElement('span'); mazo.textContent = `${L(TXT_CARTAS.mazo)} ${J.mazo.length}`;
         cab.append(titulo, vida, mazo); bloque.appendChild(cab);
-        if (j) { const reversos = document.createElement('div'); reversos.className = 'cartas-reversos'; for (let i = 0; i < J.mano.length; i++) { const r = document.createElement('i'); r.className = 'carta-reverso'; reversos.appendChild(r); } bloque.appendChild(reversos); }
+        if (j) { const reversos = document.createElement('div'); reversos.className = 'cartas-reversos'; for (let i = 0; i < J.mano.length; i++) { const r = document.createElement('i'); r.className = 'carta-reverso'; const img = arteReverso(); if (img) { r.classList.add('con-arte'); r.style.backgroundImage = `url(${img})`; } reversos.appendChild(r); } bloque.appendChild(reversos); }
         const zonas = document.createElement('div'); zonas.className = 'cartas-zonas'; for (let z = 0; z < 3; z++) zonas.appendChild(zona(j, z)); bloque.appendChild(zonas);
         return bloque;
     }
