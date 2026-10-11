@@ -645,3 +645,4 @@ body.en-minijuego .mj-tablero.visible { display: flex; }
 .coop-hud { position: absolute; top: 60px; left: 12px; padding: 2px 8px; background: rgb(0 0 0 / 0.45); color: #8ce07a; font-size: 0.9rem; text-shadow: 2px 2px 0 #1f1f1f; pointer-events: none; }
 /* La ayuda de comandos no tapa las escenas (cine, minijuegos, escenas de amistad) */
 body.en-cine .consola-ayuda { display: none; }
+.horario-amigo { margin: 4px 0 8px; font-size: 0.85rem; opacity: 0.9; }

@@ -44,7 +44,8 @@ módulo, sacado de sus cabeceras y de grep, nunca inventado.
 | Sonnet | Features con instrucciones claras, ejecutar un plan ya escrito, arreglar un bug con el error a la vista, ajustes de UI, documentación. |
 | Opus | Diseño y arquitectura, bugs difíciles, refactors riesgosos, cambios que tocan varios módulos y hay que pensarlos. |
 
-- Decirlo en una línea al empezar: «Para esta tarea conviene <modelo>, porque …». Si el modelo actual
+- **Effort** (se recomienda junto al modelo; gasta menos): `low` para ediciones mecánicas y búsquedas; `medium` para ejecutar un plan claro o un bug con el error a la vista (lo normal en Sonnet); `high` para diseño o bugs difíciles; `xhigh`/`max` solo si `high` falló o es arquitectura que toca varios módulos. Subir solo con motivo.
+- Decirlo en una línea al empezar: «Para esta tarea conviene <modelo> con effort <nivel>, porque …». Si el modelo actual
   no es el recomendado, decirlo con franqueza y esperar la decisión del usuario.
 - **Subagentes solo para partes grandes y mecánicas**: cada uno parte en frío y vuelve a leer lo que
   ya se sabe. Haiku primero; si Haiku se atasca o el resultado es flojo, Sonnet. Quien delega define
@@ -91,7 +92,7 @@ El prompt para el siguiente chat dice, y solo dice:
    archivos enteros ni «lee todo el proyecto».
 2. **El estado en 5-10 líneas**: qué quedó hecho, qué rama y PR, qué decisiones se tomaron y por qué,
    qué no se tocó.
-3. **Lo que sigue**: la tarea exacta, el modelo recomendado y cómo se verifica.
+3. **Lo que sigue**: la tarea exacta, el modelo y effort recomendados y cómo se verifica.
 
 Nada de pegar diffs, historiales ni resúmenes de lo que ya está en el repositorio.
 
@@ -120,7 +121,7 @@ Nada de pegar diffs, historiales ni resúmenes de lo que ya está en el reposito
 ### Al empezar un chat
 
 1. Leer el mapa del proyecto y, de los pendientes, **solo la sección en curso**.
-2. Decir el modelo recomendado en una línea (y esperar si el actual no lo es).
+2. Decir el modelo y el effort recomendados en una línea (y esperar si el actual no lo es).
 3. Confirmar que la tarea cabe en un chat; si no, dividirla y avisar.
 4. Revisar `git status` y la rama: partir del `main` actualizado y no pisar trabajo de otros chats.
 5. Decidir de antemano la verificación según la tabla de §3.

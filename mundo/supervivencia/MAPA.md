@@ -32,6 +32,8 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `entidades.js` (215) | Objetos tirados; se juntan los iguales a < 1 bloque también al soltar (7b-1). `crearEntidades:69` |
 | `particulas.js` (95) | Partículas con un InstancedMesh. `crearParticulas:11` |
 | `dia.js` (41) | Día de 10 min. `crearDia:15` |
+| `reloj.js` (19) | 7j-0, sin DOM: hora de reloj (24 h, 1 h = 25 s de media) desde `horaDe`. `minutosDe` `textoHora` `textoDiaHora` `enTramo`. Lo pinta `pintarHora` de `main.js` (HUD, pausa, Reloj en la mano) |
+| `horarios-datos.js` (22) | 7j-0: horario y lugar ES/EN de cada amigo con posición (`HORARIOS`); lo muestra `hablar.js`; lo leerán las rutinas de 6d |
 | `subsuelo.js` (~230) | Roca madre, cuevas, lava, menas. `llenarSubsuelo:128` · `buscarSubsuelo` (pistas de 7d-2: mena o piedra luminosa más cercana con la misma generación) |
 | `desplazado.js` (41) | Vista con el mapa subido `dy` para las criaturas. `vistaDesplazada:20` |
 | `mano.js` (252) | Mano en primera persona: brazo con la skin siempre visible y el objeto en la mano (7c-1, `AGARRE_1P`). `crearFabrica` (mallas por id, las comparte con el cuerpo) `crearMano` |
