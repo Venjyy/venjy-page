@@ -118,6 +118,19 @@ for (const r of rs) {
     const igual = crearContenedores({ mundo: {}, terreno: A }).obtener(r.cofre.x, r.cofre.y + A.dy, r.cofre.z, B.COFRE);
     if (JSON.stringify(igual.casillas) !== JSON.stringify(e.casillas)) falla('botín del cofre cambia entre partidas');
 }
+// Variedad: entre todos los cofres salen armas y herramientas de todos los tipos (no solo azadas)
+{
+    const clases = new Set();
+    for (const r of rs) {
+        const e = cont.obtener(r.cofre.x, r.cofre.y + A.dy, r.cofre.z, B.COFRE);
+        for (const c of e.casillas) if (c && O.ARCO && c.id >= 256) clases.add(c.id);
+    }
+    const nombres = ['ARCO', 'ESPADA', 'PICO', 'HACHA', 'PALA'];
+    const hay = n => [...clases].some(id => id === O.ARCO ? n === 'ARCO' : Object.keys(O).some(k => O[k] === id && k.startsWith(n + '_')));
+    for (const n of nombres) if (!hay(n)) falla(`ningún cofre de ruina trae ${n}`);
+    const soloAzadas = [...clases].every(id => Object.keys(O).some(k => O[k] === id && k.startsWith('AZADA')));
+    if (soloAzadas) falla('solo azadas en los cofres');
+}
 // La tabla de ruina no es la de la casa (el cofre usó `lugarDe`)
 const huellaCasa = JSON.stringify(botinDe('casa', azar(7)));
 if (JSON.stringify(a1) === huellaCasa) falla('la tabla `ruina` no existe (cae en `casa`)');

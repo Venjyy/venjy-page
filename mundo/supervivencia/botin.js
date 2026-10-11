@@ -15,7 +15,12 @@ const TABLAS = {
     atalaya: [[O.FLECHA, 4, 12, 0.9], [O.ARCO, 1, 1, 0.3], [O.PAN, 1, 2, 0.7], [O.HILO, 1, 4, 0.5], [B.TRONCO_PINO, 2, 6, 0.6]],
     campamento: [[O.FILETE, 1, 3, 0.8], [O.PALO, 2, 6, 0.7], [B.ANTORCHA, 2, 6, 0.7], [O.CARBON, 1, 4, 0.6]],
     pescador: [[O.BACALAO, 2, 6, 1], [O.SALMON, 1, 3, 0.7], [O.CANA, 1, 1, 0.5], [O.HILO, 1, 3, 0.5]],
-    ruina: [[O.LINGOTE_HIERRO, 1, 3, 0.7], [O.LINGOTE_ORO, 1, 2, 0.45], [O.PEDERNAL, 1, 3, 0.6], [O.HILO, 1, 3, 0.5], [O.MANZANA, 1, 3, 0.6], [B.ANTORCHA, 2, 6, 0.6], [O.ESMERALDA, 1, 1, 0.2], [O.FLECHA, 3, 8, 0.4], [O.AZADA_PIEDRA, 1, 1, 0.2]],
+    ruina: [[O.LINGOTE_HIERRO, 1, 3, 0.5], [O.LINGOTE_ORO, 1, 2, 0.35], [O.PEDERNAL, 1, 3, 0.5], [O.HILO, 1, 3, 0.4], [O.MANZANA, 1, 3, 0.5], [B.ANTORCHA, 2, 6, 0.5], [O.ESMERALDA, 1, 1, 0.15], [O.FLECHA, 3, 8, 0.45],
+        // Herramientas y armas de distinto tipo y material (1 por pila): suelen salir 2-4 distintas
+        [O.ARCO, 1, 1, 0.3], [O.ESPADA_MADERA, 1, 1, 0.3], [O.ESPADA_PIEDRA, 1, 1, 0.3], [O.ESPADA_HIERRO, 1, 1, 0.1],
+        [O.PICO_MADERA, 1, 1, 0.3], [O.PICO_PIEDRA, 1, 1, 0.3], [O.PICO_HIERRO, 1, 1, 0.1], [O.PICO_ORO, 1, 1, 0.08],
+        [O.HACHA_MADERA, 1, 1, 0.3], [O.HACHA_PIEDRA, 1, 1, 0.3], [O.HACHA_HIERRO, 1, 1, 0.1],
+        [O.PALA_MADERA, 1, 1, 0.3], [O.PALA_PIEDRA, 1, 1, 0.3], [O.PALA_HIERRO, 1, 1, 0.1], [O.AZADA_PIEDRA, 1, 1, 0.12]],
     casa: [[O.PAN, 1, 3, 0.8], [O.MANZANA, 1, 3, 0.7], [O.SEMILLAS, 1, 6, 0.6], [O.PALO, 2, 6, 0.6], [O.LINGOTE_HIERRO, 1, 2, 0.3], [O.TRIGO, 1, 4, 0.5], [O.ZANAHORIA, 1, 3, 0.4], [O.PAPA, 1, 3, 0.4]]
 };
 
