@@ -957,3 +957,8 @@ puro y su prueba.
   editar en la línea de tiempo; verlas sin poder editarlas no sirve. Para editarlas habría que pasarlas a JSON (fase aparte).
 - **No hecho**: ver un gesto dentro de una escena desde esta pestaña (hoy: en vivo, o posando el instante); lo de 6a que
   sigue pendiente (reloj `local`, extender el esquema).
+
+## 18. Mesa del Duelo de Cartas: lista para el Estudio (7h-2b, PR 4a, 2026-10-11)
+
+La mesa 3D (`mundo/supervivencia/cartas-mesa.js`) toma todas sus medidas de `MESA` en `cartas-mesa-modelo.js`: dónde queda respecto de Lucho (`mesa.giro`, `dist`, `lado`), su tamaño, las zonas, los mazos, la mano de Lucho, los dos encuadres (`camara1`, `camara3`), la vista de arriba (`mini`) y tu mano en pantalla (`mano`). Son datos planos y la mesa los mezcla con `fusionar(MESA, datos)`; `mesa.aplicarDatos(datos)` los cambia sin recargar (rearma la mesa y te vuelve a sentar). Para editarla desde el Estudio falta solo: un `mundo/datos/cartas-mesa.json` (con su esquema y su entrada en `indice.json`), sumarlo a `DATOS_VIVOS` y que `aplicarDatos` del juego lo pase a `__venjy.mesaCartas`. Con `supervivencia.html?estudio` la mesa ya funciona igual (se abre con `/cartas` o `__venjy.abrirMesa('facil')`; con `?estudio=tactil` está sin probar).
+
