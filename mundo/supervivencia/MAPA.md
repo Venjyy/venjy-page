@@ -81,8 +81,8 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `dialogos-datos.js` (365) | `TEMAS:22` `OPINIONES:227` `SALUDOS:330` `REGALOS:349` |
 | `venjys-datos.js` (338) | 7f-1: lo que dicen los Venjy en la supervivencia: pistas, brújula, progreso, skin, amistad, carta, hora, chistes; `crearSelector` (`import()` al primer globo). `brujula` `progreso` `amistadFrase` `paraDe` `crearSelector` |
 | `escenas-datos.js` (174) | Diálogos de las escenas de skin. `CORTAS:12` `VENJY:68` `IGLU:162` |
-| `escenas-skin.js` (626) | Escena al acercarte con skin de un amigo. `crearEscenasSkin:90` `iniciar:187` `terminar:254` |
-| `escena-amistad-datos.js` (210) | Animaciones por nivel. `ANIMACIONES:20` `GESTOS_AMISTAD:55` `FRASES_AMISTAD:105`; al final `PLANOS_AMISTAD`, `PLANOS_GRUPO`, `PLANOS_GRUPO_TECHO` (los lee `mundo/datos/escenas.js` → `planosDe`) |
+| `escenas-skin.js` (645) | Escena al acercarte con skin de un amigo. `GESTOS:75` (la registra para `poses.json`: `registrarGestos`) `crearEscenasSkin:102` `iniciar:199` `terminar:266` |
+| `escena-amistad-datos.js` (212) | Animaciones por nivel. `ANIMACIONES:22` `GESTOS_AMISTAD:57` (registrada para `poses.json`) `FRASES_AMISTAD:108`; al final `PLANOS_AMISTAD`, `PLANOS_GRUPO`, `PLANOS_GRUPO_TECHO` (los lee `mundo/datos/escenas.js` → `planosDe`) |
 | `escena-amistad.js` (653) | Motor de guiones de amistad, bienvenidas y reencuentros. Lee `mundo/datos/escenas.json` al importarse (`await cargarDatos`; `aplicarDatosVivos:50` para el Estudio) y fusiona sus escenas `amistad` con `ANIMACIONES` en `guionGenerico`; `jugarGuion:585` juega las de tipo `guion`. `crearEscenaAmistad:98` `iniciar:247` `terminar:312` `aplicar:361` |
 | `moldes.js` (158) | Piezas de movimiento 6c. `ruta:29` `MOLDES:40` `molde:82` `fusion:91` `espejo:108` |
 | `reencuentros.js` (226) | Escenas entre amigos 6c-1. `REENCUENTROS:23` `reencuentro:212` |
@@ -113,8 +113,9 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
 | `mundo/datos/cargador.js` (58) | Navegador: `cargarDatos:21` (fetch con tope 3 s, caché, `?sin-datos`), `fusionar:46`, `texto:55` |
-| `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `escenas` (lo lee `escena-amistad.js`, fase 5) y `poses` (referencia; ver `estudio/DISENO.md` §13); `indice.json` dice quién lee qué |
+| `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `escenas` (lo lee `escena-amistad.js`, fase 5) y `poses` (lo lee `mundo/datos/gestos.js`, fase 6; `main.js` lo pide); `indice.json` dice quién lee qué |
 | `mundo/datos/escenas.js` (94) | Fase 5, sin DOM: `animacionDeDatos` (escena `amistad` → fila de `ANIMACIONES`), `guionDeDatos` (escena `guion` → guion de ejecución, `d` = `durLinea(texto)` si falta) y `reglasEscenas` (las reglas que el esquema no expresa; las usa `cli.mjs validar` y la prueba) |
+| `mundo/datos/gestos.js` (177) | Fase 6, sin DOM: `evaluarGesto` (canales de un gesto de `poses.json` en un objeto reutilizado), `funcionGesto` (con la firma de `GESTOS` o `GESTOS_AMISTAD`), `registrarGestos` + `aplicarPoses` (reemplaza por nombre en esas tablas; nuevos y poses fijas a `GESTOS`; con otros datos todo vuelve a su código), `gestosDeDatos`, `reglasPoses` (las usa `cli.mjs validar`) |
 | `mundo/datos/posiciones.js` (84) | Fase 4, sin DOM: `resolverAncla` (lugares, `escenario`, `faro`), `puntoAMundo` y `mundoAPunto` (la inversa que usa el gizmo), `GIRO_CALCULADO` |
 | `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |
@@ -126,7 +127,7 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | `estudio/puente-juego.js` (190) | Lado del juego, solo con `?estudio`: abre/crea el mundo «Estudio», `/tp` por la consola, globo de vista previa, SSE; aplica `dialogos` en la fachada, `posiciones` en `amigos.posiciones` y `escenas` en `escena-amistad.js`; `elegir` carga `gizmo-juego.js`; `escena:96` juega, pausa, salta o para una escena y suelta el mouse; manda `escenaT` cada 100 ms |
 | `estudio/gizmo-juego.js` (135) | Fase 4, solo con `?estudio`: `crearGizmo` pone un `TransformControls` (de `vendor/three-addons/`) sobre un marcador en el grupo de la persona, mira hacia ella, libera el puntero, salta las escenas que arranquen y manda `cambio` al soltar |
 | `estudio/puente-cliente.js` (67) / `juego.js` (98) | Lado del Estudio: `crearCliente:11`; pestaña Juego (iframe, `/tp`, aplicar archivos) |
-| `estudio/avisos-layout.js` (26) / `evaluar.mjs` (35) | `calcularAvisos` (choques, chicos, fuera); `evaluarGesto` de `poses.json` (referencia) |
+| `estudio/avisos-layout.js` (26) / `evaluar.mjs` (35) | `calcularAvisos` (choques, chicos, fuera); `evaluarGesto` de `poses.json` (referencia legible; el del juego es `mundo/datos/gestos.js`) |
 | `estudio/avisos-textos.js` (68) / `glifos.mjs` (75) / `dialogos-md.mjs` (87) | `avisosDeTexto` (par, emoji, glifo, plantilla, largo); `leerGlifos` (cmap de PixelCraft → `glifos.json`); `generarPersonas` y `escribirEnDocumento` (tablas de `mundo/DIALOGOS.md`) |
 | `estudio/textos.js` (352) | Editor de textos ES/EN: tabla filtrable, «revisado», avisos, globo en el juego, guardar. `montarTextos:22` |
 | `estudio/puntero-libre.js` (34) | Solo con `?estudio`: `liberar:14` / `devolver:26` (con cuenta) sueltan el mouse del juego (no recaptura, sin pausa, sin «Haz clic»); lo usan el gizmo y la pestaña Escenas |

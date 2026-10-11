@@ -22,9 +22,9 @@
     },
     "poses": {
       "esquema": "poses",
-      "lee": null,
+      "lee": "mundo/datos/gestos.js",
       "fase": 6,
-      "que": "Poses fijas y gestos por canal de hueso (keyframes y osciladores)"
+      "que": "Poses fijas y gestos por canal de hueso (claves y osciladores): un gesto reemplaza por nombre al de GESTOS o GESTOS_AMISTAD, los nuevos y las poses fijas se suman a GESTOS (valen en las pistas de escenas); main.js lo pide y se aplica en vivo con supervivencia.html?estudio"
     },
     "dialogos": {
       "esquema": "dialogos",

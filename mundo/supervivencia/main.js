@@ -73,9 +73,13 @@ import { crearPanelQR } from './ui-qr.js';
 import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
 import { nivelDeMs, barrasDeMs } from '../online/ping.js';
+import { cargarDatos } from '../datos/cargador.js';
+import { aplicarPoses } from '../datos/gestos.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
+// Estudio, fase 6: gestos y poses de mundo/datos/poses.json (reemplazan por nombre a los del código; sin archivo, el código)
+cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
 
 // ---------------------------------------------------------
 // Idioma

@@ -85,7 +85,7 @@ Archivos de esta fase:
 | `ui-layout.json` | Los 12 botones táctiles de la supervivencia más la misión en curso, en los dos perfiles | Fase 1: `tactil-supervivencia.js` |
 | `textos.json` | Etiquetas de los 7 botones de `tactil-supervivencia.js` (ROMPER, USAR…) | Fase 1: `tactil-supervivencia.js` |
 | `posiciones.json` | Los 9 amigos de `criaturas/amigos.js`, relativos a su lugar | Fase 4: `amigos.js` |
-| `poses.json` | 6 poses del atlas de `rig.md` y 11 gestos (`GESTOS` y `GESTOS_AMISTAD.puno`) | Fase 6: el evaluador de gestos |
+| `poses.json` | 6 poses del atlas de `rig.md` y 11 gestos (`GESTOS` y `GESTOS_AMISTAD.puno`) | Fase 6 (PR 6a): `mundo/datos/gestos.js` |
 
 Mientras `lee` sea `null`, el archivo es **referencia** (sirve al CLI y a las pruebas de paridad) y el
 juego sigue usando el código.
@@ -422,6 +422,8 @@ export function texto(t, idioma, vars) { /* … */ }
 - **Piloto**: los 11 gestos que ya están en `poses.json` (paridad exacta probada). El resto
   (`baile`, `cabecea`, `hachazo`, `sorpresa`) entra si se extiende el esquema (`ciclo`, forma
   `pulso`), con su prueba de paridad.
+- **Partición** (2026-10-11): PR 6a = evaluador + lectura del juego + en vivo + CLI (hecho, §16); PR 6b = el editor de
+  arriba (pestaña Poses) con el mensaje `pose`. Detalle y criterios de 6b en §16.
 
 ### Fase 7 · motor genérico (opcional)
 
@@ -445,7 +447,7 @@ $ node estudio/cli.mjs resumen
 ui-layout   13 elementos (normal) · 3 (baja) · lee tactil-supervivencia.js
 textos      1 espacio, 7 textos · lee tactil-supervivencia.js
 posiciones  9 personas · referencia (fase 4)
-poses       6 poses, 11 gestos · referencia (fase 6)
+poses       6 poses, 11 gestos · lee gestos.js
 js:dialogos 93 temas, 53 variantes de skin, 74 opiniones (dialogos-datos.js, 54 KB)
 js:tienda   13 tiendas, 80 ofertas (tienda-datos.js, 14 KB)
 
@@ -716,8 +718,8 @@ Solo diseño: esquema, piloto con paridad y partición en 3 PR para Sonnet. Nada
    bloques en una línea de tiempo. En `guion`, `d` es opcional: si falta vale `durLinea(texto)` (`reencuentros.js`), lo que se
    alcanza a leer (regla del dueño: no apurar frases).
 4. **Gestos solo por nombre.** Una escena no define gestos ni variantes (`frotaJ = frota + pz 0.4`). Un gesto nuevo va a `MOLDES`
-   (JS) o, desde la fase 6, a `poses.json`. Nombres válidos = los que el juego resuelve hoy: `GESTOS`, `GESTOS_AMISTAD` y
-   `MOLDES`. Los de `poses.json` se suman cuando la fase 6 le ponga `lee` (hoy los 11 también están en el código).
+   (JS) o, desde la fase 6, a `poses.json`. Nombres válidos = los que el juego resuelve: `GESTOS`, `GESTOS_AMISTAD`,
+   `MOLDES` y, desde el PR 6a, los gestos y las poses fijas de `poses.json` (§16).
 5. **Fusión** (regla 2 de §3): `fusionar(ANIMACIONES[k], escenas[k])` sin `tipo`, `camara` ni `nota`. `pista` es objeto: una
    fila de actor del JSON reemplaza la fila entera; una fila que falta queda la del código. Sin archivo, roto o con
    `?sin-datos`: el código.
@@ -843,7 +845,7 @@ puro y su prueba.
   mientras corre una escena (`clave` es la que lanzó el editor; si la lanzó otro, el nombre de la animación) y un último con `clave: null`.
 - **Gestos**: `import()` de `escenas-skin.js`, `moldes.js` y `reencuentros.js` al abrir la pestaña (41 nombres: `GESTOS`, `GESTOS_AMISTAD` y `MOLDES`).
   Si falla, el editor sigue sin validar nombres. Un bloque con un gesto que no existe sale en rojo y `reglasEscenas` da el error.
-  Los gestos de `poses.json` se suman en la fase 6.
+  Desde el PR 6a se suman los gestos y las poses fijas de `poses.json` (el editor lo pide con `fetch` al abrir la pestaña).
 - **Guardar**: `PUT /api/datos/escenas` con `If-Match`; el botón queda deshabilitado mientras haya errores de reglas. Mover un tramo cambia
   una sola línea de `escenas.json` (la prueba lo comprueba con `formatear`).
 - **No hecho** (a propósito): crear escenas `amistad` nuevas (el juego solo conoce las de `ANIMACIONES`); borrar una escena; arrastrar un
@@ -857,3 +859,62 @@ puro y su prueba.
 - **Panel Cámara** (va en el lateral, como el resto de la pestaña; no es una fila de la línea de tiempo: una lista de campos numéricos no cabe en una pista): estado, tres botones «Usar juego», una tarjeta por plano (nombre, ang, dist, alto, órbita, dolly; Ver, Subir, Bajar, Quitar) y Agregar (tope 8, el del esquema). Los números se recortan a los límites del esquema.
 - **Ver**: el editor manda `datos` con una copia de la escena con `camara: { planos: [ese] }` y juega; cuando el juego avisa que terminó (`escenaT` con `clave: null`) manda otra vez los datos reales. Sin mensaje nuevo en el puente.
 - **Sin cambios**: `escenas.json`, el esquema (ya traía `camara` y `plano`; solo se actualizó su texto), `camaras.js`.
+
+## 16. Fase 6 · PR 6a · lo que cambió al construirla (2026-10-11)
+
+- **Partición**: la fase entera (evaluador, lectura del juego y editor con sliders, vistas, curvas, osciladores y «medir») era
+  demasiado para un PR. 6a deja el juego leyendo `poses.json` y todo lo que no necesita pantalla; 6b es el editor.
+- **Archivos**: `mundo/datos/gestos.js` (nuevo, puro); `escenas-skin.js` y `escena-amistad-datos.js` registran `GESTOS` y
+  `GESTOS_AMISTAD` (una línea cada uno); `main.js` pide `poses.json` (`cargarDatos('poses').then(aplicarPoses)`);
+  `puente-juego.js` y `puente-protocolo.js` (`poses` en `DATOS_VIVOS`); `cli.mjs` (`validar` con `reglasPoses` y los nombres de
+  `poses.json` como gestos válidos de las escenas); `estudio/escenas.js` (los mismos nombres en el editor de Escenas);
+  `indice.json` (`lee` = `mundo/datos/gestos.js`).
+- **Conexión: reemplazo en la tabla, no un paso más en cada motor.** Hay cinco lugares que llaman gestos por nombre
+  (`escenas-skin.js`, `escena-amistad.js`, `hablar.js`, `vida-amigos.js` y `molde()` de `moldes.js`). En vez de enseñarle a cada
+  uno a mirar primero el JSON, `aplicarPoses` cambia la entrada de `GESTOS` o `GESTOS_AMISTAD` por una función armada con el
+  evaluador, con la misma firma (`skin`: `u, t, s, j`; `amistad`: `u, t, info`). Así ningún motor cambió y la prioridad de hoy se
+  conserva (`GESTOS_AMISTAD` gana a `GESTOS` en las escenas de amistad; `MOLDES` gana a todo en las de guion).
+  - Un nombre que existe en el código se reemplaza en su tabla; uno nuevo va a `GESTOS` (la que miran todos al final).
+  - Las **poses fijas** de `poses.json` también entran como gestos quietos (se pueden usar en una pista: `["doblarse", 1, 2]`),
+    salvo que un gesto del JSON tenga el mismo nombre.
+  - Al aplicar otros datos (en vivo o del disco), todo vuelve primero a su código: lo que sale del JSON recupera su función y
+    los nuevos se borran. Sin archivo, roto o con `?sin-datos`: el código, como siempre.
+  - Lo que se arma con nombre al cargar `moldes.js` (`fusion('habla', …)`, `espejo`, `con`) guarda la función de ese momento:
+    las composiciones siguen en JS (§2) y no cambian con el JSON. `molde('nombre')` sí lo ve (busca al usarse).
+- **Sin memoria por cuadro**: el evaluador arma una vez por gesto las listas `[canal, valor]` de cada caso (de pie, sentado,
+  jugador, los dos) y escribe en un objeto por caso que se reutiliza (`funcionGesto`). Ninguna closure ni objeto por cuadro.
+  El resultado vale hasta la próxima llamada: los motores lo leen enseguida y los combinadores de `moldes.js` copian.
+- **Relojes**: `t` y `u` como el esquema; `local` necesita la duración del tramo, que los motores de hoy no pasan: usa
+  `info.d` si viene y si no, `t` (`validar` lo avisa). `ciclo` funciona (`t` módulo `ciclo`, también con `t` negativo).
+- **`salto`**: se devuelve tal cual. Cada motor decide qué hacer sentado (las funciones de hoy ya lo ponen en 0 donde hace falta).
+- **Reglas de `validar`** (`reglasPoses`): claves `k` fuera de orden y `env` al revés son error; `base` junto a `k`, reloj `local`,
+  un gesto que tapa `MOLDES`, una pose con nombre de gesto del JSON o del código son aviso.
+- **Paridad**: los 11 gestos con la firma del juego, en los 4 casos, 401 instantes: 64 160 comparaciones, diferencia 0. También
+  igual a la referencia legible `estudio/evaluar.mjs` (sigue para el CLI `capturar gesto`).
+- **Pruebas**: `mundo/tests/estudio-poses.mjs` (paridad, referencia, memoria, variantes, relojes, ciclo, interpolaciones, formas,
+  reemplazo y vuelta al código, poses como gestos, un gesto roto, reglas, puente y CLI) y `estudio-poses-navegador.mjs`
+  (Playwright: el juego pidió `poses.json` una vez, `GESTOS.doblarse` existe, el editor de Escenas acepta las poses, `punos` en
+  pausa en el golpe: el brazo de Andy está en -0,980 con el archivo, en -2,500 al mandar `puno` editado por el puente y
+  vuelve a -0,981; un gesto nuevo
+  escrito en disco llega por `/api/eventos`). `estudio.mjs` y `estudio-textos.mjs` usan ahora `tienda` como archivo «no vivo».
+- **Medida** (sin `?estudio`, headless con swiftshader, 960×540, 12 s, base `origin/main` contra la rama, dos corridas iguales):
+  al abrir `supervivencia.html` 114 archivos y 2665,9 KB contra 116 y 2681,2 KB: `gestos.js` (10 KB) y `poses.json` (4,6 KB),
+  pedidos en paralelo sin esperar a nadie. El cuadro no cambia: un gesto del JSON cuesta lo mismo que la función que reemplaza.
+- **No hecho** (a propósito): mensaje `pose { clave, canales }` (es del editor: 6b); extender el esquema para `baile`, `cabecea`,
+  `hachazo` y `sorpresa` (forma `pulso`, condición de sentado en un oscilador); pasar la duración del tramo a los motores
+  (`local`). No se tocaron `camaras.js`, `mano.js`, `skin.js` ni `coop.js`.
+
+### PR 6b · editor de poses (para el próximo chat)
+
+- **Pestaña Poses** en `/estudio/` (comparte el iframe de Juego, como Posiciones y Escenas): lista de poses y gestos de
+  `poses.json` más los de `GESTOS` / `GESTOS_AMISTAD` que no están («en código», como Escenas: editar uno lo copia al JSON solo
+  si cabe en el esquema; los que no caben —composiciones, condiciones— se muestran sin editar).
+- **Sliders por canal** con los rangos de `rig.md` (los 14 canales del esquema), **curva por canal** con claves que se arrastran
+  (reloj, `interp`) y **osciladores** (forma, amplitud, frecuencia, fase, `env`); variantes `sentado` y `jugador` en pestañas.
+- **Vista**: frente, 3/4 y lado con una persona de cajas en un canvas propio (como `posar.html`), sin esperar al juego; y en el
+  juego, el mensaje nuevo `pose { clave, canales }` (pone esos canales en una persona, quieta) y `datos` → `poses` + `escena`
+  para ver el gesto en una escena.
+- **Medir**: la punta de la mano (como `capturar.mjs --medir`), en el canvas propio.
+- **Guardar** con `PUT /api/datos/poses` e `If-Match`; deshabilitado con errores de `reglasPoses`. Mover una clave cambia una línea.
+- **Pruebas**: modelo puro en Node (como `escenas-modelo.mjs`) y una de navegador (slider → el juego, guardar, restaurar).
+- **Modelo**: Opus para el diseño de la pestaña y el modelo; Sonnet para la parte grande de UI una vez definida.
