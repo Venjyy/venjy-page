@@ -15,7 +15,7 @@ export default {
     titulo: 'Caminos y lugares 7f-3',
     h1: 'Bloque 7f-3 · parte 1: caminos con señales',
     estado: 'PR abierto, sin mergear. Sin probar en navegador: aspecto del texto y luz de los faroles. Quedan 6 partes de 7f-3 para otros PR.',
-    pr: { n: 0, url: 'https://github.com/Venjyy/venjy-page/pulls' },
+    pr: { n: 62, url: 'https://github.com/Venjyy/venjy-page/pull/62' },
     meta: 'Rama <code>claude/caminos-lugares-7f3-71vdlf</code> · 2026-10-11 · Sonnet',
     hecho: [
         `<b>${mojones.length} mojones</b> cada ~100 bloques de camino: pilar de piedra con «Tramo N · distancia».`,
