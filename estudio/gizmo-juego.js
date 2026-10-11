@@ -8,6 +8,7 @@
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
 import { TransformControls } from '../vendor/three-addons/TransformControls.js';
+import { liberar, devolver } from './puntero-libre.js';
 
 const MODOS = { mover: 'translate', girar: 'rotate' };
 
@@ -16,31 +17,20 @@ export function crearGizmo(venjy, alCambio) {
     const amigos = venjy.amigos;
     let actual = null; // { n, marcador, controles, ayudante, modo, suelo, reloj }
     const lienzo = venjy.renderer.domElement;
-    let pedirOriginal = null, activoOriginal = null, estilo = null, ultimoSalto = 0;
+    let libre = false, ultimoSalto = 0;
 
     // Con el gizmo puesto el puntero queda libre: el juego no lo recaptura al hacer clic (arrastrar el gizmo es un clic),
     // no abre la pausa al soltarlo ni muestra «Haz clic para seguir jugando». Quitar el gizmo lo deja todo como estaba.
+    // El parche y su cuenta viven en puntero-libre.js (la pestaña Escenas también lo pide).
     function liberarPuntero() {
-        if (pedirOriginal) return;
-        const J = venjy.jugador;
-        pedirOriginal = lienzo.requestPointerLock;
-        lienzo.requestPointerLock = () => Promise.resolve();
-        activoOriginal = J.alCambiarActivo;
-        J.alCambiarActivo = activo => { if (activo && activoOriginal) activoOriginal(activo); };
-        if (document.pointerLockElement) document.exitPointerLock();
-        if (activoOriginal) activoOriginal(true); // esconde una pausa que ya estuviera abierta
-        estilo = document.createElement('style');
-        estilo.textContent = '.clic-seguir { display: none !important; }';
-        document.head.appendChild(estilo);
+        if (libre) return;
+        libre = true;
+        liberar(venjy);
     }
     function devolverPuntero() {
-        if (!pedirOriginal) return;
-        lienzo.requestPointerLock = pedirOriginal;
-        pedirOriginal = null;
-        venjy.jugador.alCambiarActivo = activoOriginal;
-        activoOriginal = null;
-        if (estilo) estilo.remove();
-        estilo = null;
+        if (!libre) return;
+        libre = false;
+        devolver(venjy);
     }
 
     function quitar() {

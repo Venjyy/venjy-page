@@ -15,7 +15,7 @@
             <button class="pestana" type="button" data-pestana="juego" data-es="Juego" data-en="Game">Juego</button>
             <button class="pestana" type="button" data-pestana="textos" data-es="Textos" data-en="Texts">Textos</button>
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
-            <button class="pestana" type="button" disabled data-es="Escenas · fase 5" data-en="Scenes · phase 5">Escenas · fase 5</button>
+            <button class="pestana" type="button" data-pestana="escenas" data-seccion="juego" data-es="Escenas" data-en="Scenes">Escenas</button>
             <button class="pestana" type="button" disabled data-es="Poses · fase 6" data-en="Poses · phase 6">Poses · fase 6</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
@@ -105,6 +105,38 @@
             <div class="marco marco-juego">
                 <iframe id="juego" title="Juego" allow="fullscreen; autoplay"></iframe>
             </div>
+            <div id="es-zona" hidden>
+                <div class="fila-aparato es-barra">
+                    <label class="campo">
+                        <span data-es="Persona de la escena" data-en="Scene person">Persona de la escena</span>
+                        <select id="es-persona"></select>
+                    </label>
+                    <label class="campo corto"><span>T (s)</span><input id="es-T" type="number" step="0.05" min="1" max="120"></label>
+                    <label class="campo corto"><span data-es="Distancia" data-en="Distance">Distancia</span><input id="es-r" type="number" step="0.05" min="0.5" max="4"></label>
+                    <label class="campo corto" id="es-campo-nivel"><span data-es="Nivel" data-en="Level">Nivel</span>
+                        <select id="es-nivel"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+                    </label>
+                    <div class="fila-botones es-botones">
+                        <button id="es-jugar" class="boton chico" type="button" data-es="Reproducir" data-en="Play">Reproducir</button>
+                        <button id="es-pausa" class="boton chico secundario" type="button" data-es="Pausa" data-en="Pause">Pausa</button>
+                        <button id="es-parar" class="boton chico secundario" type="button" data-es="Parar" data-en="Stop">Parar</button>
+                        <button id="es-zoom-menos" class="boton chico secundario" type="button" data-es="Zoom −" data-en="Zoom −">Zoom −</button>
+                        <button id="es-zoom-mas" class="boton chico secundario" type="button" data-es="Zoom +" data-en="Zoom +">Zoom +</button>
+                    </div>
+                    <span id="es-tiempo" class="etiqueta-perfil">t 0.00 / 0 s</span>
+                </div>
+                <label class="casilla-marca es-junto">
+                    <input id="es-ir-junto" type="checkbox" checked>
+                    <span data-es="Viajar junto a la persona al reproducir" data-en="Travel next to the person when playing">Viajar junto a la persona al reproducir</span>
+                </label>
+                <div id="es-linea" class="es-linea" tabindex="0"></div>
+                <div id="es-selector" class="es-selector" hidden>
+                    <input id="es-selector-texto" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Buscar gesto…">
+                    <ul id="es-selector-lista"></ul>
+                </div>
+                <p class="ayuda" data-es="Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace."
+                   data-en="Drag a block to move it and its edges to stretch it (snaps to 0.05 s and stops against its neighbour). Double-click an empty row to add; Del removes; click the ruler to jump to that moment. Ctrl+S saves, Ctrl+Z undoes.">Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace.</p>
+            </div>
             <p class="ayuda" data-es="El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante."
                data-en="The game opens (or creates) the world “Estudio” on Peaceful. Click the game to play; Esc to get back. What you move in Layout shows up here instantly.">El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante.</p>
         </section>
@@ -177,6 +209,57 @@
                         <button id="ps-descargar" class="boton secundario" type="button" data-es="Descargar JSON" data-en="Download JSON">Descargar JSON</button>
                     </div>
                     <p id="ps-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-escenas" hidden>
+                <section class="panel">
+                    <h2 data-es="Escenas" data-en="Scenes">Escenas</h2>
+                    <ul id="es-lista" class="lista-escenas"></ul>
+                    <div class="fila-botones">
+                        <button id="es-nueva" class="boton chico" type="button" data-es="Nueva escena" data-en="New scene">Nueva escena</button>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 id="es-elegido-titulo" data-es="Elige un bloque" data-en="Pick a block">Elige un bloque</h2>
+                    <div id="es-campos" hidden>
+                        <div id="es-campo-gesto" class="campo">
+                            <span data-es="Gesto" data-en="Gesture">Gesto</span>
+                            <button id="es-gesto" class="boton chico" type="button"></button>
+                        </div>
+                        <div class="campos">
+                            <label class="campo"><span data-es="Desde (s)" data-en="From (s)">Desde (s)</span><input id="es-desde" type="number" step="0.05" min="0"></label>
+                            <label class="campo" id="es-campo-hasta"><span id="es-hasta-rotulo" data-es="Hasta (s)" data-en="To (s)">Hasta (s)</span><input id="es-hasta" type="number" step="0.05" min="0"></label>
+                        </div>
+                        <label class="campo" id="es-campo-quien">
+                            <span data-es="Quién la dice" data-en="Who says it">Quién la dice</span>
+                            <select id="es-quien"></select>
+                        </label>
+                        <label class="campo" id="es-campo-es">
+                            <span data-es="Texto en español" data-en="Spanish text">Texto en español</span>
+                            <textarea id="es-texto-es" rows="3" maxlength="400"></textarea>
+                        </label>
+                        <label class="campo" id="es-campo-en">
+                            <span data-es="Texto en inglés" data-en="English text">Texto en inglés</span>
+                            <textarea id="es-texto-en" rows="3" maxlength="400"></textarea>
+                        </label>
+                        <p id="es-frase-nota" class="mensaje"></p>
+                        <button id="es-borrar" class="boton chico secundario" type="button" data-es="Borrar (Supr)" data-en="Delete (Del)">Borrar (Supr)</button>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2 data-es="Avisos de la escena" data-en="Scene warnings">Avisos de la escena</h2>
+                    <ul id="es-avisos" class="avisos avisos-textos"></ul>
+                </section>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="es-deshacer" class="boton chico" type="button" data-es="Deshacer" data-en="Undo">Deshacer</button>
+                        <button id="es-descartar" class="boton chico" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <div class="fila-botones">
+                        <button id="es-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="es-descargar" class="boton secundario" type="button" data-es="Descargar JSON" data-en="Download JSON">Descargar JSON</button>
+                    </div>
+                    <p id="es-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <section class="panel" id="panel-ir-a">
