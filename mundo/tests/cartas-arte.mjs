@@ -31,7 +31,7 @@ for (const id of Object.keys(CARTAS)) {
 ok(Object.keys(marcos).length === 5, 'cinco familias de marco (4 + Hechizo)');
 for (const [f, set] of Object.entries(marcos)) ok(set.size === 1, `${f}: un solo color de bisel`);
 ok(new Set(Object.values(marcos).map(s => [...s][0])).size === 5, 'cada familia con su color');
-for (const id of ['zombi', 'boris', 'rayo']) ok(A.tieneRetrato(id), `${id} tiene retrato`);
+for (const id of Object.keys(CARTAS)) ok(A.tieneRetrato(id), `${id} tiene retrato`);
 ok(A.dibujarCarta('no-existe') === null, 'carta desconocida = null');
 revisar(A.dibujarReverso(), 'reverso');
 ok(A.arteCarta('zombi') === null && A.arteReverso() === null, 'sin canvas devuelve null');
