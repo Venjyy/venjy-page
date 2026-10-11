@@ -19,7 +19,7 @@ const O_ESCUDO = O.ESCUDO;
 export const AGARRE_1P = {
     vacia: { pos: [0, 0, 0], rot: [0.42, 0.42, 0] },
     objeto: { pos: [0.06, -0.2, 0.14], rot: [0.42, 0.42, 0] },
-    bloque: { pos: [0.06, -0.2, 0.16], rot: [0.42, 0.42, 0] }
+    bloque: { pos: [0.22, -0.34, -0.02], rot: [0.7, 0.3, 0] }
 };
 
 // Geometría de un dibujo de 16×16 extruido (caras de frente, atrás y cantos donde no hay vecino)

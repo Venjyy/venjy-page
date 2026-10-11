@@ -41,11 +41,11 @@ export const POSES = {
     // Comer: la mano a la boca y un vaivén corto
     comer: { bDx: -1.35, bDz: 0.35, vaiven: 0.12, f: 16, cx: 0.1 },
     // Arco: los dos brazos al frente siguiendo la mirada; el izquierdo cruza hacia el centro
-    arco: { bDy: -0.1, bIy: 0.5 },
-    // Escudo: el brazo del escudo al frente y hacia el centro
-    escudo: { bx: -0.94, by: 0.52 },
+    arco: { bIz: -0.35 },
+    // Escudo: el brazo del escudo al frente y hacia el centro (bz: cuánto cruza al pecho)
+    escudo: { bx: -0.94, bz: 0.52 },
     // Sentado en el suelo (atlas de rig.md); lo usa 7g
-    sentado: { y: -0.62, pDx: -1.45, pIx: -1.45, inc: 0.15, bDx: -0.6, bIx: -0.6 }
+    sentado: { y: -0.62, pDx: -1.45, pIx: -1.45, inc: 0.15, bDx: -1.0, bIx: -1.0 }
 };
 
 export function crearEstado() {
@@ -96,14 +96,15 @@ export function angulos(e, ent, escudo = 0) {
     // Arco tensado: brazos al frente siguiendo la mirada
     if (e.tensar > 0.001) {
         const mira = -Math.PI / 2 - pit;
-        a.bDx = mezcla(a.bDx, mira, e.tensar); a.bDy = mezcla(a.bDy, POSES.arco.bDy, e.tensar);
-        a.bIx = mezcla(a.bIx, mira, e.tensar); a.bIy = mezcla(a.bIy, POSES.arco.bIy, e.tensar);
+        // (bIz negativo = la mano izquierda cruza al centro; con Euler XYZ bIy no cambia la dirección del brazo)
+        a.bDx = mezcla(a.bDx, mira, e.tensar);
+        a.bIx = mezcla(a.bIx, mira, e.tensar); a.bIz = mezcla(a.bIz, POSES.arco.bIz, e.tensar);
     }
     // Escudo: con el escudo en la mano principal (escudo = 1) bloquea la derecha; si no, la izquierda
     if (e.bloquear > 0.001) {
         const s = POSES.escudo;
-        if (escudo === 1) { a.bDx = mezcla(a.bDx, a.bDx * 0.5 + s.bx, e.bloquear); a.bDy = mezcla(a.bDy, -s.by, e.bloquear); }
-        else { a.bIx = mezcla(a.bIx, a.bIx * 0.5 + s.bx, e.bloquear); a.bIy = mezcla(a.bIy, s.by, e.bloquear); }
+        if (escudo === 1) { a.bDx = mezcla(a.bDx, a.bDx * 0.5 + s.bx, e.bloquear); a.bDz = mezcla(a.bDz, s.bz, e.bloquear); }
+        else { a.bIx = mezcla(a.bIx, a.bIx * 0.5 + s.bx, e.bloquear); a.bIz = mezcla(a.bIz, -s.bz, e.bloquear); }
     }
     // Golpe en arco (encima de todo lo anterior)
     if (e.golpe >= 0) {
