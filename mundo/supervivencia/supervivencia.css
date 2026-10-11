@@ -419,6 +419,17 @@ body.con-tactil .mision-activa { top: 182px; left: 12px; right: auto; }
 .creditos li b { font-weight: normal; color: var(--amarillo); }
 @keyframes subir { from { transform: translateY(min(62vh, 460px)); } to { transform: translateY(0); } }
 
+/* ---------- Cuaderno de los Tomatitos ---------- */
+.cuaderno { margin: auto; width: min(560px, 100%); padding: 14px; color: #fff; background: rgb(0 0 0 / 0.7); border: 4px solid #000; }
+.cuaderno h1 { color: var(--amarillo); font-weight: normal; font-size: 1.6rem; text-shadow: 3px 3px 0 #3f3f15; margin: 0 0 6px; }
+.cuaderno .sub { color: var(--gris); margin: 0 0 4px; }
+.cuaderno .cuenta { color: #7df; margin: 0 0 10px; }
+.cuaderno .hojas { max-height: min(54vh, 420px); overflow-y: auto; display: grid; gap: 8px; margin-bottom: 12px; }
+.cuaderno article { padding: 8px 10px; background: rgb(196 160 100 / 0.18); border: 2px solid #6e4e28; }
+.cuaderno article.falta { opacity: 0.5; border-style: dashed; }
+.cuaderno h2 { font-weight: normal; font-size: 1rem; color: var(--amarillo); margin: 0 0 4px; }
+.cuaderno article p { margin: 0; white-space: pre-line; line-height: 1.4; }
+
 /* ---------- Editor de skin ---------- */
 .panel.panel-skin { width: min(760px, 100%); }
 .editor-skin { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: center; }

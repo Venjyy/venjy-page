@@ -151,6 +151,10 @@ obj('AMULETO_MINA', 'Amuleto de la mina', 'Mine Amulet', { icono: 'amuleto', api
 obj('PLUMA_CHONCHON', 'Pluma del Chonchon', 'Chonchon Feather', { icono: 'pluma_negra', apila: 1, jefe: 'chonchon' });
 obj('FAROL_CALEUCHE', 'Farol del Caleuche', 'Caleuche Lantern', { icono: 'farol', apila: 1, jefe: 'caleuche' });
 
+// ---- 7f-3 parte 6: cuaderno de los Tomatitos (12 páginas escondidas; ids al final) ----
+obj('CUADERNO', 'Cuaderno de los Tomatitos', 'Tomatitos Notebook', { icono: 'cuaderno', apila: 1, combustible: 5 }); // clic derecho: lee las páginas que llevas
+obj('TOMATE_BIGOTE', 'Tomate con bigote', 'Mustache Tomato', { icono: 'tomate', comida: [10, 12.8] }); // premio de las 12 páginas
+
 // ---------------------------------------------------------
 // Bloques como objeto: nombre, dureza, herramienta y drops
 // ---------------------------------------------------------

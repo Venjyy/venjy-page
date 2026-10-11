@@ -13,6 +13,7 @@ import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } fr
 import { colocarCaminos } from './caminos.js';
 import { colocarMotivos } from './lugares-motivos.js';
 import { colocarRuinas } from './ruinas.js';
+import { colocarPaginas } from './paginas-cuaderno.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -75,6 +76,8 @@ export function prepararTerreno(datos, opciones = {}) {
         const rui = colocarRuinas(terreno, datos, ESCALA, NIVEL_AGUA);
         terreno.ruinas = rui.ruinas;
         for (const d of rui.decor) terreno.decor.push(d);
+        // Páginas del cuaderno de los Tomatitos (7f-3): solo posiciones; las pinta supervivencia/cuaderno.js
+        terreno.paginas = colocarPaginas({ ...terreno, datos, ESCALA, NIVEL_AGUA });
     } else terreno.dy = 0;
     return terreno;
 }

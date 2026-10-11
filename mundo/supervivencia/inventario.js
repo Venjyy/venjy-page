@@ -20,6 +20,9 @@ export class Inventario {
         this.mano2 = null;
         this.elegida = 0;
         this.alCambiar = null;
+        // Páginas del cuaderno de los Tomatitos (7f-3): bits 0-11 = páginas encontradas, bit 12 = premio cobrado.
+        // Viaja con el inventario para ser por jugador (también en cooperativo, que ya manda `inv` en el perfil).
+        this.cuaderno = 0;
     }
 
     cambio() { this.alCambiar && this.alCambiar(); }
@@ -131,12 +134,15 @@ export class Inventario {
 
     serializar() {
         const s = p => (p ? (p.p ? [p.id, p.n, p.d, p.p] : [p.id, p.n, p.d]) : 0);
-        return { c: this.casillas.map(s), a: this.armadura.map(s), m: s(this.mano2), e: this.elegida };
+        const o = { c: this.casillas.map(s), a: this.armadura.map(s), m: s(this.mano2), e: this.elegida };
+        if (this.cuaderno) o.q = this.cuaderno; // solo con páginas: los guardados sin cuaderno quedan igual
+        return o;
     }
 
     cargar(o) {
         const l = v => (v ? pila(v[0], v[1], v[2] || 0, typeof v[3] === 'string' ? v[3] : null) : null);
         if (!o) return;
+        this.cuaderno = Number.isInteger(o.q) && o.q > 0 ? o.q & 0x1fff : 0;
         this.casillas = (o.c || []).map(l).concat(new Array(36).fill(null)).slice(0, 36);
         this.armadura = (o.a || []).map(l).concat(new Array(4).fill(null)).slice(0, 4);
         this.mano2 = l(o.m);
