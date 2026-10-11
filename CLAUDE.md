@@ -22,11 +22,16 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 - **Si un pedido es grande, avisarlo y proponer hacerlo en un chat dedicado.**
 
-- **Al terminar cada chat de trabajo** (PR abierto o fusionado, o plan escrito): entregar el prompt de traspaso al siguiente chat con el modelo y el effort recomendados y la parte del plan que sigue. Cómo, en la skill `.claude/skills/traspaso-chat/`.
+- **Al terminar cada chat de trabajo** (PR abierto o fusionado, o plan escrito): entregar el prompt de traspaso al siguiente chat (máximo ~10 líneas: rama, qué falta y qué leer con funciones o rangos de líneas concretos, no archivos enteros) con el modelo y el effort recomendados. Cómo, en la skill `.claude/skills/traspaso-chat/`.
 
 - **Nunca** incluir enlaces de sesión (`claude.ai/code/session…`) ni la línea «Generated with Claude Code» en commits, PRs, comentarios o archivos del repo (ni la línea `Claude-Session:` en los commits).
 
-- **Artifact obligatorio al cerrar cada chat de trabajo** (PR abierto o plan escrito), sin que el dueño lo pida y antes del prompt de traspaso: receta de `.claude/artifacts/GUIA.md` (estética de paneles Minecraft, PixelCraft incrustada, datos generados desde el código, secciones en orden fijo). Camino corto y barato: copiar `.claude/artifacts/contenido-6c1.mjs`, cambiar el contenido y generar con `.claude/artifacts/plantilla.mjs`; enlazarlo en el PR.
+- **Cierre liviano** (desde 2026-10-11, para ahorrar uso):
+  - **Artifact** solo al fusionar una fase completa o si el dueño lo pide: receta de `.claude/artifacts/GUIA.md` (camino corto: copiar `.claude/artifacts/contenido-6c1.mjs`, cambiar el contenido y generar con `.claude/artifacts/plantilla.mjs`; enlazarlo en el PR).
+  - **Medición de carga** de `supervivencia.html` solo si el cambio toca lo que carga sin `?estudio`; si no, en el PR: «no aplica: no cambia la carga».
+  - **Pruebas de navegador**: solo la nueva o la directamente afectada; las demás van en el PR como «pendientes del dueño». Siempre: las pruebas de Node y `node estudio/cli.mjs validar --contra HEAD`.
+  - **Prueba visual** (sliders, canvas, cómo se ve): la hace el dueño; el PR trae una lista corta de «qué mirar».
+  - **Docs**: en cada chat, `mundo/PENDIENTES.md` (bitácora) y la sección de la fase en `estudio/DISENO.md`; `CLAUDE.md` y `mundo/supervivencia/MAPA.md` solo si cambió algo que un agente futuro necesite saber.
 - Todo texto visible lleva su par `data-es` / `data-en`.
 - Solo fuente `PixelCraft`; sin emojis como íconos (se dibujan en `ICONOS` de `script.js`).
 
