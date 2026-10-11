@@ -65,9 +65,10 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 |---|---|
 | `misiones-datos.js` (~300) | 3 misiones por amigo, kits y 3 jefes. `MISIONES:23` `KITS` `repartirKit` `JEFES:219` `TEXTOS_VENJY:240` |
 | `facilidades-datos.js` (~220) / `facilidades.js` (~130) | 7d-2: tabla `FACILIDADES` por misión, pesca, rumbo, `crearGarantia`, planos del huerto/grava/horno · cableado: decorados una vez por mundo, pista, marcas del minimapa y monstruo de la noche. `botinPesca` `elegirSitio` `planoHuerto` · `crearFacilidades` |
-| `caminos-carteles.js` (~40) + `mundo/caminos.js` (~140) | 7f-3 parte 1: mojones, carteles de cruce y faroles sobre los caminos. `colocarCaminos` (en `mundo/`, determinista, lo llama `prepararTerreno` solo en supervivencia y deja `terreno.caminos`; bloques como decorados) · `crearCartelesCamino` (texto a < 24 bloques) |
+| `caminos-carteles.js` (~40) + `mundo/caminos.js` (~155) | 7f-3 parte 1: mojones, carteles de cruce y faroles sobre los caminos. `colocarCaminos` (en `mundo/`, determinista, lo llama `prepararTerreno` solo en supervivencia y deja `terreno.caminos`; bloques como decorados) · `crearCartelesCamino` (texto a < 24 bloques) |
 | `mundo/lugares-motivos.js` (~50) | 7f-3 parte 3: cama y antorcha del molino y carteles de lugar (molino, portal). `colocarMotivos` (lo llama `prepararTerreno` solo en supervivencia; los carteles van en `terreno.caminos` con `tipo: 'lugar'`) · `CARTELES_LUGARES` |
 | `mundo/ruinas.js` (~120) | 7f-3 parte 4: 7 ruinas con cofre (arco y pilar caído) en claros del bosque. `colocarRuinas` (lo llama `prepararTerreno` solo en supervivencia; deja `terreno.ruinas` y decorados `ruina`, sin `zonasLuz`) · `RUINAS` (cantidad, separación, densidad de bosque). Botín: tabla `ruina` de `botin.js`, elegida por `lugarDe` de `contenedores.js` |
+| `cuaderno.js` (~130) + `cuaderno-datos.js` (~75) + `mundo/paginas-cuaderno.js` (~100) | 7f-3 parte 6: 12 páginas del cuaderno de los Tomatitos. `colocarPaginas` (en `mundo/`, determinista, 1 por zona 4×3 con orden barajado; deja `terreno.paginas`) · `crearCuaderno` (sprites a < 40 bloques, recoger a 1,6, panel de lectura, clic derecho con el Cuaderno) · `recogerPagina` (lógica pura, premio) · `PAGINAS`/`PREMIO`/`TEXTOS`. Estado por jugador: `inventario.cuaderno` (viaja en `serializar` como `q`) |
 | `misiones.js` (499) | Panel de cada amigo y misión activa. `crearMisiones:38` `cumplida:114` `aceptar:273` `completar:284` `hablar:321` `hablarVenjy:343` |
 | `tienda-datos.js` (215) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `crearTienda:21` `comprar:110` `vender:123` |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
@@ -101,7 +102,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `../online/ping.js` (118) | 7e, lógica pura del ping (sin DOM ni red): `nivelDeMs` `barrasDeMs` `rttDeEco` `rttDeStats` `Suave` `RelojAnfitrion` `Eco` `ecoDeLista` `ecoPropio`. Prueba `mundo/tests/ping.mjs` |
 | `ui-qr.js` (86) | Panel QR para jugar sin internet. `crearPanelQR:15` |
 
-## Estudio · editor y datos (fases 1 a 4)
+## Estudio · editor y datos (fases 1 a 5)
 
 Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en `mundo/datos/`. Diseño y contratos: `estudio/DISENO.md`.
 
@@ -109,7 +110,7 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 |---|---|
 | `mundo/datos/cargador.js` (58) | Navegador: `cargarDatos:21` (fetch con tope 3 s, caché, `?sin-datos`), `fusionar:46`, `texto:55` |
 | `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `escenas` (lo lee `escena-amistad.js`, fase 5) y `poses` (referencia; ver `estudio/DISENO.md` §13); `indice.json` dice quién lee qué |
-| `mundo/datos/escenas.js` (92) | Fase 5, sin DOM: `animacionDeDatos` (escena `amistad` → fila de `ANIMACIONES`), `guionDeDatos` (escena `guion` → guion de ejecución, `d` = `durLinea(texto)` si falta) y `reglasEscenas` (las reglas que el esquema no expresa; las usa `cli.mjs validar` y la prueba) |
+| `mundo/datos/escenas.js` (94) | Fase 5, sin DOM: `animacionDeDatos` (escena `amistad` → fila de `ANIMACIONES`), `guionDeDatos` (escena `guion` → guion de ejecución, `d` = `durLinea(texto)` si falta) y `reglasEscenas` (las reglas que el esquema no expresa; las usa `cli.mjs validar` y la prueba) |
 | `mundo/datos/posiciones.js` (84) | Fase 4, sin DOM: `resolverAncla` (lugares, `escenario`, `faro`), `puntoAMundo` y `mundoAPunto` (la inversa que usa el gizmo), `GIRO_CALCULADO` |
 | `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |
@@ -117,15 +118,18 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | `estudio/cli.mjs` (446) / `fuentes.mjs` (77) | `resumen` (con `dialogos --md [--escribir]`), `validar`, `glifos` y `capturar` (delega en `capturar.mjs`); fuentes JS `tienda` y `amistad` |
 | `estudio/capturar.mjs` (180) | `capturar layout\|pose\|gesto\|escena`: servidor propio + Playwright. `aparatoDe:29` `capturar:110` |
 | `estudio/playwright.mjs` (109) | Dónde está Playwright y un navegador: `cargarPlaywright:34` `buscarChromiumLocal:68` `lanzarNavegador:90` `abrirNavegador:106` |
-| `estudio/puente-protocolo.js` (79) | Canal `venjy-estudio`, `DATOS_VIVOS`, `crearManejador` (mensajes `hola`, `datos`, `tp`, `globo`, `elegir`; sin DOM) |
-| `estudio/puente-juego.js` (135) | Lado del juego, solo con `?estudio`: abre/crea el mundo «Estudio», `/tp` por la consola, globo de vista previa, SSE; aplica `dialogos` en la fachada y `posiciones` en `amigos.posiciones`; `elegir` carga `gizmo-juego.js` |
-| `estudio/gizmo-juego.js` (139) | Fase 4, solo con `?estudio`: `crearGizmo` pone un `TransformControls` (de `vendor/three-addons/`) sobre un marcador en el grupo de la persona, mira hacia ella, libera el puntero, salta las escenas que arranquen y manda `cambio` al soltar |
+| `estudio/puente-protocolo.js` (96) | Canal `venjy-estudio`, `DATOS_VIVOS`, `crearManejador` (mensajes `hola`, `datos`, `tp`, `globo`, `elegir`, `escena`; sin DOM) |
+| `estudio/puente-juego.js` (190) | Lado del juego, solo con `?estudio`: abre/crea el mundo «Estudio», `/tp` por la consola, globo de vista previa, SSE; aplica `dialogos` en la fachada, `posiciones` en `amigos.posiciones` y `escenas` en `escena-amistad.js`; `elegir` carga `gizmo-juego.js`; `escena:96` juega, pausa, salta o para una escena y suelta el mouse; manda `escenaT` cada 100 ms |
+| `estudio/gizmo-juego.js` (135) | Fase 4, solo con `?estudio`: `crearGizmo` pone un `TransformControls` (de `vendor/three-addons/`) sobre un marcador en el grupo de la persona, mira hacia ella, libera el puntero, salta las escenas que arranquen y manda `cambio` al soltar |
 | `estudio/puente-cliente.js` (67) / `juego.js` (98) | Lado del Estudio: `crearCliente:11`; pestaña Juego (iframe, `/tp`, aplicar archivos) |
 | `estudio/avisos-layout.js` (26) / `evaluar.mjs` (35) | `calcularAvisos` (choques, chicos, fuera); `evaluarGesto` de `poses.json` (referencia) |
 | `estudio/avisos-textos.js` (68) / `glifos.mjs` (75) / `dialogos-md.mjs` (87) | `avisosDeTexto` (par, emoji, glifo, plantilla, largo); `leerGlifos` (cmap de PixelCraft → `glifos.json`); `generarPersonas` y `escribirEnDocumento` (tablas de `mundo/DIALOGOS.md`) |
 | `estudio/textos.js` (352) | Editor de textos ES/EN: tabla filtrable, «revisado», avisos, globo en el juego, guardar. `montarTextos:22` |
+| `estudio/puntero-libre.js` (34) | Solo con `?estudio`: `liberar:14` / `devolver:26` (con cuenta) sueltan el mouse del juego (no recaptura, sin pausa, sin «Haz clic»); lo usan el gizmo y la pestaña Escenas |
+| `estudio/escenas-modelo.mjs` (295) | Línea de tiempo, puro: `moverTramo:63` `estirarTramo:76` `agregarTramo:90` `moverMarca:123` `moverFrase:158` `estirarFrase:168` `cambiarT:216` `desdeCodigo:263` `escenaNueva:271` `crearHistorial:287`; encaja a 0,05 s y se detiene contra el vecino |
+| `estudio/escenas.js` (733) | Editor de escenas: lista (JSON y «en código»), línea de tiempo (gestos, frases, golpes y corazones), Reproducir / Pausa / Parar / clic en la regla por el puente, avisos con `reglasEscenas`, guardar. `montarEscenas:46` `cargarMotor:86` `pintarLinea:181` `reproducir:608` |
 | `estudio/posiciones.js` (221) | Editor de posiciones: persona, ancla, ejes, dx/dy/dz/giro, Mover / Girar, guardar. Comparte el iframe de la pestaña Juego. `montarPosiciones:25` |
-| `estudio/index.html` · `estudio.js` (74) · `estudio.css` | Cáscara: idioma ES/EN, estado del servidor, pestañas (Layout, Juego, Textos y Posiciones), cliente del puente |
+| `estudio/index.html` · `estudio.js` (86) · `estudio.css` | Cáscara: idioma ES/EN, estado del servidor, pestañas (Layout, Juego, Textos, Posiciones y Escenas), cliente del puente |
 | `estudio/layout.js` (578) | Editor de layout: asas, panel de campos, avisos, guardar; manda cada cambio al juego. `APARATOS:50` `montarLayout:65` |
 | `estudio/vista-tactil.html` (87) | Capa táctil real sin el mundo (iframe del editor); recibe `{tipo:'layout'}` y `{tipo:'seguro'}` |
 

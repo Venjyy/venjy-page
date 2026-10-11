@@ -265,3 +265,83 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 #panel-posiciones .campo input[type="text"]:focus { outline: none; border-color: var(--blanco); }
 #panel-posiciones [data-modo].activo { border-color: var(--blanco); }
 #panel-posiciones .campo, #panel-posiciones .casilla-marca { margin-bottom: 8px; }
+
+/* ---------- Escenas (fase 5): línea de tiempo que comparte la sección del juego ---------- */
+#panel-escenas[hidden], #es-zona[hidden] { display: none; }
+#es-zona { margin-top: 12px; }
+.es-barra .campo select { min-width: 150px; }
+.es-barra .campo.corto select, .es-barra .campo.corto input { min-width: 0; }
+.es-botones { flex: none; width: auto; }
+.es-botones .boton { flex: none; }
+.es-junto { margin-bottom: 8px; }
+.es-linea {
+    position: relative; overflow-x: auto; overflow-y: hidden;
+    background: rgb(0 0 0 / 0.4);
+    border: 4px solid #000;
+    box-shadow: inset 4px 4px 0 #3a2a1c, inset -4px -4px 0 #0c0704;
+    user-select: none; touch-action: pan-y;
+}
+.es-linea:focus-visible { outline: 2px solid var(--blanco); }
+.es-interior { position: relative; padding: 6px 0; }
+.es-fila { display: flex; align-items: flex-start; border-bottom: 1px solid #000; }
+.es-rotulo {
+    position: sticky; left: 0; z-index: 3; flex: none; width: 130px; padding: 4px 6px;
+    font-size: 0.75rem; color: var(--gris); background: var(--fondo-panel); border-right: 2px solid #000;
+    min-height: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.es-pista { position: relative; flex: none; background-image: linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px); background-size: 40px 100%; }
+.es-regla .es-pista { cursor: pointer; background: rgb(0 0 0 / 0.35); }
+.es-marca-regla { position: absolute; bottom: 0; width: 1px; height: 6px; background: var(--gris); pointer-events: none; }
+.es-marca-regla.entera { height: 12px; background: var(--blanco); font-size: 0.7rem; color: var(--blanco); }
+.es-marca-regla.entera::after { content: attr(data-t); }
+.es-marca-regla.entera { padding-left: 3px; line-height: 12px; top: 0; height: auto; bottom: 0; }
+.es-bloque {
+    position: absolute; top: 3px; height: 28px; z-index: 1;
+    display: flex; align-items: center; overflow: hidden;
+    font-size: 0.75rem; color: var(--blanco); text-shadow: 1px 1px 0 #000;
+    background: #4a6a3a; border: 2px solid #000;
+    box-shadow: inset 2px 2px 0 rgb(255 255 255 / 0.25), inset -2px -2px 0 rgb(0 0 0 / 0.35);
+    cursor: grab; touch-action: none;
+}
+.es-bloque:active { cursor: grabbing; }
+.es-bloque.gesto { background: #4a6a3a; }
+.es-bloque.frase { background: #3a5a8a; }
+.es-bloque.frase.implicita { border-style: dashed; }
+.es-bloque.apurada { border-color: var(--rojo); }
+.es-bloque.desconocido { background: #7a2e2e; }
+.es-bloque.elegido { border-color: var(--amarillo); z-index: 2; }
+.es-bloque .txt { flex: 1; min-width: 0; padding: 0 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+.es-bloque .asa { flex: none; width: 7px; align-self: stretch; cursor: ew-resize; background: rgb(0 0 0 / 0.35); }
+.es-marca { position: absolute; top: 5px; width: 18px; height: 18px; cursor: grab; z-index: 1; touch-action: none; }
+.es-marca canvas { image-rendering: pixelated; display: block; pointer-events: none; }
+.es-marca.elegida { outline: 2px solid var(--amarillo); }
+.es-cabezal { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--rojo); z-index: 4; pointer-events: none; }
+.es-cabezal.activo { background: var(--verde); }
+.es-selector {
+    margin-top: 8px; padding: 8px; background: var(--fondo-panel);
+    border: 4px solid #000; box-shadow: inset 4px 4px 0 #3a2a1c, inset -4px -4px 0 #0c0704;
+}
+.es-selector[hidden] { display: none; }
+.es-selector input { width: 100%; padding: 4px 6px; font: inherit; font-size: 0.9rem; color: var(--blanco); background: #000; border: 2px solid #6a6a6a; }
+.es-selector input:focus { outline: none; border-color: var(--blanco); }
+.es-selector ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 150px; overflow: auto; display: flex; flex-wrap: wrap; gap: 4px; }
+.es-selector li.vacio { font-size: 0.8rem; color: var(--gris); }
+.es-selector button { padding: 3px 8px; font: inherit; font-size: 0.8rem; color: var(--blanco); background: rgb(0 0 0 / 0.5); border: 2px solid #000; cursor: pointer; }
+.es-selector button:hover { background: rgb(125 140 196 / 0.4); }
+.lista-escenas { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.lista-escenas button {
+    width: 100%; padding: 4px 6px; text-align: left;
+    font: inherit; font-size: 0.8rem; color: var(--blanco);
+    background: rgb(0 0 0 / 0.35); border: 2px solid #000; cursor: pointer;
+}
+.lista-escenas button:hover { background: rgb(125 140 196 / 0.4); }
+.lista-escenas button.elegido { color: var(--amarillo); border-color: var(--amarillo); }
+#panel-escenas .campo, #panel-escenas .casilla-marca { margin-bottom: 8px; }
+#panel-escenas textarea {
+    width: 100%; padding: 4px 6px; font: inherit; font-size: 0.85rem; color: var(--blanco);
+    background: #000; border: 2px solid #6a6a6a; resize: vertical;
+}
+#panel-escenas textarea:focus { outline: none; border-color: var(--blanco); }
+#es-gesto { width: 100%; text-align: left; }
+/* En Escenas el juego se achica para que la línea de tiempo quepa sin bajar la pantalla */
+.modo-escenas .marco-juego iframe { aspect-ratio: auto; height: 38vh; min-height: 240px; }

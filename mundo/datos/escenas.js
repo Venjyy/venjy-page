@@ -28,6 +28,8 @@ export function guionDeDatos(def, { durLinea, moldes } = {}) {
 }
 
 const r3 = v => Math.round(v * 1000) / 1000;
+// 4.4 + 4.2 da 8.600000000000001: un final que cae justo en T no es un error
+const EPS = 1e-9;
 
 // nombres: { gestos: Set | Array de nombres que el juego resuelve (GESTOS, GESTOS_AMISTAD y MOLDES),
 //            animaciones: Set | Array con las claves de ANIMACIONES, durLinea?: txt -> segundos }
@@ -69,7 +71,7 @@ export function reglasEscenas(datos, nombres = {}) {
         }
 
         if (e.tipo === 'amistad') {
-            if (e.linea && e.linea[0] + e.linea[1] > T) mal(`${donde}.linea: termina en ${r3(e.linea[0] + e.linea[1])}, después de T ${T}`);
+            if (e.linea && e.linea[0] + e.linea[1] > T + EPS) mal(`${donde}.linea: termina en ${r3(e.linea[0] + e.linea[1])}, después de T ${T}`);
             if (animaciones && !animaciones.has(clave)) aviso(`${donde}: «${clave}» no está en ANIMACIONES, el juego la ignora`);
         } else if (e.tipo === 'guion') {
             const lineas = e.lineas || [];
@@ -78,7 +80,7 @@ export function reglasEscenas(datos, nombres = {}) {
                 const ruta = `${donde}.lineas[${i}]`;
                 if (l.q !== 'todos' && !declarados.has(l.q)) mal(`${ruta}.q: «${l.q}» no es un actor declarado (valen ${[...declarados].join(', ')} o todos)`);
                 const d = dura(l);
-                if (d !== null && l.a + d > T) mal(`${ruta}: termina en ${r3(l.a + d)}, después de T ${T}`);
+                if (d !== null && l.a + d > T + EPS) mal(`${ruta}: termina en ${r3(l.a + d)}, después de T ${T}`);
                 if (l.d !== undefined && durLinea && l.d < durLinea(l.texto)) aviso(`${ruta}.d: ${l.d} s es menos que los ${durLinea(l.texto)} s que se necesitan para leerla (frase apurada)`);
                 if (!l.texto.revisado) aviso(`${ruta}.texto: sin revisar (el dueño marca revisado: true)`);
             });

@@ -9,9 +9,11 @@ export const VERSION = 1;
 // Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas). Fase siguiente: poses.
 export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas'];
 export const MODOS_GIZMO = ['mover', 'girar'];
+export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 
 const MAX_GLOBO = 400;
 const NOMBRE_DESTINO = /^[a-z0-9áéíóúüñ][a-z0-9áéíóúüñ _-]{0,40}$/i;
+const CLAVE_ESCENA = /^[a-z0-9][a-z0-9_@-]{0,40}$/i; // clave de escena o de persona (venjy@atalaya)
 const esNum = v => typeof v === 'number' && Number.isFinite(v);
 const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -23,6 +25,11 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //   globo(persona, texto)          muestra `texto` en el globo de esa persona (vista previa del editor de textos)
 //   elegir({ clave, modo })        pone el gizmo sobre una persona (clave null lo quita); devuelve su punto actual
 //                                  { ancla, marco?, dx, dy, dz, giro } o lanza si no existe en este mundo
+//   escena({ accion, clave?, persona?, t?, v? })
+//                                  juega, pausa, salta a un instante o detiene una escena de amistad (fase 5); `puntero` con v
+//                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
+//                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
+// Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
 // Devuelve responder(mensaje) -> objeto de respuesta o null (si el mensaje no es para el juego).
 export function crearManejador(juego) {
     return async function responder(m) {
@@ -68,6 +75,16 @@ export function crearManejador(juego) {
                     if (!juego.elegir) return error('este juego no sabe poner el gizmo');
                     const punto = await juego.elegir(nada ? { clave: null } : { clave: m.clave, modo });
                     return { ...base, tipo: 'elegido', clave: nada ? null : m.clave, punto: punto || null };
+                }
+                case 'escena': {
+                    if (!ACCIONES_ESCENA.includes(m.accion)) return error(`escena pide accion ${ACCIONES_ESCENA.join(', ')}`);
+                    if (m.accion === 'jugar' && (typeof m.clave !== 'string' || !CLAVE_ESCENA.test(m.clave))) return error('clave de escena no válida');
+                    if (m.persona !== undefined && (typeof m.persona !== 'string' || !CLAVE_ESCENA.test(m.persona))) return error('persona no válida');
+                    if (m.accion === 'ir' && !(esNum(m.t) && m.t >= 0)) return error('ir pide t (segundos, 0 o más)');
+                    if (m.v !== undefined && typeof m.v !== 'boolean') return error('v tiene que ser verdadero o falso');
+                    if (!juego.escena) return error('este juego no sabe jugar escenas');
+                    const r = await juego.escena({ accion: m.accion, clave: m.clave, persona: m.persona, t: m.t, v: m.v });
+                    return { ...base, tipo: 'ok', escena: r || null };
                 }
                 default:
                     return error(`mensaje desconocido: ${m.tipo}`);

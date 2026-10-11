@@ -68,6 +68,7 @@ conForma(['WWW', 'WWW', ' S '], { W, S }, O.CARTEL, 3);
 conForma(['V V', ' V '], { V: B.VIDRIO }, O.BOTELLA, 3);
 sinForma([O.PAPEL, O.PAPEL, O.PAPEL, CARBONES], O.MAZO);
 conForma(['P', 'S', 'H'], { P: O.PLUMA, S, H: O.HILO }, O.PLUMA_JUGUETE);
+sinForma([O.LIBRO, O.PLUMA], O.CUADERNO); // 7f-3: repuesto del cuaderno de los Tomatitos (las páginas ya encontradas se conservan)
 conForma(['  S', ' WH', 'WW '], { S, W, H: O.HILO }, O.GUITARRA);
 conForma(['CNC', 'WWW'], { C: B.CUARZO, N: B.NEGRO, W }, O.TECLADO);
 conForma(['CCC', 'WWW'], { C: O.CUERO, W }, O.TAMBOR);
