@@ -205,7 +205,7 @@ function filasPosiciones(d, filtro) {
     const filas = [];
     for (const [k, p] of Object.entries(d.personas || {})) {
         if (filtro && !k.startsWith(filtro)) continue;
-        filas.push({ clave: k, texto: `${p.ancla} ${num(p.dx ?? 0)},${num(p.dy ?? 0)},${num(p.dz ?? 0)} giro ${p.giro ?? 0}`, extra: p.nota ? '# ' + p.nota : '' });
+        filas.push({ clave: k, texto: `${p.ancla}${p.marco === 'ancla' ? ' (ejes del ancla)' : ''} ${num(p.dx ?? 0)},${p.dy === 'suelo' ? 'suelo' : num(p.dy ?? 0)},${num(p.dz ?? 0)} giro ${p.giro ?? 0}`, extra: p.nota ? '# ' + p.nota : '' });
     }
     return filas;
 }
@@ -325,9 +325,31 @@ async function nombresDeObjetos() {
     return nombres;
 }
 
+// Referencias de posiciones.json: las anclas que el juego resuelve (lugares de construcciones.js, el escenario y
+// el faro) y las claves de PERSONAS (criaturas/amigos.js, leído como texto: el módulo necesita el DOM)
+async function referenciasDePosiciones() {
+    const { LUGARES } = await import('../mundo/construcciones.js');
+    const fuente = fs.readFileSync(path.join(RAIZ, 'mundo', 'criaturas', 'amigos.js'), 'utf8');
+    const bloque = (fuente.match(/export const PERSONAS = \{([\s\S]*?)\r?\n\};/) || [])[1] || '';
+    const personas = new Set([...bloque.matchAll(/^ {4}([a-z0-9_]+): \{/gm)].map(m => m[1]));
+    const { ANCLAS_ESCENARIO, ANCLAS_PUNTO, GIRO_CALCULADO } = await import('../mundo/datos/posiciones.js');
+    return { anclas: new Set([...LUGARES.map(l => l.clave), ...ANCLAS_ESCENARIO, ...ANCLAS_PUNTO]), personas, giroCalculado: GIRO_CALCULADO };
+}
+
 // Reglas de contenido que el esquema no expresa
-function revisarSemantica(nombre, datos, problemas, arch, objetos) {
+function revisarSemantica(nombre, datos, problemas, arch, objetos, refs) {
     const mal = texto => problemas.push({ archivo: arch, tipo: 'error', texto });
+    if (nombre === 'posiciones' && refs) {
+        for (const [grupo, puntos] of Object.entries({ personas: datos.personas, objetos: datos.objetos, poi: datos.poi })) {
+            for (const [clave, p] of Object.entries(puntos || {})) {
+                if (grupo === 'personas' && !refs.personas.has(clave)) mal(`$.personas.${clave}: no existe esa persona (PERSONAS de criaturas/amigos.js)`);
+                if (!refs.anclas.has(p.ancla)) mal(`$.${grupo}.${clave}.ancla: «${p.ancla}» no se resuelve en el juego (valen ${[...refs.anclas].join(', ')})`);
+                if (grupo === 'personas' && refs.giroCalculado[clave] && p.giro) {
+                    problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.personas.${clave}.giro: el juego lo ignora, ${refs.giroCalculado[clave]}` });
+                }
+            }
+        }
+    }
     if (nombre === 'dialogos') {
         for (const [persona, lista] of Object.entries(datos.temas || {})) {
             const ids = new Set();
@@ -379,6 +401,7 @@ async function validarCmd(pos, op) {
     let limpios = 0;
     const rangos = leerRangos();
     const objetos = nombres.includes('tienda') ? await nombresDeObjetos() : null;
+    const refs = nombres.includes('posiciones') ? await referenciasDePosiciones() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
 
     for (const nombre of nombres) {
@@ -401,7 +424,7 @@ async function validarCmd(pos, op) {
             if (aviso) problemas.push({ archivo: arch, tipo: nivel === 'aviso' ? 'aviso' : 'error', texto: `${ruta}: ${aviso}` });
             else if (EMOJI.test(valor)) problemas.push({ archivo: arch, tipo: 'error', texto: `${ruta}: emoji en «${valor}» (los íconos se dibujan, no se escriben)` });
         }, rangos);
-        revisarSemantica(nombre, datos, problemas, arch, objetos);
+        revisarSemantica(nombre, datos, problemas, arch, objetos, refs);
         if (op.contra) {
             const viejo = enHEAD(op.contra, nombre);
             if (viejo) {

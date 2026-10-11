@@ -5,6 +5,7 @@
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
 import { montarTextos } from './textos.js';
+import { montarPosiciones } from './posiciones.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -12,6 +13,8 @@ const ctx = {
     zonaSegura: false,
     servidor: { escritura: false },
     alIdioma: [],
+    pestana: 'layout',
+    alPestana: [], // f(clave) al cambiar de pestaña (posiciones pone y quita el gizmo)
     puente: crearCliente(), // canal con el juego (fase 2); layout.js manda cada cambio por aquí
     juego: null
 };
@@ -59,16 +62,20 @@ await buscarServidor();
 await montarLayout(ctx);
 montarJuego(ctx);
 await montarTextos(ctx);
+await montarPosiciones(ctx);
 
-// Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez)
+// Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
+// Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
 for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
     b.addEventListener('click', () => {
-        for (const o of document.querySelectorAll('.pestana[data-pestana]')) {
-            const activa = o === b;
-            o.classList.toggle('activa', activa);
-            document.getElementById('seccion-' + o.dataset.pestana).hidden = !activa;
-        }
-        if (b.dataset.pestana === 'juego') ctx.juego.activar();
+        const anterior = ctx.pestana;
+        const seccion = b.dataset.seccion || b.dataset.pestana;
+        for (const o of document.querySelectorAll('.pestana[data-pestana]')) o.classList.toggle('activa', o === b);
+        for (const sec of document.querySelectorAll('main.seccion')) sec.hidden = sec.id !== 'seccion-' + seccion;
+        ctx.pestana = b.dataset.pestana;
+        document.getElementById('panel-posiciones').hidden = ctx.pestana !== 'posiciones';
+        if (seccion === 'juego') ctx.juego.activar();
+        if (anterior !== ctx.pestana) for (const f of ctx.alPestana) f(ctx.pestana);
         window.dispatchEvent(new Event('resize')); // el editor de layout mide la vista al volver
     });
 }

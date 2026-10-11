@@ -280,7 +280,7 @@ try {
         ok(cliente.estado.listo === true && cliente.estado.idioma === 'en', 'el cliente recuerda que el juego está listo');
         const d = await cliente.enviar('datos', { nombre: 'ui-layout', datos: { supervivencia: {} } });
         ok(d.tipo === 'ok' && aplicados.length === 1 && aplicados[0][0] === 'ui-layout', 'datos se aplica y responde ok');
-        const dm = await cliente.enviar('datos', { nombre: 'posiciones', datos: {} }).then(() => null, e => e.message);
+        const dm = await cliente.enviar('datos', { nombre: 'poses', datos: {} }).then(() => null, e => e.message);
         ok(dm && dm.includes('no se aplica en vivo'), 'un archivo que no es vivo da error');
         const dr = await cliente.enviar('datos', { nombre: 'textos', datos: { romper: 1 } }).then(() => null, e => e.message);
         ok(dr === 'rompe', 'el error de aplicarDatos llega al cliente');

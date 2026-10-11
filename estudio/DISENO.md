@@ -634,3 +634,43 @@ entero.
   sirve JSON con gzip) es del formato estable con un par ES/EN por varias líneas.
 - **Sin probar / pendiente**: el globo en el juego con el Estudio en otra pestaña o por `--lan`; el editor con un teclado en celular (no es
   su uso). `estudio-navegador.mjs` falla en el paso de `/tp spawn` también en `main` (el jugador ya está ahí): no es de esta fase.
+
+## 12. Fase 4 · lo que cambió al construirla (2026-10-10)
+
+- **Archivos**: `mundo/datos/posiciones.js` (ancla ↔ mundo, sin DOM; lo usan `amigos.js`, el gizmo y las pruebas), `estudio/gizmo-juego.js`
+  (el gizmo dentro del juego), `estudio/posiciones.js` (editor), `vendor/three-addons/TransformControls.js` (Three 0.186.1, `three.LICENSE`
+  al lado), `mundo/tests/estudio-posiciones.mjs` y `estudio-posiciones-navegador.mjs`.
+- **Anclas que el juego resuelve**: los 6 `lugares` (bx, bz, y), `escenario` (x, z, y y `yaw` propio) y `faro`. Los puntos RUTA (`spawn`,
+  `casa`, `mina`…) son celdas del mapa 2D sin construcción propia y todavía no sirven de ancla: `validar` los rechaza con la lista de las que
+  valen.
+- **`amigos.js`**: `nuevo(clave, x, y, z, yaw, semilla)` sigue recibiendo los números de hoy y, si `posiciones.json` trae a esa persona
+  (y el mundo tiene su ancla), usa el JSON. `cargarDatos('posiciones')` se pide al importar el módulo; si no llegó antes de crear a las
+  personas, `aplicarPosiciones()` las reubica cuando llega (el mundo tarda más en generarse, pasa casi nunca). Sin archivo, roto o con
+  `?sin-datos`: los números del código. La paridad es exacta bit a bit: el orden de las sumas del JSON reproduce el de las expresiones
+  del código (`posiciones.js` lo comenta; la prueba lo verifica con un mundo de decimales feos).
+- **`dy: "suelo"`** (braulio y conejeros): `y` vale 0 y la persona sigue buscando su suelo sola (`cargado`), igual que hoy. El gizmo de
+  esos dos solo se mueve en X y Z.
+- **Quién ignora `giro`**: Moisés y Lalo se miran entre sí (con ±0,35 rad) y Lucho mira a Boris; el juego lo recalcula siempre
+  (`calcularMiradas`). El JSON de hoy trae `giro: 0` para ellos y no se tocó. El editor lo avisa y `validar` da un aviso solo si alguien
+  les pone un giro distinto de 0.
+- **Sitio de vuelta de las escenas**: las escenas leen `n.x`/`n.z` al empezar y los restauran al terminar; no copian el sitio a otro lado.
+  Mover a alguien con el gizmo (o con el JSON) lo mueve todo junto. `amistad.mjs` y `vida-amigos.mjs` pasan sin cambios.
+- **Mensajes**: `elegir { objeto: 'persona' | 'nada', clave?, modo?: 'mover' | 'girar' }` → `elegido { clave, punto }` (el campo no puede
+  llamarse `tipo`: es el del sobre). Del juego, sin `id`: `cambio { nombre: 'posiciones', ruta: 'personas.<clave>', valor: punto }` al
+  soltar. Errores con el id: persona que el mundo no tiene, persona sin entrada en `posiciones.json`, ancla que falta.
+- **El gizmo**: un `Object3D` marcador en el **mismo grupo** que la persona (el de la supervivencia va subido 48 bloques; así `n.x/n.y/n.z`
+  y el marcador comparten coordenadas de terreno) con `TransformControls` colgado. Mientras está puesto: el marcador manda sobre
+  `n.x/n.z/n.yaw` en cada cuadro (braulio camina y las escenas lo mueven); el puntero queda libre (`requestPointerLock` de la
+  vista se desactiva, la pausa no se abre al soltarlo y `.clic-seguir` se esconde; «Quitar gizmo» lo devuelve todo); el jugador mira hacia la persona (si no, el gizmo
+  cae detrás de la barra de objetos); una escena que arranque se salta con su propio `saltar()` (un Esc abriría la pausa). Giro con paso de 5°.
+- **Pestaña Posiciones = pestaña Juego + panel**: `data-seccion="juego"` en el botón. El iframe es el mismo (sin recargar y sin
+  segundo mundo); al salir de la pestaña se quita el gizmo. Cada cambio de campo o de gizmo se manda al juego (`datos`) sin guardar;
+  Guardar escribe con `If-Match`, y el servidor valida el esquema. «Volver a lo guardado» deshace solo a esa persona.
+- **Persona sin entrada**: el editor solo lista las que ya están en `posiciones.json`. Para sumar una nueva hay que agregar su clave
+  con ancla, `dx` y `dz` (a mano o por un agente) y recargar el editor. Un botón «Agregar persona» queda para cuando exista una.
+- **Importmap**: `supervivencia.html` lo trae siempre (una línea). No cambia la carga: solo mapea `three` y el juego importa por ruta.
+  `TransformControls.js` se baja con `import()` dinámico al elegir a alguien con `?estudio`.
+- **Sin probar**: el gizmo con el Estudio en otra pestaña o por `--lan`; con táctil (el arrastre con el dedo sí funciona en
+  TransformControls, pero el editor es de escritorio); personas de `npcs.js` (Pony, Salonas, Lona y los Venjy no están en `posiciones.json`).
+- **Pruebas**: `node mundo/tests/estudio-posiciones.mjs` (Node) y `node mundo/tests/estudio-posiciones-navegador.mjs` (arrastre real con
+  Playwright; toca `posiciones.json` y lo deja como estaba aunque falle).

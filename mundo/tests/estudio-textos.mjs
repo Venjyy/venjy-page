@@ -141,7 +141,7 @@ assert.deepStrictEqual(D.GESTO_REGALO, dialogos.gestoRegalo || {});
     ok((await m('globo', { persona: 'pony', texto: '' })).tipo === 'error', 'globo sin texto es error');
     ok((await m('globo', { persona: 'pony', texto: 'x'.repeat(401) })).tipo === 'error', 'globo de más de 400 caracteres es error');
     ok((await m('globo', { persona: '../x', texto: 'Hola' })).tipo === 'error', 'globo con persona no válida es error');
-    ok((await m('datos', { nombre: 'posiciones', datos: {} })).tipo === 'error', 'posiciones todavía no se aplica en vivo');
+    ok((await m('datos', { nombre: 'poses', datos: {} })).tipo === 'error', 'poses todavía no se aplica en vivo');
 }
 
 // ---------- 6. tienda.json y su esquema ----------
