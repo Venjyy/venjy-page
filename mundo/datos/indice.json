@@ -40,9 +40,9 @@
     },
     "escenas": {
       "esquema": "escenas",
-      "lee": null,
+      "lee": "mundo/supervivencia/escena-amistad.js",
       "fase": 5,
-      "que": "Escenas cortas con guion (T, r, frases, golpes, corazones y una pista de gestos por actor); hoy: punos y pareja de ANIMACIONES como piloto con paridad exacta. Lo leerá escena-amistad.js (PR 5a)"
+      "que": "Escenas cortas con guion (T, r, frases, golpes, corazones y una pista de gestos por actor): las de tipo amistad reemplazan por clave a ANIMACIONES (hoy punos y pareja, paridad exacta) y las de tipo guion se juegan con /amistad guion <clave> [persona]; se aplica en vivo con supervivencia.html?estudio"
     }
   }
 }

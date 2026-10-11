@@ -763,7 +763,7 @@ escena `guion` de ejemplo válida, paridad de datos exacta y, cada 1/120 s, el m
 Reglas para los tres: no tocar `camaras.js`, `mano.js`, `skin.js` ni `coop.js`; todo texto visible del Estudio con `data-es` /
 `data-en`; `escenas.json` solo gana claves (los valores del piloto no se cambian); PENDIENTES.md y MAPA.md al día.
 
-**PR 5a · el juego lee `escenas.json` (sin editor)** · rama `estudio-fase5a`
+**PR 5a · el juego lee `escenas.json` (sin editor)** · rama `estudio-fase5a` · **hecho (2026-10-11)**: resumen y medidas en «Estudio» de `mundo/PENDIENTES.md`. Lo único que difiere del texto: el módulo importa el JSON con `await cargarDatos('escenas')` al nivel de módulo (no hay carrera con la primera escena) y `reglasEscenas(datos, { gestos, animaciones, durLinea })` recibe también `durLinea` para el aviso de frase apurada y para el `d` que falta.
 - `mundo/datos/escenas.js` (nuevo, puro, sin DOM): `animacionDeDatos(def)` (quita `tipo`, `camara` y `nota`, como la prueba),
   `guionDeDatos(def, { durLinea, moldes })` → guion de ejecución (`d` que falta = `durLinea(texto)`, `gestos: moldes`,
   `actores` tal cual) y `reglasEscenas(datos, nombres)` → `[{ tipo: 'error' | 'aviso', texto }]` (punto 8).

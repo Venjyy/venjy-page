@@ -14,10 +14,14 @@ const MUNDO = 'Estudio';
 // ui-layout y textos los aplica tactil-supervivencia.js; dialogos, la fachada de «Hablar» (con ?estudio el
 // módulo se carga aquí si todavía no estaba: hablar.js lee sus objetos al usarlos, así que ve el cambio)
 // posiciones: amigos.js ubica a las personas (y el gizmo, si está puesto, sigue al que quedó en otro sitio)
+// escenas: escena-amistad.js (se carga aquí si todavía no estaba; la próxima escena que se juegue ya usa los datos nuevos)
 let gizmo = null; // estudio/gizmo-juego.js, solo después del primer `elegir`
 async function aplicar(nombre, datos) {
     if (nombre === 'dialogos') {
         const m = await import('../mundo/supervivencia/dialogos-datos.js');
+        m.aplicarDatosVivos(datos);
+    } else if (nombre === 'escenas') {
+        const m = await import('../mundo/supervivencia/escena-amistad.js');
         m.aplicarDatosVivos(datos);
     } else if (nombre === 'posiciones') {
         const v = window.__venjy;

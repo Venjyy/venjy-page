@@ -12,6 +12,8 @@
 //   la skin del amigo y al terminar el recorrido te devuelve la tuya; mientras dura, no salen escenas automáticas.
 //   Bloque 6c-2: /amistad grupos (las 13 escenas de grupo) y /amistad <grupo>-<skin> (tomatitos-braulio, atalaya-lucho,
 //   coyhaique-venjy...), también con la skin del integrante.
+//   Estudio, fase 5: /amistad guion <clave> [persona] juega una escena de tipo «guion» de mundo/datos/escenas.json (sin
+//   persona, la más cercana). Esas escenas no se disparan solas.
 // Sin argumentos, /tp, /dar, /mob, /jefe y /amistad listan lo que aceptan.
 // =========================================================
 import { relacion, GRUPOS } from './amistad.js';
@@ -42,6 +44,8 @@ const TXT = {
         limpiar: n => `${n} monstruos eliminados`,
         amLista: l => `Escenas de amistad (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, grupos, una persona, persona-escena, skin-amigo, grupo-skin o vida-<charla> (${l})`,
         amNo: n => `No conozco «${n}». Escribe /amistad`,
+        amGuionLista: l => (l.length ? `Escenas de guion (/amistad guion <clave> [persona]): ${l.join(', ')}` : 'No hay escenas de guion en escenas.json todavía'),
+        amGuionNo: n => `No hay una escena de guion «${n}». Escribe /amistad guion`,
         amSig: (q, i, n) => `Escena ${i}/${n}: ${q}. Saltar pasa a la siguiente; Esc ahora termina el recorrido`,
         amFin: 'Recorrido de escenas de amistad terminado',
         amCorte: 'Recorrido cortado',
@@ -70,6 +74,8 @@ const TXT = {
         limpiar: n => `${n} monsters removed`,
         amLista: l => `Friendship scenes (/amistad <...>): todo, saludos, momentos, bienvenidas, reencuentros, grupos, a person, person-scene, skin-friend, group-skin or vida-<chat> (${l})`,
         amNo: n => `I don't know "${n}". Type /amistad`,
+        amGuionLista: l => (l.length ? `Script scenes (/amistad guion <key> [person]): ${l.join(', ')}` : 'There are no script scenes in escenas.json yet'),
+        amGuionNo: n => `There is no script scene "${n}". Type /amistad guion`,
         amSig: (q, i, n) => `Scene ${i}/${n}: ${q}. Skip moves to the next one; Esc now ends the tour`,
         amFin: 'Friendship scene tour finished',
         amCorte: 'Tour stopped',
@@ -104,7 +110,7 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
 
     // ---- /amistad: recorrido por las escenas de amistad (amistad: { cargar() -> motor, persona(clave), nombre(clave), puede(), max(clave) }) ----
     let cola = null, espera = null;
-    const opcionesAmistad = () => ['todo', 'saludos', 'momentos', 'bienvenidas', 'reencuentros', ...AMIGOS, ...AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => `${c}-${k}`)),
+    const opcionesAmistad = () => ['guion', 'todo', 'saludos', 'momentos', 'bienvenidas', 'reencuentros', ...AMIGOS, ...AMIGOS.flatMap(c => [...saludosDe(c), ...momentosDe(c)].map(k => `${c}-${k}`)),
         ...BIENVENIDAS.map(c => `${c}-bienvenida`), ...REENCUENTROS.map(([a, , b]) => `${a}-${b}`), 'grupos', ...ESC_GRUPOS.map(([c, , g]) => `${g}-${c}`),
         ...Object.values(INTERACCIONES).flat().map(id => `vida-${id}`)];
     // 6d: /amistad vida-<id> te lleva junto al lugar y empieza esa interacción entre amigos (sin ti)
@@ -116,6 +122,21 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
         irA(n.x + 2.5, undefined, n.z, n.y > 0 ? n.y : undefined);
         setTimeout(() => { escenas.saltar(); amistad.vida.forzar(lugar, id, 0); }, 1600);
         return true;
+    }
+    // Estudio, fase 5: una escena «guion» de escenas.json con la persona dada (o la más cercana)
+    async function guionDeDatos(clave, persona) {
+        const ea = await amistad.cargar();
+        if (!ea) return;
+        const claves = ea.guiones ? ea.guiones() : [];
+        if (!clave) { hud.mensaje(t.amGuionLista(claves), 12); return; }
+        if (!claves.includes(clave)) { hud.mensaje(t.amGuionNo(clave), 4); return; }
+        const c = persona && (AMIGOS.find(a => a === persona) || AMIGOS.find(a => a.startsWith(persona)));
+        if (persona && (!c || !amistad.persona(c))) { hud.mensaje(t.amNo(persona), 4); return; }
+        if (!amistad.puede()) { hud.mensaje(t.amNoPuede, 4); return; }
+        cortar(false);
+        escenas.saltar();
+        ea.saltar();
+        if (!await ea.jugarGuion(clave, c || undefined)) hud.mensaje(t.amNoPuede, 4);
     }
     function colaDe(q) {
         if (q === 'bienvenidas') return BIENVENIDAS.map(c => [c, 'bienvenida']);
@@ -319,6 +340,8 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
             ayuda: { es: '/amistad <todo|saludos|momentos|bienvenidas|reencuentros|grupos|persona|persona-escena|skin-amigo|grupo-skin>', en: '/amistad <todo|saludos|momentos|bienvenidas|reencuentros|grupos|person|person-scene|skin-friend|group-skin>' },
             sugerir: opcionesAmistad,
             fn(arg) {
+                const partes = sinTildes(arg).split(/\s+/).filter(Boolean);
+                if (partes[0] === 'guion') { guionDeDatos(partes[1], partes[2]); return; }
                 const q = sinTildes(arg).replace(/\s+/g, '-');
                 if (!q) { hud.mensaje(t.amLista(AMIGOS.join(', ')), 14); return; }
                 if (q.startsWith('vida-')) { if (!vida6d(q.slice(5))) hud.mensaje(t.amNo(arg), 4); return; }
