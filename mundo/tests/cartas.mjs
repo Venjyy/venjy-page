@@ -23,18 +23,23 @@ let fallos = 0;
 const ok = (c, msg) => { if (!c) { fallos++; console.log('FALLA:', msg); } };
 
 // ---- 1. Datos ----
+const LARGO = { jugador: 25, facil: 20, medio: 25 };
 for (const [k, m] of Object.entries(D.MAZOS)) {
-    ok(m.length === 15, `mazo ${k} de 15`);
-    ok(m.every(id => D.CARTAS[id]), `mazo ${k}: cartas que existen`);
+    ok(m.length === LARGO[k], `mazo ${k} de ${LARGO[k]}`);
+    ok(m.every(id => D.CARTAS[id] && !D.CARTAS[id].ficha), `mazo ${k}: cartas que existen (sin fichas)`);
+    ok(m.every(id => m.filter(x => x === id).length <= 2), `mazo ${k}: máximo 2 copias`);
 }
-for (const m of D.TUTORIAL.mazos) ok(m.length === 15 && m.every(id => D.CARTAS[id]), 'mazos del tutorial válidos');
+for (const m of D.TUTORIAL.mazos) ok(m.every(id => D.CARTAS[id]), 'mazos del tutorial válidos');
+ok(Object.keys(D.CARTAS).length >= 35, 'al menos 35 cartas');
+ok(Object.values(D.CARTAS).every(c => c.tipo === 'hechizo' || D.FAMILIAS[c.familia]), 'cada criatura con familia');
+ok(Object.keys(D.CARTAS).filter(k => !D.CARTAS[k].ficha).every(k => Object.values(D.MAZOS).some(m => m.includes(k))), 'cada carta sale en algún mazo');
 const textos = [];
 const juntar = o => {
     if (!o || typeof o !== 'object') return;
-    if ('es' in o && 'en' in o) { ok(o.es && o.en, 'par ES/EN completo'); textos.push(o.es, o.en); return; }
+    if ('es' in o && 'en' in o) { ok(o.es && o.en, 'par ES/EN completo'); textos.push(o.es); if (o.en !== o.es) textos.push(o.en); return; }
     for (const v of Object.values(o)) juntar(v);
 };
-juntar(D.CARTAS); juntar(D.TXT_CARTAS); juntar({ p: D.TUTORIAL.pasos.map(p => p.texto), i: D.TUTORIAL.intro, l: D.TUTORIAL.turnoLucho, f: D.TUTORIAL.fin, o: D.TUTORIAL.otra });
+juntar(D.CARTAS); juntar(D.FAMILIAS); juntar(D.TXT_CARTAS); juntar({ p: D.TUTORIAL.pasos.map(p => p.texto), i: D.TUTORIAL.intro, l: D.TUTORIAL.turnoLucho, f: D.TUTORIAL.fin, o: D.TUTORIAL.otra });
 const rep = textos.filter((s, i) => textos.indexOf(s) !== i);
 ok(!rep.length, 'textos únicos: ' + rep.join(' | '));
 ok(!textos.some(s => /\p{Extended_Pictographic}/u.test(s)), 'sin emojis');
@@ -49,19 +54,20 @@ function partida(manos, { mazos = [[], []], vidas, empieza = 0 } = {}) {
     for (let j = 0; j < 2; j++) { e.jug[j].mano = manos[j].slice(); e.jug[j].mazo = mazos[j].slice(); }
     return e;
 }
-const poner = (e, j, z, id, extra = {}) => { const c = D.CARTAS[id]; e.jug[j].zonas[z] = { id, atk: c.atk, def: c.def, bono: 0, modo: 'ata', nueva: false, ataques: 1, ataco: 0, atada: 0, cambio: false, racha: false, ...extra }; };
+const poner = (e, j, z, id, extra = {}) => { const c = D.CARTAS[id]; e.jug[j].zonas[z] = { id, atk: c.atk, def: c.def, bono: 0, modo: 'ata', nueva: false, ataques: 1, ataco: 0, atada: 0, cambio: false, racha: false, quieta: false, escudo: false, unidos: [], ...extra }; };
 const tiene = (lista, a) => lista.some(b => JSON.stringify(b) === JSON.stringify(a));
 const principal = e => { e.fase = 'principal'; e.n = 3; };
 
 // ---- 2. Reglas ----
 {
-    const e = C.nuevaPartida({ mazos: [D.MAZOS.jugador, D.MAZOS.facil], semilla: 7 });
-    ok(e.jug[0].mano.length === 3 && e.jug[0].mazo.length === 12 && e.jug[0].vida === 2000, 'reparto 3 + 12, 2000 de vida');
-    const e2 = C.nuevaPartida({ mazos: [D.MAZOS.jugador, D.MAZOS.facil], semilla: 7 });
+    const e = C.partidaNivel('facil', { semilla: 7 });
+    ok(e.jug[0].mano.length === 4 && e.jug[0].mazo.length === 21 && e.jug[1].mazo.length === 16 && e.jug[0].vida === 3000, 'fácil: mano 4, 3000 de vida');
+    ok(C.partidaNivel('medio').jug[1].vida === 4000, 'medio: 4000 de vida');
+    const e2 = C.partidaNivel('facil', { semilla: 7 });
     ok(JSON.stringify(e) === JSON.stringify(e2), 'misma semilla, misma partida');
     ok(C.jugadas(e).length === 1 && C.jugadas(e)[0].t === 'robar', 'fase robo: solo robar');
     C.aplicar(e, { t: 'robar' });
-    ok(e.jug[0].mano.length === 4 && e.fase === 'principal', 'robar suma 1 y pasa a principal');
+    ok(e.jug[0].mano.length === 5 && e.fase === 'principal', 'robar suma 1 y pasa a principal');
     let ilegal = false; try { C.aplicar(e, { t: 'robar' }); } catch { ilegal = true; }
     ok(ilegal, 'jugada ilegal lanza error');
 }
@@ -161,16 +167,112 @@ const principal = e => { e.fase = 'principal'; e.n = 3; };
     ok(!C.jugadas(e).some(a => a.t === 'hechizo' && a.m < 2), 'sin objetivos no hay Poción ni Rayo');
     poner(e, 0, 0, 'trauco'); poner(e, 1, 0, 'boris');
     C.aplicar(e, { t: 'hechizo', m: 0, obj: 0 });
-    ok(C.atkDe(e.jug[0].zonas[0]) === 1300, 'Poción +500');
+    ok(C.atkDe(e, 0, e.jug[0].zonas[0]) === 1300, 'Poción +500');
     C.aplicar(e, { t: 'hechizo', m: 0, obj: 0 });
     ok(!e.jug[1].zonas[0], 'Rayo destruye');
     C.aplicar(e, { t: 'hechizo', m: 0 });
     ok(e.jug[0].vida === 2500 && e.jug[0].desc.length === 3, 'curar +500 y los hechizos van al descarte');
 }
 { // mano llena: la carta robada se quema
-    const e = partida([['zombi', 'zombi', 'zombi', 'zombi', 'zombi', 'zombi'], []], { mazos: [['rayo'], []] });
+    const e = partida([Array(7).fill('zombi'), []], { mazos: [['rayo'], []] });
     const ev = C.aplicar(e, { t: 'robar' });
-    ok(e.jug[0].mano.length === 6 && e.jug[0].desc[0] === 'rayo' && ev[0].t === 'quema', 'mano llena: se quema');
+    ok(e.jug[0].mano.length === 7 && e.jug[0].desc[0] === 'rayo' && ev[0].t === 'quema', 'mano llena: se quema');
+}
+
+{ // prisa, poción de la Bruja, divide, hincha
+    const e = partida([['enderman'], []]); principal(e);
+    C.aplicar(e, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(C.objetivos(e, 0).includes(-1), 'Enderman ataca el turno en que entra');
+    const f = partida([[], []], { mazos: [['zombi'], ['zombi']] });
+    poner(f, 0, 0, 'bruja'); f.jug[0].vida = 1000;
+    C.aplicar(f, { t: 'robar' });
+    ok(f.jug[0].vida === 1200, 'Bruja: +200 al empezar el turno');
+    const g = partida([['rayo'], []]); principal(g);
+    poner(g, 1, 1, 'slime');
+    C.aplicar(g, { t: 'hechizo', m: 0, obj: 1 });
+    ok(g.jug[1].zonas.filter(c => c?.id === 'slimecito').length === 2 && !g.jug[1].desc.includes('slimecito'), 'Slime se parte en dos Slimecitos');
+    poner(g, 0, 0, 'boris');
+    C.aplicar(g, { t: 'atacar', z: 0, obj: 1 });
+    ok(!g.jug[1].desc.includes('slimecito'), 'las fichas no van al descarte');
+    const h = partida([['rayo'], []], { mazos: [[], ['zombi', 'arana', 'trauco']] }); principal(h);
+    poner(h, 1, 0, 'conejeros');
+    C.aplicar(h, { t: 'hechizo', m: 0, obj: 0 });
+    ok(h.jug[1].mano.join() === 'zombi,arana', 'Conejeros: al morir su dueño roba 2');
+}
+{ // marea, explora, gatera + duo, riff, asado, jefe, iglú
+    const e = partida([['pincoya'], []]); principal(e);
+    e.jug[0].desc = ['zombi', 'caleuche', 'rayo'];
+    C.aplicar(e, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(e.jug[0].mano.join() === 'caleuche', 'Pincoya recupera la más fuerte del descarte');
+    const f = partida([['braulio'], []], { mazos: [['rayo', 'boris'], []] }); principal(f);
+    C.aplicar(f, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(f.jug[0].mano.join() === 'boris', 'Braulio encuentra la primera criatura');
+    const g = partida([['lona', 'gala'], []], { mazos: [['zombi', 'mila'], []] }); principal(g);
+    C.aplicar(g, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(g.jug[0].zonas[1]?.id === 'mila', 'Lona llama a Mila a la mesa');
+    ok(C.atkDe(g, 0, g.jug[0].zonas[1]) === 500, 'Mila sola: 500');
+    poner(g, 0, 2, 'gala');
+    ok(C.atkDe(g, 0, g.jug[0].zonas[1]) === 900 && C.atkDe(g, 0, g.jug[0].zonas[2]) === 800, 'Mila y Gala juntas: +400 cada una');
+    const h = partida([['salonas'], []]); principal(h);
+    poner(h, 0, 0, 'zombi'); poner(h, 0, 1, 'pony');
+    C.aplicar(h, { t: 'invocar', m: 0, z: 2, modo: 'ata' });
+    ok(C.atkDe(h, 0, h.jug[0].zonas[0]) === 600 && C.atkDe(h, 0, h.jug[0].zonas[2]) === 800, 'Salonas: +100 a las otras');
+    const k = partida([['nacho'], []]); principal(k);
+    poner(k, 0, 0, 'pony');
+    C.aplicar(k, { t: 'invocar', m: 0, z: 1, modo: 'ata' });
+    ok(k.jug[0].vida === 2600, 'Nacho: 300 por cada Amigo (él incluido)');
+    poner(k, 0, 2, 'hadad');
+    ok(C.atkDe(k, 0, k.jug[0].zonas[0]) === 800 && C.atkDe(k, 0, k.jug[0].zonas[2]) === 700, 'Hadad: +200 a los otros Amigos');
+    const m = partida([[], []]); principal(m);
+    poner(m, 0, 0, 'moises', { modo: 'def' }); poner(m, 0, 1, 'zombi', { modo: 'def' }); poner(m, 0, 2, 'boris');
+    ok(C.defDe(m, 0, m.jug[0].zonas[1]) === 900 && C.defDe(m, 0, m.jug[0].zonas[0]) === 1600 && C.defDe(m, 0, m.jug[0].zonas[2]) === 500, 'Moisés: +300 de DEF a las que defienden');
+}
+{ // aullido, petrifica, puntería, baile, traga
+    const e = partida([['calchona', 'basilisco'], []], { mazos: [['zombi'], ['zombi']] }); principal(e);
+    poner(e, 1, 0, 'boris'); poner(e, 1, 1, 'zombi');
+    C.aplicar(e, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(C.atkDe(e, 1, e.jug[1].zonas[0]) === 900, 'Calchona: las rivales -200');
+    e.invoc = 1;
+    C.aplicar(e, { t: 'invocar', m: 0, z: 1, modo: 'ata', obj: 0 });
+    ok(e.jug[1].zonas[0].modo === 'def', 'Basilisco: la deja en Defensa');
+    C.aplicar(e, { t: 'terminar' }); C.aplicar(e, { t: 'robar' });
+    ok(!C.jugadas(e).some(a => (a.t === 'modo' || a.t === 'atacar') && a.z === 0), 'petrificada: ni ataca ni cambia de postura');
+    const f = partida([['lucho'], []]); principal(f);
+    poner(f, 1, 0, 'caleuche'); poner(f, 1, 1, 'esqueleto');
+    ok(C.jugadas(f).filter(a => a.t === 'invocar').every(a => a.obj === 1), 'Lucho solo apunta a ATK 700 o menos');
+    C.aplicar(f, { t: 'invocar', m: 0, z: 0, modo: 'ata', obj: 1 });
+    ok(!f.jug[1].zonas[1], 'Lucho la derriba');
+    const g = partida([['andy'], []]); principal(g);
+    poner(g, 0, 0, 'boris');
+    C.aplicar(g, { t: 'atacar', z: 0, obj: -1 });
+    C.aplicar(g, { t: 'invocar', m: 0, z: 1, modo: 'ata' });
+    ok(C.objetivos(g, 0).length > 0, 'Andy: la que ya atacó ataca otra vez');
+    const h = partida([[], []]); principal(h);
+    poner(h, 0, 0, 'cuero'); poner(h, 1, 0, 'zombi');
+    C.aplicar(h, { t: 'atacar', z: 0, obj: 0 });
+    ok(C.atkDe(h, 0, h.jug[0].zonas[0]) === 1100, 'Cuero crece +200 al derribar');
+}
+{ // escudo, revivir, abrazo, once
+    const e = partida([['escudo'], ['rayo']]); principal(e);
+    poner(e, 0, 0, 'trauco'); poner(e, 1, 0, 'boris');
+    C.aplicar(e, { t: 'hechizo', m: 0, obj: 0 });
+    ok(!C.jugadas(e).some(a => a.t === 'hechizo'), 'no se apilan dos escudos');
+    C.aplicar(e, { t: 'atacar', z: 0, obj: 0 });
+    ok(e.jug[0].zonas[0] && !e.jug[0].zonas[0].escudo && e.jug[0].vida === 1700, 'Escudo: se salva una vez (la vida baja igual)');
+    const f = partida([['revivir'], []], { mazos: [['rayo'], []] }); principal(f);
+    f.jug[0].desc = ['zombi', 'trauco'];
+    C.aplicar(f, { t: 'hechizo', m: 0 });
+    ok(f.jug[0].zonas[0]?.id === 'trauco' && f.jug[0].mano.join() === 'rayo', 'Tótem: vuelve la más fuerte y su efecto actúa');
+    const g = partida([['abrazo', 'once'], []], { mazos: [['zombi', 'arana', 'pony'], []] }); principal(g);
+    poner(g, 0, 0, 'boris'); poner(g, 0, 1, 'pony');
+    C.aplicar(g, { t: 'hechizo', m: 0, obj: 0, obj2: 1 });
+    ok(C.atkDe(g, 0, g.jug[0].zonas[0]) === 1700 && !g.jug[0].zonas[1], 'Abrazo: suma el ATK y libera la zona');
+    C.aplicar(g, { t: 'hechizo', m: 0 });
+    ok(g.jug[0].mano.join() === 'zombi,arana', 'Once: robas 2');
+    poner(g, 1, 0, 'caleuche', { bono: 1000 });
+    g.turno = 1;
+    C.aplicar(g, { t: 'atacar', z: 0, obj: 0 });
+    ok(['abrazo', 'once', 'boris', 'pony'].every(x => g.jug[0].desc.includes(x)), 'la fusionada muere con sus dos cartas al descarte');
 }
 
 // ---- 4. Fin de partida ----
@@ -183,37 +285,44 @@ const principal = e => { e.fase = 'principal'; e.n = 3; };
     const f = partida([[], []]);
     C.aplicar(f, { t: 'robar' });
     ok(f.ganador === 1 && f.motivo === 'mazo', 'mazo vacío al robar: pierde');
-    const g = partida([[], []], { mazos: [Array(60).fill('zombi'), Array(60).fill('zombi')], vidas: [1500, 1000] });
-    for (let i = 0; i < 200 && g.ganador === null; i++) C.aplicar(g, g.fase === 'robo' ? { t: 'robar' } : { t: 'terminar' });
+    const g = partida([[], []], { mazos: [Array(90).fill('zombi'), Array(90).fill('zombi')], vidas: [1500, 1000] });
+    for (let i = 0; i < 400 && g.ganador === null; i++) C.aplicar(g, g.fase === 'robo' ? { t: 'robar' } : { t: 'terminar' });
     ok(g.ganador === 0 && g.motivo === 'tope', 'tope de turnos: gana quien tiene más vida');
 }
 
 // ---- 5. IA ----
-function jugarIA(n0, n1, semilla, empieza) {
-    const e = C.nuevaPartida({ mazos: [D.MAZOS[n0 === 'medio' ? 'medio' : 'facil'], D.MAZOS[n1 === 'medio' ? 'medio' : 'jugador']], semilla, empieza });
-    const nivel = [n0, n1];
+// Partida completa de IA contra IA: tú (jugador 0) con tu mazo y la IA `tuya`; Lucho con la del nivel
+function jugarNivel(nivel, tuya, semilla) {
+    const e = C.partidaNivel(nivel, { semilla, empieza: semilla % 2 });
+    const ias = [tuya, D.NIVELES[nivel].ia];
     let pasos = 0, porTurno = 0, turno = e.n;
-    while (e.ganador === null && pasos < 3000) {
-        const a = C.jugadaIA(e, nivel[e.turno]);
+    while (e.ganador === null && pasos < 5000) {
+        const a = C.jugadaIA(e, ias[e.turno]);
         if (!a || !C.esLegal(e, a)) return { error: 'IA sin jugada legal' };
         C.aplicar(e, a); pasos++;
-        if (e.n !== turno) { turno = e.n; porTurno = 0; } else if (++porTurno > 40) return { error: 'IA no termina su turno' };
+        if (e.n !== turno) { turno = e.n; porTurno = 0; } else if (++porTurno > 60) return { error: 'IA no termina su turno' };
     }
-    return { e, pasos };
+    return { e };
 }
 {
-    let errores = 0, sinFin = 0, ganaMedio = 0, turnos = 0;
-    for (let s = 1; s <= 100; s++) for (const [a, b] of [['facil', 'facil'], ['medio', 'facil']]) {
-        const r = jugarIA(a, b, s, s % 2);
-        if (r.error) { errores++; if (errores < 3) console.log(r.error, s, a, b); continue; }
-        if (r.e.ganador === null) sinFin++;
-        if (a === 'medio' && r.e.ganador === 0) ganaMedio++;
-        turnos += r.e.n;
+    const res = {};
+    let errores = 0, sinFin = 0;
+    for (const nivel of ['facil', 'medio']) {
+        const r = res[nivel] = { gana: 0, turnos: 0, n: 0 };
+        for (let s = 1; s <= 60; s++) {
+            const p = jugarNivel(nivel, 'medio', s); // tú: IA media (parecido a alguien que ya sabe jugar)
+            if (p.error) { errores++; if (errores < 3) console.log(p.error, nivel, s); continue; }
+            if (p.e.ganador === null) sinFin++;
+            if (p.e.ganador === 1) r.gana++;
+            r.turnos += p.e.n; r.n++;
+        }
+        console.log(`IA ${nivel}: Lucho ganó ${r.gana}/${r.n} · ${(r.turnos / r.n).toFixed(1)} turnos por partida`);
     }
     ok(!errores, 'IA: siempre jugada legal y termina sus turnos');
     ok(!sinFin, 'IA: todas las partidas terminan');
-    ok(ganaMedio >= 60, `medio le gana a fácil la mayoría (${ganaMedio}/100)`);
-    console.log(`IA: medio ganó ${ganaMedio}/100 contra fácil · ${(turnos / 200).toFixed(1)} turnos por partida`);
+    ok(res.medio.gana > res.facil.gana, 'Lucho medio gana más que Lucho fácil');
+    ok(res.medio.turnos / res.medio.n > res.facil.turnos / res.facil.n, 'medio dura más que fácil');
+    ok(res.facil.turnos / res.facil.n >= 11, 'fácil: al menos 11 turnos de media');
 }
 
 // ---- 6. Tutorial ----

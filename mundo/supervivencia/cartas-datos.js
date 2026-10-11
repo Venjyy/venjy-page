@@ -1,5 +1,5 @@
 // =========================================================
-// VENJY · Supervivencia · Duelo de Cartas Pixel (7h-2): cartas, mazos, tutorial y textos
+// VENJY · Supervivencia · Duelo de Cartas Pixel (7h-2): cartas, mazos, niveles, tutorial y textos
 // Todas las cartas son inventadas: criaturas del juego, del folclor chileno y amigos en buena onda.
 // No se copia ningún nombre, arte ni texto de cartas reales. El dueño revisa los textos.
 // Reglas en cartas.js. Cada frase es única (mundo/tests/cartas.mjs lo revisa).
@@ -7,75 +7,94 @@
 
 const t = (es, en) => ({ es, en });
 
-// efecto: entrar (al invocarla) · pasivo (siempre) · hechizo
-//   horda    al entrar, otro Zombi de tu mano entra gratis (y ese también llama al siguiente)
-//   flecha   al entrar, 200 de daño directo al rival
-//   telarana al entrar, una criatura rival no puede atacar en su próximo turno
-//   robar    al entrar, robas 1 carta
-//   barco    al entrar, una criatura rival vuelve a la mano de su dueño
-//   pesca    al entrar, el primer hechizo de tu mazo pasa a tu mano
-//   extra    al entrar, puedes invocar una criatura más este turno
-//   explota  si muere en combate, la criatura contra la que peleó también muere
-//   guardian mientras esté en la mesa, el rival tiene que atacarla a ella primero
-//   vuela    puede atacar directo aunque el rival tenga criaturas
-//   racha    si destruye a una criatura atacando, puede atacar otra vez este turno (una vez)
-//   poder    hechizo: +500 de ATK a una criatura tuya (mientras siga en la mesa)
-//   rayo     hechizo: destruye una criatura rival
-//   curar    hechizo: recuperas 500 de vida
-export const CARTAS = {
-    zombi: { tipo: 'criatura', atk: 500, def: 600, efecto: 'horda',
-        nombre: t('Zombi de la Noche', 'Night Zombie'),
-        texto: t('Al entrar, otro Zombi de tu mano entra gratis.', 'On entry, another Zombie from your hand enters for free.') },
-    esqueleto: { tipo: 'criatura', atk: 700, def: 300, efecto: 'flecha',
-        nombre: t('Esqueleto Arquero', 'Skeleton Archer'),
-        texto: t('Al entrar, dispara: 200 de daño al rival.', 'On entry, it shoots: 200 damage to the rival.') },
-    creeper: { tipo: 'criatura', atk: 900, def: 100, efecto: 'explota',
-        nombre: t('Creeper Nervioso', 'Jumpy Creeper'),
-        texto: t('Si muere peleando, explota y se lleva a su rival.', 'If it dies fighting, it blows up and takes its foe along.') },
-    arana: { tipo: 'criatura', atk: 600, def: 500, efecto: 'telarana',
-        nombre: t('Araña de Cueva', 'Cave Spider'),
-        texto: t('Al entrar, enreda a una criatura rival: no ataca en su próximo turno.', 'On entry, it webs a rival creature: it cannot attack next turn.') },
-    trauco: { tipo: 'criatura', atk: 800, def: 700, efecto: 'robar',
-        nombre: t('Trauco del Bosque', 'Forest Trauco'),
-        texto: t('Al entrar, robas una carta.', 'On entry, you draw a card.') },
-    imbunche: { tipo: 'criatura', atk: 1000, def: 1200, efecto: 'guardian',
-        nombre: t('Imbunche Guardián', 'Guardian Imbunche'),
-        texto: t('Cuida la cueva: el rival tiene que atacarlo primero.', 'It guards the cave: the rival must attack it first.') },
-    chonchon: { tipo: 'criatura', atk: 500, def: 200, efecto: 'vuela',
-        nombre: t('Chonchon Volador', 'Flying Chonchon'),
-        texto: t('Vuela: puede atacar directo aunque haya criaturas.', 'It flies: it can attack directly even past creatures.') },
-    caleuche: { tipo: 'criatura', atk: 1400, def: 1100, efecto: 'barco',
-        nombre: t('Caleuche en la Niebla', 'Caleuche in the Fog'),
-        texto: t('Al entrar, una criatura rival vuelve a la mano de su dueño.', "On entry, a rival creature returns to its owner's hand.") },
-    pony: { tipo: 'criatura', atk: 600, def: 600, efecto: 'pesca',
-        nombre: t('Pony, pescador de oficio', 'Pony, Fisher by Trade'),
-        texto: t('Al entrar, pesca el primer hechizo de tu mazo.', 'On entry, he fishes the first spell out of your deck.') },
-    boris: { tipo: 'criatura', atk: 1100, def: 500, efecto: 'racha',
-        nombre: t('Boris del hacha', 'Boris of the Axe'),
-        texto: t('Si derriba a una criatura atacando, ataca otra vez.', 'If he fells a creature while attacking, he attacks again.') },
-    venjy: { tipo: 'criatura', atk: 700, def: 700, efecto: 'extra',
-        nombre: t('Venjy, el anfitrión', 'Venjy, the Host'),
-        texto: t('Al entrar, invita a otro: puedes invocar una criatura más.', 'On entry, he invites a friend: you may summon one more creature.') },
-    poder: { tipo: 'hechizo', efecto: 'poder',
-        nombre: t('Poción de Fuerza', 'Strength Potion'),
-        texto: t('Una criatura tuya gana 500 de ATK.', 'One of your creatures gains 500 ATK.') },
-    rayo: { tipo: 'hechizo', efecto: 'rayo',
-        nombre: t('Rayo de Tormenta', 'Storm Bolt'),
-        texto: t('Destruye una criatura rival.', 'Destroy one rival creature.') },
-    curar: { tipo: 'hechizo', efecto: 'curar',
-        nombre: t('Sopaipilla Caliente', 'Warm Sopaipilla'),
-        texto: t('Recuperas 500 de vida.', 'You recover 500 life.') }
+// Familias: algunas cartas se potencian entre sí (Hadad sube a los Amigos, Mila y Gala se buscan…)
+export const FAMILIAS = {
+    monstruo: t('Monstruo', 'Monster'),
+    mito: t('Mito', 'Myth'),
+    amigo: t('Amigo', 'Friend'),
+    animal: t('Animal', 'Animal')
 };
 
-// Efectos que piden elegir una criatura rival al entrar (o al lanzar el hechizo)
-export const PIDE_RIVAL = new Set(['telarana', 'barco', 'rayo']);
-export const PIDE_PROPIA = new Set(['poder']);
+// efecto (cuándo actúa):
+//   al entrar · horda (otro Zombi de tu mano entra gratis, en cadena) · flecha (200 al rival) · telarana (una
+//     rival no ataca su próximo turno) · robar (1 carta) · barco (una rival vuelve a la mano de su dueño) · pesca
+//     (el primer hechizo del mazo a tu mano) · extra (una invocación más) · prisa (ataca el mismo turno) · marea
+//     (la criatura más fuerte de tu descarte vuelve a tu mano) · aullido (las rivales pierden 200 de ATK) ·
+//     petrifica (una rival pasa a Defensa y no se mueve en su turno) · gatera (Mila o Gala salta del mazo a la
+//     mesa) · riff (tus otras criaturas +100 de ATK) · asado (300 de vida por cada Amigo tuyo en la mesa) ·
+//     baile (las tuyas que ya atacaron pueden atacar otra vez) · punteria (destruye una rival de ATK 700 o
+//     menos) · explora (la primera criatura del mazo a tu mano)
+//   siempre · guardian (hay que atacarla primero) · vuela (ataca directo aunque haya criaturas) · jefe (tus
+//     otros Amigos +200 de ATK) · duo (+400 de ATK si su pareja está en tu mesa) · iglu (tus criaturas en
+//     Defensa +300 de DEF)
+//   al combatir · explota (si muere peleando se lleva al otro) · racha (si derriba atacando, ataca otra vez,
+//     una vez) · traga (cada vez que derriba atacando, +200 de ATK)
+//   al empezar tu turno · pocion (recuperas 200 de vida)
+//   al morir · divide (deja dos Slimecitos en tus zonas libres) · hincha (robas 2 cartas)
+//   hechizos · poder (+500 de ATK a una tuya) · rayo (destruye una rival) · curar (+500 de vida) · escudo (la
+//     próxima vez que una tuya iba a morir, se salva) · revivir (la más fuerte de tu descarte vuelve a la mesa,
+//     con su efecto) · abrazo (fusiona dos tuyas: suma el ATK en una, la otra se va al descarte) · once (robas 2)
+const c = (familia, atk, def, efecto, es, en, tes, ten, extra = {}) => ({ tipo: 'criatura', familia, atk, def, efecto, nombre: t(es, en), texto: t(tes, ten), ...extra });
+const h = (efecto, es, en, tes, ten) => ({ tipo: 'hechizo', efecto, nombre: t(es, en), texto: t(tes, ten) });
+export const CARTAS = {
+    // ---- Monstruos ----
+    zombi: c('monstruo', 500, 600, 'horda', 'Zombi de la Noche', 'Night Zombie', 'Al entrar, otro Zombi de tu mano entra gratis.', 'On entry, another Zombie from your hand enters for free.'),
+    esqueleto: c('monstruo', 700, 300, 'flecha', 'Esqueleto Arquero', 'Skeleton Archer', 'Al entrar, dispara: 200 de daño al rival.', 'On entry, it shoots: 200 damage to the rival.'),
+    creeper: c('monstruo', 900, 100, 'explota', 'Creeper Nervioso', 'Jumpy Creeper', 'Si muere peleando, explota y se lleva a su rival.', 'If it dies fighting, it blows up and takes its foe along.'),
+    arana: c('monstruo', 600, 500, 'telarana', 'Araña de Cueva', 'Cave Spider', 'Al entrar, enreda a una criatura rival: no ataca en su próximo turno.', 'On entry, it webs a rival creature: it cannot attack next turn.'),
+    enderman: c('monstruo', 1000, 600, 'prisa', 'Enderman Inquieto', 'Restless Enderman', 'Se teletransporta: puede atacar el mismo turno en que entra.', 'It teleports: it may attack on the turn it enters.'),
+    bruja: c('monstruo', 400, 800, 'pocion', 'Bruja del Pantano', 'Swamp Witch', 'Al empezar tu turno, recuperas 200 de vida.', 'At the start of your turn, you recover 200 life.'),
+    slime: c('monstruo', 700, 500, 'divide', 'Slime Saltarín', 'Bouncy Slime', 'Al morir, se parte en dos Slimecitos.', 'When it dies, it splits into two Slimelings.'),
+    slimecito: c('monstruo', 300, 300, null, 'Slimecito', 'Slimeling', 'Pedacito de Slime: no vuelve al descarte.', 'A bit of Slime: it never goes to the discard pile.', { ficha: true }),
+    // ---- Mitos ----
+    trauco: c('mito', 800, 700, 'robar', 'Trauco del Bosque', 'Forest Trauco', 'Al entrar, robas una carta.', 'On entry, you draw a card.'),
+    imbunche: c('mito', 1000, 1200, 'guardian', 'Imbunche Guardián', 'Guardian Imbunche', 'Cuida la cueva: el rival tiene que atacarlo primero.', 'It guards the cave: the rival must attack it first.'),
+    chonchon: c('mito', 600, 200, 'vuela', 'Chonchon Volador', 'Flying Chonchon', 'Vuela: puede atacar directo aunque haya criaturas.', 'It flies: it can attack directly even past creatures.'),
+    caleuche: c('mito', 1300, 1000, 'barco', 'Caleuche en la Niebla', 'Caleuche in the Fog', 'Al entrar, una criatura rival vuelve a la mano de su dueño.', "On entry, a rival creature returns to its owner's hand."),
+    pincoya: c('mito', 600, 900, 'marea', 'Pincoya de la Orilla', 'Shore Pincoya', 'Al entrar, la marea te devuelve a la mano tu criatura más fuerte del descarte.', 'On entry, the tide brings your strongest discarded creature back to your hand.'),
+    cuero: c('mito', 900, 400, 'traga', 'Cuero del Lago', 'Lake Cuero', 'Cada vez que derriba a una criatura atacando, gana 200 de ATK.', 'Each time it fells a creature while attacking, it gains 200 ATK.'),
+    calchona: c('mito', 700, 600, 'aullido', 'Calchona Aulladora', 'Howling Calchona', 'Al entrar, aúlla: las criaturas rivales pierden 200 de ATK.', 'On entry, it howls: rival creatures lose 200 ATK.'),
+    basilisco: c('mito', 1200, 800, 'petrifica', 'Basilisco Chilote', 'Chilote Basilisk', 'Al entrar, su mirada deja a una rival en Defensa y quieta un turno.', 'On entry, its stare locks a rival in Defense, frozen for a turn.'),
+    // ---- Amigos ----
+    pony: c('amigo', 600, 600, 'pesca', 'Pony, pescador de oficio', 'Pony, Fisher by Trade', 'Al entrar, pesca el primer hechizo de tu mazo.', 'On entry, he fishes the first spell out of your deck.'),
+    boris: c('amigo', 1100, 500, 'racha', 'Boris del hacha', 'Boris of the Axe', 'Si derriba a una criatura atacando, ataca otra vez.', 'If he fells a creature while attacking, he attacks again.'),
+    venjy: c('amigo', 700, 700, 'extra', 'Venjy, el anfitrión', 'Venjy, the Host', 'Al entrar, invita a otro: puedes invocar una criatura más.', 'On entry, he invites a friend: you may summon one more creature.'),
+    lona: c('amigo', 600, 700, 'gatera', 'Lona, guardiana de gatas', 'Lona, Keeper of Cats', 'Al entrar, llama a Mila o a Gala desde tu mazo a la mesa.', 'On entry, she calls Mila or Gala from your deck onto the table.'),
+    salonas: c('amigo', 800, 500, 'riff', 'Salonas y su bajo', 'Salonas and His Bass', 'Al entrar, toca un riff: tus otras criaturas ganan 100 de ATK.', 'On entry, he plays a riff: your other creatures gain 100 ATK.'),
+    nacho: c('amigo', 600, 600, 'asado', 'Nacho, maestro parrillero', 'Nacho, Grill Master', 'Al entrar, prende la parrilla: 300 de vida por cada Amigo tuyo en la mesa.', 'On entry, he fires up the grill: 300 life for each of your Friends on the table.'),
+    hadad: c('amigo', 700, 800, 'jefe', 'Hadad, jefe de la fogata', 'Hadad, Campfire Chief', 'Tus otros Amigos en la mesa tienen 200 más de ATK.', 'Your other Friends on the table have 200 more ATK.'),
+    moises: c('amigo', 400, 1300, 'iglu', 'Moisés del iglú', 'Moisés of the Igloo', 'Tus criaturas en Defensa tienen 300 más de DEF.', 'Your creatures in Defense have 300 more DEF.'),
+    andy: c('amigo', 600, 500, 'baile', 'Andy, bailarín de victoria', 'Andy, Victory Dancer', 'Al entrar, baila: las tuyas que ya atacaron pueden atacar otra vez.', 'On entry, he dances: your creatures that already attacked may attack again.'),
+    lucho: c('amigo', 900, 600, 'punteria', 'Lucho, buena puntería', 'Lucho, Sharp Aim', 'Al entrar, derriba a una criatura rival de 700 de ATK o menos.', 'On entry, he knocks down a rival creature with 700 ATK or less.'),
+    braulio: c('amigo', 600, 500, 'explora', 'Braulio, explorador', 'Braulio, Explorer', 'Al entrar, encuentra la primera criatura de tu mazo y la lleva a tu mano.', 'On entry, he finds the first creature in your deck and brings it to your hand.'),
+    conejeros: c('amigo', 300, 300, 'hincha', 'Conejeros de primera fila', 'Conejeros, Front Row', 'Al morir, alienta desde la galería: robas 2 cartas.', 'When he falls, he cheers from the stands: you draw 2 cards.'),
+    // ---- Animales ----
+    mila: c('animal', 500, 400, 'duo', 'Mila la curiosa', 'Mila the Curious', 'Si Gala está en tu mesa, Mila gana 400 de ATK.', 'If Gala is on your table, Mila gains 400 ATK.', { pareja: 'gala' }),
+    gala: c('animal', 400, 500, 'duo', 'Gala la dormilona', 'Gala the Sleepy', 'Si Mila está en tu mesa, Gala gana 400 de ATK.', 'If Mila is on your table, Gala gains 400 ATK.', { pareja: 'mila' }),
+    // ---- Hechizos ----
+    poder: h('poder', 'Poción de Fuerza', 'Strength Potion', 'Una criatura tuya gana 500 de ATK.', 'One of your creatures gains 500 ATK.'),
+    rayo: h('rayo', 'Rayo de Tormenta', 'Storm Bolt', 'Destruye una criatura rival.', 'Destroy one rival creature.'),
+    curar: h('curar', 'Sopaipilla Caliente', 'Warm Sopaipilla', 'Recuperas 500 de vida.', 'You recover 500 life.'),
+    escudo: h('escudo', 'Escudo de Obsidiana', 'Obsidian Shield', 'La próxima vez que una criatura tuya iba a morir, se salva.', 'The next time one of your creatures would die, it survives.'),
+    revivir: h('revivir', 'Tótem de la Fogata', 'Campfire Totem', 'Tu criatura más fuerte del descarte vuelve a la mesa, con su efecto.', 'Your strongest discarded creature returns to the table, effect and all.'),
+    abrazo: h('abrazo', 'Abrazo de Amigos', 'Friendship Hug', 'Junta dos criaturas tuyas en una: suma sus ATK.', 'Merge two of your creatures into one: their ATK adds up.'),
+    once: h('once', 'Once con Pan Amasado', 'Teatime with Homemade Bread', 'Robas 2 cartas.', 'You draw 2 cards.')
+};
 
-// Mazos de 15 (orden sin importancia: se barajan)
+// Efectos que piden elegir una criatura rival o una propia (al entrar o al lanzar el hechizo)
+export const PIDE_RIVAL = new Set(['telarana', 'barco', 'rayo', 'petrifica', 'punteria']);
+export const PIDE_PROPIA = new Set(['poder', 'escudo']);
+
+// Niveles: más difícil = más vida, mazos más largos y un Lucho con mejores combos
+//   jugador: tu mazo (25; más adelante se arma en la colección) · facil/medio: el de Lucho
+export const NIVELES = {
+    facil: { vida: 3000, mano: 4, ia: 'facil' },
+    medio: { vida: 4000, mano: 4, ia: 'medio' }
+};
 export const MAZOS = {
-    jugador: ['zombi', 'zombi', 'esqueleto', 'creeper', 'arana', 'trauco', 'imbunche', 'chonchon', 'caleuche', 'pony', 'boris', 'venjy', 'poder', 'rayo', 'curar'],
-    facil: ['zombi', 'zombi', 'zombi', 'esqueleto', 'esqueleto', 'arana', 'arana', 'trauco', 'chonchon', 'chonchon', 'imbunche', 'creeper', 'poder', 'curar', 'curar'],
-    medio: ['zombi', 'zombi', 'esqueleto', 'creeper', 'arana', 'trauco', 'imbunche', 'chonchon', 'caleuche', 'pony', 'boris', 'venjy', 'poder', 'poder', 'rayo']
+    jugador: ['boris', 'venjy', 'pony', 'salonas', 'nacho', 'hadad', 'moises', 'lona', 'mila', 'gala', 'andy', 'imbunche', 'caleuche', 'basilisco', 'enderman', 'cuero', 'creeper', 'trauco', 'esqueleto', 'poder', 'poder', 'rayo', 'curar', 'abrazo', 'once'],
+    facil: ['zombi', 'zombi', 'esqueleto', 'esqueleto', 'arana', 'arana', 'slime', 'bruja', 'bruja', 'creeper', 'trauco', 'chonchon', 'braulio', 'imbunche', 'conejeros', 'cuero', 'curar', 'curar', 'poder', 'once'],
+    medio: ['zombi', 'zombi', 'esqueleto', 'creeper', 'arana', 'enderman', 'bruja', 'imbunche', 'caleuche', 'calchona', 'basilisco', 'cuero', 'pincoya', 'lucho', 'hadad', 'moises', 'conejeros', 'boris', 'rayo', 'curar', 'poder', 'escudo', 'revivir', 'abrazo', 'once']
 };
 
 // ---------------------------------------------------------
@@ -110,7 +129,7 @@ export const TUTORIAL = {
     // Lucho habla antes del paso 1, en su turno y al final
     intro: [
         t('Te enseño mi juego de cartas: como el Yu-Gi-Oh, pero corto y sin pagar nada.', 'Let me show you my card game: like Yu-Gi-Oh, but short and with nothing to pay.'),
-        t('Cada uno tiene 2000 de vida, tres zonas en la mesa y un mazo de 15.', 'We each have 2000 life, three zones on the table and a deck of 15.')
+        t('Cada uno tiene tres zonas en la mesa. En esta práctica yo parto con poca vida, para que sea cortita.', 'We each have three zones on the table. In this practice round I start low on life, to keep it short.')
     ],
     turnoLucho: [
         t('Mi turno: saco un Zombi. Paciencia, que todavía no ataca.', "My turn: I bring out a Zombie. Patience, it can't attack yet."),
@@ -150,7 +169,7 @@ export const TXT_CARTAS = {
         tope: t('Se acabaron los turnos: gana quien tiene más vida.', 'Out of turns: the one with more life wins.')
     },
     reglas: [
-        t('Empiezas con 3 cartas y 2000 de vida. En tu turno robas 1.', 'You start with 3 cards and 2000 life. On your turn you draw 1.'),
+        t('Empiezas con 4 cartas; la vida depende del nivel (3000 en Fácil, 4000 en Medio). En tu turno robas 1.', 'You start with 4 cards; life depends on the level (3000 on Easy, 4000 on Medium). On your turn you draw 1.'),
         t('Invocas 1 criatura por turno en una de tus 3 zonas; los hechizos, todos los que quieras.', 'Summon 1 creature per turn in one of your 3 zones; cast as many spells as you like.'),
         t('Nada cuesta: los efectos encadenan combos dentro del mismo turno.', 'Nothing costs anything: effects chain into combos within the same turn.'),
         t('Cada criatura ataca una vez, pero no el turno en que entra.', 'Each creature attacks once, but not on the turn it enters.'),
