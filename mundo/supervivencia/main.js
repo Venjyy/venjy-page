@@ -1262,7 +1262,7 @@ async function arrancar(guardado, cx = null) {
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
         gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, guardarYa, estadoActual,
-        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
+        particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
         get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
