@@ -130,6 +130,18 @@ obj('CAMA', 'Cama', 'Bed', { icono: 'cama', apila: 1 });
 obj('CUENCO', 'Cuenco', 'Bowl', { icono: 'cuenco', combustible: 5 });
 obj('CARTA', 'Carta', 'Letter', { icono: 'carta', apila: 1, encargo: true }); // 7f-1: la da el Venjy del correo; no se vende
 
+// ---- 7f-2: útiles y de actividades (ids nuevos al final: los guardados no cambian) ----
+obj('RELOJ', 'Reloj', 'Clock', { icono: 'reloj', apila: 1 }); // base de 7j-0: muestra la hora al tenerlo en la mano
+obj('MAPA', 'Mapa', 'Map', { icono: 'mapa', apila: 1 }); // abre el minimapa grande sin tecla
+obj('FAROL_MANO', 'Farol', 'Lantern', { icono: 'farol_mano', apila: 16 }); // luz colgante
+obj('CARTEL', 'Cartel', 'Sign', { icono: 'cartel', combustible: 10 }); // texto propio; base de 7f-3
+obj('BOTELLA', 'Botella', 'Glass Bottle', { icono: 'botella' });
+obj('MAZO', 'Mazo de cartas', 'Card Deck', { icono: 'mazo', apila: 1 }); // 7h: duelo de cartas
+obj('PLUMA_JUGUETE', 'Pluma de juguete', 'Toy Feather', { icono: 'pluma_juguete', apila: 1 }); // 7h: carrera de gatas
+obj('GUITARRA', 'Guitarra', 'Guitar', { icono: 'guitarra', apila: 1, combustible: 15 }); // 7h: concierto
+obj('TECLADO', 'Teclado', 'Keyboard', { icono: 'teclado', apila: 1 });
+obj('TAMBOR', 'Tambor', 'Drum', { icono: 'tambor', apila: 1 });
+
 // ---- Objetos de los jefes (los entrega Venjy; se usan en su altar) ----
 obj('AMULETO_MINA', 'Amuleto de la mina', 'Mine Amulet', { icono: 'amuleto', apila: 1, jefe: 'imbunche' });
 obj('PLUMA_CHONCHON', 'Pluma del Chonchon', 'Chonchon Feather', { icono: 'pluma_negra', apila: 1, jefe: 'chonchon' });

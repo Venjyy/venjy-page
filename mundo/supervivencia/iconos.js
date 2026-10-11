@@ -317,6 +317,48 @@ const PINTORES = {
         p.mascara(['', '......kk........', '.....k..k.......', '....kkkkkk......', '....kyyyyk......', '....kyooyk......', '....kyooyk......', '....kyyyyk......', '....kkkkkk......', '.....kkkk.......'].map(f => '..' + f), { k: [50, 50, 60], y: [120, 220, 200], o: [200, 255, 230] });
         p.contornear();
     },
+    // ---- 7f-2 (pintados a ojo: el dueño los revisa) ----
+    reloj(p) {
+        p.mascara(['', '', '....kkkkkkkk....', '...kyyyyyyyyk...', '..kyywwwwwwyyk..', '..kywwwwwwwwyk..', '..kywwwkwwwwyk..', '..kywwwkkkwwyk..', '..kywwwwwwwwyk..', '..kyywwwwwwyyk..', '...kyyyyyyyyk...', '....kkkkkkkk....'], { k: [90, 66, 10], y: [246, 215, 58], w: [244, 240, 224] });
+        p.contornear();
+    },
+    mapa(p) {
+        p.mascara(['', '..bbbbbbbbbbbb..', '..bgggwwgggab..', '..bgwwgggwwab..', '..bggggaaggab..', '..bwwgxaaggab..', '..bwwggggwwab..', '..bggagggggab..', '..bbbbbbbbbbb..', ''], { b: [120, 84, 48], g: [96, 170, 70], w: [60, 110, 200], a: [190, 170, 110], x: [200, 40, 40] });
+        p.contornear();
+    },
+    farol_mano(p) {
+        p.mascara(['', '......kkkk......', '.....k....k.....', '.....k....k.....', '....kkkkkkkk....', '....koyyyyok....', '....kyyoyyyk....', '....kyyoyyyk....', '....koyyyyok....', '....kkkkkkkk....'], { k: [60, 60, 66], y: [255, 190, 70], o: [255, 240, 170] });
+        p.contornear();
+    },
+    cartel(p) {
+        p.mascara(['', '..tttttttttttt..', '..taaaaaaaaaat..', '..tabbbbbbbbat..', '..taaaaaaaaaat..', '..tabbbbbbaaat..', '..taaaaaaaaaat..', '..tttttttttttt..', '.......mm.......', '.......mm.......', '.......mm.......', '.......mm.......'], { t: [110, 78, 40], a: [196, 160, 100], b: [96, 66, 34], m: [137, 103, 59] });
+        p.contornear();
+    },
+    botella(p) {
+        p.mascara(['', '......kk........', '......cc........', '......cc........', '.....cccc.......', '....cwwwwc......', '...cwwwwwwc.....', '...cwwwwwwc.....', '...cwwwwwwc.....', '...cwwwwwwc.....', '....cccccc......'], { k: [137, 103, 59], c: [170, 210, 220], w: [210, 235, 245] });
+        p.contornear([60, 90, 100]);
+    },
+    mazo(p) {
+        p.mascara(['', '', '.....rrrrrrr.....', '....rwwwwwwr....', '....rwrrrrwr....', '....rwrwwrwr....', '....rwrrrrwr....', '....rwwwwwwr....', '....rrrrrrrr....', '.....bbbbbbb....'], { r: [176, 44, 48], w: [244, 236, 214], b: [90, 24, 28] });
+        p.contornear();
+    },
+    pluma_juguete(p) {
+        for (let k = 0; k < 10; k++) { p.set(3 + k, 13 - k, [137, 103, 59]); p.set(4 + k, 12 - k, [250, 120, 160]); p.set(5 + k, 12 - k, [255, 190, 210]); p.set(4 + k, 11 - k, k > 3 ? [255, 190, 210] : null); }
+        p.set(2, 14, [240, 240, 236]); p.set(3, 14, [240, 240, 236]);
+        p.contornear();
+    },
+    guitarra(p) {
+        p.mascara(['..............kk..', '.............kmk..', '............kmk...', '...........kmk....', '..........kmk.....', '....kkk..kmk......', '...kaaak.mk.......', '..kaabbakk........', '..kabkbak.........', '..kaabbak.........', '...kaaak..........', '....kkk...........'], { k: [50, 30, 16], a: [190, 130, 70], b: [50, 30, 16], m: [137, 103, 59] });
+        p.contornear();
+    },
+    teclado(p) {
+        p.mascara(['', '', '', '..kkkkkkkkkkkk..', '..kwwkwwkwwkwk..', '..kwwkwwkwwkwk..', '..kwwkwwkwwkwk..', '..kwwwwwwwwwwk..', '..kkkkkkkkkkkk..'], { k: [40, 40, 48], w: [240, 240, 236] });
+        p.contornear();
+    },
+    tambor(p) {
+        p.mascara(['', '', '...cccccccccc...', '..cwwwwwwwwwwc..', '..cccccccccccc..', '..bbrbbrbbrbbb..', '..bbbrbbrbbrbb..', '..bbrbbrbbrbbb..', '..bbbbbbbbbbbb..', '...bbbbbbbbbb...'], { c: [176, 44, 48], w: [244, 236, 214], b: [150, 100, 56], r: [96, 66, 34] });
+        p.contornear();
+    },
     cama(p) {
         p.mascara(['', '', '', '', '', '..wwwrrrrrrrrr..', '..wwwrrrrrrrrr..', '..rrrrrrrrrrrr..', '..mmmmmmmmmmmm..', '..m..........m..'], { w: [240, 240, 236], r: [176, 44, 48], m: [137, 103, 59] });
         p.contornear();

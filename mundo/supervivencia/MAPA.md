@@ -17,11 +17,11 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `guardado.js` (150) | Hasta 5 mundos en IndexedDB `venjy-supervivencia`. `listarMundos:42` `cargarMundo:49` `guardarMundo:50` `borrarMundo:51` `serializarEdiciones:60` `cargarEdiciones:72` `descargarMundo:98` `guardarCopiaConTope:121` (copia del coop con tope, almacén inyectado) |
 | `vida.js` (218) | Vida, hambre, aire, daño y armadura. `crearVida:23` |
 | `inventario.js` (173) | Datos puros: 36 casillas, armadura, mano. `Inventario:12` `clicCasilla:149` |
-| `objetos.js` (346) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
-| `recetas.js` (159) | Recetas con y sin forma, fundición. `RECETAS:16` `buscarReceta:122` `FUNDICION:152` |
+| `objetos.js` (359) | Registro de bloques y objetos. `OBJETOS:15` `MATERIALES:75` `info:237` `tiempoRomper:256` |
+| `recetas.js` (171) | Recetas con y sin forma, fundición. `RECETAS:16` `buscarReceta:122` `FUNDICION:152` |
 | `ui-inventario.js` (494) | Ventanas: inventario, mesa 3×3, horno, cofre. `crearVentanas:22` |
 | `hud.js` (169) | Barra rápida, corazones, hambre, mensajes. `crearHUD:39` |
-| `iconos.js` (431) | Íconos 16×16 y cubos isométricos. `crearAtlasObjetos:328` `icono:379` |
+| `iconos.js` (477) | Íconos 16×16 y cubos isométricos. `crearAtlasObjetos:328` `icono:379` |
 | `minado.js` (432) | Romper, poner y usar bloques. `crearMinado:53` |
 | `contenedores.js` (164) | Cofres, barriles y hornos por posición. `crearContenedores:15` |
 | `botin.js` (30) | Tablas de botín por lugar. `botinDe:21` |
