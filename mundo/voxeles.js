@@ -12,6 +12,7 @@ import { llenarSubsuelo } from './supervivencia/subsuelo.js';
 import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } from './construcciones.js';
 import { colocarCaminos } from './caminos.js';
 import { colocarMotivos } from './lugares-motivos.js';
+import { colocarRuinas } from './ruinas.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
 export const ESCALA = 4;        // 1 celda del mapa = 4×4 bloques
@@ -70,6 +71,10 @@ export function prepararTerreno(datos, opciones = {}) {
         terreno.caminos.push(...mot.carteles);
         for (const d of mot.decor) terreno.decor.push(d);
         for (const d of cam.decor) { terreno.decor.push(d); if (d.farol) terreno.zonasLuz.push(d.luz); }
+        // Ruinas con cofre en claros del bosque (7f-3): al final, para no pisar nada de lo anterior; no emiten luz
+        const rui = colocarRuinas(terreno, datos, ESCALA, NIVEL_AGUA);
+        terreno.ruinas = rui.ruinas;
+        for (const d of rui.decor) terreno.decor.push(d);
     } else terreno.dy = 0;
     return terreno;
 }

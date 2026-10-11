@@ -49,6 +49,7 @@ export function crearContenedores({ mundo, terreno }) {
         let mejor = 'casa', dm = Infinity;
         const prueba = (nombre, px, pz, radio) => { const d = Math.hypot(px - x, pz - z); if (d < radio && d < dm) { dm = d; mejor = nombre; } };
         for (const l of terreno.lugares || []) prueba(l.clave, l.x, l.z, l.radio + 4);
+        for (const r of terreno.ruinas || []) prueba('ruina', r.cofre.x, r.cofre.z, 4);
         const mina = (terreno.decor || []).find(d => d.t === 'mina');
         if (mina) prueba('mina', mina.x, mina.z - 14, 26);
         if (terreno.pescador && terreno.pescador.caseta) prueba('pescador', terreno.pescador.caseta.x, terreno.pescador.caseta.z, 10);
