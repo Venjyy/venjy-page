@@ -81,7 +81,7 @@ export function crearPanelCartas(ctx = {}) {
             const d = CARTAS[e.jug[0].mano[eleccion.m]];
             if (d.efecto === 'abrazo' && !usaZona) { eleccion = { tipo: 'abrazo', acciones: a, primero: z }; pintar(); return; }
             // Un hechizo con objetivo se juega al tocar la zona (antes pedía tocarla dos veces)
-            if (a.length === 1 && (!usaZona || a[0].obj === undefined)) return ejecutar(a[0]);
+            if (a.length === 1) return ejecutar(a[0]); // una sola opción: sin pedir objetivo
             eleccion = { tipo: 'objetivo', acciones: a, zona: z }; pintar(); return;
         }
         if (eleccion && eleccion.tipo === 'abrazo') {
