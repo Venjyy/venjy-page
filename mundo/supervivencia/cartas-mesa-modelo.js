@@ -110,7 +110,8 @@ export function tocarZona(e, sel, j, z) {
         const d = CARTAS[e.jug[0].mano[sel.m]];
         if (d.efecto === 'abrazo' && !usaZona) return nada({ tipo: 'abrazo', acciones: a, primero: z });
         // Un hechizo con objetivo se juega al tocar la zona (en el panel pedía tocarla dos veces)
-        if (a.length === 1 && (!usaZona || a[0].obj === undefined)) return { sel: null, accion: a[0] };
+        // Una sola opción (p. ej. el Caleuche con una sola criatura rival): se juega sin pedir el objetivo
+        if (a.length === 1) return { sel: null, accion: a[0] };
         return nada({ tipo: 'objetivo', acciones: a });
     }
     if (sel && sel.tipo === 'abrazo') {
