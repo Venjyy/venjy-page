@@ -20,7 +20,7 @@ export const CARTELES_LUGARES = {
         }
     },
     portal: {
-        dz: 3.5, alto: 3.2,
+        dx: -3.5, dz: 1, alto: 3.2, // al oeste del centro: Venjy queda en la mitad este (candidatos a +2,4)
         texto: {
             es: 'Portal del Chonchon\nDicen que un brujo lo cruzó de noche y volvió hecho pájaro. Si oyes «tue, tue», no mires',
             en: 'Chonchon portal\nThey say a wizard crossed it at night and came back as a bird. If you hear "tue, tue", do not look'
@@ -32,7 +32,7 @@ export function colocarMotivos(terreno) {
     const decor = [], carteles = [];
     for (const l of terreno.lugares || []) {
         const c = CARTELES_LUGARES[l.clave];
-        if (c) carteles.push({ tipo: 'lugar', x: l.bx + 0.5, y: l.y + c.alto, z: l.bz + 0.5 + c.dz, texto: c.texto });
+        if (c) carteles.push({ tipo: 'lugar', x: l.bx + 0.5 + (c.dx || 0), y: l.y + c.alto, z: l.bz + 0.5 + c.dz, texto: c.texto });
         if (l.clave === 'molino') {
             // Dentro de la torre (hueco de 3×3, puerta al sur): cama contra el lado oeste y antorcha en el este
             const { bx, bz, y } = l;
