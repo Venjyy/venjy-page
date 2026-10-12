@@ -16,7 +16,10 @@
         "sv-soltar": { "ancla": "si", "x": 12, "y": 130, "w": 64, "h": 40, "letra": 0.8 },
         "sv-camara": { "ancla": "si", "x": 12, "y": 176, "w": 64, "h": 40, "letra": 0.8 },
         "sv-comando": { "ancla": "si", "x": 12, "y": 222, "w": 64, "h": 40, "letra": 0.9 },
-        "mision": { "ancla": "si", "x": 12, "y": 270, "seguro": false }
+        "mision": { "ancla": "si", "x": 12, "y": 270, "seguro": false },
+        "coords": { "ancla": "si", "x": 12, "y": 330, "seguro": false },
+        "fps": { "ancla": "si", "x": 12, "y": 350, "seguro": false },
+        "hora": { "ancla": "si", "x": 12, "y": 370, "seguro": false }
       }
     },
     "baja": {

@@ -19,7 +19,10 @@ export const SELECTORES = {
     'sv-acariciar': '.tactil-boton.sv-acariciar',
     'sv-gestos': '.tactil-boton.sv-gestos',
     mision: '#hud .mision-activa',
-    minimapa: '#hud .mm-pequeno'
+    minimapa: '#hud .mm-pequeno',
+    coords: '#coords',
+    fps: '#fps',
+    hora: '#hora'
 };
 // pausa y pantalla: mundo/mundo.css fija su posición con !important (bajan bajo el minimapa); el layout tiene que ganarle
 const IMPORTANTES = new Set(['pausa', 'pantalla']);

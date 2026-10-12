@@ -1350,6 +1350,7 @@ async function arrancar(guardado, cx = null) {
         $('aj-sens').value = ajustes.sens; $('aj-sens-v').textContent = ajustes.sens;
         $('aj-sonido').checked = !mundoSilenciado();
         $('aj-musica').checked = musica.encendida;
+        $('aj-idioma').checked = idioma === 'es'; $('aj-idioma-en').checked = idioma === 'en';
         $('aj-hora').checked = !!ajustes.hora;
         sincronizarRend();
         pintarHora(true);
@@ -1363,6 +1364,14 @@ async function arrancar(guardado, cx = null) {
     $('aj-sens').addEventListener('input', e => { ajustes.sens = Number(e.target.value); $('aj-sens-v').textContent = ajustes.sens; jugador.sensibilidad = ajustes.sens / 10000; guardarAjustes(); });
     $('aj-sonido').addEventListener('change', e => silenciarMundo(!e.target.checked));
     $('aj-musica').addEventListener('change', e => musica.encender(e.target.checked));
+    // Idioma: el texto de la página se arma al cargar, así que al cambiar se guarda la elección y se recarga
+    const cambiarIdioma = nuevo => {
+        if (nuevo === idioma) return;
+        try { localStorage.setItem('preferredLanguage', nuevo); } catch (e) { /* sin almacenamiento */ }
+        guardarYa().then(() => { const u = new URL(location.href); u.searchParams.delete('lang'); location.href = u.href; });
+    };
+    $('aj-idioma').addEventListener('change', e => { if (e.target.checked) cambiarIdioma('es'); });
+    $('aj-idioma-en').addEventListener('change', e => { if (e.target.checked) cambiarIdioma('en'); });
     $('aj-hora').addEventListener('change', e => { ajustes.hora = e.target.checked; guardarAjustes(); pintarHora(true); });
 
 

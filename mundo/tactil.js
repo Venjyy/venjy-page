@@ -11,8 +11,10 @@ const DOBLE_TOQUE_MS = 300;
 const SONDEO_MS = 150;
 
 const TEXTOS = {
-    es: { saltar: 'SALTAR', subir: 'SUBIR', bajar: 'BAJAR', agachar: 'AGACHAR', pausa: 'Pausa' },
-    en: { saltar: 'JUMP', subir: 'UP', bajar: 'DOWN', agachar: 'SNEAK', pausa: 'Pause' }
+    es: { saltar: 'SALTAR', subir: 'SUBIR', bajar: 'BAJAR', agachar: 'AGACHAR', pausa: 'Pausa',
+        iphone: ['El iPhone no tiene pantalla completa. Para jugar sin la barra del navegador:', '1. Toca el botón Compartir (cuadrado con flecha).', '2. Elige «Añadir a pantalla de inicio».', '3. Abre Venjy desde el ícono nuevo.'] },
+    en: { saltar: 'JUMP', subir: 'UP', bajar: 'DOWN', agachar: 'SNEAK', pausa: 'Pause',
+        iphone: ['iPhone has no full screen. To play without the browser bar:', '1. Tap the Share button (square with an arrow).', '2. Choose «Add to Home Screen».', '3. Open Venjy from the new icon.'] }
 };
 
 function cargarCSS() {
@@ -240,10 +242,16 @@ export function iniciarTactil(jugador, { alEntrar } = {}) {
                 .catch(() => {});
             return;
         }
-        avisoPantalla.textContent = TEXTOS[idioma()].iphone;
+        // Mini tutorial: se cierra al tocarlo o solo tras un rato
+        avisoPantalla.replaceChildren(...TEXTOS[idioma()].iphone.map((t, i) => {
+            const p = document.createElement('p');
+            p.textContent = t;
+            if (i === 0) p.className = 'aviso-titulo';
+            return p;
+        }));
         avisoPantalla.hidden = false;
         clearTimeout(relojAviso);
-        relojAviso = setTimeout(() => { avisoPantalla.hidden = true; }, 6000);
+        relojAviso = setTimeout(() => { avisoPantalla.hidden = true; }, 20000);
     }
     bPantalla.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     bPantalla.addEventListener('touchend', e => { e.preventDefault(); pantallaCompleta(); }, { passive: false });
