@@ -28,15 +28,15 @@
         "sv-usar": { "y": 22, "w": 66, "h": 66, "x": 34 },
         "sv-romper": { "y": 24, "w": 66, "h": 66, "x": 134 },
         "sv-acariciar": { "x": 374, "y": -8 },
-        "mision": { "y": 10, "x": 0 },
-        "joy": { "x": 50, "y": -78, "w": 164, "h": 152 },
-        "sv-comando": { "x": 4, "w": 24, "y": 176, "h": 42 },
+        "mision": { "y": 4, "x": 240 },
+        "joy": { "x": 60, "y": -70, "w": 136, "h": 126 },
+        "sv-comando": { "x": 2, "w": 24, "y": 218, "h": 42 },
         "sv-camara": { "x": 508, "y": 12, "w": 44, "h": 44 },
-        "sv-soltar": { "x": 2, "y": 128, "w": 66 },
-        "sv-inventario": { "x": 2, "h": 58, "y": 64 },
-        "bajar": { "y": -64, "x": 156 },
-        "saltar": { "y": -78, "x": 42, "w": 94, "h": 92 },
-        "minimapa": { "ancla": "sd", "seguro": false, "x": 24, "y": 10, "w": 134, "h": 120 }
+        "sv-soltar": { "x": 2, "w": 66, "y": 154 },
+        "sv-inventario": { "x": 2, "h": 58, "y": 92 },
+        "bajar": { "y": -64, "x": 144 },
+        "saltar": { "y": -78, "x": 32, "w": 94, "h": 92 },
+        "minimapa": { "ancla": "sd", "seguro": false, "x": 8, "y": 8, "w": 134, "h": 120 }
       }
     }
   }
