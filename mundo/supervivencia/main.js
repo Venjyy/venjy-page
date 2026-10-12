@@ -108,7 +108,7 @@ aplicarIdioma();
 
 const TXT = {
     es: {
-        dificultades: ['Pacífico', 'Fácil', 'Normal', 'Difícil'], jugar: 'Jugar', exportar: 'Exportar', borrar: 'Borrar',
+        dificultades: ['Pacífico', 'Fácil', 'Normal', 'Difícil'], descubierto: 'Lugar descubierto', jugar: 'Jugar', exportar: 'Exportar', borrar: 'Borrar',
         confirmarBorrar: n => `¿Borrar «${n}» para siempre? No se puede deshacer.`, vacio: 'Aún no tienes mundos.',
         dia: n => `Día ${n}`, lleno: `Tienes ${MAX_MUNDOS} mundos: borra uno para crear otro.`, mundo: 'Mi mundo',
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
@@ -143,7 +143,7 @@ const TXT = {
         }
     },
     en: {
-        dificultades: ['Peaceful', 'Easy', 'Normal', 'Hard'], jugar: 'Play', exportar: 'Export', borrar: 'Delete',
+        dificultades: ['Peaceful', 'Easy', 'Normal', 'Hard'], descubierto: 'Place discovered', jugar: 'Play', exportar: 'Export', borrar: 'Delete',
         confirmarBorrar: n => `Delete "${n}" forever? This can't be undone.`, vacio: "You don't have any worlds yet.",
         dia: n => `Day ${n}`, lleno: `You have ${MAX_MUNDOS} worlds: delete one to create another.`, mundo: 'My world',
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
@@ -530,6 +530,10 @@ async function arrancar(guardado, cx = null) {
     const dia = crearDia({ cielo });
     dia.cargar(guardado.dia);
     let jugado = guardado.jugado || 0;
+    // Lugares descubiertos (7f-3): se recuerdan por mundo
+    const CLAVE_DESCUBIERTOS = `venjy-descubiertos-${guardado.id}`;
+    let descubiertos = new Set();
+    try { descubiertos = new Set(JSON.parse(localStorage.getItem(CLAVE_DESCUBIERTOS)) || []); } catch (e) { /* sin almacenamiento */ }
 
     // Ventanas: al abrir se libera el puntero sin mostrar la pausa; al cerrar se vuelve a jugar
     let uiAbierta = false;
@@ -1530,6 +1534,15 @@ async function arrancar(guardado, cx = null) {
         pintarHora(); // barato: solo escribe al cambiar el minuto, el día, el idioma o la mano
         cuadros++; acumulado += dt;
         if (acumulado >= 0.5) {
+            // Lugares descubiertos (7f-3): aviso al pasar cerca de uno, revisado cada ~0,5 s
+            const lugares = terreno.lugares || [];
+            for (const l of lugares) {
+                if (descubiertos.has(l.clave) || Math.hypot(jugador.pos.x - l.x, jugador.pos.z - l.z) > l.radio) continue;
+                descubiertos.add(l.clave);
+                try { localStorage.setItem(CLAVE_DESCUBIERTOS, JSON.stringify([...descubiertos])); } catch (e) { /* sin almacenamiento */ }
+                const n = lugares.filter(q => descubiertos.has(q.clave)).length;
+                hud.mensaje(`${tx().descubierto}: ${l.nombre[idioma] || l.nombre.es} · ${n}/${lugares.length}`, 4);
+            }
             const fps = cuadros / acumulado;
             fpsEl.textContent = [rend.fps ? Math.round(fps) + ' FPS' : '', rend.ms ? cuadrosMs.mediana.toFixed(1) + ' ms' : ''].filter(Boolean).join(' · ');
             if (rend.auto) {
