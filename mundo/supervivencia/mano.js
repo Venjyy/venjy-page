@@ -151,8 +151,6 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
             m.scale.setScalar(0.5);
             // Herramientas inclinadas como en Minecraft; el resto de frente y algo girado
             if (tipo === 'herramienta') m.rotation.set(0, -Math.PI / 2 + 0.35, 0.65);
-            // La caña va más adelante en la mano (mano en primera persona): sin esto queda pegada al cuerpo
-            if (id === O.CANA) m.position.set(0, 0.1, -0.15);
             else m.rotation.set(0, -0.55, 0);
         }
         m.userData.tipo = tipo === 'bloque' ? 'bloque' : 'objeto';

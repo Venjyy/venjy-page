@@ -428,8 +428,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         sentadoEnSuelo(moises.p);
         // Dónde queda el bong cuando no lo usa: en el suelo (sentado) o en la mano izquierda (de pie)
         moises.reposoBong = [0.36, 0.6, 0.5];
-        lalo.reposoBong = [0.1, 0.8, 0.2]; // más al centro del cuerpo (antes 0.3, 0.3)
-        lalo.reposoGiro = Math.PI;         // y dado vuelta: la boquilla mira al otro lado
+        lalo.reposoBong = [0.3, 0.8, 0.3];
         // Bong de vidrio celeste con agua, cazoleta y boquilla
         const vidrio = tinte.caras(tex(4, 4, 4601, [170, 220, 236], 0.1), {}, { transparent: true, opacity: 0.5, depthWrite: false });
         const bong = new THREE.Group();
@@ -466,7 +465,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     // Deja el objeto en las manos (o junto) de n
     function tomar(n, objeto) {
         n.objeto = objeto;
-        if (objeto === 'bong') { n.p.cuerpo.add(bongO.g); bongO.g.position.set(...n.reposoBong); bongO.g.rotation.set(0, n.reposoGiro || 0, 0); }
+        if (objeto === 'bong') { n.p.cuerpo.add(bongO.g); bongO.g.position.set(...n.reposoBong); bongO.g.rotation.set(0, 0, 0); }
         else { n.p.brazoD.add(pitoO.g); pitoO.g.position.set(...POS_PITO); pitoO.g.rotation.set(-0.6, 0, 0); }
     }
     const vTmp = new THREE.Vector3(), vA = new THREE.Vector3(), vB = new THREE.Vector3();
@@ -476,8 +475,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     function usarBong(n, dt, t, dJ) {
         const { p } = n, c = n.ciclo, r = n.reposoBong;
         const arriba = c < 1.2 ? suave(c / 1.2) : c < 3.6 ? 1 : c < 4.6 ? 1 - suave((c - 3.6) / 1) : 0;
-        // Moisés fuma más abajo (0.92 en vez de 1,03): la boquilla queda a la altura de la boca, no de la frente
-        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.92 : 1.03, arriba), lerp(r[2], 0.36, arriba));
+        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], 1.03, arriba), lerp(r[2], 0.36, arriba));
         bongO.g.rotation.x = lerp(0, -0.15, arriba);
         const reposo = n === moises ? -0.6 : -0.75;
         p.brazoD.rotation.x = lerp(reposo, -1.15, arriba); p.brazoD.rotation.z = lerp(0.05, 0.42, arriba);
