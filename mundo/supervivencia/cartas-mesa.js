@@ -25,7 +25,9 @@ export const TXT_MESA = {
     cerrarLector: t('Cerrar', 'Close'),
     panel: t('Panel 2D', '2D panel'),
     tocaCarta: t('Toca una carta de tu mano o una de tus criaturas', 'Tap a card in your hand or one of your creatures'),
-    tocaZona: t('Toca una zona marcada', 'Tap a highlighted zone'),
+    tocaZona: t('Toca una zona marcada en verde', 'Tap a zone highlighted in green'),
+    tocaObjetivo: t('Ahora toca la criatura marcada en verde a la que apunta la carta', 'Now tap the green-highlighted creature the card targets'),
+    tocaAbrazo: t('Ahora toca la segunda criatura tuya', 'Now tap your second creature'),
     tocaRival: t('Toca una criatura de Lucho, o a Lucho para el ataque directo', 'Tap one of Lucho\'s creatures, or Lucho for a direct attack')
 };
 
@@ -269,7 +271,9 @@ export function crearMesaCartas(ctx) {
         const turno = document.createElement('strong'); turno.textContent = Lx(e.turno === 0 ? TXT_CARTAS.tuTurno : TXT_CARTAS.suTurno);
         arriba.append(lado(1), turno, lado(0));
         const guia = document.createElement('p'); guia.className = 'cartas-mesa-aviso';
-        guia.textContent = aviso || (e.turno === 0 && e.fase === 'principal' ? Lx(!sel ? TXT_MESA.tocaCarta : sel.tipo === 'propia' ? TXT_MESA.tocaRival : TXT_MESA.tocaZona) : '');
+        // Con algo elegido manda la guía del paso siguiente; si no, la última jugada
+        const paso = !sel ? null : sel.tipo === 'propia' ? TXT_MESA.tocaRival : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
+        guia.textContent = e.turno === 0 && e.fase === 'principal' && paso ? Lx(paso) : aviso || (e.turno === 0 && e.fase === 'principal' ? Lx(TXT_MESA.tocaCarta) : '');
         const B = botonesMesa(e, sel), fila = document.createElement('div'); fila.className = 'cartas-mesa-botones';
         fila.append(
             boton(Lx(TXT_CARTAS.terminar), () => ejecutar(B.terminar), '', !B.terminar),
