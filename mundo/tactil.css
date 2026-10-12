@@ -148,6 +148,8 @@
     text-shadow: 2px 2px 0 #3f3f3f;
     pointer-events: auto;
 }
+.tactil-aviso p { margin: 4px 0; }
+.tactil-aviso .aviso-titulo { font-weight: bold; }
 
 /* Icono de pausa dibujado con bordes (dos barras) */
 .tactil-icono-pausa {

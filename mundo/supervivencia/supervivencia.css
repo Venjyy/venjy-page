@@ -648,6 +648,8 @@ body.en-ronda-fp #hud { visibility: hidden; }
 .capa-hablar .pestanas-mision .boton { font-size: 0.85rem; padding-inline: 4px; }
 body.panel-lado .mision-activa { display: none; } /* el globo del amigo queda arriba a la derecha */
 @media (max-width: 600px) { .capa-hablar .panel-mision { margin: auto auto 2vh; width: 94vw; } }
+/* Celular en vertical: el panel de Hablar no tapa los botones táctiles y la lista de temas entra en pantalla */
+@media (max-width: 600px) and (orientation: portrait) { .capa-hablar .panel-mision { max-height: 62vh; margin-bottom: calc(var(--pie, 60px) + 8px); } }
 .amistad { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
 .amistad b { font-weight: normal; color: #ff9fcf; }
 .amistad small { color: var(--gris); }

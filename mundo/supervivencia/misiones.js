@@ -527,6 +527,15 @@ export function crearMisiones(ctx) {
             const W = window.innerWidth || 1, H = window.innerHeight || 1, r = saltarA.getBoundingClientRect();
             zonasPantalla.push({ x0: r.left / W * 2 - 1 - 0.02, x1: r.right / W * 2 - 1 + 0.02, y0: 1 - r.bottom / H * 2 - 0.02, y1: 1 - r.top / H * 2 + 0.02 });
         }
+        // Celular: los botones táctiles van encima del mundo (la capa del canvas queda debajo): el globo los esquiva
+        if (document.body.classList.contains('con-tactil')) {
+            const W = window.innerWidth || 1, H = window.innerHeight || 1;
+            for (const b of document.querySelectorAll('.tactil-joy, .tactil-boton, .tactil-saltar, .tactil-bajar')) {
+                const r = b.getBoundingClientRect();
+                if (!r.width || !r.height) continue; // oculto
+                zonasPantalla.push({ x0: r.left / W * 2 - 1 - 0.02, x1: r.right / W * 2 - 1 + 0.02, y0: 1 - r.bottom / H * 2 - 0.02, y1: 1 - r.top / H * 2 + 0.02 });
+            }
+        }
         for (const p of personas()) {
             const s = marcaDe(p.clave);
             const n = p.n;

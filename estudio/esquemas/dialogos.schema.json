@@ -36,6 +36,7 @@
         "properties": {
           "bajo": { "$ref": "comun.schema.json#/$defs/texto" },
           "alto": { "$ref": "comun.schema.json#/$defs/texto" },
+          "buen": { "$ref": "comun.schema.json#/$defs/texto" },
           "skin": { "$ref": "#/$defs/porSkin" }
         },
         "required": ["bajo", "alto"],
