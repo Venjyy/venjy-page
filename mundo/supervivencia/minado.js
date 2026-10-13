@@ -221,11 +221,6 @@ export function crearMinado(ctx) {
 
     function usarObjeto(o, p) {
         const def = info(p.id);
-        // Comida: se mantiene apretado (ver actualizar)
-        if (def.comida) {
-            if (vida.hambre < 20 || def.efecto === 'leche') { estado.comiendo = 0.0001; return true; }
-            return false;
-        }
         // Semillas, zanahoria y papa: se plantan sobre tierra labrada
         if (def.planta && o && esTierraCultivo(o.id) && o.normal[1] === 1) {
             const y = o.y + 1;
@@ -237,6 +232,12 @@ export function crearMinado(ctx) {
             sonidos.poner(B.PASTO_ALTO);
             estado.alPoner && estado.alPoner(def.planta, o.x, y, o.z);
             return true;
+        }
+        // Comida: se mantiene apretado (ver actualizar). Va después de plantar: zanahoria y papa son las dos cosas
+        // y apuntando a tierra labrada se plantan
+        if (def.comida) {
+            if (vida.hambre < 20 || def.efecto === 'leche') { estado.comiendo = 0.0001; return true; }
+            return false;
         }
         // Azada: pasto, tierra o camino → tierra labrada (con aire encima)
         if (def.herramienta && def.herramienta.clase === 'azada' && o && [B.PASTO, B.TIERRA, B.CAMINO, B.PODZOL].includes(o.id) && o.normal[1] !== -1) {
