@@ -403,3 +403,28 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 #po-grabar.grabando { background: #8b1a1a; color: var(--blanco); }
 .po-como { margin: 4px 0; }
 .po-caso-nota { margin: 4px 0; color: var(--amarillo); }
+
+/* ---------- Píxeles (editor de íconos y arte de cartas) ---------- */
+.px-herramientas { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px; margin-bottom: 10px; }
+.px-herramientas .boton.activo { border-color: var(--blanco); }
+.px-zoom input { width: 140px; }
+.px-area { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.px-lienzo { image-rendering: pixelated; border: 4px solid #000; background: #000; cursor: crosshair; touch-action: none; }
+.px-vistas { display: flex; flex-direction: column; gap: 10px; }
+.px-vistas figure { margin: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.px-vistas figure[hidden] { display: none; }
+.px-vistas figcaption { font-size: 0.75rem; color: var(--gris); }
+.px-real { image-rendering: pixelated; border: 2px solid #000; background: #6f6f6f; }
+.px-paleta-fila { display: flex; gap: 14px; align-items: flex-end; margin-top: 12px; }
+.px-paleta { display: flex; flex-wrap: wrap; gap: 3px; max-width: 640px; }
+.px-paleta button { width: 22px; height: 22px; padding: 0; border: 2px solid #000; cursor: pointer; }
+.px-paleta button.activo { outline: 2px solid var(--blanco); outline-offset: 1px; }
+.px-paleta button.vacio { background: repeating-conic-gradient(#8a8a8a 0 25%, #5a5a5a 0 50%) 0 0 / 10px 10px; }
+.px-ficha { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.px-ficha .campo input[type="text"], .px-ficha .campo input[type="number"], .px-ficha textarea, .px-ficha select {
+    width: 100%; padding: 4px 6px; font: inherit; font-size: 0.85rem; color: var(--blanco);
+    background: #000; border: 2px solid #6a6a6a;
+}
+.px-ficha textarea { resize: vertical; min-height: 3.2em; }
+.px-ficha .fila-colores { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.px-ficha input[type="color"] { width: 100%; height: 26px; padding: 0; border: 2px solid #000; background: #000; }

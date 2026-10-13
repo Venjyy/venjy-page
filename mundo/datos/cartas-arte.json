@@ -1,0 +1,6 @@
+{
+  "$schema": "../../estudio/esquemas/cartas-arte.schema.json",
+  "version": 1,
+  "retratos": {},
+  "marcos": {}
+}

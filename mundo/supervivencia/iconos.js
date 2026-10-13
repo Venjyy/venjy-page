@@ -7,6 +7,8 @@
 import { BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
 import { OBJETOS, COLORES } from './objetos.js';
 import { iconoModelo } from './modelos-mano.js';
+import { cargarDatos } from '../datos/cargador.js';
+import { decodificar, listoParaJuego } from '../datos/pixeles.js';
 
 const hex = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const ajustar = ([r, g, b], f) => [Math.min(255, r * f), Math.min(255, g * f), Math.min(255, b * f)];
@@ -384,6 +386,24 @@ const PINTORES = {
 };
 
 // ---------------------------------------------------------
+// Dibujos del dueño (mundo/datos/iconos.json, pestaña Píxeles del Estudio): por clave de objeto en minúscula
+// (palo, pico_madera), 16×16. Si hay uno listo, reemplaza al de PINTORES; los de "estado": "borrador", no.
+// ---------------------------------------------------------
+let dibujos = new Map(); // clave en minúscula -> 256 colores
+let versionIconos = 0;
+const oyentes = new Set();
+export function aplicarIconos(d) {
+    dibujos = new Map();
+    for (const [k, dib] of Object.entries((d && d.iconos) || {})) if (listoParaJuego(dib, 16, 16)) dibujos.set(k, decodificar(dib, 16, 16));
+    versionIconos++;
+    repintar();
+}
+export const versionDeIconos = () => versionIconos;
+// f() cuando cambian los dibujos (la textura del atlas y las mallas de la mano se rehacen)
+export function alCambiarIconos(f) { oyentes.add(f); return () => oyentes.delete(f); }
+if (typeof location !== 'undefined') cargarDatos('iconos').then(d => { if (d) aplicarIconos(d); });
+
+// ---------------------------------------------------------
 // Atlas de objetos (para los objetos tirados en 3D) y caché de íconos de la interfaz
 // ---------------------------------------------------------
 const COLS_OBJ = 16;
@@ -395,6 +415,12 @@ export function crearAtlasObjetos() {
     const filas = Math.ceil(ids.length / COLS_OBJ);
     const c = document.createElement('canvas');
     c.width = COLS_OBJ * 16; c.height = Math.max(16, filas * 16);
+    atlasObjetos = c;
+    pintarAtlas(ids);
+    return c;
+}
+function pintarAtlas(ids = [...celdaObjeto.keys()]) {
+    const c = atlasObjetos;
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(c.width, c.height);
     ids.forEach((id, n) => {
@@ -409,8 +435,6 @@ export function crearAtlasObjetos() {
         }
     });
     ctx.putImageData(img, 0, 0);
-    atlasObjetos = c;
-    return c;
 }
 export function uvObjeto(id) {
     crearAtlasObjetos();
@@ -422,10 +446,14 @@ export function uvObjeto(id) {
 
 // Píxeles de un objeto (256 entradas [r, g, b] o null): la mano los extruye en 3D
 export function pixelesObjeto(id) { return pintarObjeto(id).px; }
+// El dibujo del código, sin el del JSON (Estudio: «partir del dibujo actual» y «volver al del código»)
+export function pixelesDeCodigo(id) { return pintarObjeto(id, false).px; }
 
-function pintarObjeto(id) {
+function pintarObjeto(id, conDatos = true) {
     const o = OBJETOS[id];
     const p = lienzo16();
+    const propio = conDatos && o && dibujos.get(o.clave.toLowerCase());
+    if (propio) { propio.forEach((c, i) => { p.px[i] = c; }); return p; }
     const f = o && PINTORES[o.icono];
     if (!f) { p.mascara(['', '', '', '', '.....aaaaaa.....', '....a......a....', '.........aa.....', '........a.......', '........a.......', '', '........a.......'], { a: [255, 0, 255] }); return p; }
     let cols = null;
@@ -444,9 +472,15 @@ export function icono(id) {
     if (cache.has(id)) return cache.get(id);
     const c = document.createElement('canvas');
     c.width = c.height = 32;
+    pintarIcono(c, id);
+    cache.set(id, c);
+    return c;
+}
+function pintarIcono(c, id) {
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     if (id >= 256) {
+        ctx.clearRect(0, 0, 32, 32);
         const p = pintarObjeto(id);
         const img = ctx.createImageData(32, 32);
         for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
@@ -459,8 +493,13 @@ export function icono(id) {
     } else if (BLOQUES[id] && atlasBloques) {
         dibujarBloque(ctx, id);
     }
-    cache.set(id, c);
-    return c;
+}
+// Los lienzos ya entregados se repintan en su lugar: la interfaz que los muestra cambia sola
+function repintar() {
+    if (typeof document === 'undefined') return;
+    for (const [id, c] of cache) if (id >= 256) pintarIcono(c, id);
+    if (atlasObjetos) pintarAtlas();
+    for (const f of oyentes) f();
 }
 
 function tileXY(tile) { return [(tile % COLS) * TAM, Math.floor(tile / COLS) * TAM]; }

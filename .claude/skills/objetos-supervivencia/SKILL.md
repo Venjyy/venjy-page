@@ -17,7 +17,9 @@ Mapa del módulo: `mundo/supervivencia/MAPA.md` (tabla de archivos con funciones
    - Campos que ya existen y conviene copiar: `apila` (1, 16 o 64), `color` (clave de `COLORES`),
      `comida: [hambre, saturación]`, `efecto`, `devuelve: 'CLAVE'`, `combustible`, `durabilidad`,
      `herramienta`, `encargo: true` (no se vende). Buscar uno parecido con `grep -n "obj('" objetos.js`.
-2. **Ícono** en `iconos.js`, dentro de `PINTORES` (bloque `// ---- 7f-2 …` como ejemplo):
+2. **Ícono** en `iconos.js`, dentro de `PINTORES` (bloque `// ---- 7f-2 …` como ejemplo). Si el dueño lo dibujó en el
+   Estudio (pestaña Píxeles: `mundo/datos/iconos.json` o el `dibujo` de un borrador en `borradores.json`), ese dibujo
+   manda: va tal cual a `iconos.json` y no hace falta pintor (flujo en la skill `datos-json`, §6).
    `nombre(p) { p.mascara([...16 filas de 16...], { letra: [r, g, b] }); p.contornear(); }`.
    - El nombre del pintor es el `icono` del registro. Sin imágenes ni emojis: todo pintado.
    - Paleta Minecraft, contorno oscuro, que se lea a 16×16. Si se pinta sin verlo, decirlo: **el dueño lo revisa**.

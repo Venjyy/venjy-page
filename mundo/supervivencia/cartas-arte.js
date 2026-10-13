@@ -12,6 +12,8 @@
 // Todo el arte es propio: ninguna carta copia marcos ni dibujos de juegos reales.
 // =========================================================
 import { CARTAS } from './cartas-datos.js';
+import { cargarDatos } from '../datos/cargador.js';
+import { decodificar, hexDe, listoParaJuego, MEDIDAS } from '../datos/pixeles.js';
 
 export const ANCHO = 50, ALTO = 76;
 // Rectángulos [x, y, ancho, alto] en píxeles de arte, con su borde hundido incluido.
@@ -32,6 +34,38 @@ const MARCOS = {
     animal: { claro: '#ffab84', base: ['#c0532e', '#c0532e', '#b84e2b', '#c95b33'], oscuro: '#6e2a14', sombra: '#341208', cinta: '#9a3f20' },
     hechizo: { claro: '#c9a2ff', base: ['#6a32d1', '#6a32d1', '#6430c6', '#7039da'], oscuro: '#3a1580', sombra: '#1a0840', cinta: '#5226a8' }
 };
+export const PLANTILLAS = Object.keys(MARCOS);
+export const COLORES_MARCO = ['claro', 'base', 'oscuro', 'sombra', 'cinta'];
+// Colores del marco que da el código (el Estudio los muestra junto a los del JSON)
+export const marcoDeCodigo = fam => MARCOS[fam];
+
+// ---------- Arte del dueño (mundo/datos/cartas-arte.json, pestaña Píxeles del Estudio) ----------
+// retratos[clave de carta]: dibujo de 40×26 sobre el fondo de la familia; reverso: dibujo de 50×76;
+// marcos[familia]: colores del marco. Lo de "estado": "borrador" no se usa en el juego.
+let arte = { retratos: new Map(), reverso: null, marcos: {} };
+let versionArte = 0;
+export function aplicarArte(d) {
+    const [rw, rh] = MEDIDAS.retrato, [cw, ch] = MEDIDAS.carta;
+    const retratos = new Map();
+    for (const [k, dib] of Object.entries((d && d.retratos) || {})) if (listoParaJuego(dib, rw, rh)) retratos.set(k, decodificar(dib, rw, rh));
+    const reverso = d && listoParaJuego(d.reverso, cw, ch) ? decodificar(d.reverso, cw, ch) : null;
+    arte = { retratos, reverso, marcos: (d && d.marcos) || {} };
+    imagenes.clear();
+    versionArte++;
+}
+export const versionDeArte = () => versionArte;
+if (typeof location !== 'undefined') cargarDatos('cartas-arte').then(d => { if (d) aplicarArte(d); });
+const HEX6 = /^#[0-9a-f]{6}$/i;
+function marcoDe(fam) {
+    const o = arte.marcos[fam];
+    if (!o) return MARCOS[fam];
+    const M = { ...MARCOS[fam] };
+    for (const k of COLORES_MARCO) if (typeof o[k] === 'string' && HEX6.test(o[k])) M[k] = o[k];
+    // la base lleva sus motas: el mismo color dos veces, uno algo más oscuro y uno algo más claro
+    if (M.base !== MARCOS[fam].base) { const c = rgb(M.base); M.base = [M.base, M.base, hexDe(c.map(v => v * 0.95)), hexDe(c.map(v => v * 1.06))]; }
+    return M;
+}
+
 const CONTORNO = '#0c0806';
 const PLACA = ['#1d1813', '#1d1813', '#211b15', '#19140f'];
 const PERGAMINO = ['#eadcb4', '#eadcb4', '#e4d4a8', '#f0e4c2', '#e7d8ae'];
@@ -50,6 +84,7 @@ const ESCUDO = ['WWWWW', 'WCCCW', 'WCCCW', '.WCW.', '..W..'];
 
 // ---------- Lienzo puro ----------
 const cache = new Map();
+const imagenes = new Map(); // dataURL por carta (arteCarta, arteReverso)
 const rgb = h => {
     let c = cache.get(h);
     if (!c) { c = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; cache.set(h, c); }
@@ -1137,25 +1172,34 @@ function marcador(F, fam, M) {
         for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) F.px(10 + x * 4 + i, 3 + y * 4 + j, i === 0 || j === 0 ? M.claro : j === 3 || i === 3 ? M.oscuro : '#ffffff');
     } });
 }
-export function dibujarCarta(id) {
-    const d = CARTAS[id];
-    if (!d) return null;
-    const fam = familiaDe(id), M = MARCOS[fam], s = semillaDe(id), L = lienzo(ANCHO, ALTO);
-    marco(L, M, s);
-    hundido(L, ZONAS.nombre, PLACA, M.sombra, M.claro, s);
-    // retrato
-    hundido(L, ZONAS.retrato, '#000000', M.sombra, M.claro, s);
+// Retrato de 40×26 (fondo de la familia + figura con contorno), sin la viñeta de las esquinas.
+function retratoCodigo(id, fam, M, s) {
     const fondo = lienzo(40, 26), fig = lienzo(40, 26);
     FONDOS[fam](fondo, s);
     if (RETRATOS[id]) RETRATOS[id](fig, fondo, s);
     else marcador(fig, fam, M); // carta nueva sin retrato
     contorno(fig, CONTORNO);
     pegar(fondo, fig, 0, 0);
+    return fondo;
+}
+// Dibujo del dueño encima del fondo de la familia: lo vacío deja ver el fondo
+function retratoDibujado(px, fam, s) {
+    const fondo = lienzo(40, 26);
+    FONDOS[fam](fondo, s);
+    px.forEach((c, i) => { if (c) fondo.px(i % 40, Math.floor(i / 40), hexDe(c)); });
+    return fondo;
+}
+// Carta completa a partir de su familia y un retrato de 40×26 ya hecho
+function componer(fam, hechizo, s, retrato) {
+    const M = marcoDe(fam), L = lienzo(ANCHO, ALTO);
+    marco(L, M, s);
+    hundido(L, ZONAS.nombre, PLACA, M.sombra, M.claro, s);
+    hundido(L, ZONAS.retrato, '#000000', M.sombra, M.claro, s);
     // viñeta suave en las esquinas del retrato
-    for (const [x, y] of [[0, 0], [1, 0], [0, 1], [39, 0], [38, 0], [39, 1], [0, 25], [1, 25], [0, 24], [39, 25], [38, 25], [39, 24]]) fondo.px(x, y, '#000000', 0.35);
-    pegar(L, fondo, ZONAS.retrato[0] + 1, ZONAS.retrato[1] + 1);
+    for (const [x, y] of [[0, 0], [1, 0], [0, 1], [39, 0], [38, 0], [39, 1], [0, 25], [1, 25], [0, 24], [39, 25], [38, 25], [39, 24]]) retrato.px(x, y, '#000000', 0.35);
+    pegar(L, retrato, ZONAS.retrato[0] + 1, ZONAS.retrato[1] + 1);
     cinta(L, M, fam);
-    if (d.tipo === 'hechizo') hundido(L, ZONAS.textoHechizo, PERGAMINO, ...PERGAMINO_BORDE, s);
+    if (hechizo) hundido(L, ZONAS.textoHechizo, PERGAMINO, ...PERGAMINO_BORDE, s);
     else {
         hundido(L, ZONAS.texto, PERGAMINO, ...PERGAMINO_BORDE, s);
         hundido(L, ZONAS.atk, PLACA, M.sombra, M.claro, s);
@@ -1165,9 +1209,44 @@ export function dibujarCarta(id) {
     }
     return L;
 }
+export function dibujarCarta(id) {
+    const d = CARTAS[id];
+    if (!d) return null;
+    const fam = familiaDe(id), s = semillaDe(id);
+    const propio = arte.retratos.get(id);
+    return componer(fam, d.tipo === 'hechizo', s, propio ? retratoDibujado(propio, fam, s) : retratoCodigo(id, fam, marcoDe(fam), s));
+}
+// Estudio: el retrato que dibuja hoy el código (40×26, sin viñeta), para «partir del dibujo actual»
+export function retratoDeCodigo(id) {
+    if (!CARTAS[id]) return null;
+    const fam = familiaDe(id);
+    return pixelesDe(retratoCodigo(id, fam, marcoDe(fam), semillaDe(id)));
+}
+// Estudio (cartas nuevas, borradores): la carta con el marco de su plantilla y el boceto del dueño (o la insignia)
+// plantilla: monstruo | mito | amigo | animal | hechizo; boceto: arreglo de 40×26 colores o null
+export function dibujarPlantilla(plantilla, boceto = null, semilla = plantilla) {
+    if (!MARCOS[plantilla]) return null;
+    const s = semillaDe(semilla), M = marcoDe(plantilla);
+    const retrato = boceto ? retratoDibujado(boceto, plantilla, s) : retratoCodigo(null, plantilla, M, s);
+    return componer(plantilla, plantilla === 'hechizo', s, retrato);
+}
+// Lienzo -> arreglo de [r, g, b] o null (lo que usa mundo/datos/pixeles.js)
+export function pixelesDe(L) {
+    const px = new Array(L.w * L.h).fill(null);
+    for (let i = 0; i < px.length; i++) if (L.d[i * 4 + 3]) px[i] = [L.d[i * 4], L.d[i * 4 + 1], L.d[i * 4 + 2]];
+    return px;
+}
 
 // ---------- Reverso ----------
 export function dibujarReverso() {
+    if (!arte.reverso) return reversoCodigo();
+    const L = lienzo(ANCHO, ALTO);
+    arte.reverso.forEach((c, i) => { if (c) L.px(i % ANCHO, Math.floor(i / ANCHO), hexDe(c)); });
+    return L;
+}
+// Estudio: el reverso que dibuja hoy el código, para «partir del dibujo actual»
+export const reversoDeCodigo = () => pixelesDe(reversoCodigo());
+function reversoCodigo() {
     const L = lienzo(ANCHO, ALTO), s = 99;
     const M = { claro: '#8a8a8a', base: ['#4a4a4a', '#4a4a4a', '#454545', '#505050'], oscuro: '#2a2a2a', sombra: '#141414' };
     marco(L, M, s);
@@ -1199,7 +1278,6 @@ export function dibujarReverso() {
 }
 
 // ---------- Paso a imagen (con caché) ----------
-const imagenes = new Map();
 function aDataURL(L) {
     if (typeof document === 'undefined') return null;
     const c = document.createElement('canvas');

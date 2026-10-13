@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cartas-arte.schema.json",
+  "title": "Arte de las cartas del Duelo (mundo/datos/cartas-arte.json)",
+  "description": "retratos: por clave de carta (las de CARTAS en cartas-datos.js), un dibujo de 40×26 que va dentro de la zona retrato; lo vacío deja ver el fondo de la familia. reverso: dibujo de 50×76 de la carta entera. marcos: colores del marco por familia (base lleva sus motas sola). Lo que falte, o lo que tenga \"estado\": \"borrador\", usa el código (cartas-arte.js). Reglas de arte: mundo/supervivencia/CARTAS-ARTE.md.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "$ref": "comun.schema.json#/$defs/version"
+    },
+    "nota": {
+      "$ref": "comun.schema.json#/$defs/nota"
+    },
+    "retratos": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "comun.schema.json#/$defs/dibujo"
+      }
+    },
+    "reverso": {
+      "$ref": "comun.schema.json#/$defs/dibujo"
+    },
+    "marcos": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "monstruo",
+          "mito",
+          "amigo",
+          "animal",
+          "hechizo"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "nota": {
+            "$ref": "comun.schema.json#/$defs/nota"
+          },
+          "claro": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "base": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "oscuro": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "sombra": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "cinta": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false
+}

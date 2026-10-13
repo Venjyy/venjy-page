@@ -31,6 +31,18 @@
       "required": ["es", "en"],
       "additionalProperties": false
     },
+    "dibujo": {
+      "description": "Dibujo de píxeles (pestaña Píxeles del Estudio; lo lee mundo/datos/pixeles.js). paleta: colores #rrggbb; filas: una cadena por línea, cada carácter es el índice del color en 0-9a-zA-Z ('.' = vacío). Con más de 62 colores cada píxel usa dos caracteres ('..' = vacío). Medidas: ícono 16×16, retrato de carta 40×26, reverso 50×76 (validar revisa filas y ancho). estado «borrador»: el juego no lo usa todavía.",
+      "type": "object",
+      "properties": {
+        "estado": { "enum": ["borrador", "hecho"] },
+        "nota": { "$ref": "#/$defs/nota" },
+        "paleta": { "type": "array", "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }, "maxItems": 3844 },
+        "filas": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-zA-Z.]+$" }, "minItems": 1, "maxItems": 128 }
+      },
+      "required": ["paleta", "filas"],
+      "additionalProperties": false
+    },
     "radianes": {
       "description": "Ángulo de hueso en radianes, con los signos de .claude/skills/animaciones-minecraft/referencia/rig.md.",
       "type": "number",

@@ -40,6 +40,15 @@ async function aplicar(nombre, datos) {
     } else if (nombre === 'objetos-mano') {
         const m = await import('../mundo/supervivencia/objetos-mano-datos.js');
         m.aplicarDatosVivos(datos); // mano.js y pose-jugador.js se reacomodan solos al notar la versión nueva
+    } else if (nombre === 'iconos') {
+        // iconos.js repinta los íconos ya entregados y el atlas; la mano rehace la malla del objeto que llevas
+        const m = await import('../mundo/supervivencia/iconos.js');
+        m.aplicarIconos(datos);
+    } else if (nombre === 'cartas-arte') {
+        const m = await import('../mundo/supervivencia/cartas-arte.js');
+        m.aplicarArte(datos);
+        const v = window.__venjy;
+        if (v && v.mesaCartas) v.mesaCartas.refrescarArte();
     } else aplicarDatosVivos(nombre, datos);
 }
 const canal = new BroadcastChannel(CANAL);

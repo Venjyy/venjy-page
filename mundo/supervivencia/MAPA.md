@@ -24,7 +24,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `recetas.js` (171) | Recetas con y sin forma, fundición. `RECETAS:16` `buscarReceta:122` `FUNDICION:152` |
 | `ui-inventario.js` (494) | Ventanas: inventario, mesa 3×3, horno, cofre. `crearVentanas:22` |
 | `hud.js` (169) | Barra rápida, corazones, hambre, mensajes. `crearHUD:39` |
-| `iconos.js` (477) | Íconos 16×16 y cubos isométricos. `crearAtlasObjetos:328` `icono:379` |
+| `iconos.js` (534) | Íconos 16×16 y cubos isométricos; el dibujo de `mundo/datos/iconos.json` manda sobre `PINTORES`. `aplicarIconos:395` (repinta lo entregado) `crearAtlasObjetos:412` `icono:471` `pixelesDeCodigo` |
 | `minado.js` (437) | Romper, poner y usar bloques; beber leche (`terminarComer`). `crearMinado:53` |
 | `contenedores.js` (164) | Cofres, barriles y hornos por posición. `crearContenedores:15` |
 | `botin.js` (30) | Tablas de botín por lugar. `botinDe:21` |
@@ -121,6 +121,8 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | `mundo/datos/*.json` | Contenido nuevo: `ui-layout`, `textos`, `dialogos`, `posiciones` (los lee el juego), `escenas` (lo lee `escena-amistad.js`, fase 5) y `poses` (lo lee `mundo/datos/gestos.js`, fase 6; `main.js` lo pide); `indice.json` dice quién lee qué |
 | `mundo/datos/escenas.js` (94) | Fase 5, sin DOM: `animacionDeDatos` (escena `amistad` → fila de `ANIMACIONES`), `guionDeDatos` (escena `guion` → guion de ejecución, `d` = `durLinea(texto)` si falta) y `reglasEscenas` (las reglas que el esquema no expresa; las usa `cli.mjs validar` y la prueba) |
 | `mundo/datos/gestos.js` (177) | Fase 6, sin DOM: `evaluarGesto` (canales de un gesto de `poses.json` en un objeto reutilizado), `funcionGesto` (con la firma de `GESTOS` o `GESTOS_AMISTAD`), `registrarGestos` + `aplicarPoses` (reemplaza por nombre en esas tablas; nuevos y poses fijas a `GESTOS`; con otros datos todo vuelve a su código), `gestosDeDatos`, `reglasPoses` (las usa `cli.mjs validar`) |
+| `mundo/datos/pixeles.js` (85) | Pestaña Píxeles, sin DOM: formato de los dibujos (`paleta` + `filas`), `codificar`, `decodificar`, `revisarDibujo`, `listoParaJuego`, `MEDIDAS` (ícono 16×16, retrato 40×26, carta 50×76) |
+| `estudio/pixeles.js` (541) | Pestaña Píxeles: editor de íconos (`iconos.json`), retratos, reverso y marcos (`cartas-arte.json`) y objetos y cartas nuevos (`borradores.json`). `montarPixeles` |
 | `mundo/datos/posiciones.js` (84) | Fase 4, sin DOM: `resolverAncla` (lugares, `escenario`, `faro`), `puntoAMundo` y `mundoAPunto` (la inversa que usa el gizmo), `GIRO_CALCULADO` |
 | `estudio/servidor.mjs` (249) | `node estudio/servidor.mjs [--lan] [--log]`: estáticos con ETag, `PUT /api/datos/<nombre>` y `GET /api/eventos` (SSE: `cambio <nombre>`). `crearServidor:85` `iniciar:232` |
 | `estudio/formato.mjs` (39) | `formatear(obj)`: el formato estable de los JSON |

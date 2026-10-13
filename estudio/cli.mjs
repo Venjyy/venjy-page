@@ -2,6 +2,7 @@
 // VENJY · Estudio · CLI para el agente (estudio/DISENO.md §7)
 //   node estudio/cli.mjs resumen [archivo|js:fuente] [clave] [--completo] [--idioma es|en|ambos] [--json]
 //   node estudio/cli.mjs resumen dialogos [persona[.tema]] [--md [--escribir]]   (--md: tablas de mundo/DIALOGOS.md)
+//   node estudio/cli.mjs resumen borradores [objetos|cartas|clave] [--dibujo]   (objetos y cartas nuevos del dueño, pestaña Píxeles)
 //   node estudio/cli.mjs validar [archivo...] [--contra HEAD] [--arreglar] [--permitir-cambios] [--json]
 //   node estudio/cli.mjs glifos     (lee font/pixelcraft.ttf y guarda estudio/glifos.json)
 //   node estudio/cli.mjs capturar layout|pose|gesto|escena <nombre> [--tiempos a,b] [--hoja] [--medir js] [--salida dir]   (estudio/capturar.mjs)
@@ -18,6 +19,7 @@ import { avisosDeTexto, esPar } from './avisos-textos.js';
 import { leerGlifos, tablaDeRangos } from './glifos.mjs';
 import { reglasEscenas } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
+import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATOS = path.join(RAIZ, 'mundo', 'datos');
@@ -94,6 +96,16 @@ const RESUMEN_JSON = {
         const e = Object.values(d.escenas || {});
         const g = e.filter(x => x.tipo === 'guion').length;
         return `${e.length} escenas (${e.length - g} de amistad, ${g} de guion)`;
+    },
+    iconos: d => {
+        const v = Object.values(d.iconos || {});
+        return `${v.length} íconos dibujados (${v.filter(x => x.estado === 'borrador').length} en borrador)`;
+    },
+    'cartas-arte': d => `${Object.keys(d.retratos || {}).length} retratos, reverso ${d.reverso ? 'propio' : 'del código'}, marcos de ${Object.keys(d.marcos || {}).length} familias`,
+    borradores: d => {
+        const o = Object.values(d.objetos || {}), c = Object.values(d.cartas || {});
+        const p = [...o, ...c].filter(x => x.estado === 'borrador').length;
+        return `${o.length} objetos y ${c.length} cartas nuevos (${p} por implementar)`;
     }
 };
 
@@ -268,7 +280,54 @@ function filasEscenas(d, filtro, op) {
     return filas;
 }
 
-const FILAS_JSON = { 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
+// ---------- Píxeles (iconos, cartas-arte, borradores) ----------
+const colores = d => (d ? `${d.paleta.length} colores` : '');
+// Filas del dibujo, para --dibujo (el agente las lee o las copia tal cual)
+const filasDibujo = (d, op) => (op.dibujo && d ? [{ clave: '', texto: `paleta ${d.paleta.map((c, i) => `${i < 62 ? '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'[i] : i}=${c}`).join(' ')}` }, ...d.filas.map(f => ({ clave: '', texto: f }))] : []);
+function filasIconos(d, filtro, op) {
+    const filas = [];
+    for (const [k, dib] of Object.entries(d.iconos || {})) {
+        if (filtro && !k.startsWith(filtro)) continue;
+        filas.push({ clave: k, texto: `${dib.estado || 'listo'} · ${colores(dib)}` }, ...filasDibujo(dib, op));
+    }
+    return filas;
+}
+function filasCartasArte(d, filtro, op) {
+    const filas = [];
+    for (const [k, dib] of Object.entries(d.retratos || {})) {
+        if (filtro && !k.startsWith(filtro)) continue;
+        filas.push({ clave: k, texto: `retrato ${dib.estado || 'listo'} · ${colores(dib)}` }, ...filasDibujo(dib, op));
+    }
+    if (d.reverso && (!filtro || 'reverso'.startsWith(filtro))) filas.push({ clave: 'reverso', texto: `${d.reverso.estado || 'listo'} · ${colores(d.reverso)}` }, ...filasDibujo(d.reverso, op));
+    for (const [fam, m] of Object.entries(d.marcos || {})) if (!filtro || fam.startsWith(filtro)) filas.push({ clave: `marco.${fam}`, texto: Object.entries(m).map(([k, v]) => `${k} ${v}`).join(' · ') });
+    return filas;
+}
+// Una fila por objeto o carta nuevos con todo lo que llenó el dueño (filtro: objetos, cartas o el comienzo de una clave)
+function filasBorradores(d, filtro, op) {
+    const filas = [];
+    const lado = tx => (tx ? `${tx.es}${tx.en ? ' / ' + tx.en : ' / (falta inglés)'}` : '');
+    for (const [grupo, lista] of [['objetos', d.objetos], ['cartas', d.cartas]]) {
+        for (const [k, b] of Object.entries(lista || {})) {
+            if (filtro && filtro !== grupo && !k.startsWith(filtro)) continue;
+            const partes = [`[${b.estado}]`, lado(b.nombre)];
+            if (grupo === 'objetos') {
+                if (b.que) partes.push(`qué hace: ${b.que}`);
+                if (b.receta) partes.push(`receta: ${b.receta}`);
+                partes.push(b.dibujo ? `dibujo 16×16 (${colores(b.dibujo)})` : 'sin dibujo');
+            } else {
+                partes.push(`plantilla ${b.plantilla}` + (b.plantilla === 'hechizo' ? '' : ` ATK ${b.atk ?? '?'} DEF ${b.def ?? '?'}`));
+                partes.push(b.efecto ? `efecto: ${lado(b.efecto)}` : 'sin efecto');
+                partes.push(b.boceto ? `boceto 40×26 (${colores(b.boceto)})` : 'sin boceto');
+            }
+            if (b.notas) partes.push(`notas: ${b.notas}`);
+            if (b.fecha) partes.push(b.fecha);
+            filas.push({ clave: `${grupo === 'objetos' ? 'objeto' : 'carta'}.${k}`, texto: partes.join(' · ') }, ...filasDibujo(b.dibujo || b.boceto, op));
+        }
+    }
+    return filas;
+}
+
+const FILAS_JSON = { iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {
@@ -324,7 +383,7 @@ async function resumen(pos, op) {
     } else {
         salir([`Desconocido: ${objetivo}. Archivos: ${Object.keys(indice.archivos).join(', ')} · fuentes: ${Object.keys(FUENTES).map(k => 'js:' + k).join(', ')}`], op, 1);
     }
-    if (!filas.length) salir([`Sin resultados para ${objetivo}${filtro ? ' ' + filtro : ''}.`], op, 1);
+    if (!filas.length) salir([`Sin resultados para ${objetivo}${filtro ? ' ' + filtro : ''}.`], op, objetivo === 'borradores' && !filtro ? 0 : 1);
     const ancho = Math.min(22, Math.max(...filas.map(f => f.clave.length)) + 2);
     salir(filas.map(f => ({ clave: f.clave, texto: rellenar(f.clave, ancho) + cortar(f.texto, op) + (f.extra ? '  ' + f.extra : '') })), op);
 }
@@ -348,6 +407,13 @@ function recorrer(v, ruta, alHallar, glifos) {
 }
 
 // Nombres que acepta /dar: claves de O y de B en minúsculas (sin agua ni lava ni el aire)
+// Claves de objetos (en minúscula) y de cartas, para revisar iconos, cartas-arte y borradores
+async function refsPixeles() {
+    const { O } = await import('../mundo/supervivencia/objetos.js');
+    const { CARTAS } = await import('../mundo/supervivencia/cartas-datos.js');
+    return { objetos: new Set(Object.keys(O).map(k => k.toLowerCase())), cartas: new Set(Object.keys(CARTAS)) };
+}
+
 async function nombresDeObjetos() {
     const { O } = await import('../mundo/supervivencia/objetos.js');
     const { B } = await import('../mundo/texturas.js');
@@ -390,8 +456,34 @@ async function nombresDeEscenasImport() {
 }
 
 // Reglas de contenido que el esquema no expresa
-function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas) {
+function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix) {
     const mal = texto => problemas.push({ archivo: arch, tipo: 'error', texto });
+    const aviso = texto => problemas.push({ archivo: arch, tipo: 'aviso', texto });
+    const dibujo = (ruta, d, [w, h]) => { if (d) for (const e of revisarDibujo(d, w, h)) mal(`${ruta}: ${e} (${w}×${h})`); };
+    if (nombre === 'iconos' && pix) {
+        for (const [k, d] of Object.entries(datos.iconos || {})) {
+            dibujo(`$.iconos.${k}`, d, MEDIDAS.icono);
+            if (!pix.objetos.has(k)) aviso(`$.iconos.${k}: no hay objeto con esa clave (OBJETOS de objetos.js): el juego no lo usa`);
+        }
+    }
+    if (nombre === 'cartas-arte' && pix) {
+        for (const [k, d] of Object.entries(datos.retratos || {})) {
+            dibujo(`$.retratos.${k}`, d, MEDIDAS.retrato);
+            if (!pix.cartas.has(k)) aviso(`$.retratos.${k}: no hay carta con esa clave (CARTAS de cartas-datos.js): el juego no lo usa`);
+        }
+        dibujo('$.reverso', datos.reverso, MEDIDAS.carta);
+    }
+    if (nombre === 'borradores' && pix) {
+        for (const [k, b] of Object.entries(datos.objetos || {})) {
+            dibujo(`$.objetos.${k}.dibujo`, b.dibujo, MEDIDAS.icono);
+            if (b.estado === 'borrador' && pix.objetos.has(k)) aviso(`$.objetos.${k}: ya hay un objeto con esa clave en el juego (¿marcarlo hecho?)`);
+        }
+        for (const [k, b] of Object.entries(datos.cartas || {})) {
+            dibujo(`$.cartas.${k}.boceto`, b.boceto, MEDIDAS.retrato);
+            if (b.estado === 'borrador' && pix.cartas.has(k)) aviso(`$.cartas.${k}: ya hay una carta con esa clave en el juego (¿marcarla hecha?)`);
+            if (b.plantilla === 'hechizo' && (b.atk !== undefined || b.def !== undefined)) aviso(`$.cartas.${k}: un hechizo no lleva ATK ni DEF`);
+        }
+    }
     if (nombre === 'escenas' && escenas) {
         for (const r of reglasEscenas(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
@@ -462,6 +554,7 @@ async function validarCmd(pos, op) {
     const objetos = nombres.includes('tienda') ? await nombresDeObjetos() : null;
     const refs = nombres.includes('posiciones') ? await referenciasDePosiciones() : null;
     const escenas = nombres.includes('escenas') || nombres.includes('poses') ? await nombresDeEscenas() : null;
+    const pix = nombres.some(n => ['iconos', 'cartas-arte', 'borradores'].includes(n)) ? await refsPixeles() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
 
     for (const nombre of nombres) {
@@ -484,7 +577,7 @@ async function validarCmd(pos, op) {
             if (aviso) problemas.push({ archivo: arch, tipo: nivel === 'aviso' ? 'aviso' : 'error', texto: `${ruta}: ${aviso}` });
             else if (EMOJI.test(valor)) problemas.push({ archivo: arch, tipo: 'error', texto: `${ruta}: emoji en «${valor}» (los íconos se dibujan, no se escriben)` });
         }, rangos);
-        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas);
+        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix);
         if (op.contra) {
             const viejo = enHEAD(op.contra, nombre);
             if (viejo) {

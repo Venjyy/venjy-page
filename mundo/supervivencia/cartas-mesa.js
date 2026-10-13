@@ -15,7 +15,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { CARTAS, FAMILIAS, NIVELES, TXT_CARTAS } from './cartas-datos.js';
 import { partidaNivel, aplicar, jugadaIA, atkDe, defDe, esLegal } from './cartas.js';
-import { dibujarCarta, dibujarReverso, ZONAS, ANCHO, ALTO } from './cartas-arte.js';
+import { dibujarCarta, dibujarReverso, versionDeArte, ZONAS, ANCHO, ALTO } from './cartas-arte.js';
 import { MESA, ALTO_CARTA, marcoMesa, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto } from './cartas-mesa-modelo.js';
 import { fusionar } from '../datos/cargador.js';
 import { crearAnimador } from './cartas-mesa-anim.js';
@@ -84,7 +84,11 @@ export function crearMesaCartas(ctx) {
         const alto = ls.length * px * 1.1, y0 = (y + h / 2) * K - alto / 2;
         ls.forEach((l, i) => g.fillText(l, (x + 1.5) * K, y0 + i * px * 1.1));
     }
+    // cartas-arte.json cambió (Estudio, pestaña Píxeles): las texturas se vuelven a pintar
+    let verArte = versionDeArte();
+    function alDia() { if (verArte !== versionDeArte()) { verArte = versionDeArte(); vaciarTexturas(); texReverso = null; } }
     function texturaCarta(id, atk, def) {
+        alDia();
         const d = CARTAS[id], clave = `${id}|${idioma}|${atk}|${def}`;
         if (texturas.has(clave)) return texturas.get(clave);
         const c = document.createElement('canvas'); c.width = ANCHO * K; c.height = ALTO * K;
@@ -104,7 +108,7 @@ export function crearMesaCartas(ctx) {
         return tx;
     }
     let texReverso = null;
-    const reverso = () => texReverso || (texReverso = aTextura(aLienzo(dibujarReverso())));
+    const reverso = () => { alDia(); return texReverso || (texReverso = aTextura(aLienzo(dibujarReverso()))); };
     function vaciarTexturas() { for (const tx of texturas.values()) tx.dispose(); texturas.clear(); }
 
     // ---------- Mesa en el mundo ----------
@@ -530,6 +534,8 @@ export function crearMesaCartas(ctx) {
         setIdioma(l) { idioma = l === 'en' ? 'en' : 'es'; if (abierto) { vaciarTexturas(); refrescarMesa(); } },
         // Estudio (más adelante, un JSON en mundo/datos/): medidas de la mesa y de las cámaras sin recargar
         aplicarDatos(datos) { anim.saltar(); L = fusionar(MESA, datos || null); if (abierto) { colocar(); refrescarMesa(); } },
+        // Estudio: el arte de las cartas cambió (cartas-arte.json); la mesa abierta se repinta
+        refrescarArte() { alDia(); if (abierto) { colocar(); refrescarMesa(); } },
         // Estudio: vuelve a animar la última jugada (si no hubo otra después), para ajustar tiempos y colores
         repetirAnimacion() { if (!abierto || !e || !ultimos) return false; anim.iniciar(ultimos); return true; },
         get animando() { return anim.ocupado; },
