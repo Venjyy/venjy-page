@@ -5,7 +5,7 @@
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
 import { TIPO, B } from './texturas.js';
-import { ALTO, CHUNK, NIVEL_AGUA } from './voxeles.js';
+import { ALTO, CHUNK, NIVEL_AGUA, ALTURA_CAMA } from './voxeles.js';
 
 const ANCHO = 0.6, ALTURA = 1.8, OJOS = 1.62;
 const GRAVEDAD = 32, SALTO = 9;
@@ -125,13 +125,30 @@ export class Jugador {
         return this.mundo.chunks.has(Math.floor(x / CHUNK) + ',' + Math.floor(z / CHUNK));
     }
 
+    // ¿Lo único sólido bajo la caja del jugador en la capa y es una cama?
+    soloCamasEn(px, y, pz) {
+        const r = ANCHO / 2;
+        let cama = false;
+        for (let z = Math.floor(pz - r); z <= Math.floor(pz + r); z++) {
+            for (let x = Math.floor(px - r); x <= Math.floor(px + r); x++) {
+                if (!this.solido(x, y, z)) continue;
+                if (this.mundo.bloque(x, y, z) !== B.CAMA) return false;
+                cama = true;
+            }
+        }
+        return cama;
+    }
+
     // ¿Colisiona la caja del jugador en la posición dada?
     choca(px, py, pz) {
         const r = ANCHO / 2;
         for (let y = Math.floor(py); y <= Math.floor(py + ALTURA - 0.001); y++) {
             for (let z = Math.floor(pz - r); z <= Math.floor(pz + r); z++) {
                 for (let x = Math.floor(px - r); x <= Math.floor(px + r); x++) {
-                    if (this.solido(x, y, z)) return true;
+                    if (!this.solido(x, y, z)) continue;
+                    // La cama mide 9/16: con los pies por encima de su tapa no estorba (se camina y se está de pie sobre ella)
+                    if (y === Math.floor(py) && py - y >= ALTURA_CAMA && this.mundo.bloque(x, y, z) === B.CAMA) continue;
+                    return true;
                 }
             }
         }
@@ -152,6 +169,7 @@ export class Jugador {
             if (dy < 0) {
                 this.enSuelo = true;
                 p.y = Math.floor(p.y + dy) + 1; // apoyar sobre el bloque
+                if (this.soloCamasEn(p.x, p.y - 1, p.z)) p.y -= 1 - ALTURA_CAMA; // ...o sobre la tapa de la cama (9/16)
                 if (!antes && this.yMaxAire !== null && this.alAterrizar) this.alAterrizar(this.yMaxAire - p.y);
                 this.yMaxAire = null;
             } else p.y = Math.floor(p.y + ALTURA + dy) - ALTURA - 0.001;

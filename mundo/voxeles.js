@@ -1024,6 +1024,9 @@ const CARAS = [
     { d: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]], t: [0, 1], sombra: 0.8, lado: true }
 ];
 // Texturas: u según la cara
+// Alto del bloque cama (como en Minecraft: 9/16). jugador.js lo usa para pararse sobre ella.
+export const ALTURA_CAMA = 9 / 16;
+
 const UV_U = [c => 1 - c[2], c => c[2], c => c[0], c => c[0], c => c[0], c => 1 - c[0]];
 const UV_V = [c => c[1], c => c[1], c => 1 - c[2], c => c[2], c => c[1], c => c[1]];
 
@@ -1123,7 +1126,14 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
     const luz = relleno.luz;
     const solido = new Buffer(), agua = new Buffer();
     const ox = cx * CHUNK, oz = cz * CHUNK;
-    const at = (x, y, z) => (y < 0 ? 1 : y >= ALTO ? 0 : TIPO[vox[(y * VENT + z) * VENT + x]]);
+    // La cama es un bloque de 9/16 (ALTURA_CAMA): para los vecinos cuenta como hoja (tipo 2), no como sólido, así
+    // sus caras no se esconden detrás de ella y no queda un hueco en el muro de al lado.
+    const at = (x, y, z) => {
+        if (y < 0) return 1;
+        if (y >= ALTO) return 0;
+        const id = vox[(y * VENT + z) * VENT + x];
+        return id === B.CAMA ? 2 : TIPO[id];
+    };
     const ocluye = (x, y, z) => { const t = at(x, y, z); return t === 1 || t === 2 ? 1 : 0; };
     // Luz empacada de una celda transparente; -1 si es opaca (no aporta al promedio)
     const luzEn = (x, y, z) => {
@@ -1197,6 +1207,7 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
                         let alturaAgua = 1;
                         if (tipo === 3) alturaAgua = 0.88;
                         else if (tipo === 5 && at(x, y + 1, z) !== 5) alturaAgua = 0.88;
+                        else if (id === B.CAMA) alturaAgua = ALTURA_CAMA;
                         const px = ox + x - 1 + co[0], py = y + (co[1] ? alturaAgua : 0), pz = oz + z - 1 + co[2];
                         buf.p.push(px, py, pz);
                         const [u, v] = uvTile(tile, UV_U[f](co), UV_V[f](co));
