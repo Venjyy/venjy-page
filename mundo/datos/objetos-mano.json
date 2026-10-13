@@ -1,0 +1,7 @@
+{
+  "$schema": "../../estudio/esquemas/objetos-mano.schema.json",
+  "version": 1,
+  "nota": "Vacío = todo como en el código. Se edita en /estudio/ → pestaña Objetos (pos en bloques, rot en grados).",
+  "tipos": {},
+  "objetos": {}
+}

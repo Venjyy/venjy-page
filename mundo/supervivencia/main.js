@@ -43,6 +43,7 @@ import { crearEnemigos } from './enemigos.js';
 import { crearCombate } from './combate.js';
 import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
+import { avisarLugar } from '../descubrimiento.js';
 import { crearFacilidades } from './facilidades.js';
 import { crearCartelesCamino } from './caminos-carteles.js';
 import { crearCuaderno } from './cuaderno.js';
@@ -114,7 +115,7 @@ const TXT = {
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
         noDormir: 'Solo puedes dormir de noche', monstruos: 'No puedes dormir ahora: hay monstruos cerca', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).es, sinAlmacen: 'Este navegador no permite guardar partidas (modo privado).',
-        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando',
+        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando', idiomaCoop: 'El idioma se cambia fuera de la partida en grupo', idiomaOtraVez: 'Pulsa L otra vez para pasar a English: se guarda y se recarga el mundo', idiomaPregunta: '¿Cambiar el idioma? Se guarda la partida y el mundo se recarga (unos segundos).',
         hospedar: 'Hospedar', conectando: 'Conectando…', creandoSala: 'Abriendo la sala…', bajandoMundo: 'Bajando el mundo del anfitrión…',
         faltaNombre: 'Escribe tu nombre.', faltaCodigo: 'Escribe el código de la sala (6 letras o números).',
         errores: { 'sin-anfitrion': 'No hay nadie hospedando esa sala.', llena: `La sala está llena (máximo ${MAX_COOP}).`, 'llena-respaldo': `Tu red no permite conexión directa y la sala ya tiene ${MAX_RESPALDO} o más jugadores.`, foto: 'El anfitrión no mandó el mundo. Prueba de nuevo.', codigo: 'No se pudo abrir la sala. Prueba de nuevo.', 'sin-config': 'El modo online no está configurado.' },
@@ -149,7 +150,7 @@ const TXT = {
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
         noDormir: 'You can only sleep at night', monstruos: 'You may not rest now; there are monsters nearby', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).en, sinAlmacen: "This browser can't save games (private mode).",
-        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing',
+        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing', idiomaCoop: 'Change the language outside the group game', idiomaOtraVez: 'Press L again to switch to Español: the world is saved and reloaded', idiomaPregunta: 'Change the language? The game is saved and the world reloads (a few seconds).',
         hospedar: 'Host', conectando: 'Connecting…', creandoSala: 'Opening the room…', bajandoMundo: "Downloading the host's world…",
         faltaNombre: 'Enter your name.', faltaCodigo: 'Enter the room code (6 letters or numbers).',
         errores: { 'sin-anfitrion': 'Nobody is hosting that room.', llena: `The room is full (max ${MAX_COOP}).`, 'llena-respaldo': `Your network doesn't allow a direct connection and the room already has ${MAX_RESPALDO} or more players.`, foto: "The host didn't send the world. Try again.", codigo: "Couldn't open the room. Try again.", 'sin-config': 'Online mode is not configured.' },
@@ -530,11 +531,6 @@ async function arrancar(guardado, cx = null) {
     const dia = crearDia({ cielo });
     dia.cargar(guardado.dia);
     let jugado = guardado.jugado || 0;
-    // Lugares descubiertos (7f-3): se recuerdan por mundo
-    const CLAVE_DESCUBIERTOS = `venjy-descubiertos-${guardado.id}`;
-    let descubiertos = new Set();
-    try { descubiertos = new Set(JSON.parse(localStorage.getItem(CLAVE_DESCUBIERTOS)) || []); } catch (e) { /* sin almacenamiento */ }
-
     // Ventanas: al abrir se libera el puntero sin mostrar la pausa; al cerrar se vuelve a jugar
     let uiAbierta = false;
     const soltarDelante = (id, n, d, marca = null) => {
@@ -652,6 +648,13 @@ async function arrancar(guardado, cx = null) {
         alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
     });
     misiones.cargar(guardado.misiones);
+    // Lugares descubiertos (7f-3): viven en la partida (misiones.estado.lugares). Los de antes estaban
+    // en localStorage aparte; se pasan una vez a la partida.
+    try {
+        const viejos = JSON.parse(localStorage.getItem(`venjy-descubiertos-${guardado.id}`));
+        if (Array.isArray(viejos)) for (const c of viejos) misiones.estado.lugares.add(c);
+        localStorage.removeItem(`venjy-descubiertos-${guardado.id}`);
+    } catch (e) { /* sin almacenamiento */ }
     // Facilidades de misión (7d-2): huerto, horno y grava puestos, pistas, monstruo de la noche y pesca. El invitado no edita el mundo del anfitrión
     facilidades = crearFacilidades({ mundo, terreno, dy: DY, jugador, dia, enemigos, agricultura, misiones, idioma, colocar: !invitado });
     facilidades.cargar();
@@ -1296,6 +1299,8 @@ async function arrancar(guardado, cx = null) {
         }
         // G reparte según el contexto: acariciar a una gata si está cerca; si no, sentarse en el iglú
         if (e.code === 'KeyG' && !e.repeat && (caricias.intentar() || ronda.intentar())) e.preventDefault();
+        // L cambia el idioma jugando o en la pausa (no mientras se escribe en un campo)
+        if (e.code === 'KeyL' && !e.repeat && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '') && !(consola && consola.abierta) && $('inicio').hidden) { e.preventDefault(); idiomaConL(); }
         if ((e.code === 'KeyT' || e.code === 'Slash') && !e.repeat && jugador.activo && !vida.muerto) { e.preventDefault(); consola.abrir(e.code === 'Slash' ? '/' : ''); }
     });
     lienzo.addEventListener('click', () => { if (!jugador.activo && !uiAbierta && !vida.muerto && $('inicio').hidden) entrar(); });
@@ -1365,13 +1370,31 @@ async function arrancar(guardado, cx = null) {
     $('aj-sonido').addEventListener('change', e => silenciarMundo(!e.target.checked));
     $('aj-musica').addEventListener('change', e => musica.encender(e.target.checked));
     // Idioma: el texto de la página se arma al cargar, así que al cambiar se guarda la elección y se recarga
+    // volviendo al mismo mundo (venjy-seguir). En la partida en grupo no: recargar cortaría la sala
+    let cambiandoIdioma = false;
     const cambiarIdioma = nuevo => {
-        if (nuevo === idioma) return;
-        try { localStorage.setItem('preferredLanguage', nuevo); } catch (e) { /* sin almacenamiento */ }
+        if (nuevo === idioma || cambiandoIdioma) return;
+        if (coop) { hud.mensaje(tx().idiomaCoop, 3); $('aj-idioma').checked = idioma === 'es'; $('aj-idioma-en').checked = idioma === 'en'; return; }
+        cambiandoIdioma = true;
+        try { localStorage.setItem('preferredLanguage', nuevo); sessionStorage.setItem('venjy-seguir', guardado.id); } catch (e) { /* sin almacenamiento */ }
         guardarYa().then(() => { const u = new URL(location.href); u.searchParams.delete('lang'); location.href = u.href; });
     };
-    $('aj-idioma').addEventListener('change', e => { if (e.target.checked) cambiarIdioma('es'); });
-    $('aj-idioma-en').addEventListener('change', e => { if (e.target.checked) cambiarIdioma('en'); });
+    // Antes de recargar se avisa: L pide una segunda pulsación (4 s) y los radios, confirmar
+    let idiomaPedido = 0;
+    const idiomaConL = () => {
+        if (coop) { cambiarIdioma(idioma === 'es' ? 'en' : 'es'); return; }
+        if (!jugador.activo) { idiomaConRadio(idioma === 'es' ? 'en' : 'es'); return; } // en la pausa la HUD no se ve: se confirma
+        if (performance.now() - idiomaPedido < 4000) { cambiarIdioma(idioma === 'es' ? 'en' : 'es'); return; }
+        idiomaPedido = performance.now();
+        hud.mensaje(tx().idiomaOtraVez, 4);
+    };
+    const idiomaConRadio = nuevo => {
+        if (nuevo === idioma) return;
+        if (coop || confirm(tx().idiomaPregunta)) cambiarIdioma(nuevo);
+        else { $('aj-idioma').checked = idioma === 'es'; $('aj-idioma-en').checked = idioma === 'en'; }
+    };
+    $('aj-idioma').addEventListener('change', e => { if (e.target.checked) idiomaConRadio('es'); });
+    $('aj-idioma-en').addEventListener('change', e => { if (e.target.checked) idiomaConRadio('en'); });
     $('aj-hora').addEventListener('change', e => { ajustes.hora = e.target.checked; guardarAjustes(); pintarHora(true); });
 
 
@@ -1546,11 +1569,10 @@ async function arrancar(guardado, cx = null) {
             // Lugares descubiertos (7f-3): aviso al pasar cerca de uno, revisado cada ~0,5 s
             const lugares = terreno.lugares || [];
             for (const l of lugares) {
-                if (descubiertos.has(l.clave) || Math.hypot(jugador.pos.x - l.x, jugador.pos.z - l.z) > l.radio) continue;
-                descubiertos.add(l.clave);
-                try { localStorage.setItem(CLAVE_DESCUBIERTOS, JSON.stringify([...descubiertos])); } catch (e) { /* sin almacenamiento */ }
-                const n = lugares.filter(q => descubiertos.has(q.clave)).length;
-                hud.mensaje(`${tx().descubierto}: ${l.nombre[idioma] || l.nombre.es} · ${n}/${lugares.length}`, 4);
+                if (misiones.estado.lugares.has(l.clave) || Math.hypot(jugador.pos.x - l.x, jugador.pos.z - l.z) > l.radio) continue;
+                misiones.estado.lugares.add(l.clave);
+                const n = lugares.filter(q => misiones.estado.lugares.has(q.clave)).length;
+                avisarLugar({ nombre: l.nombre[idioma] || l.nombre.es, n, total: lugares.length, idioma });
             }
             const fps = cuadros / acumulado;
             fpsEl.textContent = [rend.fps ? Math.round(fps) + ' FPS' : '', rend.ms ? cuadrosMs.mediana.toFixed(1) + ' ms' : ''].filter(Boolean).join(' · ');

@@ -17,6 +17,7 @@ import { crearAnimales } from './criaturas/animales.js';
 import { crearAmigos } from './criaturas/amigos.js';
 import { crearVenjys } from './criaturas/venjy.js';
 import { crearBrujula } from './brujula.js';
+import { avisarLugar } from './descubrimiento.js';
 import { iniciarOnline } from './online/online.js';
 import { cargarContenido } from './portafolio/contenido.js';
 import { crearPortafolio } from './portafolio/portafolio.js';
@@ -146,9 +147,8 @@ async function iniciar() {
     const amigos = crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, idioma });
     // Venjy en persona: saluda en el inicio y explica cada lugar del portafolio
     const venjys = crearVenjys(scene, { terreno, mundo, jugador, materiales, destinos: destinosZona, orientacion, idioma });
-    // L cambia el idioma de los paneles, carteles y textos de la página
-    document.addEventListener('keydown', e => {
-        if (e.code !== 'KeyL' || e.repeat || !jugador.activo) return;
+    // L (jugando o en la pausa) o el botón de la pausa cambian el idioma de los paneles, carteles y textos
+    const cambiarIdioma = () => {
         idioma = idioma === 'es' ? 'en' : 'es';
         try { localStorage.setItem('preferredLanguage', idioma); } catch (err) { /* sin almacenamiento */ }
         aplicarIdioma();
@@ -156,12 +156,17 @@ async function iniciar() {
         npcs.setIdioma(idioma);
         amigos.setIdioma(idioma);
         venjys.setIdioma(idioma);
+    };
+    document.addEventListener('keydown', e => {
+        if (e.code !== 'KeyL' || e.repeat || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '')) return;
+        cambiarIdioma();
     });
+    document.getElementById('cambiar-idioma').addEventListener('click', cambiarIdioma);
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     // Pistas en el minimapa y el mapa grande: dónde hay gente (puntos tenues, agrupados)
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
     const brujula = crearBrujula(hudEl, idioma);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma });
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma, alDescubrir: l => avisarLugar({ ...l, idioma }) });
     const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
     window.__venjy = { venjys, amigos, animales, npcs, portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 

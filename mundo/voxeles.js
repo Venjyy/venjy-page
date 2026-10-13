@@ -5,7 +5,7 @@
 // =========================================================
 import * as THREE from '../vendor/three.module.js';
 import { crearRuido } from './mundo-datos.js';
-import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION } from './texturas.js';
+import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION, TILE } from './texturas.js';
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
 import { actualizarLuz, campoChunk, ABORTAR } from './luz-incremental.js';
 import { llenarSubsuelo } from './supervivencia/subsuelo.js';
@@ -1024,6 +1024,9 @@ const CARAS = [
     { d: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]], t: [0, 1], sombra: 0.8, lado: true }
 ];
 // Texturas: u según la cara
+// Alto del bloque cama (como en Minecraft: 9/16). jugador.js lo usa para pararse sobre ella.
+export const ALTURA_CAMA = 9 / 16;
+
 const UV_U = [c => 1 - c[2], c => c[2], c => c[0], c => c[0], c => c[0], c => 1 - c[0]];
 const UV_V = [c => c[1], c => c[1], c => 1 - c[2], c => c[2], c => c[1], c => c[1]];
 
@@ -1112,6 +1115,56 @@ function mallarPanel(buf, id, def, x, y, z, ox, oz, at, propia) {
     }
 }
 
+// Cama (Minecraft): colchón de 3/16 a 9/16 con patas de madera en las esquinas. Dos camas juntas forman una
+// de dos bloques: la de más abajo en el eje (x o z) es la cabecera (con almohada), la otra el pie. El eje es
+// z salvo que solo haya vecina en x. `hay(dx, dz)`: ¿hay otra cama en ese lado?
+const PATA = 3 / 16, TAPA_CAMA = 3 / 16;
+function mallarCama(buf, def, x, y, z, ox, oz, hay, propia) {
+    const lc = (propia >> 4) / 15, lb = propia >= 0 ? (propia & 15) / 15 : 0;
+    const eje = hay(0, 1) || hay(0, -1) || !(hay(1, 0) || hay(-1, 0)) ? 'z' : 'x';
+    const mas = eje === 'z' ? hay(0, 1) : hay(1, 0), menos = eje === 'z' ? hay(0, -1) : hay(-1, 0);
+    const cabecera = mas || !menos; // pie: la vecina está en el lado de abajo
+    const tapa = cabecera ? def.top : TILE.cama_pie;
+    const tablones = def.fondo;
+    const bx = ox + x - 1, bz = oz + z - 1;
+    const caja = (x0, y0, z0, x1, y1, z1, lado, arriba, omitir) => {
+        for (let f = 0; f < 6; f++) {
+            if (omitir && omitir[f]) continue;
+            if (f === 3 && y0 === 0) continue; // la base de las patas apoya en el suelo
+            const cara = CARAS[f];
+            const base = buf.n;
+            const s = SOMBRA[f];
+            for (let k = 0; k < 4; k++) {
+                const co = cara.c[k];
+                const px = co[0] ? x1 : x0, py = co[1] ? y1 : y0, pz = co[2] ? z1 : z0;
+                buf.p.push(bx + px, y + py, bz + pz);
+                let u, v;
+                if (f === 2) { // tapa: la almohada queda en el extremo bajo del eje
+                    if (eje === 'z') { u = px; v = 1 - pz; } else { u = pz; v = 1 - px; }
+                } else if (f === 3) { u = px; v = pz; } else {
+                    u = f < 2 ? (f === 0 ? 1 - pz : pz) : (f === 4 ? px : 1 - px);
+                    v = py;
+                }
+                const [tu, tv] = uvTile(f === 2 ? arriba : lado, u, v);
+                buf.u.push(tu, tv);
+                buf.c.push(s, s, s);
+                buf.l.push(lc, lb);
+            }
+            buf.i.push(base, base + 1, base + 2, base, base + 2, base + 3);
+            buf.n += 4;
+        }
+    };
+    // colchón: se omite la cara que toca a la otra mitad (+x -x +y -y +z -z)
+    const omitir = [hay(1, 0), hay(-1, 0), false, false, hay(0, 1), hay(0, -1)];
+    caja(0, TAPA_CAMA, 0, 1, ALTURA_CAMA, 1, def.lado, tapa, omitir);
+    // patas en las cuatro esquinas (las del lado que toca a la otra mitad no se ponen)
+    for (const [cx, cz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        if ((cx === 1 && hay(1, 0)) || (cx === 0 && hay(-1, 0)) || (cz === 1 && hay(0, 1)) || (cz === 0 && hay(0, -1))) continue;
+        const x0 = cx ? 1 - PATA : 0, z0 = cz ? 1 - PATA : 0;
+        caja(x0, 0, z0, x0 + PATA, TAPA_CAMA, z0 + PATA, tablones, tablones, null);
+    }
+}
+
 // y0..y1: solo esas capas (una sección de 16 de alto al editar). Como las caras se emiten capa por
 // capa, `cortes` guarda dónde empieza cada sección en el índice (para ocultarla del chunk entero).
 export const SECCION = 16;
@@ -1123,15 +1176,36 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
     const luz = relleno.luz;
     const solido = new Buffer(), agua = new Buffer();
     const ox = cx * CHUNK, oz = cz * CHUNK;
-    const at = (x, y, z) => (y < 0 ? 1 : y >= ALTO ? 0 : TIPO[vox[(y * VENT + z) * VENT + x]]);
+    // La cama es un bloque de 9/16 (ALTURA_CAMA): para los vecinos cuenta como hoja (tipo 2), no como sólido, así
+    // sus caras no se esconden detrás de ella y no queda un hueco en el muro de al lado.
+    const at = (x, y, z) => {
+        if (y < 0) return 1;
+        if (y >= ALTO) return 0;
+        const id = vox[(y * VENT + z) * VENT + x];
+        return id === B.CAMA ? 2 : TIPO[id];
+    };
     const ocluye = (x, y, z) => { const t = at(x, y, z); return t === 1 || t === 2 ? 1 : 0; };
     // Luz empacada de una celda transparente; -1 si es opaca (no aporta al promedio)
-    const luzEn = (x, y, z) => {
+    const luzCruda = (x, y, z) => {
         if (y >= ALTO) return LUZ_CIELO_ABIERTO;
         if (y < 0) return -1;
         const i = (y * VENT + z) * VENT + x;
         if (TIPO[vox[i]] === 1) return -1;
         return luz ? luz[i] : LUZ_CIELO_ABIERTO;
+    };
+    // La cama es opaca para la luz, pero lo que la rodea (y ella misma) no tiene que quedar negro: toma la luz
+    // de la celda libre más clara de al lado o de arriba
+    const luzCama = (x, y, z) => {
+        let mejor = -1, valor = -1;
+        for (const [dx, dy, dz] of [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, -1, 0]]) {
+            const v = luzCruda(x + dx, y + dy, z + dz);
+            if (v >= 0 && (v >> 4) + (v & 15) > valor) { mejor = v; valor = (v >> 4) + (v & 15); }
+        }
+        return mejor;
+    };
+    const luzEn = (x, y, z) => {
+        if (y >= 0 && y < ALTO && vox[(y * VENT + z) * VENT + x] === B.CAMA) return luzCama(x, y, z);
+        return luzCruda(x, y, z);
     };
     // Suma de muestras para la luz suave de cada vértice
     let sumaCielo = 0, sumaBloque = 0, muestras = 0;
@@ -1176,6 +1250,11 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
                 }
                 if (tipo === 6 || tipo === 7) { // panel delgado: puerta o escalera de mano
                     mallarPanel(solido, id, def, x, y, z, ox, oz, at, luzEn(x, y, z));
+                    continue;
+                }
+                if (id === B.CAMA) { // cama: colchón con patas, almohada en la cabecera (mallarCama)
+                    const hay = (dx, dz) => vox[(y * VENT + z + dz) * VENT + x + dx] === B.CAMA;
+                    mallarCama(solido, def, x, y, z, ox, oz, hay, luzEn(x, y, z));
                     continue;
                 }
                 for (let f = 0; f < 6; f++) {

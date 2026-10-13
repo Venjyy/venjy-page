@@ -376,6 +376,11 @@ const PINTORES = {
         if (y >= 11) return ajustar([120, 84, 44], 0.88 + r() * 0.2);
         return ajustar([176, 44, 48], 0.86 + r() * 0.16);
     },
+    // Pie de la cama: la manta sola, con el doblez del borde (la cabecera lleva la almohada de cama_top)
+    cama_pie: (x, y, r) => {
+        if (y >= 13) return ajustar([140, 30, 36], 0.9 + r() * 0.12);
+        return ajustar([176, 44, 48], 0.88 + r() * 0.16);
+    },
     riel_top: (x, y, r) => {
         if (x === 4 || x === 11) return ajustar([170, 170, 176], 0.85 + r() * 0.2);
         if (y % 4 === 1 && x >= 2 && x <= 13) return ajustar([120, 84, 44], 0.9 + r() * 0.15);

@@ -387,6 +387,13 @@ export function crearGlobo(scene, etiqueta = null) {
             const r = b.getBoundingClientRect();
             if (r.height && getComputedStyle(b).display !== 'none') suelo = Math.max(suelo ?? -1, 1 - 2 * r.top / innerHeight);
         }
+        // Celular: joystick y botones táctiles de la mitad de abajo (los de arriba no cuentan: subirían el piso a la cabeza)
+        if (document.body.classList.contains('con-tactil')) {
+            for (const b of document.querySelectorAll('.tactil-joy, .tactil-boton, .tactil-saltar, .tactil-bajar')) {
+                const r = b.getBoundingClientRect();
+                if (r.height && r.top > innerHeight / 2 && getComputedStyle(b).display !== 'none') suelo = Math.max(suelo ?? -1, 1 - 2 * r.top / innerHeight);
+            }
+        }
         return suelo ?? -1 + franja;
     };
     let colitaArriba = false, relleno = 0; // relleno: parte transparente del lienzo bajo la caja (fracción del alto)

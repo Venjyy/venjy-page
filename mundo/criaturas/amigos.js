@@ -16,6 +16,7 @@ import { crearCharla } from './charla.js';
 import { pasoLejano } from './lod.js';
 import { cargarDatos } from '../datos/cargador.js';
 import { resolverAncla, puntoAMundo, mundoAPunto } from '../datos/posiciones.js';
+import { agregarParpadeo } from './parpadeo.js';
 
 // mundo/datos/posiciones.json: dónde está cada persona, relativo a su lugar. Si no llegó o le falta una clave, valen los
 // números del código (los de hoy). Llega por fetch: si tarda más que la generación del mundo, aplicarPosiciones() reubica.
@@ -117,6 +118,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const escala = d.escala || 1;
         p.g.scale.setScalar(escala);
         agregarExtras(p, piel.extras, tinte, semilla);
+        if (d.piel && !d.sinParpadeo) agregarParpadeo(p, tinte, d.piel, semilla + 900);
         scene.add(p.g);
         const n = {
             clave, p, escala, x, y, z, yaw, t: Math.random() * 10, fase: 0,
@@ -446,7 +448,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const pito = new THREE.Group();
         const papel = caja(0.035, 0.035, 0.17, tinte.caras(tex(2, 4, 4701, [240, 236, 226], 0.06)));
         const brasaPito = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.03), new THREE.MeshBasicMaterial({ color: 0x993300 }));
-        brasaPito.position.z = 0.1;
+        brasaPito.position.z = -0.1; // la ceniza del lado de la mano; la punta de fumar mira a la boca
         pito.add(papel, brasaPito);
         pitoO = { g: pito, brasa: brasaPito };
         tomar(moises, 'bong'); tomar(lalo, 'pito');
@@ -476,9 +478,10 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     function usarBong(n, dt, t, dJ) {
         const { p } = n, c = n.ciclo, r = n.reposoBong;
         const arriba = c < 1.2 ? suave(c / 1.2) : c < 3.6 ? 1 : c < 4.6 ? 1 - suave((c - 3.6) / 1) : 0;
-        // Moisés fuma más abajo (0.92 en vez de 1,03): la boquilla queda a la altura de la boca, no de la frente
-        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.92 : 1.03, arriba), lerp(r[2], 0.36, arriba));
+        // Moisés fuma más abajo (0,9 en vez de 1,03, va sentado): la boquilla queda a la altura de la boca, no de la frente
+        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.9 : 1.03, arriba), lerp(r[2], 0.36, arriba));
         bongO.g.rotation.x = lerp(0, -0.15, arriba);
+        bongO.g.rotation.y = lerp(n.reposoGiro || 0, 0, arriba); // al fumar la boquilla mira a la boca aunque en reposo esté dado vuelta
         const reposo = n === moises ? -0.6 : -0.75;
         p.brazoD.rotation.x = lerp(reposo, -1.15, arriba); p.brazoD.rotation.z = lerp(0.05, 0.42, arriba);
         p.brazoI.rotation.x = lerp(reposo, -1.0, arriba); p.brazoI.rotation.z = lerp(-0.05, -0.4, arriba);

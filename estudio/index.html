@@ -18,6 +18,7 @@
             <button class="pestana" type="button" data-pestana="escenas" data-seccion="juego" data-es="Escenas" data-en="Scenes">Escenas</button>
             <button class="pestana" type="button" data-pestana="mesa" data-seccion="juego" data-es="Mesa" data-en="Table">Mesa</button>
             <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
+            <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
         <div class="idiomas" role="group" aria-label="Idioma">
@@ -266,6 +267,24 @@
                         <button id="me-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="me-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-objetos" hidden>
+                <section class="panel">
+                    <h2 data-es="Objetos en la mano" data-en="Held objects">Objetos en la mano</h2>
+                    <p class="mensaje" data-es="Elige un tipo o un objeto, ponlo en tu mano y mueve los números: se ve al instante en primera y tercera persona (F5 en el juego cambia de cámara). Guardar escribe mundo/datos/objetos-mano.json." data-en="Pick a type or an object, put it in your hand and move the numbers: it updates live in first and third person (F5 in the game switches camera). Save writes mundo/datos/objetos-mano.json.">Elige un tipo o un objeto, ponlo en tu mano y mueve los números: se ve al instante en primera y tercera persona (F5 en el juego cambia de cámara). Guardar escribe mundo/datos/objetos-mano.json.</p>
+                    <div class="fila-botones">
+                        <select id="ob-elegir" aria-label="Objeto"></select>
+                        <button id="ob-mano" class="boton chico" type="button" data-es="Ponerlo en mi mano" data-en="Put it in my hand">Ponerlo en mi mano</button>
+                    </div>
+                </section>
+                <div id="ob-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="ob-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="ob-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="ob-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>

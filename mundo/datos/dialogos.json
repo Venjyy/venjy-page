@@ -1486,9 +1486,14 @@
       }
     },
     "nacho": {
-      "bajo": { "es": "¿Nacho, cierto?", "en": "Nacho, right?" },
-      "alto": { "es": "¡Nacho!", "en": "Nacho!" },
-      "buen": { "es": "Wena, Nachito", "en": "Hey there, Nachito" }
+      "bajo": {
+        "es": "Jajaja, hola. Perdón, me estaba acordando de algo.",
+        "en": "Haha, hi. Sorry, I was remembering something."
+      },
+      "alto": {
+        "es": "¡Jajaja, volviste! Siéntate, que se viene el cuento bueno.",
+        "en": "Haha, you are back! Sit down, the good story is coming."
+      }
     },
     "moises": {
       "bajo": {
