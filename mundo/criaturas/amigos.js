@@ -16,6 +16,7 @@ import { crearCharla } from './charla.js';
 import { pasoLejano } from './lod.js';
 import { cargarDatos } from '../datos/cargador.js';
 import { resolverAncla, puntoAMundo, mundoAPunto } from '../datos/posiciones.js';
+import { agregarParpadeo } from './parpadeo.js';
 
 // mundo/datos/posiciones.json: dónde está cada persona, relativo a su lugar. Si no llegó o le falta una clave, valen los
 // números del código (los de hoy). Llega por fetch: si tarda más que la generación del mundo, aplicarPosiciones() reubica.
@@ -117,6 +118,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const escala = d.escala || 1;
         p.g.scale.setScalar(escala);
         agregarExtras(p, piel.extras, tinte, semilla);
+        if (d.piel && !d.sinParpadeo) agregarParpadeo(p, tinte, d.piel, semilla + 900);
         scene.add(p.g);
         const n = {
             clave, p, escala, x, y, z, yaw, t: Math.random() * 10, fase: 0,
