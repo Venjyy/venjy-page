@@ -99,11 +99,12 @@ function tambor(THREE, mat) {
 
 export const MODELOS = { guitarra, teclado, tambor };
 
-// Colgados del torso (coordenadas de `cuerpo`, como el bajo de Salonas). `brazos`: giros [x, y, z] de cada brazo
+// Colgados del torso, como el bajo de Salonas. Aquí solo los giros [x, y, z] de cada brazo; la posición, el giro y la
+// escala del modelo en el torso están en AJUSTE_OBJETO.mano3 de objetos-mano-datos.js (y se editan en el Estudio).
 export const COLGAR = {
-    guitarra: { pos: [0.05, 0.86, 0.2], rot: [0, 0, 0.42], brazoI: [-1.05, 0, 0.55], brazoD: [-0.6, 0, 0.3] },
-    teclado: { pos: [0.0, 0.8, 0.22], rot: [0, 0, 0.12], brazoI: [-1.0, 0, 0.45], brazoD: [-1.0, 0, -0.1] },
-    tambor: { pos: [0.0, 0.62, 0.32], rot: [0.5, 0, 0], brazoI: [-0.9, 0, 0.1], brazoD: [-0.9, 0, -0.1] }
+    guitarra: { brazoI: [-1.05, 0, 0.55], brazoD: [-0.6, 0, 0.3] },
+    teclado: { brazoI: [-1.0, 0, 0.45], brazoD: [-1.0, 0, -0.1] },
+    tambor: { brazoI: [-0.9, 0, 0.1], brazoD: [-0.9, 0, -0.1] }
 };
 
 // ¿Este objeto (clave de OBJETOS en minúscula) tiene modelo?

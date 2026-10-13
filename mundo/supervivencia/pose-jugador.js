@@ -187,8 +187,10 @@ export function ponerObjeto(m, id, fabrica, lado = 0) {
     // Modelo 3D (guitarra, teclado, tambor): colgado del torso como el bajo de Salonas, con los brazos en él
     const colgar = tipo === 'modelo' && clave && COLGAR[String(clave).toLowerCase()];
     if (colgar && m.cuerpo) {
-        malla.position.set(...colgar.pos);
-        malla.rotation.set(...colgar.rot);
+        const ag = agarre('mano3', clave, 'modelo'); // editable en el Estudio (pestaña Objetos, 3.ª persona)
+        malla.position.set(...ag.pos);
+        malla.rotation.set(...ag.rot);
+        malla.scale.setScalar(ag.escala);
         m.cuerpo.add(malla);
         s.malla = malla; s.colgar = colgar;
         return;

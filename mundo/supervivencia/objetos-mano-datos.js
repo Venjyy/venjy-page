@@ -36,7 +36,12 @@ export const AJUSTE_OBJETO = {
         teclado: { pos: [-0.12, 0.12, 0.05], rot: [0.3, 0.35, 0.1], escala: 0.45 },
         tambor: { pos: [-0.1, 0.1, 0.05], rot: [0.5, 0, 0.1], escala: 0.55 }
     },
-    mano3: {}
+    // Instrumentos 3D colgados del torso (en coordenadas de `cuerpo`, no del brazo): ver COLGAR en modelos-mano.js
+    mano3: {
+        guitarra: { pos: [0.05, 0.86, 0.2], rot: [0, 0, 0.42], escala: 1 },
+        teclado: { pos: [0, 0.8, 0.22], rot: [0, 0, 0.12], escala: 1 },
+        tambor: { pos: [0, 0.62, 0.32], rot: [0.5, 0, 0], escala: 1 }
+    }
 };
 
 const RAD = Math.PI / 180;
