@@ -104,9 +104,10 @@ async function teletransportar(d) {
     const antes = [p.x, p.y, p.z].join();
     const yaDev = c.modoDev;
     if (!yaDev) c.ejecutar('/gamemode devenjy');
-    c.ejecutar(d.destino ? '/tp ' + d.destino : `/tp ${d.x} ${d.y === undefined ? '' : d.y} ${d.z}`.replace(/\s+/g, ' '));
+    const hecho = c.ejecutar(d.destino ? '/tp ' + d.destino : `/tp ${d.x} ${d.y === undefined ? '' : d.y} ${d.z}`.replace(/\s+/g, ' '));
     if (!yaDev) c.ejecutar('/gamemode devenjy');
-    if ([p.x, p.y, p.z].join() === antes) throw new Error('el jugador no se movió: ¿existe el destino? (en el juego, /tp lista los destinos)');
+    // /tp dice si encontró el destino; si ya estabas ahí (el spawn de un mundo nuevo) la posición no cambia y está bien
+    if (hecho === false || (hecho === undefined && [p.x, p.y, p.z].join() === antes)) throw new Error('el jugador no se movió: ¿existe el destino? (en el juego, /tp lista los destinos)');
     const r = n => Math.round(n * 10) / 10;
     return { x: r(p.x), y: r(p.y), z: r(p.z) };
 }

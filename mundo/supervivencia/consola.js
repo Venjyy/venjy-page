@@ -138,7 +138,8 @@ export function crearConsola({ jugador, dia, hud, idioma = 'es', alAbrir, alCerr
             if (modoDev) mostrarAyuda(); else ocultarAyuda();
         }
         else if (extra[c]) extra[c].fn(partes.slice(1).join(' '));
-        else if (dev[c]) { if (modoDev) dev[c].fn(partes.slice(1).join(' ')); else hud.mensaje(t.devNecesita(c), 4); }
+        // lo que devuelva el comando vuelve a quien llamó (el puente del Estudio sabe así si /tp encontró el destino)
+        else if (dev[c]) { if (modoDev) return dev[c].fn(partes.slice(1).join(' ')); hud.mensaje(t.devNecesita(c), 4); }
         else hud.mensaje(t.desconocido(c));
     }
 
