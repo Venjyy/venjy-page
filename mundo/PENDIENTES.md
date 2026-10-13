@@ -1124,6 +1124,20 @@ Plan acordado el 2026-10-07. Todo lo que va en el terreno es determinista (los w
 
 Marca `[x]` al terminar y registra el cambio en la bitácora.
 
+### Hito 1 · lo que sigue (de fácil a difícil; rama `hito1-arreglos`)
+
+Hecho en el chat del 2026-10-13 (ver bitácora): herramientas en la mano, zanahoria/papa, saludo de tres tramos retirado, bong de Moisés, idioma con L, cámara con E, globos táctiles, Hablar a 375 px. Cada punto dice qué leer; no abrir archivos enteros.
+
+- [ ] **9 · «Lugar descubierto» de verdad**: hoy va en `localStorage` aparte (`supervivencia/main.js:534` y `:1552`) y duplica `estado.visitados` de `misiones.js:496`. Guardarlo en la partida (`serializar`, `misiones.js:569`), aviso con animación y sonido (estilo Skyrim, textos ES/EN en JSON) y también en el creativo.
+- [ ] **10 · Lona camina acostada / brazos tras hablar**: reproducir antes de tocar. `actualizarLona` reescribe `cuerpo.position.y` cada cuadro (`npcs.js:796`) y una escena ya corta la interacción (`npcs.js:849`), así que el diagnóstico de Antigravity no explica el bug. Leer `terminarInter` (`npcs.js:672`), `aplicarInter` (`:691`) y el gancho de Hablar (`supervivencia/hablar.js:79`).
+- [ ] **11 · Bong de Lalo enorme**: la geometría mide ~0,66 de alto (`amigos.js:435`); medir con `node estudio/cli.mjs capturar …` antes de cambiar `reposoBong` (`amigos.js:431`).
+- [ ] **12 · Parpadeo (solo una prueba)**: 3–6 s, cierre ~120 ms; ojos en `criaturas/pieles.js:17` (`OJO`). Skill `animaciones-minecraft`, subagente Haiku. Si al dueño no le gusta, se descarta.
+- [ ] **13 · Objetos en la mano editables en el Estudio**: nuevo `mundo/datos/objetos-mano.json` (posición, rotación y escala por objeto, 1.ª y 3.ª persona) que lean `mano.js` (`crearMalla`, `:145`) y `pose-jugador.js`; esquema en `estudio/esquemas/` y sliders en el Estudio. Resuelve la caña al revés sin pedírselo a un agente.
+- [ ] **14 · Estudio: el juego atrapa el mouse**: Esc abre la pausa que tapa todo y T deja la franja del chat. Con `?estudio`, soltar el puntero sin pausa (tecla propia o pausa mínima).
+- [ ] **15 · Camas**: `B.CAMA` es un cubo común (`supervivencia/objetos.js:208`); darle forma de cama (medio bloque con almohada).
+- [ ] **Grandes, un chat cada uno, no empezar sin el dueño**: mundo de prueba (agua, construcciones editables, todo a mano para probar), pasar escenas y animaciones viejas al Estudio, skills nuevas para delegar a Haiku/Sonnet, Duelo: reemplazar criatura con zonas llenas (requiere aprobación; preguntar al dueño las recomendaciones de Lucho), pantalla de carga, menú de inicio, minijuego Lalo vs Moisés, minijuego Salonas (al final). Antes: actualizar `estudio/hoja-de-ruta.html` con este estado.
+- [ ] **Añadidos dudosos**: ver la sección «Añadidos dudosos (en espera)».
+
 ### Fase 2 · Pulido Minecraft
 - [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Techo a dos aguas, chimenea con hogar, cama, librero, mesa con antorcha, cofre y antorchas en las paredes (hecho). La casa naranja de las gatas se deja sin muebles para que ellas circulen.
 - [x] Mina: el foso se convirtió en una plaza de piedra a ras del camino y un túnel de 28 bloques con marcos de madera, vetas de mineral y un bloque de oro y otro de diamante al fondo (`colocarDecor`, tipo `mina`). Vías, antorchas y cofre ya puestos.
