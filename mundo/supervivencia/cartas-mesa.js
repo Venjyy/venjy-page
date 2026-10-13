@@ -28,6 +28,7 @@ export const TXT_MESA = {
     tocaZona: t('Toca una zona marcada en verde', 'Tap a zone highlighted in green'),
     tocaObjetivo: t('Ahora toca la criatura marcada en verde a la que apunta la carta', 'Now tap the green-highlighted creature the card targets'),
     tocaAbrazo: t('Ahora toca la segunda criatura tuya', 'Now tap your second creature'),
+    noAtaca: t('Esta criatura no puede atacar ahora (entró este turno, está en Defensa o atada)', 'This creature cannot attack now (it entered this turn, is in Defense or is bound)'),
     tocaRival: t('Toca una criatura de Lucho, o a Lucho para el ataque directo', 'Tap one of Lucho\'s creatures, or Lucho for a direct attack')
 };
 
@@ -273,7 +274,7 @@ export function crearMesaCartas(ctx) {
         const guia = document.createElement('p'); guia.className = 'cartas-mesa-aviso';
         // Con algo elegido manda la guía del paso siguiente; si no, la última jugada
         const reemplaza = sel && sel.tipo === 'carta' && sel.acciones.some(a => a.t === 'invocar' && e.jug[0].zonas[a.z]);
-        const paso = !sel ? null : reemplaza ? TXT_CARTAS.reemplaza : sel.tipo === 'propia' ? TXT_MESA.tocaRival : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
+        const paso = !sel ? null : reemplaza ? TXT_CARTAS.reemplaza : sel.tipo === 'propia' ? (sel.acciones.some(a => a.t === 'atacar') ? TXT_MESA.tocaRival : TXT_MESA.noAtaca) : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
         guia.textContent = e.turno === 0 && e.fase === 'principal' && paso ? Lx(paso) : aviso || (e.turno === 0 && e.fase === 'principal' ? Lx(TXT_MESA.tocaCarta) : '');
         const B = botonesMesa(e, sel), fila = document.createElement('div'); fila.className = 'cartas-mesa-botones';
         fila.append(

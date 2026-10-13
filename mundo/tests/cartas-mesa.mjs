@@ -101,5 +101,19 @@ ok(sinAlcanzar === 0, `${sinAlcanzar} jugadas legales no se alcanzan con toques`
 }
 ok(Mo.pausaAuto({ fase: 'robo', turno: 0 }) === 0.4 && Mo.pausaAuto({ fase: 'principal', turno: 1 }) === 0.7, 'tiempos de la IA = panel');
 
+// ---- 3. Criatura que no puede actuar: igual queda elegida (no deja la selección anterior) ----
+{
+    const relleno = Array(15).fill('zombi');
+    const e = C.nuevaPartida({ mazos: [relleno, relleno], barajar: false });
+    e.fase = 'principal'; e.n = 3;
+    const poner = (z, id, extra) => { const c = D.CARTAS[id]; e.jug[0].zonas[z] = { id, atk: c.atk, def: c.def, bono: 0, modo: 'ata', nueva: false, ataques: 1, ataco: 0, atada: 0, cambio: false, racha: false, quieta: false, escudo: false, unidos: [], ...extra }; };
+    poner(0, 'boris'); poner(1, 'nacho', { nueva: true });
+    let r = Mo.tocarZona(e, null, 0, 0);
+    ok(r.sel && r.sel.tipo === 'propia' && r.sel.z === 0 && Mo.botonesMesa(e, r.sel).directo, 'criatura con ataque: elegida y con ataque directo');
+    r = Mo.tocarZona(e, r.sel, 0, 1);
+    ok(r.sel && r.sel.tipo === 'propia' && r.sel.z === 1, 'criatura recién invocada: pasa a ser la elegida');
+    ok(!Mo.botonesMesa(e, r.sel).directo && !Mo.botonesMesa(e, r.sel).cambiar, 'sin ataque directo ni cambio de postura');
+}
+
 console.log(fallos ? `${fallos} fallos` : `cartas-mesa: todo bien (${probadas} jugadas por toques)`);
 process.exit(fallos ? 1 : 0);
