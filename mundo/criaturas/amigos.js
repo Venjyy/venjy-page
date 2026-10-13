@@ -419,6 +419,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     // Iglú: Moisés (sentado) y Lalo (apoyado) fuman; de vez en cuando se pasan el bong y el pito
     // ---------------------------------------------------------
     const I = lugar('iglu');
+    // Lalo es de pie y el bong entero (0,66) le llegaba del cinturón al hombro: más chico, y la boquilla sube a la boca
+    const ESCALA_BONG = { lalo: 0.65 };
     let moises, lalo, charlaIglu, bongO, pitoO, pase = null, proximoPase = rnd(18, 30);
     const POS_PITO = [0.02, -0.76, 0.1];
     if (I) {
@@ -466,7 +468,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     // Deja el objeto en las manos (o junto) de n
     function tomar(n, objeto) {
         n.objeto = objeto;
-        if (objeto === 'bong') { n.p.cuerpo.add(bongO.g); bongO.g.position.set(...n.reposoBong); bongO.g.rotation.set(0, n.reposoGiro || 0, 0); }
+        if (objeto === 'bong') { n.p.cuerpo.add(bongO.g); bongO.g.scale.setScalar(ESCALA_BONG[n.clave] || 1); bongO.g.position.set(...n.reposoBong); bongO.g.rotation.set(0, n.reposoGiro || 0, 0); }
         else { n.p.brazoD.add(pitoO.g); pitoO.g.position.set(...POS_PITO); pitoO.g.rotation.set(-0.6, 0, 0); }
     }
     const vTmp = new THREE.Vector3(), vA = new THREE.Vector3(), vB = new THREE.Vector3();
@@ -477,7 +479,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         const { p } = n, c = n.ciclo, r = n.reposoBong;
         const arriba = c < 1.2 ? suave(c / 1.2) : c < 3.6 ? 1 : c < 4.6 ? 1 - suave((c - 3.6) / 1) : 0;
         // Moisés fuma más abajo (0,9 en vez de 1,03, va sentado): la boquilla queda a la altura de la boca, no de la frente
-        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.9 : 1.03, arriba), lerp(r[2], 0.36, arriba));
+        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.9 : n === lalo ? 1.25 : 1.03, arriba), lerp(r[2], 0.36, arriba));
         bongO.g.rotation.x = lerp(0, -0.15, arriba);
         bongO.g.rotation.y = lerp(n.reposoGiro || 0, 0, arriba); // al fumar la boquilla mira a la boca aunque en reposo esté dado vuelta
         const reposo = n === moises ? -0.6 : -0.75;
