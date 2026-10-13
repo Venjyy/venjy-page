@@ -167,6 +167,7 @@ export const TXT_CARTAS = {
     lucho: t('Lucho', 'Lucho'),
     tu: t('Tú', 'You'),
     invocar: t('Invoca', 'Summons'),
+    reemplaza: t('Zonas llenas: toca la criatura tuya que se va al cementerio y la nueva ocupa su lugar', 'Zones full: tap the creature of yours that goes to the discard pile and the new one takes its place'),
     hechizo: t('Hechizo', 'Spell'),
     atk: t('ATK', 'ATK'),
     def: t('DEF', 'DEF'),
@@ -184,7 +185,7 @@ export const TXT_CARTAS = {
     },
     reglas: [
         t('Empiezas con 4 cartas; la vida depende del nivel (3000 en Fácil, 4000 en Medio). En tu turno robas 1.', 'You start with 4 cards; life depends on the level (3000 on Easy, 4000 on Medium). On your turn you draw 1.'),
-        t('Invocas 1 criatura por turno en una de tus 3 zonas; los hechizos, todos los que quieras.', 'Summon 1 creature per turn in one of your 3 zones; cast as many spells as you like.'),
+        t('Invocas 1 criatura por turno en una de tus 3 zonas (con las 3 llenas, reemplazas una tuya: se va al cementerio); los hechizos, todos los que quieras.', 'Summon 1 creature per turn in one of your 3 zones (with all 3 full, you replace one of yours: it goes to the discard pile); cast as many spells as you like.'),
         t('Nada cuesta: los efectos encadenan combos dentro del mismo turno.', 'Nothing costs anything: effects chain into combos within the same turn.'),
         t('Cada criatura ataca una vez, pero no el turno en que entra.', 'Each creature attacks once, but not on the turn it enters.'),
         t('ATK contra ATK: cae la menor y la diferencia baja la vida. Quien defiende en Defensa no pierde vida.', 'ATK against ATK: the lower one falls and the difference cuts life. A creature in Defense stance spares its owner any life loss.'),

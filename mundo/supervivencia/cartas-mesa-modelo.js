@@ -125,7 +125,7 @@ export function tocarZona(e, sel, j, z) {
     if (j === 0 && e.jug[0].zonas[z]) {
         if (sel && sel.tipo === 'propia' && sel.z === z) return nada(null);
         const a = jugadas(e).filter(x => (x.t === 'atacar' || x.t === 'modo') && x.z === z);
-        return nada(a.length ? { tipo: 'propia', z, acciones: a } : sel);
+        return nada({ tipo: 'propia', z, acciones: a }); // sin acciones (entró este turno…) también queda elegida
     }
     if (sel && sel.tipo === 'propia' && j === 1) {
         const a = sel.acciones.find(x => x.t === 'atacar' && x.obj === z);

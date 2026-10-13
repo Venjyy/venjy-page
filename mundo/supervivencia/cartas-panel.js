@@ -97,7 +97,7 @@ export function crearPanelCartas(ctx = {}) {
         }
         if (j === 0 && e.jug[0].zonas[z]) {
             const a = acciones().filter(x => (x.t === 'atacar' || x.t === 'modo') && x.z === z);
-            if (a.length) { eleccion = { tipo: 'propia', z, acciones: a }; pintar(); }
+            eleccion = { tipo: 'propia', z, acciones: a }; pintar();
         }
         if (eleccion && (eleccion.tipo === 'propia' || eleccion.tipo === 'atacar') && j === 1) {
             const a = eleccion.acciones.find(x => x.obj === z); if (a) ejecutar(a);
@@ -189,6 +189,9 @@ export function crearPanelCartas(ctx = {}) {
                 }, modo === postura ? 'elegido' : ''); selector.appendChild(b);
             }
             fila.appendChild(selector);
+            if (eleccion.acciones.some(a => a.t === 'invocar' && e.jug[0].zonas[a.z])) {
+                const aviso = document.createElement('p'); aviso.className = 'cartas-aviso'; aviso.textContent = L(TXT_CARTAS.reemplaza); fila.appendChild(aviso);
+            }
         }
         return fila;
     }
