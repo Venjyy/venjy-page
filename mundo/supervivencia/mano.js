@@ -9,7 +9,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
-import { pixelesObjeto } from './iconos.js';
+import { pixelesObjeto, versionDeIconos } from './iconos.js';
 import { geometriaCubo } from './entidades.js';
 import { info, O } from './objetos.js';
 import { agarre, versionObjetosMano } from './objetos-mano-datos.js';
@@ -69,7 +69,12 @@ function pixelesTile(atlasLienzo, tile) {
 // materiales (`materiales()`), para teñirlos con la luz de donde está.
 export function crearFabrica({ atlas, atlasLienzo }) {
     const geos = new Map();
+    let verIconos = versionDeIconos();
     function datos(id) {
+        if (verIconos !== versionDeIconos()) { // iconos.json cambió: los objetos se vuelven a extruir
+            verIconos = versionDeIconos();
+            for (const k of [...geos.keys()]) if (k >= 256) geos.delete(k);
+        }
         if (geos.has(id)) return geos.get(id);
         let d;
         const t = id < 256 ? TIPO[id] : 0;
@@ -164,7 +169,7 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
         colocarMalla(m);
         return m;
     }
-    let verDatos = versionObjetosMano();
+    let verDatos = versionObjetosMano(), verIconos = versionDeIconos();
     let actual2 = -1, visible2 = null;
     function mostrar2(id) {
         if (visible2) pivote2.remove(visible2);
@@ -197,6 +202,12 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
                 verDatos = versionObjetosMano();
                 for (const m of cache.values()) colocarMalla(m);
                 for (const m of cache2.values()) colocarMalla(m);
+            }
+            if (verIconos !== versionDeIconos()) { // el Estudio redibujó un ícono: la malla extruida se rehace
+                verIconos = versionDeIconos();
+                for (const c of [cache, cache2]) for (const k of [...c.keys()]) if (k >= 256) c.delete(k);
+                if (actual >= 256) mostrar(actual);
+                if (actual2 >= 256) mostrar2(actual2);
             }
             const id = inventario.idEnMano();
             if (id !== actual) { if (cambio >= 1) cambio = 0; if (cambio > 0.5 || actual === -1) mostrar(id); }

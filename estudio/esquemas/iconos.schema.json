@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "iconos.schema.json",
+  "title": "Íconos de objetos (mundo/datos/iconos.json)",
+  "description": "Dibujos de 16×16 de los objetos de la supervivencia, por clave de OBJETOS en minúscula (palo, pico_madera). Si hay uno listo, iconos.js lo usa en vez del de PINTORES (inventario, objetos tirados y la malla extruida de la mano); sin clave o con \"estado\": \"borrador\", el del código. Se pintan en el Estudio, pestaña Píxeles.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "$ref": "comun.schema.json#/$defs/version"
+    },
+    "nota": {
+      "$ref": "comun.schema.json#/$defs/nota"
+    },
+    "iconos": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "comun.schema.json#/$defs/dibujo"
+      }
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false
+}

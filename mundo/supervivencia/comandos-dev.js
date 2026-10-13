@@ -239,14 +239,15 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
                     const [x, y, z] = nums.length === 2 ? [nums[0], undefined, nums[1]] : nums;
                     irA(x, y, z);
                     hud.mensaje(nums.length === 2 ? t.tpXyz(x, '~', z) : t.tpXyz(x, y, z), 3);
-                    return;
+                    return true;
                 }
                 const k = sinTildes(arg).replace(/\s+/g, '-');
                 const clave = Object.keys(L).find(c => c === k) || Object.keys(L).find(c => c.startsWith(k));
-                if (!clave) { hud.mensaje(t.tpNo(arg), 4); return; }
+                if (!clave) { hud.mensaje(t.tpNo(arg), 4); return false; }
                 const d = L[clave];
                 irA(d.x, d.y, d.z, d.pista);
                 hud.mensaje(t.tpOk(clave), 3);
+                return true; // true/false: el puente del Estudio lo usa (si ya estabas ahí, la posición no cambia)
             }
         },
         '/pos': {

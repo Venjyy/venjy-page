@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "borradores.schema.json",
+  "title": "Objetos y cartas nuevos del dueño (mundo/datos/borradores.json)",
+  "description": "Lo crea la pestaña Píxeles del Estudio («Nuevo objeto», «Nueva carta»). El juego NO lee este archivo: un agente los lista con `node estudio/cli.mjs resumen borradores`, los programa (skill datos-json, «Borradores: termínalo e impleméntalo») y los marca \"hecho\".",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "$ref": "comun.schema.json#/$defs/version"
+    },
+    "nota": {
+      "$ref": "comun.schema.json#/$defs/nota"
+    },
+    "objetos": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/objeto"
+      }
+    },
+    "cartas": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/carta"
+      }
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "texto": {
+      "description": "Texto del dueño: el español basta; el agente que lo implementa completa el inglés.",
+      "type": "object",
+      "properties": {
+        "es": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "es"
+      ],
+      "additionalProperties": false
+    },
+    "objeto": {
+      "type": "object",
+      "properties": {
+        "estado": {
+          "description": "borrador: lo hizo el dueño y espera a un agente. hecho: ya está en el juego (el agente lo marca al implementarlo).",
+          "enum": [
+            "borrador",
+            "hecho"
+          ]
+        },
+        "nombre": {
+          "$ref": "#/$defs/texto"
+        },
+        "que": {
+          "description": "Qué hace o para qué sirve.",
+          "type": "string"
+        },
+        "receta": {
+          "description": "Receta, o dónde se consigue (tienda, cofre, drop…).",
+          "type": "string"
+        },
+        "notas": {
+          "type": "string"
+        },
+        "fecha": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "dibujo": {
+          "$ref": "comun.schema.json#/$defs/dibujo"
+        }
+      },
+      "required": [
+        "estado",
+        "nombre"
+      ],
+      "additionalProperties": false
+    },
+    "carta": {
+      "type": "object",
+      "properties": {
+        "estado": {
+          "description": "borrador: lo hizo el dueño y espera a un agente. hecho: ya está en el juego (el agente lo marca al implementarlo).",
+          "enum": [
+            "borrador",
+            "hecho"
+          ]
+        },
+        "plantilla": {
+          "description": "Familia (marco, fondo e insignia): monstruo, mito, amigo, animal o hechizo.",
+          "enum": [
+            "monstruo",
+            "mito",
+            "amigo",
+            "animal",
+            "hechizo"
+          ]
+        },
+        "nombre": {
+          "$ref": "#/$defs/texto"
+        },
+        "atk": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5000
+        },
+        "def": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5000
+        },
+        "efecto": {
+          "$ref": "#/$defs/texto"
+        },
+        "notas": {
+          "type": "string"
+        },
+        "fecha": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "boceto": {
+          "description": "Boceto opcional del retrato (40×26); el agente hace el arte único tomándolo de guía.",
+          "$ref": "comun.schema.json#/$defs/dibujo"
+        }
+      },
+      "required": [
+        "estado",
+        "plantilla",
+        "nombre"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

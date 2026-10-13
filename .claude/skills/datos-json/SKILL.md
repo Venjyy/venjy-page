@@ -1,6 +1,6 @@
 ---
 name: datos-json
-description: Agrega o cambia contenido del juego de venjy-page en los JSON de mundo/datos/ (posiciones, poses y gestos, escenas, diálogos de «Hablar», textos, botones táctiles, mesa del Duelo, objetos en la mano, tienda) sin romper nada y sin pisar lo que editó el dueño. Úsala siempre que una tarea toque un archivo de mundo/datos/ o pase algo del JS a JSON (etapa B), sea Opus, Sonnet, Haiku, Codex o Antigravity.
+description: Agrega o cambia contenido del juego de venjy-page en los JSON de mundo/datos/ (posiciones, poses y gestos, escenas, diálogos de «Hablar», textos, botones táctiles, mesa del Duelo, objetos en la mano, tienda, íconos y arte de cartas) y termina los objetos y cartas nuevos que el dueño dejó como borrador en la pestaña Píxeles, sin romper nada y sin pisar lo que editó el dueño. Úsala siempre que una tarea toque un archivo de mundo/datos/ o pase algo del JS a JSON (etapa B), sea Opus, Sonnet, Haiku, Codex o Antigravity.
 ---
 
 # Contenido en `mundo/datos/*.json`
@@ -51,6 +51,7 @@ Además, según el archivo:
 | `textos.json` | `node mundo/tests/estudio-textos.mjs` |
 | `objetos-mano.json` | `node mundo/tests/objetos-mano.mjs` |
 | `cartas-mesa.json` | `node mundo/tests/cartas-mesa.mjs` |
+| `iconos.json`, `cartas-arte.json`, `borradores.json` | `node mundo/tests/pixeles.mjs` (y `recetas.mjs` / `cartas-arte.mjs` si tocaste objetos o cartas) |
 
 Las pruebas `*-navegador.mjs` necesitan Playwright; si no está, se saltan solas y se anota
 «pendiente del dueño».
@@ -70,7 +71,32 @@ El formato está en los esquemas, pero **el criterio** (ángulos, signos del rig
 `.claude/skills/animaciones-minecraft/`. Para gestos o escenas nuevas, seguir esa skill; esta solo
 cuida que el JSON quede válido.
 
-## 6. Al cerrar
+## 6. Borradores: «termínalo e impleméntalo»
+
+El dueño crea objetos y cartas en el Estudio (pestaña Píxeles, «Objeto nuevo» / «Carta nueva») y quedan
+en `mundo/datos/borradores.json` con `"estado": "borrador"`. **El juego no lee ese archivo.** Cuando dice
+«hice X e Y, termínalos e impleméntalos»:
+
+1. Listarlos: `node estudio/cli.mjs resumen borradores --completo` (todo lo que llenó) y, para ver el
+   dibujo o el boceto por filas, `resumen borradores <clave> --dibujo`.
+2. **Objeto** (skill `objetos-supervivencia`): agregarlo a `objetos.js` con la clave del borrador en
+   mayúscula (`linterna` → `obj('LINTERNA', …)`), su receta o dónde se consigue y su uso, según «qué hace»,
+   «receta» y «notas». Si falta el nombre en inglés, ponerlo (par ES/EN siempre).
+   **Ícono: el dibujo del dueño tal cual**: copiar `dibujo` (`paleta` y `filas`, sin cambiarlos) a
+   `mundo/datos/iconos.json` → `iconos.<clave>`. No hace falta pintor en `PINTORES`.
+3. **Carta**: agregarla a `CARTAS` de `cartas-datos.js` (`c(plantilla, atk, def, efecto, …)` o `h(…)` si la
+   plantilla es `hechizo`). Si el efecto ya existe (lista al comienzo de `cartas-datos.js`), reutilizarlo;
+   si no, programarlo en `cartas.js` con su prueba en `mundo/tests/cartas.mjs` y medir la IA. Texto ES/EN
+   (frase única; completar el inglés). **El retrato lo dibuja el agente**: arte único en `RETRATOS` de
+   `cartas-arte.js` con las reglas de `mundo/supervivencia/CARTAS-ARTE.md`; si hay `boceto`, tomarlo de
+   guía (composición y colores), no copiarlo. No ponerlo en `cartas-arte.json` (eso es del dueño).
+   Si las notas no dicen en qué mazo o sobre aparece, preguntar.
+4. Marcar el borrador `"estado": "hecho"` (es un cambio de valor pedido: `validar --contra HEAD --permitir-cambios`).
+   No borrarlo: queda como registro de lo que pidió.
+5. Pruebas de §3 más las del área (`recetas.mjs`, `inventario.mjs`, `cartas.mjs`, `cartas-arte.mjs`).
+   En el PR, «qué mirar»: el ícono o la carta en el juego.
+
+## 7. Al cerrar
 
 Una línea en la bitácora de `mundo/PENDIENTES.md` con qué claves se agregaron. Si cambió algo que un
 agente futuro necesita saber (un archivo nuevo, `lee` que dejó de ser `null`), actualizar

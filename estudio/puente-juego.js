@@ -40,6 +40,15 @@ async function aplicar(nombre, datos) {
     } else if (nombre === 'objetos-mano') {
         const m = await import('../mundo/supervivencia/objetos-mano-datos.js');
         m.aplicarDatosVivos(datos); // mano.js y pose-jugador.js se reacomodan solos al notar la versión nueva
+    } else if (nombre === 'iconos') {
+        // iconos.js repinta los íconos ya entregados y el atlas; la mano rehace la malla del objeto que llevas
+        const m = await import('../mundo/supervivencia/iconos.js');
+        m.aplicarIconos(datos);
+    } else if (nombre === 'cartas-arte') {
+        const m = await import('../mundo/supervivencia/cartas-arte.js');
+        m.aplicarArte(datos);
+        const v = window.__venjy;
+        if (v && v.mesaCartas) v.mesaCartas.refrescarArte();
     } else aplicarDatosVivos(nombre, datos);
 }
 const canal = new BroadcastChannel(CANAL);
@@ -95,9 +104,10 @@ async function teletransportar(d) {
     const antes = [p.x, p.y, p.z].join();
     const yaDev = c.modoDev;
     if (!yaDev) c.ejecutar('/gamemode devenjy');
-    c.ejecutar(d.destino ? '/tp ' + d.destino : `/tp ${d.x} ${d.y === undefined ? '' : d.y} ${d.z}`.replace(/\s+/g, ' '));
+    const hecho = c.ejecutar(d.destino ? '/tp ' + d.destino : `/tp ${d.x} ${d.y === undefined ? '' : d.y} ${d.z}`.replace(/\s+/g, ' '));
     if (!yaDev) c.ejecutar('/gamemode devenjy');
-    if ([p.x, p.y, p.z].join() === antes) throw new Error('el jugador no se movió: ¿existe el destino? (en el juego, /tp lista los destinos)');
+    // /tp dice si encontró el destino; si ya estabas ahí (el spawn de un mundo nuevo) la posición no cambia y está bien
+    if (hecho === false || (hecho === undefined && [p.x, p.y, p.z].join() === antes)) throw new Error('el jugador no se movió: ¿existe el destino? (en el juego, /tp lista los destinos)');
     const r = n => Math.round(n * 10) / 10;
     return { x: r(p.x), y: r(p.y), z: r(p.z) };
 }

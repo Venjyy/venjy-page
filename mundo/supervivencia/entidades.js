@@ -9,7 +9,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TIPO, TAM, COLS, FILAS } from '../texturas.js';
-import { crearAtlasObjetos, uvObjeto } from './iconos.js';
+import { crearAtlasObjetos, uvObjeto, alCambiarIconos } from './iconos.js';
 import { sonidos } from './sonidos.js';
 import { marcar } from '../voxeles.js';
 
@@ -71,6 +71,7 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     const texObjetos = new THREE.CanvasTexture(crearAtlasObjetos());
     texObjetos.magFilter = THREE.NearestFilter; texObjetos.minFilter = THREE.NearestFilter;
     texObjetos.generateMipmaps = false; texObjetos.colorSpace = THREE.SRGBColorSpace;
+    alCambiarIconos(() => { texObjetos.needsUpdate = true; }); // dibujos de iconos.json (Estudio, pestaña Píxeles)
     const lista = [];
     const api = { red: null, prefijo: 'o' };
     let relojJuntar = 0, contador = 0;

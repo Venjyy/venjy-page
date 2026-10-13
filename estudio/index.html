@@ -19,6 +19,7 @@
             <button class="pestana" type="button" data-pestana="mesa" data-seccion="juego" data-es="Mesa" data-en="Table">Mesa</button>
             <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
+            <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
         <div class="idiomas" role="group" aria-label="Idioma">
@@ -490,6 +491,112 @@
                     <button id="tx-descargar" class="boton secundario" type="button" data-es="Descargar JSON" data-en="Download JSON">Descargar JSON</button>
                 </div>
                 <p id="tx-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-pixeles" class="seccion" hidden>
+        <section class="escritorio">
+            <div class="fila-aparato">
+                <label class="campo">
+                    <span data-es="Qué dibujar" data-en="What to draw">Qué dibujar</span>
+                    <select id="px-modo">
+                        <option value="icono" data-es="Ícono de objeto (16×16)" data-en="Object icon (16×16)">Ícono de objeto (16×16)</option>
+                        <option value="retrato" data-es="Retrato de carta (40×26)" data-en="Card portrait (40×26)">Retrato de carta (40×26)</option>
+                        <option value="reverso" data-es="Reverso de las cartas (50×76)" data-en="Card back (50×76)">Reverso de las cartas (50×76)</option>
+                        <option value="objeto" data-es="Objeto nuevo (borrador)" data-en="New object (draft)">Objeto nuevo (borrador)</option>
+                        <option value="carta" data-es="Carta nueva (borrador)" data-en="New card (draft)">Carta nueva (borrador)</option>
+                    </select>
+                </label>
+                <label class="campo" id="px-cual-campo">
+                    <span data-es="Cuál" data-en="Which">Cuál</span>
+                    <select id="px-cual"></select>
+                </label>
+                <button id="px-nuevo" class="boton chico" type="button" hidden data-es="Crear nuevo" data-en="Create new">Crear nuevo</button>
+                <span id="px-estado" class="etiqueta-perfil"></span>
+            </div>
+            <div class="px-herramientas" role="toolbar" aria-label="Herramientas">
+                <button class="boton chico" type="button" data-herr="lapiz" data-es="Lápiz (B)" data-en="Pencil (B)">Lápiz (B)</button>
+                <button class="boton chico" type="button" data-herr="borrador" data-es="Borrador (E)" data-en="Eraser (E)">Borrador (E)</button>
+                <button class="boton chico" type="button" data-herr="gotero" data-es="Cuentagotas (I)" data-en="Eyedropper (I)">Cuentagotas (I)</button>
+                <button class="boton chico" type="button" data-herr="relleno" data-es="Relleno (G)" data-en="Fill (G)">Relleno (G)</button>
+                <button id="px-espejo" class="boton chico" type="button" data-es="Espejo (M)" data-en="Mirror (M)">Espejo (M)</button>
+                <button id="px-voltear" class="boton chico secundario" type="button" data-es="Voltear" data-en="Flip">Voltear</button>
+                <button id="px-deshacer" class="boton chico secundario" type="button" data-es="Deshacer" data-en="Undo">Deshacer</button>
+                <button id="px-rehacer" class="boton chico secundario" type="button" data-es="Rehacer" data-en="Redo">Rehacer</button>
+                <label class="campo px-zoom">
+                    <span data-es="Tamaño del cuadro" data-en="Cell size">Tamaño del cuadro</span>
+                    <input id="px-zoom" type="range" min="4" max="40" step="1" value="24">
+                </label>
+                <label class="casilla-marca">
+                    <input id="px-reticula" type="checkbox" checked>
+                    <span data-es="Cuadrícula" data-en="Grid">Cuadrícula</span>
+                </label>
+            </div>
+            <div class="px-area">
+                <canvas id="px-lienzo" class="px-lienzo" width="16" height="16"></canvas>
+                <div class="px-vistas">
+                    <figure>
+                        <canvas id="px-real" class="px-real"></canvas>
+                        <figcaption data-es="Tamaño real" data-en="Actual size">Tamaño real</figcaption>
+                    </figure>
+                    <figure>
+                        <canvas id="px-doble" class="px-real"></canvas>
+                        <figcaption data-es="En el juego" data-en="In the game">En el juego</figcaption>
+                    </figure>
+                    <figure id="px-carta-fig" hidden>
+                        <canvas id="px-carta" class="px-real"></canvas>
+                        <figcaption data-es="La carta con su marco" data-en="The card with its frame">La carta con su marco</figcaption>
+                    </figure>
+                </div>
+            </div>
+            <div class="px-paleta-fila">
+                <div id="px-paleta" class="px-paleta" aria-label="Paleta"></div>
+                <label class="campo">
+                    <span data-es="Color" data-en="Color">Color</span>
+                    <input id="px-color" type="color" value="#5a8f2f">
+                </label>
+            </div>
+            <p class="ayuda" data-es="Clic: pinta con la herramienta. Clic derecho: borra. Alt+clic: toma el color. Ctrl+Z deshace, Ctrl+Y rehace, Ctrl+S guarda (fuera de un campo)."
+               data-en="Click: paint with the tool. Right click: erase. Alt+click: pick the color. Ctrl+Z undoes, Ctrl+Y redoes, Ctrl+S saves (outside a field).">Clic: pinta con la herramienta. Clic derecho: borra. Alt+clic: toma el color. Ctrl+Z deshace, Ctrl+Y rehace, Ctrl+S guarda (fuera de un campo).</p>
+        </section>
+
+        <aside class="lateral">
+            <section class="panel">
+                <h2 id="px-titulo">Dibujo</h2>
+                <p id="px-meta" class="mensaje"></p>
+                <div class="fila-botones">
+                    <button id="px-actual" class="boton chico" type="button" data-es="Partir del dibujo actual" data-en="Start from the current drawing">Partir del dibujo actual</button>
+                    <button id="px-blanco" class="boton chico secundario" type="button" data-es="Lienzo en blanco" data-en="Blank canvas">Lienzo en blanco</button>
+                </div>
+                <div class="fila-botones">
+                    <button id="px-quitar" class="boton chico secundario" type="button" data-es="Quitar mi dibujo" data-en="Remove my drawing">Quitar mi dibujo</button>
+                </div>
+                <label class="casilla-marca" id="px-borrador-campo">
+                    <input id="px-borrador" type="checkbox">
+                    <span data-es="Borrador: el juego sigue con el del código" data-en="Draft: the game keeps the coded one">Borrador: el juego sigue con el del código</span>
+                </label>
+            </section>
+            <section class="panel" id="px-ficha" hidden>
+                <h2 data-es="Ficha" data-en="Details">Ficha</h2>
+                <div id="px-ficha-campos" class="px-ficha"></div>
+                <div class="fila-botones">
+                    <button id="px-borrar-borrador" class="boton chico secundario" type="button" data-es="Borrar este borrador" data-en="Delete this draft">Borrar este borrador</button>
+                </div>
+            </section>
+            <section class="panel" id="px-marco" hidden>
+                <h2 id="px-marco-titulo">Colores del marco</h2>
+                <div id="px-marco-campos" class="px-ficha"></div>
+                <div class="fila-botones">
+                    <button id="px-marco-codigo" class="boton chico secundario" type="button" data-es="Volver a los del código" data-en="Back to the coded ones">Volver a los del código</button>
+                </div>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="px-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                    <button id="px-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                </div>
+                <p id="px-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

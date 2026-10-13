@@ -55,6 +55,24 @@
       "lee": "mundo/supervivencia/escena-amistad.js",
       "fase": 5,
       "que": "Escenas cortas con guion (T, r, frases, golpes, corazones y una pista de gestos por actor): las de tipo amistad reemplazan por clave a ANIMACIONES (hoy punos y pareja, paridad exacta) y las de tipo guion se juegan con /amistad guion <clave> [persona]; se aplica en vivo con supervivencia.html?estudio"
+    },
+    "iconos": {
+      "esquema": "iconos",
+      "lee": "mundo/supervivencia/iconos.js",
+      "fase": 9,
+      "que": "Dibujos de 16×16 de los objetos de la supervivencia (por clave en minúscula): reemplazan al de PINTORES en el inventario, los objetos tirados y la mano; se pintan en la pestaña Píxeles y se aplican en vivo con supervivencia.html?estudio"
+    },
+    "cartas-arte": {
+      "esquema": "cartas-arte",
+      "lee": "mundo/supervivencia/cartas-arte.js",
+      "fase": 9,
+      "que": "Arte de las cartas del Duelo: retrato de 40×26 por carta, reverso de 50×76 y colores del marco por familia (mesa 3D y panel 2D); se pinta en la pestaña Píxeles y se aplica en vivo con supervivencia.html?estudio"
+    },
+    "borradores": {
+      "esquema": "borradores",
+      "lee": null,
+      "fase": 9,
+      "que": "Objetos y cartas nuevos que el dueño crea en la pestaña Píxeles (dibujo + ficha) con estado borrador: el juego no los lee; un agente los lista con resumen borradores, los implementa y los marca hecho"
     }
   }
 }
