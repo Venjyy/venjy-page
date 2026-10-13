@@ -17,9 +17,9 @@
         "sv-camara": { "ancla": "si", "x": 12, "y": 176, "w": 64, "h": 40, "letra": 0.8 },
         "sv-comando": { "ancla": "si", "x": 12, "y": 222, "w": 64, "h": 40, "letra": 0.9 },
         "mision": { "ancla": "si", "x": 12, "y": 270, "seguro": false },
-        "coords": { "ancla": "si", "x": 12, "y": 330, "seguro": false },
-        "fps": { "ancla": "si", "x": 12, "y": 350, "seguro": false },
-        "hora": { "ancla": "si", "x": 12, "y": 370, "seguro": false }
+        "coords": { "ancla": "si", "x": 12, "y": 352, "seguro": false },
+        "fps": { "ancla": "si", "x": 12, "y": 391, "seguro": false },
+        "hora": { "ancla": "si", "x": 12, "y": 430, "seguro": false }
       }
     },
     "baja": {
@@ -36,7 +36,10 @@
         "sv-inventario": { "x": 2, "h": 58, "y": 92 },
         "bajar": { "y": -64, "x": 144 },
         "saltar": { "y": -78, "x": 32, "w": 94, "h": 92 },
-        "minimapa": { "ancla": "sd", "seguro": false, "x": 8, "y": 8, "w": 134, "h": 120 }
+        "minimapa": { "ancla": "sd", "seguro": false, "x": 8, "y": 8, "w": 134, "h": 120 },
+        "coords": { "x": 12, "y": 8 },
+        "fps": { "x": 12, "y": 46 },
+        "hora": { "x": 76, "y": 92 }
       }
     }
   }

@@ -47,9 +47,9 @@
             "sv-acariciar": { "$ref": "#/$defs/boton" },
             "sv-gestos": { "$ref": "#/$defs/boton", "description": ".tactil-boton.sv-gestos (GESTOS: abre la ruleta, 7c-2). Hoy id, x 116, y 176 desde pie, 76x40." },
             "mision": { "$ref": "#/$defs/boton", "description": "#hud .mision-activa (misión en curso). Sin w ni h: su tamaño es el del texto." },
-            "coords": { "$ref": "#/$defs/boton", "description": "#coords (X Y Z del jugador, texto). Sin w ni h: su tamaño es el del texto. Hoy si, x 12, y 330." },
-            "fps": { "$ref": "#/$defs/boton", "description": "#fps (FPS y ms si están activos en Rendimiento). Hoy si, x 12, y 350." },
-            "hora": { "$ref": "#/$defs/boton", "description": "#hora (hora del mundo, si está activada en Ajustes). Hoy si, x 12, y 370." },
+            "coords": { "$ref": "#/$defs/boton", "description": "#coords (X Y Z del jugador, texto). Sin w ni h: su tamaño es el del texto. Con posición sale del bloque .datos (position:fixed, layout-datos.js)." },
+            "fps": { "$ref": "#/$defs/boton", "description": "#fps (FPS y ms si están activos en Rendimiento). Igual que coords." },
+            "hora": { "$ref": "#/$defs/boton", "description": "#hora (hora del mundo, si está activada en Ajustes). Igual que coords." },
             "minimapa": { "$ref": "#/$defs/boton", "description": "#hud .mm-pequeno (minimapa de la esquina). Hoy sd, x 12, y 10, seguro false, 160x160 (110x110 con ancho <= 600). Pausa y pantalla bajan bajo él por mundo.css: si lo mueves, muévelas también." }
           },
           "additionalProperties": false
