@@ -19,6 +19,8 @@ import { dibujarCarta, dibujarReverso, versionDeArte, ZONAS, ANCHO, ALTO } from 
 import { MESA, ALTO_CARTA, marcoMesa, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto } from './cartas-mesa-modelo.js';
 import { fusionar } from '../datos/cargador.js';
 import { crearAnimador } from './cartas-mesa-anim.js';
+import { sonidoDe, sonidoFin } from './cartas-anim-modelo.js';
+import { sonar } from './cartas-mesa-sonido.js';
 
 const t = (es, en) => ({ es, en });
 export const TXT_MESA = {
@@ -43,6 +45,7 @@ export function crearMesaCartas(ctx) {
     let abierto = false, e = null, nivel = 'facil', sel = null, postura = 'ata', reloj = 0, vista = 1, tercera = 0, leida = null;
     let M = null, lucho = null, luchoAntes = null, aviso = '', encima = -1, mostrandoReglas = false;
     let leidaId = null; // carta abierta en el lector que no está en una zona (tu mano sin jugarla, el descarte)
+    let finSonado = false; // el sonido del final ya sonó (una vez por partida)
     let ultimos = null; const vidaVista = [0, 0], spanVida = [null, null]; // animación: últimos eventos y la vida que se ve
     const Lx = o => (o && (o[idioma] || o.es)) || '';
 
@@ -407,6 +410,7 @@ export function crearMesaCartas(ctx) {
     }
     function ejecutar(a) {
         if (!a || !e || e.ganador !== null || !esLegal(e, a)) return;
+        anim.saltar(); // si algo seguía animando, termina con el estado anterior (el final no suena antes de tiempo)
         const antes = e.turno, id = (a.t === 'invocar' || a.t === 'hechizo') ? e.jug[antes].mano[a.m] : null;
         const ev = aplicar(e, a);
         sel = null; reloj = 0; registrar(a, antes, id);
@@ -414,9 +418,16 @@ export function crearMesaCartas(ctx) {
         ultimos = ev;
         refrescarMesa();
         anim.iniciar(ev);
+        if (!anim.ocupado) anunciarFin();
+    }
+    // El final (ganar, perder, empatar) suena una vez, cuando la animación termina y sale el cartel
+    function anunciarFin() {
+        if (!e || e.ganador === null || finSonado) return;
+        finSonado = true; sonar(sonidoFin(e.ganador, L));
     }
     function iniciar(n) {
         anim.saltar(); ultimos = null;
+        finSonado = false;
         nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel, { semilla: (Math.random() * 1e9) | 0 }); sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false;
         refrescarMesa();
     }
@@ -509,7 +520,8 @@ export function crearMesaCartas(ctx) {
         texto: p => Lx(p.j === 0 ? TXT_CARTAS.tuTurno : TXT_CARTAS.suTurno),
         vida: (j, n) => { vidaVista[j] = n; if (spanVida[j]) spanVida[j].textContent = String(n); },
         refrescar: () => refrescarMesa(),
-        alTerminar: () => { if (abierto) refrescarMesa(); }
+        sonido: p => sonar(sonidoDe(p, L, id => CARTAS[id]?.efecto)),
+        alTerminar: () => { if (abierto) refrescarMesa(); anunciarFin(); }
     });
 
     const luz = new THREE.Color(), BLANCO = new THREE.Color(1, 1, 1);

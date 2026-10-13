@@ -101,5 +101,21 @@
     "muere": "#b02020",
     "atada": "#a0a0a0",
     "salva": "#5ab4ff"
+  },
+  "sonido": {
+    "activo": 1,
+    "volumen": 1,
+    "roba": 1,
+    "juega": 1,
+    "ataque": 1,
+    "golpe": 1,
+    "destruye": 1,
+    "hechizo": 1,
+    "efecto": 1,
+    "cura": 1,
+    "turno": 1,
+    "gana": 1,
+    "pierde": 1,
+    "empate": 1
   }
 }

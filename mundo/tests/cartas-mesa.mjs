@@ -162,6 +162,21 @@ ok(Mo.pausaAuto({ fase: 'robo', turno: 0 }) === 0.4 && Mo.pausaAuto({ fase: 'pri
     const t1 = An.planificar(ev, A, e).total, t2 = An.planificar(ev, fusionar(A, { anim: { velocidad: 2 } }), e).total;
     ok(Math.abs(t2 - t1 / 2) < 1e-9, 'velocidad 2 = la mitad del tiempo');
     console.log(`animaciones: ${planes} jugadas planificadas, la más larga ${largo.toFixed(2)} s`);
+    // ---- 5. Sonido: cada evento tiene su sonido y los ajustes mandan ----
+    for (const t of tipos) if (t !== 'fin') ok(Object.hasOwn(An.CLAVE_SONIDO, t) || t === 'nada', `el evento ${t} tiene sonido o está anotado sin él`);
+    const p = ev.find(x => x.t === 'roba');
+    ok(An.sonidoDe(p, A)?.clave === 'roba', 'robar suena roba');
+    ok(An.sonidoDe(p, fusionar(A, { sonido: { activo: 0 } })) === null, 'activo 0: mudo');
+    ok(An.sonidoDe(p, fusionar(A, { sonido: { volumen: 0 } })) === null, 'volumen 0: mudo');
+    ok(An.sonidoDe(p, fusionar(A, { sonido: { roba: 0 } })) === null, 'roba 0 apaga solo ese sonido');
+    ok(An.sonidoDe({ t: 'ataque' }, fusionar(A, { sonido: { roba: 0, volumen: 0.5 } })).vol === 0.5, 'volumen general escala');
+    ok(An.sonidoDe({ t: 'hechizo', c: 'x' }, A, () => 'rayo').variante === 'rayo', 'el hechizo suena según su efecto');
+    ok(An.sonidoFin(0, A).clave === 'gana' && An.sonidoFin(1, A).clave === 'pierde' && An.sonidoFin('empate', A).clave === 'empate', 'final: gana, pierde, empate');
+    ok(An.sonidoFin(0, fusionar(A, { sonido: { gana: 0 } })) === null, 'gana 0: sin fanfarria');
+    // Las recetas cubren todas las claves (el módulo usa WebAudio y no carga en Node: se lee su texto)
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(resolve(raiz, 'mundo/supervivencia/cartas-mesa-sonido.js'), 'utf8');
+    for (const k of new Set([...Object.values(An.CLAVE_SONIDO), 'gana', 'pierde', 'empate'])) ok(new RegExp(`\n    ${k}: `).test(src), `receta para ${k}`);
 }
 
 console.log(fallos ? `${fallos} fallos` : `cartas-mesa: todo bien (${probadas} jugadas por toques)`);

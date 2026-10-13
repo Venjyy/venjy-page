@@ -23,7 +23,8 @@
     "anim": { "$ref": "#/$defs/numeros", "description": "Animaciones: activas (0/1), velocidad, arco, alzar, embestida, sacudida, flota (px), numero (px), pulso, tocarSalta (0/1). Ver ANIM en mundo/supervivencia/cartas-anim-modelo.js" },
     "duraciones": { "$ref": "#/$defs/numeros", "description": "Segundos que dura la animación de cada evento de aplicar (roba, invoca, ataque, muere…)" },
     "sigue": { "$ref": "#/$defs/numeros", "description": "Cuánto de cada evento (0-1) pasa antes de que empiece el siguiente" },
-    "colores": { "$ref": "#/$defs/colores" }
+    "colores": { "$ref": "#/$defs/colores" },
+    "sonido": { "$ref": "#/$defs/numeros", "description": "Sonido del duelo (sintetizado): activo (0/1), volumen general y volumen de cada sonido: roba, juega, ataque, golpe, destruye, hechizo, efecto, cura, turno, gana, pierde, empate (0 lo apaga)" }
   },
   "required": ["version"],
   "additionalProperties": false,

@@ -25,8 +25,34 @@ export const ANIM = {
     colores: {
         poder: '#ff8a3d', rayo: '#ffe14d', curar: '#5dff7a', escudo: '#5ab4ff', once: '#c77dff', revivir: '#f2f2f2', abrazo: '#ff8fc8',
         efecto: '#ffd24a', dano: '#ff5555', cura: '#55ff55', sube: '#55ff55', baja: '#ff8a3d', muere: '#b02020', atada: '#a0a0a0', salva: '#5ab4ff'
-    }
+    },
+    // Sonido (pulido, PR 2; sintetizado en cartas-mesa-sonido.js, cuelga de los mismos eventos que la animación)
+    // activo: 0 = mudo · volumen: general · el resto, volumen de cada sonido (0 lo apaga). Sin animaciones no hay sonido.
+    sonido: { activo: 1, volumen: 1, roba: 1, juega: 1, ataque: 1, golpe: 1, destruye: 1, hechizo: 1, efecto: 1, cura: 1, turno: 1, gana: 1, pierde: 1, empate: 1 }
 };
+
+// Qué sonido le toca a cada evento de `aplicar` (la receta de cada uno está en cartas-mesa-sonido.js)
+export const CLAVE_SONIDO = {
+    roba: 'roba', vuelve: 'roba', invoca: 'juega', modo: 'juega', ataque: 'ataque', dano: 'golpe', muere: 'destruye', quema: 'destruye',
+    hechizo: 'hechizo', efecto: 'efecto', sube: 'efecto', escudo: 'efecto', salva: 'efecto', atada: 'efecto', abrazo: 'efecto',
+    cura: 'cura', turno: 'turno'
+};
+
+// → { clave, variante, vol } o null (mudo, sonido apagado o sin sonido). A = MESA fusionada (o ANIM).
+export function sonidoDe(p, A = ANIM, efectoDe = null) {
+    const S = { ...ANIM.sonido, ...(A.sonido || {}) }, clave = CLAVE_SONIDO[p.t];
+    if (!S.activo || !clave) return null;
+    const vol = (Number(S.volumen) || 0) * (Number(S[clave]) || 0);
+    if (!(vol > 0)) return null;
+    const variante = p.t === 'hechizo' ? (efectoDe && efectoDe(p.c)) || '' : p.t === 'sube' && p.n < 0 ? 'baja' : p.t === 'efecto' ? p.ef || '' : '';
+    return { clave, variante, vol };
+}
+// El final de la partida: ganador 0 (tú), 1 (Lucho) o 'empate'
+export function sonidoFin(ganador, A = ANIM) {
+    const S = { ...ANIM.sonido, ...(A.sonido || {}) }, clave = ganador === 0 ? 'gana' : ganador === 1 ? 'pierde' : 'empate';
+    const vol = S.activo ? (Number(S.volumen) || 0) * (Number(S[clave]) || 0) : 0;
+    return vol > 0 ? { clave, variante: '', vol } : null;
+}
 
 const rival = j => 1 - j;
 
