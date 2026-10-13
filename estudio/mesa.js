@@ -23,7 +23,9 @@ const GRUPOS = [
     ['anim', 'Animaciones', 'Animations', { activas: '1 = sí, 0 = no', velocidad: '2 = el doble de rápido', arco: 'altura del vuelo (m)', alzar: 'altura del hechizo (m)', embestida: 'cuánto avanza al atacar (0-1)', sacudida: 'temblor del golpe (m)', flota: 'cuánto sube el número (px)', numero: 'tamaño del número (px)', pulso: 'tamaño del brillo', tocarSalta: '1 = tocar salta la animación' }],
     ['duraciones', 'Animaciones: segundos por evento', 'Animations: seconds per event', {}],
     ['sigue', 'Animaciones: cuándo empieza el siguiente (0-1)', 'Animations: when the next one starts (0-1)', {}],
-    ['colores', 'Animaciones: colores', 'Animations: colors', {}]
+    ['colores', 'Animaciones: colores', 'Animations: colors', {}],
+    // Sonido (cartas-mesa-sonido.js): cuelga de los mismos eventos; 0 apaga ese sonido
+    ['sonido', 'Sonido del duelo', 'Duel sound', { activo: '1 = suena, 0 = mudo', volumen: 'volumen general', roba: 'robar carta', juega: 'poner carta / cambiar postura', ataque: 'embestida', golpe: 'daño recibido', destruye: 'carta destruida', hechizo: 'hechizos', efecto: 'efectos, escudos y poderes', cura: 'curar', turno: 'aviso de turno', gana: 'ganar', pierde: 'perder', empate: 'empatar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
 const rango = (k, v) => GRADOS.has(k) ? [-180, 180, 1] : v > 10 ? [0, Math.max(600, v * 2), 1] : [-3, 3, 0.01];

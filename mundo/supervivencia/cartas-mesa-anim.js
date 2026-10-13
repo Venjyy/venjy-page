@@ -17,7 +17,7 @@ import { ALTO_CARTA, posZona, posManoRival, posMazo, posDesc, posMano } from './
 //   zonaMesh(j, z), manoMesh(i), manoRivalMesh(i), tam() → { x, y } del lienzo,
 //   pantalla(x, y, z) → { x, y } px desde arriba (o null), desdePantalla(x, yAbajo, dist) → Vector3 local,
 //   destinoMano(i) → { x, y, w, h, giro } de tu carta i, efectoDe(id), capa (DOM para los números),
-//   texto(evento turno), vida(j, n), refrescar(), alTerminar()
+//   texto(evento turno), vida(j, n), refrescar(), alTerminar(), sonido(paso) (opcional: suena al empezar cada paso)
 export function crearAnimador(api) {
     let plan = null, t = 0, pend = [0, 0];
     const fantasmas = new Map(); // segmento → malla
@@ -331,7 +331,10 @@ export function crearAnimador(api) {
                 g.material.map = g.userData.cara; g.material.opacity = 1; g.material.color.copy(BLANCO);
             }
             visibilidad();
-            for (const p of plan.pasos) if (t >= p.ini && t <= p.ini + p.dur + 0.001) animarPaso(p);
+            for (const p of plan.pasos) {
+                if (t >= p.ini && !p.sono) { p.sono = true; if (api.sonido) api.sonido(p); } // el sonido sale al empezar el paso
+                if (t >= p.ini && t <= p.ini + p.dur + 0.001) animarPaso(p);
+            }
             for (const x of extras.entries()) { const p = plan.pasos[x[0]]; if (termino(p.k)) { x[1].mallas.forEach(m => { m.visible = false; }); x[1].dom.forEach(d => { d.style.opacity = '0'; }); } }
             animarManos();
             vidas();
