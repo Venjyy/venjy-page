@@ -799,6 +799,7 @@ async function arrancar(guardado, cx = null) {
                 tinte: materiales.solido.color,
                 lucho: () => amigos.lista.find(n => n.clave === 'lucho') || null,
                 alCerrar: liberarEscena,
+                alTutorial: () => misiones.estado.minijuegos.add('cartas-tuto'), // ganaste el tutorial: la próxima vez, elegir nivel
                 alPanel: n => { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); }
             });
             return mesaCartas;
@@ -813,13 +814,18 @@ async function arrancar(guardado, cx = null) {
         bloquearEscena(true);
         cargarMesaCartas().then(m => { if (!m || !m.abrir(n)) { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); } });
     }
+    // Duelo: la primera vez (sin la marca 'cartas-tuto') el botón abre el tutorial; después, «Repasar el tutorial» aparte
+    const tutoCartasVisto = () => misiones.estado.minijuegos.has('cartas-tuto');
     misiones.minijuego = {
         texto: clave => {
-            if (clave === 'lucho') return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) };
+            if (clave === 'lucho') {
+                const motivo = inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo);
+                return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo, extra: tutoCartasVisto() && !motivo ? [{ texto: textoCartas(TXT_CARTAS_BOTON.tuto), modo: 'tutorial' }] : [] };
+            }
             return minijuegos.botonPara(clave);
         },
         // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
-        jugar: clave => {
+        jugar: (clave, modo) => {
             const b = clave === 'lucho'
                 ? { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) }
                 : minijuegos.botonPara(clave);
@@ -827,7 +833,7 @@ async function arrancar(guardado, cx = null) {
             capaPanel.hidden = true; capaPanel.textContent = '';
             document.body.classList.remove('panel-lado');
             camaras.terminarCine();
-            if (clave === 'lucho') { abrirMesaCartas('facil'); return; }
+            if (clave === 'lucho') { abrirMesaCartas(modo === 'tutorial' || !tutoCartasVisto() ? 'tutorial' : 'facil'); return; }
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
@@ -925,10 +931,10 @@ async function arrancar(guardado, cx = null) {
     });
     // /cartas [facil|medio] (7h-2b): abre la mesa del duelo sin pedir el mazo, para probarla
     comandosDev['/cartas'] = {
-        ayuda: { es: '/cartas [facil|medio] (mesa del duelo con Lucho)', en: '/cartas [facil|medio] (card duel table with Lucho)' },
-        sugerir: () => ['facil', 'medio'],
+        ayuda: { es: '/cartas [facil|medio|tutorial] (mesa del duelo con Lucho)', en: '/cartas [facil|medio|tutorial] (card duel table with Lucho)' },
+        sugerir: () => ['facil', 'medio', 'tutorial'],
         fn: arg => { // la consola se cierra y pide el puntero antes: se abre un momento después
-            const n = String(arg || '').trim() === 'medio' ? 'medio' : 'facil';
+            const a = String(arg || '').trim(), n = a === 'medio' || a === 'tutorial' ? a : 'facil';
             setTimeout(() => { if (!uiAbierta && !vida.muerto && !camaras.enCine) abrirMesaCartas(n); }, 150);
         }
     };
@@ -1469,7 +1475,7 @@ async function arrancar(guardado, cx = null) {
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
         get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
-        // Mesa del duelo (7h-2b): abrirMesa('facil'|'medio') sin pedir el mazo; mesaCartas, para pruebas y el Estudio
+        // Mesa del duelo (7h-2b): abrirMesa('facil'|'medio'|'tutorial') sin pedir el mazo; mesaCartas, para pruebas y el Estudio
         get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe

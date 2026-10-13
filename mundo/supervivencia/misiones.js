@@ -325,6 +325,13 @@ export function crearMisiones(ctx) {
             if (mj.motivo) { b.disabled = true; b.title = mj.motivo; }
             else b.addEventListener('click', () => { if (hablarUI) hablarUI.soltar(); botonMinijuego.jugar(clave); }); // suelta al amigo antes de que el minijuego lo tome
             el.appendChild(b);
+            // Botones extra del mismo juego (el Duelo: «Repasar el tutorial»); `modo` llega a jugar(clave, modo)
+            for (const x of mj.extra || []) {
+                const bx = document.createElement('button');
+                bx.type = 'button'; bx.className = 'boton boton-minijuego boton-minijuego-extra'; bx.textContent = x.texto;
+                bx.addEventListener('click', () => { if (hablarUI) hablarUI.soltar(); botonMinijuego.jugar(clave, x.modo); });
+                el.appendChild(bx);
+            }
             if (mj.motivo) el.appendChild(parrafo(mj.motivo, 'motivo-minijuego'));
         }
         // La cámara de cine encuadra al amigo mientras el panel está abierto

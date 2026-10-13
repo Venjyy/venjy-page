@@ -117,5 +117,19 @@
     "gana": 1,
     "pierde": 1,
     "empate": 1
-  }
+  },
+  "turnoLucho": { "enPartida": 1, "pausa": 0.9, "mesa": 0.8 },
+  "planoLucho": {
+    "lado": 0.35,
+    "alto": 0.9,
+    "z": 0.8,
+    "mira": [0, 0.9, -0.75]
+  },
+  "planoMesa": {
+    "lado": 0,
+    "alto": 1.15,
+    "z": 0.5,
+    "mira": [0, 0, -0.12]
+  },
+  "tutorial": { "color": "#ffe14a", "opacidad": 0.95, "pulso": 1.6, "borde": 1.14, "leer": 4 }
 }

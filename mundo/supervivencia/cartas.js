@@ -7,6 +7,7 @@
 //   aplicar(e, a)    → cambia `e` y devuelve los eventos (para animar: roba, invoca, ataque, muere…)
 //   jugadaIA(e, nivel) → una acción legal ('facil' | 'medio')
 //   accionTutorial(e, esperada) → la acción legal que calza con un paso de TUTORIAL (o null)
+//   calzaTutorial(e, a, esperada) → si la acción `a` es la que pide ese paso
 //   atkDe(e, j, c) / defDe(e, j, c) → ATK y DEF reales (con bonos y auras: Hadad, Mila y Gala, Moisés)
 // Turno: fase 'robo' (solo «robar»; antes actúan los efectos de inicio de turno) → fase 'principal':
 // invocar (1 por turno, más con Venjy), hechizos sin límite, atacar con cada criatura (no la recién
@@ -371,15 +372,18 @@ export function valorar(e, j, fino = true) {
 
 // ---------------------------------------------------------
 // Tutorial: la acción legal que calza con un paso (cartas-datos.js, TUTORIAL.pasos / .lucho)
-// El panel la usa para marcar qué tocar y para jugar los turnos de Lucho.
+// La mesa la usa para marcar qué tocar (resaltadoTutorial) y para jugar los turnos de Lucho.
 // ---------------------------------------------------------
 export function accionTutorial(e, esp) {
+    return jugadas(e).find(a => calzaTutorial(e, a, esp)) || null;
+}
+// ¿La acción `a` del jugador de turno es la que pide el paso? (la mesa deja jugar solo esa en el tutorial;
+// la zona donde se invoca da lo mismo)
+export function calzaTutorial(e, a, esp) {
+    if (!a || !esp || a.t !== esp.t) return false;
     const J = e.jug[e.turno], R = e.jug[rival(e.turno)];
     const contraOk = (obj, contra) => (contra === undefined ? true : contra === null ? obj === -1 || obj === undefined : obj >= 0 && R.zonas[obj]?.id === contra);
-    return jugadas(e).find(a => {
-        if (a.t !== esp.t) return false;
-        if (a.t === 'invocar' || a.t === 'hechizo') return J.mano[a.m] === esp.carta && (!esp.modo || a.modo === esp.modo) && contraOk(a.obj, esp.contra);
-        if (a.t === 'atacar') return J.zonas[a.z]?.id === esp.carta && contraOk(a.obj, esp.contra);
-        return true;
-    }) || null;
+    if (a.t === 'invocar' || a.t === 'hechizo') return J.mano[a.m] === esp.carta && (!esp.modo || a.modo === esp.modo) && contraOk(a.obj, esp.contra);
+    if (a.t === 'atacar') return J.zonas[a.z]?.id === esp.carta && contraOk(a.obj, esp.contra);
+    return true;
 }

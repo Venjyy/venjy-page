@@ -210,6 +210,8 @@ const responder = crearManejador({
         if (!v || !v.abrirMesa) throw new Error('el juego todavía no está listo');
         if (accion === 'abrir') {
             if (!(v.mesaCartas && v.mesaCartas.activo)) v.abrirMesa('facil');
+        } else if (accion === 'tutorial') {
+            if (v.mesaCartas && v.mesaCartas.activo) v.mesaCartas.iniciarTutorial(); else v.abrirMesa('tutorial');
         } else if (accion === 'cerrar') { if (v.mesaCartas) v.mesaCartas.cerrar(); }
         else if (!v.mesaCartas || !v.mesaCartas.activo) throw new Error('primero abre la mesa');
         else if (accion === 'animar') { if (!v.mesaCartas.repetirAnimacion()) throw new Error('primero haz una jugada en la mesa'); }

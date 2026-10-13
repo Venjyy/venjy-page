@@ -4,6 +4,7 @@
 //   1. layout: la mesa queda frente a Lucho, tu asiento al otro lado; las zonas y tu mano no se pisan
 //   2. clic → jugada: en partidas reales, cada jugada legal de tu turno se alcanza tocando cartas, zonas,
 //      a Lucho o los botones, y todo lo que devuelven los toques es legal
+//   6. tutorial: siguiendo solo lo que se ilumina se gana la partida guiada; la cámara del turno de Lucho
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -177,6 +178,57 @@ ok(Mo.pausaAuto({ fase: 'robo', turno: 0 }) === 0.4 && Mo.pausaAuto({ fase: 'pri
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(resolve(raiz, 'mundo/supervivencia/cartas-mesa-sonido.js'), 'utf8');
     for (const k of new Set([...Object.values(An.CLAVE_SONIDO), 'gana', 'pierde', 'empate'])) ok(new RegExp(`\n    ${k}: `).test(src), `receta para ${k}`);
+}
+
+// ---- 6. Tutorial: se gana tocando solo lo que brilla; la cámara del turno de Lucho ----
+{
+    const T = D.TUTORIAL;
+    const e = C.nuevaPartida({ mazos: T.mazos, barajar: false, vidas: T.vidas, empieza: 0 });
+    ok(!C.calzaTutorial(e, { t: 'terminar' }, T.pasos[0].a), 'tutorial: una jugada que no pide el paso no calza');
+    let p = 0, l = 0, bien = true, toques = 0;
+    while (e.ganador === null && bien) {
+        if (e.turno === 1) {
+            for (const esp of T.lucho[l++] || []) { const a = C.accionTutorial(e, esp); if (!a) { bien = false; break; } C.aplicar(e, a); }
+            continue;
+        }
+        const esp = T.pasos[p]?.a;
+        let sel = null, accion = null;
+        for (let k = 0; k < 6 && !accion; k++) {
+            const r = Mo.resaltadoTutorial(e, sel, esp), B = Mo.botonesMesa(e, sel);
+            if (!r) break;
+            toques++;
+            if (r.tipo === 'mazo') accion = B.robar;
+            else if (r.tipo === 'mano') ({ sel, accion } = Mo.tocarCarta(e, sel, r.i, 'ata'));
+            else if (r.tipo === 'zona') ({ sel, accion } = Mo.tocarZona(e, sel, r.j, r.z));
+            else if (r.b === 'terminar' || r.b === 'directo') accion = B[r.b];
+            else sel = Mo.elegirPostura(e, sel, r.b);
+        }
+        if (!accion || !C.calzaTutorial(e, accion, esp)) { bien = false; console.log('paso sin jugada por el resaltado', p, esp); break; }
+        C.aplicar(e, accion); p++;
+    }
+    ok(bien && e.ganador === 0 && p === T.pasos.length, 'tutorial: tocando lo que brilla se gana, paso a paso');
+    // Con la postura equivocada elegida, brilla el botón de la buena
+    {
+        const e2 = C.nuevaPartida({ mazos: T.mazos, barajar: false, vidas: T.vidas, empieza: 0 });
+        C.aplicar(e2, { t: 'robar' });
+        const m = e2.jug[0].mano.indexOf('trauco');
+        const sel = Mo.tocarCarta(e2, null, m, 'def').sel;
+        const r = Mo.resaltadoTutorial(e2, sel, T.pasos[1].a);
+        ok(r && r.tipo === 'boton' && r.b === 'ata', 'tutorial: en Defensa brilla el botón Ataque');
+        ok(Mo.resaltadoTutorial(e2, null, null) === null, 'sin paso no brilla nada');
+    }
+    // Cámara del turno de Lucho
+    const { fusionar } = await importar('mundo/datos/cargador.js');
+    const L6 = Mo.MESA, e3 = C.nuevaPartida({ mazos: T.mazos, barajar: false, vidas: T.vidas, empieza: 1 });
+    ok(Mo.planoTurno(L6, { e: e3 }) === 'lucho', 'turno de Lucho: la cámara lo mira');
+    ok(Mo.planoTurno(L6, { e: e3, jugoMesa: true, animando: true }) === 'mesa', 'su jugada: la cámara va a la mesa');
+    ok(Mo.planoTurno(L6, { e: e3, jugoMesa: true, reloj: L6.turnoLucho.mesa + 0.1 }) === 'lucho', 'después vuelve a él');
+    ok(Mo.planoTurno(fusionar(L6, { turnoLucho: { enPartida: 0 } }), { e: e3 }) === null, 'enPartida 0: fuera del tutorial no se mueve');
+    ok(Mo.planoTurno(fusionar(L6, { turnoLucho: { enPartida: 0 } }), { e: e3, tuto: true }) === 'lucho', 'en el tutorial siempre');
+    ok(Mo.planoTurno(L6, { e, intro: true }) === 'lucho' && Mo.planoTurno(L6, { e: C.nuevaPartida({ mazos: T.mazos }) }) === null, 'bienvenida: mira a Lucho; tu turno: tu vista');
+    ok(cerca(Mo.pausaLucho(L6, e3, { tuto: true, primera: true }), Mo.pausaAuto(e3) + L6.tutorial.leer), 'tutorial: Lucho habla antes de jugar');
+    ok(cerca(Mo.pausaLucho(L6, e3, { jugoMesa: true }), Mo.pausaAuto(e3) + L6.turnoLucho.mesa), 'tras su jugada se queda en la mesa');
+    console.log(`tutorial: ${p} pasos con ${toques} toques`);
 }
 
 console.log(fallos ? `${fallos} fallos` : `cartas-mesa: todo bien (${probadas} jugadas por toques)`);
