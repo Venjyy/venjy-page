@@ -109,8 +109,8 @@ export function crearManejador(juego) {
                     return { ...base, tipo: 'ok', pose: r || null };
                 }
                 case 'mesa': {
-                    // Mesa del Duelo de Cartas (7h-2b): abrir, cerrar o cambiar de vista
-                    if (!['abrir', 'cerrar', 'vista'].includes(m.accion)) return error('accion de mesa no válida');
+                    // Mesa del Duelo de Cartas (7h-2b): abrir, cerrar, cambiar de vista o repetir la animación de la última jugada
+                    if (!['abrir', 'cerrar', 'vista', 'animar'].includes(m.accion)) return error('accion de mesa no válida');
                     if (!juego.mesa) return error('este juego no tiene la mesa de cartas');
                     await juego.mesa({ accion: m.accion });
                     return { ...base, tipo: 'ok' };

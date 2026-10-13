@@ -5,7 +5,7 @@
 //                              editarlas como un JSON más (`fusionar(MESA, datos)` en aplicarDatos de la mesa)
 //   marcoMesa(L, lucho)      → centro, giro y asiento del jugador en el mundo
 //   aMundo(M, x, z)          → punto local de la mesa (x a tu derecha, z hacia ti) en coordenadas del mundo
-//   posZona / posManoRival / posMazo / posMano → dónde va cada carta
+//   posZona / posManoRival / posMazo / posDesc / posMano → dónde va cada carta
 //   tocarCarta / tocarZona / elegirPostura / botonesMesa / zonasMarcadas
 //                            → el mismo flujo de selección que el panel (cartas-panel.js), convertido en
 //                              funciones puras: (estado, selección, toque) → { sel, accion }. `accion` siempre
@@ -13,6 +13,7 @@
 // =========================================================
 import { CARTAS, PIDE_PROPIA } from './cartas-datos.js';
 import { jugadas } from './cartas.js';
+import { ANIM } from './cartas-anim-modelo.js';
 
 export const ALTO_CARTA = 76 / 50;
 
@@ -25,6 +26,7 @@ export const MESA = {
     zonas: { sep: 0.42, propia: 0.22, rival: -0.22 },
     manoRival: { sep: 0.1, z: -0.6, alto: 0.38, inclina: 20 },
     mazo: { x: 0.76, z: 0.26 },                   // el tuyo a tu derecha y cerca; el de Lucho, al revés
+    desc: { x: 0.76, z: -0.2 },                   // el descarte (cementerio), junto al mazo; el de Lucho, al revés
     asiento: { dist: 0.45 },                      // desde tu borde de la mesa
     camara1: { alto: 1.62, atras: 0, mira: [0, 0.3, -0.45] },
     // Al elegir una carta en 1.ª persona la cámara sube sobre la mesa (tu mano no tapa las zonas)
@@ -35,7 +37,9 @@ export const MESA = {
         { alto: 2.2, atras: 2.2, lado: -2.0, mira: [0, 0.3, -0.4] }
     ],
     mini: { ancho: 0.3, max: 340, alto: 1.7, margen: 12 }, // vista de arriba en una esquina (3.ª persona)
-    mano: { alto: 0.26, max: 230, solape: 0.72, sube: 0.18 } // tu mano en pantalla (fracción del alto)
+    mano: { alto: 0.26, max: 230, solape: 0.72, sube: 0.18 }, // tu mano en pantalla (fracción del alto)
+    // Animaciones (anim, duraciones, sigue, colores): ver cartas-anim-modelo.js
+    ...ANIM
 };
 
 const rad = g => g * Math.PI / 180;
@@ -66,6 +70,9 @@ export function posManoRival(L, i, n) {
 }
 export function posMazo(L, j) {
     return j === 0 ? { x: L.mazo.x, z: L.mazo.z } : { x: -L.mazo.x, z: -L.mazo.z };
+}
+export function posDesc(L, j) {
+    return j === 0 ? { x: L.desc.x, z: L.desc.z } : { x: -L.desc.x, z: -L.desc.z };
 }
 // Tu mano en pantalla (px, origen abajo a la izquierda): centro, ancho y giro de cada carta en abanico
 export function posMano(L, i, n, ancho, alto, elegida = false, encima = false) {

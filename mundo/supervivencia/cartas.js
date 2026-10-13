@@ -128,7 +128,7 @@ export function aplicar(e, a) {
             e.invoc--;
             const id = J.mano.splice(a.m, 1)[0];
             if (J.zonas[a.z]) morir(e, j, a.z, ev, false, true); // reemplazo: la criatura propia se va al cementerio
-            entrar(e, j, id, a.z, a.modo, a.obj, ev, false);
+            entrar(e, j, id, a.z, a.modo, a.obj, ev, false, a.m);
             break;
         }
         case 'hechizo': lanzar(e, j, a, ev); break;
@@ -165,7 +165,7 @@ function aMano(e, j, id, ev, de) {
     if (J.mano.length >= MANO_MAX) { if (!carta(id).ficha) J.desc.push(id); ev.push({ t: 'quema', j, c: id }); }
     else { J.mano.push(id); ev.push({ t: 'roba', j, c: id, de }); }
 }
-function curar(e, j, n, ev) { e.jug[j].vida += n; ev.push({ t: 'cura', j, n }); }
+function curar(e, j, n, ev) { const antes = e.jug[j].vida; e.jug[j].vida += n; ev.push({ t: 'cura', j, n, antes }); }
 
 // Índice en el descarte de la criatura más fuerte (-1 si no hay)
 function mejorDescarte(J) {
@@ -182,16 +182,17 @@ function mejorRival(e, j, filtro = () => true) {
 }
 
 // Pone la criatura en la zona y dispara su efecto de entrada (los combos salen de aquí)
-function entrar(e, j, id, z, modo, obj, ev, gratis) {
+// m = índice en la mano (jugada normal) o de = de dónde sale (mano, mazo, desc, mesa) si entra gratis: para animar
+function entrar(e, j, id, z, modo, obj, ev, gratis, m, de) {
     const J = e.jug[j], r = rival(j), R = e.jug[r], d = carta(id);
     J.zonas[z] = { id, atk: d.atk, def: d.def, bono: 0, modo, nueva: true, ataques: 1, ataco: 0, atada: 0, cambio: false, racha: false, quieta: false, escudo: false, unidos: [] };
-    ev.push({ t: 'invoca', j, z, c: id, modo, gratis });
+    ev.push(gratis ? { t: 'invoca', j, z, c: id, modo, gratis, de } : { t: 'invoca', j, z, c: id, modo, gratis, m });
     if (PIDE_RIVAL.has(d.efecto) && obj === undefined) obj = mejorRival(e, j, c => d.efecto !== 'punteria' || atkDe(e, r, c) <= 700);
     const efecto = (extra = {}) => ev.push({ t: 'efecto', j, z, c: id, ef: d.efecto, ...extra });
     switch (d.efecto) {
         case 'horda': {
             const m = J.mano.indexOf('zombi'), libre = libres(J)[0];
-            if (m >= 0 && libre !== undefined) { efecto(); J.mano.splice(m, 1); entrar(e, j, 'zombi', libre, modo, undefined, ev, true); }
+            if (m >= 0 && libre !== undefined) { efecto(); J.mano.splice(m, 1); entrar(e, j, 'zombi', libre, modo, undefined, ev, true, undefined, 'mano'); }
             break;
         }
         case 'flecha': efecto(); danar(e, r, 200, ev); break;
@@ -227,7 +228,7 @@ function entrar(e, j, id, z, modo, obj, ev, gratis) {
         }
         case 'gatera': {
             const k = J.mazo.findIndex(x => x === 'mila' || x === 'gala'), libre = libres(J)[0];
-            if (k >= 0 && libre !== undefined) { efecto(); entrar(e, j, J.mazo.splice(k, 1)[0], libre, modo, undefined, ev, true); }
+            if (k >= 0 && libre !== undefined) { efecto(); entrar(e, j, J.mazo.splice(k, 1)[0], libre, modo, undefined, ev, true, undefined, 'mazo'); }
             break;
         }
         case 'aullido': if (ocupadas(R).length) { efecto(); for (const k of ocupadas(R)) { R.zonas[k].bono -= 200; ev.push({ t: 'sube', j: r, z: k, n: -200 }); } } break;
@@ -245,7 +246,7 @@ function entrar(e, j, id, z, modo, obj, ev, gratis) {
 function lanzar(e, j, a, ev) {
     const J = e.jug[j], r = rival(j), id = J.mano.splice(a.m, 1)[0], h = carta(id).efecto;
     J.desc.push(id);
-    ev.push({ t: 'hechizo', j, c: id, obj: a.obj, obj2: a.obj2 });
+    ev.push({ t: 'hechizo', j, c: id, m: a.m, obj: a.obj, obj2: a.obj2 });
     switch (h) {
         case 'poder': J.zonas[a.obj].bono += 500; ev.push({ t: 'sube', j, z: a.obj, n: 500 }); break;
         case 'rayo': morir(e, r, a.obj, ev); break;
@@ -254,7 +255,7 @@ function lanzar(e, j, a, ev) {
         case 'once': robar(e, j, ev); robar(e, j, ev); break;
         case 'revivir': {
             const vuelve = J.desc.splice(mejorDescarte(J), 1)[0];
-            entrar(e, j, vuelve, libres(J)[0], 'ata', undefined, ev, true);
+            entrar(e, j, vuelve, libres(J)[0], 'ata', undefined, ev, true, undefined, 'desc');
             break;
         }
         case 'abrazo': {
@@ -280,15 +281,16 @@ function morir(e, j, z, ev, combate = false, reemplaza = false) {
     if (ef(c) === 'divide') {
         const zs = (reemplaza ? libres(J).filter(k => k !== z) : [z, ...libres(J).filter(k => k !== z)]).slice(0, 2); // en reemplazo la zona z es de la nueva
         if (zs.length) ev.push({ t: 'efecto', j, z, c: c.id, ef: 'divide' });
-        for (const k of zs) entrar(e, j, 'slimecito', k, 'def', undefined, ev, true);
+        for (const k of zs) entrar(e, j, 'slimecito', k, 'def', undefined, ev, true, undefined, 'mesa');
     } else if (ef(c) === 'hincha') { ev.push({ t: 'efecto', j, z, c: c.id, ef: 'hincha' }); robar(e, j, ev); robar(e, j, ev); }
     return true;
 }
 
 function danar(e, j, n, ev) {
     if (n <= 0 || e.ganador !== null) return;
-    e.jug[j].vida = Math.max(0, e.jug[j].vida - n);
-    ev.push({ t: 'dano', j, n });
+    const antes = e.jug[j].vida; // antes: para animar la vida (n puede pasar de lo que quedaba)
+    e.jug[j].vida = Math.max(0, antes - n);
+    ev.push({ t: 'dano', j, n, antes });
     if (e.jug[j].vida <= 0) terminarPartida(e, ev, rival(j), 'vida');
 }
 

@@ -115,5 +115,54 @@ ok(Mo.pausaAuto({ fase: 'robo', turno: 0 }) === 0.4 && Mo.pausaAuto({ fase: 'pri
     ok(!Mo.botonesMesa(e, r.sel).directo && !Mo.botonesMesa(e, r.sel).cambiar, 'sin ataque directo ni cambio de postura');
 }
 
+// ---- 4. Animaciones: la línea de tiempo sale de los eventos y calza con el estado final ----
+{
+    const An = await importar('mundo/supervivencia/cartas-anim-modelo.js');
+    const { fusionar } = await importar('mundo/datos/cargador.js');
+    const fs = await import('fs');
+    const json = JSON.parse(fs.readFileSync(resolve(raiz, 'mundo/datos/cartas-mesa.json'), 'utf8'));
+    const A = fusionar(Mo.MESA, json);
+    ok(A.anim && A.duraciones && A.sigue && A.colores && A.desc, 'MESA trae anim, duraciones, sigue, colores y desc');
+    for (const k of Object.keys(An.ANIM.duraciones)) ok(k in An.ANIM.sigue, `sigue tiene ${k}`);
+    let planes = 0, largo = 0, tipos = new Set();
+    for (let s = 1; s <= 30; s++) {
+        const e = C.partidaNivel(s % 2 ? 'facil' : 'medio', { semilla: s * 7 });
+        for (let n = 0; n < 400 && e.ganador === null; n++) {
+            const a = e.fase === 'robo' ? { t: 'robar' } : C.jugadaIA(e, 'medio');
+            const vida = [e.jug[0].vida, e.jug[1].vida];
+            const ev = C.aplicar(e, a), P = An.planificar(ev, A, e);
+            planes++; largo = Math.max(largo, P.total);
+            for (const x of ev) tipos.add(x.t);
+            // Tiempos finitos y en orden
+            let antes = 0;
+            for (const p of P.pasos) { ok(Number.isFinite(p.ini) && Number.isFinite(p.dur) && p.ini >= antes - 1e-9, `paso ${p.t} con tiempo raro`); antes = p.ini; }
+            ok(P.vidaAntes[0] === vida[0] && P.vidaAntes[1] === vida[1], `vida antes de la jugada (${a.t})`);
+            // Cada carta del estado final que entró en esta jugada es la última ocupante de su zona
+            for (const j of [0, 1]) for (let z = 0; z < 3; z++) {
+                const lista = P.ocupantes[`${j}:${z}`] || [], real = lista.filter(o => o.hasta === null);
+                const c = e.jug[j].zonas[z];
+                ok(real.length <= 1, 'una sola carta final por zona');
+                if (real.length) ok(c && c.id === real[0].c, `zona ${j}:${z}: la que entra es la que queda`);
+                if (!c) ok(!real.length, `zona ${j}:${z} vacía sin carta final`);
+                for (const o of lista) if (o.hasta !== null) ok(['muere', 'vuelve', 'abrazo'].includes(P.pasos[o.hasta].t), 'un fantasma se va muriendo, volviendo o abrazado');
+            }
+            // Las robadas son cartas de la mano final, en su lugar
+            for (const j of [0, 1]) for (const r of P.manos[j]) ok(e.jug[j].mano[r.i] === P.pasos[r.k].c, `mano ${j}: la robada está en ${r.i}`);
+            // Las jugadas desde la mano dicen de qué índice salen
+            for (const x of ev) if ((x.t === 'invoca' && !x.gratis) || x.t === 'hechizo') ok(Number.isInteger(x.m), `${x.t} sin m`);
+            for (const x of ev) if (x.t === 'invoca' && x.gratis) ok(['mano', 'mazo', 'desc', 'mesa'].includes(x.de), 'invoca gratis sin de');
+        }
+    }
+    ok(largo < 15, `ninguna jugada anima más de 15 s (máx. ${largo.toFixed(1)} s)`);
+    for (const t of ['roba', 'invoca', 'ataque', 'dano', 'muere', 'hechizo', 'turno']) ok(tipos.has(t), `las partidas probaron ${t}`);
+    // Apagadas o más rápidas
+    const e = C.partidaNivel('facil', { semilla: 5 });
+    const ev = C.aplicar(e, { t: 'robar' });
+    ok(An.planificar(ev, fusionar(A, { anim: { activas: 0 } }), e).pasos.length === 0, 'activas 0: sin animación');
+    const t1 = An.planificar(ev, A, e).total, t2 = An.planificar(ev, fusionar(A, { anim: { velocidad: 2 } }), e).total;
+    ok(Math.abs(t2 - t1 / 2) < 1e-9, 'velocidad 2 = la mitad del tiempo');
+    console.log(`animaciones: ${planes} jugadas planificadas, la más larga ${largo.toFixed(2)} s`);
+}
+
 console.log(fallos ? `${fallos} fallos` : `cartas-mesa: todo bien (${probadas} jugadas por toques)`);
 process.exit(fallos ? 1 : 0);

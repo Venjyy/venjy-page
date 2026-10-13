@@ -13,12 +13,17 @@
     "zonas": { "$ref": "#/$defs/numeros" },
     "manoRival": { "$ref": "#/$defs/numeros" },
     "mazo": { "$ref": "#/$defs/numeros" },
+    "desc": { "$ref": "#/$defs/numeros" },
     "asiento": { "$ref": "#/$defs/numeros" },
     "camara1": { "$ref": "#/$defs/camara" },
     "enfoque": { "$ref": "#/$defs/camara" },
     "terceras": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/camara" } },
     "mini": { "$ref": "#/$defs/numeros" },
-    "mano": { "$ref": "#/$defs/numeros" }
+    "mano": { "$ref": "#/$defs/numeros" },
+    "anim": { "$ref": "#/$defs/numeros", "description": "Animaciones: activas (0/1), velocidad, arco, alzar, embestida, sacudida, flota (px), numero (px), pulso, tocarSalta (0/1). Ver ANIM en mundo/supervivencia/cartas-anim-modelo.js" },
+    "duraciones": { "$ref": "#/$defs/numeros", "description": "Segundos que dura la animación de cada evento de aplicar (roba, invoca, ataque, muere…)" },
+    "sigue": { "$ref": "#/$defs/numeros", "description": "Cuánto de cada evento (0-1) pasa antes de que empiece el siguiente" },
+    "colores": { "$ref": "#/$defs/colores" }
   },
   "required": ["version"],
   "additionalProperties": false,
@@ -27,6 +32,12 @@
       "type": "object",
       "properties": { "nota": { "$ref": "comun.schema.json#/$defs/nota" } },
       "additionalProperties": { "type": "number" }
+    },
+    "colores": {
+      "type": "object",
+      "description": "Colores de los brillos de hechizos (por efecto) y de los números (dano, cura, sube, baja, muere…)",
+      "properties": { "nota": { "$ref": "comun.schema.json#/$defs/nota" } },
+      "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
     },
     "camara": {
       "type": "object",

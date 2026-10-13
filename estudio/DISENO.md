@@ -964,6 +964,8 @@ La mesa 3D (`mundo/supervivencia/cartas-mesa.js`) toma todas sus medidas de `MES
 
 **Hecho (2026-10-11):** pestaña **Mesa** (`estudio/mesa.js`): edita `cartas-mesa.json` en vivo y lo guarda; mensaje `mesa { accion: 'abrir' | 'cerrar' | 'vista' }` en el puente.
 
+**Animaciones (pulido, PR 1, 2026-10-13):** el mismo JSON trae `desc` (dónde va el descarte), `anim` (activas, velocidad, arco, embestida, sacudida, números, brillo, tocar para saltar), `duraciones` y `sigue` (segundos de cada evento y cuándo empieza el siguiente) y `colores` (hechizos por efecto, daño, cura, muerte). La pestaña Mesa los muestra como grupos más (los colores con selector) y el botón **Repetir la última jugada** (`mesa { accion: 'animar' }`) vuelve a animarla con los valores nuevos. Los valores base viven en `ANIM` (`mundo/supervivencia/cartas-anim-modelo.js`).
+
 ## 19. Objetos en la mano editables (Hito 1, punto 13, 2026-10-13)
 
 `mundo/datos/objetos-mano.json` guarda cómo se agarra lo que llevas: `tipos` (`objeto`, `herramienta`, `bloque`) y `objetos` (clave de `OBJETOS` en minúscula: `cana`, `pico_madera`), cada uno con `mano1` (la mano en primera persona, `mano.js`) y `mano3` (el cuerpo en tercera y el de los demás jugadores, `pose-jugador.js`): `pos` en bloques, `rot` en **grados**, `escala`. Esquema: `estudio/esquemas/objetos-mano.schema.json`.
