@@ -1,35 +1,89 @@
 # AGENTS.md
 
-## Propósito
+Guía para cualquier agente (Codex, Antigravity, Claude u otro) que trabaje en este repositorio.
+Portafolio personal de Venjy con estética Minecraft: una página (`index.html`) y un juego 3D en Three.js
+(`mundo.html` y el modo supervivencia, `supervivencia.html`). Todo en español de Chile, con inglés aparte.
 
-Este archivo guía a los agentes de IA para trabajar de manera efectiva en este portafolio personal, cuya estética y experiencia deben mantenerse siempre en línea con el estilo visual de Minecraft.
+## Antes de empezar
 
-## Convenciones y Estilo
+- Partir de `main` actualizado, en una **rama nueva** por tarea. Un PR por tarea.
+- Leer solo lo necesario: el mapa del módulo (`mundo/supervivencia/MAPA.md`), luego `grep` del símbolo
+  y leer por tramos. No abrir archivos de más de ~200 líneas enteros.
+- No abrir: `images/*.gif` (pesan varios MB), `vendor/`, `respaldo-2026-10-06/`, `.impeccable/review/`,
+  `centroeventostest/` (demo aparte, ya no es parte de la estructura principal).
+- Estado del juego y tareas: `mundo/PENDIENTES.md` (buscar con `grep -n` la sección de la tarea; no leerlo entero).
 
-- **Estética Minecraft:**
-  - Usa siempre fuentes pixeladas (por ejemplo, `pixelcraft.ttf` en la carpeta `font/`).
-  - Paletas de colores y elementos visuales deben recordar a Minecraft: verdes, marrones, grises, bloques, bordes pixelados.
-  - Evita estilos modernos, minimalistas o que no encajen con la temática.
-- **Imágenes:**
-  - Utiliza imágenes y GIFs de la carpeta `images/` para reforzar la identidad visual.
-- **Estructura:**
-  - El archivo principal es `index.html` junto a `script.js` y `style.css`.
-  - El subdirectorio `centroeventostest/` contiene una demo de sistema de reservas, también tematizado.
-- **Nombres y endpoints:**
-  - Siempre en español, contexto Chile.
+## Ejecutar
 
-## Buenas prácticas para agentes
+- Servidor: `node estudio/servidor.mjs` (puerto 5510). `index.html` no abre con doble clic: usa módulos ES.
+- Estudio (editor visual de datos): `http://localhost:5510/estudio/`. El juego dentro del Estudio:
+  `supervivencia.html?estudio`.
+- Sin `package.json` ni build: las pruebas son scripts de Node en `mundo/tests/`.
 
-- Antes de sugerir cambios visuales, verifica que mantengan la coherencia con Minecraft.
-- Si agregas nuevas páginas o componentes, incluye referencias visuales (bordes, fondos, tipografía) que sigan el estilo.
-- Si se requiere documentación adicional, crea archivos Markdown en español y enlázalos aquí.
+## Reglas visuales y de texto
 
-## Documentación relevante
+- Estética Minecraft siempre: fuente **PixelCraft** (`font/pixelcraft.ttf`), verdes, marrones, grises,
+  bloques y bordes pixelados. Nada de estilos modernos o minimalistas. Tokens en `DESIGN.md`.
+- **Todo texto visible lleva su par español/inglés**: en HTML, atributos `data-es` / `data-en`; en
+  JSON, `{ "es": "…", "en": "…" }`; en JS, el mismo patrón que use el módulo.
+- **Sin emojis** como íconos: los íconos se dibujan en código (`ICONOS` en `script.js`, `iconos.js` en
+  la supervivencia). No se agregan imágenes para eso.
+- Nombres de archivos, funciones y endpoints en español.
+- Contenido del portafolio y datos de ProcedimientoSeguro: `PRODUCT.md`.
 
-- [pixelcraft.ttf](font/pixelcraft.ttf): Fuente principal para títulos y textos.
-- Carpeta [images/](images/): Recursos gráficos.
-- Estructura de ejemplo en [centroeventostest/](centroeventostest/).
+## Contenido en JSON (`mundo/datos/`)
 
----
+Instrucciones completas: **`.claude/skills/datos-json/SKILL.md`** (léela si la tarea toca esa carpeta).
+Lo esencial:
 
-Este archivo debe actualizarse si cambian las convenciones visuales o la estructura principal del portafolio.
+- Posiciones, poses, gestos, escenas, diálogos, textos y layout táctil **nuevos** van en
+  `mundo/datos/*.json` si el juego ya lee ese archivo (`lee` distinto de `null` en `mundo/datos/indice.json`).
+  Si no, siguen en JS. La lógica sigue en JS.
+- **Solo añadir claves.** No cambiar ni borrar valores existentes salvo que el dueño lo pida. No mover
+  personas en `posiciones.json`. La marca `"revisado"` de los textos la pone solo el dueño.
+- Leer con el CLI en vez de abrir archivos grandes: `node estudio/cli.mjs resumen [archivo] [clave]`.
+- Todo lo nuevo, genérico: nombres, lugares y textos en datos, no amarrados a una persona ni a un punto fijo del mapa.
+
+## Verificar (siempre antes del commit)
+
+```
+node estudio/cli.mjs validar --contra HEAD
+node mundo/tests/estudio.mjs
+```
+
+Y la prueba del área tocada:
+
+- Objetos, recetas, íconos: `node mundo/tests/recetas.mjs` y `node mundo/tests/inventario.mjs`.
+- Amistad y diálogos: `node mundo/tests/amistad.mjs`.
+- Otra área: la prueba con su nombre en `mundo/tests/` (`ls mundo/tests`).
+- Las `*-navegador.mjs` necesitan Playwright; si no está, se saltan solas.
+
+Lo que solo se ve jugando (cómo se ve un ícono, una animación, la cámara) lo prueba el dueño: el PR
+trae una lista corta de «qué mirar».
+
+## Skills para tareas frecuentes
+
+Son archivos Markdown; si tu herramienta no las carga sola, léelas como documento:
+
+| Tarea | Skill |
+|---|---|
+| Cambiar o agregar datos en `mundo/datos/` | `.claude/skills/datos-json/SKILL.md` |
+| Objetos, recetas, íconos y usos de la supervivencia | `.claude/skills/objetos-supervivencia/SKILL.md` |
+| Animaciones, gestos, escenas, cámara | `.claude/skills/animaciones-minecraft/SKILL.md` |
+| Arte de las cartas del Duelo | `mundo/supervivencia/CARTAS-ARTE.md` |
+| Encargar trabajo a otro agente | `.claude/skills/delegar/SKILL.md` |
+
+## Commits y PR
+
+- Mensajes cortos en español con prefijo (`feat:`, `fix:`, `docs:`).
+- **Sin atribución de herramientas**: nada de «Generated with …», enlaces de sesión ni líneas
+  `Claude-Session:` en commits, PRs, comentarios ni archivos. (La línea `Co-Authored-By` del modelo en el
+  commit sí se permite.)
+- Descripción del PR: qué cambió, por qué, qué pruebas pasaron y «qué mirar» para el dueño.
+- No tocar `estudio/hoja-de-ruta.html` (es local, fuera de git) ni documentos que no estén en git.
+
+## Al terminar
+
+- `mundo/PENDIENTES.md`: marcar lo hecho en su bloque y agregar una línea a la bitácora con la fecha.
+- Si se creó un módulo, una línea en `mundo/supervivencia/MAPA.md`.
+- Si cambian las convenciones visuales o la estructura principal, actualizar este archivo.
