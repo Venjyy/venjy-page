@@ -966,6 +966,8 @@ La mesa 3D (`mundo/supervivencia/cartas-mesa.js`) toma todas sus medidas de `MES
 
 **Hecho (2026-10-11):** pestaña **Mesa** (`estudio/mesa.js`): edita `cartas-mesa.json` en vivo y lo guarda; mensaje `mesa { accion: 'abrir' | 'cerrar' | 'vista' }` en el puente.
 
+**Tutorial y turno de Lucho (pulido, PR 3, 2026-10-13):** grupos `turnoLucho` (`enPartida` 1 = la cámara mira a Lucho en su turno también fuera del tutorial; `pausa` = segundos mirándolo antes de su primera jugada; `mesa` = segundos en la mesa tras su jugada), `planoLucho` y `planoMesa` (cámaras de ese turno: `lado`, `alto` sobre la mesa, `z` hacia ti y `mira`) y `tutorial` (`color` del marco y del botón que brilla, `opacidad`, `pulso` por segundo, `borde` × la carta, `leer` = segundos que Lucho habla antes de jugar). En la pestaña Mesa van como cuatro grupos más; el botón **Abrir el tutorial** (`mesa { accion: 'tutorial' }`) lo juega desde el principio para ajustar encuadres y tiempos. No editable aún: los textos del tutorial (`TUTORIAL` en `cartas-datos.js`).
+
 **Animaciones (pulido, PR 1, 2026-10-13):** el mismo JSON trae `desc` (dónde va el descarte), `anim` (activas, velocidad, arco, embestida, sacudida, números, brillo, tocar para saltar), `duraciones` y `sigue` (segundos de cada evento y cuándo empieza el siguiente) y `colores` (hechizos por efecto, daño, cura, muerte). La pestaña Mesa los muestra como grupos más (los colores con selector) y el botón **Repetir la última jugada** (`mesa { accion: 'animar' }`) vuelve a animarla con los valores nuevos. Los valores base viven en `ANIM` (`mundo/supervivencia/cartas-anim-modelo.js`).
 
 ## 19. Objetos en la mano editables (Hito 1, punto 13, 2026-10-13)

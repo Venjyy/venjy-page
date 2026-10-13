@@ -2,8 +2,8 @@
 // VENJY · Estudio · editor de la mesa del Duelo de Cartas (7h-2b)
 // Edita mundo/datos/cartas-mesa.json: dónde queda la mesa junto a Lucho, sus medidas, las cartas que sostiene
 // Lucho y las cámaras (1.ª persona, enfoque y la lista de 3.ª persona). Comparte pantalla con el juego (pestaña
-// Mesa = el iframe de Juego más este panel). Cada cambio va en vivo (mensaje `datos`); «Abrir la mesa» y
-// «Cambiar vista» usan el mensaje `mesa`. Guardar escribe el JSON con If-Match, como Posiciones.
+// Mesa = el iframe de Juego más este panel). Cada cambio va en vivo (mensaje `datos`); «Abrir la mesa»,
+// «Abrir el tutorial» y «Cambiar vista» usan el mensaje `mesa`. Guardar escribe el JSON con If-Match, como Posiciones.
 // =========================================================
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
@@ -25,10 +25,15 @@ const GRUPOS = [
     ['sigue', 'Animaciones: cuándo empieza el siguiente (0-1)', 'Animations: when the next one starts (0-1)', {}],
     ['colores', 'Animaciones: colores', 'Animations: colors', {}],
     // Sonido (cartas-mesa-sonido.js): cuelga de los mismos eventos; 0 apaga ese sonido
-    ['sonido', 'Sonido del duelo', 'Duel sound', { activo: '1 = suena, 0 = mudo', volumen: 'volumen general', roba: 'robar carta', juega: 'poner carta / cambiar postura', ataque: 'embestida', golpe: 'daño recibido', destruye: 'carta destruida', hechizo: 'hechizos', efecto: 'efectos, escudos y poderes', cura: 'curar', turno: 'aviso de turno', gana: 'ganar', pierde: 'perder', empate: 'empatar' }]
+    ['sonido', 'Sonido del duelo', 'Duel sound', { activo: '1 = suena, 0 = mudo', volumen: 'volumen general', roba: 'robar carta', juega: 'poner carta / cambiar postura', ataque: 'embestida', golpe: 'daño recibido', destruye: 'carta destruida', hechizo: 'hechizos', efecto: 'efectos, escudos y poderes', cura: 'curar', turno: 'aviso de turno', gana: 'ganar', pierde: 'perder', empate: 'empatar' }],
+    // Tutorial y turno de Lucho (pulido, PR 3): «Abrir el tutorial» lo juega desde el principio
+    ['turnoLucho', 'Turno de Lucho: cámara', "Lucho's turn: camera", { enPartida: '1 = también fuera del tutorial', pausa: 'segundos mirándolo antes de jugar', mesa: 'segundos en la mesa tras su jugada' }],
+    ['planoLucho', 'Cámara que mira a Lucho', 'Camera looking at Lucho', { lado: 'a tu derecha', alto: 'altura sobre la mesa', z: 'hacia ti' }],
+    ['planoMesa', 'Cámara en la mesa (jugada de Lucho)', "Table camera (Lucho's play)", { lado: 'a tu derecha', alto: 'altura sobre la mesa', z: 'hacia ti' }],
+    ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
-const rango = (k, v) => GRADOS.has(k) ? [-180, 180, 1] : v > 10 ? [0, Math.max(600, v * 2), 1] : [-3, 3, 0.01];
+const rango = (k, v) => GRADOS.has(k) ? [-180, 180, 1] : v > 10 ? [0, Math.max(600, v * 2), 1] : v > 3 ? [0, Math.max(10, v * 2), 0.1] : [-3, 3, 0.01];
 
 export async function montarMesa(ctx) {
     const $ = id => document.getElementById(id);
@@ -115,6 +120,7 @@ export async function montarMesa(ctx) {
     $('me-abrir').addEventListener('click', async () => { await mesa('abrir'); ctx.puente.enviarDatos('cartas-mesa', datos); });
     $('me-vista').addEventListener('click', () => mesa('vista'));
     $('me-animar').addEventListener('click', () => mesa('animar'));
+    $('me-tutorial').addEventListener('click', async () => { await mesa('tutorial'); ctx.puente.enviarDatos('cartas-mesa', datos); });
     $('me-cerrar').addEventListener('click', () => mesa('cerrar'));
     $('me-descartar').addEventListener('click', () => { datos = clonar(original); cambio(); pintar(); });
     btnGuardar.addEventListener('click', guardar);

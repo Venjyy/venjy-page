@@ -439,6 +439,16 @@ body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
 .cartas-fx-num { position: absolute; left: 0; top: 0; white-space: nowrap; line-height: 1; text-shadow: 3px 3px 0 #1a0f08, -1px -1px 0 #1a0f08; will-change: transform, opacity; }
 .cartas-fx-turno { position: absolute; left: 50%; top: 38%; padding: 10px 26px; background: rgb(28 19 12 / 0.88); border: 4px solid #120c07; box-shadow: inset 2px 2px 0 #856041, inset -2px -2px 0 #24160d; color: var(--amarillo); font-size: 1.6rem; text-shadow: 2px 2px 0 #222; white-space: nowrap; opacity: 0; }
 .cartas-mesa-vida { font-weight: normal; }
+/* Tutorial del duelo (cartas-mesa.js, pulido PR 3): globo de Lucho y botón que toca usar; el color sale de tutorial.color (--tuto) */
+.cartas-tuto-globo { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); width: min(460px, calc(100vw - 32px)); padding: 10px 14px; background: #f4ecd8; color: #2b1d0e; text-shadow: none; border: 4px solid #120c07; box-shadow: inset -3px -3px 0 #c9b98f, 4px 4px 0 rgb(0 0 0 / 0.35); }
+.cartas-tuto-globo b { display: block; margin-bottom: 4px; color: #7a3b10; font-weight: normal; }
+.cartas-tuto-globo p { margin: 0; font-size: .86rem; line-height: 1.3; }
+.cartas-tuto-globo .cartas-boton { display: block; margin: 8px 0 0 auto; min-height: 0; padding: 4px 18px; font-size: .8rem; }
+.cartas-tuto-globo .cartas-tuto-mal { margin-top: 6px; color: #a01e1e; }
+.cartas-tuto-globo.mal { animation: cartas-tuto-sacude 300ms steps(6) 1; }
+@keyframes cartas-tuto-sacude { 0%, 100% { margin-left: 0; } 25% { margin-left: -6px; } 75% { margin-left: 6px; } }
+.cartas-mesa-botones .cartas-tuto-brillo { outline: 4px solid var(--tuto, #ffe14a); outline-offset: 1px; animation: cartas-tuto-pulso 900ms steps(2) infinite; }
+@keyframes cartas-tuto-pulso { 50% { outline-color: transparent; } }
 @media (max-width: 700px) {
     .cartas-mesa-marcador { flex-wrap: wrap; font-size: .7rem; padding: 6px 8px; }
     .cartas-mesa-aviso { top: 64px; font-size: .7rem; }
@@ -446,6 +456,8 @@ body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
     .cartas-mesa-botones .cartas-boton { min-height: 34px; font-size: .7rem; padding: 4px; }
     .cartas-mesa-hud .cartas-reglas { left: 140px; top: 96px; width: calc(100vw - 150px); }
     .cartas-mesa-lector { left: 140px; top: 96px; transform: none; width: 130px; }
+    .cartas-tuto-globo { top: 96px; left: calc(50% + 66px); width: calc(100vw - 156px); padding: 6px 8px; }
+    .cartas-tuto-globo p { font-size: .7rem; }
 }
 /* Cartas con arte (cartas-arte.js): lienzo de 50×76 píxeles escalado por enteros
    (--px = 2 en la mesa, 3 en la mano); los textos se colocan sobre las ZONAS del lienzo. */
@@ -721,6 +733,7 @@ body.en-minijuego .mj-tablero.visible { display: flex; }
 .mj-accion.urgente { color: var(--amarillo); background: #4f7a2a; }
 .boton-minijuego { width: 100%; margin: 10px 0 0; background: #3c6a2a; }
 .boton-minijuego:hover:not(:disabled), .boton-minijuego:focus-visible { background: #4f8a36; }
+.boton-minijuego-extra { margin-top: 6px; background: #4a3a26; }.boton-minijuego-extra:hover:not(:disabled), .boton-minijuego-extra:focus-visible { background: #5e4a30; }
 .panel-mision .motivo-minijuego { margin: 4px 0 0; color: #ff9a6a; font-size: 0.85em; }
 @media (max-width: 600px) { .mj-tablero { font-size: 0.75rem; padding: 6px 8px; } .mj-pista { display: none; } .mj-accion { padding: 12px 6px; } }
 

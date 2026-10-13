@@ -17,6 +17,7 @@ export const TXT_MJ = {
 // los datos completos de cartas al abrir el mundo).
 export const TXT_CARTAS_BOTON = {
     boton: t('Jugar a las cartas', 'Play cards'),
+    tuto: t('Repasar el tutorial', 'Replay the tutorial'),
     faltaMazo: t('Necesitas un Mazo de cartas (3 papeles + carbón)', 'You need a Card Deck (3 paper + coal)')
 };
 

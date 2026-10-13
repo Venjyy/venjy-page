@@ -10,13 +10,16 @@
 // (cartas-panel.js) queda de respaldo. Animaciones (pulido, PR 1): cartas-mesa-anim.js reproduce los eventos de
 // `aplicar` encima del estado final (la IA espera a que terminen; tocar la pantalla las salta).
 // `alEventos(ev, accion)` sigue avisando afuera (sonido, PR 2).
+// Tutorial (pulido, PR 3): partida guiada con TUTORIAL (cartas-datos.js); Lucho habla en un globo, solo vale la
+// jugada que pide cada paso y lo que toca usar se ilumina (resaltadoTutorial). En el turno de Lucho (en el
+// tutorial y, con turnoLucho.enPartida, en toda partida) la cámara lo mira a él y va a la mesa cuando juega.
 // main.js la carga con import() la primera vez y llama a actualizar(dt) cada cuadro y a dibujar() después del render.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
-import { CARTAS, FAMILIAS, NIVELES, TXT_CARTAS } from './cartas-datos.js';
-import { partidaNivel, aplicar, jugadaIA, atkDe, defDe, esLegal } from './cartas.js';
+import { CARTAS, FAMILIAS, NIVELES, TXT_CARTAS, TUTORIAL } from './cartas-datos.js';
+import { partidaNivel, nuevaPartida, aplicar, jugadaIA, atkDe, defDe, esLegal, accionTutorial, calzaTutorial } from './cartas.js';
 import { dibujarCarta, dibujarReverso, versionDeArte, ZONAS, ANCHO, ALTO } from './cartas-arte.js';
-import { MESA, ALTO_CARTA, marcoMesa, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto } from './cartas-mesa-modelo.js';
+import { MESA, ALTO_CARTA, marcoMesa, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto, pausaLucho, planoTurno, resaltadoTutorial } from './cartas-mesa-modelo.js';
 import { fusionar } from '../datos/cargador.js';
 import { crearAnimador } from './cartas-mesa-anim.js';
 import { sonidoDe, sonidoFin } from './cartas-anim-modelo.js';
@@ -33,7 +36,9 @@ export const TXT_MESA = {
     tocaObjetivo: t('Ahora toca la criatura marcada en verde a la que apunta la carta', 'Now tap the green-highlighted creature the card targets'),
     tocaAbrazo: t('Ahora toca la segunda criatura tuya', 'Now tap your second creature'),
     noAtaca: t('Esta criatura no puede atacar ahora (entró este turno, está en Defensa o atada)', 'This creature cannot attack now (it entered this turn, is in Defense or is bound)'),
-    tocaRival: t('Toca una criatura de Lucho, o a Lucho para el ataque directo', 'Tap one of Lucho\'s creatures, or Lucho for a direct attack')
+    tocaRival: t('Toca una criatura de Lucho, o a Lucho para el ataque directo', 'Tap one of Lucho\'s creatures, or Lucho for a direct attack'),
+    seguir: t('Seguir', 'Continue'),
+    tutoEspera: t('Todavía no: haz lo que te pide Lucho (lo que brilla)', 'Not yet: do what Lucho asks (the glowing one)')
 };
 
 const K = 6; // escala de la textura: 50×76 de arte → 300×456
@@ -47,6 +52,11 @@ export function crearMesaCartas(ctx) {
     let leidaId = null; // carta abierta en el lector que no está en una zona (tu mano sin jugarla, el descarte)
     let finSonado = false; // el sonido del final ya sonó (una vez por partida)
     let ultimos = null; const vidaVista = [0, 0], spanVida = [null, null]; // animación: últimos eventos y la vida que se ve
+    // Tutorial: p = paso tuyo, l/li = turno de Lucho y jugada dentro de él, intro = frase de bienvenida que va; mal = jugada rechazada
+    let tuto = null, resaltado = null, tiempo = 0;
+    let primeraLucho = false, jugoMesa = false; // turno de Lucho: aún no juega nada / su última acción fue sobre la mesa
+    const enIntro = () => !!(tuto && tuto.intro < TUTORIAL.intro.length);
+    const pasoTuto = () => (tuto && !enIntro() ? TUTORIAL.pasos[tuto.p]?.a || null : null);
     const Lx = o => (o && (o[idioma] || o.es)) || '';
 
     // ---------- Texturas ----------
@@ -162,6 +172,7 @@ export function crearMesaCartas(ctx) {
     }
     function refrescarMesa() {
         limpiarDinamicos();
+        resaltado = null;
         if (!e) { pintarMano(); pintarHud(); return; }
         const y = L.mesa.alto + 0.004;
         for (const j of [0, 1]) for (let z = 0; z < 3; z++) {
@@ -194,6 +205,7 @@ export function crearMesaCartas(ctx) {
             m.material.color.setHex(elegida ? COLOR_MARCA.elegida : valida ? COLOR_MARCA.valida : COLOR_MARCA.libre);
             m.material.opacity = elegida || valida ? 0.7 : 0.3;
         }
+        resaltado = resaltadoTutorial(e, sel, pasoTuto());
         pintarMano(); pintarHud();
     }
 
@@ -238,6 +250,13 @@ export function crearMesaCartas(ctx) {
     const terceraActual = () => L.terceras[tercera % Math.max(1, L.terceras.length)] || MESA.terceras[0];
     function objetivoCamara() {
         const atras = L.mesa.fondo / 2 + L.asiento.dist;
+        // Turno de Lucho (y su bienvenida en el tutorial): la cámara lo mira a él, o a la mesa cuando juega
+        const P = planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj });
+        if (P) {
+            const C = P === 'mesa' ? L.planoMesa : L.planoLucho;
+            local(C.lado, L.mesa.alto + C.alto, C.z, v1); local(C.mira[0], L.mesa.alto + C.mira[1], C.mira[2], v2);
+            return;
+        }
         if (vista === 1 && sel && e && e.ganador === null) {
             const F = L.enfoque;
             local(0, L.mesa.alto + F.alto, F.z, v1); local(F.mira[0], L.mesa.alto + F.mira[1], F.mira[2], v2);
@@ -284,7 +303,7 @@ export function crearMesaCartas(ctx) {
             const caja = document.createElement('div'); caja.className = 'cartas-inicio';
             const h = document.createElement('h1'); h.textContent = Lx(TXT_CARTAS.titulo);
             const p = document.createElement('p'); p.textContent = Lx(TXT_CARTAS.elegirNivel);
-            caja.append(h, p, boton(Lx(TXT_CARTAS.facil), () => iniciar('facil'), nivel === 'facil' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.medio), () => iniciar('medio'), nivel === 'medio' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
+            caja.append(h, p, boton(Lx(TXT_CARTAS.facil), () => iniciar('facil'), nivel === 'facil' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.medio), () => iniciar('medio'), nivel === 'medio' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.botonTuto), iniciarTutorial, 'secundario'), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
             hud.appendChild(caja); return;
         }
         const arriba = document.createElement('div'); arriba.className = 'cartas-mesa-marcador';
@@ -303,19 +322,23 @@ export function crearMesaCartas(ctx) {
         const paso = !sel ? null : reemplaza ? TXT_CARTAS.reemplaza : sel.tipo === 'propia' ? (sel.acciones.some(a => a.t === 'atacar') ? TXT_MESA.tocaRival : TXT_MESA.noAtaca) : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
         guia.textContent = e.turno === 0 && e.fase === 'principal' && paso ? Lx(paso) : aviso || (e.turno === 0 && e.fase === 'principal' ? Lx(TXT_MESA.tocaCarta) : '');
         const B = botonesMesa(e, sel), fila = document.createElement('div'); fila.className = 'cartas-mesa-botones';
+        // Tutorial: el botón que toca usar brilla (resaltadoTutorial → { tipo: 'boton', b })
+        const brilla = b => (resaltado && resaltado.tipo === 'boton' && resaltado.b === b ? ' cartas-tuto-brillo' : '');
+        hud.style.setProperty('--tuto', L.tutorial.color);
         fila.append(
-            boton(Lx(TXT_CARTAS.terminar), () => ejecutar(B.terminar), '', !B.terminar),
+            boton(Lx(TXT_CARTAS.terminar), () => ejecutar(B.terminar), brilla('terminar'), !B.terminar),
             boton(Lx(TXT_CARTAS.cambiar), () => ejecutar(B.cambiar), '', !B.cambiar)
         );
-        if (B.directo) fila.appendChild(boton(Lx(TXT_CARTAS.directo), () => ejecutar(B.directo), 'cartas-directo'));
-        if (B.postura) for (const modo of ['ata', 'def']) fila.appendChild(boton(Lx(modo === 'ata' ? TXT_CARTAS.ataque : TXT_CARTAS.defensa), () => { postura = modo; sel = elegirPostura(e, sel, modo); refrescarMesa(); }, modo === sel.modo ? 'elegido' : ''));
+        if (B.directo) fila.appendChild(boton(Lx(TXT_CARTAS.directo), () => ejecutar(B.directo), 'cartas-directo' + brilla('directo')));
+        if (B.postura) for (const modo of ['ata', 'def']) fila.appendChild(boton(Lx(modo === 'ata' ? TXT_CARTAS.ataque : TXT_CARTAS.defensa), () => { postura = modo; sel = elegirPostura(e, sel, modo); refrescarMesa(); }, (modo === sel.modo ? 'elegido' : '') + brilla(modo)));
         fila.append(
             boton(vista === 1 ? Lx(TXT_MESA.camara1) : `${Lx(TXT_MESA.camara3)}${L.terceras.length > 1 ? ` ${tercera + 1}/${L.terceras.length}` : ''}`, cambiarVista),
-            boton('?', () => { mostrandoReglas = !mostrandoReglas; pintarHud(); }, 'cartas-ayuda'),
-            boton(Lx(TXT_MESA.panel), () => { const n = nivel; cerrar(false); if (ctx.alPanel) ctx.alPanel(n); }, 'secundario'),
-            boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario')
+            boton('?', () => { mostrandoReglas = !mostrandoReglas; pintarHud(); }, 'cartas-ayuda')
         );
+        if (!tuto) fila.appendChild(boton(Lx(TXT_MESA.panel), () => { const n = nivel; cerrar(false); if (ctx.alPanel) ctx.alPanel(n); }, 'secundario'));
+        fila.appendChild(boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
         hud.append(arriba, guia, fila);
+        if (tuto && e.ganador === null) hud.appendChild(globoTuto());
         // Lector: la carta elegida de tu mano o la última de la mesa que tocaste, en grande para leerla
         const id = sel && sel.tipo === 'carta' ? e.jug[0].mano[sel.m] : (leida && e.jug[leida[0]].zonas[leida[1]]?.id) || leidaId;
         if (id) {
@@ -328,14 +351,72 @@ export function crearMesaCartas(ctx) {
             if (!sel || sel.tipo !== 'carta') lector.appendChild(boton(Lx(TXT_MESA.cerrarLector), () => { leida = null; leidaId = null; pintarHud(); }, 'secundario'));
             hud.appendChild(lector);
         }
-        if (mostrandoReglas) { const r = document.createElement('div'); r.className = 'cartas-reglas'; for (const l of TXT_CARTAS.reglas) { const p = document.createElement('p'); p.textContent = Lx(l); r.appendChild(p); } hud.appendChild(r); }
+        if (mostrandoReglas) {
+            const r = document.createElement('div'); r.className = 'cartas-reglas';
+            for (const l of TXT_CARTAS.reglas) { const p = document.createElement('p'); p.textContent = Lx(l); r.appendChild(p); }
+            r.appendChild(boton(Lx(TXT_CARTAS.botonTuto), iniciarTutorial)); // el tutorial se repite las veces que quieras
+            hud.appendChild(r);
+        }
         if (e.ganador !== null && !(anim && anim.ocupado)) { // el final sale cuando termina la animación
             const fin = document.createElement('div'); fin.className = 'cartas-fin';
             const h = document.createElement('h2'); h.textContent = Lx(e.ganador === 0 ? TXT_CARTAS.ganaste : e.ganador === 1 ? TXT_CARTAS.perdiste : TXT_CARTAS.empate);
-            const p = document.createElement('p'); p.textContent = Lx(TXT_CARTAS.motivo[e.motivo]);
-            fin.append(h, p, boton(Lx(TXT_CARTAS.otraVez), () => { e = null; sel = null; refrescarMesa(); }), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
+            const p = document.createElement('p'); p.textContent = Lx(tuto && e.ganador === 0 ? TUTORIAL.fin : TXT_CARTAS.motivo[e.motivo]);
+            // Al terminar el tutorial: «¿Jugamos de verdad?» lleva a elegir el nivel
+            fin.append(h, p, boton(Lx(tuto ? TUTORIAL.otra : TXT_CARTAS.otraVez), () => { e = null; sel = null; tuto = null; refrescarMesa(); }), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
             hud.appendChild(fin);
         }
+    }
+
+    // ---------- Tutorial: globo de Lucho y marco de lo que toca usar ----------
+    function globoTuto() {
+        const g = document.createElement('div'); g.className = 'cartas-tuto-globo' + (tuto.mal ? ' mal' : '');
+        const quien = document.createElement('b'); quien.textContent = Lx(TXT_CARTAS.lucho);
+        const texto = enIntro() ? TUTORIAL.intro[tuto.intro]
+            : e.turno === 1 ? TUTORIAL.turnoLucho[Math.min(tuto.l, TUTORIAL.turnoLucho.length - 1)]
+            : TUTORIAL.pasos[tuto.p]?.texto;
+        const p = document.createElement('p'); p.textContent = Lx(texto);
+        g.append(quien, p);
+        if (tuto.mal) { const m = document.createElement('p'); m.className = 'cartas-tuto-mal'; m.textContent = Lx(TXT_MESA.tutoEspera); g.appendChild(m); }
+        if (enIntro() || (e.turno === 1 && primeraLucho)) g.appendChild(boton(Lx(TXT_MESA.seguir), seguirTuto));
+        tuto.mal = 0;
+        return g;
+    }
+    // «Seguir» (o tocar la pantalla): la siguiente frase de bienvenida, o Lucho deja de hablar y juega
+    function seguirTuto() {
+        if (!tuto) return;
+        if (enIntro()) { tuto.intro++; refrescarMesa(); return; }
+        if (e && e.turno === 1 && primeraLucho) reloj = 1e3;
+    }
+    // Marco pixelado (blanco: el material le pone el color de tutorial.color), uno en la mesa y otro en tu mano
+    function texMarco() {
+        const c = document.createElement('canvas'); c.width = 25; c.height = 38;
+        const g = c.getContext('2d'); g.fillStyle = '#fff';
+        g.fillRect(0, 0, 25, 2); g.fillRect(0, 36, 25, 2); g.fillRect(0, 0, 2, 38); g.fillRect(23, 0, 2, 38);
+        return aTextura(c);
+    }
+    const txMarco = texMarco();
+    const matMarco = () => new THREE.MeshBasicMaterial({ map: txMarco, transparent: true, depthWrite: false, depthTest: false });
+    const marco3D = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matMarco());
+    marco3D.rotation.x = -Math.PI / 2; marco3D.renderOrder = 10; marco3D.visible = false; raiz.add(marco3D);
+    const marcoMano = new THREE.Mesh(geoMano, matMarco());
+    marcoMano.renderOrder = 100; marcoMano.visible = false; escenaMano.add(marcoMano);
+    function pintarResaltado(dt) {
+        tiempo += dt;
+        const r = anim.ocupado || enIntro() ? null : resaltado, T = L.tutorial;
+        const op = T.opacidad * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(tiempo * Math.PI * 2 * T.pulso)));
+        for (const m of [marco3D, marcoMano]) { m.material.color.set(T.color); m.material.opacity = op; }
+        marco3D.visible = !!r && (r.tipo === 'zona' || r.tipo === 'mazo');
+        if (marco3D.visible) {
+            const p = r.tipo === 'mazo' ? posMazo(L, 0) : posZona(L, r.j, r.z), cw = L.carta.ancho;
+            const def = r.tipo === 'zona' && e.jug[r.j].zonas[r.z]?.modo === 'def';
+            const alto = r.tipo === 'mazo' ? Math.max(0.004, e.jug[0].mazo.length * 0.004) : 0.006;
+            marco3D.position.set(p.x, L.mesa.alto + alto + 0.004, p.z);
+            marco3D.rotation.z = def ? Math.PI / 2 : 0;
+            marco3D.scale.set(cw * T.borde, cw * ALTO_CARTA * T.borde, 1);
+        }
+        const c = r && r.tipo === 'mano' ? cartasMano[r.i] : null;
+        marcoMano.visible = !!c;
+        if (c) { marcoMano.position.copy(c.position); marcoMano.rotation.z = c.rotation.z; marcoMano.scale.set(c.scale.x * T.borde, c.scale.y * T.borde, 1); }
     }
 
     // ---------- Toques ----------
@@ -371,6 +452,8 @@ export function crearMesaCartas(ctx) {
         if (anim.ocupado) { ev.preventDefault(); if (!L.anim.tocarSalta) return; anim.saltar(); }
         if (e.ganador !== null) return;
         ev.preventDefault();
+        // Tutorial: mientras Lucho habla, tocar la pantalla pasa a lo siguiente
+        if (tuto && (enIntro() || (e.turno === 1 && primeraLucho))) { seguirTuto(); return; }
         const u = tocado(ev.clientX, ev.clientY);
         let r = { sel: null, accion: null };
         if (u.mano !== undefined) r = tocarCarta(e, sel, u.mano, postura);
@@ -410,10 +493,22 @@ export function crearMesaCartas(ctx) {
     }
     function ejecutar(a) {
         if (!a || !e || e.ganador !== null || !esLegal(e, a)) return;
+        // Tutorial: en tu turno solo vale la jugada que pide el paso (lo demás sacude el globo de Lucho)
+        if (tuto && e.turno === 0) {
+            if (enIntro()) return;
+            const esp = pasoTuto();
+            if (esp && !calzaTutorial(e, a, esp)) { tuto.mal = 1; sel = null; refrescarMesa(); return; }
+            tuto.p++;
+        }
         anim.saltar(); // si algo seguía animando, termina con el estado anterior (el final no suena antes de tiempo)
         const antes = e.turno, id = (a.t === 'invocar' || a.t === 'hechizo') ? e.jug[antes].mano[a.m] : null;
         const ev = aplicar(e, a);
         sel = null; reloj = 0; registrar(a, antes, id);
+        // Turno de Lucho: la cámara lo mira al empezar y va a la mesa con cada jugada suya sobre ella
+        primeraLucho = antes === 0 && e.turno === 1;
+        jugoMesa = antes === 1 && ['invocar', 'hechizo', 'atacar', 'modo'].includes(a.t);
+        if (tuto && antes === 1 && a.t === 'terminar') { tuto.l++; tuto.li = 0; }
+        if (tuto && e.ganador === 0 && ctx.alTutorial) ctx.alTutorial(); // visto: la próxima vez se elige el nivel
         if (ctx.alEventos) ctx.alEventos(ev, a);
         ultimos = ev;
         refrescarMesa();
@@ -425,9 +520,25 @@ export function crearMesaCartas(ctx) {
         if (!e || e.ganador === null || finSonado) return;
         finSonado = true; sonar(sonidoFin(e.ganador, L));
     }
+    // Jugada de Lucho: la del guion en el tutorial (si calza), si no la IA
+    function jugadaLucho() {
+        const esp = tuto && (TUTORIAL.lucho[tuto.l] || [])[tuto.li];
+        const a = esp && accionTutorial(e, esp);
+        if (a) { tuto.li++; return a; }
+        return jugadaIA(e, NIVELES[nivel].ia);
+    }
+    // Partida guiada: mazos fijos sin barajar, Lucho con poca vida; Lucho saluda antes del paso 1
+    function iniciarTutorial() {
+        anim.saltar(); ultimos = null; finSonado = false;
+        nivel = 'facil'; tuto = { p: 0, l: 0, li: 0, intro: 0, mal: 0 };
+        e = nuevaPartida({ mazos: TUTORIAL.mazos, barajar: false, vidas: TUTORIAL.vidas, empieza: 0 });
+        sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false; leida = null; leidaId = null;
+        primeraLucho = false; jugoMesa = false;
+        refrescarMesa();
+    }
     function iniciar(n) {
         anim.saltar(); ultimos = null;
-        finSonado = false;
+        finSonado = false; tuto = null; primeraLucho = false; jugoMesa = false;
         nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel, { semilla: (Math.random() * 1e9) | 0 }); sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false;
         refrescarMesa();
     }
@@ -449,7 +560,7 @@ export function crearMesaCartas(ctx) {
     function abrir(n = 'facil') {
         lucho = ctx.lucho();
         if (!lucho) return false;
-        nivel = NIVELES[n] ? n : 'facil'; abierto = true; e = null; sel = null;
+        nivel = NIVELES[n] ? n : 'facil'; abierto = true; e = null; sel = null; tuto = null;
         grupo.add(raiz);
         colocar();
         luchoAntes = { yaw: lucho.yaw, escena: lucho.escena };
@@ -460,7 +571,7 @@ export function crearMesaCartas(ctx) {
         camaras.pose = cuerpo => { cuerpo.g.visible = vista === 3; };
         capa.hidden = false; hud.hidden = false; capaFx.hidden = false;
         document.body.classList.add('cartas-mesa-abierta');
-        refrescarMesa();
+        if (n === 'tutorial') iniciarTutorial(); else refrescarMesa();
         // La fuente PixelCraft puede llegar después: se redibujan las cartas con ella
         if (document.fonts && document.fonts.load) document.fonts.load(fuente(30)).then(() => { if (abierto) { vaciarTexturas(); refrescarMesa(); } }).catch(() => {});
         return true;
@@ -468,7 +579,8 @@ export function crearMesaCartas(ctx) {
     function cerrar(avisar = true) {
         if (!abierto) return;
         anim.saltar();
-        abierto = false; e = null; sel = null; encima = -1; leida = null; leidaId = null;
+        abierto = false; e = null; sel = null; encima = -1; leida = null; leidaId = null; tuto = null; resaltado = null;
+        marco3D.visible = false; marcoMano.visible = false;
         limpiarDinamicos(); pintarMano();
         grupo.remove(raiz);
         if (lucho && luchoAntes) { lucho.escena = luchoAntes.escena; lucho.yaw = luchoAntes.yaw; }
@@ -525,6 +637,11 @@ export function crearMesaCartas(ctx) {
     });
 
     const luz = new THREE.Color(), BLANCO = new THREE.Color(1, 1, 1);
+    function enPantalla(p) {
+        const v = local(p.x, L.mesa.alto, p.z, new THREE.Vector3()).project(camaras.camara);
+        renderer.getSize(tam);
+        return { x: (v.x + 1) / 2 * tam.x, y: (1 - v.y) / 2 * tam.y };
+    }
     return {
         abrir, cerrar,
         get activo() { return abierto; },
@@ -532,10 +649,12 @@ export function crearMesaCartas(ctx) {
         get vista() { return vista; },
         // Dónde se ve en pantalla (px desde arriba a la izquierda) una zona de la mesa o una carta de tu mano:
         // pruebas y, en 7h-2c, la flecha del tutorial sobre lo que hay que tocar
-        pantallaZona(j, z) {
-            const p = posZona(L, j, z), v = local(p.x, L.mesa.alto, p.z, new THREE.Vector3()).project(camaras.camara);
-            renderer.getSize(tam);
-            return { x: (v.x + 1) / 2 * tam.x, y: (1 - v.y) / 2 * tam.y };
+        pantallaZona(j, z) { return enPantalla(posZona(L, j, z)); },
+        // Tutorial: dónde tocar lo que brilla (null si es un botón: tiene la clase cartas-tuto-brillo)
+        pantallaResaltado() {
+            const r = resaltado;
+            if (!r || r.tipo === 'boton') return null;
+            return r.tipo === 'mano' ? this.pantallaMano(r.i) : enPantalla(r.tipo === 'mazo' ? posMazo(L, 0) : posZona(L, r.j, r.z));
         },
         pantallaMano(i) {
             const m = cartasMano[i]; if (!m) return null;
@@ -543,6 +662,11 @@ export function crearMesaCartas(ctx) {
             return { x: m.position.x, y: tam.y - m.position.y };
         },
         cambiarVista,
+        iniciarTutorial,
+        // Pruebas y Estudio: dónde va el tutorial ({ p, l, li, intro } o null), qué se ilumina y el plano del turno de Lucho
+        get tutorial() { return tuto ? { ...tuto } : null; },
+        get resaltado() { return resaltado; },
+        get planoCamara() { return planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj }); },
         setIdioma(l) { idioma = l === 'en' ? 'en' : 'es'; if (abierto) { vaciarTexturas(); refrescarMesa(); } },
         // Estudio (más adelante, un JSON en mundo/datos/): medidas de la mesa y de las cámaras sin recargar
         aplicarDatos(datos) { anim.saltar(); L = fusionar(MESA, datos || null); if (abierto) { colocar(); refrescarMesa(); } },
@@ -557,12 +681,15 @@ export function crearMesaCartas(ctx) {
             if (tinte) for (const m of mats) m.color.copy(luz.copy(tinte).lerp(BLANCO, 1 - m.userData.claro)).multiply(m.userData.base);
             colocarMano(Math.min(1, dt * 14));
             moverCamara(dt);
+            pintarResaltado(dt);
             jugador.yaw = M.asiento.yaw; jugador.pitch = 0;
             if (anim.ocupado) { anim.actualizar(dt); return; } // la IA y el robo esperan a que termine
-            if (!e || e.ganador !== null) return;
-            if (e.fase === 'robo' || e.turno === 1) {
+            if (!e || e.ganador !== null || enIntro()) return; // en el tutorial, Lucho saluda primero
+            // Lucho juega solo; tu robo es automático salvo en el tutorial (el paso 1 es tocar el mazo)
+            if (e.turno === 1 || (e.fase === 'robo' && !tuto)) {
                 reloj += dt;
-                if (reloj >= pausaAuto(e)) ejecutar(e.fase === 'robo' ? { t: 'robar' } : jugadaIA(e, NIVELES[nivel].ia));
+                const espera = e.turno === 1 ? pausaLucho(L, e, { tuto: !!tuto, primera: primeraLucho, jugoMesa }) : pausaAuto(e);
+                if (reloj >= espera) ejecutar(e.turno === 1 ? jugadaLucho() : { t: 'robar' });
             } else reloj = 0;
         },
         // Después de renderer.render(scene, camara): la mesa desde arriba (3.ª persona) y tu mano encima de todo

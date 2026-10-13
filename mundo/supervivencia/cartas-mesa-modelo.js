@@ -10,9 +10,11 @@
 //                            → el mismo flujo de selección que el panel (cartas-panel.js), convertido en
 //                              funciones puras: (estado, selección, toque) → { sel, accion }. `accion` siempre
 //                              es una de jugadas(e) o null.
+//   resaltadoTutorial(e, sel, esperada) → qué iluminar en el tutorial (mano, zona, mazo o botón)
+//   planoTurno / pausaLucho  → la cámara en el turno de Lucho (lo mira a él; a la mesa cuando juega) y su pausa
 // =========================================================
 import { CARTAS, PIDE_PROPIA } from './cartas-datos.js';
-import { jugadas } from './cartas.js';
+import { jugadas, accionTutorial } from './cartas.js';
 import { ANIM } from './cartas-anim-modelo.js';
 
 export const ALTO_CARTA = 76 / 50;
@@ -38,6 +40,16 @@ export const MESA = {
     ],
     mini: { ancho: 0.3, max: 340, alto: 1.7, margen: 12 }, // vista de arriba en una esquina (3.ª persona)
     mano: { alto: 0.26, max: 230, solape: 0.72, sube: 0.18 }, // tu mano en pantalla (fracción del alto)
+    // Turno de Lucho: la cámara lo mira a él (y a su globo en el tutorial) y va a la mesa cuando juega una carta.
+    // enPartida 1 = también fuera del tutorial; pausa = segundos mirándolo antes de su primera jugada (en el
+    // tutorial manda tutorial.leer); mesa = segundos que la cámara se queda en la mesa tras su jugada.
+    turnoLucho: { enPartida: 1, pausa: 0.9, mesa: 0.8 },
+    // Planos de ese turno: lado (x), alto (sobre la mesa) y z (hacia ti) de la cámara; mira = punto local (y sobre la mesa)
+    planoLucho: { lado: 0.35, alto: 0.9, z: 0.8, mira: [0, 0.9, -0.75] },
+    planoMesa: { lado: 0, alto: 1.15, z: 0.5, mira: [0, 0, -0.12] },
+    // Tutorial: color, opacidad, pulsos por segundo y tamaño (× la carta) del marco de lo que toca usar;
+    // leer = segundos que Lucho habla antes de jugar en su turno (tocar o «Seguir» lo salta)
+    tutorial: { color: '#ffe14a', opacidad: 0.95, pulso: 1.6, borde: 1.14, leer: 4 },
     // Animaciones (anim, duraciones, sigue, colores): ver cartas-anim-modelo.js
     ...ANIM
 };
@@ -171,3 +183,44 @@ export function zonasMarcadas(e, sel) {
 
 // Pausa antes de cada paso automático (robar o jugada de Lucho), en segundos: los mismos del panel
 export const pausaAuto = e => (e.fase === 'robo' ? (e.turno === 0 ? 0.4 : 0.7) : 0.7);
+
+// ---------- Turno de Lucho: cámara y pausa ----------
+// Qué plano usa la cámara: 'lucho' (lo mira a él), 'mesa' (su jugada) o null (la vista que eligió el jugador).
+// jugoMesa = su última acción fue sobre la mesa (invocar, hechizo, atacar, postura); reloj = segundos desde que terminó
+export function planoTurno(L, { e, tuto = false, intro = false, animando = false, jugoMesa = false, reloj = 0 }) {
+    if (intro) return 'lucho';
+    if (!e || e.ganador !== null || e.turno !== 1 || (!tuto && !L.turnoLucho.enPartida)) return null;
+    return jugoMesa && (animando || reloj < L.turnoLucho.mesa) ? 'mesa' : 'lucho';
+}
+// Pausa antes de la próxima acción de Lucho: la de siempre, más lo que la cámara lo mira al empezar su turno
+// (primera) y lo que se queda en la mesa después de su jugada (jugoMesa)
+export function pausaLucho(L, e, { tuto = false, primera = false, jugoMesa = false } = {}) {
+    let p = pausaAuto(e);
+    if (tuto || L.turnoLucho.enPartida) {
+        if (primera) p += tuto ? L.tutorial.leer : L.turnoLucho.pausa;
+        if (jugoMesa) p += L.turnoLucho.mesa;
+    }
+    return p;
+}
+
+// ---------- Tutorial: qué se ilumina ----------
+// El paso pide una acción (TUTORIAL.pasos[].a); según lo que ya está elegido, se ilumina lo que toca ahora:
+// { tipo: 'mazo' } · { tipo: 'mano', i } · { tipo: 'zona', j, z } · { tipo: 'boton', b: 'terminar'|'directo'|'ata'|'def' } · null
+export function resaltadoTutorial(e, sel, esp) {
+    if (!esp || !tuTurno(e)) return null;
+    if (esp.t === 'robar') return e.fase === 'robo' ? { tipo: 'mazo' } : null;
+    if (e.fase !== 'principal') return null;
+    if (esp.t === 'terminar') return { tipo: 'boton', b: 'terminar' };
+    const a = accionTutorial(e, esp);
+    if (!a) return null;
+    if (a.t === 'invocar' || a.t === 'hechizo') {
+        if (!sel || sel.tipo !== 'carta' || sel.m !== a.m) return { tipo: 'mano', i: a.m };
+        if (a.t === 'invocar') return sel.modo && esp.modo && sel.modo !== esp.modo ? { tipo: 'boton', b: esp.modo } : { tipo: 'zona', j: 0, z: a.z };
+        return a.obj === undefined ? null : { tipo: 'zona', j: ladoObjetivo(e, a), z: a.obj };
+    }
+    if (a.t === 'atacar') {
+        if (!sel || sel.tipo !== 'propia' || sel.z !== a.z) return { tipo: 'zona', j: 0, z: a.z };
+        return a.obj === -1 ? { tipo: 'boton', b: 'directo' } : { tipo: 'zona', j: 1, z: a.obj };
+    }
+    return null;
+}
