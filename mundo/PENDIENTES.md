@@ -1135,8 +1135,31 @@ Hecho en el chat del 2026-10-13 (ver bitácora): herramientas en la mano, zanaho
 - [x] **13 · Objetos en la mano editables en el Estudio** (hecho 2026-10-13, falta usarlo el dueño): nuevo `mundo/datos/objetos-mano.json` (posición, rotación y escala por objeto, 1.ª y 3.ª persona) que lean `mano.js` (`crearMalla`, `:145`) y `pose-jugador.js`; esquema en `estudio/esquemas/` y sliders en el Estudio. Resuelve la caña al revés sin pedírselo a un agente.
 - [x] **14 · Estudio: el juego atrapa el mouse** (hecho 2026-10-13, falta probarlo el dueño con el mouse real): Esc abre la pausa que tapa todo y T deja la franja del chat. Con `?estudio`, soltar el puntero sin pausa (tecla propia o pausa mínima).
 - [x] **15 · Camas** (hecho 2026-10-13, falta verlo el dueño): `B.CAMA` es un cubo común (`supervivencia/objetos.js:208`); darle forma de cama (medio bloque con almohada).
-- [ ] **Grandes, un chat cada uno, no empezar sin el dueño**: mundo de prueba (agua, construcciones editables, todo a mano para probar), pasar escenas y animaciones viejas al Estudio, skills nuevas para delegar a Haiku/Sonnet, Duelo: reemplazar criatura con zonas llenas (requiere aprobación; preguntar al dueño las recomendaciones de Lucho), pantalla de carga, menú de inicio, minijuego Lalo vs Moisés, minijuego Salonas (al final). Antes: actualizar `estudio/hoja-de-ruta.html` con este estado.
+- [ ] **Grandes, un chat cada uno, no empezar sin el dueño** (siguen en el orden de abajo).
 - [ ] **Añadidos dudosos**: ver la sección «Añadidos dudosos (en espera)».
+
+### Orden para terminar el portafolio (decidido por el dueño, 2026-10-13)
+
+Dos etapas; un chat por punto; dentro de cada etapa, de arriba a abajo. **Regla para todo lo nuevo:** hacerlo genérico (nombres, lugares y textos en datos, no amarrados a Venjy ni a un lugar fijo del mapa), para que se pueda reutilizar. La vista con avance está en `estudio/hoja-de-ruta.html` (local, fuera de git).
+
+**Etapa A · terminar el juego**
+1. Skills nuevas para delegar a Haiku/Sonnet y `AGENTS.md` al día (para Codex y Antigravity).
+2. Duelo: reemplazar criatura con zonas llenas (requiere aprobación; preguntar al dueño las recomendaciones de Lucho) · 7f-2: que los 10 objetos nuevos hagan algo.
+3. Mundo de prueba · pantalla de carga → menú de inicio · 7f-2: bloques con forma · 7h-1 carrera de gatas.
+4. **6d etapa 2 (visitas) con navegación de verdad** (buscar camino sobre el terreno, no rutas fijas; incluye 7j-1) → 7i acompañantes.
+5. Minijuego Lalo vs Moisés (pelea estilo Mortal Kombat; deja la base de peleas cuerpo a cuerpo) · 7g-1 → 7g-2 ∥ 7g-3 → 7h-3 concierto → minijuego Salonas.
+- Opcional: resto de 7f-3 (lugares del mapa actual) y los añadidos dudosos.
+- **Fin de la etapa A: el portafolio queda terminado como juego.**
+
+**Etapa B · todo editable en el Estudio** (al final, con todo el contenido ya hecho; el juego no cambia)
+1. Inventario con el CLI: qué sigue en JS, qué cabe en los esquemas y qué no (hoy solo `punos` y `pareja` están en `escenas.json`, y `tienda.json` tiene `lee: null`).
+2. Pasar las escenas y gestos que ya caben (Haiku, con Opus revisando la paridad).
+3. Motor genérico del Estudio (la antigua fase 7 de `estudio/DISENO.md`), diseñado con todos los casos que no cupieron (§13).
+4. Pasar el resto (grupo, bienvenidas, vida entre amigos, escenas de skin).
+5. Personajes en datos (nombre, piel, ropa, lugar, horario, diálogos): sumar una persona tiene que ser solo datos.
+6. Misiones, objetos, recetas y tienda en JSON · lugares y construcciones en datos con el gizmo de Posiciones.
+7. Cierre: validar todo y anotar lo que no se pudo pasar, con el motivo.
+- **Fin de la etapa B: tag `portafolio-v1`.**
 
 ### Fase 2 · Pulido Minecraft
 - [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Techo a dos aguas, chimenea con hogar, cama, librero, mesa con antorcha, cofre y antorchas en las paredes (hecho). La casa naranja de las gatas se deja sin muebles para que ellas circulen.
@@ -1389,3 +1412,4 @@ Formato: `AAAA-MM-DD · qué se cambió · archivos · por qué / notas`. Lo má
 - 2026-10-06 · **Fase 1 completa**: página `mundo.html`, generador sin DOM con paridad exacta, conversión mapa→bloques por chunks (culling + AO), texturas procedurales, árboles, jugador creativo (caminar/volar), menú ES/EN. Archivos: `mundo.html`, `mundo/*`, `vendor/*`. Mapa 2D e `index.html` sin tocar. PR #3.
 - 2026-10-06 · Se subió el techo de vuelo de `ALTO + 120` a 600 · `mundo/jugador.js` · para poder ver el título desde arriba.
 - 2026-10-06 · Se creó este archivo · `mundo/PENDIENTES.md`.
+- 2026-10-13 · **Orden para terminar el portafolio** (rama `orden-cierre`): sección nueva en «Por hacer» con la etapa A (terminar el juego, todo genérico) y la etapa B (todo editable en el Estudio; al cerrarla, tag `portafolio-v1`); el resto de 7f-3 pasa a opcional. Solo documentación.
