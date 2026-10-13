@@ -253,6 +253,8 @@ decir({ tipo: 'estado', fase: 'esperando' });
 try {
     await abrirMundo();
     if (!await esperar(juegoListo, 120000, 200)) throw new Error('el juego no terminó de cargar en 2 minutos');
+    // Punto 14: el juego no atrapa el mouse (sin pausa al soltarlo; el chat se cierra al perder el foco)
+    (await import('./suelto.js')).soltarSinPausa(window.__venjy);
     // el juego ya pidió y aplicó los JSON al importar tactil-supervivencia.js; esto avisa que se puede hablar con él
     decir({ tipo: 'listo', version: 1, idioma: document.documentElement.lang === 'en' ? 'en' : 'es' });
     document.documentElement.dataset.estudio = 'listo';
