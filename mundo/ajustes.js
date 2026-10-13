@@ -24,7 +24,7 @@ function guardar(v) {
     try { localStorage.setItem(CLAVE, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ }
 }
 
-export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [], destinosZona = {}, nombresZona = null, getIdioma = () => idioma }) {
+export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa = 'h', pedirPuntero, destinos = [], destinosZona = {}, nombresZona = null, getIdioma = () => idioma, alDescubrir = null }) {
     const t = TXT[idioma] || TXT.es;
     const nombres = NOMBRES_ZONA[idioma] || NOMBRES_ZONA.es;
     // Nombres de las zonas tal como los pone el portafolio (index.html), en el idioma actual
@@ -228,6 +228,8 @@ export function iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara,
                 if (!descubiertos.has(l.clave)) {
                     descubiertos.add(l.clave);
                     try { localStorage.setItem('venjy-mundo-descubiertos', JSON.stringify([...descubiertos])); } catch (e) { /* sin almacenamiento */ }
+                    const total = lugares.filter(q => descubiertos.has(q.clave)).length;
+                    if (alDescubrir) alDescubrir({ nombre: l.nombre[getIdioma()] || l.nombre.es, n: total, total: lugares.length });
                 }
                 const n = lugares.filter(q => descubiertos.has(q.clave)).length;
                 return `${l.nombre[getIdioma()] || l.nombre.es} · ${n}/${lugares.length}`;

@@ -42,8 +42,9 @@ export function crearMisiones(ctx) {
     const L = o => (o ? o[idioma] || o.es : '');
     // escenasSkin: amigos que ya reaccionaron a tu skin en esta partida (escenas-skin.js)
     // minijuegos: juegos jugados y marcas como 'mj-boris' (minijuego.js)
+    // lugares: claves de los lugares descubiertos para siempre (visitados es solo de la misión activa)
     // carta: el encargo diario del Venjy del correo ({ dia, para, entregada } o null; 7f-1)
-    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null, kits: new Set(),
+    const estado = { hechas: new Set(), activa: null, progreso: 0, visitados: new Set(), lugares: new Set(), noche: null, jefes: new Set(), vidaExtra: 0, escenasSkin: new Set(), minijuegos: new Set(), carta: null, kits: new Set(),
         fac: { deco: new Set(), pista: null, noche: null } }; // 7d-2: decorados puestos, pista de la misión activa, monstruo de la noche (facilidades.js)
     let ocultarMarcas = false;
     let facilidades = null; // 7d-2: { textoSeguimiento() } (main.js lo conecta con facilidades.js)
@@ -566,7 +567,7 @@ export function crearMisiones(ctx) {
     }
 
     function serializar() {
-        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, kits: [...estado.kits], fac: { deco: [...estado.fac.deco], pista: estado.fac.pista, noche: estado.fac.noche }, amistad: amistad.serializar() };
+        return { hechas: [...estado.hechas], activa: estado.activa, progreso: estado.progreso, visitados: [...estado.visitados], lugares: [...estado.lugares], noche: estado.noche, jefes: [...estado.jefes], vidaExtra: estado.vidaExtra, escenasSkin: [...estado.escenasSkin], minijuegos: [...estado.minijuegos], carta: estado.carta ? { ...estado.carta } : null, kits: [...estado.kits], fac: { deco: [...estado.fac.deco], pista: estado.fac.pista, noche: estado.fac.noche }, amistad: amistad.serializar() };
     }
     function cargar(o) {
         if (!o) return;
@@ -574,6 +575,7 @@ export function crearMisiones(ctx) {
         estado.activa = o.activa || null;
         estado.progreso = o.progreso || 0;
         estado.visitados = new Set(o.visitados || []);
+        estado.lugares = new Set(o.lugares || []);
         estado.noche = o.noche || null;
         estado.jefes = new Set(o.jefes || []);
         estado.vidaExtra = o.vidaExtra || 0;

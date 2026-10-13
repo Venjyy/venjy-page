@@ -17,6 +17,7 @@ import { crearAnimales } from './criaturas/animales.js';
 import { crearAmigos } from './criaturas/amigos.js';
 import { crearVenjys } from './criaturas/venjy.js';
 import { crearBrujula } from './brujula.js';
+import { avisarLugar } from './descubrimiento.js';
 import { iniciarOnline } from './online/online.js';
 import { cargarContenido } from './portafolio/contenido.js';
 import { crearPortafolio } from './portafolio/portafolio.js';
@@ -165,7 +166,7 @@ async function iniciar() {
     // Pistas en el minimapa y el mapa grande: dónde hay gente (puntos tenues, agrupados)
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
     const brujula = crearBrujula(hudEl, idioma);
-    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma });
+    const ajustes = iniciarAjustes({ idioma, datos, terreno, mundo, jugador, camara, cielo, scene, gatas, brujula, mapa: orientacion, pedirPuntero: () => entrar(), nombresZona, destinosZona, getIdioma: () => idioma, alDescubrir: l => avisarLugar({ ...l, idioma }) });
     const online = iniciarOnline({ idioma, datos, terreno, mundo, jugador, camara, scene, materiales, hudEl, panelEl: document.getElementById('panel'), atlasLienzo, renderer, cielo });
     window.__venjy = { venjys, amigos, animales, npcs, portafolio, online, datos, terreno, mundo, jugador, camara, renderer, scene, cielo, ajustes, minimapa, gatas, brujula };
 

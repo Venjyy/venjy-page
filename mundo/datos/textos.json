@@ -10,6 +10,9 @@
       "acariciar": { "es": "ACARICIAR", "en": "PET" },
       "camara": { "es": "CAM", "en": "CAM" },
       "comando": { "es": "/", "en": "/" }
+    },
+    "lugar": {
+      "descubierto": { "es": "Lugar descubierto", "en": "Place discovered" }
     }
   }
 }

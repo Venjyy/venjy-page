@@ -43,6 +43,7 @@ import { crearEnemigos } from './enemigos.js';
 import { crearCombate } from './combate.js';
 import { crearPesca } from './pesca.js';
 import { crearMisiones } from './misiones.js';
+import { avisarLugar } from '../descubrimiento.js';
 import { crearFacilidades } from './facilidades.js';
 import { crearCartelesCamino } from './caminos-carteles.js';
 import { crearCuaderno } from './cuaderno.js';
@@ -530,11 +531,6 @@ async function arrancar(guardado, cx = null) {
     const dia = crearDia({ cielo });
     dia.cargar(guardado.dia);
     let jugado = guardado.jugado || 0;
-    // Lugares descubiertos (7f-3): se recuerdan por mundo
-    const CLAVE_DESCUBIERTOS = `venjy-descubiertos-${guardado.id}`;
-    let descubiertos = new Set();
-    try { descubiertos = new Set(JSON.parse(localStorage.getItem(CLAVE_DESCUBIERTOS)) || []); } catch (e) { /* sin almacenamiento */ }
-
     // Ventanas: al abrir se libera el puntero sin mostrar la pausa; al cerrar se vuelve a jugar
     let uiAbierta = false;
     const soltarDelante = (id, n, d, marca = null) => {
@@ -652,6 +648,13 @@ async function arrancar(guardado, cx = null) {
         alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
     });
     misiones.cargar(guardado.misiones);
+    // Lugares descubiertos (7f-3): viven en la partida (misiones.estado.lugares). Los de antes estaban
+    // en localStorage aparte; se pasan una vez a la partida.
+    try {
+        const viejos = JSON.parse(localStorage.getItem(`venjy-descubiertos-${guardado.id}`));
+        if (Array.isArray(viejos)) for (const c of viejos) misiones.estado.lugares.add(c);
+        localStorage.removeItem(`venjy-descubiertos-${guardado.id}`);
+    } catch (e) { /* sin almacenamiento */ }
     // Facilidades de misión (7d-2): huerto, horno y grava puestos, pistas, monstruo de la noche y pesca. El invitado no edita el mundo del anfitrión
     facilidades = crearFacilidades({ mundo, terreno, dy: DY, jugador, dia, enemigos, agricultura, misiones, idioma, colocar: !invitado });
     facilidades.cargar();
@@ -1566,11 +1569,10 @@ async function arrancar(guardado, cx = null) {
             // Lugares descubiertos (7f-3): aviso al pasar cerca de uno, revisado cada ~0,5 s
             const lugares = terreno.lugares || [];
             for (const l of lugares) {
-                if (descubiertos.has(l.clave) || Math.hypot(jugador.pos.x - l.x, jugador.pos.z - l.z) > l.radio) continue;
-                descubiertos.add(l.clave);
-                try { localStorage.setItem(CLAVE_DESCUBIERTOS, JSON.stringify([...descubiertos])); } catch (e) { /* sin almacenamiento */ }
-                const n = lugares.filter(q => descubiertos.has(q.clave)).length;
-                hud.mensaje(`${tx().descubierto}: ${l.nombre[idioma] || l.nombre.es} · ${n}/${lugares.length}`, 4);
+                if (misiones.estado.lugares.has(l.clave) || Math.hypot(jugador.pos.x - l.x, jugador.pos.z - l.z) > l.radio) continue;
+                misiones.estado.lugares.add(l.clave);
+                const n = lugares.filter(q => misiones.estado.lugares.has(q.clave)).length;
+                avisarLugar({ nombre: l.nombre[idioma] || l.nombre.es, n, total: lugares.length, idioma });
             }
             const fps = cuadros / acumulado;
             fpsEl.textContent = [rend.fps ? Math.round(fps) + ' FPS' : '', rend.ms ? cuadrosMs.mediana.toFixed(1) + ' ms' : ''].filter(Boolean).join(' · ');
