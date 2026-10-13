@@ -432,8 +432,29 @@ const PINTORES = {
         return ajustar([58, 54, 50], ((x + y) % 2 ? 0.7 : 1) * (0.9 + r() * 0.15));
     },
     // ---------- Supervivencia ----------
-    ...pintoresSupervivencia()
-};
+    ...pintoresSupervivencia(),
+    // Al final: así no se corre el índice de ningún tile anterior (el atlas del creativo queda igual)
+    // Farol colgante (7f-2): argolla arriba, tapa y base de hierro, llama entre barrotes; fondo transparente
+    farol: (x, y, r) => {
+        const hierro = ajustar([62, 62, 70], 0.9 + r() * 0.2);
+        if (y === 2 || y === 3) return x === 7 || x === 8 ? hierro : [0, 0, 0, 0];
+        if (y === 4 || y === 13) return x >= 4 && x <= 11 ? hierro : [0, 0, 0, 0];
+        if (y >= 5 && y <= 12) {
+            if (x === 4 || x === 11) return hierro;
+            if (x < 5 || x > 10) return [0, 0, 0, 0];
+            return (x === 7 || x === 8) && y >= 7 && y <= 10 ? [255, 244, 170] : [250, 190, 60];
+        }
+        return [0, 0, 0, 0];
+    },
+    // Cartel (7f-2): tablón claro con borde oscuro y un palo; fondo transparente
+    cartel: (x, y, r) => {
+        if (y >= 3 && y <= 9 && x >= 2 && x <= 13) {
+            const borde = y === 3 || y === 9 || x === 2 || x === 13;
+            return borde ? ajustar([92, 64, 34], 0.9 + r() * 0.2) : ajustar([176, 138, 84], (y % 2 ? 0.94 : 1) * (0.94 + r() * 0.12));
+        }
+        if (y >= 10 && (x === 7 || x === 8)) return ajustar([110, 80, 44], 0.9 + r() * 0.2);
+        return [0, 0, 0, 0];
+    }};
 
 export const NOMBRES_TILE = Object.keys(PINTORES);
 export const TILE = Object.fromEntries(NOMBRES_TILE.map((n, i) => [n, i]));
@@ -504,7 +525,9 @@ export const B = {
     PAPA_0: 76, PAPA_1: 77, PAPA_2: 78, PAPA_3: 79,
     BLOQUE_HIERRO: 80, BLOQUE_CARBON: 81, BLOQUE_REDSTONE: 82, BLOQUE_LAPIS: 83,
     PUERTA_ABAJO: 84, PUERTA_ARRIBA: 85, PUERTA_ABIERTA_ABAJO: 86, PUERTA_ABIERTA_ARRIBA: 87,
-    ESCALERA: 88, ALTAR: 89
+    ESCALERA: 88, ALTAR: 89,
+    // 7f-2: objetos que se colocan como bloque
+    FAROL: 90, CARTEL: 91
 };
 
 export const BLOQUES = [];
@@ -595,6 +618,8 @@ BLOQUES[B.PUERTA_ABIERTA_ABAJO] = def('puerta', 'e', 'puerta_abajo');
 BLOQUES[B.PUERTA_ABIERTA_ARRIBA] = def('puerta', 'e', 'puerta_arriba');
 BLOQUES[B.ESCALERA] = def('escalera de mano', 'e', 'escalera');
 BLOQUES[B.ALTAR] = def('altar', 's', 'altar_top', 'altar_lado', 'altar_lado');
+BLOQUES[B.FAROL] = def('farol', 'p', 'farol');
+BLOQUES[B.CARTEL] = def('cartel', 'p', 'cartel');
 
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz,
 // 5 lava (líquido opaco que se atraviesa), 6 panel que choca (puerta cerrada), 7 panel que se atraviesa
@@ -609,3 +634,4 @@ LUZ_EMISION[B.ANTORCHA] = 14;
 LUZ_EMISION[B.PIEDRA_LUMINOSA] = 15;
 LUZ_EMISION[B.LAVA] = 15;
 LUZ_EMISION[B.HORNO_ENCENDIDO] = 13;
+LUZ_EMISION[B.FAROL] = 15;

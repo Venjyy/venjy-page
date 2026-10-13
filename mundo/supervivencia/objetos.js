@@ -133,8 +133,8 @@ obj('CARTA', 'Carta', 'Letter', { icono: 'carta', apila: 1, encargo: true }); //
 // ---- 7f-2: útiles y de actividades (ids nuevos al final: los guardados no cambian) ----
 obj('RELOJ', 'Reloj', 'Clock', { icono: 'reloj', apila: 1 }); // base de 7j-0: muestra la hora al tenerlo en la mano
 obj('MAPA', 'Mapa', 'Map', { icono: 'mapa', apila: 1 }); // abre el minimapa grande sin tecla
-obj('FAROL_MANO', 'Farol', 'Lantern', { icono: 'farol_mano', apila: 16 }); // luz colgante
-obj('CARTEL', 'Cartel', 'Sign', { icono: 'cartel', combustible: 10 }); // texto propio; base de 7f-3
+obj('FAROL_MANO', 'Farol', 'Lantern', { icono: 'farol_mano', apila: 16, pone: B.FAROL }); // se coloca como bloque y da luz
+obj('CARTEL', 'Cartel', 'Sign', { icono: 'cartel', combustible: 10, pone: B.CARTEL }); // se coloca como bloque; el texto propio va en 7f-3
 obj('BOTELLA', 'Botella', 'Glass Bottle', { icono: 'botella' });
 obj('MAZO', 'Mazo de cartas', 'Card Deck', { icono: 'mazo', apila: 1 }); // 7h: duelo de cartas
 obj('PLUMA_JUGUETE', 'Pluma de juguete', 'Toy Feather', { icono: 'pluma_juguete', apila: 1 }); // 7h: carrera de gatas
@@ -154,6 +154,9 @@ obj('FAROL_CALEUCHE', 'Farol del Caleuche', 'Caleuche Lantern', { icono: 'farol'
 // ---- 7f-3 parte 6: cuaderno de los Tomatitos (12 páginas escondidas; ids al final) ----
 obj('CUADERNO', 'Cuaderno de los Tomatitos', 'Tomatitos Notebook', { icono: 'cuaderno', apila: 1, combustible: 5 }); // clic derecho: lee las páginas que llevas
 obj('TOMATE_BIGOTE', 'Tomate con bigote', 'Mustache Tomato', { icono: 'tomate', comida: [10, 12.8] }); // premio de las 12 páginas
+
+// ---- 7f-2: usos (ids al final) ----
+obj('BOTELLA_AGUA', 'Botella de agua', 'Water Bottle', { icono: 'botella', color: 'agua', apila: 16, devuelve: 'BOTELLA' }); // clic derecho sobre tierra labrada la humedece
 
 // ---------------------------------------------------------
 // Bloques como objeto: nombre, dureza, herramienta y drops
@@ -243,6 +246,8 @@ bloque(B.PUERTA_ABIERTA_ABAJO, 'Puerta de madera', 'Oak Door', 3, 'hacha', 0, { 
 bloque(B.PUERTA_ABIERTA_ARRIBA, 'Puerta de madera', 'Oak Door', 3, 'hacha', 0, { suelta: 0, puerta: true });
 bloque(B.ESCALERA, 'Escalera de mano', 'Ladder', 0.4, 'hacha', 0, { combustible: 15 });
 bloque(B.ALTAR, 'Altar', 'Altar', -1);
+bloque(B.FAROL, 'Farol', 'Lantern', 0.3, 'pico', 0, { suelta: O.FAROL_MANO });
+bloque(B.CARTEL, 'Cartel', 'Sign', 1, 'hacha', 0, { suelta: O.CARTEL, combustible: 10 });
 // Cultivos por etapas (la tierra de cultivo es B.TIERRA_LABRADA; B.LABRADA es la piedra labrada del mapa)
 for (let n = 0; n < 4; n++) {
     bloque(B.TRIGO_0 + n, 'Trigo', 'Wheat', 0, null, 0, { cultivo: 'trigo', etapa: n });

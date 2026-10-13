@@ -30,6 +30,11 @@ export function crearAgricultura({ mundo }) {
 
     function registrar(x, y, z) { lista.set(clave(x, y, z), true); }
 
+    // Riego a mano (Botella de agua): la tierra queda húmeda `seg` segundos aunque no haya agua cerca.
+    // No se guarda: al recargar la tierra vuelve a depender del agua de alrededor.
+    const mojadas = new Map(); // 'x,y,z' -> segundos que quedan
+    function humedecer(x, y, z, seg = 180) { mojadas.set(clave(x, y, z), seg); registrar(x, y, z); }
+
     // ¿Hay agua a 4 bloques en horizontal (al mismo nivel o uno más arriba)?
     function regada(x, y, z) {
         for (let dz = -4; dz <= 4; dz++) for (let dx = -4; dx <= 4; dx++) {
@@ -91,7 +96,7 @@ export function crearAgricultura({ mundo }) {
         }
         if (id === B.TIERRA_LABRADA || id === B.TIERRA_LABRADA_HUMEDA) {
             // Riego: se humedece cerca del agua y se seca lejos; seca y sin cultivo, vuelve a ser tierra
-            const r = regada(x, y, z);
+            const r = mojadas.has(clave(x, y, z)) || regada(x, y, z);
             if (r && id === B.TIERRA_LABRADA) mundo.editar(x, y, z, B.TIERRA_LABRADA_HUMEDA, false);
             else if (!r && id === B.TIERRA_LABRADA_HUMEDA && Math.random() < 0.1) mundo.editar(x, y, z, B.TIERRA_LABRADA, false);
             else if (!r && id === B.TIERRA_LABRADA && !CULTIVO_DE.has(mundo.bloque(x, y + 1, z)) && Math.random() < 0.02) { mundo.editar(x, y, z, B.TIERRA, false); return false; }
@@ -104,6 +109,7 @@ export function crearAgricultura({ mundo }) {
         reloj += dt;
         if (reloj < 1) return;
         reloj -= 1;
+        for (const [k, s] of mojadas) { if (s <= 1) mojadas.delete(k); else mojadas.set(k, s - 1); }
         for (const k of [...lista.keys()]) {
             const [x, y, z] = k.split(',').map(Number);
             if (!crecer(x, y, z)) lista.delete(k);
@@ -139,7 +145,7 @@ export function crearAgricultura({ mundo }) {
     }
 
     return {
-        registrar, actualizar, abonar,
+        registrar, actualizar, abonar, humedecer,
         serializar: () => [...lista.keys()],
         cargar(arr) { lista.clear(); for (const k of arr || []) lista.set(k, true); }
     };

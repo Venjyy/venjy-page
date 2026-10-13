@@ -203,7 +203,7 @@ export function crearMinado(ctx) {
         // Plantas: necesitan su suelo
         if (id === B.BROTE || id === B.BROTE_ABEDUL || id === B.BROTE_PINO) { if (!esSueloBrote(abajo)) return false; agricultura.registrar(x, y, z); }
         else if ([B.FLOR_ROJA, B.FLOR_AMARILLA, B.FLOR_AZUL, B.PASTO_ALTO].includes(id)) { if (!esSueloBrote(abajo)) return false; }
-        else if (id === B.ANTORCHA) {
+        else if (id === B.ANTORCHA || id === B.FAROL || id === B.CARTEL) {
             const apoyo = TIPO[abajo] === 1 || [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => TIPO[mundo.bloque(x + dx, y, z + dz)] === 1);
             if (!apoyo) return false;
         } else if (id === B.ESCALERA) {
@@ -254,6 +254,25 @@ export function crearMinado(ctx) {
         if (p.id === O.HARINA_HUESO && o) {
             if (agricultura.abonar(o.x, o.y, o.z)) { inventario.gastarMano(1); sonidos.poner(B.PASTO_ALTO); return true; }
             return false;
+        }
+        // Objetos que se colocan como bloque con apoyo (Farol, Cartel)
+        if (def.pone) return o ? ponerBloque(o, def.pone) : false;
+        // Botella: se llena apuntando al agua (la fuente no se gasta)
+        if (p.id === O.BOTELLA) {
+            const l = apuntar(true);
+            if (!l || l.id !== B.AGUA) return false;
+            llenarCubo(O.BOTELLA_AGUA);
+            sonidos.salpicar();
+            return true;
+        }
+        // Botella de agua sobre tierra labrada: la humedece y devuelve la botella vacía
+        if (p.id === O.BOTELLA_AGUA) {
+            if (!o || o.id !== B.TIERRA_LABRADA) return false;
+            mundo.editar(o.x, o.y, o.z, B.TIERRA_LABRADA_HUMEDA);
+            agricultura.humedecer(o.x, o.y, o.z);
+            llenarCubo(O.BOTELLA);
+            sonidos.salpicar();
+            return true;
         }
         // Cubos
         if (p.id === O.CUBO) {
