@@ -42,6 +42,7 @@ export function crearMesaCartas(ctx) {
     let idioma = ctx.idioma || 'es', L = fusionar(MESA, ctx.datos || null);
     let abierto = false, e = null, nivel = 'facil', sel = null, postura = 'ata', reloj = 0, vista = 1, tercera = 0, leida = null;
     let M = null, lucho = null, luchoAntes = null, aviso = '', encima = -1, mostrandoReglas = false;
+    let leidaId = null; // carta abierta en el lector que no está en una zona (tu mano sin jugarla, el descarte)
     let ultimos = null; const vidaVista = [0, 0], spanVida = [null, null]; // animación: últimos eventos y la vida que se ve
     const Lx = o => (o && (o[idioma] || o.es)) || '';
 
@@ -309,7 +310,7 @@ export function crearMesaCartas(ctx) {
         );
         hud.append(arriba, guia, fila);
         // Lector: la carta elegida de tu mano o la última de la mesa que tocaste, en grande para leerla
-        const id = sel && sel.tipo === 'carta' ? e.jug[0].mano[sel.m] : leida && e.jug[leida[0]].zonas[leida[1]]?.id;
+        const id = sel && sel.tipo === 'carta' ? e.jug[0].mano[sel.m] : (leida && e.jug[leida[0]].zonas[leida[1]]?.id) || leidaId;
         if (id) {
             const c = leida && !(sel && sel.tipo === 'carta') ? e.jug[leida[0]].zonas[leida[1]] : null, d = CARTAS[id];
             const tx = c ? texturaCarta(id, atkDe(e, leida[0], c), defDe(e, leida[0], c)) : texturaCarta(id, d.atk ?? 0, d.def ?? 0);
@@ -317,7 +318,7 @@ export function crearMesaCartas(ctx) {
             const lz = document.createElement('canvas'); lz.width = tx.image.width; lz.height = tx.image.height;
             lz.getContext('2d').drawImage(tx.image, 0, 0); lz.setAttribute('aria-label', `${Lx(d.nombre)} · ${Lx(d.texto)}`);
             lector.appendChild(lz);
-            if (!sel || sel.tipo !== 'carta') lector.appendChild(boton(Lx(TXT_MESA.cerrarLector), () => { leida = null; pintarHud(); }, 'secundario'));
+            if (!sel || sel.tipo !== 'carta') lector.appendChild(boton(Lx(TXT_MESA.cerrarLector), () => { leida = null; leidaId = null; pintarHud(); }, 'secundario'));
             hud.appendChild(lector);
         }
         if (mostrandoReglas) { const r = document.createElement('div'); r.className = 'cartas-reglas'; for (const l of TXT_CARTAS.reglas) { const p = document.createElement('p'); p.textContent = Lx(l); r.appendChild(p); } hud.appendChild(r); }
@@ -370,15 +371,20 @@ export function crearMesaCartas(ctx) {
         else if (u.lucho) { const B = botonesMesa(e, sel); r = B.directo ? { sel: null, accion: B.directo } : { sel, accion: null }; }
         else if (u.mazo === 0) { const B = botonesMesa(e, sel); r = { sel, accion: B.robar }; }
         sel = r.sel;
-        // Tocar una carta de la mesa sin jugar la abre en el lector
+        // Tocar una carta de la mesa sin jugar la abre en el lector; lo mismo una de tu mano que no se puede jugar
+        // ahora (hechizo sin objetivo, turno de Lucho) y la de arriba del descarte
         leida = !r.accion && u.zona && e.jug[u.zona[0]].zonas[u.zona[1]] ? u.zona : null;
+        const D = u.desc !== undefined ? e.jug[u.desc].desc : null;
+        leidaId = r.accion || (r.sel && r.sel.tipo === 'carta') ? null
+            : u.mano !== undefined ? e.jug[0].mano[u.mano] ?? null
+            : D && D.length ? D[D.length - 1] : null;
         if (r.accion) ejecutar(r.accion); else refrescarMesa();
     }
     function alMover(ev) {
         if (!abierto || !e) return;
         const u = tocado(ev.clientX, ev.clientY), i = u.mano ?? -1;
         if (i !== encima) encima = i;
-        capa.style.cursor = u.mano !== undefined || u.zona || u.lucho || u.mazo === 0 ? 'pointer' : '';
+        capa.style.cursor = u.mano !== undefined || u.zona || u.lucho || u.mazo === 0 || u.desc !== undefined ? 'pointer' : '';
     }
     capa.addEventListener('pointerdown', alTocar);
     capa.addEventListener('pointermove', alMover);
@@ -447,7 +453,7 @@ export function crearMesaCartas(ctx) {
     function cerrar(avisar = true) {
         if (!abierto) return;
         anim.saltar();
-        abierto = false; e = null; sel = null; encima = -1; leida = null;
+        abierto = false; e = null; sel = null; encima = -1; leida = null; leidaId = null;
         limpiarDinamicos(); pintarMano();
         grupo.remove(raiz);
         if (lucho && luchoAntes) { lucho.escena = luchoAntes.escena; lucho.yaw = luchoAntes.yaw; }
