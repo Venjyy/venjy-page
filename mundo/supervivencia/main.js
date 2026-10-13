@@ -114,7 +114,7 @@ const TXT = {
         generando: 'Generando el mundo…', guardado: 'Partida guardada', importado: 'Partida importada', errorGuardar: 'No se pudo guardar la partida',
         noDormir: 'Solo puedes dormir de noche', monstruos: 'No puedes dormir ahora: hay monstruos cerca', durmiendo: 'Durmiendo…', spawn: 'Punto de reaparición fijado',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).es, sinAlmacen: 'Este navegador no permite guardar partidas (modo privado).',
-        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando', idiomaCoop: 'El idioma se cambia fuera de la partida en grupo',
+        completado: 'Completado', jugado: m => `${m} min jugados`, clicSeguir: 'Haz clic para seguir jugando', idiomaCoop: 'El idioma se cambia fuera de la partida en grupo', idiomaOtraVez: 'Pulsa L otra vez para pasar a English: se guarda y se recarga el mundo', idiomaPregunta: '¿Cambiar el idioma? Se guarda la partida y el mundo se recarga (unos segundos).',
         hospedar: 'Hospedar', conectando: 'Conectando…', creandoSala: 'Abriendo la sala…', bajandoMundo: 'Bajando el mundo del anfitrión…',
         faltaNombre: 'Escribe tu nombre.', faltaCodigo: 'Escribe el código de la sala (6 letras o números).',
         errores: { 'sin-anfitrion': 'No hay nadie hospedando esa sala.', llena: `La sala está llena (máximo ${MAX_COOP}).`, 'llena-respaldo': `Tu red no permite conexión directa y la sala ya tiene ${MAX_RESPALDO} o más jugadores.`, foto: 'El anfitrión no mandó el mundo. Prueba de nuevo.', codigo: 'No se pudo abrir la sala. Prueba de nuevo.', 'sin-config': 'El modo online no está configurado.' },
@@ -149,7 +149,7 @@ const TXT = {
         generando: 'Generating the world…', guardado: 'Game saved', importado: 'World imported', errorGuardar: "Couldn't save the game",
         noDormir: 'You can only sleep at night', monstruos: 'You may not rest now; there are monsters nearby', durmiendo: 'Sleeping…', spawn: 'Respawn point set',
         muerteCausa: c => (CAUSAS[c] || CAUSAS.golpe).en, sinAlmacen: "This browser can't save games (private mode).",
-        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing', idiomaCoop: 'Change the language outside the group game',
+        completado: 'Completed', jugado: m => `${m} min played`, clicSeguir: 'Click to keep playing', idiomaCoop: 'Change the language outside the group game', idiomaOtraVez: 'Press L again to switch to Español: the world is saved and reloaded', idiomaPregunta: 'Change the language? The game is saved and the world reloads (a few seconds).',
         hospedar: 'Host', conectando: 'Connecting…', creandoSala: 'Opening the room…', bajandoMundo: "Downloading the host's world…",
         faltaNombre: 'Enter your name.', faltaCodigo: 'Enter the room code (6 letters or numbers).',
         errores: { 'sin-anfitrion': 'Nobody is hosting that room.', llena: `The room is full (max ${MAX_COOP}).`, 'llena-respaldo': `Your network doesn't allow a direct connection and the room already has ${MAX_RESPALDO} or more players.`, foto: "The host didn't send the world. Try again.", codigo: "Couldn't open the room. Try again.", 'sin-config': 'Online mode is not configured.' },
@@ -1297,7 +1297,7 @@ async function arrancar(guardado, cx = null) {
         // G reparte según el contexto: acariciar a una gata si está cerca; si no, sentarse en el iglú
         if (e.code === 'KeyG' && !e.repeat && (caricias.intentar() || ronda.intentar())) e.preventDefault();
         // L cambia el idioma jugando o en la pausa (no mientras se escribe en un campo)
-        if (e.code === 'KeyL' && !e.repeat && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '') && !(consola && consola.abierta) && $('inicio').hidden) { e.preventDefault(); cambiarIdioma(idioma === 'es' ? 'en' : 'es'); }
+        if (e.code === 'KeyL' && !e.repeat && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '') && !(consola && consola.abierta) && $('inicio').hidden) { e.preventDefault(); idiomaConL(); }
         if ((e.code === 'KeyT' || e.code === 'Slash') && !e.repeat && jugador.activo && !vida.muerto) { e.preventDefault(); consola.abrir(e.code === 'Slash' ? '/' : ''); }
     });
     lienzo.addEventListener('click', () => { if (!jugador.activo && !uiAbierta && !vida.muerto && $('inicio').hidden) entrar(); });
@@ -1376,8 +1376,22 @@ async function arrancar(guardado, cx = null) {
         try { localStorage.setItem('preferredLanguage', nuevo); sessionStorage.setItem('venjy-seguir', guardado.id); } catch (e) { /* sin almacenamiento */ }
         guardarYa().then(() => { const u = new URL(location.href); u.searchParams.delete('lang'); location.href = u.href; });
     };
-    $('aj-idioma').addEventListener('change', e => { if (e.target.checked) cambiarIdioma('es'); });
-    $('aj-idioma-en').addEventListener('change', e => { if (e.target.checked) cambiarIdioma('en'); });
+    // Antes de recargar se avisa: L pide una segunda pulsación (4 s) y los radios, confirmar
+    let idiomaPedido = 0;
+    const idiomaConL = () => {
+        if (coop) { cambiarIdioma(idioma === 'es' ? 'en' : 'es'); return; }
+        if (!jugador.activo) { idiomaConRadio(idioma === 'es' ? 'en' : 'es'); return; } // en la pausa la HUD no se ve: se confirma
+        if (performance.now() - idiomaPedido < 4000) { cambiarIdioma(idioma === 'es' ? 'en' : 'es'); return; }
+        idiomaPedido = performance.now();
+        hud.mensaje(tx().idiomaOtraVez, 4);
+    };
+    const idiomaConRadio = nuevo => {
+        if (nuevo === idioma) return;
+        if (coop || confirm(tx().idiomaPregunta)) cambiarIdioma(nuevo);
+        else { $('aj-idioma').checked = idioma === 'es'; $('aj-idioma-en').checked = idioma === 'en'; }
+    };
+    $('aj-idioma').addEventListener('change', e => { if (e.target.checked) idiomaConRadio('es'); });
+    $('aj-idioma-en').addEventListener('change', e => { if (e.target.checked) idiomaConRadio('en'); });
     $('aj-hora').addEventListener('change', e => { ajustes.hora = e.target.checked; guardarAjustes(); pintarHora(true); });
 
 
