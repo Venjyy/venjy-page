@@ -44,6 +44,12 @@
       "fase": 7,
       "que": "Mesa del Duelo de Cartas junto a Lucho: dónde queda, medidas, las cartas que sostiene Lucho y las cámaras (1.ª persona, enfoque sobre la mesa y la lista de 3.ª persona); se aplica en vivo con supervivencia.html?estudio si la mesa está abierta o ya se abrió"
     },
+    "objetos-mano": {
+      "esquema": "objetos-mano",
+      "lee": "mundo/supervivencia/objetos-mano-datos.js",
+      "fase": 8,
+      "que": "Cómo se agarra cada objeto: posición, rotación (grados) y escala por tipo o por objeto, en la mano de primera persona (mano.js) y en el cuerpo de tercera (pose-jugador.js); se aplica en vivo con supervivencia.html?estudio"
+    },
     "escenas": {
       "esquema": "escenas",
       "lee": "mundo/supervivencia/escena-amistad.js",

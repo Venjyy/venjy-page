@@ -12,6 +12,7 @@ import { BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
 import { pixelesObjeto } from './iconos.js';
 import { geometriaCubo } from './entidades.js';
 import { info, O } from './objetos.js';
+import { agarre, versionObjetosMano } from './objetos-mano-datos.js';
 import { crearModelo } from './skin.js';
 const O_ESCUDO = O.ESCUDO;
 
@@ -84,6 +85,8 @@ export function crearFabrica({ atlas, atlasLienzo }) {
         THREE,
         materiales: () => [new THREE.MeshBasicMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 }), new THREE.MeshBasicMaterial({ vertexColors: true })],
         // { malla, tipo }: tipo 'bloque' | 'herramienta' | 'objeto'
+        // Clave de OBJETOS (CANA, PICO_MADERA…) para buscar su ajuste en objetos-mano.json; null en los bloques
+        clave: id => (id >= 256 && info(id) ? info(id).clave : null),
         malla(id, mats) {
             const d = datos(id);
             return { malla: new THREE.Mesh(d.geo, d.tipo === 'bloque' ? mats[0] : mats[1]), tipo: d.tipo };
@@ -142,22 +145,22 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
         c.set(id, m);
         return m;
     }
+    // Posición, giro y escala de la malla según objetos-mano.json (mano1) o los del código
+    function colocarMalla(m) {
+        const a = agarre('mano1', m.userData.clave, m.userData.tipoMano);
+        m.position.set(...a.pos);
+        m.rotation.set(...a.rot);
+        m.scale.setScalar(a.escala);
+    }
     function crearMalla(id) {
         const { malla: m, tipo } = fabrica.malla(id, materiales);
-        if (tipo === 'bloque') {
-            m.scale.setScalar(1.1); // el cubito de 0,25 queda en ~0,28
-            m.rotation.set(0, Math.PI / 4, 0);
-        } else {
-            m.scale.setScalar(0.5);
-            // Herramientas inclinadas como en Minecraft; el resto de frente y algo girado
-            if (tipo === 'herramienta') m.rotation.set(0, -Math.PI / 2 + 0.35, 0.65);
-            else m.rotation.set(0, -0.55, 0);
-            // La caña va más adelante en la mano (mano en primera persona): sin esto queda pegada al cuerpo
-            if (id === O.CANA) m.position.set(0, 0.1, -0.15);
-        }
         m.userData.tipo = tipo === 'bloque' ? 'bloque' : 'objeto';
+        m.userData.tipoMano = tipo;
+        m.userData.clave = fabrica.clave(id);
+        colocarMalla(m);
         return m;
     }
+    let verDatos = versionObjetosMano();
     let actual2 = -1, visible2 = null;
     function mostrar2(id) {
         if (visible2) pivote2.remove(visible2);
@@ -186,6 +189,11 @@ export function crearMano({ renderer, atlas, atlasLienzo, mundo, jugador, invent
         // Golpe (romper, atacar, poner, usar)
         golpear() { if (golpe <= 0 || golpe > 0.5) golpe = 0.001; },
         actualizar(dt) {
+            if (verDatos !== versionObjetosMano()) { // el Estudio cambió cómo se agarra algo
+                verDatos = versionObjetosMano();
+                for (const m of cache.values()) colocarMalla(m);
+                for (const m of cache2.values()) colocarMalla(m);
+            }
             const id = inventario.idEnMano();
             if (id !== actual) { if (cambio >= 1) cambio = 0; if (cambio > 0.5 || actual === -1) mostrar(id); }
             if (cambio < 1) { cambio = Math.min(1, cambio + dt * 5); if (cambio >= 0.5 && actual !== id) mostrar(id); }

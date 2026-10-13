@@ -7,7 +7,7 @@
 export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
 // Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas; fase 6: poses).
-export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa'];
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 // Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json
@@ -31,6 +31,7 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  juega, pausa, salta a un instante o detiene una escena de amistad (fase 5); `puntero` con v
 //                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
 //                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
+//   objeto({ clave })             pone en tu mano ese objeto de OBJETOS (o un id numérico), dándotelo si no lo tienes (pestaña Objetos)
 //   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
@@ -113,6 +114,13 @@ export function crearManejador(juego) {
                     if (!juego.mesa) return error('este juego no tiene la mesa de cartas');
                     await juego.mesa({ accion: m.accion });
                     return { ...base, tipo: 'ok' };
+                }
+                case 'objeto': {
+                    // Pestaña Objetos: pone en tu mano ese objeto (clave de OBJETOS en cualquier caja, o un id numérico)
+                    if (typeof m.clave !== 'string' || !/^[A-Za-z0-9_]{1,40}$/.test(m.clave)) return error('clave de objeto no válida');
+                    if (!juego.objeto) return error('este juego no sabe poner objetos en la mano');
+                    const r = await juego.objeto({ clave: m.clave });
+                    return { ...base, tipo: 'ok', objeto: r || null };
                 }
                 default:
                     return error(`mensaje desconocido: ${m.tipo}`);

@@ -10,6 +10,7 @@ import { montarPosiciones } from './posiciones.js';
 import { montarEscenas } from './escenas.js';
 import { montarPoses } from './poses.js';
 import { montarMesa } from './mesa.js';
+import { montarObjetos } from './objetos.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -70,6 +71,7 @@ await montarPosiciones(ctx);
 await montarEscenas(ctx);
 await montarPoses(ctx);
 await montarMesa(ctx);
+await montarObjetos(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
@@ -82,6 +84,7 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         ctx.pestana = b.dataset.pestana;
         document.getElementById('panel-posiciones').hidden = ctx.pestana !== 'posiciones';
         document.getElementById('panel-mesa').hidden = ctx.pestana !== 'mesa';
+        document.getElementById('panel-objetos').hidden = ctx.pestana !== 'objetos';
         document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';
         document.getElementById('es-zona').hidden = ctx.pestana !== 'escenas';
         document.getElementById('seccion-juego').classList.toggle('modo-escenas', ctx.pestana === 'escenas');

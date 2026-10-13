@@ -159,31 +159,30 @@ export function limpiar(m) {
     ocultarObjetos(m);
 }
 
+import { AGARRE, agarre, versionObjetosMano } from './objetos-mano-datos.js';
+
 // ---------- Objeto en la mano del cuerpo ----------
 // fabrica = mano.fabrica (mallas de mano.js con su geometría en caché por id).
 // Cada modelo tiene su par de materiales (para teñirlos con la luz de donde está).
 // Colocación en la punta del brazo (en coordenadas del brazo: cuelga hacia −y, el frente es +z)
-export const AGARRE = {
-    objeto: { pos: [0, -0.68, 0.08], rot: [0, -Math.PI / 2, 0], escala: 0.55, mango: [-0.32, -0.32] },
-    herramienta: { pos: [0, -0.68, 0.08], rot: [Math.PI / 4, -Math.PI / 2, 0], escala: 0.62, mango: [-0.36, -0.36] },
-    bloque: { pos: [0, -0.78, 0.12], rot: [0, Math.PI / 4, 0], escala: 1.4 }
-};
+export { AGARRE };
 
 function soporte(m, lado) {
     const k = lado ? 'objetoI' : 'objetoD';
-    if (!m[k]) m[k] = { id: 0, malla: null, mats: null };
+    if (!m[k]) m[k] = { id: 0, malla: null, mats: null, ver: 0 };
     return m[k];
 }
 export function ponerObjeto(m, id, fabrica, lado = 0) {
     const s = soporte(m, lado);
-    if (s.id === id) { if (s.malla) s.malla.visible = true; return; }
+    // Si el Estudio cambió cómo se agarra (versión nueva), se vuelve a armar
+    if (s.id === id && s.ver === versionObjetosMano()) { if (s.malla) s.malla.visible = true; return; }
     const brazo = lado ? m.brazoI : m.brazoD;
     if (s.malla) { brazo.remove(s.malla); s.malla = null; }
-    s.id = id;
+    s.id = id; s.ver = versionObjetosMano();
     if (!id || !fabrica) return;
     if (!s.mats) s.mats = fabrica.materiales();
     const { malla, tipo } = fabrica.malla(id, s.mats);
-    const ag = AGARRE[tipo] || AGARRE.objeto;
+    const ag = agarre('mano3', fabrica.clave ? fabrica.clave(id) : null, tipo);
     const g = new fabrica.THREE.Group();
     g.position.set(...ag.pos);
     g.rotation.set(...ag.rot);

@@ -37,6 +37,9 @@ async function aplicar(nombre, datos) {
         const v = window.__venjy;
         if (v && v.mesaCartas) v.mesaCartas.aplicarDatos(datos);
         else if (v) v.datosMesa = datos;
+    } else if (nombre === 'objetos-mano') {
+        const m = await import('../mundo/supervivencia/objetos-mano-datos.js');
+        m.aplicarDatosVivos(datos); // mano.js y pose-jugador.js se reacomodan solos al notar la versión nueva
     } else aplicarDatosVivos(nombre, datos);
 }
 const canal = new BroadcastChannel(CANAL);
@@ -200,6 +203,19 @@ const responder = crearManejador({
         } else if (accion === 'cerrar') { if (v.mesaCartas) v.mesaCartas.cerrar(); }
         else if (!v.mesaCartas || !v.mesaCartas.activo) throw new Error('primero abre la mesa');
         else v.mesaCartas.cambiarVista();
+    },
+    // Pestaña Objetos: deja en tu mano (barra rápida) el objeto o bloque pedido, dándotelo si no lo tienes
+    objeto({ clave }) {
+        const v = window.__venjy;
+        if (!v || !v.inventario || !v.O) throw new Error('el juego todavía no está listo');
+        const id = /^\d+$/.test(clave) ? Number(clave) : v.O[String(clave).toUpperCase()];
+        if (!id) throw new Error(`no hay un objeto «${clave}»`);
+        if (!v.inventario.contar(id)) v.dar(id, 1);
+        const casilla = v.inventario.casillas.findIndex((c, i) => i < 9 && c && c.id === id);
+        if (casilla < 0) throw new Error('la barra rápida está llena: libera una casilla');
+        v.inventario.elegida = casilla;
+        if (v.inventario.alCambiar) v.inventario.alCambiar();
+        return { id };
     },
     // Vista previa de un texto: el globo especial de misiones.js (el mismo de los diálogos únicos)
     globo(persona, texto) {

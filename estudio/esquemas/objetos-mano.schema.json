@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objetos-mano.schema.json",
+  "title": "Objetos en la mano (mundo/datos/objetos-mano.json)",
+  "description": "Cómo se agarra lo que llevas: por tipo (objeto, herramienta, bloque) o por objeto (clave de OBJETOS en minúscula: cana, pico_madera). `mano1` = la mano en primera persona (mano.js), `mano3` = el cuerpo en tercera persona y el de los demás jugadores (pose-jugador.js). pos en bloques dentro del pivote de la mano, rot en GRADOS, escala sin unidad. Lo que falte usa el código (mundo/supervivencia/objetos-mano-datos.js). Un agarre cambia por completo pos, rot o escala solo si la clave está.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "tipos": {
+      "type": "object",
+      "propertyNames": { "enum": ["objeto", "herramienta", "bloque"] },
+      "additionalProperties": { "$ref": "#/$defs/vistas" }
+    },
+    "objetos": {
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": { "$ref": "#/$defs/vistas" }
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "vistas": {
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "mano1": { "$ref": "#/$defs/agarre" },
+        "mano3": { "$ref": "#/$defs/agarre" }
+      },
+      "additionalProperties": false
+    },
+    "agarre": {
+      "type": "object",
+      "properties": {
+        "pos": { "type": "array", "items": { "type": "number", "minimum": -3, "maximum": 3 }, "minItems": 3, "maxItems": 3 },
+        "rot": { "type": "array", "items": { "type": "number", "minimum": -360, "maximum": 360 }, "minItems": 3, "maxItems": 3 },
+        "escala": { "type": "number", "minimum": 0.05, "maximum": 5 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
