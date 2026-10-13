@@ -146,9 +146,8 @@ async function iniciar() {
     const amigos = crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, idioma });
     // Venjy en persona: saluda en el inicio y explica cada lugar del portafolio
     const venjys = crearVenjys(scene, { terreno, mundo, jugador, materiales, destinos: destinosZona, orientacion, idioma });
-    // L cambia el idioma de los paneles, carteles y textos de la página
-    document.addEventListener('keydown', e => {
-        if (e.code !== 'KeyL' || e.repeat || !jugador.activo) return;
+    // L (jugando o en la pausa) o el botón de la pausa cambian el idioma de los paneles, carteles y textos
+    const cambiarIdioma = () => {
         idioma = idioma === 'es' ? 'en' : 'es';
         try { localStorage.setItem('preferredLanguage', idioma); } catch (err) { /* sin almacenamiento */ }
         aplicarIdioma();
@@ -156,7 +155,12 @@ async function iniciar() {
         npcs.setIdioma(idioma);
         amigos.setIdioma(idioma);
         venjys.setIdioma(idioma);
+    };
+    document.addEventListener('keydown', e => {
+        if (e.code !== 'KeyL' || e.repeat || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '')) return;
+        cambiarIdioma();
     });
+    document.getElementById('cambiar-idioma').addEventListener('click', cambiarIdioma);
     const minimapa = crearMinimapa(datos, hudEl, ESCALA);
     // Pistas en el minimapa y el mapa grande: dónde hay gente (puntos tenues, agrupados)
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
