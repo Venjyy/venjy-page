@@ -30,6 +30,9 @@ Mapa del módulo: `mundo/supervivencia/MAPA.md` (tabla de archivos con funciones
      rellenar el costado con `(x - d + 1, y - d)`: una diagonal sola deja solo la mitad de los píxeles (ajedrez).
    - Referencias: pedir o mirar la foto que mande el dueño; inspirarse, no copiar. Un farol tiene argolla, tapa
      y base azul grisáceo, vidrio anaranjado con núcleo claro y barrotes oscuros.
+   - Objeto con modelo 3D: `iconoModelo(clave)` de `modelos-mano.js` dibuja el ícono desde el mismo modelo (`desdeModelo` en
+     `iconos.js`; vista en `VISTA_ICONO`). A 16×16 se pierden los detalles finos (teclas, mástil): si no se lee, pintarlo a mano.
+   - Para ver íconos: página temporal en la raíz que dibuje `pixelesObjeto(id)` ampliado; borrarla antes del commit.
    - Pintado sin verlo: decirlo en el PR (el dueño lo revisa).
 
 ## 2. Receta

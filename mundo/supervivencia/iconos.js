@@ -6,6 +6,7 @@
 // =========================================================
 import { BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
 import { OBJETOS, COLORES } from './objetos.js';
+import { iconoModelo } from './modelos-mano.js';
 
 const hex = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const ajustar = ([r, g, b], f) => [Math.min(255, r * f), Math.min(255, g * f), Math.min(255, b * f)];
@@ -44,6 +45,26 @@ function lienzo16() {
 // Mango diagonal de (x0,y0) abajo-izquierda a (x1,y1) arriba-derecha, 1 px con sombra
 function mango(p, x0, y0, n) {
     for (let k = 0; k < n; k++) { p.set(x0 + k, y0 - k, PALO[0]); p.set(x0 + k + 1, y0 - k, PALO[1]); }
+}
+
+// Pluma grande en diagonal: cálamo, barbas con tres tonos que se afinan hacia las puntas
+function plumaGrande(p, c, contorno) {
+    for (let k = 0; k <= 12; k++) {
+        const x = 2 + k, y = 13 - k;
+        const ancho = Math.round(3 * Math.sin(Math.PI * (k + 1.5) / 15));
+        for (let d = 1; d <= ancho; d++) {
+            p.set(x - d, y - d, d === ancho ? c.medio : c.claro); p.set(x - d + 1, y - d, c.claro);
+            p.set(x + d, y + d, d === ancho ? c.oscuro : c.medio); p.set(x + d - 1, y + d, c.medio);
+        }
+        p.set(x, y, k < 2 ? c.punta : c.calamo);
+    }
+    p.set(1, 14, c.punta); p.set(0, 15, c.punta);
+    p.contornear(contorno);
+}
+// Íconos de los objetos con modelo 3D: se dibujan desde las mismas piezas (iconoModelo)
+function desdeModelo(p, clave) {
+    iconoModelo(clave).forEach((c, i) => { if (c) p.px[i] = c; });
+    p.contornear();
 }
 
 const PINTORES = {
@@ -139,10 +160,7 @@ const PINTORES = {
         for (let k = 0; k < 12; k++) p.set(2 + k, 8 + Math.round(Math.sin(k * 0.9) * 3), k % 3 ? a : b);
         for (let k = 0; k < 6; k++) p.set(10 + (k % 2), 2 + k, b);
     },
-    pluma(p) {
-        for (let k = 0; k < 11; k++) { p.set(3 + k, 13 - k, [200, 200, 196]); p.set(4 + k, 13 - k, [246, 246, 244]); p.set(4 + k, 12 - k, k > 2 ? [230, 230, 226] : null); }
-        p.contornear([90, 90, 90]);
-    },
+    pluma(p) { plumaGrande(p, { claro: [250, 250, 248], medio: [226, 228, 232], oscuro: [176, 180, 190], calamo: [236, 220, 170], punta: [190, 160, 90] }); },
     cuero(p) {
         p.mascara(['', '', '', '...c.cccccc.c...', '...aaaaaaaaaa...', '...aaaabaaaaa...', '....aaaaaaba....', '....aabaaaaa....', '....aaaaaaaa....', '...aaaaabaaaa...', '...a.aaaaaa.a...', '...b.bbbbbb.b...'], { a: hex(COLORES.cuero[0]), b: hex(COLORES.cuero[1]), c: hex(COLORES.cuero[2]) });
         p.contornear();
@@ -309,10 +327,7 @@ const PINTORES = {
         p.mascara(['', '', '', '', '', '......cc........', '.....caab.......', '....caaaab......', '....aaaaab......', '.....aaab.......', '......ab........'].map(f => '..' + f), { a: [150, 40, 190], b: [80, 10, 110], c: [230, 150, 255] });
         p.contornear();
     },
-    pluma_negra(p) {
-        for (let k = 0; k < 11; k++) { p.set(3 + k, 13 - k, [40, 30, 60]); p.set(4 + k, 13 - k, [80, 50, 110]); if (k > 2) p.set(4 + k, 12 - k, [120, 70, 160]); }
-        p.contornear([20, 10, 30]);
-    },
+    pluma_negra(p) { plumaGrande(p, { claro: [150, 100, 200], medio: [100, 60, 150], oscuro: [56, 30, 90], calamo: [190, 170, 210], punta: [120, 90, 140] }, [20, 10, 30]); },
     farol(p) {
         p.mascara(['', '......kk........', '.....k..k.......', '....kkkkkk......', '....kyyyyk......', '....kyooyk......', '....kyooyk......', '....kyyyyk......', '....kkkkkk......', '.....kkkk.......'].map(f => '..' + f), { k: [50, 50, 60], y: [120, 220, 200], o: [200, 255, 230] });
         p.contornear();
@@ -351,33 +366,17 @@ const PINTORES = {
         p.mascara(['', '', '.....rrrrrrr.....', '....rwwwwwwr....', '....rwrrrrwr....', '....rwrwwrwr....', '....rwrrrrwr....', '....rwwwwwwr....', '....rrrrrrrr....', '.....bbbbbbb....'], { r: [176, 44, 48], w: [244, 236, 214], b: [90, 24, 28] });
         p.contornear();
     },
-    pluma_juguete(p) {
-        // Pluma grande en diagonal: cálamo crema, barbas rojas (más claras arriba) que se afinan hacia las puntas
-        const claro = [244, 112, 112], medio = [220, 52, 64], oscuro = [168, 28, 48], calamo = [244, 232, 196], punta = [176, 140, 70];
-        for (let k = 0; k <= 12; k++) {
-            const x = 2 + k, y = 13 - k;
-            const ancho = Math.round(3 * Math.sin(Math.PI * (k + 1.5) / 15));
-            for (let d = 1; d <= ancho; d++) {
-                p.set(x - d, y - d, d === ancho ? medio : claro); p.set(x - d + 1, y - d, claro);
-                p.set(x + d, y + d, d === ancho ? oscuro : medio); p.set(x + d - 1, y + d, medio);
-            }
-            p.set(x, y, k < 2 ? punta : calamo);
-        }
-        p.set(1, 14, punta); p.set(0, 15, punta);
-        p.contornear();
-    },
+    pluma_juguete(p) { plumaGrande(p, { claro: [244, 112, 112], medio: [220, 52, 64], oscuro: [168, 28, 48], calamo: [244, 232, 196], punta: [176, 140, 70] }); },
+    // Guitarra y Teclado, pintados a mano (a 16×16 el modelo 3D pierde los detalles); el Tambor sí sale del modelo 3D
     guitarra(p) {
-        p.mascara(['..............kk', '.............kmk', '............kmk.', '...........kmk..', '..........kmk...', '.....kkk.kmk....', '....kaaakmk.....', '...kaaaaaak.....', '..kaaakkaaak....', '..kaaakkaaak....', '..kaaaaaaaak....', '...kaaaaaak.....', '....kkkkkk......'], { k: [50, 30, 16], a: [214, 150, 70], m: [137, 103, 59] });
+        p.mascara(['...........nnn..', '..........nnnn..', '.........nff....', '........nff.....', '.......nff......', '....aaanff......', '...aaaaaaf......', '..aaaaaaaaa.....', '..aaahhhaaad....', '..aadhhhhdad....', '..aaaahhaaad....', '...aaaaaadd.....', '....dddddd......'], { a: [226, 164, 84], d: [168, 106, 48], h: [38, 24, 14], n: [120, 78, 44], f: [58, 38, 24] });
         p.contornear();
     },
     teclado(p) {
-        p.mascara(['', '', '', '..kkkkkkkkkkkk..', '..kwwkwwkwwkwk..', '..kwwkwwkwwkwk..', '..kwwkwwkwwkwk..', '..kwwwwwwwwwwk..', '..kkkkkkkkkkkk..'], { k: [40, 40, 48], w: [240, 240, 236] });
+        p.mascara(['', '', '', '', '', '..dddddddddddd..', '..drdwdudrdddd...', '.wwwwwwwwwwwwww.', '.wbwbwwbwbwbww..', '.wbwbwwbwbwbww..', '.wwwwwwwwwwwwww.', '.gggggggggggggg.', '.dddddddddddddd.'], { d: [58, 60, 74], w: [244, 244, 240], b: [28, 26, 30], g: [170, 170, 166], r: [214, 62, 58], u: [70, 130, 210] });
         p.contornear();
     },
-    tambor(p) {
-        p.mascara(['', '', '...cccccccccc...', '..cwwwwwwwwwwc..', '..cccccccccccc..', '..bbrbbrbbrbbb..', '..bbbrbbrbbrbb..', '..bbrbbrbbrbbb..', '..bbbbbbbbbbbb..', '...bbbbbbbbbb...'], { c: [176, 44, 48], w: [244, 236, 214], b: [150, 100, 56], r: [96, 66, 34] });
-        p.contornear();
-    },
+    tambor(p) { desdeModelo(p, 'tambor'); },
     cama(p) {
         p.mascara(['', '', '', '', '', '..wwwrrrrrrrrr..', '..wwwrrrrrrrrr..', '..rrrrrrrrrrrr..', '..mmmmmmmmmmmm..', '..m..........m..'], { w: [240, 240, 236], r: [176, 44, 48], m: [137, 103, 59] });
         p.contornear();
