@@ -17,7 +17,13 @@ const GRUPOS = [
     ['mazo', 'Mazos', 'Decks', {}],
     ['asiento', 'Tu asiento', 'Your seat', { dist: 'distancia a la mesa' }],
     ['mini', 'Vista de arriba (3.ª persona)', 'Top view (3rd person)', { ancho: 'fracción de pantalla', max: 'ancho máx. (px)', alto: 'altura de la cámara', margen: 'margen (px)' }],
-    ['mano', 'Tu mano en pantalla', 'Your hand on screen', { alto: 'fracción del alto', max: 'alto máx. (px)', solape: 'solape', sube: 'cuánto sube la elegida' }]
+    ['mano', 'Tu mano en pantalla', 'Your hand on screen', { alto: 'fracción del alto', max: 'alto máx. (px)', solape: 'solape', sube: 'cuánto sube la elegida' }],
+    ['desc', 'Descarte (cementerio)', 'Discard pile', {}],
+    // Animaciones (cartas-mesa-anim.js): «Repetir la última jugada» las vuelve a mostrar con los valores nuevos
+    ['anim', 'Animaciones', 'Animations', { activas: '1 = sí, 0 = no', velocidad: '2 = el doble de rápido', arco: 'altura del vuelo (m)', alzar: 'altura del hechizo (m)', embestida: 'cuánto avanza al atacar (0-1)', sacudida: 'temblor del golpe (m)', flota: 'cuánto sube el número (px)', numero: 'tamaño del número (px)', pulso: 'tamaño del brillo', tocarSalta: '1 = tocar salta la animación' }],
+    ['duraciones', 'Animaciones: segundos por evento', 'Animations: seconds per event', {}],
+    ['sigue', 'Animaciones: cuándo empieza el siguiente (0-1)', 'Animations: when the next one starts (0-1)', {}],
+    ['colores', 'Animaciones: colores', 'Animations: colors', {}]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
 const rango = (k, v) => GRADOS.has(k) ? [-180, 180, 1] : v > 10 ? [0, Math.max(600, v * 2), 1] : [-3, 3, 0.01];
@@ -48,12 +54,21 @@ export async function montarMesa(ctx) {
         fila.append(s, d);
         return fila;
     }
+    function colorCampo(obj, k) {
+        const fila = document.createElement('label'); fila.className = 'campo';
+        const s = document.createElement('span'); s.textContent = k;
+        const c = document.createElement('input'); c.type = 'color'; c.value = obj[k];
+        c.addEventListener('input', () => { obj[k] = c.value; cambio(); });
+        fila.append(s, c);
+        return fila;
+    }
     function camara(obj, nombres = {}) {
         const out = [];
         for (const k of Object.keys(obj)) {
             if (k === 'nota') continue;
             if (k === 'mira') { obj.mira.forEach((_, i) => out.push(numero(obj.mira, i, ['mira: x (derecha)', 'mira: y (arriba)', 'mira: z (hacia ti)'][i]))); continue; }
             if (typeof obj[k] === 'number') out.push(numero(obj, k, nombres[k]));
+            else if (typeof obj[k] === 'string' && /^#[0-9a-f]{6}$/i.test(obj[k])) out.push(colorCampo(obj, k));
         }
         return out;
     }
@@ -97,6 +112,7 @@ export async function montarMesa(ctx) {
     };
     $('me-abrir').addEventListener('click', async () => { await mesa('abrir'); ctx.puente.enviarDatos('cartas-mesa', datos); });
     $('me-vista').addEventListener('click', () => mesa('vista'));
+    $('me-animar').addEventListener('click', () => mesa('animar'));
     $('me-cerrar').addEventListener('click', () => mesa('cerrar'));
     $('me-descartar').addEventListener('click', () => { datos = clonar(original); cambio(); pintar(); });
     btnGuardar.addEventListener('click', guardar);

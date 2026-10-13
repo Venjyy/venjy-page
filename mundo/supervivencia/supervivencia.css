@@ -434,6 +434,11 @@ body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
 .cartas-mesa-lector canvas { width: 100%; height: auto; image-rendering: pixelated; border: 3px solid #000; }
 .cartas-mesa-lector .cartas-boton { min-height: 34px; }
 .cartas-mesa-mini { position: fixed; z-index: 56; border: 4px solid #120c07; box-shadow: inset 0 0 0 2px #7a5a36; pointer-events: none; box-sizing: content-box; transform: translate(-4px, 4px); }
+/* Animaciones de la mesa (cartas-mesa-anim.js): números que flotan y el aviso de turno; tiempos y colores en cartas-mesa.json */
+.cartas-mesa-fx { position: fixed; inset: 0; z-index: 58; pointer-events: none; overflow: hidden; font-family: PixelCraft, monospace; }
+.cartas-fx-num { position: absolute; left: 0; top: 0; white-space: nowrap; line-height: 1; text-shadow: 3px 3px 0 #1a0f08, -1px -1px 0 #1a0f08; will-change: transform, opacity; }
+.cartas-fx-turno { position: absolute; left: 50%; top: 38%; padding: 10px 26px; background: rgb(28 19 12 / 0.88); border: 4px solid #120c07; box-shadow: inset 2px 2px 0 #856041, inset -2px -2px 0 #24160d; color: var(--amarillo); font-size: 1.6rem; text-shadow: 2px 2px 0 #222; white-space: nowrap; opacity: 0; }
+.cartas-mesa-vida { font-weight: normal; }
 @media (max-width: 700px) {
     .cartas-mesa-marcador { flex-wrap: wrap; font-size: .7rem; padding: 6px 8px; }
     .cartas-mesa-aviso { top: 64px; font-size: .7rem; }

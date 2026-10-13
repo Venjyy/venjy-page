@@ -99,6 +99,9 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `minijuego.js` (285) | Marco: intro, juego, final. `crearMinijuegos:27` |
 | `minijuego-lena.js` (310) / `-pesca.js` (250) / `-asado.js` (338) | Hachas con Boris · pesca con Pony · asado. `crearLena:36` `crearPescaPony:33` `crearAsado:47` |
 | `minijuegos-datos.js` (201) | Textos ES/EN. `TXT_MJ:11` `LENA:28` `PESCA:69` `ASADO:164` |
+| `cartas-mesa.js` (~560) | Duelo de Cartas: mesa 3D junto a Lucho, tu mano en pantalla, cámaras, toques y HUD. `crearMesaCartas` |
+| `cartas-mesa-anim.js` (~330) | Animaciones del Duelo desde los eventos de `aplicar` (robar, jugar, atacar, daño, cementerio, hechizos, turno). `crearAnimador` |
+| `cartas-anim-modelo.js` (~100) | Puro: tiempos y colores por defecto (`ANIM`, en `cartas-mesa.json`) y línea de tiempo de los eventos. `planificar` `ocupanteEn` |
 
 ## supervivencia/ · cooperativo y panel QR
 

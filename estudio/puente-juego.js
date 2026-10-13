@@ -202,6 +202,7 @@ const responder = crearManejador({
             if (!(v.mesaCartas && v.mesaCartas.activo)) v.abrirMesa('facil');
         } else if (accion === 'cerrar') { if (v.mesaCartas) v.mesaCartas.cerrar(); }
         else if (!v.mesaCartas || !v.mesaCartas.activo) throw new Error('primero abre la mesa');
+        else if (accion === 'animar') { if (!v.mesaCartas.repetirAnimacion()) throw new Error('primero haz una jugada en la mesa'); }
         else v.mesaCartas.cambiarVista();
     },
     // Pestaña Objetos: deja en tu mano (barra rápida) el objeto o bloque pedido, dándotelo si no lo tienes
