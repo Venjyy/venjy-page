@@ -1184,6 +1184,7 @@ Ideas que se probaron y se sacaron hasta que el dueño decida. Para revivir una,
 
 ## Bitácora de cambios
 
+- 2026-10-13 · **Hito 1 · bong de Moisés a la boca** (rama `hito1-arreglos`): altura al fumar 0,84 (PR #88 la dejó en 0,92; el dueño pidió ~0,84, Moisés va sentado). Verifica el dueño · `criaturas/amigos.js` (`usarBong`).
 - 2026-10-13 · **Hito 1 · saludo de tres tramos retirado** (rama `hito1-arreglos`): el dueño no quiere esa función por ahora (Nacho era un ejemplo). Se quita `buen` del esquema y de `hablar.js`, y Nacho recupera sus saludos originales `bajo`/`alto`. Queda descrito en «Añadidos dudosos (en espera)» · `datos/dialogos.json`, `supervivencia/hablar.js`, `estudio/esquemas/dialogos.schema.json`.
 - 2026-10-13 · **Hito 1 · zanahoria y papa se plantan** (rama `hito1-arreglos`): en `usarObjeto` la comida se revisaba antes que `planta` y retornaba antes de plantar (solo las semillas de trigo llegaban). Ahora primero se intenta plantar sobre tierra labrada; si no, se come. Verifica el dueño: labrar y plantar zanahoria y papa (con y sin hambre) · `supervivencia/minado.js`.
 - 2026-10-13 · **Hito 1 · herramientas en la mano** (rama `hito1-arreglos`): el arreglo de la caña del PR #88 metió un `if` entre el `if (herramienta)` y su `else`, y todas las herramientas perdían la inclinación (quedaban giradas como objeto). Se restaura la cadena; la caña conserva su posición más adelante. Ubicación por objeto editable desde el Estudio: pendiente (punto 13). Verifica el dueño: pico, hacha, espada y caña en primera persona · `supervivencia/mano.js`.

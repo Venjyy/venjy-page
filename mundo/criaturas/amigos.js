@@ -476,8 +476,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     function usarBong(n, dt, t, dJ) {
         const { p } = n, c = n.ciclo, r = n.reposoBong;
         const arriba = c < 1.2 ? suave(c / 1.2) : c < 3.6 ? 1 : c < 4.6 ? 1 - suave((c - 3.6) / 1) : 0;
-        // Moisés fuma más abajo (0.92 en vez de 1,03): la boquilla queda a la altura de la boca, no de la frente
-        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.92 : 1.03, arriba), lerp(r[2], 0.36, arriba));
+        // Moisés fuma más abajo (0,84 en vez de 1,03, va sentado): la boquilla queda a la altura de la boca, no de la frente
+        bongO.g.position.set(lerp(r[0], 0, arriba), lerp(r[1], n === moises ? 0.84 : 1.03, arriba), lerp(r[2], 0.36, arriba));
         bongO.g.rotation.x = lerp(0, -0.15, arriba);
         const reposo = n === moises ? -0.6 : -0.75;
         p.brazoD.rotation.x = lerp(reposo, -1.15, arriba); p.brazoD.rotation.z = lerp(0.05, 0.42, arriba);
