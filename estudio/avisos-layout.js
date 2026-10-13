@@ -17,7 +17,8 @@ export function calcularAvisos(visibles, w, h) {
             const alto = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
             if (ancho > 1 && alto > 1) avisos.push({ tipo: 'choque', a: a.clave, b: b.clave });
         }
-        if (a.clave !== 'mision' && Math.min(a.r.width, a.r.height) < MIN_TOQUE) {
+        // la misión y los textos del HUD (coords, fps, hora) no se tocan: no cuentan como botón chico
+        if (!['mision', 'coords', 'fps', 'hora'].includes(a.clave) && Math.min(a.r.width, a.r.height) < MIN_TOQUE) {
             avisos.push({ tipo: 'chico', clave: a.clave, ancho: Math.round(a.r.width), alto: Math.round(a.r.height) });
         }
         if (a.r.left < -0.5 || a.r.top < -0.5 || a.r.right > w + 0.5 || a.r.bottom > h + 0.5) avisos.push({ tipo: 'fuera', clave: a.clave });

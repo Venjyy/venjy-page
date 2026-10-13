@@ -26,6 +26,9 @@ export const SELECTORES = {
 };
 // pausa y pantalla: mundo/mundo.css fija su posición con !important (bajan bajo el minimapa); el layout tiene que ganarle
 const IMPORTANTES = new Set(['pausa', 'pantalla']);
+// coords, fps y hora van uno bajo otro dentro de .datos (flex, mundo/mundo.css): para moverlos solos se sacan del flujo.
+// position:fixed mide desde la pantalla, lo mismo que #hud (fixed, inset 0), que es desde donde mide el Estudio.
+export const TEXTOS_HUD = new Set(['coords', 'fps', 'hora']);
 // display al «des-ocultar» (oculto:false en baja cuando normal lo oculta)
 const VISIBLE = { joy: 'block', mision: 'flex' };
 const LADOS = { si: ['left', 'top'], sd: ['right', 'top'], ii: ['left', 'bottom'], id: ['right', 'bottom'] };
@@ -56,6 +59,7 @@ function reglasBoton(clave, b, completo) {
         if ((num(b.y) || cambiaAncla || typeof b.desde === 'string') && num(completo.y)) {
             d.push(`${v}:${medida(completo.y, v, seguro, pie)}${imp}`, `${v === 'top' ? 'bottom' : 'top'}:auto${imp}`);
         }
+        if (TEXTOS_HUD.has(clave) && d.length) d.unshift('position:fixed');
     }
     if (num(b.w)) d.push(`width:${px(b.w)}`);
     if (num(b.h)) d.push(`height:${px(b.h)}`);
