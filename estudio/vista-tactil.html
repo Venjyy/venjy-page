@@ -23,6 +23,12 @@
 </head>
 <body class="supervivencia">
     <div id="hud">
+        <!-- Textos del HUD como en supervivencia.html (valores de ejemplo; la hora se ve siempre aquí) -->
+        <div class="datos">
+            <span id="coords">X 12  Y 70  Z -34</span>
+            <span id="fps">60 FPS · 16 ms</span>
+            <span id="hora">Día 3 · 14:30</span>
+        </div>
         <div id="barra-rapida" class="barra-rapida" role="listbox"></div>
     </div>
     <script type="module">
@@ -62,6 +68,8 @@
         });
         tactil.activar();
         sv.acariciar.hidden = false; // ACARICIAR aparece siempre en la vista
+        // GESTOS lo crea ruleta.js en el juego (necesita el mundo): aquí, el mismo botón sin acción
+        tactil.agregarAccion('sv-gestos', idioma === 'en' ? 'EMOTES' : 'GESTOS', nada, nada).hidden = false;
         const sonda = document.createElement('div');
         sonda.id = 'sonda-pie';
         document.querySelector('.tactil').appendChild(sonda);

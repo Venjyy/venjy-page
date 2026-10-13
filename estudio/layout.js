@@ -24,8 +24,14 @@ const BOTONES = [
     ['sv-acariciar', 'Acariciar', 'Pet'],
     ['sv-gestos', 'Gestos (ruleta)', 'Emotes (wheel)'],
     ['mision', 'Misión', 'Quest'],
-    ['minimapa', 'Minimapa', 'Minimap']
+    ['minimapa', 'Minimapa', 'Minimap'],
+    ['coords', 'Coordenadas', 'Coordinates'],
+    ['fps', 'FPS', 'FPS'],
+    ['hora', 'Hora', 'Time']
 ];
+// Del HUD (se miden desde #hud) y sin ancho ni alto propios: su tamaño es el del texto
+const DEL_HUD = new Set(['mision', 'minimapa', 'coords', 'fps', 'hora']);
+const SIN_TAMANO = new Set(['mision', 'coords', 'fps', 'hora']);
 const NOMBRE = Object.fromEntries(BOTONES.map(([c, es, en]) => [c, { es, en }]));
 
 // Ancla de cada botón en el CSS de hoy (para los que todavía no están en el JSON)
@@ -44,7 +50,10 @@ const DEF = {
     'sv-camara': { ancla: 'si' },
     'sv-comando': { ancla: 'si' },
     mision: { ancla: 'si', seguro: false },
-    minimapa: { ancla: 'sd', seguro: false }
+    minimapa: { ancla: 'sd', seguro: false },
+    coords: { ancla: 'si', seguro: false },
+    fps: { ancla: 'si', seguro: false },
+    hora: { ancla: 'si', seguro: false }
 };
 const LADOS = { si: ['left', 'top'], sd: ['right', 'top'], ii: ['left', 'bottom'], id: ['right', 'bottom'] };
 const ANCLAS = [['si', 'Arriba izquierda', 'Top left'], ['sd', 'Arriba derecha', 'Top right'], ['ii', 'Abajo izquierda', 'Bottom left'], ['id', 'Abajo derecha', 'Bottom right']];
@@ -135,7 +144,7 @@ export async function montarLayout(ctx) {
         if (!e) return null;
         const r = e.getBoundingClientRect();
         if (!r.width && !r.height) return null;
-        const cont = (clave === 'mision' || clave === 'minimapa' ? d.getElementById('hud') : d.querySelector('.tactil')).getBoundingClientRect();
+        const cont = (DEL_HUD.has(clave) ? d.getElementById('hud') : d.querySelector('.tactil')).getBoundingClientRect();
         const [h, v] = LADOS[c.ancla];
         const x = h === 'left' ? r.left - cont.left : cont.right - r.right;
         let y;
@@ -162,7 +171,7 @@ export async function montarLayout(ctx) {
             if (eff.seguro === false) destino.seguro = false;
             if (m) {
                 destino.x = m.x; destino.y = m.y;
-                if (clave !== 'mision') { destino.w = m.w; destino.h = m.h; }
+                if (!SIN_TAMANO.has(clave)) { destino.w = m.w; destino.h = m.h; }
             }
         }
         const base = { ...DEF[clave], ...(normal || {}) };
@@ -246,7 +255,7 @@ export async function montarLayout(ctx) {
 
         caja.appendChild(campo('x (px)', 'x (px)', numero(val('x'), LIMITES.x, 1, v => conf('x', v))));
         caja.appendChild(campo('y (px)', 'y (px)', numero(val('y'), LIMITES.y, 1, v => conf('y', v))));
-        if (elegido !== 'mision') {
+        if (!SIN_TAMANO.has(elegido)) {
             caja.appendChild(campo('Ancho', 'Width', numero(val('w'), LIMITES.w, 1, v => conf('w', v))));
             caja.appendChild(campo('Alto', 'Height', numero(val('h'), LIMITES.h, 1, v => conf('h', v))));
         }
@@ -375,7 +384,7 @@ export async function montarLayout(ctx) {
             rot.className = 'rotulo';
             rot.textContent = nombre(clave);
             asa.appendChild(rot);
-            if (clave !== 'mision') {
+            if (!SIN_TAMANO.has(clave)) {
                 // la esquina que se arrastra es la contraria a la ancla: así x e y no cambian
                 const [hl, vl] = LADOS[efectivo(clave).ancla];
                 const esq = document.createElement('span');
