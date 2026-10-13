@@ -117,7 +117,11 @@ export function crearHablar(ctx) {
             cy: lim(angulo(ang - c.off), -1.1, 1.1),
             cx: lim(-Math.atan2(J.y + 1.6 - ((n.y ?? 0) + dy + 1.6 * esc), d), -0.45, 0.45)
         };
+        // Canales que la animación normal no reescribe (el cuerpo inclinado, los brazos en z...) quedaban pegados
+        // con lo último que escribió el gesto: si el hueso sigue valiendo lo que dejamos, lo normal es su valor inicial
         const ahora = leer(p);
+        if (!c.base0) c.base0 = { ...ahora };
+        if (c.escrito) for (const k of CAMPOS) if (ahora[k] === c.escrito[k]) ahora[k] = c.base0[k];
         const meta2 = {};
         for (const k of CAMPOS) {
             let v = ahora[k];
@@ -130,9 +134,16 @@ export function crearHablar(ctx) {
         const fin = {};
         for (const k of CAMPOS) { c.cur[k] += (meta2[k] - c.cur[k]) * r; fin[k] = lerp(ahora[k], c.cur[k], c.w); }
         escribir(p, fin);
+        c.escrito = leer(p);
     }
     function cerrarCharla(c) {
         c.n.yaw = c.yawLibre;
+        // Deja los canales que nadie más reescribe como estaban antes de la charla (Lona quedaba acostada o con los brazos abiertos)
+        if (c.escrito && c.base0) {
+            const ahora = leer(c.n.p), v = { ...ahora };
+            for (const k of CAMPOS) if (ahora[k] === c.escrito[k]) v[k] = c.base0[k];
+            escribir(c.n.p, v);
+        }
         if (c.n.escena === c.hook) delete c.n.escena;
         if (charla === c) charla = null;
     }
