@@ -84,5 +84,57 @@ ok(OBJETOS[O.CUBO_LECHE].devuelve === 'CUBO' && OBJETOS[O.BOTELLA_LECHE].devuelv
     const oveja = { ...vaca, tipo: 'oveja' }; mano = pila(O.CUBO, 1);
     ok(!g.interactuar(oveja), 'solo las vacas dan leche');
 }
+// ---- 7f-2: usos de los objetos (Mapa, instrumentos, Pluma, Farol, Cartel, Botella de agua) ----
+{
+    const { crearUsosObjetos, ALCANCE_PLUMA, INSTRUMENTOS } = await import('../supervivencia/usos-objetos.js');
+    const { info, infoBloque } = await import('../supervivencia/objetos.js');
+    const { LUZ_EMISION, TIPO, BLOQUES } = await import('../texturas.js');
+    let mapa = 0, tonos = 0, ruidos = 0, maullidos = [], t = 0;
+    const gata = { x: 3, z: 4, maullar: d => maullidos.push(d) };
+    const u = crearUsosObjetos({
+        minimapa: { alternarGrande: () => { mapa++; } }, gatas: { gatas: [gata] }, jugador: { pos: { x: 0, z: 0 } },
+        sonido: { tono: () => { tonos++; }, ruido: () => { ruidos++; } }, ahora: () => t
+    });
+    ok(u.usar({ id: O.MAPA }) && mapa === 1, 'Mapa abre el minimapa grande');
+    ok(!u.usar({ id: O.RELOJ }) && !u.usar({ id: O.PALO }), 'otros objetos no los toma usos-objetos');
+    for (const id of [O.GUITARRA, O.TECLADO, O.TAMBOR]) {
+        t += 1; tonos = 0;
+        ok(u.usar({ id }) && tonos === 1 && INSTRUMENTOS[id], 'instrumento suena: ' + OBJETOS[id].clave);
+    }
+    tonos = 0; t += 0.01;
+    ok(u.usar({ id: O.GUITARRA }) && tonos === 0, 'un instrumento no suena dos veces en menos de 0,12 s');
+    t += 5;
+    ok(u.usar({ id: O.PLUMA_JUGUETE }) && maullidos.length === 1 && Math.abs(maullidos[0] - 5) < 1e-9, 'Pluma: la gata a 5 bloques maúlla');
+    t += 0.5;
+    u.usar({ id: O.PLUMA_JUGUETE });
+    ok(maullidos.length === 1, 'Pluma: espera entre maullidos');
+    gata.x = ALCANCE_PLUMA + 1; t += 10;
+    ok(u.usar({ id: O.PLUMA_JUGUETE }) && maullidos.length === 1, 'Pluma: gata fuera de alcance no maúlla');
+    // Farol y Cartel: objeto → bloque con luz / sin luz y vuelven como objeto al romperlos
+    ok(info(O.FAROL_MANO).pone === B.FAROL && infoBloque(B.FAROL).suelta === O.FAROL_MANO, 'Farol: objeto ↔ bloque');
+    ok(info(O.CARTEL).pone === B.CARTEL && infoBloque(B.CARTEL).suelta === O.CARTEL, 'Cartel: objeto ↔ bloque');
+    ok(LUZ_EMISION[B.FAROL] >= 14 && !LUZ_EMISION[B.CARTEL], 'Farol da luz y el Cartel no');
+    ok(TIPO[B.FAROL] === 4 && TIPO[B.CARTEL] === 4 && BLOQUES[B.FAROL].top >= 0, 'Farol y Cartel: plantas en cruz con tile propio');
+    ok(OBJETOS[O.BOTELLA_AGUA].devuelve === 'BOTELLA' && O.BOTELLA_AGUA > O.TOMATE_BIGOTE, 'Botella de agua: devuelve la botella, id al final');
+    // Modelos 3D de la mano y el cuerpo: guitarra, teclado y tambor tienen modelo, brazos y agarre
+    const { MODELOS, COLGAR, tieneModelo } = await import('../supervivencia/modelos-mano.js');
+    for (const id of [O.GUITARRA, O.TECLADO, O.TAMBOR]) {
+        const mod = info(id).modelo;
+        ok(mod && tieneModelo(mod) && MODELOS[mod] && COLGAR[mod] && COLGAR[mod].brazoI && COLGAR[mod].brazoD, 'modelo 3D completo: ' + OBJETOS[id].clave);
+    }
+    // Riego a mano: la tierra húmeda aguanta sin agua cerca mientras dura
+    const { crearAgricultura } = await import('../supervivencia/agricultura.js');
+    const celdas = new Map(); const k = (x, y, z) => x + ',' + y + ',' + z;
+    celdas.set(k(0, 0, 0), B.TIERRA_LABRADA_HUMEDA);
+    const mundoSim = { bloque: (x, y, z) => celdas.get(k(x, y, z)) ?? 0, editar: (x, y, z, id) => celdas.set(k(x, y, z), id), editarLote() {} };
+    const mr = Math.random; Math.random = () => 0; // el 10 % de secado siempre cae
+    const ag = crearAgricultura({ mundo: mundoSim });
+    ag.humedecer(0, 0, 0, 5);
+    for (let i = 0; i < 4; i++) ag.actualizar(1);
+    ok(celdas.get(k(0, 0, 0)) === B.TIERRA_LABRADA_HUMEDA, 'tierra regada a mano sigue húmeda mientras dura');
+    for (let i = 0; i < 3; i++) ag.actualizar(1);
+    ok(celdas.get(k(0, 0, 0)) !== B.TIERRA_LABRADA_HUMEDA, 'sin agua cerca y pasado el tiempo, se seca');
+    Math.random = mr;
+}
 console.log(`${RECETAS.length} recetas · ${fallos ? fallos + ' fallas' : 'recetas OK'}`);
 process.exit(fallos ? 1 : 0);

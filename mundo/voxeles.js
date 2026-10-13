@@ -1165,6 +1165,45 @@ function mallarCama(buf, def, x, y, z, ox, oz, hay, propia) {
     }
 }
 
+// Objetos pequeños hechos de cajas (7f-2): farol y cartel. Cada caja { a: [x0,y0,z0], b: [x1,y1,z1] } va en
+// 1/16 de bloque, centrada en la celda; `lado`, `arriba` y `fondo` son tiles y cada cara muestra el tile entero.
+// `brillo`: las caras se dibujan a plena luz (el farol).
+const CAJAS_FAROL = [
+    { a: [5, 0, 5], b: [11, 7, 11], lado: 'farol', arriba: 'farol_tapa', fondo: 'farol_tapa' },
+    { a: [6, 7, 6], b: [10, 8, 10], lado: 'farol_tapa', arriba: 'farol_tapa' },
+    { a: [7, 8, 7], b: [9, 10, 9], lado: 'farol_tapa', arriba: 'farol_tapa' }
+];
+const CAJAS_CARTEL = [
+    { a: [7, 0, 7], b: [9, 9, 9], lado: 'cartel_poste', arriba: 'cartel_poste', fondo: 'cartel_poste' },
+    { a: [1, 8, 7], b: [15, 15, 9], lado: 'cartel_poste', arriba: 'cartel_poste', fondo: 'cartel_poste', frente: 'cartel' }
+];
+function mallarCajas(buf, bx, y, bz, propia, brillo, cajas) {
+    const lc = propia >= 0 ? (propia >> 4) / 15 : 1, lb = brillo ? EMISOR : propia >= 0 ? (propia & 15) / 15 : 0;
+    for (const c of cajas) {
+        const [x0, y0, z0] = c.a.map(v => v / 16), [x1, y1, z1] = c.b.map(v => v / 16);
+        const n = (v, a, b) => (v - a) / (b - a);
+        for (let f = 0; f < 6; f++) {
+            const cara = CARAS[f];
+            const base = buf.n, s = SOMBRA[f];
+            const tile = TILE[f === 2 ? c.arriba : f === 3 ? (c.fondo || c.arriba) : ((f === 4 || f === 5) && c.frente ? c.frente : c.lado)];
+            for (let k = 0; k < 4; k++) {
+                const co = cara.c[k];
+                const px = co[0] ? x1 : x0, py = co[1] ? y1 : y0, pz = co[2] ? z1 : z0;
+                buf.p.push(bx + px, y + py, bz + pz);
+                const nx = n(px, x0, x1), ny = n(py, y0, y1), nz = n(pz, z0, z1);
+                const u = f < 2 ? (f === 0 ? 1 - nz : nz) : f >= 4 ? (f === 4 ? nx : 1 - nx) : nx;
+                const v = f < 4 ? ny : nz;
+                const [tu, tv] = uvTile(tile, u, v);
+                buf.u.push(tu, tv);
+                buf.c.push(s, s, s);
+                buf.l.push(lc, lb);
+            }
+            buf.i.push(base, base + 1, base + 2, base, base + 2, base + 3);
+            buf.n += 4;
+        }
+    }
+}
+
 // y0..y1: solo esas capas (una sección de 16 de alto al editar). Como las caras se emiten capa por
 // capa, `cortes` guarda dónde empieza cada sección en el índice (para ocultarla del chunk entero).
 export const SECCION = 16;
@@ -1221,6 +1260,10 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
                 const tipo = TIPO[id];
                 const def = BLOQUES[id];
                 const emite = LUZ_EMISION[id];
+                if (id === B.FAROL || id === B.CARTEL) { // objetos de cajas (7f-2)
+                    mallarCajas(solido, ox + x - 1, y, oz + z - 1, luzEn(x, y, z), id === B.FAROL, id === B.FAROL ? CAJAS_FAROL : CAJAS_CARTEL);
+                    continue;
+                }
                 if (tipo === 4) { // planta: dos planos cruzados, visibles por ambos lados
                     const planos = [[[0, 0, 0], [1, 0, 1], [1, 1, 1], [0, 1, 0]], [[1, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 0]]];
                     const cuv = [[0, 0], [1, 0], [1, 1], [0, 1]];

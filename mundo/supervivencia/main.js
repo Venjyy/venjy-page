@@ -55,6 +55,8 @@ import { crearRuleta } from './ruleta.js';
 import { crearEscenasSkin } from './escenas-skin.js';
 import { crearCaricias } from './caricias.js';
 import { crearEscenasGatas } from './escenas-gatas.js';
+import { crearUsosObjetos } from './usos-objetos.js';
+import { tono, ruido } from './sonidos.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearVidaAmigos } from './vida-amigos.js';
@@ -681,7 +683,8 @@ async function arrancar(guardado, cx = null) {
         const e = combate.entidadApuntada();
         return !!(e && e.animal && ganado.interactuar(e.animal));
     };
-    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : combate.usar(p));
+    const usosObjetos = crearUsosObjetos({ minimapa, gatas, jugador, sonido: { tono, ruido } });
+    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : usosObjetos.usar(p) || combate.usar(p));
     minado.usarSinNada = () => combate.bloquearConMano2();
     minado.alSoltarDerecho = () => combate.soltarDerecho();
     minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
@@ -1337,12 +1340,12 @@ async function arrancar(guardado, cx = null) {
     const horaEl = $('hora'), relojManoEl = $('reloj-mano'), pausaHoraEl = $('pausa-hora');
     let horaPintada = '';
     function pintarHora(fuerza = false) {
-        const h = textoHora(dia.t), clave = h + '|' + dia.dias + '|' + idioma + '|' + (ajustes.hora ? 1 : 0) + '|' + inventario.idEnMano();
+        const h = textoHora(dia.t), clave = h + '|' + dia.dias + '|' + idioma + '|' + (ajustes.hora ? 1 : 0) + '|' + inventario.idEnMano() + '|' + (inventario.mano2 ? inventario.mano2.id : 0);
         if (!fuerza && clave === horaPintada) return;
         horaPintada = clave;
         horaEl.hidden = !ajustes.hora;
         if (ajustes.hora) horaEl.textContent = h;
-        const enMano = inventario.idEnMano() === O.RELOJ;
+        const enMano = inventario.idEnMano() === O.RELOJ || (inventario.mano2 && inventario.mano2.id === O.RELOJ); // en cualquiera de las dos manos
         relojManoEl.hidden = !enMano;
         if (enMano) relojManoEl.textContent = textoDiaHora(dia.dias, dia.t, idioma);
         pausaHoraEl.textContent = textoDiaHora(dia.dias, dia.t, idioma);

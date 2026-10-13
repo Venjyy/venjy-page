@@ -16,17 +16,32 @@ export const VISTAS = ['mano1', 'mano3'];
 export const AGARRE_1P_MALLA = {
     objeto: { pos: [0, 0, 0], rot: [0, -0.55, 0], escala: 0.5 },
     herramienta: { pos: [0, 0, 0], rot: [0, -Math.PI / 2 + 0.35, 0.65], escala: 0.5 },
-    bloque: { pos: [0, 0, 0], rot: [0, Math.PI / 4, 0], escala: 1.1 }
+    bloque: { pos: [0, 0, 0], rot: [0, Math.PI / 4, 0], escala: 1.1 },
+    // Modelos 3D (modelos-mano.js): el mástil hacia +X del modelo apunta hacia delante y un poco arriba
+    modelo: { pos: [0, 0, 0], rot: [0, Math.PI / 2 + 0.25, 0.25], escala: 0.34 }
 };
 export const AGARRE = {
     objeto: { pos: [0, -0.68, 0.08], rot: [0, -Math.PI / 2, 0], escala: 0.55, mango: [-0.32, -0.32] },
     herramienta: { pos: [0, -0.68, 0.08], rot: [Math.PI / 4, -Math.PI / 2, 0], escala: 0.62, mango: [-0.36, -0.36] },
-    bloque: { pos: [0, -0.78, 0.12], rot: [0, Math.PI / 4, 0], escala: 1.4 }
+    bloque: { pos: [0, -0.78, 0.12], rot: [0, Math.PI / 4, 0], escala: 1.4 },
+    // Los modelos 3D van colgados del torso (COLGAR en modelos-mano.js); esto solo vale si no tienen colgar
+    modelo: { pos: [0, -0.68, 0.08], rot: [0, 0, 0], escala: 0.5 }
 };
 // Ajustes por objeto que ya traía el código (clave en minúscula, como las del JSON)
 export const AJUSTE_OBJETO = {
-    mano1: { cana: { pos: [0, 0.1, -0.15] } }, // la caña va más adelante en la mano: sin esto queda pegada al cuerpo
-    mano3: {}
+    mano1: {
+        cana: { pos: [0, 0.1, -0.15] }, // la caña va más adelante en la mano: sin esto queda pegada al cuerpo
+        // Instrumentos 3D (modelos-mano.js): el cuerpo cerca de la mano y el mástil hacia delante y arriba
+        guitarra: { pos: [-0.1, 0.12, 0.1], rot: [0, Math.PI / 2 + 0.3, 0.45], escala: 0.4 },
+        teclado: { pos: [-0.12, 0.12, 0.05], rot: [0.3, 0.35, 0.1], escala: 0.45 },
+        tambor: { pos: [-0.1, 0.1, 0.05], rot: [0.5, 0, 0.1], escala: 0.55 }
+    },
+    // Instrumentos 3D colgados del torso (en coordenadas de `cuerpo`, no del brazo): ver COLGAR en modelos-mano.js
+    mano3: {
+        guitarra: { pos: [0.05, 0.86, 0.2], rot: [0, 0, 0.42], escala: 1 },
+        teclado: { pos: [0, 0.8, 0.22], rot: [0, 0, 0.12], escala: 1 },
+        tambor: { pos: [0, 0.62, 0.32], rot: [0.5, 0, 0], escala: 1 }
+    }
 };
 
 const RAD = Math.PI / 180;

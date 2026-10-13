@@ -14,6 +14,7 @@ import { geometriaCubo } from './entidades.js';
 import { info, O } from './objetos.js';
 import { agarre, versionObjetosMano } from './objetos-mano-datos.js';
 import { crearModelo } from './skin.js';
+import { construirModelo } from './modelos-mano.js';
 const O_ESCUDO = O.ESCUDO;
 
 // Primera persona (7c-1): dónde va el brazo (en el marco del pivote) según lo que tengas en la mano
@@ -88,6 +89,9 @@ export function crearFabrica({ atlas, atlasLienzo }) {
         // Clave de OBJETOS (CANA, PICO_MADERA…) para buscar su ajuste en objetos-mano.json; null en los bloques
         clave: id => (id >= 256 && info(id) ? info(id).clave : null),
         malla(id, mats) {
+            // Objetos con modelo 3D propio (Guitarra, Teclado, Tambor): cajas con color, no ícono extruido
+            const modelo = id >= 256 && info(id) && info(id).modelo;
+            if (modelo) return { malla: construirModelo(THREE, modelo, mats[1]), tipo: 'modelo' };
             const d = datos(id);
             return { malla: new THREE.Mesh(d.geo, d.tipo === 'bloque' ? mats[0] : mats[1]), tipo: d.tipo };
         }

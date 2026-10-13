@@ -160,6 +160,7 @@ export function limpiar(m) {
 }
 
 import { AGARRE, agarre, versionObjetosMano } from './objetos-mano-datos.js';
+import { COLGAR } from './modelos-mano.js';
 
 // ---------- Objeto en la mano del cuerpo ----------
 // fabrica = mano.fabrica (mallas de mano.js con su geometría en caché por id).
@@ -177,12 +178,24 @@ export function ponerObjeto(m, id, fabrica, lado = 0) {
     // Si el Estudio cambió cómo se agarra (versión nueva), se vuelve a armar
     if (s.id === id && s.ver === versionObjetosMano()) { if (s.malla) s.malla.visible = true; return; }
     const brazo = lado ? m.brazoI : m.brazoD;
-    if (s.malla) { brazo.remove(s.malla); s.malla = null; }
+    if (s.malla) { s.malla.parent && s.malla.parent.remove(s.malla); s.malla = null; s.colgar = null; }
     s.id = id; s.ver = versionObjetosMano();
     if (!id || !fabrica) return;
     if (!s.mats) s.mats = fabrica.materiales();
     const { malla, tipo } = fabrica.malla(id, s.mats);
-    const ag = agarre('mano3', fabrica.clave ? fabrica.clave(id) : null, tipo);
+    const clave = fabrica.clave ? fabrica.clave(id) : null;
+    // Modelo 3D (guitarra, teclado, tambor): colgado del torso como el bajo de Salonas, con los brazos en él
+    const colgar = tipo === 'modelo' && clave && COLGAR[String(clave).toLowerCase()];
+    if (colgar && m.cuerpo) {
+        const ag = agarre('mano3', clave, 'modelo'); // editable en el Estudio (pestaña Objetos, 3.ª persona)
+        malla.position.set(...ag.pos);
+        malla.rotation.set(...ag.rot);
+        malla.scale.setScalar(ag.escala);
+        m.cuerpo.add(malla);
+        s.malla = malla; s.colgar = colgar;
+        return;
+    }
+    const ag = agarre('mano3', clave, tipo);
     const g = new fabrica.THREE.Group();
     g.position.set(...ag.pos);
     g.rotation.set(...ag.rot);
@@ -209,5 +222,10 @@ export function iluminarObjetos(m, color) {
 export function posar(m, e, ent, dt, fabrica, escudo = 0) {
     avanzar(e, ent, dt);
     aplicarAngulos(m, angulos(e, ent, escudo));
-    if (fabrica) { ponerObjeto(m, ent.objeto || 0, fabrica, 0); ponerObjeto(m, ent.objeto2 || 0, fabrica, 1); }
+    if (fabrica) {
+        ponerObjeto(m, ent.objeto || 0, fabrica, 0); ponerObjeto(m, ent.objeto2 || 0, fabrica, 1);
+        // Instrumento colgado: los brazos lo sostienen (como los de Salonas con el bajo)
+        const c = m.objetoD && m.objetoD.colgar;
+        if (c && m.objetoD.malla && m.objetoD.malla.visible !== false) { m.brazoI.rotation.set(...c.brazoI); m.brazoD.rotation.set(...c.brazoD); }
+    }
 }
