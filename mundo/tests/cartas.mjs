@@ -6,6 +6,7 @@
 //   1. datos: mazos de 15 con cartas que existen, ES/EN en todo, textos únicos y sin emojis
 //   2. reglas: reparto, robo, invocación (1 por turno), combate ATK/ATK y ATK/DEF, sin ataque el turno 1
 //   3. efectos y combos: horda en cadena, flecha, telaraña, robar, barco, pesca, extra, explota, guardián, vuela, racha
+//   3b. reemplazo con las 3 zonas llenas (cementerio, evento, efectos al morir, IA)
 //   4. fin de partida: vida en 0, mazo vacío al robar, tope de turnos
 //   5. IA fácil y media: siempre jugada legal; 200 partidas terminan; medio le gana a fácil la mayoría
 //   6. tutorial: los pasos y los turnos de Lucho calzan con jugadas legales y terminan en victoria
@@ -273,6 +274,41 @@ const principal = e => { e.fase = 'principal'; e.n = 3; };
     g.turno = 1;
     C.aplicar(g, { t: 'atacar', z: 0, obj: 0 });
     ok(['abrazo', 'once', 'boris', 'pony'].every(x => g.jug[0].desc.includes(x)), 'la fusionada muere con sus dos cartas al descarte');
+}
+
+{ // reemplazo con las 3 zonas llenas: la propia va al cementerio y la nueva ocupa su zona
+    const e = partida([['boris', 'rayo'], []], { mazos: [['zombi', 'arana', 'pony'], []] }); principal(e);
+    poner(e, 0, 0, 'zombi'); poner(e, 0, 1, 'trauco'); poner(e, 0, 2, 'esqueleto');
+    const inv = C.jugadas(e).filter(a => a.t === 'invocar');
+    ok(inv.length === 6 && inv.every(a => a.m === 0 && e.jug[0].zonas[a.z]), 'zonas llenas: se invoca sobre cualquiera de las 3 (2 posturas)');
+    const ev = C.aplicar(e, { t: 'invocar', m: 0, z: 1, modo: 'def' });
+    ok(e.jug[0].zonas[1].id === 'boris' && e.jug[0].zonas[1].modo === 'def' && e.jug[0].zonas[1].nueva, 'la nueva ocupa la zona elegida');
+    ok(e.jug[0].desc.includes('trauco') && e.jug[0].mano.join() === 'rayo', 'la reemplazada va al cementerio y la carta sale de la mano');
+    ok(ev.some(x => x.t === 'muere' && x.reemplaza && x.c === 'trauco') && ev.some(x => x.t === 'invoca' && x.c === 'boris'), 'eventos: muere (reemplaza) e invoca');
+    ok(e.invoc === 0 && !C.jugadas(e).some(a => a.t === 'invocar'), 'cuenta como la invocación del turno');
+    // con una zona libre no se reemplaza
+    const f = partida([['boris'], []]); principal(f);
+    poner(f, 0, 0, 'zombi'); poner(f, 0, 1, 'trauco');
+    ok(C.jugadas(f).filter(a => a.t === 'invocar').every(a => a.z === 2), 'con una zona libre solo se invoca en ella');
+    // efecto al morir actúa; el escudo no la salva; el Slime no se parte (la zona es de la nueva)
+    const g = partida([['boris'], []], { mazos: [['zombi', 'arana'], []] }); principal(g);
+    poner(g, 0, 0, 'conejeros', { escudo: true }); poner(g, 0, 1, 'zombi'); poner(g, 0, 2, 'esqueleto');
+    C.aplicar(g, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(g.jug[0].mano.join() === 'zombi,arana' && g.jug[0].desc.includes('conejeros') && g.jug[0].zonas[0].id === 'boris' && !g.jug[0].zonas[0].escudo,
+        'Conejeros reemplazada: roba 2, el escudo no la salva');
+    const h = partida([['boris'], []]); principal(h);
+    poner(h, 0, 0, 'slime'); poner(h, 0, 1, 'zombi'); poner(h, 0, 2, 'esqueleto');
+    C.aplicar(h, { t: 'invocar', m: 0, z: 0, modo: 'ata' });
+    ok(h.jug[0].zonas.map(c => c.id).join() === 'boris,zombi,esqueleto', 'Slime reemplazado: sin fichas, la zona es de la nueva');
+    // el efecto de entrada de la nueva sigue funcionando (Lucho, con objetivo)
+    const k = partida([['lucho'], []]); principal(k);
+    poner(k, 0, 0, 'zombi'); poner(k, 0, 1, 'zombi'); poner(k, 0, 2, 'zombi'); poner(k, 1, 0, 'esqueleto');
+    ok(C.jugadas(k).filter(a => a.t === 'invocar').every(a => a.obj === 0), 'reemplazo con efecto de entrada: pide objetivo rival');
+    // IA: con las zonas llenas y una carta mucho mejor, reemplaza a la más débil (tras atacar con ella)
+    const ia = partida([['caleuche'], []]); principal(ia);
+    poner(ia, 0, 0, 'zombi', { nueva: true }); poner(ia, 0, 1, 'boris', { nueva: true }); poner(ia, 0, 2, 'trauco', { nueva: true });
+    const a = C.jugadaIA(ia, 'medio');
+    ok(a.t === 'invocar' && a.z === 0, 'IA media: reemplaza la criatura más débil con una mucho mejor');
 }
 
 // ---- 4. Fin de partida ----

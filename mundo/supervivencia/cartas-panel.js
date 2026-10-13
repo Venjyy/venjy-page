@@ -189,6 +189,9 @@ export function crearPanelCartas(ctx = {}) {
                 }, modo === postura ? 'elegido' : ''); selector.appendChild(b);
             }
             fila.appendChild(selector);
+            if (eleccion.acciones.some(a => a.t === 'invocar' && e.jug[0].zonas[a.z])) {
+                const aviso = document.createElement('p'); aviso.className = 'cartas-aviso'; aviso.textContent = L(TXT_CARTAS.reemplaza); fila.appendChild(aviso);
+            }
         }
         return fila;
     }

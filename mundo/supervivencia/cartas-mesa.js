@@ -272,7 +272,8 @@ export function crearMesaCartas(ctx) {
         arriba.append(lado(1), turno, lado(0));
         const guia = document.createElement('p'); guia.className = 'cartas-mesa-aviso';
         // Con algo elegido manda la guía del paso siguiente; si no, la última jugada
-        const paso = !sel ? null : sel.tipo === 'propia' ? TXT_MESA.tocaRival : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
+        const reemplaza = sel && sel.tipo === 'carta' && sel.acciones.some(a => a.t === 'invocar' && e.jug[0].zonas[a.z]);
+        const paso = !sel ? null : reemplaza ? TXT_CARTAS.reemplaza : sel.tipo === 'propia' ? TXT_MESA.tocaRival : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
         guia.textContent = e.turno === 0 && e.fase === 'principal' && paso ? Lx(paso) : aviso || (e.turno === 0 && e.fase === 'principal' ? Lx(TXT_MESA.tocaCarta) : '');
         const B = botonesMesa(e, sel), fila = document.createElement('div'); fila.className = 'cartas-mesa-botones';
         fila.append(

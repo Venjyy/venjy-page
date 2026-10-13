@@ -11,6 +11,8 @@
 // Turno: fase 'robo' (solo «robar»; antes actúan los efectos de inicio de turno) → fase 'principal':
 // invocar (1 por turno, más con Venjy), hechizos sin límite, atacar con cada criatura (no la recién
 // invocada, salvo el Enderman) y cambiar postura; «terminar». Sin costes: los combos salen de encadenar efectos.
+// Con las 3 zonas llenas se invoca igual sobre una criatura propia (z ocupada): esa va al cementerio
+// (su efecto al morir sí actúa, el escudo no la salva) y la nueva ocupa su zona; cuenta como la invocación del turno.
 // Acciones: { t:'robar' } · { t:'invocar', m, z, modo:'ata'|'def', obj? } · { t:'hechizo', m, obj?, obj2? }
 //           { t:'atacar', z, obj } (obj -1 = directo) · { t:'modo', z } · { t:'terminar' }
 //   m = índice en tu mano, z = tu zona (0-2), obj = zona rival (o propia en Poción, Escudo y Abrazo).
@@ -75,7 +77,8 @@ export function jugadas(e) {
         if (c.tipo === 'criatura') {
             if (e.invoc <= 0) return;
             const objs = PIDE_RIVAL.has(c.efecto) ? objRival.filter(k => c.efecto !== 'punteria' || atkDe(e, rival(j), R.zonas[k]) <= 700) : [];
-            for (const z of libres(J)) for (const modo of ['ata', 'def']) {
+            const destinos = libres(J).length ? libres(J) : propias; // zonas llenas: reemplazas una propia
+            for (const z of destinos) for (const modo of ['ata', 'def']) {
                 if (objs.length) for (const obj of objs) out.push({ t: 'invocar', m, z, modo, obj });
                 else out.push({ t: 'invocar', m, z, modo });
             }
@@ -124,6 +127,7 @@ export function aplicar(e, a) {
         case 'invocar': {
             e.invoc--;
             const id = J.mano.splice(a.m, 1)[0];
+            if (J.zonas[a.z]) morir(e, j, a.z, ev, false, true); // reemplazo: la criatura propia se va al cementerio
             entrar(e, j, id, a.z, a.modo, a.obj, ev, false);
             break;
         }
@@ -264,17 +268,17 @@ function lanzar(e, j, a, ev) {
     }
 }
 
-function morir(e, j, z, ev, combate = false) {
+function morir(e, j, z, ev, combate = false, reemplaza = false) {
     const J = e.jug[j], c = J.zonas[z];
     if (!c) return false;
-    if (c.escudo) { c.escudo = false; ev.push({ t: 'salva', j, z, c: c.id }); return false; }
+    if (c.escudo && !reemplaza) { c.escudo = false; ev.push({ t: 'salva', j, z, c: c.id }); return false; }
     J.zonas[z] = null;
     if (!carta(c.id).ficha) J.desc.push(c.id);
     for (const u of c.unidos) J.desc.push(u);
-    ev.push({ t: 'muere', j, z, c: c.id, combate });
+    ev.push({ t: 'muere', j, z, c: c.id, combate, reemplaza });
     // Al morir
     if (ef(c) === 'divide') {
-        const zs = [z, ...libres(J).filter(k => k !== z)].slice(0, 2);
+        const zs = (reemplaza ? libres(J).filter(k => k !== z) : [z, ...libres(J).filter(k => k !== z)]).slice(0, 2); // en reemplazo la zona z es de la nueva
         if (zs.length) ev.push({ t: 'efecto', j, z, c: c.id, ef: 'divide' });
         for (const k of zs) entrar(e, j, 'slimecito', k, 'def', undefined, ev, true);
     } else if (ef(c) === 'hincha') { ev.push({ t: 'efecto', j, z, c: c.id, ef: 'hincha' }); robar(e, j, ev); robar(e, j, ev); }
@@ -323,6 +327,7 @@ function terminarPartida(e, ev, ganador, motivo) {
 
 // ---------------------------------------------------------
 // IA de Lucho: prueba cada jugada legal sobre una copia y valora cómo queda la mesa.
+//   Con las zonas llenas también reemplaza (la valoración compara lo que sale con lo que entra y la carta gastada).
 //   facil: mira solo lo inmediato, con ruido; a veces se olvida de sus hechizos y no siempre ataca bien
 //   medio: sin ruido y con mejor criterio (cuida su vida, valora los efectos que quedan en la mesa)
 // Siempre devuelve una jugada de jugadas(e).
@@ -337,6 +342,8 @@ export function jugadaIA(e, nivel = 'facil') {
     for (const a of lista) {
         if (a.t === 'terminar') continue;
         if (olvida && a.t === 'hechizo') continue;
+        // Reemplazo (zonas llenas): primero ataca con la criatura que se va a sacrificar
+        if (a.t === 'invocar' && e.jug[j].zonas[a.z] && objetivos(e, a.z).length) continue;
         const c = clonar(e); aplicar(c, a);
         const v = valorar(c, j, medio) + (medio ? 0 : (azar(e) - 0.5) * 500);
         if (v > top) { top = v; mejor = a; }
