@@ -1135,8 +1135,31 @@ Hecho en el chat del 2026-10-13 (ver bitácora): herramientas en la mano, zanaho
 - [x] **13 · Objetos en la mano editables en el Estudio** (hecho 2026-10-13, falta usarlo el dueño): nuevo `mundo/datos/objetos-mano.json` (posición, rotación y escala por objeto, 1.ª y 3.ª persona) que lean `mano.js` (`crearMalla`, `:145`) y `pose-jugador.js`; esquema en `estudio/esquemas/` y sliders en el Estudio. Resuelve la caña al revés sin pedírselo a un agente.
 - [x] **14 · Estudio: el juego atrapa el mouse** (hecho 2026-10-13, falta probarlo el dueño con el mouse real): Esc abre la pausa que tapa todo y T deja la franja del chat. Con `?estudio`, soltar el puntero sin pausa (tecla propia o pausa mínima).
 - [x] **15 · Camas** (hecho 2026-10-13, falta verlo el dueño): `B.CAMA` es un cubo común (`supervivencia/objetos.js:208`); darle forma de cama (medio bloque con almohada).
-- [ ] **Grandes, un chat cada uno, no empezar sin el dueño**: mundo de prueba (agua, construcciones editables, todo a mano para probar), pasar escenas y animaciones viejas al Estudio, skills nuevas para delegar a Haiku/Sonnet, Duelo: reemplazar criatura con zonas llenas (requiere aprobación; preguntar al dueño las recomendaciones de Lucho), pantalla de carga, menú de inicio, minijuego Lalo vs Moisés, minijuego Salonas (al final). Antes: actualizar `estudio/hoja-de-ruta.html` con este estado.
+- [ ] **Grandes, un chat cada uno, no empezar sin el dueño** (siguen en el orden de abajo).
 - [ ] **Añadidos dudosos**: ver la sección «Añadidos dudosos (en espera)».
+
+### Orden para terminar el portafolio (decidido por el dueño, 2026-10-13)
+
+Dos etapas; un chat por punto; dentro de cada etapa, de arriba a abajo. **Regla para todo lo nuevo:** hacerlo genérico (nombres, lugares y textos en datos, no amarrados a Venjy ni a un lugar fijo del mapa), para que se pueda reutilizar. La vista con avance está en `estudio/hoja-de-ruta.html` (local, fuera de git).
+
+**Etapa A · terminar el juego**
+1. Skills nuevas para delegar a Haiku/Sonnet y `AGENTS.md` al día (para Codex y Antigravity).
+2. Duelo: reemplazar criatura con zonas llenas (requiere aprobación; preguntar al dueño las recomendaciones de Lucho) · 7f-2: que los 10 objetos nuevos hagan algo.
+3. Mundo de prueba · pantalla de carga → menú de inicio · 7f-2: bloques con forma · 7h-1 carrera de gatas.
+4. **6d etapa 2 (visitas) con navegación de verdad** (buscar camino sobre el terreno, no rutas fijas; incluye 7j-1) → 7i acompañantes.
+5. Minijuego Lalo vs Moisés (pelea estilo Mortal Kombat; deja la base de peleas cuerpo a cuerpo) · 7g-1 → 7g-2 ∥ 7g-3 → 7h-3 concierto → minijuego Salonas.
+- Opcional: resto de 7f-3 (lugares del mapa actual) y los añadidos dudosos.
+- **Fin de la etapa A: el portafolio queda terminado como juego.**
+
+**Etapa B · todo editable en el Estudio** (al final, con todo el contenido ya hecho; el juego no cambia)
+1. Inventario con el CLI: qué sigue en JS, qué cabe en los esquemas y qué no (hoy solo `punos` y `pareja` están en `escenas.json`, y `tienda.json` tiene `lee: null`).
+2. Pasar las escenas y gestos que ya caben (Haiku, con Opus revisando la paridad).
+3. Motor genérico del Estudio (la antigua fase 7 de `estudio/DISENO.md`), diseñado con todos los casos que no cupieron (§13).
+4. Pasar el resto (grupo, bienvenidas, vida entre amigos, escenas de skin).
+5. Personajes en datos (nombre, piel, ropa, lugar, horario, diálogos): sumar una persona tiene que ser solo datos.
+6. Misiones, objetos, recetas y tienda en JSON · lugares y construcciones en datos con el gizmo de Posiciones.
+7. Cierre: validar todo y anotar lo que no se pudo pasar, con el motivo.
+- **Fin de la etapa B: tag `portafolio-v1`.**
 
 ### Fase 2 · Pulido Minecraft
 - [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Techo a dos aguas, chimenea con hogar, cama, librero, mesa con antorcha, cofre y antorchas en las paredes (hecho). La casa naranja de las gatas se deja sin muebles para que ellas circulen.
@@ -1198,6 +1221,7 @@ Ideas que se probaron y se sacaron hasta que el dueño decida. Para revivir una,
 
 ## Bitácora de cambios
 
+- 2026-10-13 · **Orden para terminar el portafolio** (rama `orden-cierre`): sección nueva en «Por hacer» con la etapa A (terminar el juego, todo genérico) y la etapa B (todo editable en el Estudio; al cerrarla, tag `portafolio-v1`); el resto de 7f-3 pasa a opcional. Solo documentación.
 - 2026-10-13 · **Hito 1 · revisión del dueño: bong, pito y camas** (rama `hito1-arreglos`, PR #89): (1) el bong va siempre al tamaño de Moisés: se quita `ESCALA_BONG` y la altura 1,25 de Lalo (al pasarlo se achicaba). (2) Pito dado vuelta: la brasa/ceniza queda en z −0,1 del papel (`amigos.js`, `brasaPito`). (3) Cama bajo un bloque se veía negra y con hueco: `voxeles.js` la dibuja con geometría propia (`mallarCama`: colchón 3/16–9/16 con cuatro patas de madera; dos camas juntas forman una de dos bloques, cabecera con almohada y pie con `cama_pie` nueva en `texturas.js`), nunca esconde su tapa, y la luz de sus caras y de los vecinos sale de la celda libre más clara de al lado (`luzCama`). Verificado en el navegador: pareja en z, pareja en x y sola; el dueño dio el visto bueno a la forma. Falta mirar el caso bajo un bloque con luz real.
 - 2026-10-13 · **Hito 1 · camas con forma de cama** (rama `hito1-arreglos`, punto 15): `B.CAMA` sigue siendo tipo sólido para todo el juego (rayo, luz, dormir), pero el mallado (`voxeles.js`, `mallarBuffers`) la dibuja de `ALTURA_CAMA` = 9/16 de alto (la almohada ya estaba en `cama_top`) y para los vecinos cuenta como hoja (así un muro al lado no queda con un hueco). `jugador.js`: con los pies sobre su tapa no choca (`choca`) y al caer se apoya a 9/16 (`soloCamasEn`); para subirse hay que saltar, como en Minecraft. Comprobado en el navegador: de pie sobre la cama `y` = suelo + 0,5625 y se ve la cama baja con su almohada. Pendiente: los monstruos y las demás cajas (`fisica.js`) la siguen tratando como bloque entero, y apuntar al aire sobre la cama la selecciona. Verifica el dueño: casa de Venjy, cama de la gatera y dormir.
 - 2026-10-13 · **Hito 1 · el juego no atrapa el mouse en el Estudio** (rama `hito1-arreglos`, punto 14): nuevo `estudio/suelto.js` (solo con `?estudio`, lo importa `puente-juego.js` cuando el mundo está listo). Esc suelta el puntero y ya no deja la pausa: se esconde y queda una etiqueta chica abajo a la derecha «Mouse suelto · haz clic en el juego para seguir» (clic en el juego o en la etiqueta lo vuelve a tomar; la partida sigue y se ve entera). El chat (T o /) se cierra solo al perder el foco (clic en el Estudio), así su franja no tapa la vista; `.clic-seguir` queda oculto. Envuelve `jugador.alCambiarActivo`, así que `puntero-libre.js` (gizmo y escenas) se apila sin cambios. Comprobado en el navegador llamando al gancho (pausa oculta, etiqueta visible, HUD visible); la captura real con Esc la prueba el dueño.
