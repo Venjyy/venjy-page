@@ -1163,6 +1163,12 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 - [x] `.claude/launch.json` usa la variable `PORT` con `autoPort: true`.
 - [x] Test de paridad reutilizable en el repo (`mundo/tests/paridad.mjs` ejecuta `generarMundo` con un `document` falso y compara el bitmap; 0 celdas distintas).
 
+## Añadidos dudosos (en espera)
+
+Ideas que se probaron y se sacaron hasta que el dueño decida. Para revivir una, ver el commit indicado.
+
+- **Saludo de tres tramos por amistad** (PR #88, `ea994d9`; retirado el 2026-10-13): `bajo` (Desconocido y Conocido), `alto` (Amigo) y `buen` (Buen amigo o más) en `SALUDOS` de `dialogos.json`, con diminutivos ("Wena, Nachito"). Tocaba `hablar.js` (elección del saludo), `estudio/esquemas/dialogos.schema.json` (clave `buen`) y los textos de Nacho. Nacho era solo un ejemplo: si vuelve, debe ser para todos y editable en la pestaña Textos del Estudio.
+
 ## Notas para depurar
 
 - El navegador integrado cachea los módulos ES: tras editar, ejecuta `await Promise.all(urls.map(u => fetch(u, { cache: 'reload' })))` y luego `location.reload()`.
@@ -1178,6 +1184,7 @@ Marca `[x]` al terminar y registra el cambio en la bitácora.
 
 ## Bitácora de cambios
 
+- 2026-10-13 · **Hito 1 · saludo de tres tramos retirado** (rama `hito1-arreglos`): el dueño no quiere esa función por ahora (Nacho era un ejemplo). Se quita `buen` del esquema y de `hablar.js`, y Nacho recupera sus saludos originales `bajo`/`alto`. Queda descrito en «Añadidos dudosos (en espera)» · `datos/dialogos.json`, `supervivencia/hablar.js`, `estudio/esquemas/dialogos.schema.json`.
 - 2026-10-13 · **Hito 1 · zanahoria y papa se plantan** (rama `hito1-arreglos`): en `usarObjeto` la comida se revisaba antes que `planta` y retornaba antes de plantar (solo las semillas de trigo llegaban). Ahora primero se intenta plantar sobre tierra labrada; si no, se come. Verifica el dueño: labrar y plantar zanahoria y papa (con y sin hambre) · `supervivencia/minado.js`.
 - 2026-10-13 · **Hito 1 · herramientas en la mano** (rama `hito1-arreglos`): el arreglo de la caña del PR #88 metió un `if` entre el `if (herramienta)` y su `else`, y todas las herramientas perdían la inclinación (quedaban giradas como objeto). Se restaura la cadena; la caña conserva su posición más adelante. Ubicación por objeto editable desde el Estudio: pendiente (punto 13). Verifica el dueño: pico, hacha, espada y caña en primera persona · `supervivencia/mano.js`.
 - 2026-10-12 · **Supervivencia (PR de revisión)**: aviso «Lugar descubierto» por mundo (`venjy-descubiertos-<id>`); idioma ES/EN en la pausa (recarga la página); coords, FPS y hora como elementos del layout táctil (`ui-layout.json`, esquema actualizado); aviso de iPhone con tutorial (antes mostraba «undefined»); los globos de Hablar esquivan los botones táctiles; «Hablar» con Nacho en tres tramos (`buen`, esquema actualizado). Pendiente del dueño: revisar visualmente los globos, el layout táctil de coords/FPS/hora y el orden de Nacho. Cartel del Chonchón al oeste del portal, bong de Lalo más al centro y dado vuelta, bong de Moisés más bajo, caña más adelante en la mano (sin verificar en navegador: los verifica el dueño). Sin cambiar: parpadeo, Lona, cámara con E, duelo (regla propuesta, no aplicada), lugares 16–19.

@@ -204,8 +204,7 @@ export function crearHablar(ctx) {
         // Saludo según el nivel (o la skin)
         if (!frase) {
             const s = SALUDOS[clave];
-            // Tres tramos: bajo (Desconocido y Conocido), alto (Amigo) y buen (Buen amigo o más, si el personaje lo trae)
-            frase = L((s.skin && base && s.skin[base]) || (nivelDeActual >= 3 && s.buen) || (nivelDeActual >= 2 ? s.alto : s.bajo));
+            frase = L((s.skin && base && s.skin[base]) || (nivelDeActual >= 2 ? s.alto : s.bajo));
             ctx.decir(clave, frase);
         }
         const p = document.createElement('p'); p.className = 'dialogo'; p.textContent = frase;
