@@ -434,27 +434,24 @@ const PINTORES = {
     // ---------- Supervivencia ----------
     ...pintoresSupervivencia(),
     // Al final: así no se corre el índice de ningún tile anterior (el atlas del creativo queda igual)
-    // Farol colgante (7f-2): argolla arriba, tapa y base de hierro, llama entre barrotes; fondo transparente
+    // Farol (7f-2), cara lateral de la caja de 6×7: marco de hierro, barrote central y vidrio anaranjado con núcleo claro
     farol: (x, y, r) => {
-        const hierro = ajustar([62, 62, 70], 0.9 + r() * 0.2);
-        if (y === 2 || y === 3) return x === 7 || x === 8 ? hierro : [0, 0, 0, 0];
-        if (y === 4 || y === 13) return x >= 4 && x <= 11 ? hierro : [0, 0, 0, 0];
-        if (y >= 5 && y <= 12) {
-            if (x === 4 || x === 11) return hierro;
-            if (x < 5 || x > 10) return [0, 0, 0, 0];
-            return (x === 7 || x === 8) && y >= 7 && y <= 10 ? [255, 244, 170] : [250, 190, 60];
-        }
-        return [0, 0, 0, 0];
+        const hierro = ajustar([58, 60, 70], 0.9 + r() * 0.2);
+        if (x <= 1 || x >= 14 || y <= 1 || y >= 14 || x === 7 || x === 8) return hierro;
+        const cx = Math.abs(x - 7.5), cy = Math.abs(y - 7.5);
+        if (cx < 2.6 && cy < 3.6) return ajustar([255, 238, 160], 0.95 + r() * 0.1);
+        return ajustar([248, 176, 52], (1 - Math.max(cx, cy) * 0.025) * (0.94 + r() * 0.12));
     },
-    // Cartel (7f-2): tablón claro con borde oscuro y un palo; fondo transparente
+    // Tapa, argolla y base del farol: hierro azulado
+    farol_tapa: (x, y, r) => ajustar([74, 82, 102], (x === 0 || y === 0 || x === 15 || y === 15 ? 0.75 : 1) * (0.9 + r() * 0.2)),
+    // Tablón del cartel (7f-2): madera clara con borde oscuro y vetas
     cartel: (x, y, r) => {
-        if (y >= 3 && y <= 9 && x >= 2 && x <= 13) {
-            const borde = y === 3 || y === 9 || x === 2 || x === 13;
-            return borde ? ajustar([92, 64, 34], 0.9 + r() * 0.2) : ajustar([176, 138, 84], (y % 2 ? 0.94 : 1) * (0.94 + r() * 0.12));
-        }
-        if (y >= 10 && (x === 7 || x === 8)) return ajustar([110, 80, 44], 0.9 + r() * 0.2);
-        return [0, 0, 0, 0];
-    }};
+        if (x <= 1 || x >= 14 || y <= 1 || y >= 14) return ajustar([96, 66, 34], 0.9 + r() * 0.2);
+        return ajustar([186, 148, 92], (y % 4 === 0 ? 0.88 : 1) * (0.94 + r() * 0.12));
+    },
+    // Palo y cantos del cartel
+    cartel_poste: (x, y, r) => ajustar([118, 86, 48], (x % 4 === 0 ? 0.88 : 1) * (0.92 + r() * 0.16))
+};;
 
 export const NOMBRES_TILE = Object.keys(PINTORES);
 export const TILE = Object.fromEntries(NOMBRES_TILE.map((n, i) => [n, i]));

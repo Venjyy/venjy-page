@@ -90,6 +90,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `momentos/*.js` (12 archivos) | «Momento especial» a amistad 100, uno por personaje: `LINEAS` y `momento` |
 | `escenas-gatas.js` (497) | Primera caricia a Mila/Gala con skin Lona o Venjy. `crearEscenasGatas:305` |
 | `usos-objetos.js` | Usos con clic derecho de Mapa, instrumentos y Pluma de juguete (7f-2). `crearUsosObjetos`; Farol, Cartel y Botella van en `minado.usarObjeto`. |
+| `modelos-mano.js` | Modelos 3D de Guitarra, Teclado y Tambor (cajas con color) y `COLGAR`: dónde van en el torso y los brazos (7f-2). Los usa la fábrica de `mano.js` y `pose-jugador.js`. |
 | `caricias.js` (290) | Caricias a las gatas (tecla G). `crearCaricias:47` |
 | `escena-cuello.js` (300) | Misión lona3, el cuello de Gala. `crearEscenaCuello:45` |
 | `escena-guardian.js` (334) / `cofres-companeros.js` (175) | Cofres de amigos que ya no están y su guardián. `crearEscenaGuardian:66` · `crearCofresCompaneros:53` |

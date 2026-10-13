@@ -327,7 +327,8 @@ const PINTORES = {
         p.contornear();
     },
     farol_mano(p) {
-        p.mascara(['', '......kkkk......', '.....k....k.....', '.....k....k.....', '....kkkkkkkk....', '....koyyyyok....', '....kyyoyyyk....', '....kyyoyyyk....', '....koyyyyok....', '....kkkkkkkk....'], { k: [60, 60, 66], y: [255, 190, 70], o: [255, 240, 170] });
+        // Farol colgante: argolla, tapa y base azul grisáceo, vidrio anaranjado con núcleo claro entre barrotes oscuros
+        p.mascara(['', '......kkkk......', '......k..k......', '....cccccccc....', '....bYYYYYYb....', '....bYoooYYb....', '....bYoooYYb....', '....bYoooYYb....', '....bYYYYYYb....', '....cccccccc....', '.....cccccc.....'], { k: [74, 82, 102], c: [96, 108, 134], b: [70, 48, 34], Y: [250, 172, 44], o: [255, 238, 160] });
         p.contornear();
     },
     cuaderno(p) {
@@ -351,12 +352,22 @@ const PINTORES = {
         p.contornear();
     },
     pluma_juguete(p) {
-        for (let k = 0; k < 10; k++) { p.set(3 + k, 13 - k, [137, 103, 59]); p.set(4 + k, 12 - k, [250, 120, 160]); p.set(5 + k, 12 - k, [255, 190, 210]); p.set(4 + k, 11 - k, k > 3 ? [255, 190, 210] : null); }
-        p.set(2, 14, [240, 240, 236]); p.set(3, 14, [240, 240, 236]);
+        // Pluma grande en diagonal: cálamo crema, barbas rojas (más claras arriba) que se afinan hacia las puntas
+        const claro = [244, 112, 112], medio = [220, 52, 64], oscuro = [168, 28, 48], calamo = [244, 232, 196], punta = [176, 140, 70];
+        for (let k = 0; k <= 12; k++) {
+            const x = 2 + k, y = 13 - k;
+            const ancho = Math.round(3 * Math.sin(Math.PI * (k + 1.5) / 15));
+            for (let d = 1; d <= ancho; d++) {
+                p.set(x - d, y - d, d === ancho ? medio : claro); p.set(x - d + 1, y - d, claro);
+                p.set(x + d, y + d, d === ancho ? oscuro : medio); p.set(x + d - 1, y + d, medio);
+            }
+            p.set(x, y, k < 2 ? punta : calamo);
+        }
+        p.set(1, 14, punta); p.set(0, 15, punta);
         p.contornear();
     },
     guitarra(p) {
-        p.mascara(['..............kk..', '.............kmk..', '............kmk...', '...........kmk....', '..........kmk.....', '....kkk..kmk......', '...kaaak.mk.......', '..kaabbakk........', '..kabkbak.........', '..kaabbak.........', '...kaaak..........', '....kkk...........'], { k: [50, 30, 16], a: [190, 130, 70], b: [50, 30, 16], m: [137, 103, 59] });
+        p.mascara(['..............kk', '.............kmk', '............kmk.', '...........kmk..', '..........kmk...', '.....kkk.kmk....', '....kaaakmk.....', '...kaaaaaak.....', '..kaaakkaaak....', '..kaaakkaaak....', '..kaaaaaaaak....', '...kaaaaaak.....', '....kkkkkk......'], { k: [50, 30, 16], a: [214, 150, 70], m: [137, 103, 59] });
         p.contornear();
     },
     teclado(p) {

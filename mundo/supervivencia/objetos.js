@@ -138,9 +138,9 @@ obj('CARTEL', 'Cartel', 'Sign', { icono: 'cartel', combustible: 10, pone: B.CART
 obj('BOTELLA', 'Botella', 'Glass Bottle', { icono: 'botella' });
 obj('MAZO', 'Mazo de cartas', 'Card Deck', { icono: 'mazo', apila: 1 }); // 7h: duelo de cartas
 obj('PLUMA_JUGUETE', 'Pluma de juguete', 'Toy Feather', { icono: 'pluma_juguete', apila: 1 }); // 7h: carrera de gatas
-obj('GUITARRA', 'Guitarra', 'Guitar', { icono: 'guitarra', apila: 1, combustible: 15 }); // 7h: concierto
-obj('TECLADO', 'Teclado', 'Keyboard', { icono: 'teclado', apila: 1 });
-obj('TAMBOR', 'Tambor', 'Drum', { icono: 'tambor', apila: 1 });
+obj('GUITARRA', 'Guitarra', 'Guitar', { icono: 'guitarra', apila: 1, combustible: 15, modelo: 'guitarra' }); // 7h: concierto
+obj('TECLADO', 'Teclado', 'Keyboard', { icono: 'teclado', apila: 1, modelo: 'teclado' });
+obj('TAMBOR', 'Tambor', 'Drum', { icono: 'tambor', apila: 1, modelo: 'tambor' });
 
 // ---- 7f-2: leche (cubo o botella + vaca adulta; se bebe y quita veneno y hambre) ----
 obj('CUBO_LECHE', 'Cubo de leche', 'Milk Bucket', { icono: 'cubo', color: 'leche', apila: 1, comida: [2, 1.2], efecto: 'leche', devuelve: 'CUBO' });

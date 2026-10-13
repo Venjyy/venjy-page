@@ -1340,12 +1340,12 @@ async function arrancar(guardado, cx = null) {
     const horaEl = $('hora'), relojManoEl = $('reloj-mano'), pausaHoraEl = $('pausa-hora');
     let horaPintada = '';
     function pintarHora(fuerza = false) {
-        const h = textoHora(dia.t), clave = h + '|' + dia.dias + '|' + idioma + '|' + (ajustes.hora ? 1 : 0) + '|' + inventario.idEnMano();
+        const h = textoHora(dia.t), clave = h + '|' + dia.dias + '|' + idioma + '|' + (ajustes.hora ? 1 : 0) + '|' + inventario.idEnMano() + '|' + (inventario.mano2 ? inventario.mano2.id : 0);
         if (!fuerza && clave === horaPintada) return;
         horaPintada = clave;
         horaEl.hidden = !ajustes.hora;
         if (ajustes.hora) horaEl.textContent = h;
-        const enMano = inventario.idEnMano() === O.RELOJ;
+        const enMano = inventario.idEnMano() === O.RELOJ || (inventario.mano2 && inventario.mano2.id === O.RELOJ); // en cualquiera de las dos manos
         relojManoEl.hidden = !enMano;
         if (enMano) relojManoEl.textContent = textoDiaHora(dia.dias, dia.t, idioma);
         pausaHoraEl.textContent = textoDiaHora(dia.dias, dia.t, idioma);

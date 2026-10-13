@@ -116,6 +116,12 @@ ok(OBJETOS[O.CUBO_LECHE].devuelve === 'CUBO' && OBJETOS[O.BOTELLA_LECHE].devuelv
     ok(LUZ_EMISION[B.FAROL] >= 14 && !LUZ_EMISION[B.CARTEL], 'Farol da luz y el Cartel no');
     ok(TIPO[B.FAROL] === 4 && TIPO[B.CARTEL] === 4 && BLOQUES[B.FAROL].top >= 0, 'Farol y Cartel: plantas en cruz con tile propio');
     ok(OBJETOS[O.BOTELLA_AGUA].devuelve === 'BOTELLA' && O.BOTELLA_AGUA > O.TOMATE_BIGOTE, 'Botella de agua: devuelve la botella, id al final');
+    // Modelos 3D de la mano y el cuerpo: guitarra, teclado y tambor tienen modelo, brazos y agarre
+    const { MODELOS, COLGAR, tieneModelo } = await import('../supervivencia/modelos-mano.js');
+    for (const id of [O.GUITARRA, O.TECLADO, O.TAMBOR]) {
+        const mod = info(id).modelo;
+        ok(mod && tieneModelo(mod) && MODELOS[mod] && COLGAR[mod] && COLGAR[mod].brazoI && COLGAR[mod].brazoD, 'modelo 3D completo: ' + OBJETOS[id].clave);
+    }
     // Riego a mano: la tierra húmeda aguanta sin agua cerca mientras dura
     const { crearAgricultura } = await import('../supervivencia/agricultura.js');
     const celdas = new Map(); const k = (x, y, z) => x + ',' + y + ',' + z;

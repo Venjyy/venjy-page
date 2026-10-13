@@ -1,6 +1,6 @@
 ---
 name: objetos-supervivencia
-description: Agrega objetos, bloques simples, recetas, íconos pintados y usos (clic derecho, tenerlo en la mano) en el modo supervivencia de venjy-page (mundo/supervivencia/objetos.js, recetas.js, iconos.js, minado.js, main.js). Úsala siempre que haya que crear un objeto nuevo, darle una receta o una función a uno que ya existe (por ejemplo los de 7f-2: Mapa, Farol, Cartel, Botella), o venderlo en una tienda. No sirve para bloques con forma (losas, escaleras, vallas): esos tocan malla y colisión y van con Opus o Sonnet.
+description: Agrega objetos, recetas, íconos pintados, usos (clic derecho, tenerlo en la mano), objetos que se colocan como bloque de cajas (farol, cartel) y objetos con modelo 3D en la mano y en el cuerpo (guitarra, teclado, tambor) en el modo supervivencia de venjy-page (mundo/supervivencia/objetos.js, recetas.js, iconos.js, minado.js, usos-objetos.js, modelos-mano.js, main.js, texturas.js, voxeles.js). Úsala siempre que haya que crear un objeto nuevo, darle una receta, una función, un ícono o un modelo a uno que ya existe, o venderlo en una tienda. No sirve para bloques con forma de losa, escalera o valla con colisión propia: esos tocan colisión y van con Opus o Sonnet.
 ---
 
 # Objetos y recetas de la supervivencia
@@ -24,6 +24,13 @@ Mapa del módulo: `mundo/supervivencia/MAPA.md` (tabla de archivos con funciones
    - Un ícono por familia con `color` (como `lingote` o `botella`) es mejor que uno por objeto.
 3. **Agarre en la mano** (opcional): si se ve mal en la mano, la posición va en `mundo/datos/objetos-mano.json`
    (skill `datos-json`); el tipo por defecto ya sirve casi siempre.
+4. **Cómo se ve el ícono** (lo que más critica el dueño; en la mano se ve extruido y grande):
+   - 16×16, contorno oscuro, **una sola silueta grande** que llene el recuadro. Evitar manchas oscuras sin forma.
+   - Objetos en diagonal (plumas, guitarras, varas): armarlos con un bucle (`p.set`) a lo largo de la diagonal y
+     rellenar el costado con `(x - d + 1, y - d)`: una diagonal sola deja solo la mitad de los píxeles (ajedrez).
+   - Referencias: pedir o mirar la foto que mande el dueño; inspirarse, no copiar. Un farol tiene argolla, tapa
+     y base azul grisáceo, vidrio anaranjado con núcleo claro y barrotes oscuros.
+   - Pintado sin verlo: decirlo en el PR (el dueño lo revisa).
 
 ## 2. Receta
 
@@ -44,15 +51,49 @@ En `recetas.js`, en la sección temática que corresponda:
 | Clic derecho sobre un animal o persona | `interactuar` del módulo de la criatura | Cubo o Botella sobre vaca → leche (`ganado.js`) |
 | Efecto mientras se tiene en la mano | el bucle de `main.js` con `inventario.idEnMano() === O.X` | Reloj muestra la hora (`grep -n "O.RELOJ" main.js`) |
 | Comida o bebida | solo campos del registro (`comida`, `efecto`, `devuelve`) | Cubo de leche |
+| Se coloca como bloque | campo `pone: B.X` en el objeto (minado.js lo coloca con el mismo apoyo que la antorcha) y `suelta` en el bloque | Farol, Cartel |
+| Mapa, instrumentos, pluma | `usos-objetos.js` (`crearUsosObjetos`, sonido inyectado, se prueba en Node) | Mapa abre el minimapa |
+| Llenar o vaciar | rama por id en `minado.usarObjeto`; reutiliza `llenarCubo` | Botella → Botella de agua |
 
 Reglas:
 
 - La lógica nueva va en el **módulo dueño** del tema (o en uno nuevo chico), no amontonada en `main.js`;
   en `main.js` solo la línea que lo conecta.
 - Si el uso abre algo que ya existe (el Mapa abre el minimapa grande), llamar a esa función; no duplicarla.
+- El Reloj y cualquier objeto que "muestra algo" en la mano debe mirar **las dos manos** (`inventario.idEnMano()` y
+  `inventario.mano2`), no solo la principal.
 - Cooperativo: si el uso cambia el mundo (colocar, romper, encender), pasar por las mismas funciones que
   ya sincronizan (`mundo.editar`, `estado.alPoner`); no inventar mensajes de red.
 - Texto visible nuevo: par ES/EN como los demás del módulo.
+
+## 3b. Bloque pequeño hecho de cajas (farol, cartel)
+
+Para algo que se coloca y debe verse con volumen (no un plano en cruz):
+
+1. Id nuevo **al final** de `B` en `texturas.js`; `BLOQUES[B.X] = def(nombre, 'p', tile)` (tipo `'p'`: se atraviesa y deja pasar la luz);
+   `LUZ_EMISION[B.X]` si ilumina.
+2. Tiles **al final de `PINTORES`** (después de `...pintoresSupervivencia()`): insertarlos en medio corre el índice
+   de todos los tiles siguientes y cambia la huella del creativo (`paridad.mjs`). Los tiles de caja van opacos y de 16×16.
+3. Cajas en `voxeles.js` (`CAJAS_FAROL`, `CAJAS_CARTEL`, `mallarCajas`): medidas en 1/16, un tile por cara (`lado`,
+   `arriba`, `fondo`, `frente`). Añadir el id a la condición de `mallarBuffers` antes de la rama de plantas.
+4. En `objetos.js`: el bloque (`bloque(B.X, …, { suelta: O.OBJETO })`) y el objeto con `pone: B.X`.
+5. Apoyo al colocar: la rama `B.ANTORCHA` de `ponerBloque` en `minado.js` (suelo o muro al lado).
+
+## 3c. Objeto con modelo 3D en la mano y en el cuerpo (guitarra, teclado, tambor)
+
+Los objetos normales se ven como su ícono extruido. Para uno con volumen:
+
+1. En `modelos-mano.js`: una función `nombre(THREE, material)` que arma cajas y cilindros con color por vértice
+   (ayudante `fabricar`), con el mástil o lado largo hacia **+X** y la cara hacia **+Z**, en las unidades del cuerpo
+   de las personas (igual que el bajo de Salonas en `criaturas/npcs.js`). Registrar en `MODELOS`.
+2. `COLGAR[nombre]`: dónde va en el torso (`pos`, `rot`) y cómo quedan los brazos (`brazoI`, `brazoD`). Así se ve
+   en 3.ª persona, propio y de los demás jugadores (`pose-jugador.js` → `ponerObjeto`).
+3. En `objetos.js`, al objeto: `modelo: 'nombre'`. La fábrica de `mano.js` ya lo toma (tipo `'modelo'`).
+4. En primera persona: ajuste por objeto en `AJUSTE_OBJETO.mano1` de `objetos-mano-datos.js` (`pos`, `rot` en
+   radianes, `escala`); el tipo `modelo` trae valores base.
+5. **Cómo verlo sin pelear con el puntero del juego**: una página temporal en la raíz del repo que importe
+   `crearModelo` (`skin.js`), `crearFabrica` (`mano.js`) y `ponerObjeto` (`pose-jugador.js`), arme tres personas con
+   el objeto y rinda con una cámara fija; abrirla con el servidor y capturar. Borrarla antes del commit.
 
 ## 4. Tienda y `/dar`
 
