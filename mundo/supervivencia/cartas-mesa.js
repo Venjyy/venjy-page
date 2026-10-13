@@ -22,6 +22,7 @@ import { dibujarCarta, dibujarReverso, versionDeArte, ZONAS, ANCHO, ALTO } from 
 import { MESA, ALTO_CARTA, marcoMesa, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto, pausaLucho, planoTurno, resaltadoTutorial } from './cartas-mesa-modelo.js';
 import { fusionar } from '../datos/cargador.js';
 import { crearAnimador } from './cartas-mesa-anim.js';
+import { mazoParaPartida, juegaAlAzar, ponerAzar, reglasDe } from './cartas-coleccion.js';
 import { sonidoDe, sonidoFin } from './cartas-anim-modelo.js';
 import { sonar } from './cartas-mesa-sonido.js';
 
@@ -38,6 +39,8 @@ export const TXT_MESA = {
     noAtaca: t('Esta criatura no puede atacar ahora (entró este turno, está en Defensa o atada)', 'This creature cannot attack now (it entered this turn, is in Defense or is bound)'),
     tocaRival: t('Toca una criatura de Lucho, o a Lucho para el ataque directo', 'Tap one of Lucho\'s creatures, or Lucho for a direct attack'),
     seguir: t('Seguir', 'Continue'),
+    mazoArmado: t('Mazo: el que armaste (toca para jugar al azar)', 'Deck: the one you built (tap for a random one)'),
+    mazoAzar: t('Mazo: al azar, +{x} en la mano (toca para usar el tuyo)', 'Deck: random, +{x} in hand (tap to use yours)'),
     tutoEspera: t('Todavía no: haz lo que te pide Lucho (lo que brilla)', 'Not yet: do what Lucho asks (the glowing one)')
 };
 
@@ -303,7 +306,10 @@ export function crearMesaCartas(ctx) {
             const caja = document.createElement('div'); caja.className = 'cartas-inicio';
             const h = document.createElement('h1'); h.textContent = Lx(TXT_CARTAS.titulo);
             const p = document.createElement('p'); p.textContent = Lx(TXT_CARTAS.elegirNivel);
-            caja.append(h, p, boton(Lx(TXT_CARTAS.facil), () => iniciar('facil'), nivel === 'facil' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.medio), () => iniciar('medio'), nivel === 'medio' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.botonTuto), iniciarTutorial, 'secundario'), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
+            // Con qué mazo juegas (se cambia aquí o al armarlo con el MAZO en la mano)
+            const azar = !!ctx.inventario && juegaAlAzar(ctx.inventario);
+            const mazoB = ctx.inventario ? [boton(azar ? Lx(TXT_MESA.mazoAzar).replace('{x}', reglasDe(L).azarExtra) : Lx(TXT_MESA.mazoArmado), () => { ponerAzar(ctx.inventario, !azar, L); pintarHud(); }, 'secundario')] : [];
+            caja.append(h, p, ...mazoB, boton(Lx(TXT_CARTAS.facil), () => iniciar('facil'), nivel === 'facil' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.medio), () => iniciar('medio'), nivel === 'medio' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.botonTuto), iniciarTutorial, 'secundario'), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
             hud.appendChild(caja); return;
         }
         const arriba = document.createElement('div'); arriba.className = 'cartas-mesa-marcador';
@@ -539,7 +545,9 @@ export function crearMesaCartas(ctx) {
     function iniciar(n) {
         anim.saltar(); ultimos = null;
         finSonado = false; tuto = null; primeraLucho = false; jugoMesa = false;
-        nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel, { semilla: (Math.random() * 1e9) | 0 }); sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false;
+        // Tu mazo: el armado con el MAZO o uno al azar con cartas de más en la mano (cartas-coleccion.js; L trae «coleccion»)
+        const semilla = (Math.random() * 1e9) | 0, tuyo = ctx.inventario ? mazoParaPartida(ctx.inventario, L, semilla) : null;
+        nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel, tuyo ? { semilla, mazo: tuyo.mazo, manoExtra: tuyo.extra } : { semilla }); sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false;
         refrescarMesa();
     }
     function cambiarVista() {

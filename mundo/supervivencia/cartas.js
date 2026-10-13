@@ -2,7 +2,8 @@
 // VENJY · Supervivencia · Duelo de Cartas Pixel (7h-2): reglas puras e IA de Lucho
 // Sin DOM ni Three: el panel (y luego el duelo entre jugadores) solo llama a estas funciones.
 //   nuevaPartida(op) → estado (objeto plano, se puede clonar con JSON; el azar va en `r`, determinista)
-//   partidaNivel(nivel, op) → nuevaPartida con la vida, la mano y los mazos de NIVELES (tú = jugador 0)
+//   partidaNivel(nivel, op) → nuevaPartida con la vida, la mano y los mazos de NIVELES (tú = jugador 0;
+//                      op.mazo = tu mazo armado o al azar y op.manoExtra = cartas de más en tu mano, de cartas-coleccion.js)
 //   jugadas(e)       → acciones legales del jugador de turno
 //   aplicar(e, a)    → cambia `e` y devuelve los eventos (para animar: roba, invoca, ataque, muere…)
 //   jugadaIA(e, nivel) → una acción legal ('facil' | 'medio')
@@ -35,14 +36,14 @@ export function nuevaPartida({ mazos, semilla = 1, empieza = 0, barajar = true, 
     for (let j = 0; j < 2; j++) {
         const mazo = mazos[j].slice();
         if (barajar) for (let i = mazo.length - 1; i > 0; i--) { const k = Math.floor(azar(e) * (i + 1)); [mazo[i], mazo[k]] = [mazo[k], mazo[i]]; }
-        e.jug.push({ vida: vidas[j], mazo, mano: mazo.splice(0, mano), zonas: Array(ZONAS).fill(null), desc: [] });
+        e.jug.push({ vida: vidas[j], mazo, mano: mazo.splice(0, Array.isArray(mano) ? mano[j] : mano), zonas: Array(ZONAS).fill(null), desc: [] }); // mano: una para los dos o [tuya, del rival]
     }
     return e;
 }
 
-export function partidaNivel(nivel, { semilla = 1, empieza = 0, mazo = MAZOS.jugador } = {}) {
+export function partidaNivel(nivel, { semilla = 1, empieza = 0, mazo = MAZOS.jugador, manoExtra = 0 } = {}) {
     const N = NIVELES[nivel];
-    return nuevaPartida({ mazos: [mazo, MAZOS[nivel]], semilla, empieza, vidas: [N.vida, N.vida], mano: N.mano });
+    return nuevaPartida({ mazos: [mazo, MAZOS[nivel]], semilla, empieza, vidas: [N.vida, N.vida], mano: [N.mano + manoExtra, N.mano] });
 }
 
 export const clonar = e => JSON.parse(JSON.stringify(e));

@@ -33,10 +33,11 @@ async function aplicar(nombre, datos) {
         v.amigos.posiciones.aplicar(datos);
         if (gizmo) gizmo.sincronizar();
     } else if (nombre === 'cartas-mesa') {
-        // La mesa del duelo: si ya se abrió alguna vez la rearma; si no, la próxima vez que se abra lee el archivo
+        // La mesa del duelo: si ya se abrió alguna vez la rearma; si no, la próxima vez que se abra lee estos datos
+        // (también el panel de armar mazo: reglas y colección inicial)
         const v = window.__venjy;
+        if (v) v.datosMesa = datos;
         if (v && v.mesaCartas) v.mesaCartas.aplicarDatos(datos);
-        else if (v) v.datosMesa = datos;
     } else if (nombre === 'objetos-mano') {
         const m = await import('../mundo/supervivencia/objetos-mano-datos.js');
         m.aplicarDatosVivos(datos); // mano.js y pose-jugador.js se reacomodan solos al notar la versión nueva

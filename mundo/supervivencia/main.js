@@ -89,7 +89,7 @@ cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
 // Idioma
 // ---------------------------------------------------------
 let idioma = 'es';
-let panelCartas = null, mesaCartas = null;
+let panelCartas = null, mesaCartas = null, armarMazo = null;
 try {
     const param = new URLSearchParams(location.search).get('lang');
     const guardado = localStorage.getItem('preferredLanguage');
@@ -106,6 +106,7 @@ function aplicarIdioma() {
     document.getElementById('ir-creativo').href = `mundo.html?lang=${idioma}`;
     panelCartas?.setIdioma(idioma);
     mesaCartas?.setIdioma(idioma);
+    armarMazo?.setIdioma(idioma);
 }
 aplicarIdioma();
 
@@ -684,7 +685,7 @@ async function arrancar(guardado, cx = null) {
         return !!(e && e.animal && ganado.interactuar(e.animal));
     };
     const usosObjetos = crearUsosObjetos({ minimapa, gatas, jugador, sonido: { tono, ruido } });
-    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : usosObjetos.usar(p) || combate.usar(p));
+    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : p.id === O.MAZO ? abrirArmarMazo() : usosObjetos.usar(p) || combate.usar(p));
     minado.usarSinNada = () => combate.bloquearConMano2();
     minado.alSoltarDerecho = () => combate.soltarDerecho();
     minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
@@ -780,11 +781,11 @@ async function arrancar(guardado, cx = null) {
         bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
-    let cargandoCartas = null;
+    let cargandoCartas = null, datosCartas = null; // datosCartas: cartas-mesa.json tal como se leyó (mesa, panel y armar mazo)
     const textoCartas = o => (o && (o[idioma] || o.es)) || '';
     function cargarPanelCartas() {
         if (!cargandoCartas) cargandoCartas = import('./cartas-panel.js').then(m => {
-            panelCartas = m.crearPanelCartas({ idioma, alCerrar: () => { document.body.classList.remove('panel-lado'); uiAbierta = false; if (!vida.muerto) entrar(); } });
+            panelCartas = m.crearPanelCartas({ idioma, inventario, datos: () => window.__venjy?.datosMesa || datosCartas, alCerrar: () => { document.body.classList.remove('panel-lado'); uiAbierta = false; if (!vida.muerto) entrar(); } });
             return panelCartas;
         }).catch(err => { cargandoCartas = null; console.error('No se pudo cargar el duelo de cartas', err); return null; });
         return cargandoCartas;
@@ -793,9 +794,10 @@ async function arrancar(guardado, cx = null) {
     let cargandoMesa = null;
     function cargarMesaCartas() {
         if (!cargandoMesa) cargandoMesa = Promise.all([import('./cartas-mesa.js'), cargarDatos('cartas-mesa')]).then(([m, datos]) => {
+            datosCartas = datos;
             mesaCartas = m.crearMesaCartas({
                 datos: window.__venjy?.datosMesa || datos, // mundo/datos/cartas-mesa.json (o lo último que mandó el Estudio)
-                scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma,
+                scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma, inventario, // inventario: tu colección y tu mazo
                 tinte: materiales.solido.color,
                 lucho: () => amigos.lista.find(n => n.clave === 'lucho') || null,
                 alCerrar: liberarEscena,
@@ -805,6 +807,19 @@ async function arrancar(guardado, cx = null) {
             return mesaCartas;
         }).catch(err => { cargandoMesa = null; console.error('No se pudo cargar la mesa de cartas', err); return null; });
         return cargandoMesa;
+    }
+    // Armar tu mazo (etapa A, punto 3): clic derecho con el MAZO en la mano; cartas-armar.js con import() la primera vez.
+    // Lee las reglas y la colección inicial de cartas-mesa.json (o lo último que mandó el Estudio)
+    let cargandoArmar = null;
+    function abrirArmarMazo() {
+        if (uiAbierta) return false;
+        if (!cargandoArmar) cargandoArmar = Promise.all([import('./cartas-armar.js'), cargarDatos('cartas-mesa')]).then(([m, datos]) => {
+            datosCartas = datos;
+            armarMazo = m.crearArmarMazo({ idioma, inventario, hud, abrirPanel, cerrarPanel, datos: () => window.__venjy?.datosMesa || datosCartas });
+            return armarMazo;
+        }).catch(err => { cargandoArmar = null; console.error('No se pudo cargar el armado del mazo', err); return null; });
+        cargandoArmar.then(a => { if (a && !uiAbierta && !vida.muerto) a.abrir(); });
+        return true;
     }
     function abrirPanelCartas(n = 'facil') {
         uiAbierta = true;

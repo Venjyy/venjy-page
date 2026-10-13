@@ -101,6 +101,8 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `minijuegos-datos.js` (201) | Textos ES/EN. `TXT_MJ:11` `LENA:28` `PESCA:69` `ASADO:164` |
 | `cartas-mesa.js` (~560) | Duelo de Cartas: mesa 3D junto a Lucho, tu mano en pantalla, cámaras, toques y HUD. `crearMesaCartas` |
 | `cartas-mesa-anim.js` (~330) | Animaciones del Duelo desde los eventos de `aplicar` (robar, jugar, atacar, daño, cementerio, hechizos, turno). `crearAnimador` |
+| `cartas-coleccion.js` (~150) | Duelo: tu colección y tu mazo (puro): `inventario.cartas`, reglas de `cartas-mesa.json` (`coleccion`, `coleccionInicial`), `mazoParaPartida` (armado o al azar con cartas de más en la mano), `sumarCarta` |
+| `cartas-armar.js` (~150) | Panel para armar tu mazo (clic derecho con el MAZO): colección con arte, poner/quitar, completar al azar, elegir armado o al azar |
 | `cartas-mesa-sonido.js` (~75) | Sonido del Duelo: recetas con `tono`/`ruido`; `sonar(sonidoDe(paso))` al empezar cada paso de la animación y `sonidoFin` al terminar |
 | `cartas-anim-modelo.js` (~100) | Puro: tiempos y colores por defecto (`ANIM`, en `cartas-mesa.json`) y línea de tiempo de los eventos. `planificar` `ocupanteEn` |
 
