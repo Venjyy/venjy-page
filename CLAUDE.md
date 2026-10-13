@@ -32,6 +32,7 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
   - **Pruebas de navegador**: solo la nueva o la directamente afectada; las demás van en el PR como «pendientes del dueño». Siempre: las pruebas de Node y `node estudio/cli.mjs validar --contra HEAD`.
   - **Prueba visual** (sliders, canvas, cómo se ve): la hace el dueño; el PR trae una lista corta de «qué mirar».
   - **Docs**: en cada chat, `mundo/PENDIENTES.md` (bitácora) y la sección de la fase en `estudio/DISENO.md`; `CLAUDE.md` y `mundo/supervivencia/MAPA.md` solo si cambió algo que un agente futuro necesite saber.
+- **Todo lo que se desarrolle debe poder modificarse y ajustarse desde el Estudio (`/estudio/`) por el dueño**: posiciones, giros, escalas, colores, tiempos, textos, medidas y cualquier valor que afecte cómo se ve o se siente. Los valores van en `mundo/datos/*.json` (o con su valor base en el código y un ajuste en el JSON, como `objetos-mano.json`), con esquema en `estudio/esquemas/` y control en la pestaña que corresponda. Si algo nuevo no cabe en ninguna pestaña, crear el campo o la pestaña, o dejarlo anotado en `mundo/PENDIENTES.md` y en el PR como «no editable aún». Nunca dejar números mágicos que solo se cambien tocando el código.
 - Todo texto visible lleva su par `data-es` / `data-en`.
 - Solo fuente `PixelCraft`; sin emojis como íconos (se dibujan en `ICONOS` de `script.js`).
 

@@ -57,6 +57,8 @@ En `recetas.js`, en la sección temática que corresponda:
 
 Reglas:
 
+- **Todo lo que se desarrolle debe poder modificarse y ajustarse desde el Estudio (`/estudio/`) por el dueño**: posiciones, giros, escalas, colores, tiempos, textos, medidas y cualquier valor que afecte cómo se ve o se siente. Los valores van en `mundo/datos/*.json` (o con su valor base en el código y un ajuste en el JSON, como `objetos-mano.json`), con esquema en `estudio/esquemas/` y control en la pestaña que corresponda. Si algo nuevo no cabe en ninguna pestaña, crear el campo o la pestaña, o dejarlo anotado en `mundo/PENDIENTES.md` y en el PR como «no editable aún». Nunca dejar números mágicos que solo se cambien tocando el código.
+
 - La lógica nueva va en el **módulo dueño** del tema (o en uno nuevo chico), no amontonada en `main.js`;
   en `main.js` solo la línea que lo conecta.
 - Si el uso abre algo que ya existe (el Mapa abre el minimapa grande), llamar a esa función; no duplicarla.
