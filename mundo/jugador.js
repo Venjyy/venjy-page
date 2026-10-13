@@ -60,7 +60,10 @@ export class Jugador {
             this.alCambiarActivo && this.alCambiarActivo(this.activo);
         });
         document.addEventListener('mousemove', e => {
-            if (!this.activo || this.sinMirar) return;
+            if (!this.activo || this.sinMirar || document.pointerLockElement !== this.el) return;
+            // Al tomar o soltar el puntero (p. ej. abrir el inventario con E) el navegador manda a veces un
+            // movimiento falso de cientos de píxeles que giraba la cámara de golpe: se descarta
+            if (Math.abs(e.movementX) > 200 || Math.abs(e.movementY) > 200) return;
             this.yaw -= e.movementX * this.sensibilidad;
             this.pitch -= e.movementY * this.sensibilidad;
             this.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, this.pitch));
