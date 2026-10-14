@@ -493,3 +493,44 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .in-plano-cab { display: grid; grid-template-columns: minmax(0, 1fr) 110px auto auto auto; gap: 6px; align-items: end; }
 .in-vector { display: grid; grid-template-columns: 90px repeat(3, minmax(0, 1fr)); gap: 6px; align-items: center; font-size: 0.8rem; color: var(--gris); }
 @media (max-width: 700px) { .in-plano-cab { grid-template-columns: 1fr 1fr; } .in-vector { grid-template-columns: 1fr 1fr 1fr; } .in-vector span { grid-column: 1 / -1; } }
+
+/* ---------- Pestaña Música (§24) ---------- */
+.mu-barra { flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
+.mu-barra .boton { flex: 0 0 auto; }
+.mu-tema-sel { flex: 1 1 220px; }
+.mu-texto, .mu-tema-sel select, #mu-nivel {
+    width: 100%; padding: 4px 6px; font: inherit; font-size: 0.85rem; color: var(--blanco);
+    background: #000; border: 2px solid #6a6a6a; box-sizing: border-box;
+}
+.mu-texto:focus { outline: none; border-color: var(--blanco); }
+.mu-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
+.mu-chip {
+    min-width: 46px; padding: 6px 8px; font: inherit; font-size: 0.85rem; color: var(--blanco);
+    background: var(--boton); border: 3px solid #000;
+    box-shadow: inset 2px 2px 0 var(--borde-claro), inset -2px -2px 0 var(--borde-oscuro); cursor: pointer;
+}
+.mu-chip:hover, .mu-chip:focus-visible { background: var(--boton-hover); outline: none; }
+.mu-chip.elegido { color: var(--amarillo); background: var(--boton-hover); }
+.mu-chip.malo { color: var(--rojo); }
+.mu-chip.sonando { border-color: var(--verde); }
+.mu-acordes { padding: 8px; margin-bottom: 8px; background: rgb(0 0 0 / 0.4); border: 4px solid #000; }
+.mu-acordes[hidden] { display: none; }
+.mu-capas { display: grid; gap: 10px; }
+.mu-capa {
+    padding: 8px; background: var(--fondo-panel); border: 3px solid #000; border-left: 6px solid var(--verde);
+    box-shadow: inset 3px 3px 0 #3a2a1c, inset -3px -3px 0 #0c0704;
+}
+.mu-capa.muda { border-left-color: var(--borde-oscuro); opacity: 0.6; }
+.mu-capa.solo { border-left-color: var(--amarillo); }
+.mu-capa-cab { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin-bottom: 6px; }
+.mu-capa-marcas, .mu-capa-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 6px; }
+.mu-rejilla { display: block; width: 100%; image-rendering: pixelated; border: 2px solid #000; cursor: pointer; touch-action: none; }
+.mu-teclado { display: flex; flex-wrap: wrap; gap: 2px; margin: 4px 0 8px; }
+.mu-teclado[hidden] { display: none; }
+.mu-tecla {
+    flex: 1 0 28px; padding: 8px 0; font: inherit; font-size: 0.6rem; color: #000;
+    background: #e8e8e8; border: 2px solid #000; cursor: pointer;
+}
+.mu-tecla.negra { color: var(--blanco); background: #222; }
+.mu-tecla:hover { background: var(--boton-hover); color: var(--blanco); }
+

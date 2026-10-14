@@ -23,6 +23,7 @@
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
+            <button class="pestana" type="button" data-pestana="musica" data-es="Música" data-en="Music">Música</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
         <div class="idiomas" role="group" aria-label="Idioma">
@@ -752,6 +753,66 @@
                     <button id="in-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                 </div>
                 <p id="in-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-musica" class="seccion" hidden>
+        <section class="escritorio">
+            <div class="fila-botones mu-barra">
+                <label class="campo mu-tema-sel"><span data-es="Tema" data-en="Song">Tema</span><select id="mu-tema"></select></label>
+                <button id="mu-nuevo" class="boton chico" type="button" data-es="Tema nuevo" data-en="New song">Tema nuevo</button>
+                <button id="mu-duplicar" class="boton chico" type="button" data-es="Duplicar" data-en="Duplicate">Duplicar</button>
+                <button id="mu-crear" class="boton chico" type="button" hidden data-es="Crear versión con capas" data-en="Create layered version">Crear versión con capas</button>
+                <button id="mu-borrar" class="boton chico secundario" type="button" data-es="Borrar tema" data-en="Delete song">Borrar tema</button>
+            </div>
+            <p id="mu-estado" class="ayuda"></p>
+            <div class="fila-botones mu-barra">
+                <button id="mu-tocar" class="boton chico" type="button">Reproducir</button>
+                <button id="mu-juego" class="boton chico" type="button">Reproducir en el juego</button>
+                <label class="campo"><span data-es="Nivel" data-en="Level">Nivel</span><select id="mu-nivel"></select></label>
+                <label class="campo corto"><span data-es="Tempo ×" data-en="Tempo ×">Tempo ×</span><input id="mu-tempo" type="number" min="0.5" max="2" step="0.05" value="1"></label>
+            </div>
+            <h2 class="in-titulo" data-es="Progresión (un acorde por compás; clic para cambiarlo)" data-en="Progression (one chord per bar; click to change it)">Progresión (un acorde por compás; clic para cambiarlo)</h2>
+            <div id="mu-prog" class="mu-prog"></div>
+            <div id="mu-acordes" class="mu-acordes" hidden></div>
+            <h2 class="in-titulo" data-es="Capas" data-en="Layers">Capas</h2>
+            <div id="mu-capas" class="mu-capas"></div>
+            <div id="mu-agregar" class="fila-botones mu-barra">
+                <button class="boton chico" type="button" data-tipo="ritmo" data-es="+ Ritmo" data-en="+ Rhythm">+ Ritmo</button>
+                <button class="boton chico" type="button" data-tipo="rel" data-es="+ Sobre el acorde" data-en="+ On the chord">+ Sobre el acorde</button>
+                <button class="boton chico" type="button" data-tipo="acorde" data-es="+ Acorde" data-en="+ Chord">+ Acorde</button>
+                <button class="boton chico" type="button" data-tipo="notas" data-es="+ Melodía" data-en="+ Melody">+ Melodía</button>
+                <button class="boton chico" type="button" data-tipo="arpegio" data-es="+ Arpegio" data-en="+ Arpeggio">+ Arpegio</button>
+            </div>
+            <p class="ayuda" data-es="Rejilla: clic en un paso. Ritmo: nada, fuerte (x), suave (o). Piano roll: la misma nota otra vez la borra. «Sobre el acorde» cuenta semitonos desde la raíz del acorde del compás (verde claro = la raíz). Espacio reproduce, Ctrl+Z deshace, Ctrl+S guarda. Un tema del juego (living, cocina, patio, techo, podio, ambiente, pony…) se reemplaza con un tema de esa clave sin la marca Borrador."
+               data-en="Grid: click a step. Rhythm: nothing, loud (x), soft (o). Piano roll: the same note again erases it. «On the chord» counts semitones from the bar's chord root (light green = the root). Space plays, Ctrl+Z undoes, Ctrl+S saves. A game song (living, cocina, patio, techo, podio, ambiente, pony…) is replaced by a song with that key without the Draft mark.">Rejilla: clic en un paso.</p>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Tema" data-en="Song">Tema</h2>
+                <div id="mu-tema-campos" class="campos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Sintetizadores propios" data-en="Custom synths">Sintetizadores propios</h2>
+                <div class="fila-botones mu-barra">
+                    <label class="campo mu-tema-sel"><span data-es="Instrumento" data-en="Instrument">Instrumento</span><select id="mu-sinte"></select></label>
+                </div>
+                <div class="fila-botones mu-barra">
+                    <button id="mu-sinte-nuevo" class="boton chico" type="button" data-es="Nuevo" data-en="New">Nuevo</button>
+                    <button id="mu-sinte-duplicar" class="boton chico" type="button" data-es="Duplicar" data-en="Duplicate">Duplicar</button>
+                    <button id="mu-sinte-borrar" class="boton chico secundario" type="button" data-es="Borrar" data-en="Delete">Borrar</button>
+                </div>
+                <div id="mu-teclado" class="mu-teclado"></div>
+                <div id="mu-sinte-campos" class="campos"></div>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="mu-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                    <button id="mu-deshacer" class="boton secundario" type="button" disabled data-es="Deshacer" data-en="Undo">Deshacer</button>
+                </div>
+                <button id="mu-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                <p id="mu-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

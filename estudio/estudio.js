@@ -3,7 +3,7 @@
 // Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout. Fase 2: Juego. Fase 3: Textos. Fase 4: Posiciones.
 // Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20). Inicio: menú de la supervivencia (§21).
 // Formas: cajas de losas, escalones, vallas… (§22).
-// Carrera: la carrera de gatas de la Gatera (7h-1).
+// Carrera: la carrera de gatas de la Gatera (7h-1). Música: temas y sintetizadores de musica.json (§24).
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
@@ -17,6 +17,7 @@ import { montarPixeles } from './pixeles.js';
 import { montarInicio } from './inicio.js';
 import { montarFormas } from './formas.js';
 import { montarCarrera } from './carrera.js';
+import { montarMusica } from './musica.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -82,6 +83,7 @@ await montarPixeles(ctx);
 await montarInicio(ctx);
 await montarFormas(ctx);
 await montarCarrera(ctx);
+await montarMusica(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
