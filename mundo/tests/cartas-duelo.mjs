@@ -10,10 +10,12 @@
 //      con las mismas huellas; rechazo; abandono; desincronización detectada
 //   4. duelo donde están (PR 2): lugar, superficie, dos duelos a la vez y motivos
 //   5. mesa de duelo colocada (PR 3): la más cercana, el lugar en ella y el lado del retador
+//   6. coop.js escucha en la sala todos los tipos que maneja (sin 'ac' el reto nunca llegaba)
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { readFileSync } from 'fs';
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '../../');
 const importar = r => import(pathToFileURL(resolve(raiz, r)).href);
@@ -262,6 +264,20 @@ function jugarHastaFin(s, a, b) {
     });
     J.h.d.retar('g1'); s.correr(); J.g1.d.aceptar(J.g1.invitaciones[0]); s.correr();
     ok(J.h.lugar && J.g1.lugar && J.h.lugar.fija === 1 && J.h.lugar.x === J.g1.lugar.x && J.h.lugar.g === J.g1.lugar.g, 'los dos juegan en la misma mesa colocada');
+}
+
+// ---------- 6. La sala de verdad escucha los mensajes de las actividades ----------
+// coop.js solo se suscribe a los tipos de TIPOS: un manejador que no esté ahí nunca recibe nada (el reto no llegaba)
+{
+    const src = readFileSync(resolve(raiz, 'mundo/supervivencia/coop.js'), 'utf8');
+    const tipos = new Set([...src.match(/const TIPOS = \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map(x => x[1]));
+    const desde = src.slice(src.indexOf('const manejadores = {'));
+    const cuerpo = desde.slice(0, desde.search(/\r?\n {4}\};/)); // hasta el cierre del objeto (4 espacios)
+    const claves = [...cuerpo.matchAll(/^ {8}(?:'([^']+)'|([a-zA-Z?]+))\(/gm)].map(x => x[1] || x[2]);
+    ok(claves.length > 10, 'coop: se leen los manejadores');
+    const faltan = claves.filter(k => !tipos.has(k));
+    ok(!faltan.length, `coop: la sala escucha todos los manejadores (faltan: ${faltan.join(', ')})`);
+    ok(tipos.has('ac'), "coop: la sala escucha 'ac' (actividades y duelo)");
 }
 
 console.log(fallos ? `${fallos} fallo(s)` : 'cartas-duelo: todo bien');
