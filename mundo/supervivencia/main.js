@@ -1187,7 +1187,7 @@ async function arrancar(guardado, cx = null) {
                         const nombre = coop.nombreDe(espera ? espera.id : duelo.rival);
                         quitarEspera();
                         const R = duelo.textos.rechazo;
-                        hud.mensaje(textoCartas(R[motivo] || R.cerrada).replace('{x}', nombre), 4);
+                        avisoDuelo(textoCartas(R[motivo] || R.cerrada).replace('{x}', nombre), 4);
                     }
                 }
             });
@@ -1204,6 +1204,7 @@ async function arrancar(guardado, cx = null) {
         quitarEspera();
         colaJugadas.length = 0;
         if (!lugar || ocupadoParaDuelo()) { duelo.salir(); return; }
+        mostrar(null); // si estabas con el menú de pausa (Esc para cambiar de ventana), la mesa queda a la vista
         bloquearEscena(true);
         cargarMesaCartas().then(m => {
             if (!m || !m.abrirDuelo(lugar, lado, e, persona(rival))) { liberarEscena(); duelo.salir(); return; }
@@ -1254,11 +1255,24 @@ async function arrancar(guardado, cx = null) {
         cargarDuelo().then(d => {
             if (!d || espera || reto || d.fase !== 'libre') return;
             const T = d.textos, R = d.lugar();
-            if (!tutoCartasVisto()) { hud.mensaje(textoCartas(T.sinTuto), 4); return; }
+            if (!tutoCartasVisto()) { avisoDuelo(textoCartas(T.sinTuto), 4); return; }
             const dh = Math.hypot(o.g.position.x - jugador.pos.x, o.g.position.z - jugador.pos.z);
-            if (dh > R.dist || Math.abs(o.g.position.y - jugador.pos.y) > R.desnivel) { hud.mensaje(textoCartas(T.lejos).replace('{x}', nombre), 4); return; }
+            if (dh > R.dist || Math.abs(o.g.position.y - jugador.pos.y) > R.desnivel) { avisoDuelo(textoCartas(T.lejos).replace('{x}', nombre), 4); return; }
             if (d.retar(o.id)) cargarMesaCartas(); // que la mesa esté lista cuando acepte
         });
+    }
+    // Avisos del duelo: una caja propia (no el HUD, que se oculta con el menú de pausa), así se leen aunque tengas
+    // Esc puesto para cambiar de ventana. El título de la pestaña también avisa mientras te retan
+    function avisoDuelo(texto, segundos = 4) {
+        const el = document.createElement('div'); el.className = 'reto-aviso reto-breve';
+        const p = document.createElement('p'); p.textContent = texto; el.appendChild(p);
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), segundos * 1000);
+    }
+    let tituloAntes = null;
+    function tituloReto(texto) {
+        if (texto) { if (tituloAntes === null) tituloAntes = document.title; document.title = texto; }
+        else if (tituloAntes !== null) { document.title = tituloAntes; tituloAntes = null; }
     }
     // Mientras el otro responde: «Esperando a X…» con Cancelar (N o clic)
     let espera = null;
@@ -1280,29 +1294,30 @@ async function arrancar(guardado, cx = null) {
         if (!duelo) return;
         const T = duelo.textos, quien = coop.nombreDe(inv.de);
         if (reto || espera) { duelo.rechazar(inv, 'ocupado'); return; } // ya tienes uno a la vista
-        if (!tutoCartasVisto()) { duelo.rechazar(inv, 'sinTuto'); hud.mensaje(`${textoCartas(T.titulo).replace('{x}', quien)}: ${textoCartas(T.sinTuto)}`, 5); return; }
-        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv, 'faltaMazo'); hud.mensaje(`${textoCartas(T.titulo).replace('{x}', quien)}: ${textoCartas(T.faltaMazo)}`, 5); return; }
+        if (!tutoCartasVisto()) { duelo.rechazar(inv, 'sinTuto'); avisoDuelo(`${textoCartas(T.titulo).replace('{x}', quien)}: ${textoCartas(T.sinTuto)}`, 5); return; }
+        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv, 'faltaMazo'); avisoDuelo(`${textoCartas(T.titulo).replace('{x}', quien)}: ${textoCartas(T.faltaMazo)}`, 5); return; }
         const el = document.createElement('div');
         el.className = 'reto-aviso';
         const p = document.createElement('p'); p.textContent = textoCartas(T.titulo).replace('{x}', quien);
         const boton = (texto, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'boton'; b.textContent = texto; b.addEventListener('click', ev => { ev.stopPropagation(); fn(); }); return b; };
         el.append(p, boton(textoCartas(T.si), () => responderReto(true)), boton(textoCartas(T.no), () => responderReto(false)));
         document.body.appendChild(el);
+        tituloReto(p.textContent);
         const s = duelo.espera();
         reto = { inv, el, timer: s > 0 ? setTimeout(() => responderReto(false), s * 1000) : null };
     }
     function responderReto(si) {
         if (!reto) return;
         const { inv, el, timer } = reto;
-        reto = null; el.remove(); if (timer) clearTimeout(timer);
+        reto = null; el.remove(); if (timer) clearTimeout(timer); tituloReto(null);
         if (!si) { duelo.rechazar(inv); return; }
         const T = duelo.textos;
-        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv, 'faltaMazo'); hud.mensaje(textoCartas(T.faltaMazo), 4); return; }
-        if (ocupadoParaDuelo()) { duelo.rechazar(inv, 'ocupado'); hud.mensaje(textoCartas(T.ocupado), 4); return; }
+        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv, 'faltaMazo'); avisoDuelo(textoCartas(T.faltaMazo), 4); return; }
+        if (ocupadoParaDuelo()) { duelo.rechazar(inv, 'ocupado'); avisoDuelo(textoCartas(T.ocupado), 4); return; }
         // Te alejaste después del reto: el lugar quedaría lejos de los dos
         const r = coop.remotos.get(inv.de), R = duelo.lugar();
         if (r && r.modelo && Math.hypot(r.modelo.g.position.x - jugador.pos.x, r.modelo.g.position.z - jugador.pos.z) > R.dist * 2) {
-            duelo.rechazar(inv, 'lejos'); hud.mensaje(textoCartas(T.lejos).replace('{x}', coop.nombreDe(inv.de)), 4); return;
+            duelo.rechazar(inv, 'lejos'); avisoDuelo(textoCartas(T.lejos).replace('{x}', coop.nombreDe(inv.de)), 4); return;
         }
         if (duelo.aceptar(inv)) cargarMesaCartas();
     }

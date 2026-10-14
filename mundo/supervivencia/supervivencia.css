@@ -832,6 +832,8 @@ body.en-cine .consola-ayuda { display: none; }
 .armar-pie { justify-content: flex-end; }
 @media (max-width: 520px) { .armar-rejilla { grid-template-columns: repeat(2, 1fr); } .cartas-armar h1 { font-size: 1.2rem; } }
 /* Duelo entre jugadores (cartas-duelo.js): aviso «X te reta», con Aceptar (Y) y No (N) */
-.reto-aviso { position: fixed; top: 96px; left: 50%; transform: translateX(-50%); z-index: 40; max-width: calc(100% - 32px); padding: 10px 14px; color: #fff; text-align: center; background: rgb(0 0 0 / 0.78); border: 4px solid #000; }
+.reto-aviso { position: fixed; top: 96px; left: 50%; transform: translateX(-50%); z-index: 90; max-width: calc(100% - 32px); padding: 10px 14px; color: #fff; text-align: center; background: rgb(0 0 0 / 0.78); border: 4px solid #000; }
 .reto-aviso p { margin: 0 0 8px; color: var(--amarillo); text-shadow: 2px 2px 0 #3f3f15; }
 .reto-aviso .boton { display: inline-block; width: auto; margin: 0 4px; }
+.reto-aviso.reto-breve { top: 180px; pointer-events: none; }
+.reto-aviso.reto-breve p { margin: 0; }
