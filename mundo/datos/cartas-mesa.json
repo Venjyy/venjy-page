@@ -136,7 +136,8 @@
     "nota": "Duelo entre 2 jugadores de la sala (cartas-duelo.js): vida y mano inicial de cada uno (el mazo al azar suma azarExtra); espera = segundos para aceptar el reto (0 = sin límite)",
     "vida": 4000,
     "mano": 4,
-    "espera": 30
+    "espera": 30,
+    "esperaMesa": 0
   },
   "lugar": {
     "nota": "Duelo entre jugadores donde están (con el MAZO en la mano, apuntando al otro): dist = metros máximos hasta él; desnivel = diferencia de altura máxima",

@@ -43,13 +43,13 @@ const GRUPOS = [
     // Abrir el sobre (cartas-sobre.js): «Probar el sobre» la muestra en el juego con estos valores
     ['sobreAnim', 'Sobre: abrir (rasgar y voltear)', 'Pack: opening (tear and flip)', { activa: '1 = lo rasgas tú, 0 = sin escena', rasgar: 'cuánto arrastrar (1 = todo el ancho)', toques: 'toques que lo abren', salir: 'segundos que sale cada carta', voltear: 'segundos que se da vuelta', entre: 'segundos entre cartas', tapa: 'segundos que vuela la tapa', ancho: 'ancho del sobre (px)', sacudir: '1 = tiembla al rasgar', sonido: 'volumen (0 = mudo)' }],
     // Duelo entre 2 jugadores de la sala (cartas-duelo.js): cada uno con su mazo
-    ['duelo', 'Duelo entre jugadores', 'Player duel', { vida: 'vida de cada uno', mano: 'cartas en la mano al empezar', espera: 'segundos para aceptar el reto (0 = sin límite)' }],
+    ['duelo', 'Duelo entre jugadores', 'Player duel', { vida: 'vida de cada uno', mano: 'cartas en la mano al empezar', espera: 'segundos para aceptar el reto (0 = sin límite)', esperaMesa: 'segundos esperando rival en una mesa colocada (0 = sin límite)' }],
     // Duelo donde están los dos (PR 2): retar con el MAZO apuntando al otro; se juega en el piso o sobre un tronco
     ['lugar', 'Duelo entre jugadores: retar', 'Player duel: challenge', { dist: 'metros máx. hasta el otro', desnivel: 'diferencia de altura máx.', mesaCerca: 'metros máx. hasta una mesa colocada para jugar en ella', mirar: 'metros hasta un duelo ajeno para verlo (0 = no)' }],
     // Mesa de duelo (PR 3): colores del mueble (la de Lucho, la que se lleva y la colocada en el mundo)
     ['mueble', 'Mesa de duelo: colores', 'Duel table: colors', {}],
-    ['tronco', 'Duelo sobre un tronco', 'Duel on a log', { alto: 'alto del tronco', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],
-    ['piso', 'Duelo en el piso', 'Duel on the ground', { alto: 'alto de las cartas', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],
+    ['tronco', 'Duelo sobre un tronco', 'Duel on a log', { alto: 'alto del tronco', ojos: 'cámara sentado', asiento: 'separación: cada jugador hasta el borde (más = más lejos uno del otro)', mano: 'cartas del rival (alto)' }],
+    ['piso', 'Duelo en el piso', 'Duel on the ground', { alto: 'alto de las cartas', ojos: 'cámara sentado', asiento: 'separación: cada jugador hasta el borde (más = más lejos uno del otro)', mano: 'cartas del rival (alto)' }],
     ['planoRival', 'Cámara que mira al otro jugador', 'Camera looking at the other player', { lado: 'a tu derecha', alto: 'desde tus ojos', z: 'hacia ti' }],
     ['turnoRival', 'Turno del otro jugador: cámara', "Other player's turn: camera", { mirar: '1 = lo mira (cámara de arriba), 0 = tu vista del tablero' }],
     // Celular en horizontal: dónde van los botones y la carta grande (px)
@@ -59,7 +59,7 @@ const GRUPOS = [
 const GRADOS = new Set(['giro', 'inclina']);
 // Enteros con su tope (colección y mazo); el resto, según el valor
 const ENTEROS = { coleccion: { largo: [10, 40], copias: [1, 4], azarExtra: [0, 3], azarTodas: [0, 1], hechizosMin: [0, 40], hechizosMax: [0, 40] }, coleccionInicial: {},
-    duelo: { vida: [500, 20000], mano: [1, 7], espera: [0, 120] }, turnoRival: { mirar: [0, 1] },
+    duelo: { vida: [500, 20000], mano: [1, 7], espera: [0, 120], esperaMesa: [0, 600] }, turnoRival: { mirar: [0, 1] },
     hudHorizontal: { altoMax: [300, 900], arriba: [0, 200], ancho: [90, 260], boton: [20, 60], lectorAncho: [90, 320], lectorDerecha: [0, 200] },
     tiendaCartas: { activa: [0, 1], sobrePrecio: [1, 64], sobreCartas: [1, 10], sobreNuevas: [0, 10], sobreHechizos: [0, 10], sueltaTope: [0, 1], mesaPrecio: [0, 64] }, preciosCartas: {}, pesosSobre: {} };
 // Sin tope propio: 0-4 (copias); precios hasta 10 esmeraldas y pesos hasta 5 (con el número se puede poner más)

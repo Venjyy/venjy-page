@@ -1103,11 +1103,12 @@ async function arrancar(guardado, cx = null) {
         cont.replaceChildren(...nodos);
     }
     // Lista Tab y de la pausa: quién te reta (con Y / N) y quién está en un duelo (duelo 2J, PR 4)
-    const TXT_TAB_DUELO = { reta: { es: 'te reta: Y / N', en: 'challenges you: Y / N' }, duelo: { es: 'en un duelo', en: 'in a duel' } };
+    const TXT_TAB_DUELO = { reta: { es: 'te reta: Y / N', en: 'challenges you: Y / N' }, duelo: { es: 'en un duelo', en: 'in a duel' }, espera: { es: 'espera rival en una mesa', en: 'waiting at a duel table' } };
     function etiquetaDuelo(id) {
         try { // (reto y actividades se declaran más abajo: antes de eso no hay nada que mostrar)
             if (reto && reto.inv.de === id) return textoCartas(TXT_TAB_DUELO.reta);
-            if (actividades && (actividades.dondeEsta(id) || '').startsWith('duelo@')) return textoCartas(TXT_TAB_DUELO.duelo);
+            const aid = actividades && actividades.dondeEsta(id);
+            if (aid && aid.startsWith('duelo@')) { const a = actividades.actividad(aid); return textoCartas(a && a.jug.length === 1 && a.d[id] && a.d[id].espera ? TXT_TAB_DUELO.espera : TXT_TAB_DUELO.duelo); }
         } catch { /* aún sin declarar */ }
         return '';
     }
@@ -1169,6 +1170,9 @@ async function arrancar(guardado, cx = null) {
     // Quien reta o acepta junto a una juega en ella (lugar.mesaCerca metros)
     let mesasColocadas = null, cargandoMesas = null;
     const esMesaDuelo = id => id === B.MESA_DUELO || id === B.MESA_DUELO_Z;
+    let esperaMesa = null; // la mesa donde esperas rival (PR 5, minado.usarMesaDuelo): { x, y, z, g }
+    const mesaDeBloque = o => ({ x: o.x + 0.5, y: o.y - DY, z: o.z + 0.5, g: o.id === B.MESA_DUELO_Z ? Math.PI / 2 : 0 });
+    const mismaMesa = (a, b) => !!(a && b && Math.abs(a.x - b.x) < 0.1 && Math.abs(a.z - b.z) < 0.1 && Math.abs(a.y - b.y) < 0.5);
     function cargarMesasColocadas() {
         if (!cargandoMesas) cargandoMesas = Promise.all([import('./mesas-colocadas.js'), import('./cartas-mesa-modelo.js'), cargarDatos('cartas-mesa')]).then(([MC, MM, datos]) => {
             if (!datosCartas) datosCartas = datos;
@@ -1182,6 +1186,8 @@ async function arrancar(guardado, cx = null) {
     }
     // Toda edición (tuya o del cooperativo) pasa por aquí: cargar() lee las ediciones ya guardadas, así que no hace falta cola
     mundo.alEditar = lista => {
+        // Rompieron la mesa donde esperabas rival: dejas de esperar
+        if (esperaMesa && duelo && duelo.fase === 'esperando' && lista.some(e => !esMesaDuelo(e[3]) && mismaMesa(esperaMesa, { x: e[0] + 0.5, y: e[1] - DY, z: e[2] + 0.5 }))) cancelarReto();
         if (mesasColocadas) mesasColocadas.editar(lista);
         else if (lista.some(e => esMesaDuelo(e[3]))) cargarMesasColocadas();
     };
@@ -1331,16 +1337,53 @@ async function arrancar(guardado, cx = null) {
     }
     // Mientras el otro responde: «Esperando a X…» con Cancelar (N o clic)
     let espera = null;
-    function mostrarEspera(id) {
+    function mostrarEspera(id, texto = null) {
         quitarEspera();
         const el = document.createElement('div'); el.className = 'reto-aviso';
-        const p = document.createElement('p'); p.textContent = textoCartas(duelo.textos.esperando).replace('{x}', coop.nombreDe(id));
+        const p = document.createElement('p'); p.textContent = texto || textoCartas(duelo.textos.esperando).replace('{x}', coop.nombreDe(id));
         const b = document.createElement('button'); b.type = 'button'; b.className = 'boton'; b.textContent = textoCartas(duelo.textos.cancelar);
         b.addEventListener('click', ev => { ev.stopPropagation(); cancelarReto(); });
         el.append(p, b); document.body.appendChild(el);
         espera = { id, el };
     }
-    function quitarEspera() { if (espera) { espera.el.remove(); espera = null; } }
+    function quitarEspera() { if (espera) { espera.el.remove(); espera = null; } esperaMesa = null; }
+    // Mesa de duelo colocada (PR 5): clic derecho en ella. Si alguien espera ahí, te sientas enfrente y empieza el duelo;
+    // si no, te quedas esperando rival (otro clic derecho o N = dejar de esperar). Sin sala es solo un mueble
+    minado.usarMesaDuelo = o => {
+        if (!coop || !coop.remotos.size) { avisoDuelo(textoCartas({ es: 'Para jugar en la mesa hace falta una sala con otro jugador', en: 'You need a room with another player to play at the table' }), 4); return true; }
+        const m = mesaDeBloque(o);
+        cargarDuelo().then(d => {
+            if (!d) return;
+            const T = d.textos;
+            if (d.fase === 'esperando') { if (mismaMesa(esperaMesa, m)) cancelarReto(); return; }
+            if (d.fase !== 'libre' || espera || reto || ocupadoParaDuelo()) return;
+            if (!tutoCartasVisto()) { avisoDuelo(textoCartas(T.sinTuto), 4); return; }
+            if (inventario.contar(O.MAZO) < 1) { avisoDuelo(textoCartas(T.faltaMazo), 4); return; }
+            const act = d.mesasEsperando().find(a => mismaMesa(a.d[a.jug[0]].mesa, m));
+            if (act) { if (d.unirse(act)) cargarMesaCartas(); return; }
+            if (d.duelosAbiertos().some(a => a.jug.some(j => mismaMesa(a.d[j] && a.d[j].mesa, m)))) { avisoDuelo(textoCartas(T.rechazo.cerrada), 3); return; } // ya juegan ahí
+            if (d.esperar(m)) { mostrarEspera(null, textoCartas(T.esperandoMesa)); esperaMesa = m; cargarMesaCartas(); }
+        });
+        return true;
+    };
+    // Cada segundo: si esperas y te alejas de la mesa, dejas de esperar; si alguien espera cerca de ti, te avisa una vez
+    const avisadasMesa = new Set();
+    function revisarMesas() {
+        if (!duelo) return;
+        const R = duelo.lugar(), p = jugador.pos, lejos = (R.mesaCerca ?? 3) * 2 + 2;
+        if (duelo.fase === 'esperando' && esperaMesa && Math.hypot(esperaMesa.x - p.x, esperaMesa.z - p.z) > lejos) {
+            cancelarReto(); avisoDuelo(textoCartas(duelo.textos.lejosMesa), 4); return;
+        }
+        if (duelo.fase !== 'libre') return;
+        for (const a of duelo.mesasEsperando()) {
+            const m = a.d[a.jug[0]].mesa;
+            if (!m || avisadasMesa.has(a.id) || Math.hypot(m.x - p.x, m.z - p.z) > (R.mirar ?? 12)) continue;
+            avisadasMesa.add(a.id);
+            avisoDuelo(textoCartas(duelo.textos.esperaEn).replace('{x}', coop.nombreDe(a.jug[0])), 5);
+        }
+        for (const k of avisadasMesa) if (!duelo.mesasEsperando().some(a => a.id === k)) avisadasMesa.delete(k);
+    }
+    if (coop) setInterval(revisarMesas, 1000);
     function cancelarReto() { if (!espera) return; quitarEspera(); duelo.salir(); }
     // Aviso «X te reta»: Aceptar (Y o clic) entra al duelo con tu mazo (la mesa abre donde están cuando llega `ini`);
     // No (N) lo rechaza. Sin el tutorial de Lucho o sin MAZO se rechaza solo, con el motivo
