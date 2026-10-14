@@ -37,7 +37,7 @@
       "description": "Segundos máximos de carrera.",
       "type": "number",
       "minimum": 60,
-      "maximum": 900
+      "maximum": 1800
     },
     "dificultad": {
       "enum": [
@@ -71,15 +71,15 @@
           "description": "Puntos [x, y, z, ancho?] en bloques sobre el piso del living, en orden; se cierra solo; la salida en el primero.",
           "type": "array",
           "minItems": 4,
-          "maxItems": 64,
+          "maxItems": 128,
           "items": {
             "type": "array",
             "prefixItems": [
               {
                 "description": "x",
                 "type": "number",
-                "minimum": -150,
-                "maximum": 150
+                "minimum": -250,
+                "maximum": 250
               },
               {
                 "description": "y (altura sobre el piso)",
@@ -90,8 +90,8 @@
               {
                 "description": "z",
                 "type": "number",
-                "minimum": -150,
-                "maximum": 150
+                "minimum": -250,
+                "maximum": 250
               },
               {
                 "description": "ancho propio (opcional)",
@@ -106,14 +106,14 @@
         },
         "huecos": {
           "type": "array",
-          "maxItems": 16,
+          "maxItems": 64,
           "items": {
             "type": "object",
             "properties": {
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               },
               "largo": {
                 "description": "bloques",
@@ -130,20 +130,20 @@
         },
         "turbos": {
           "type": "array",
-          "maxItems": 32,
+          "maxItems": 64,
           "items": {
             "type": "object",
             "properties": {
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               },
               "avance": {
                 "description": "bloques después del punto",
                 "type": "number",
                 "minimum": 0,
-                "maximum": 60
+                "maximum": 120
               },
               "lado": {
                 "description": "-1 izquierda .. 1 derecha",
@@ -166,24 +166,55 @@
         },
         "tuneles": {
           "type": "array",
-          "maxItems": 16,
+          "maxItems": 32,
           "items": {
             "type": "object",
             "properties": {
               "desde": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               },
               "hasta": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               }
             },
             "additionalProperties": false,
             "required": [
               "desde"
+            ]
+          }
+        },
+        "cajas": {
+          "description": "Filas de cajas de objetos (una fila a lo ancho de la pista)",
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "properties": {
+              "punto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 127
+              },
+              "avance": {
+                "description": "bloques después del punto",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 120
+              },
+              "cuantas": {
+                "description": "cajas a lo ancho (sin el número: objetos.cuantas)",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 8
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "punto"
             ]
           }
         }
@@ -197,38 +228,38 @@
           "description": "",
           "type": "number",
           "minimum": 60,
-          "maximum": 300
+          "maximum": 500
         },
         "fondo": {
           "description": "",
           "type": "number",
           "minimum": 60,
-          "maximum": 300
+          "maximum": 500
         },
         "alto": {
           "description": "",
           "type": "number",
           "minimum": 20,
-          "maximum": 120
+          "maximum": 150
         },
         "x": {
           "description": "",
           "type": "number",
-          "minimum": -60,
-          "maximum": 60
+          "minimum": -150,
+          "maximum": 150
         },
         "z": {
           "description": "",
           "type": "number",
-          "minimum": -60,
-          "maximum": 60
+          "minimum": -150,
+          "maximum": 150
         }
       },
       "additionalProperties": false
     },
     "muebles": {
       "type": "array",
-      "maxItems": 60,
+      "maxItems": 120,
       "items": {
         "type": "object",
         "properties": {
@@ -249,26 +280,26 @@
           "x": {
             "description": "",
             "type": "number",
-            "minimum": -150,
-            "maximum": 150
+            "minimum": -250,
+            "maximum": 250
           },
           "z": {
             "description": "",
             "type": "number",
-            "minimum": -150,
-            "maximum": 150
+            "minimum": -250,
+            "maximum": 250
           },
           "a": {
             "description": "ancho (x)",
             "type": "number",
             "minimum": 0.5,
-            "maximum": 80
+            "maximum": 160
           },
           "f": {
             "description": "fondo (z)",
             "type": "number",
             "minimum": 0.5,
-            "maximum": 80
+            "maximum": 160
           },
           "h": {
             "description": "alto",
@@ -385,6 +416,18 @@
           "minimum": 0,
           "maximum": 100
         },
+        "roza": {
+          "description": "seno del ángulo contra la pared desde el que choca; menos, se desliza",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rozaRoce": {
+          "description": "roce por segundo al deslizarse por el borde",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
         "radio": {
           "description": "radio",
           "type": "number",
@@ -396,6 +439,12 @@
           "type": "number",
           "minimum": 0,
           "maximum": 100
+        },
+        "vuelve": {
+          "description": "bloques antes del hueco donde Lona te deja",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 60
         },
         "niveles": {
           "type": "array",
@@ -564,6 +613,385 @@
           "type": "number",
           "minimum": 0,
           "maximum": 0.3
+        }
+      },
+      "additionalProperties": false
+    },
+    "objetos": {
+      "description": "Objetos de las cajas: salen según el puesto; la IA también los usa",
+      "type": "object",
+      "properties": {
+        "activos": {
+          "description": "1 = con objetos, 0 = sin",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cuantas": {
+          "description": "cajas por fila",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "ruleta": {
+          "description": "segundos de la ruleta",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "reaparece": {
+          "description": "segundos hasta que vuelve una caja",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 60
+        },
+        "radioCaja": {
+          "description": "tamaño de la caja para tomarla",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 3
+        },
+        "gracia": {
+          "description": "segundos en que no golpea a quien lo lanza",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "inmune": {
+          "description": "segundos sin otro golpe",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "pluma": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "object",
+              "properties": {
+                "es": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "en": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "additionalProperties": false
+            },
+            "primera": {
+              "description": "peso en la ruleta si va 1.ª",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "ultima": {
+              "description": "peso en la ruleta si va última",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "turbo": {
+              "description": "segundos de turbo",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "additionalProperties": false
+        },
+        "ovillo": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "object",
+              "properties": {
+                "es": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "en": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "additionalProperties": false
+            },
+            "primera": {
+              "description": "peso en la ruleta si va 1.ª",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "ultima": {
+              "description": "peso en la ruleta si va última",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "vel": {
+              "description": "bloques/s",
+              "type": "number",
+              "minimum": 1,
+              "maximum": 80
+            },
+            "vida": {
+              "description": "segundos que rueda",
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 30
+            },
+            "radio": {
+              "description": "tamaño del golpe (bloques)",
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 3
+            },
+            "golpe": {
+              "description": "segundos aturdida",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "additionalProperties": false
+        },
+        "caja": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "object",
+              "properties": {
+                "es": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "en": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "additionalProperties": false
+            },
+            "primera": {
+              "description": "peso en la ruleta si va 1.ª",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "ultima": {
+              "description": "peso en la ruleta si va última",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "vida": {
+              "description": "segundos en la pista",
+              "type": "number",
+              "minimum": 1,
+              "maximum": 300
+            },
+            "radio": {
+              "description": "tamaño del golpe (bloques)",
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 3
+            },
+            "golpe": {
+              "description": "segundos aturdida",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "additionalProperties": false
+        },
+        "pescado": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "object",
+              "properties": {
+                "es": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "en": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "additionalProperties": false
+            },
+            "primera": {
+              "description": "peso en la ruleta si va 1.ª",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "ultima": {
+              "description": "peso en la ruleta si va última",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "adelante": {
+              "description": "bloques adelante si va 1.ª",
+              "type": "number",
+              "minimum": 1,
+              "maximum": 120
+            },
+            "vida": {
+              "description": "segundos en la pista",
+              "type": "number",
+              "minimum": 1,
+              "maximum": 120
+            },
+            "atrae": {
+              "description": "distancia a la que atrae",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 60
+            },
+            "fuerza": {
+              "description": "bloques/s con que atrae",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "radio": {
+              "description": "tamaño del golpe (bloques)",
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 3
+            },
+            "come": {
+              "description": "segundos comiendo",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "additionalProperties": false
+        },
+        "hierba": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "object",
+              "properties": {
+                "es": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "en": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "additionalProperties": false
+            },
+            "primera": {
+              "description": "peso en la ruleta si va 1.ª",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "ultima": {
+              "description": "peso en la ruleta si va última",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "alcance": {
+              "description": "bloques adelante o atrás",
+              "type": "number",
+              "minimum": 1,
+              "maximum": 300
+            },
+            "segundos": {
+              "description": "segundos al revés",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 15
+            }
+          },
+          "additionalProperties": false
+        },
+        "aspiradora": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "object",
+              "properties": {
+                "es": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "en": {
+                  "type": "string",
+                  "maxLength": 40
+                }
+              },
+              "additionalProperties": false
+            },
+            "primera": {
+              "description": "peso en la ruleta si va 1.ª",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "ultima": {
+              "description": "peso en la ruleta si va última",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "segundos": {
+              "description": "segundos del susto",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "freno": {
+              "description": "fracción de velocidad que queda",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "salto": {
+              "description": "salto del susto (× salto)",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 3
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

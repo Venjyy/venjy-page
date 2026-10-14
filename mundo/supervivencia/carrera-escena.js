@@ -6,7 +6,9 @@
 // los tramos altos, placas de turbo animadas, línea a cuadros y el arco de salida con el nombre del gran premio.
 // Las seis gatas: Mila y Gala son copias de su modelo del mundo; las demás se arman con su pelaje (carrera-modelo.js,
 // `gatas`). Lona (copia de su modelo) da la partida desde su caja con la bandera. Partículas: polvo, chispas del
-// derrape, fuego del turbo, estrellas del truco y confeti del podio.
+// derrape, fuego del turbo, estrellas del truco y confeti del podio. Objetos: cajas «?» que giran (se esconden al
+// tomarlas), ovillo que rueda, caja de cartón, pescado que salta, la aspiradora de Lona que pasa volando, y los
+// efectos en las gatas (golpeada da vueltas, hierba = remolino verde, susto = gotas, comiendo = agachada).
 // Todo con MeshBasicMaterial y sombra por cara (crearTinte), como las criaturas: sin luces.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -39,7 +41,8 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
     const bloque = (w, h, d, m, x, y, z, padre = scene) => { const b = caja(w, h, d, m); b.position.set(x, y, z); padre.add(b); recursos.push(b.geometry); return b; };
     const sala = R.sala;
     scene.background = new THREE.Color('#2a1c14');
-    scene.fog = new THREE.Fog(new THREE.Color('#3a2a20'), 90, 200);
+    const lado = Math.max(R.sala.ancho, R.sala.fondo);
+    scene.fog = new THREE.Fog(new THREE.Color('#3a2a20'), lado * 0.6, lado * 1.4); // se adapta al tamaño de la sala
 
     // ---------- Sala ----------
     const tabla = tx(16, 16, (x, y, r) => {
@@ -351,9 +354,87 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
         inst.instanceMatrix.needsUpdate = true; if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
     }
 
+    // ---------- Objetos: cajas «?», lo tirado (ovillo, caja de cartón, pescado) y la aspiradora de Lona ----------
+    const OB = R.objetos || {};
+    const colOb = (k, d) => hex((OB[k] && OB[k].color) || d);
+    const signo = tx(8, 8, (x, y) => {
+        const q = ['..aaaa..', '.aa..aa.', '......aa', '....aaa.', '...aa...', '...aa...', '........', '...aa...'][y][x];
+        return q === 'a' ? [255, 255, 255] : (x + y) % 2 ? [236, 168, 40] : [246, 196, 64];
+    });
+    const matCaja = new THREE.MeshBasicMaterial({ map: signo, transparent: true, opacity: 0.88 });
+    const cajasV = M.cajasDe(R, pista).map(c => {
+        const p = M.puntoPista(pista, c.s, c.lat);
+        const m = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 1.1), matCaja);
+        m.position.set(p.x, p.y + 1, p.z); scene.add(m); recursos.push(m.geometry);
+        return { m, y: p.y + 1, fase: Math.random() * 6 };
+    });
+    // Modelos de lo que se tira (un grupo por tipo; se clonan)
+    const modelos = {};
+    {
+        const lana = colOb('ovillo', '#d8455a'), ov = new THREE.Group();
+        const matLana = mats(tx(8, 8, (x, y, r) => (x + y * 2) % 5 === 0 ? ajustar(lana, 0.7) : ajustar(lana, 0.92 + r() * 0.14)));
+        for (let k = -2; k <= 2; k++) { const w = Math.sqrt(1 - (k / 2.6) ** 2) * 1.1; bloque(w, 0.24, w, matLana, 0, 0.55 + k * 0.22, 0, ov); }
+        modelos.ovillo = ov;
+        const cc = colOb('caja', '#c49660'), cj = new THREE.Group();
+        bloque(1.3, 1.1, 1.3, mats(tx(8, 8, (x, y, r) => y === 0 || x === 0 ? ajustar(cc, 0.8) : ajustar(cc, 0.92 + r() * 0.12))), 0, 0.55, 0, cj);
+        bloque(0.2, 0.04, 1.32, mats(tela([222, 212, 180], 0.02)), 0, 1.12, 0, cj);
+        for (const l of [-1, 1]) { const solapa = bloque(0.6, 0.06, 1.3, mats(tela(ajustar(cc, 0.9), 0.05)), l * 0.5, 1.2, 0, cj); solapa.rotation.z = l * 0.6; }
+        modelos.caja = cj;
+        const pc = colOb('pescado', '#7ab0d8'), pz = new THREE.Group(), cuerpoP = mats(tela(pc, 0.12));
+        bloque(0.4, 0.5, 1.0, cuerpoP, 0, 0.35, 0, pz);
+        bloque(0.3, 0.36, 0.3, mats(tela(ajustar(pc, 0.75), 0.05)), 0, 0.35, -0.6, pz);
+        bloque(0.2, 0.6, 0.2, mats(tela(ajustar(pc, 0.75), 0.05)), 0, 0.35, -0.82, pz);
+        for (const l of [-1, 1]) bloque(0.05, 0.1, 0.1, mats(tela([20, 20, 20], 0)), l * 0.21, 0.45, 0.32, pz);
+        modelos.pescado = pz;
+        const ac = colOb('aspiradora', '#c8384a'), asp = new THREE.Group(), gris = mats(tela([70, 70, 76], 0.05));
+        bloque(1.6, 1.2, 2.2, mats(tela(ac, 0.08)), 0, 0.8, 0, asp);
+        bloque(1.0, 0.3, 1.2, mats(tela(ajustar(ac, 1.25), 0.04)), 0, 1.5, -0.2, asp);
+        for (const [x, z] of [[-0.7, 0.8], [0.7, 0.8], [-0.7, -0.8], [0.7, -0.8]]) bloque(0.3, 0.4, 0.4, gris, x, 0.2, z, asp);
+        const tubo = bloque(0.3, 0.3, 2.6, gris, 0, 1.6, 1.8, asp); tubo.rotation.x = -0.5;
+        bloque(1.4, 0.3, 0.5, gris, 0, 0.35, 2.9, asp); // la boquilla
+        asp.visible = false; scene.add(asp);
+        modelos.aspiradora = asp;
+    }
+    const hilo = `rgb(${colOb('ovillo', '#d8455a').join(',')})`; // la hebra que deja el ovillo
+    const sueltosV = new Map(); // id → grupo
+    let aspiradora = null;      // { s0, s1, t, dur }
+    function lanzarAspiradora(s0, s1, dur = 1) { aspiradora = { s0, s1: s1 > s0 ? s1 : s0 + 30, t: 0, dur }; modelos.aspiradora.visible = true; }
+    function dibujarObjetos(W, dt, t) {
+        cajasV.forEach((c, i) => {
+            const vc = W && W.cajas[i], visible = !vc || vc.hasta <= W.t;
+            c.m.visible = visible;
+            if (!visible) return;
+            const pop = vc && W.t - vc.hasta < 0.3 ? lim((W.t - vc.hasta) / 0.3, 0.05, 1) : 1;
+            c.m.scale.setScalar(pop);
+            c.m.rotation.set(0.35, t * 1.6 + c.fase, 0.2);
+            c.m.position.y = c.y + Math.sin(t * 2.4 + c.fase) * 0.15;
+        });
+        const vivos = new Set();
+        for (const o of (W && W.sueltos) || []) {
+            vivos.add(o.id);
+            let v = sueltosV.get(o.id);
+            if (!v) { v = modelos[o.tipo].clone(); scene.add(v); sueltosV.set(o.id, v); }
+            const p = M.puntoPista(pista, o.s, o.lat);
+            v.position.set(p.x, o.y + 0.07, p.z); v.rotation.order = 'YXZ'; v.rotation.y = p.yaw;
+            if (o.tipo === 'ovillo') { v.children.forEach((b, k) => { b.rotation.y = t * 9 + k; }); v.position.y += Math.abs(Math.sin(t * 14)) * 0.15; if (Math.random() < dt * 20) emitir(p.x, o.y + 0.2, p.z, 0, 0.6, 0, hilo, 0.4, 0.12, 1); }
+            else if (o.tipo === 'pescado') { v.rotation.z = Math.sin(t * 9 + o.id) * 0.5; v.position.y += Math.abs(Math.sin(t * 5 + o.id)) * 0.3; if (Math.random() < dt * 6) emitir(p.x, o.y + 1.2, p.z, 0, 1.4, 0, '#ffffff', 0.7, 0.14, 0); }
+        }
+        for (const [id, v] of sueltosV) if (!vivos.has(id)) { scene.remove(v); sueltosV.delete(id); }
+        if (aspiradora) {
+            aspiradora.t += dt;
+            const u = aspiradora.t / aspiradora.dur, a = modelos.aspiradora;
+            if (u >= 1) { a.visible = false; aspiradora = null; }
+            else {
+                const s = aspiradora.s0 + (aspiradora.s1 - aspiradora.s0) * u, p = M.puntoPista(pista, s, 0);
+                a.position.set(p.x, p.y + 2.5 + Math.sin(u * Math.PI) * 3, p.z); a.rotation.set(0, p.yaw, Math.sin(t * 30) * 0.05);
+                if (Math.random() < dt * 40) emitir(p.x + (Math.random() - 0.5) * 3, p.y + 0.5, p.z + (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 2, 2 + Math.random() * 2, (Math.random() - 0.5) * 2, '#d8d0c4', 0.5, 0.2, 0);
+            }
+        }
+    }
+
     // ---------- Dibujar el estado ----------
-    // gs = gatas del modelo (mismo orden que R.gatas); t = segundos
-    function dibujar(gs, dt, t) {
+    // gs = gatas del modelo (mismo orden que R.gatas); t = segundos; W = objetos (nuevosObjetos), opcional
+    function dibujar(gs, dt, t, W = null) {
         for (let i = 0; i < gs.length; i++) {
             const g = gs[i], v = gatas[i];
             if (!v) continue;
@@ -364,6 +445,11 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
             v.g.rotation.x = g.suelo ? -Math.atan(q.pend) : lim(-g.vy * 0.04, -0.5, 0.5);
             v.g.rotation.z = g.derrape ? -g.derrape * 0.12 : 0;
             if (g.cayendo > 0) { v.g.rotation.z += t * 12; }
+            // Efectos de los objetos: golpeada da vueltas con estrellas; la hierba, remolino verde; el susto, gotas; comiendo, se agacha
+            if (g.aturdida > 0) { v.g.rotation.y += g.aturdida * 9; if (Math.random() < dt * 10) emitir(g.x, g.y + 1.2, g.z, (Math.random() - 0.5) * 2, 0.6, (Math.random() - 0.5) * 2, '#ffff66', 0.5, 0.14, 0); }
+            if (g.reves > 0 && Math.random() < dt * 14) { const a = t * 6; emitir(g.x + Math.cos(a) * 0.6, g.y + 1.3, g.z + Math.sin(a) * 0.6, 0, 0.3, 0, Math.random() < 0.5 ? '#5ac85a' : '#a8f07a', 0.6, 0.15, 0); }
+            if (g.susto > 0 && Math.random() < dt * 8) emitir(g.x, g.y + 1.2, g.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, '#bfe6ff', 0.4, 0.12, 6);
+            if (g.come > 0) v.g.rotation.x += 0.35;
             // Galope: delanteras juntas y traseras juntas, a contratiempo; en el aire, estiradas
             const rap = Math.abs(g.v);
             v.fase += rap * dt * 1.6;
@@ -389,6 +475,7 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
             if (g.turbo > 0 && Math.random() < dt * 40) emitir(atras.x, g.y + 0.35, atras.z, -Math.sin(g.yaw) * 3 + (Math.random() - 0.5), 0.5, -Math.cos(g.yaw) * 3 + (Math.random() - 0.5), Math.random() < 0.5 ? '#ffd040' : '#ff6a20', 0.3, 0.28, -1);
         }
         for (const t2 of placas) t2.offset.y = -(t * 1.6) % 1;
+        dibujarObjetos(W, dt, t);
         actualizarParticulas(dt);
     }
     function estrellas(x, y, z) { for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; emitir(x, y + 0.6, z, Math.cos(a) * 3, 3 + Math.random() * 2, Math.sin(a) * 3, i % 2 ? '#ffff66' : '#ffffff', 0.6, 0.2, 9); } }
@@ -420,7 +507,7 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
 
     tinte.aplicar(new THREE.Color(1, 1, 1));
     return {
-        scene, gatas, podio, emitir, estrellas, confeti, dibujar, animarLona, ponerPodio, actualizarParticulas,
+        scene, gatas, podio, emitir, estrellas, confeti, dibujar, animarLona, ponerPodio, actualizarParticulas, lanzarAspiradora,
         get lona() { return lonaM; },
         destruir() {
             scene.traverse(o => { if (o.material) for (const m of [].concat(o.material)) { if (m.map && m.map.isCanvasTexture === false) m.map.dispose(); } });

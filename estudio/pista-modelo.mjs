@@ -1,7 +1,7 @@
 // =========================================================
 // VENJY · Estudio · Editor de pista de la carrera de gatas (7h-1): lo puro (sin DOM)
 // Lo usan estudio/carrera-pista.js (el plano y el perfil) y mundo/tests/carrera.mjs.
-//   · insertarPunto / quitarPunto: cambian `pista.puntos` y corrigen los índices de huecos, turbos y túneles;
+//   · insertarPunto / quitarPunto: cambian `pista.puntos` y corrigen los índices de huecos, turbos, túneles y cajas;
 //   · avisosPista: lo que está mal o es riesgoso (la pista se pisa a sí misma, un mueble del piso la invade,
 //     un hueco sin rampa, puntos muy juntos, fuera de la sala);
 //   · probarIA: una carrera completa de las gatas del juego, al instante, y lo que pasó (tiempos, derrapes, caídas).
@@ -17,6 +17,7 @@ export function insertarPunto(pista, i, punto) {
     const mover = k => (k >= i ? k + 1 : k);
     for (const h of p.huecos || []) h.punto = mover(h.punto);
     for (const t of p.turbos || []) t.punto = mover(t.punto);
+    for (const c of p.cajas || []) c.punto = mover(c.punto);
     for (const t of p.tuneles || []) { t.desde = mover(t.desde); t.hasta = mover(t.hasta); }
     return p;
 }
@@ -28,6 +29,7 @@ export function quitarPunto(pista, i) {
     const mover = k => (k > i ? k - 1 : k === i ? Math.min(k, n - 1) : k);
     p.huecos = (p.huecos || []).filter(h => h.punto !== i).map(h => ({ ...h, punto: mover(h.punto) }));
     p.turbos = (p.turbos || []).filter(t => t.punto !== i).map(t => ({ ...t, punto: mover(t.punto) }));
+    if (p.cajas) p.cajas = p.cajas.filter(c => c.punto !== i).map(c => ({ ...c, punto: mover(c.punto) }));
     p.tuneles = (p.tuneles || []).map(t => ({ ...t, desde: mover(t.desde), hasta: mover(t.hasta) })).filter(t => t.desde !== t.hasta);
     return p;
 }
@@ -89,26 +91,34 @@ export function avisosPista(R) {
         const q = M.enPista(P, s0 - 1), q2 = M.enPista(P, s0 + (h.largo || 4) + 1);
         if (q.y - q2.y < -0.5) av.push({ tipo: 'ojo', es: `El hueco del punto ${h.punto + 1} cae más alto que donde sale: cuesta saltarlo`, en: `The gap at point ${h.punto + 1} lands higher than it starts`, x: q.x, z: q.z });
     }
+    // Cajas de objetos sobre un hueco (nadie las toma)
+    for (const c of R.pista.cajas || []) {
+        const s0 = P.puntos[c.punto]; if (s0 === undefined) continue;
+        const q = M.enPista(P, s0 + (c.avance || 0));
+        if (!q.piso) av.push({ tipo: 'ojo', es: `Las cajas del punto ${c.punto + 1} quedan sobre un hueco`, en: `The item boxes at point ${c.punto + 1} are over a gap`, x: q.x, z: q.z });
+    }
     return av;
 }
 
-// Una carrera de prueba con la IA (todas las gatas): { ok, mejor, ultimo, derrapes, caidas, turbos, porGata: [{ clave, fin }] }
+// Una carrera de prueba con la IA (todas las gatas, con objetos): { ok, mejor, ultimo, derrapes, caidas, turbos, objetos, golpes, porGata: [{ clave, fin }] }
 export function probarIA(R, { dificultad = 'normal', semilla = 11, dt = 1 / 60 } = {}) {
     const r = { ...R, dificultad };
     const P = M.armarPista(r), rnd = M.azar(semilla);
-    const gs = r.gatas.map((d, k) => M.nuevaGata(P, r, d, k));
-    let t = 0, derrapes = 0, caidas = 0, turbos = 0;
+    const gs = r.gatas.map((d, k) => M.nuevaGata(P, r, d, k)), W = M.nuevosObjetos(r, P);
+    let t = 0, derrapes = 0, caidas = 0, turbos = 0, objetos = 0, golpes = 0;
     while (gs.some(g => g.fin === null) && t < r.tope) {
-        for (const g of gs) {
-            const ev = M.pasoGata(g, M.entradaIA(g, r, P, rnd), dt, r, P, t);
+        const ents = gs.map(g => M.entradaIA(g, r, P, rnd, null, { gs, W }));
+        gs.forEach((g, i) => {
+            const ev = M.pasoGata(g, ents[i], dt, r, P, t);
             for (const e of ev) { if (e === 'derrape') derrapes++; else if (e === 'cae') caidas++; else if (e === 'turbo' || e === 'placa') turbos++; }
-        }
+        });
+        for (const e of M.pasoObjetos(W, gs, ents, dt, r, P, rnd)) { if (e.e === 'usa') objetos++; else if (['golpe', 'come', 'reves', 'susto'].includes(e.e)) golpes++; }
         M.chocarGatas(gs, r);
         t += dt;
     }
     const fines = gs.map(g => g.fin).filter(f => f !== null);
     return {
         ok: fines.length === gs.length, largo: P.largo, mejor: fines.length ? Math.min(...fines) : null, ultimo: fines.length ? Math.max(...fines) : null,
-        derrapes, caidas, turbos, porGata: M.puestos(gs).map(g => ({ clave: g.clave, nombre: g.def.nombre, fin: g.fin }))
+        derrapes, caidas, turbos, objetos, golpes, porGata: M.puestos(gs).map(g => ({ clave: g.clave, nombre: g.def.nombre, fin: g.fin }))
     };
 }

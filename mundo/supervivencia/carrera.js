@@ -9,10 +9,12 @@
 // derrapas: las chispas pasan de azul a naranja a morado y al soltar sale un turbo más largo. En el aire, Espacio
 // hace un truco (mini turbo al caer). Placas de flechas: turbo. Acelerar en el último segundo de la cuenta: arranque
 // turbo. Si caes en el hueco del sofá, Lona te devuelve. Esc pausa. En el celular: botones grandes y acelerar solo.
+// Objetos: las cajas «?» dan uno según tu puesto (ruleta en la casilla bajo el puesto); E o F lo usa (con S, el
+// ovillo sale hacia atrás). Lo que te pasa (golpe, pescado, hierba, aspiradora) sale como aviso grande y sonido.
 // HUD: vuelta, puesto, tiempo, tabla en vivo, minimapa, avisos grandes; líneas de velocidad con turbo; música de
 // 8 bits que se apura en la última vuelta y sonidos sintetizados (sin archivos).
 // Premio por puesto y amistad con Lona (minijuego `carrera`). Valores: mundo/datos/carrera.json (Estudio → Carrera).
-// No editable aún: los textos (TXT_CARRERA), la música y los colores del HUD.
+// No editable aún: los textos (TXT_CARRERA), la música, los colores del HUD y los íconos de los objetos (ICONO_OBJ).
 // Depuración: __venjy.carrera (abrir(), estado, elegir(clave, dificultad), saltarIntro(), saltarA(vuelta)).
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -47,9 +49,34 @@ export const TXT_CARRERA = {
     tu: t('tú', 'you'),
     premio: t('Premio', 'Prize'),
     mejor: t('mejor vuelta', 'best lap'),
-    ayuda: t('W acelera · S frena · A/D dobla · Espacio salta y, doblando, derrapa (suéltalo para el turbo) · Esc pausa', 'W gas · S brake · A/D steer · Space hops and, while turning, drifts (release for a boost) · Esc pause'),
-    teclas: { izq: '<', der: '>', salto: t('SALTO', 'HOP'), freno: t('FRENO', 'BRAKE'), acel: t('ACELERAR', 'GAS') }
+    ayuda: t('W acelera · S frena · A/D dobla · Espacio salta y, doblando, derrapa (suéltalo para el turbo) · E usa el objeto (con S, el ovillo va atrás) · Esc pausa', 'W gas · S brake · A/D steer · Space hops and, while turning, drifts (release for a boost) · E uses the item (with S, the yarn goes back) · Esc pause'),
+    teclas: { izq: '<', der: '>', salto: t('SALTO', 'HOP'), freno: t('FRENO', 'BRAKE'), acel: t('ACELERAR', 'GAS'), objeto: t('OBJETO', 'ITEM') },
+    usar: t('E: usar', 'E: use'),
+    // Lo que te pasa con un objeto (aviso grande)
+    golpe: t('¡Auch!', 'Ouch!'),
+    come: t('¡Ñam! Un pescado', 'Yum! A fish'),
+    reves: t('¡Hierba gatera! Todo al revés', 'Catnip! Everything is backwards'),
+    susto: t('¡LA ASPIRADORA!', 'THE VACUUM!'),
+    aspiradora: t('¡Lona prendió la aspiradora!', 'Lona turned on the vacuum!')
 };
+// Íconos de los objetos (12×12, se pintan en canvas; sin imágenes ni emojis). a = color del objeto (carrera.json),
+// b = el mismo más oscuro, c y d = fijos de cada uno
+const ICONO_OBJ = {
+    pluma: { c: '#8a5a32', px: ['..........aa', '.........aab', '........aabb', '.......aabb.', '......aabb..', '.....aabb...', '....aabb....', '...aabb.....', '..aabb......', '..abb.......', '.c..........', 'c...........'] },
+    ovillo: { c: '#f0f0f0', px: ['....aaaa....', '..aabbaaaa..', '.aaaabbaaaa.', '.abaaabbaaa.', 'aaabaaabbaaa', 'aaaabaaabbaa', 'aabaabaaabaa', 'aaabaabaaaba', '.aaabaabaaa.', '.aaaabaabaa.', '..aaaabaaa.c', '....aaaa..cc'] },
+    caja: { c: '#ece2c4', px: ['............', '.bbbbbbbbbb.', '.baaaccaaab.', '.baaaccaaab.', '.bbbbccbbbb.', '.baaaaaaaab.', '.baaaaaaaab.', '.baaaaaaaab.', '.baaaaaaaab.', '.baaaaaaaab.', '.bbbbbbbbbb.', '............'] },
+    pescado: { c: '#141414', px: ['............', '............', '...aaaa.....', '..aaaaaa..bb', '.acaaaaaabbb', 'aaaaaaaaabb.', 'aaaaaaaaabb.', '.abbaaaabbbb', '..aaaaaa..bb', '...aaaa.....', '............', '............'] },
+    hierba: { c: '#2e6a2e', px: ['....aa......', '...aaaa.....', '..aabbaa....', '..aabbaa..a.', '...abba..aaa', '....cc..aaba', '.a..cc..abba', 'aaa.cc...ca.', 'aaba.c..c...', '.abb.ccc....', '...ccc......', '....c.......'] },
+    aspiradora: { c: '#46464c', d: '#2a2a2e', px: ['......cc....', '.....c..c...', '....c....c..', '...c.....c..', '..c.......c.', '.aaaa......c', 'aaaaaa.....c', 'abaaaa....dd', 'aaaaaaaaaddd', 'aaaaaaaaaaa.', '.dd....dd...', '.dd....dd...'] }
+};
+function pintarIcono(k, clave, color, x, y, tam) {
+    const ic = ICONO_OBJ[clave];
+    if (!ic) return;
+    const n = parseInt(String(color || '#888888').slice(1), 16), rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    const pal = { a: `rgb(${rgb})`, b: `rgb(${rgb.map(v => Math.round(v * 0.68))})`, c: ic.c, d: ic.d || ic.c };
+    const p = tam / 12;
+    ic.px.forEach((fila, j) => { for (let i = 0; i < 12; i++) { const q = fila[i]; if (q === '.' || !q) continue; k.fillStyle = pal[q]; k.fillRect(x + i * p, y + j * p, Math.ceil(p), Math.ceil(p)); } });
+}
 const ORD = { es: ['1.º', '2.º', '3.º', '4.º', '5.º', '6.º', '7.º', '8.º'], en: ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'] };
 
 const CSS = `
@@ -68,6 +95,10 @@ body.en-carrera #hud, body.en-carrera .mira, body.en-carrera .tactil { display: 
 .cr-tabla .yo { color: #ffff55; }
 .cr-tabla i, .cr-gata b i { display: inline-block; width: 12px; height: 12px; border: 2px solid #000; }
 .cr-mapa { position: absolute; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: 180px; height: 150px; }
+.cr-objeto { position: absolute; right: 12px; top: calc(96px + env(safe-area-inset-top, 0px)); padding: 6px; text-align: center; font-size: 0.7rem; color: #c6c6c6; }
+.cr-objeto canvas { display: block; width: 64px; height: 64px; image-rendering: pixelated; background: #2a2a2a; border: 3px solid #000; box-shadow: inset 2px 2px 0 #555, inset -2px -2px 0 #111; }
+.cr-objeto.listo canvas { background: #4f7a2a; box-shadow: inset 2px 2px 0 #7aa84a, inset -2px -2px 0 #2c4a14; }
+.cr-objeto span { display: block; margin-top: 3px; min-height: 1em; }
 .cr-aviso { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); font-size: 3.2rem; color: #ffff55; text-shadow: 4px 4px 0 #3f3f15, -2px -2px 0 #000; white-space: nowrap; opacity: 0; transition: opacity 0.15s; }
 .cr-aviso.visible { opacity: 1; }
 .cr-semaforo { position: absolute; left: 50%; top: 13%; transform: translateX(-50%); display: none; gap: 10px; padding: 10px 14px; }
@@ -105,7 +136,7 @@ body.en-carrera #hud, body.en-carrera .mira, body.en-carrera .tactil { display: 
 .cr-botonesT > div { display: flex; gap: 10px; align-items: flex-end; }
 .cr-botonesT button { pointer-events: auto; min-width: 76px; min-height: 66px; margin: 0; font-size: 1.1rem; touch-action: none; user-select: none; -webkit-user-select: none; opacity: 0.85; }
 .cr-botonesT button.activo { background: #4f7a2a; }
-@media (max-width: 700px) { .cr-gatas { grid-template-columns: repeat(2, minmax(130px, 1fr)); } .cr-puesto { font-size: 2.2rem; } .cr-tabla, .cr-ayuda { display: none !important; } .cr-mapa { width: 120px; height: 100px; bottom: auto; top: 76px; } .cr-titulo { font-size: 1.5rem; } .cr-aviso { font-size: 2rem; } }
+@media (max-width: 700px) { .cr-gatas { grid-template-columns: repeat(2, minmax(130px, 1fr)); } .cr-puesto { font-size: 2.2rem; } .cr-tabla, .cr-ayuda { display: none !important; } .cr-mapa { width: 120px; height: 100px; bottom: auto; top: 76px; } .cr-titulo { font-size: 1.5rem; } .cr-aviso { font-size: 2rem; } .cr-objeto { right: auto; left: 12px; top: 76px; } }
 `;
 
 // ctx: { jugador, inventario, entidades, hud, misiones, gatas, npcs, idioma, tactil(), puede(), bloquear(), liberar(), datos() }
@@ -124,6 +155,8 @@ export function crearCarrera(ctx) {
     const vueltaEl = el('cr-caja cr-vuelta', arriba), puestoEl = el('cr-caja cr-puesto', arriba);
     const tablaEl = el('cr-caja cr-tabla', capa);
     const mapa = el('cr-caja cr-mapa', capa, 'canvas'); mapa.width = 180; mapa.height = 150;
+    const objEl = el('cr-caja cr-objeto', capa), objLienzo = el('', objEl, 'canvas'), objNombre = el('', objEl, 'span');
+    objLienzo.width = 48; objLienzo.height = 48;
     const avisoEl = el('cr-aviso', capa), semEl = el('cr-caja cr-semaforo', capa);
     const luces = [el('', semEl, 'b'), el('', semEl, 'b'), el('', semEl, 'b')];
     const tituloEl = el('cr-caja cr-titulo', capa), ayudaEl = el('cr-caja cr-ayuda', capa);
@@ -138,13 +171,13 @@ export function crearCarrera(ctx) {
         return b;
     }
     const tIzq = el('', tact), tDer = el('', tact);
-    const bIzq = botonT(tIzq, 'izq'), bDer = botonT(tIzq, 'der'), bSalto = botonT(tDer, 'salto'), bFreno = botonT(tDer, 'freno'), bAcel = botonT(tDer, 'acel');
+    const bIzq = botonT(tIzq, 'izq'), bDer = botonT(tIzq, 'der'), bObjeto = botonT(tDer, 'objeto'), bSalto = botonT(tDer, 'salto'), bFreno = botonT(tDer, 'freno'), bAcel = botonT(tDer, 'acel');
     const boton = (padre, texto, f, cls = 'boton') => { const b = el(cls, padre, 'button'); b.type = 'button'; b.textContent = texto; b.addEventListener('click', e => { e.preventDefault(); f(); }); return b; };
     const mostrar = (e, v) => { e.style.display = v ? '' : 'none'; };
 
     // ---------- Teclado (propio: el jugador del mundo está bloqueado) ----------
     const teclas = new Set();
-    const MANEJO = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight']);
+    const MANEJO = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF']);
     document.addEventListener('keydown', e => {
         if (!c) return;
         if (c.fase === 'menu' && c.vista) { if (e.code === 'Escape') { e.preventDefault(); cerrar(); } return; }
@@ -169,7 +202,7 @@ export function crearCarrera(ctx) {
         const auto = c.tactil && c.R.tactil.autoAcelerar && !pulsado.has('freno');
         const ad = (tiene('KeyW', 'ArrowUp') || pulsado.has('acel') || auto ? 1 : 0) - (tiene('KeyS', 'ArrowDown') || pulsado.has('freno') ? 1 : 0);
         const giro = (tiene('KeyA', 'ArrowLeft') || pulsado.has('izq') ? 1 : 0) - (tiene('KeyD', 'ArrowRight') || pulsado.has('der') ? 1 : 0);
-        return { ad, giro, salto: tiene('Space', 'ShiftLeft', 'ShiftRight') || pulsado.has('salto') };
+        return { ad, giro, salto: tiene('Space', 'ShiftLeft', 'ShiftRight') || pulsado.has('salto'), usar: tiene('KeyE', 'KeyF') || pulsado.has('objeto') };
     }
 
     // ---------- Sonido ----------
@@ -183,7 +216,15 @@ export function crearCarrera(ctx) {
         miau: () => { tono({ f0: 700, f1: 950, dur: 0.12, vol: 0.08, forma: 'triangle' }); tono({ f0: 950, f1: 600, dur: 0.22, vol: 0.08, forma: 'triangle', retardo: 0.12 }); },
         luz: verde => tono({ f0: verde ? 880 : 440, f1: verde ? 880 : 440, dur: verde ? 0.5 : 0.18, vol: 0.12, forma: 'square' }),
         vuelta: () => [660, 880].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.12, vol: 0.08, forma: 'square', retardo: i * 0.1 })),
-        meta: () => [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.16, vol: 0.09, forma: 'square', retardo: i * 0.12 }))
+        meta: () => [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.16, vol: 0.09, forma: 'square', retardo: i * 0.12 })),
+        caja: () => tono({ f0: 990, f1: 1320, dur: 0.08, vol: 0.07, forma: 'square' }),
+        ruleta: () => tono({ f0: 1200, f1: 1200, dur: 0.03, vol: 0.03, forma: 'square' }),
+        listo: () => [880, 1320].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.08, vol: 0.07, forma: 'square', retardo: i * 0.07 })),
+        lanza: () => tono({ f0: 600, f1: 300, dur: 0.15, vol: 0.08, forma: 'triangle' }),
+        golpe: () => { ruido({ dur: 0.2, frec: 400, q: 0.7, vol: 0.2, tipo: 'lowpass' }); tono({ f0: 500, f1: 180, dur: 0.35, vol: 0.09, forma: 'square' }); },
+        come: () => [0, 0.14, 0.28].forEach(r => tono({ f0: 420, f1: 520, dur: 0.07, vol: 0.06, forma: 'triangle', retardo: r })),
+        reves: () => tono({ f0: 300, f1: 900, dur: 0.5, vol: 0.06, forma: 'sine' }),
+        aspiradora: () => { ruido({ dur: 1.2, frec: 1800, q: 0.4, vol: 0.12 }); tono({ f0: 140, f1: 220, dur: 1.2, vol: 0.05, forma: 'sawtooth' }); }
     };
     // Música de 8 bits: bajo y melodía en bucle (4 compases de 16 semicorcheas); se apura en la última vuelta
     const BAJO = [45, 45, 52, 45, 43, 43, 50, 43, 41, 41, 48, 41, 43, 43, 50, 47];
@@ -211,7 +252,7 @@ export function crearCarrera(ctx) {
     const cam = new THREE.PerspectiveCamera(70, 1, 0.1, 500);
     const camPos = new THREE.Vector3(), camMira = new THREE.Vector3();
     let sel = 0, dificultad = 'normal';
-    const claveEscena = R => JSON.stringify([R.pista, R.muebles, R.sala, R.gatas.map(g => [g.clave, g.pelaje, g.escala, g.panuelo]), L]);
+    const claveEscena = R => JSON.stringify([R.pista, R.muebles, R.sala, R.gatas.map(g => [g.clave, g.pelaje, g.escala, g.panuelo]), R.objetos.activos, R.objetos.cuantas, M.OBJETOS.map(k => R.objetos[k] && R.objetos[k].color), L]);
 
     function prepararEscena(R) {
         const clave = claveEscena(R);
@@ -265,7 +306,7 @@ export function crearCarrera(ctx) {
         if (document.pointerLockElement) document.exitPointerLock();
         document.body.classList.add('en-carrera');
         capa.classList.add('visible');
-        for (const e of [arriba, tablaEl, mapa, ayudaEl, tituloEl]) mostrar(e, false);
+        for (const e of [arriba, tablaEl, mapa, ayudaEl, tituloEl, objEl]) mostrar(e, false);
         tact.classList.remove('visible');
         menuEl.classList.add('visible');
         pintarMenu();
@@ -281,10 +322,10 @@ export function crearCarrera(ctx) {
         orden.forEach((i, k) => { gs[i] = M.nuevaGata(P, R, R.gatas[i], k); });
         esc.podio.visible = false;
         const tactil = c ? c.tactil : !!(ctx.tactil && ctx.tactil());
-        c = { fase: 'intro', R, P, gs, yo: sel, t: 0, tc: 0, rnd: M.azar((Math.random() * 1e9) | 0), ultima: false, pausa: false, tactil, sacudir: 0, acelCuenta: 0, mapaEsc: null };
+        c = { fase: 'intro', R, P, gs, yo: sel, t: 0, tc: 0, rnd: M.azar((Math.random() * 1e9) | 0), ultima: false, pausa: false, tactil, sacudir: 0, acelCuenta: 0, mapaEsc: null, W: M.nuevosObjetos(R, P), firmaObj: '' };
         firmaTabla = '';
         for (const e of [menuEl, finalEl, pausaEl, avisoEl, velEl]) e.classList.remove('visible');
-        for (const e of [arriba, tablaEl, mapa, ayudaEl]) mostrar(e, false);
+        for (const e of [arriba, tablaEl, mapa, ayudaEl, objEl]) mostrar(e, false);
         tituloEl.textContent = ''; tituloEl.append(tx(R.nombre));
         const sm = document.createElement('small'); sm.textContent = tx(TXT_CARRERA.saltarIntro); tituloEl.appendChild(sm);
         mostrar(tituloEl, true);
@@ -297,9 +338,10 @@ export function crearCarrera(ctx) {
         mostrar(tituloEl, false);
         semEl.classList.add('visible');
         for (const e of [arriba, tablaEl, mapa]) mostrar(e, true);
+        mostrar(objEl, !!c.R.objetos.activos); mostrar(bObjeto, !!c.R.objetos.activos);
         mostrar(ayudaEl, !c.tactil); ayudaEl.textContent = tx(TXT_CARRERA.ayuda);
         tact.classList.toggle('visible', c.tactil);
-        bIzq.textContent = TXT_CARRERA.teclas.izq; bDer.textContent = TXT_CARRERA.teclas.der; bSalto.textContent = tx(TXT_CARRERA.teclas.salto); bFreno.textContent = tx(TXT_CARRERA.teclas.freno); bAcel.textContent = tx(TXT_CARRERA.teclas.acel);
+        bIzq.textContent = TXT_CARRERA.teclas.izq; bDer.textContent = TXT_CARRERA.teclas.der; bSalto.textContent = tx(TXT_CARRERA.teclas.salto); bFreno.textContent = tx(TXT_CARRERA.teclas.freno); bAcel.textContent = tx(TXT_CARRERA.teclas.acel); bObjeto.textContent = tx(TXT_CARRERA.teclas.objeto);
         mostrar(bAcel, !c.R.tactil.autoAcelerar);
         c.camLista = false;
     }
@@ -334,7 +376,7 @@ export function crearCarrera(ctx) {
         const orden = M.puestos(c.gs), mia = c.gs[c.yo], puesto = orden.indexOf(mia);
         esc.ponerPodio(orden);
         semEl.classList.remove('visible'); velEl.classList.remove('visible'); tact.classList.remove('visible'); avisoEl.classList.remove('visible');
-        for (const e of [arriba, tablaEl, mapa, ayudaEl]) mostrar(e, false);
+        for (const e of [arriba, tablaEl, mapa, ayudaEl, objEl]) mostrar(e, false);
         finalEl.textContent = '';
         el('', finalEl, 'h2').textContent = `${tx(TXT_CARRERA.resultados)} · ${ORD[L][puesto] || ORD.es[puesto]}`;
         const tb = el('', finalEl, 'table');
@@ -425,6 +467,19 @@ export function crearCarrera(ctx) {
             });
         }
         velEl.classList.toggle('visible', g.turbo > 0 && c.fase === 'corre');
+        // Casilla del objeto: la ruleta pasa por los íconos y se detiene en el que salió
+        if (R.objetos.activos) {
+            const ruleta = g.ruleta > 0, clave = ruleta ? M.OBJETOS[Math.floor(c.tc * 14) % M.OBJETOS.length] : g.objeto;
+            const firma = `${clave}|${ruleta}`;
+            if (firma !== c.firmaObj) {
+                c.firmaObj = firma;
+                const k = objLienzo.getContext('2d'); k.clearRect(0, 0, 48, 48);
+                if (clave) pintarIcono(k, clave, R.objetos[clave].color, 4, 4, 40);
+                if (ruleta) sfx.ruleta();
+                objEl.classList.toggle('listo', !!g.objeto && !ruleta);
+                objNombre.textContent = g.objeto && !ruleta ? `${tx(R.objetos[g.objeto].nombre)}${c.tactil ? '' : ' · ' + tx(TXT_CARRERA.usar)}` : '';
+            }
+        }
         // Minimapa
         const k = mapa.getContext('2d'), W = mapa.width, Hh = mapa.height;
         if (!c.mapaEsc) {
@@ -472,11 +527,11 @@ export function crearCarrera(ctx) {
         }
         if (c.fase !== 'corre' && c.fase !== 'fin') return;
         c.t += dt;
+        const extra = { gs: c.gs, W: c.W };
+        const ents = c.gs.map((g, i) => (i === c.yo && c.fase === 'corre' ? entrada() : M.entradaIA(g, R, P, c.rnd, c.gs[c.yo], extra)));
         for (let i = 0; i < c.gs.length; i++) {
             const g = c.gs[i];
-            const mia = i === c.yo && c.fase === 'corre';
-            const ent = mia ? entrada() : M.entradaIA(g, R, P, c.rnd, c.gs[c.yo]);
-            const ev = M.pasoGata(g, ent, dt, R, P, c.t);
+            const ev = M.pasoGata(g, ents[i], dt, R, P, c.t);
             if (i !== c.yo) continue;
             for (const e of ev) {
                 if (e === 'salto') sfx.salto();
@@ -490,6 +545,26 @@ export function crearCarrera(ctx) {
                 else if (e === 'vuelta') { sfx.vuelta(); if (M.vueltaDe(g, R, P) === R.vueltas) { c.ultima = true; aviso(tx(TXT_CARRERA.ultima), 2); } }
                 else if (e === 'meta') { sfx.meta(); aviso(tx(TXT_CARRERA.meta), 2.2); c.fase = 'fin'; c.tMeta = c.t; esc.confeti(g.x, g.y, g.z); }
             }
+        }
+        // Objetos: cajas, ruleta, lo que se usa y a quién le pega
+        for (const e of M.pasoObjetos(c.W, c.gs, ents, dt, R, P, c.rnd)) {
+            const g = c.gs[e.k], mia = e.k === c.yo, mio = e.de === c.yo;
+            if (e.e === 'usa' && e.o === 'aspiradora') {
+                const delante = c.gs.filter(x => x.av > g.av && x.fin === null).reduce((a, x) => Math.max(a, x.av), g.av);
+                esc.lanzarAspiradora(g.av, delante + 8, R.objetos.aspiradora.segundos * 0.7);
+                sfx.aspiradora(); if (!mia) aviso(tx(TXT_CARRERA.aspiradora), 1.4);
+            }
+            if (e.e === 'usa' && e.o === 'hierba') for (let k = 0; k < 18; k++) esc.emitir(g.x, g.y + 0.8, g.z, (Math.random() - 0.5) * 8, 1 + Math.random() * 2, (Math.random() - 0.5) * 8, k % 2 ? '#5ac85a' : '#a8f07a', 0.8, 0.22, 2);
+            if (e.e === 'golpe') esc.estrellas(g.x, g.y, g.z);
+            if (mia) {
+                if (e.e === 'caja') sfx.caja();
+                else if (e.e === 'listo') sfx.listo();
+                else if (e.e === 'usa') { if (e.o === 'pluma') { sfx.turbo(); aviso(tx(TXT_CARRERA.turbo), 0.8); } else if (e.o !== 'aspiradora') sfx.lanza(); }
+                else if (e.e === 'golpe') { sfx.golpe(); aviso(tx(TXT_CARRERA.golpe), 1.2); c.sacudir = 0.35; }
+                else if (e.e === 'come') { sfx.come(); aviso(tx(TXT_CARRERA.come), 1.4); }
+                else if (e.e === 'reves') { sfx.reves(); aviso(tx(TXT_CARRERA.reves), 1.8); }
+                else if (e.e === 'susto') { aviso(tx(TXT_CARRERA.susto), 1.4); c.sacudir = 0.3; }
+            } else if (mio && (e.e === 'golpe' || e.e === 'come')) sfx.miau(); // le diste a otra
         }
         M.chocarGatas(c.gs, R);
         if (c.fase === 'fin') esc.animarLona('agita', c.tc);
@@ -520,7 +595,7 @@ export function crearCarrera(ctx) {
         paso(dt);
         if (!c) return;
         if (c.fase === 'final') { c.tFinal += dt; esc.actualizarParticulas(dt); esc.animarLona('agita', c.tc); camaraPodio(); return; }
-        esc.dibujar(c.gs, dt, c.tc);
+        esc.dibujar(c.gs, dt, c.tc, c.W);
         if (c.fase === 'fin') camaraMeta(dt); else camaraSeguir(dt);
         if (c.avisoHasta && c.tc > c.avisoHasta) { avisoEl.classList.remove('visible'); c.avisoHasta = 0; }
         pintarHud();
