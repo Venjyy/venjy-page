@@ -78,7 +78,7 @@ import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
 import { nivelDeMs, barrasDeMs } from '../online/ping.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
-import { datosInicio, fraseAlAzar } from './inicio-datos.js';
+import { datosInicio, fraseAlAzar, consejoAlAzar, avanceCarga } from './inicio-datos.js';
 import { aplicarPoses } from '../datos/gestos.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
@@ -484,15 +484,65 @@ async function jugar(id) {
 // ---------------------------------------------------------
 let enJuego = false;
 // cx: conexión de la sala cooperativa (null = un jugador)
+// Pantalla de carga: título, barra por etapas reales de arrancar, consejo al azar (mundo/datos/inicio.json → carga)
+let etapaCarga = async () => {};
+let cerrarCarga = async () => {};
+function abrirCarga(d) {
+    const c = d.carga, a = c.aspecto, t = c.tiempos, pant = $('pantalla-carga');
+    const T = x => (x && (x[idioma] || x.es)) || '';
+    const desde = performance.now();
+    pant.style.setProperty('--carga-fondo', a.fondo);
+    pant.style.setProperty('--carga-fondo2', a.fondo2);
+    pant.style.setProperty('--carga-barra', a.barra);
+    pant.style.setProperty('--carga-barra-fondo', a.barraFondo);
+    pant.style.setProperty('--carga-texto', a.texto);
+    pant.style.setProperty('--carga-cuadro', a.cuadro + 'px');
+    pant.style.setProperty('--carga-salida', t.salida + 's');
+    $('carga-titulo').textContent = T(c.titulo);
+    const consejo = consejoAlAzar(d, idioma);
+    $('carga-consejo').textContent = consejo ? `${T(c.rotuloConsejo)}: ${consejo}` : '';
+    pant.classList.remove('saliendo');
+    pant.hidden = false;
+    const poner = (clave, nombre) => {
+        const n = avanceCarga(d, clave);
+        $('carga-relleno').style.width = n + '%';
+        $('carga-barra').setAttribute('aria-valuenow', String(n));
+        $('carga-etapa').textContent = nombre;
+    };
+    poner('terreno', T(c.etapas.terreno && c.etapas.terreno.nombre));
+    // Cede un cuadro para que se pinte la barra antes del trabajo pesado de la etapa (rAF puede no correr en segundo plano)
+    etapaCarga = async clave => {
+        poner(clave, T(c.etapas[clave] && c.etapas[clave].nombre));
+        await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 0)); setTimeout(r, 60); });
+    };
+    cerrarCarga = async () => {
+        poner(null, '');
+        const falta = t.minimo * 1000 - (performance.now() - desde);
+        if (falta > 0) await new Promise(r => setTimeout(r, falta));
+    };
+}
+function ocultarCarga() {
+    const pant = $('pantalla-carga');
+    if (pant.hidden) return;
+    const seg = parseFloat(pant.style.getPropertyValue('--carga-salida')) || 0;
+    pant.classList.add('saliendo');
+    setTimeout(() => { pant.hidden = true; pant.classList.remove('saliendo'); }, seg * 1000 + 30);
+}
+
 function iniciarJuego(guardado, cx = null) {
     if (enJuego) return;
     enJuego = true;
     mostrar('menu-mundos');
     $('lista-mundos').hidden = true;
     for (const id of ['nuevo-mundo', 'importar', 'volver-titulo']) $(id).hidden = true;
-    $('carga').hidden = false;
-    $('carga').textContent = tx().generando;
-    setTimeout(() => arrancar(guardado, cx).catch(err => { console.error(err); $('carga').textContent = 'Error: ' + err.message; }), 30);
+    $('carga').hidden = true;
+    cargarDatos('inicio').then(j => datosInicio(j)).then(d => {
+        abrirCarga(d);
+        setTimeout(() => arrancar(guardado, cx).catch(err => {
+            console.error(err);
+            $('carga-etapa').textContent = 'Error: ' + err.message;
+        }), 30);
+    });
 }
 
 async function arrancar(guardado, cx = null) {
@@ -572,6 +622,7 @@ async function arrancar(guardado, cx = null) {
     jugador.pitch = guardado.jugador ? guardado.jugador.pitch : 0;
 
     // ---- Sistemas ----
+    await etapaCarga('sistemas');
     const inventario = new Inventario();
     inventario.cargar(guardado.inventario);
     const hud = crearHUD({ inventario, idioma });
@@ -660,6 +711,7 @@ async function arrancar(guardado, cx = null) {
     jugador.vivo = true;
 
     // ---- Criaturas del creativo, en coordenadas desplazadas ----
+    await etapaCarga('amigos');
     const vista = vistaDesplazada({ scene, mundo, jugador, camara, dy: DY });
     const ctxCriaturas = { datos, terreno, mundo: vista.mundo, jugador: vista.jugador, materiales };
     const gatas = crearGatas(vista.grupo, ctxCriaturas);
@@ -673,6 +725,7 @@ async function arrancar(guardado, cx = null) {
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
 
     // ---- Mundo vivo: partículas, ganado, monstruos, proyectiles, combate y pesca ----
+    await etapaCarga('mundo');
     const particulas = crearParticulas({ scene, atlasLienzo });
     const ganado = crearGanado({ animales, entidades, inventario, jugador, dy: DY, scene, hud, idioma });
     ganado.cargar(guardado.ganado);
@@ -758,6 +811,7 @@ async function arrancar(guardado, cx = null) {
     };
     // Skin, tercera persona (F5) y cámara de cine con los amigos
     const skinInicial = cargarSkin();
+    await etapaCarga('escenas');
     const camaras = crearCamaras({ scene, camara, mundo, jugador, skin: skinInicial, tinteMundo: materiales.solido.color, dy: DY, fabrica: mano.fabrica, entradaPose });
     // ponerSkin acepta la descripción o la clave de una base ('pony', 'venjy'…) para probar
     let skinActual = skinInicial;
@@ -989,6 +1043,7 @@ async function arrancar(guardado, cx = null) {
     // Destinos de zonas del portafolio en coordenadas del mundo (y del creativo + desnivel)
     const destinosDev = {};
     for (const [k, d] of Object.entries(destinosZonas({ terreno, datos }))) destinosDev[k] = { x: d.x, z: d.z, y: d.y === undefined ? undefined : d.y + DY };
+    await etapaCarga('datos');
     const comandosDev = crearComandosDev({
         jugador, vida, inventario, enemigos, jefes, gatas, escenas, hud, O, B, nombreDe, idioma,
         destinos: destinosDev,
@@ -1881,8 +1936,9 @@ async function arrancar(guardado, cx = null) {
     };
 
     // ---- Bucle ----
-    $('carga').hidden = true;
+    await cerrarCarga();
     mostrar(null);
+    ocultarCarga();
     $('hud').hidden = false;
     if (vida.muerto) { $('causa-muerte').textContent = ''; mostrar('muerte'); }
     entrar();

@@ -621,6 +621,20 @@
             <h2 class="in-titulo" data-es="Frases junto al logo (sale una al azar)" data-en="Splashes next to the logo (one at random)">Frases junto al logo (sale una al azar)</h2>
             <div id="in-frases" class="lista-textos"></div>
             <button id="in-agregar" class="boton chico" type="button" data-es="Agregar frase" data-en="Add splash">Agregar frase</button>
+            <h2 class="in-titulo" data-es="Pantalla de carga (vista previa)" data-en="Loading screen (preview)">Pantalla de carga (vista previa)</h2>
+            <div id="in-c-vista" class="in-carga-vista" aria-label="Vista previa de la carga">
+                <p id="in-c-titulo" class="in-c-titulo"></p>
+                <div class="in-c-barra"><i id="in-c-relleno"></i></div>
+                <p id="in-c-etapa" class="in-c-etapa"></p>
+                <p id="in-c-consejo" class="in-c-consejo"></p>
+            </div>
+            <div class="fila-botones">
+                <button id="in-c-otro" class="boton chico" type="button" data-es="Otro consejo" data-en="Another tip">Otro consejo</button>
+                <label class="campo in-c-etapa-sel"><span data-es="Etapa mostrada" data-en="Stage shown">Etapa mostrada</span><select id="in-c-sel"></select></label>
+            </div>
+            <h2 class="in-titulo" data-es="Consejos de la carga (sale uno al azar)" data-en="Loading tips (one at random)">Consejos de la carga (sale uno al azar)</h2>
+            <div id="in-consejos" class="lista-textos"></div>
+            <button id="in-c-agregar" class="boton chico" type="button" data-es="Agregar consejo" data-en="Add tip">Agregar consejo</button>
             <p class="ayuda" data-es="Lo que dejes vacío usa el valor del código (mundo/supervivencia/inicio-datos.js). Ctrl+S guarda."
                data-en="Anything left empty uses the code value (mundo/supervivencia/inicio-datos.js). Ctrl+S saves.">Lo que dejes vacío usa el valor del código (mundo/supervivencia/inicio-datos.js). Ctrl+S guarda.</p>
         </section>
@@ -632,6 +646,14 @@
             <section class="panel">
                 <h2 data-es="Cómo se ve la frase" data-en="Splash look">Cómo se ve la frase</h2>
                 <div id="in-aspecto" class="campos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Pantalla de carga: textos y etapas" data-en="Loading screen: texts and stages">Pantalla de carga: textos y etapas</h2>
+                <div id="in-c-textos" class="campos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Pantalla de carga: colores y tiempos" data-en="Loading screen: colors and times">Pantalla de carga: colores y tiempos</h2>
+                <div id="in-c-aspecto" class="campos"></div>
             </section>
             <section class="panel acciones">
                 <div class="fila-botones">

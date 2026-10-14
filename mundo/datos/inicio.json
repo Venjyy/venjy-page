@@ -15,5 +15,68 @@
       { "es": "¡Hecho en Chile!", "en": "Made in Chile!" }
     ],
     "frase": { "color": "#ffff55", "giro": -18, "pulso": 0.08, "ritmo": 1.6, "x": -10, "y": 40 }
+  },
+  "carga": {
+    "titulo": { "es": "Generando el mundo…", "en": "Generating the world…" },
+    "rotuloConsejo": { "es": "Consejo", "en": "Tip" },
+    "etapas": {
+      "terreno": {
+        "nombre": { "es": "Levantando el terreno", "en": "Raising the terrain" },
+        "peso": 4
+      },
+      "sistemas": {
+        "nombre": { "es": "Armando inventario y sistemas", "en": "Setting up inventory and systems" },
+        "peso": 2
+      },
+      "amigos": {
+        "nombre": { "es": "Llamando a los amigos", "en": "Calling the friends" },
+        "peso": 2
+      },
+      "mundo": {
+        "nombre": { "es": "Poblando el mundo", "en": "Populating the world" },
+        "peso": 2
+      },
+      "escenas": {
+        "nombre": { "es": "Preparando las escenas", "en": "Preparing the scenes" },
+        "peso": 3
+      },
+      "datos": {
+        "nombre": { "es": "Cargando los últimos datos", "en": "Loading the last data" },
+        "peso": 1
+      }
+    },
+    "consejos": [
+      {
+        "es": "Las gatas Mila y Gala aceptan caricias: acércate despacio.",
+        "en": "Mila and Gala the cats love pets: approach slowly."
+      },
+      {
+        "es": "Habla con tus amigos para subir la amistad y desbloquear cosas.",
+        "en": "Talk to your friends to raise friendship and unlock things."
+      },
+      {
+        "es": "Duerme en una cama para fijar tu punto de reaparición.",
+        "en": "Sleep in a bed to set your respawn point."
+      },
+      {
+        "es": "Un mazo de cartas propio hace el duelo mucho más justo.",
+        "en": "Building your own deck makes the duel a lot fairer."
+      },
+      {
+        "es": "Con la tecla L cambias el idioma sin salir del juego.",
+        "en": "Press L to switch language without leaving the game."
+      },
+      { "es": "Guarda la partida antes de enfrentar a un jefe.", "en": "Save the game before facing a boss." },
+      { "es": "Invita a hasta 7 amigos desde «Con amigos».", "en": "Invite up to 7 friends from “With friends”." }
+    ],
+    "aspecto": {
+      "fondo": "#6b4a2f",
+      "fondo2": "#5a3d26",
+      "barra": "#5aa532",
+      "barraFondo": "#2b2b2b",
+      "texto": "#ffffff",
+      "cuadro": 64
+    },
+    "tiempos": { "minimo": 1.2, "salida": 0.35 }
   }
 }
