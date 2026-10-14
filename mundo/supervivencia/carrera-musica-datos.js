@@ -1,15 +1,12 @@
 // =========================================================
 // VENJY · Supervivencia · Música de la carrera: los temas como datos (puro, sin navegador)
-// Lo toca carrera-musica.js con los instrumentos de musica.js. Formato de un tema y sus capas: ver abajo.
-// Es el formato que podrá editar el Estudio (editor de música, pendiente).
+// Lo toca carrera-musica.js con los instrumentos de musica-instrumentos.js y el motor de musica-motor.js.
+// Formato de un tema y sus capas: ver abajo y estudio/esquemas/musica.schema.json. Un tema de mundo/datos/musica.json
+// con la misma clave (living, cocina, patio, techo, podio) lo reemplaza; se editan en el Estudio, pestaña Música.
 // =========================================================
-// Acordes en MIDI (raíz, tercera, quinta, séptima opcional)
-export const AC = {
-    Am: [45, 48, 52], F: [41, 45, 48], C: [48, 52, 55], G: [43, 47, 50],
-    Dm7: [50, 53, 57, 60], G7: [43, 47, 50, 53], A7: [45, 49, 52, 55],
-    Em: [40, 43, 47], D: [38, 42, 45], B: [35, 39, 42],
-    Cm: [48, 51, 55], Ab: [44, 48, 51], Eb: [39, 43, 46], Bb: [46, 50, 53]
-};
+import { AC, INSTRUMENTOS, tocarPaso } from './musica-motor.js';
+export { AC, INSTRUMENTOS, tocarPaso }; // el motor es el mismo de musica.json (musica-motor.js)
+
 // Melodías de 4 compases × 16 semicorcheas (0 = silencio); cada nota dura hasta la siguiente
 const MEL = {
     living: [
@@ -125,50 +122,4 @@ export const TEMAS_CARRERA = {
 };
 export const LISTA_TEMAS = Object.keys(TEMAS_CARRERA);
 
-// Batería que no está en musica.js
-const G = {
-    platillo: (I, c, o, t, vol) => I.ruido(c, o, t, vol, 0.8, 5000, 'highpass'),
-    cajaGrande: (I, c, o, t, vol) => I.ruido(c, o, t, vol, 0.3, 1500, 'bandpass')
-};
-// Instrumentos que puede usar una capa (los de musica.js más los de G) y los niveles
-export const INSTRUMENTOS = ['piano', 'pulsar', 'banjo', 'cajita', 'steel', 'chip', 'bajo', 'bajoSierra', 'colchon', 'rhodes', 'kick', 'caja', 'hat', 'madera', ...Object.keys(G)];
 export const NIVELES = TODO;
-const DE_ACORDE = new Set(['colchon', 'rhodes']); // reciben todas las notas juntas
-// Duración (en pasos) de cada nota de una melodía: hasta la siguiente, como mucho 6
-const largos = new WeakMap();
-function largoDe(notas) {
-    let l = largos.get(notas);
-    if (!l) {
-        l = notas.map((n, i) => { if (!n) return 0; let j = 1; while (j < 6 && !notas[(i + j) % notas.length]) j++; return j; });
-        largos.set(notas, l);
-    }
-    return l;
-}
-// Toca el paso i (0-15) del compás k de un tema; s = segundos por semicorchea; I = instrumentos de musica.js
-export function tocarPaso(I, def, c, o, t, i, k, s, nivel) {
-    const ac = AC[def.prog[k % def.prog.length]] || AC.C, j = (k % 4) * 16 + i;
-    const de = arr => arr[j % arr.length];
-    for (const p of def.capas) {
-        if (!p.niveles.includes(nivel) || (p.segunda && (k >> 2) % 2 === 0)) continue;
-        const dur = s * (p.dur || 1), oct = p.octava || 0;
-        if (p.ritmo) {
-            const g = de(p.ritmo); if (g !== 'x' && g !== 'o') continue;
-            const v = p.vol * (g === 'o' ? 0.5 : 1);
-            if (G[p.inst]) G[p.inst](I, c, o, t, v); else I[p.inst](c, o, t, v);
-        } else if (p.rel) {
-            const r = de(p.rel); if (r === null || r === undefined) continue;
-            I[p.inst](c, o, t, ac[0] + oct + r, dur, p.vol);
-        } else if (p.acorde) {
-            if (!p.pasos.includes(i)) continue;
-            const notas = (p.intervalos ? p.intervalos.map(x => ac[0] + x) : ac).map(m => m + oct);
-            if (DE_ACORDE.has(p.inst)) I[p.inst](c, o, t, notas, dur, p.vol);
-            else for (const m of notas) I[p.inst](c, o, t, m, dur, p.vol);
-        } else if (p.notas) {
-            const n = de(p.notas); if (!n) continue;
-            I[p.inst](c, o, t, n + oct, p.dur ? dur : s * largoDe(p.notas)[j % p.notas.length] * 0.9, p.vol);
-        } else if (p.arpegio) {
-            const idx = p.arpegio[i % p.arpegio.length];
-            I[p.inst](c, o, t, ac[idx % ac.length] + oct, dur, p.vol);
-        }
-    }
-}

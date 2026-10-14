@@ -1003,15 +1003,10 @@
         },
         "temas": {
           "type": "object",
+          "description": "Tema de cada pista: living, cocina, patio, techo, podio o la clave de un tema de musica.json (pestaña Música).",
           "additionalProperties": {
             "type": "string",
-            "enum": [
-              "living",
-              "cocina",
-              "patio",
-              "techo",
-              "podio"
-            ]
+            "pattern": "^[a-z][a-z0-9_-]{0,31}$"
           }
         }
       },

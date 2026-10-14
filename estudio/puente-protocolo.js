@@ -8,7 +8,7 @@ export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
 // Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas; fase 6: poses;
 // pestaña Píxeles: iconos y cartas-arte). borradores.json no: el juego lo ignora.
-export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera'];
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera', 'musica'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 // Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json
@@ -35,6 +35,8 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //   objeto({ clave })             pone en tu mano ese objeto de OBJETOS (o un id numérico), dándotelo si no lo tienes (pestaña Objetos)
 //   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
 //   carrera({ accion })           'ver' | 'mila' | 'gala' | 'terminar': la carrera de gatas (7h-1; 'ver' = la sala sin menú)
+//   musica({ accion, tema?, instrumentos?, nivel?, tempo? })
+//                                  'tocar' suena ese tema (vista previa de la pestaña Música; calla la música del juego) o 'parar'
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
@@ -124,6 +126,19 @@ export function crearManejador(juego) {
                     if (m.pista !== undefined && (typeof m.pista !== 'string' || !/^[a-z0-9_]{1,24}$/.test(m.pista))) return error('pista no válida');
                     if (!juego.carrera) return error('este juego no tiene la carrera de gatas');
                     await juego.carrera({ accion: m.accion, pista: m.pista });
+                    return { ...base, tipo: 'ok' };
+                }
+                case 'musica': {
+                    // Pestaña Música: tocar un tema (con sus instrumentos propios) en el juego, o parar
+                    if (!['tocar', 'parar'].includes(m.accion)) return error('accion de música no válida (tocar o parar)');
+                    if (m.accion === 'tocar') {
+                        if (!esObjeto(m.tema) || !Array.isArray(m.tema.capas) || !esNum(m.tema.bpm) || m.tema.bpm <= 0) return error('tema no válido (bpm y capas)');
+                        if (m.instrumentos !== undefined && m.instrumentos !== null && !esObjeto(m.instrumentos)) return error('instrumentos tiene que ser un objeto');
+                        if (m.nivel !== undefined && (typeof m.nivel !== 'string' || !/^[a-z][a-z0-9_-]{0,23}$/.test(m.nivel))) return error('nivel no válido');
+                        if (m.tempo !== undefined && !(esNum(m.tempo) && m.tempo > 0)) return error('tempo no válido');
+                    }
+                    if (!juego.musica) return error('este juego no sabe tocar música');
+                    await juego.musica({ accion: m.accion, tema: m.tema, instrumentos: m.instrumentos || null, nivel: m.nivel, tempo: m.tempo });
                     return { ...base, tipo: 'ok' };
                 }
                 case 'objeto': {

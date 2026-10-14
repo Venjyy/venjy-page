@@ -12,103 +12,14 @@
 //      tema de bienvenida.
 //  · Pelea de jefe: un loop tenso en menor; apaga lo demás.
 // El ambiente baja cuando suena un tema. Interruptor «Música» en la pausa.
+// Un tema de mundo/datos/musica.json con la misma clave reemplaza al de aquí (musica-datos.js; pestaña Música del Estudio).
 // =========================================================
-import { cuandoHayaAudio, bufferRuido } from '../criaturas/cuerpo.js';
+import { cuandoHayaAudio } from '../criaturas/cuerpo.js';
+import { I } from './musica-instrumentos.js'; // instrumentos (puros: también suenan en el Estudio)
+import { cargarMusica, temaMusica, enPrueba, instrumentosPropios } from './musica-datos.js';
+import { tocarPaso } from './musica-motor.js';
 
 const CLAVE = 'venjy-supervivencia-musica';
-const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-
-// ---------------------------------------------------------
-// Instrumentos: (ctx, salida, t, midi, dur, vol)
-// ---------------------------------------------------------
-function env(ctx, t, a, d, vol) {
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + a);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
-    return g;
-}
-function osc(ctx, tipo, f, t, fin, destino, detune = 0) {
-    const o = ctx.createOscillator(); o.type = tipo; o.frequency.value = f; o.detune.value = detune;
-    o.connect(destino); o.start(t); o.stop(fin + 0.05);
-    return o;
-}
-const I = {
-    piano(ctx, out, t, m, dur, vol) {
-        const f = mtof(m), d = Math.max(0.6, dur * 2.2);
-        const g = env(ctx, t, 0.006, d, vol);
-        g.connect(out);
-        osc(ctx, 'sine', f, t, t + d, g);
-        const g2 = ctx.createGain(); g2.gain.value = 0.25; g2.connect(g);
-        osc(ctx, 'triangle', f * 2, t, t + d, g2);
-    },
-    pulsar(ctx, out, t, m, dur, vol) { // cuerda pulsada
-        const f = mtof(m), d = Math.max(0.35, dur * 1.6);
-        const g = env(ctx, t, 0.004, d, vol);
-        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
-        lp.frequency.setValueAtTime(Math.min(8000, f * 8), t); lp.frequency.exponentialRampToValueAtTime(Math.max(200, f * 1.5), t + d);
-        lp.connect(g); g.connect(out);
-        osc(ctx, 'triangle', f, t, t + d, lp);
-        const g2 = ctx.createGain(); g2.gain.value = 0.35; g2.connect(lp);
-        osc(ctx, 'sawtooth', f, t, t + d, g2, 4);
-    },
-    banjo(ctx, out, t, m, dur, vol) { I.pulsar(ctx, out, t, m, 0.18, vol * 0.9); },
-    cajita(ctx, out, t, m, dur, vol) {
-        const f = mtof(m), d = 1.1;
-        const g = env(ctx, t, 0.003, d, vol); g.connect(out);
-        osc(ctx, 'sine', f, t, t + d, g);
-        const g2 = ctx.createGain(); g2.gain.value = 0.18; g2.connect(g);
-        osc(ctx, 'sine', f * 4.01, t, t + 0.3, g2);
-    },
-    steel(ctx, out, t, m, dur, vol) {
-        const f = mtof(m), d = 0.7;
-        const g = env(ctx, t, 0.004, d, vol); g.connect(out);
-        osc(ctx, 'sine', f, t, t + d, g);
-        for (const [k, a] of [[2, 0.5], [3.01, 0.22], [4.2, 0.1]]) { const gk = ctx.createGain(); gk.gain.value = a; gk.connect(g); osc(ctx, 'sine', f * k, t, t + d * 0.6, gk); }
-    },
-    chip(ctx, out, t, m, dur, vol) {
-        const g = env(ctx, t, 0.003, Math.max(0.08, dur * 0.9), vol * 0.6); g.connect(out);
-        osc(ctx, 'square', mtof(m), t, t + dur, g);
-    },
-    bajo(ctx, out, t, m, dur, vol) {
-        const g = env(ctx, t, 0.01, Math.max(0.25, dur), vol); g.connect(out);
-        osc(ctx, 'triangle', mtof(m), t, t + dur + 0.3, g);
-        const g2 = ctx.createGain(); g2.gain.value = 0.4; g2.connect(g);
-        osc(ctx, 'sine', mtof(m - 12), t, t + dur + 0.3, g2);
-    },
-    bajoSierra(ctx, out, t, m, dur, vol) {
-        const g = env(ctx, t, 0.005, Math.max(0.12, dur), vol);
-        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700; lp.Q.value = 6;
-        lp.connect(g); g.connect(out);
-        osc(ctx, 'sawtooth', mtof(m), t, t + dur, lp);
-    },
-    colchon(ctx, out, t, notas, dur, vol) { // pad: acorde con ataque lento
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(vol, t + dur * 0.35);
-        g.gain.linearRampToValueAtTime(0.0001, t + dur);
-        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
-        lp.connect(g); g.connect(out);
-        for (const m of notas) { osc(ctx, 'sawtooth', mtof(m), t, t + dur, lp, -6); osc(ctx, 'sawtooth', mtof(m), t, t + dur, lp, 6); }
-    },
-    rhodes(ctx, out, t, notas, dur, vol) { for (const m of notas) I.piano(ctx, out, t, m, dur, vol / notas.length * 1.6); },
-    kick(ctx, out, t, vol) {
-        const g = env(ctx, t, 0.002, 0.3, vol); g.connect(out);
-        const o = ctx.createOscillator(); o.type = 'sine';
-        o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.2);
-        o.connect(g); o.start(t); o.stop(t + 0.35);
-    },
-    ruido(ctx, out, t, vol, dur, f, tipo) {
-        const s = ctx.createBufferSource(); s.buffer = bufferRuido(ctx);
-        const fl = ctx.createBiquadFilter(); fl.type = tipo; fl.frequency.value = f;
-        const g = env(ctx, t, 0.002, dur, vol);
-        s.connect(fl).connect(g).connect(out);
-        s.start(t, Math.random() * 1.5, dur + 0.05);
-    },
-    caja(ctx, out, t, vol) { I.ruido(ctx, out, t, vol, 0.16, 1800, 'bandpass'); },
-    hat(ctx, out, t, vol) { I.ruido(ctx, out, t, vol * 0.5, 0.04, 7000, 'highpass'); },
-    madera(ctx, out, t, vol) { I.ruido(ctx, out, t, vol, 0.05, 1200, 'bandpass'); }
-};
 
 // Escalas y acordes en MIDI
 const ACORDE = {
@@ -226,6 +137,7 @@ const TEMA_DE = { pony: 'pony', lona: 'lona', hadad: 'campamento', andy: 'campam
 const CON_MUSICA_PROPIA = ['salonas', 'conejeros'];
 
 export function crearMusica() {
+    cargarMusica();
     let encendida = true;
     try { encendida = localStorage.getItem(CLAVE) !== '0'; } catch (e) { /* sin almacenamiento */ }
     let audio = null, salida = null;
@@ -242,19 +154,24 @@ export function crearMusica() {
         salida.connect(eco); eco.connect(fb); fb.connect(eco); eco.connect(mezclaEco); mezclaEco.connect(a.master);
         for (const [nombre, def] of Object.entries(TEMAS)) {
             const g = a.ctx.createGain(); g.gain.value = 0; g.connect(salida);
-            pistas[nombre] = { def, g, objetivo: 0, siguiente: 0, i: 0, k: 0, sonando: false };
+            pistas[nombre] = { nombre, def, g, objetivo: 0, siguiente: 0, i: 0, k: 0, sonando: false };
         }
     });
 
-    // Programa los pasos de una pista hasta 0,25 s en el futuro
+    // Programa los pasos de una pista hasta 0,25 s en el futuro. Si musica.json trae un tema con esa clave (y no es
+    // borrador) suena ese, con sus capas (musica-motor.js; el nivel es el momento: dia, noche o cueva)
     function programar(p, estado) {
         const ctx = audio.ctx, ahora = ctx.currentTime;
-        const s = 60 / p.def.bpm / 4;
+        const json = temaMusica(p.nombre), def = json || p.def, P = def.pasos || 16;
+        const s = 60 / def.bpm / 4;
         if (!p.sonando) { p.sonando = true; p.siguiente = ahora + 0.05; p.i = 0; p.k = 0; }
         while (p.siguiente < ahora + 0.25) {
-            try { p.def.paso(ctx, p.g, p.siguiente, p.i, p.k, s, estado); } catch (e) { /* nota perdida */ }
+            try {
+                if (json) tocarPaso(I, json, ctx, p.g, p.siguiente, p.i, p.k, s, estado.modo, instrumentosPropios());
+                else p.def.paso(ctx, p.g, p.siguiente, p.i, p.k, s, estado);
+            } catch (e) { /* nota perdida */ }
             p.siguiente += s;
-            if (++p.i >= p.def.pasos) { p.i = 0; p.k++; }
+            if (++p.i >= P) { p.i = 0; p.k++; }
         }
     }
 
@@ -289,9 +206,9 @@ export function crearMusica() {
                 p.objetivo = obj;
             }
             pistas.ambiente.objetivo = enJefe ? 0 : Math.max(0, 1 - mayor * 1.4);
-            if (silencio) for (const p of Object.values(pistas)) p.objetivo = 0;
+            if (silencio || enPrueba()) for (const p of Object.values(pistas)) p.objetivo = 0; // (enPrueba: suena la vista previa del Estudio)
             for (const p of Object.values(pistas)) {
-                const vol = (pausa ? 0.35 : 1) * p.objetivo * p.def.vol;
+                const vol = (pausa ? 0.35 : 1) * p.objetivo * (temaMusica(p.nombre) || p.def).vol;
                 p.g.gain.setTargetAtTime(vol, audio.ctx.currentTime, 0.6);
                 if (p.objetivo > 0.01 && encendida) programar(p, { modo });
                 else if (p.objetivo <= 0.01 && p.g.gain.value < 0.002) p.sonando = false;

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "musica.schema.json",
+  "title": "Música del juego (mundo/datos/musica.json)",
+  "description": "Temas hechos de capas con patrones por paso, y sintetizadores propios. Un tema con la clave de uno del código lo reemplaza (carrera: living, cocina, patio, techo, podio; mundo: ambiente, venjy, pony, lona, campamento, iglu, lenera, playa, jefe). Con \"borrador\": true el juego no lo usa hasta que se aplique. Motor: mundo/supervivencia/musica-motor.js. Se edita en el Estudio, pestaña Música.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "instrumentos": {
+      "description": "Sintetizadores propios por clave; una capa los usa con \"inst\": \"<clave>\". La clave no puede ser la de un instrumento del código.",
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9_-]{0,31}$" },
+      "additionalProperties": { "$ref": "#/$defs/sinte" }
+    },
+    "temas": {
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+      "additionalProperties": { "$ref": "#/$defs/tema" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "midi": { "type": "integer", "minimum": 0, "maximum": 127 },
+    "niveles": {
+      "description": "En qué niveles suena la capa (sin la lista: siempre). Carrera: menu, cuenta, corre, ultima. Mundo: dia, noche, cueva.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,23}$" },
+      "maxItems": 12
+    },
+    "tema": {
+      "type": "object",
+      "required": ["bpm", "prog", "capas"],
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "borrador": { "description": "true = el juego no lo usa todavía (se aplica quitando la marca).", "type": "boolean" },
+        "uso": { "description": "Dónde va a sonar (ayuda al Estudio a ofrecer los niveles).", "type": "string", "enum": ["carrera", "mundo", "libre"] },
+        "bpm": { "type": "number", "minimum": 30, "maximum": 300 },
+        "pasos": { "description": "Pasos por compás (16 = 4/4 en semicorcheas, 12 = 3/4).", "type": "integer", "minimum": 4, "maximum": 32 },
+        "vol": { "description": "Volumen del tema (los del código andan entre 0,05 y 0,11).", "type": "number", "minimum": 0, "maximum": 1 },
+        "swing": { "description": "Atraso de los pasos impares (fracción de un paso).", "type": "number", "minimum": 0, "maximum": 0.5 },
+        "prog": {
+          "description": "Progresión: un acorde por compás (o cada acordePor compases). Nombres como Am, F#m7, Bbmaj7, Dsus4 o uno de «acordes».",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 12 },
+          "minItems": 1,
+          "maxItems": 16
+        },
+        "progs": {
+          "description": "Progresión distinta por nivel (p. ej. noche, cueva).",
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 12 }, "minItems": 1, "maxItems": 16 }
+        },
+        "acordePor": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "acordes": {
+          "description": "Acordes propios del tema: nombre → notas MIDI.",
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/midi" }, "minItems": 1, "maxItems": 6 }
+        },
+        "capas": { "type": "array", "items": { "$ref": "#/$defs/capa" }, "maxItems": 24 }
+      },
+      "additionalProperties": false
+    },
+    "capa": {
+      "description": "Una capa es de un solo tipo: ritmo (batería), rel (notas sobre la raíz del acorde), acorde, notas (melodía en MIDI) o arpegio. Un patrón dura 1 compás o 4.",
+      "type": "object",
+      "required": ["inst", "vol"],
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "nombre": { "type": "string", "maxLength": 40 },
+        "inst": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9_-]{0,31}$" },
+        "vol": { "type": "number", "minimum": 0, "maximum": 2 },
+        "dur": { "description": "Duración de cada nota en pasos (en notas, sin dur: hasta la siguiente).", "type": "number", "minimum": 0.05, "maximum": 64 },
+        "octava": { "description": "Corrimiento en semitonos (12 = una octava).", "type": "integer", "minimum": -48, "maximum": 48 },
+        "niveles": { "$ref": "#/$defs/niveles" },
+        "segunda": { "description": "Solo en la segunda vuelta de 4 compases.", "type": "boolean" },
+        "prob": { "description": "Probabilidad de que suene cada golpe o nota (1 = siempre).", "type": "number", "minimum": 0, "maximum": 1 },
+        "mudo": { "type": "boolean" },
+        "ritmo": { "type": "string", "pattern": "^[xo.]{4,128}$" },
+        "rel": { "type": "array", "items": { "type": ["integer", "null"], "minimum": -36, "maximum": 48 }, "minItems": 4, "maxItems": 128 },
+        "acorde": { "const": true },
+        "pasos": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 31 }, "maxItems": 32 },
+        "intervalos": { "type": "array", "items": { "type": "integer", "minimum": -24, "maximum": 48 }, "maxItems": 8 },
+        "notas": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 108 }, "minItems": 4, "maxItems": 128 },
+        "arpegio": { "type": "array", "items": { "type": ["integer", "null"], "minimum": 0, "maximum": 7 }, "minItems": 1, "maxItems": 32 }
+      },
+      "additionalProperties": false
+    },
+    "sinte": {
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "onda": { "type": "string", "enum": ["sine", "square", "sawtooth", "triangle", "ruido"] },
+        "ataque": { "description": "Segundos hasta el volumen máximo.", "type": "number", "minimum": 0.001, "maximum": 4 },
+        "caida": { "description": "Segundos mínimos que tarda en apagarse.", "type": "number", "minimum": 0.02, "maximum": 8 },
+        "largo": { "description": "Cuánto dura respecto a la nota (× duración).", "type": "number", "minimum": 0, "maximum": 8 },
+        "curva": { "type": "string", "enum": ["exp", "lineal"] },
+        "vol": { "type": "number", "minimum": 0, "maximum": 2 },
+        "transponer": { "type": "integer", "minimum": -48, "maximum": 48 },
+        "voces": { "description": "Osciladores al unísono (1 a 4).", "type": "integer", "minimum": 1, "maximum": 4 },
+        "desafino": { "description": "Separación de las voces en cents.", "type": "number", "minimum": 0, "maximum": 100 },
+        "golpe": { "description": "Nota MIDI con la que suena en un patrón de ritmo.", "$ref": "#/$defs/midi" },
+        "filtro": {
+          "type": "object",
+          "properties": {
+            "tipo": { "type": "string", "enum": ["lowpass", "highpass", "bandpass"] },
+            "frec": { "type": "number", "minimum": 20, "maximum": 20000 },
+            "hasta": { "description": "Frecuencia al final de la nota (barrido).", "type": "number", "minimum": 20, "maximum": 20000 },
+            "q": { "type": "number", "minimum": 0, "maximum": 30 }
+          },
+          "additionalProperties": false
+        },
+        "tono": {
+          "description": "Barrido de tono al empezar (bombo, láser): semitonos desde los que baja (o sube) y en cuántos segundos.",
+          "type": "object",
+          "properties": {
+            "desde": { "type": "number", "minimum": -48, "maximum": 48 },
+            "tiempo": { "type": "number", "minimum": 0.005, "maximum": 2 }
+          },
+          "additionalProperties": false
+        },
+        "vibrato": {
+          "type": "object",
+          "properties": {
+            "frec": { "type": "number", "minimum": 0.1, "maximum": 20 },
+            "cents": { "type": "number", "minimum": 0, "maximum": 200 }
+          },
+          "additionalProperties": false
+        },
+        "armonicos": {
+          "description": "Osciladores extra a una razón de la frecuencia (2 = una octava arriba).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "onda": { "type": "string", "enum": ["sine", "square", "sawtooth", "triangle"] },
+              "ratio": { "type": "number", "minimum": 0.25, "maximum": 16 },
+              "vol": { "type": "number", "minimum": 0, "maximum": 1 }
+            },
+            "additionalProperties": false
+          },
+          "maxItems": 4
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
