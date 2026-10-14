@@ -28,6 +28,8 @@
     "turnoLucho": { "$ref": "#/$defs/numeros", "description": "Turno de Lucho: enPartida (1 = la cámara lo mira también fuera del tutorial), pausa (s mirándolo antes de su primera jugada), mesa (s que la cámara se queda en la mesa tras su jugada)" },
     "planoLucho": { "$ref": "#/$defs/camara", "description": "Cámara que mira a Lucho en su turno: lado, alto (sobre la mesa), z (hacia ti) y mira" },
     "planoMesa": { "$ref": "#/$defs/camara", "description": "Cámara sobre la mesa cuando Lucho juega una carta: lado, alto (sobre la mesa), z (hacia ti) y mira" },
+    "coleccion": { "$ref": "#/$defs/numeros", "description": "Duelo: colección y mazo (cartas-coleccion.js). largo (cartas del mazo, 10-40), copias (máximo por carta, 1-4), azarExtra (cartas de más en la mano con el mazo al azar, 0-3), azarTodas (1 = el mazo al azar sale de todas las cartas, 0 = de tu colección), hechizosMin y hechizosMax (hechizos de un mazo al azar). Ver COLECCION" },
+    "coleccionInicial": { "$ref": "#/$defs/numeros", "description": "Copias de cada carta (por clave de CARTAS) con que parte un jugador que nunca tocó su colección; 0 = no la tiene. Ver COLECCION_INICIAL en cartas-coleccion.js" },
     "tutorial": {
       "type": "object",
       "description": "Tutorial del duelo: color, opacidad, pulso (veces por segundo) y borde (× la carta) del marco de lo que toca usar; leer = segundos que Lucho habla antes de jugar",

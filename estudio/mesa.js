@@ -4,6 +4,7 @@
 // Lucho y las cámaras (1.ª persona, enfoque y la lista de 3.ª persona). Comparte pantalla con el juego (pestaña
 // Mesa = el iframe de Juego más este panel). Cada cambio va en vivo (mensaje `datos`); «Abrir la mesa»,
 // «Abrir el tutorial» y «Cambiar vista» usan el mensaje `mesa`. Guardar escribe el JSON con If-Match, como Posiciones.
+// También los límites del mazo y la colección inicial del duelo (grupos «Colección y mazo» y «Colección inicial»).
 // =========================================================
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
@@ -30,9 +31,15 @@ const GRUPOS = [
     ['turnoLucho', 'Turno de Lucho: cámara', "Lucho's turn: camera", { enPartida: '1 = también fuera del tutorial', pausa: 'segundos mirándolo antes de jugar', mesa: 'segundos en la mesa tras su jugada' }],
     ['planoLucho', 'Cámara que mira a Lucho', 'Camera looking at Lucho', { lado: 'a tu derecha', alto: 'altura sobre la mesa', z: 'hacia ti' }],
     ['planoMesa', 'Cámara en la mesa (jugada de Lucho)', "Table camera (Lucho's play)", { lado: 'a tu derecha', alto: 'altura sobre la mesa', z: 'hacia ti' }],
+    // Colección y mazo (etapa A, punto 3): límites del armado y del mazo al azar, y con qué cartas parte cada jugador
+    ['coleccion', 'Colección y mazo', 'Collection and deck', { largo: 'cartas del mazo', copias: 'máximo de cada carta', azarExtra: 'cartas de más en la mano (mazo al azar)', azarTodas: '1 = al azar de todas las cartas, 0 = de tu colección', hechizosMin: 'mínimo de hechizos (al azar)', hechizosMax: 'máximo de hechizos (al azar)' }],
+    ['coleccionInicial', 'Colección inicial (copias de cada carta)', 'Starting collection (copies of each card)', {}],
     ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
+// Enteros con su tope (colección y mazo); el resto, según el valor
+const ENTEROS = { coleccion: { largo: [10, 40], copias: [1, 4], azarExtra: [0, 3], azarTodas: [0, 1], hechizosMin: [0, 40], hechizosMax: [0, 40] }, coleccionInicial: {} };
+const rangoGrupo = (g, k, v) => (ENTEROS[g] ? [...(ENTEROS[g][k] || [0, 4]), 1] : rango(k, v));
 const rango = (k, v) => GRADOS.has(k) ? [-180, 180, 1] : v > 10 ? [0, Math.max(600, v * 2), 1] : v > 3 ? [0, Math.max(10, v * 2), 0.1] : [-3, 3, 0.01];
 
 export async function montarMesa(ctx) {
@@ -48,10 +55,10 @@ export async function montarMesa(ctx) {
     function rotular(es, en, clase = '') { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); }
     const cambio = () => { ctx.puente.enviarDatos('cartas-mesa', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
 
-    function numero(obj, k, etiqueta) {
+    function numero(obj, k, etiqueta, grupo) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta ? `${k} · ${etiqueta}` : k;
-        const [min, max, paso] = rango(k, obj[k]);
+        const [min, max, paso] = rangoGrupo(grupo, k, obj[k]);
         const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = obj[k];
         const n = document.createElement('input'); n.type = 'number'; n.step = paso; n.value = obj[k]; n.style.width = '6em';
         const poner = v => { if (!Number.isFinite(v)) return; obj[k] = Math.round(v * 1000) / 1000; rg.value = obj[k]; n.value = obj[k]; cambio(); };
@@ -69,12 +76,12 @@ export async function montarMesa(ctx) {
         fila.append(s, c);
         return fila;
     }
-    function camara(obj, nombres = {}) {
+    function camara(obj, nombres = {}, grupo = null) {
         const out = [];
         for (const k of Object.keys(obj)) {
             if (k === 'nota') continue;
             if (k === 'mira') { obj.mira.forEach((_, i) => out.push(numero(obj.mira, i, ['mira: x (derecha)', 'mira: y (arriba)', 'mira: z (hacia ti)'][i]))); continue; }
-            if (typeof obj[k] === 'number') out.push(numero(obj, k, nombres[k]));
+            if (typeof obj[k] === 'number') out.push(numero(obj, k, nombres[k], grupo));
             else if (typeof obj[k] === 'string' && /^#[0-9a-f]{6}$/i.test(obj[k])) out.push(colorCampo(obj, k));
         }
         return out;
@@ -87,7 +94,7 @@ export async function montarMesa(ctx) {
     }
     function pintar() {
         caja.textContent = '';
-        for (const [clave, es, en, nombres] of GRUPOS) if (datos[clave]) caja.appendChild(bloque(t(es, en), camara(datos[clave], nombres)));
+        for (const [clave, es, en, nombres] of GRUPOS) if (datos[clave]) caja.appendChild(bloque(t(es, en), camara(datos[clave], nombres, clave)));
         // 3.ª persona: lista de cámaras (se agregan y se quitan)
         const lista = datos.terceras || (datos.terceras = []);
         lista.forEach((c, i) => {

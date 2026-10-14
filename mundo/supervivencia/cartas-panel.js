@@ -3,6 +3,7 @@
 import { CARTAS, FAMILIAS, NIVELES, PIDE_PROPIA, TXT_CARTAS } from './cartas-datos.js';
 import { partidaNivel, jugadas, aplicar, jugadaIA, atkDe, defDe } from './cartas.js';
 import { arteCarta, arteReverso } from './cartas-arte.js';
+import { mazoParaPartida } from './cartas-coleccion.js';
 
 export function crearPanelCartas(ctx = {}) {
     let idioma = ctx.idioma || 'es', e = null, nivel = 'facil', eleccion = null, timer = 0, abierto = false;
@@ -28,7 +29,9 @@ export function crearPanelCartas(ctx = {}) {
         el.addEventListener('keydown', ev => { if (ev.code === 'Enter' || ev.code === 'Space') { ev.preventDefault(); fn(); } });
     };
     function iniciar(n) {
-        nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel); eleccion = null; registro = []; mostrandoReglas = false; postura = 'ata';
+        // Tu mazo armado o al azar (ctx.inventario: tu colección; sin inventario, el mazo de siempre)
+        const semilla = (Math.random() * 1e9) | 0, tuyo = ctx.inventario ? mazoParaPartida(ctx.inventario, ctx.datos ? ctx.datos() : null, semilla) : null;
+        nivel = NIVELES[n] ? n : 'facil'; e = partidaNivel(nivel, tuyo ? { semilla, mazo: tuyo.mazo, manoExtra: tuyo.extra } : { semilla }); eleccion = null; registro = []; mostrandoReglas = false; postura = 'ata';
         pintar(); programar();
     }
     function cerrar() {

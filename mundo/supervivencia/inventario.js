@@ -13,6 +13,16 @@ export const nombrePila = (pl, idioma = 'es') => nombreDe(pl.id, idioma) + (pl.p
 const durabilidadDe = id => (info(id) && info(id).durabilidad) || 0;
 const iguales = (a, b) => a && b && a.id === b.id && !durabilidadDe(a.id);
 
+// Colección del duelo guardada: solo forma (claves de texto y copias enteras); qué cartas existen lo revisa
+// cartas-coleccion.js al usarla (así el inventario no carga los datos de las cartas al empezar)
+function cargarCartas(k) {
+    if (!k || typeof k !== 'object' || !k.c || typeof k.c !== 'object') return null;
+    const c = {};
+    for (const [id, n] of Object.entries(k.c)) if (/^[a-z0-9_]{1,24}$/.test(id) && Number.isFinite(n) && n >= 1) c[id] = Math.min(99, Math.floor(n));
+    const m = Array.isArray(k.m) && k.m.length <= 40 && k.m.every(id => typeof id === 'string' && id.length <= 24) ? k.m.slice() : null;
+    return { c, m, z: !!k.z };
+}
+
 export class Inventario {
     constructor() {
         this.casillas = new Array(36).fill(null);
@@ -23,6 +33,9 @@ export class Inventario {
         // Páginas del cuaderno de los Tomatitos (7f-3): bits 0-11 = páginas encontradas, bit 12 = premio cobrado.
         // Viaja con el inventario para ser por jugador (también en cooperativo, que ya manda `inv` en el perfil).
         this.cuaderno = 0;
+        // Duelo de cartas: tu colección, tu mazo armado y si juegas al azar (cartas-coleccion.js). null = nunca lo tocó
+        // (colección inicial). También por jugador; se guarda solo si existe, así los guardados viejos quedan igual.
+        this.cartas = null;
     }
 
     cambio() { this.alCambiar && this.alCambiar(); }
@@ -136,6 +149,7 @@ export class Inventario {
         const s = p => (p ? (p.p ? [p.id, p.n, p.d, p.p] : [p.id, p.n, p.d]) : 0);
         const o = { c: this.casillas.map(s), a: this.armadura.map(s), m: s(this.mano2), e: this.elegida };
         if (this.cuaderno) o.q = this.cuaderno; // solo con páginas: los guardados sin cuaderno quedan igual
+        if (this.cartas) o.k = { c: { ...this.cartas.c }, ...(this.cartas.m ? { m: this.cartas.m.slice() } : {}), ...(this.cartas.z ? { z: 1 } : {}) };
         return o;
     }
 
@@ -143,6 +157,7 @@ export class Inventario {
         const l = v => (v ? pila(v[0], v[1], v[2] || 0, typeof v[3] === 'string' ? v[3] : null) : null);
         if (!o) return;
         this.cuaderno = Number.isInteger(o.q) && o.q > 0 ? o.q & 0x1fff : 0;
+        this.cartas = cargarCartas(o.k);
         this.casillas = (o.c || []).map(l).concat(new Array(36).fill(null)).slice(0, 36);
         this.armadura = (o.a || []).map(l).concat(new Array(4).fill(null)).slice(0, 4);
         this.mano2 = l(o.m);
