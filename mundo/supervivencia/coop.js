@@ -293,6 +293,7 @@ export function crearCoop(cx, ctx) {
         // Sus monstruos y su jefe desaparecen con él
         for (const g of [...enemigos.fantasmas.values()]) if (g.dueno === id) enemigos.quitarFantasma(g.uid);
         if (jefeRed && jefeRed.dueno === id) { jefes.quitarFantasma(); jefeRed = null; }
+        if (ctx.alSalirJugador) ctx.alSalirJugador(id);
         if (!esAnfitrion && id === cx.anfitrion) ctx.alCerrar && ctx.alCerrar('anfitrion');
         ctx.alCambiarJugadores && ctx.alCambiarJugadores();
     };
@@ -717,6 +718,8 @@ export function crearCoop(cx, ctx) {
         fl() { /* lo usa unirse() */ },
         fin() { if (!esAnfitrion) ctx.alCerrar && ctx.alCerrar('anfitrion'); },
         em(m) { const r = remotoPorId(m.de); if (r) r.gesto = recibirEm(r.gesto, m.k); },
+        // Actividades compartidas (actividades-red.js, 7g-1): las maneja main.js
+        ac(m) { if (ctx.alActividad) ctx.alActividad(m); },
         pc(m) {
             const p = perfiles.get(m.disp);
             if (p && m.inv) { p.inv = m.inv; ctx.alPerfil && ctx.alPerfil(m.disp, p); }
@@ -836,6 +839,10 @@ export function crearCoop(cx, ctx) {
         golpeo() { golpePend = true; },
         // 7c-2: gesto de la ruleta (gestos-jugador.js ya respeta 1 por segundo)
         gesto(k) { sala.enviar('em', { k }); },
+        // Actividades compartidas (7g-1): mensaje `ac` (para = un solo destinatario)
+        actividad(m) { sala.enviar('ac', m); },
+        yoId, idAnfitrion: () => (esAnfitrion ? yoId : cx.anfitrion),
+        nombreDe: id => (id === yoId ? cx.nombre : remotos.get(id)?.nombre || '?'),
         get total() { return 1 + remotos.size; },
         get remotos() { return remotos; },
         get compartido() { return compartido; },

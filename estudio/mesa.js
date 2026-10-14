@@ -41,11 +41,14 @@ const GRUPOS = [
     ['pesosSobre', 'Sobres: peso de cada carta (0 = nunca sale)', 'Packs: weight of each card (0 = never drops)', {}],
     // Abrir el sobre (cartas-sobre.js): «Probar el sobre» la muestra en el juego con estos valores
     ['sobreAnim', 'Sobre: abrir (rasgar y voltear)', 'Pack: opening (tear and flip)', { activa: '1 = lo rasgas tú, 0 = sin escena', rasgar: 'cuánto arrastrar (1 = todo el ancho)', toques: 'toques que lo abren', salir: 'segundos que sale cada carta', voltear: 'segundos que se da vuelta', entre: 'segundos entre cartas', tapa: 'segundos que vuela la tapa', ancho: 'ancho del sobre (px)', sacudir: '1 = tiembla al rasgar', sonido: 'volumen (0 = mudo)' }],
+    // Duelo entre 2 jugadores de la sala (cartas-duelo.js): cada uno con su mazo
+    ['duelo', 'Duelo entre jugadores', 'Player duel', { vida: 'vida de cada uno', mano: 'cartas en la mano al empezar', espera: 'segundos para aceptar el reto (0 = sin límite)' }],
     ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
 // Enteros con su tope (colección y mazo); el resto, según el valor
 const ENTEROS = { coleccion: { largo: [10, 40], copias: [1, 4], azarExtra: [0, 3], azarTodas: [0, 1], hechizosMin: [0, 40], hechizosMax: [0, 40] }, coleccionInicial: {},
+    duelo: { vida: [500, 20000], mano: [1, 7], espera: [0, 120] },
     tiendaCartas: { activa: [0, 1], sobrePrecio: [1, 64], sobreCartas: [1, 10], sobreNuevas: [0, 10], sobreHechizos: [0, 10], sueltaTope: [0, 1] }, preciosCartas: {}, pesosSobre: {} };
 // Sin tope propio: 0-4 (copias); precios hasta 10 esmeraldas y pesos hasta 5 (con el número se puede poner más)
 const TOPE = { preciosCartas: [0, 10], pesosSobre: [0, 5] };
