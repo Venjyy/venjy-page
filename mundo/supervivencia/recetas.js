@@ -73,6 +73,15 @@ conForma(['  S', ' WH', 'WW '], { S, W, H: O.HILO }, O.GUITARRA);
 conForma(['CNC', 'WWW'], { C: B.CUARZO, N: B.NEGRO, W }, O.TECLADO);
 conForma(['CCC', 'WWW'], { C: O.CUERO, W }, O.TAMBOR);
 
+// ---- 7f-2: bloques con forma (losas, escalones, trampilla y vallas de jardín; formas en mundo/formas.js) ----
+for (const [m, M] of [['PIEDRA', B.PIEDRA], ['TABLONES', W], ['ADOQUIN', B.ADOQUIN]]) {
+    conForma(['MMM'], { M }, B['LOSA_' + m], 6);
+    conForma(['M  ', 'MM ', 'MMM'], { M }, B['ESCALONES_' + m], 4);
+}
+conForma(['WWW', 'WWW'], { W }, B.TRAMPILLA, 2);
+conForma(['TST', 'TST'], { T: B.TRONCO_ABEDUL, S }, B.VALLA_ABEDUL, 6);
+conForma(['TST', 'TST'], { T: B.TRONCO_PINO, S }, B.VALLA_PINO, 6);
+
 // ---- Comida ----
 conForma(['TTT'], { T: O.TRIGO }, O.PAN);
 conForma(['HHH', 'TTT'], { H: O.HUEVO, T: O.TRIGO }, O.PASTEL); // un queque sencillo

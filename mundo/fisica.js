@@ -4,6 +4,7 @@
 // `ancho` × `alto` con los pies en `pos`, colisión por ejes como el jugador (jugador.js).
 // =========================================================
 import { TIPO, B } from './texturas.js';
+import { chocaFormas, topeFormas } from './formas.js';
 
 // ¿Bloquea el paso el bloque (x, y, z)? Sin cargar cuenta como sólido (no se cae al vacío)
 export function solidoEn(mundo, x, y, z) {
@@ -13,7 +14,13 @@ export function solidoEn(mundo, x, y, z) {
     return t === 1 || t === 2 || t === 6;
 }
 
+// Cubos enteros y las cajas de los bloques con forma (losas, escalones, vallas: formas.js)
 export function chocaCaja(mundo, px, py, pz, ancho, alto) {
+    const r = ancho / 2;
+    return chocaCubos(mundo, px, py, pz, ancho, alto) || chocaFormas(mundo, px - r, py, pz - r, px + r, py + alto, pz + r);
+}
+
+function chocaCubos(mundo, px, py, pz, ancho, alto) {
     const r = ancho / 2;
     for (let y = Math.floor(py); y <= Math.floor(py + alto - 0.001); y++) {
         for (let z = Math.floor(pz - r); z <= Math.floor(pz + r - 0.0001); z++) {
@@ -49,7 +56,13 @@ export function moverCuerpo(mundo, c, dt, { gravedad = 32, flota = true } = {}) 
         if (!chocaCaja(mundo, p.x, p.y, p.z + dz, c.ancho, c.alto)) p.z += dz; else { c.chocoLado = true; }
         if (!chocaCaja(mundo, p.x, p.y + dy, p.z, c.ancho, c.alto)) p.y += dy;
         else {
-            if (dy < 0) { c.enSuelo = true; p.y = Math.floor(p.y + dy) + 1; }
+            if (dy < 0) {
+                c.enSuelo = true;
+                const r = c.ancho / 2;
+                const y = Math.max(chocaCubos(mundo, p.x, p.y + dy, p.z, c.ancho, c.alto) ? Math.floor(p.y + dy) + 1 : -Infinity,
+                    topeFormas(mundo, p.x - r, p.z - r, p.x + r, p.z + r, p.y + dy, p.y));
+                if (y > -Infinity) p.y = y;
+            }
             v.y = 0;
         }
     }

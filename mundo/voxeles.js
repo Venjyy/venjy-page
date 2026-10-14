@@ -13,6 +13,7 @@ import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } fr
 import { colocarCaminos } from './caminos.js';
 import { colocarMotivos } from './lugares-motivos.js';
 import { colocarRuinas } from './ruinas.js';
+import { cajaPanel, cajasDe, fijarFormas, formasCrudas } from './formas.js';
 import { colocarPaginas } from './paginas-cuaderno.js';
 import { geometriaExperiencia, levantarExperiencia, levantarVetas, levantarPantallaFaro, geometriaGatera, levantarGatera, geometriaCorreo, levantarCorreo } from './portafolio/bloques.js';
 
@@ -1067,27 +1068,8 @@ export function geometriaDe(d) {
     return g;
 }
 
-// Orientación de un panel (puerta o escalera) según sus vecinos, sin metadatos:
-//  · puerta cerrada: tapa el hueco entre dos muros (plano que une los vecinos sólidos)
-//  · puerta abierta: pegada al muro, como girada sobre la bisagra
-//  · escalera de mano: contra el primer muro sólido que tenga al lado
-// Devuelve [x0, z0, x1, z1] del panel dentro del bloque (0..1).
-const GROSOR_PANEL = 3 / 16;
-export function cajaPanel(id, solidoEn) {
-    const ex = solidoEn(1, 0) || solidoEn(-1, 0), ez = solidoEn(0, 1) || solidoEn(0, -1);
-    const abierta = id === B.PUERTA_ABIERTA_ABAJO || id === B.PUERTA_ABIERTA_ARRIBA;
-    if (id === B.ESCALERA) {
-        if (solidoEn(0, -1)) return [0, 0, 1, GROSOR_PANEL];
-        if (solidoEn(0, 1)) return [0, 1 - GROSOR_PANEL, 1, 1];
-        if (solidoEn(-1, 0)) return [0, 0, GROSOR_PANEL, 1];
-        if (solidoEn(1, 0)) return [1 - GROSOR_PANEL, 0, 1, 1];
-        return [0, 0.5 - GROSOR_PANEL / 2, 1, 0.5 + GROSOR_PANEL / 2];
-    }
-    const planoX = ex || !ez; // la puerta cerrada se extiende a lo largo de X (une muros al este y oeste)
-    if (!abierta) return planoX ? [0, 0.5 - GROSOR_PANEL / 2, 1, 0.5 + GROSOR_PANEL / 2] : [0.5 - GROSOR_PANEL / 2, 0, 0.5 + GROSOR_PANEL / 2, 1];
-    // abierta: girada 90°, pegada al lado oeste (o norte)
-    return planoX ? [0, 0, GROSOR_PANEL, 1] : [0, 0, 1, GROSOR_PANEL];
-}
+// Orientación de un panel (puerta o escalera de mano): mundo/formas.js (también da su forma al contorno y al rayo)
+export { cajaPanel };
 
 function mallarPanel(buf, id, def, x, y, z, ox, oz, at, propia) {
     const [x0, z0, x1, z1] = cajaPanel(id, (dx, dz) => at(x + dx, y, z + dz) === 1);
@@ -1165,34 +1147,37 @@ function mallarCama(buf, def, x, y, z, ox, oz, hay, propia) {
     }
 }
 
-// Objetos pequeños hechos de cajas (7f-2): farol y cartel. Cada caja { a: [x0,y0,z0], b: [x1,y1,z1] } va en
-// 1/16 de bloque, centrada en la celda; `lado`, `arriba` y `fondo` son tiles y cada cara muestra el tile entero.
-// `brillo`: las caras se dibujan a plena luz (el farol).
-const CAJAS_FAROL = [
-    { a: [5, 0, 5], b: [11, 7, 11], lado: 'farol', arriba: 'farol_tapa', fondo: 'farol_tapa' },
-    { a: [6, 7, 6], b: [10, 8, 10], lado: 'farol_tapa', arriba: 'farol_tapa' },
-    { a: [7, 8, 7], b: [9, 10, 9], lado: 'farol_tapa', arriba: 'farol_tapa' }
-];
-const CAJAS_CARTEL = [
-    { a: [7, 0, 7], b: [9, 9, 9], lado: 'cartel_poste', arriba: 'cartel_poste', fondo: 'cartel_poste' },
-    { a: [1, 8, 7], b: [15, 15, 9], lado: 'cartel_poste', arriba: 'cartel_poste', fondo: 'cartel_poste', frente: 'cartel' }
-];
-function mallarCajas(buf, bx, y, bz, propia, brillo, cajas) {
+// Bloques hechos de cajas (7f-2): farol, cartel, losas, escalones, trampilla y vallas de jardín. Las cajas salen de
+// mundo/formas.js (con lo que diga formas.json). En las de uv 'caja' (farol, cartel) cada cara muestra su tile entero;
+// en las demás la textura del bloque se proyecta (una losa muestra la mitad del tile, como Minecraft). Las caras que
+// tocan el borde de la celda junto a un bloque opaco no se dibujan. `brillo`: a plena luz (el farol).
+function mallarCajas(buf, def, bx, y, bz, propia, brillo, cajas, opacoEn) {
     const lc = propia >= 0 ? (propia >> 4) / 15 : 1, lb = brillo ? EMISOR : propia >= 0 ? (propia & 15) / 15 : 0;
     for (const c of cajas) {
-        const [x0, y0, z0] = c.a.map(v => v / 16), [x1, y1, z1] = c.b.map(v => v / 16);
+        const { x0, y0, z0, x1, y1, z1 } = c;
+        const propio = c.uv === 'caja';
         const n = (v, a, b) => (v - a) / (b - a);
         for (let f = 0; f < 6; f++) {
+            const borde = f === 0 ? x1 >= 1 : f === 1 ? x0 <= 0 : f === 2 ? y1 >= 1 : f === 3 ? y0 <= 0 : f === 4 ? z1 >= 1 : z0 <= 0;
+            if (borde && opacoEn(CARAS[f].d)) continue;
             const cara = CARAS[f];
             const base = buf.n, s = SOMBRA[f];
-            const tile = TILE[f === 2 ? c.arriba : f === 3 ? (c.fondo || c.arriba) : ((f === 4 || f === 5) && c.frente ? c.frente : c.lado)];
+            const tile = propio
+                ? TILE[f === 2 ? c.arriba : f === 3 ? (c.fondo || c.arriba) : ((f === 4 || f === 5) && c.frente ? c.frente : c.lado)]
+                : f === 2 ? def.top : f === 3 ? def.fondo : def.lado;
             for (let k = 0; k < 4; k++) {
                 const co = cara.c[k];
                 const px = co[0] ? x1 : x0, py = co[1] ? y1 : y0, pz = co[2] ? z1 : z0;
                 buf.p.push(bx + px, y + py, bz + pz);
-                const nx = n(px, x0, x1), ny = n(py, y0, y1), nz = n(pz, z0, z1);
-                const u = f < 2 ? (f === 0 ? 1 - nz : nz) : f >= 4 ? (f === 4 ? nx : 1 - nx) : nx;
-                const v = f < 4 ? ny : nz;
+                let u, v;
+                if (propio) {
+                    const nx = n(px, x0, x1), ny = n(py, y0, y1), nz = n(pz, z0, z1);
+                    u = f < 2 ? (f === 0 ? 1 - nz : nz) : f >= 4 ? (f === 4 ? nx : 1 - nx) : nx;
+                    v = f < 4 ? ny : nz;
+                } else {
+                    u = f < 2 ? (f === 0 ? 1 - pz : pz) : f >= 4 ? (f === 4 ? px : 1 - px) : px;
+                    v = f === 2 ? 1 - pz : f === 3 ? pz : py;
+                }
                 const [tu, tv] = uvTile(tile, u, v);
                 buf.u.push(tu, tv);
                 buf.c.push(s, s, s);
@@ -1261,8 +1246,10 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
                 const def = BLOQUES[id];
                 const emite = LUZ_EMISION[id];
                 if (id === B.MESA_DUELO || id === B.MESA_DUELO_Z) continue; // la dibuja mesas-colocadas.js (duelo 2J, PR 3)
-                if (id === B.FAROL || id === B.CARTEL) { // objetos de cajas (7f-2)
-                    mallarCajas(solido, ox + x - 1, y, oz + z - 1, luzEn(x, y, z), id === B.FAROL, id === B.FAROL ? CAJAS_FAROL : CAJAS_CARTEL);
+                if (tipo === 8 || id === B.FAROL || id === B.CARTEL) { // bloques de cajas (7f-2, mundo/formas.js)
+                    const vecino = (dx, dy, dz) => (y + dy < 0 ? B.ROCA_MADRE : y + dy >= ALTO ? 0 : vox[((y + dy) * VENT + z + dz) * VENT + x + dx]);
+                    const opacoEn = d => at(x + d[0], y + d[1], z + d[2]) === 1;
+                    mallarCajas(solido, def, ox + x - 1, y, oz + z - 1, luzEn(x, y, z), emite > 0, cajasDe(id, vecino), opacoEn);
                     continue;
                 }
                 if (tipo === 4) { // planta: dos planos cruzados, visibles por ambos lados
@@ -1481,6 +1468,14 @@ export class MundoVoxel {
         this.mallando = new Map();     // clave -> ch.ver del pedido de malla en vuelo
     }
 
+    // 7f-2: formas de los bloques con cajas (mundo/datos/formas.json, pestaña Formas del Estudio). Las usa el mallado
+    // de aquí y el de los workers; con chunks ya cargados (en vivo desde el Estudio) los vuelve a mallar enteros.
+    aplicarFormas(d) {
+        fijarFormas(d);
+        for (const est of this.todosWorkers) est.w.postMessage({ t: 'formas', d: formasCrudas() });
+        for (const [k, ch] of this.chunks) if (ch.luzOk) this.remallarW.add(k);
+    }
+
     // Arranca workers que generan y mallan chunks fuera del hilo principal.
     // Si el navegador no los soporta, procesar() cae al mallado en el hilo principal.
     iniciarWorkers(orient, cantidad = 2) {
@@ -1497,7 +1492,7 @@ export class MundoVoxel {
                     else if (m.t === 'error') { console.error('worker de chunks:', m.mensaje); est.pedidos = Math.max(0, est.pedidos - 1); if (m.k) { this.mallando.delete(m.k); this.rehaciendo.delete(m.k); this.enVuelo.delete(m.k); } }
                 };
                 w.onerror = err => { console.error('worker de chunks:', err.message); est.listo = false; };
-                w.postMessage({ t: 'init', orient, ediciones: this.listaEdiciones(), supervivencia: !!this.terreno.supervivencia, alto: ALTO });
+                w.postMessage({ t: 'init', orient, ediciones: this.listaEdiciones(), supervivencia: !!this.terreno.supervivencia, alto: ALTO, formas: formasCrudas() });
             }
         } catch (e) { /* sin workers: se malla en el hilo principal */ }
     }

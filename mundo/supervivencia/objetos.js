@@ -254,6 +254,22 @@ bloque(B.FAROL, 'Farol', 'Lantern', 0.3, 'pico', 0, { suelta: O.FAROL_MANO });
 bloque(B.CARTEL, 'Cartel', 'Sign', 1, 'hacha', 0, { suelta: O.CARTEL, combustible: 10 });
 bloque(B.MESA_DUELO, 'Mesa de duelo', 'Duel Table', 1, 'hacha', 0, { suelta: O.MESA_DUELO, combustible: 15 });
 bloque(B.MESA_DUELO_Z, 'Mesa de duelo', 'Duel Table', 1, 'hacha', 0, { suelta: O.MESA_DUELO, combustible: 15 });
+// 7f-2: bloques con forma. Las variantes (losa de arriba, escalones girados, trampilla abierta) sueltan la de la mano;
+// la losa doble suelta dos losas
+for (const [m, es, en, dureza, herr, nivel, extra] of [
+    ['PIEDRA', 'piedra', 'Stone', 2, 'pico', 1, {}], ['TABLONES', 'tablones', 'Plank', 2, 'hacha', 0, { combustible: 7 }],
+    ['ADOQUIN', 'adoquín', 'Cobblestone', 2, 'pico', 1, {}]]) {
+    const losa = B['LOSA_' + m], escalon = B['ESCALONES_' + m];
+    bloque(losa, `Losa de ${es}`, `${en} Slab`, dureza, herr, nivel, extra);
+    bloque(B['LOSA_' + m + '_ARRIBA'], `Losa de ${es}`, `${en} Slab`, dureza, herr, nivel, { ...extra, suelta: losa });
+    bloque(B['LOSA_' + m + '_DOBLE'], `Losa doble de ${es}`, `Double ${en} Slab`, dureza, herr, nivel, { ...extra, suelta: losa, cantidad: [2, 2] });
+    for (let g = 0; g < 4; g++) bloque(escalon + g, `Escalones de ${es}`, `${en} Stairs`, dureza, herr, nivel, g ? { ...extra, suelta: escalon } : extra);
+}
+bloque(B.TRAMPILLA, 'Trampilla', 'Trapdoor', 3, 'hacha', 0, { combustible: 15 });
+bloque(B.TRAMPILLA_ARRIBA, 'Trampilla', 'Trapdoor', 3, 'hacha', 0, { combustible: 15, suelta: B.TRAMPILLA });
+for (let g = 0; g < 4; g++) bloque(B.TRAMPILLA_ABIERTA + g, 'Trampilla', 'Trapdoor', 3, 'hacha', 0, { combustible: 15, suelta: B.TRAMPILLA });
+bloque(B.VALLA_ABEDUL, 'Valla de jardín de abedul', 'Birch Garden Fence', 2, 'hacha', 0, { combustible: 15 });
+bloque(B.VALLA_PINO, 'Valla de jardín de pino', 'Spruce Garden Fence', 2, 'hacha', 0, { combustible: 15 });
 // Cultivos por etapas (la tierra de cultivo es B.TIERRA_LABRADA; B.LABRADA es la piedra labrada del mapa)
 for (let n = 0; n < 4; n++) {
     bloque(B.TRIGO_0 + n, 'Trigo', 'Wheat', 0, null, 0, { cultivo: 'trigo', etapa: n });

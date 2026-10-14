@@ -1,0 +1,9 @@
+{
+  "$schema": "../../estudio/esquemas/formas.schema.json",
+  "version": 1,
+  "nota": "Vacío = todo como en el código (mundo/formas.js). Se edita en /estudio/ → pestaña Formas (cajas en 1/16 de bloque).",
+  "formas": {},
+  "paso": 0.6,
+  "contorno": { "color": "#000000", "opacidad": 0.75 },
+  "grietas": { "opacidad": 0.75 }
+}

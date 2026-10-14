@@ -9,6 +9,7 @@ import { OBJETOS, COLORES } from './objetos.js';
 import { iconoModelo } from './modelos-mano.js';
 import { cargarDatos } from '../datos/cargador.js';
 import { decodificar, listoParaJuego } from '../datos/pixeles.js';
+import { cajasDe, esValla } from '../formas.js';
 
 const hex = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const ajustar = ([r, g, b], f) => [Math.min(255, r * f), Math.min(255, g * f), Math.min(255, b * f)];
@@ -509,10 +510,34 @@ function repintar() {
 
 function tileXY(tile) { return [(tile % COLS) * TAM, Math.floor(tile / COLS) * TAM]; }
 
+// 7f-2: bloque con forma (losa, escalones, trampilla, valla) en isométrico, caja por caja de atrás hacia delante.
+// Misma vista que el cubo: P(x, y, z) lleva un punto del bloque (0..1) al lienzo de 32×32.
+function dibujarCajas(ctx, d, cajas) {
+    const P = (x, y, z) => [16 + 16 * x - 16 * z, 8 * x + 8 * z + 16 * (1 - y)];
+    const cara = (tile, o, u, v, src, oscuro) => {
+        const [sx, sy] = tileXY(tile);
+        const [ox, oy] = P(...o), [ux, uy] = P(...u), [vx, vy] = P(...v);
+        ctx.save();
+        ctx.setTransform(ux - ox, uy - oy, vx - ox, vy - oy, ox, oy);
+        const [s0, t0, s1, t1] = src.map(n => n * TAM);
+        ctx.drawImage(atlasBloques, sx + s0, sy + t0, Math.max(1, s1 - s0), Math.max(1, t1 - t0), 0, 0, 1, 1);
+        if (oscuro) { ctx.fillStyle = `rgba(0,0,0,${oscuro})`; ctx.fillRect(0, 0, 1, 1); }
+        ctx.restore();
+    };
+    const orden = [...cajas].sort((a, b) => (a.x0 + a.z0) - (b.x0 + b.z0) || a.y0 - b.y0);
+    for (const c of orden) {
+        const { x0, y0, z0, x1, y1, z1 } = c;
+        cara(d.lado, [x1, y1, z1], [x1, y1, z0], [x1, y0, z1], [1 - z1, 1 - y1, 1 - z0, 1 - y0], 0.42); // derecha (+x)
+        cara(d.lado, [x0, y1, z1], [x1, y1, z1], [x0, y0, z1], [x0, 1 - y1, x1, 1 - y0], 0.25);     // izquierda (+z)
+        cara(d.top, [x0, y1, z0], [x1, y1, z0], [x0, y1, z1], [x0, z0, x1, z1], 0);                // tapa
+    }
+}
+
 // Cubo isométrico: tapa arriba y dos caras laterales más oscuras; plantas y paneles van planos
 function dibujarBloque(ctx, id) {
     const d = BLOQUES[id];
     const t = TIPO[id];
+    if (t === 8) return dibujarCajas(ctx, d, cajasDe(id, dx => (esValla(id) && dx !== 0 ? id : 0)));
     if (t === 4 || t === 6 || t === 7) {
         const [sx, sy] = tileXY(t === 4 ? d.top : d.lado);
         ctx.drawImage(atlasBloques, sx, sy, TAM, TAM, 0, 0, 32, 32);

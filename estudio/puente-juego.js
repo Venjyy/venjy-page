@@ -45,6 +45,12 @@ async function aplicar(nombre, datos) {
         // iconos.js repinta los íconos ya entregados y el atlas; la mano rehace la malla del objeto que llevas
         const m = await import('../mundo/supervivencia/iconos.js');
         m.aplicarIconos(datos);
+    } else if (nombre === 'formas') {
+        // 7f-2: el mundo vuelve a mallar los chunks cargados (aquí y en los workers); el contorno y las grietas
+        // y el choque leen formas.js al momento
+        const v = window.__venjy;
+        if (!v || !v.mundo) throw new Error('el juego todavía no está listo');
+        v.mundo.aplicarFormas(datos);
     } else if (nombre === 'cartas-arte') {
         const m = await import('../mundo/supervivencia/cartas-arte.js');
         m.aplicarArte(datos);

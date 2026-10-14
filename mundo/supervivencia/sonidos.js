@@ -51,6 +51,8 @@ export function tono({ f0 = 440, f1 = 220, dur = 0.12, vol = 0.2, forma = 'squar
 // Material del bloque para elegir el timbre
 const MATERIAL = { piedra: 2200, madera: 900, tierra: 500, arena: 3200, hojas: 4200, vidrio: 5200, lana: 300 };
 export function materialDe(id) {
+    // 7f-2: losas y escalones de tablones, trampilla y vallas de jardín suenan a madera; los de piedra y adoquín, a piedra
+    if (id >= 94 && id <= 122) return [95, 98, 101, 107, 108, 109, 110].includes(id) || id >= 115 ? 'madera' : 'piedra';
     if ([3, 51, 53, 54, 55, 56, 57, 58, 59, 25, 20, 36, 47, 49, 61, 62, 10, 11, 12, 13, 14, 15, 16, 17, 45, 80, 81, 82, 83, 89].includes(id)) return 'piedra';
     if ([8, 9, 27, 29, 37, 38, 41, 46, 48, 60, 84, 85, 86, 87, 88, 39].includes(id)) return 'madera';
     if ([4, 50, 5].includes(id)) return 'arena';

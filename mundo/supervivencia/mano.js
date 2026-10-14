@@ -10,7 +10,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { BLOQUES, TIPO, TAM, COLS } from '../texturas.js';
 import { pixelesObjeto, versionDeIconos } from './iconos.js';
-import { geometriaCubo } from './entidades.js';
+import { geometriaCubo, geometriaForma } from './entidades.js';
 import { info, O } from './objetos.js';
 import { agarre, versionObjetosMano } from './objetos-mano-datos.js';
 import { crearModelo } from './skin.js';
@@ -79,6 +79,7 @@ export function crearFabrica({ atlas, atlasLienzo }) {
         let d;
         const t = id < 256 ? TIPO[id] : 0;
         if (id < 256 && BLOQUES[id] && (t === 1 || t === 2 || t === 5)) d = { geo: geometriaCubo(id), tipo: 'bloque' };
+        else if (id < 256 && BLOQUES[id] && t === 8) d = { geo: geometriaForma(id), tipo: 'bloque' }; // 7f-2: losa, escalones…
         else {
             const px = id >= 256 ? pixelesObjeto(id) : pixelesTile(atlasLienzo, t === 4 ? BLOQUES[id].top : BLOQUES[id].lado);
             const herramienta = id >= 256 && info(id) && (info(id).herramienta || info(id).icono === 'palo' || info(id).icono === 'cana');
