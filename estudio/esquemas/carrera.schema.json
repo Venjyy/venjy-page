@@ -796,6 +796,168 @@
           "type": "number",
           "minimum": 1,
           "maximum": 30
+        },
+        "alPodio": {
+          "description": "",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 15
+        },
+        "lenta": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "lentaSeg": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "metaDist": {
+          "description": "",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 12
+        },
+        "metaAlto": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 6
+        },
+        "metaGiro": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "metaAcerca": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 4
+        },
+        "metaFov": {
+          "description": "",
+          "type": "number",
+          "minimum": 30,
+          "maximum": 100
+        },
+        "lonaEn": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "lonaSeg": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 4
+        },
+        "lonaDist": {
+          "description": "",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 12
+        },
+        "lonaLado": {
+          "description": "",
+          "type": "number",
+          "minimum": -1.5,
+          "maximum": 1.5
+        },
+        "lonaAlto": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "podioDist": {
+          "description": "",
+          "type": "number",
+          "minimum": 4,
+          "maximum": 30
+        },
+        "podioAlto": {
+          "description": "",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 15
+        },
+        "podioMira": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "podioFov": {
+          "description": "",
+          "type": "number",
+          "minimum": 30,
+          "maximum": 100
+        },
+        "podioEntra": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 6
+        },
+        "podioDesde": {
+          "description": "",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "podioVaiven": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5
+        },
+        "podioRitmo": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "lona": {
+      "type": "object",
+      "properties": {
+        "largada": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.4,
+          "maximum": 3
+        },
+        "aspiradora": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.4,
+          "maximum": 4
+        },
+        "salto": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ritmo": {
+          "description": "",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 14
+        },
+        "rapidez": {
+          "description": "",
+          "type": "number",
+          "minimum": 3,
+          "maximum": 30
         }
       },
       "additionalProperties": false

@@ -54,6 +54,21 @@ const GRUPOS = [
         distancia: ['distancia detrás de tu gata', 'distance behind your cat', 2, 14, 0.1], alto: ['altura', 'height', 0.5, 8, 0.1], mira: ['mira adelante (bloques)', 'looks ahead (blocks)', 0, 12, 0.5],
         fov: ['ángulo de visión', 'field of view', 40, 110, 1], fovTurbo: ['ángulo con turbo', 'field of view on boost', 40, 120, 1], suave: ['rapidez con que te sigue', 'follow speed', 1, 30, 0.5]
     }],
+    ['camara', 'Cámara de cine en la llegada', 'Finish-line cinema camera', {
+        alPodio: ['segundos desde tu llegada hasta el podio', 'seconds from your finish to the podium', 1, 15, 0.1],
+        lenta: ['cámara lenta al cruzar (1 = sin; solo sin otros jugadores)', 'slow motion at the line (1 = off; solo only)', 0.1, 1, 0.05], lentaSeg: ['segundos de cámara lenta', 'slow-motion seconds', 0, 4, 0.1],
+        metaDist: ['rodea a tu gata: distancia', 'circles your cat: distance', 2, 12, 0.1], metaAlto: ['rodea a tu gata: altura', 'circles your cat: height', 0.3, 6, 0.1],
+        metaGiro: ['rodea a tu gata: giro (rad/s)', 'circles your cat: turn (rad/s)', 0, 3, 0.05], metaAcerca: ['segundos en que se acerca', 'seconds to close in', 0.1, 4, 0.1], metaFov: ['ángulo de visión en la llegada', 'field of view at the finish', 30, 100, 1],
+        lonaEn: ['corte a Lona: a los segundos (0 = sin corte)', 'cut to Lona: after seconds (0 = no cut)', 0, 5, 0.1], lonaSeg: ['corte a Lona: segundos', 'cut to Lona: seconds', 0.3, 4, 0.1],
+        lonaDist: ['corte a Lona: distancia', 'cut to Lona: distance', 2, 12, 0.1], lonaLado: ['corte a Lona: de lado (rad, − otro lado)', 'cut to Lona: angle (rad, − other side)', -1.5, 1.5, 0.05], lonaAlto: ['corte a Lona: altura que mira', 'cut to Lona: look height', 0, 3, 0.05],
+        podioDist: ['podio: distancia', 'podium: distance', 4, 30, 0.5], podioAlto: ['podio: altura', 'podium: height', 1, 15, 0.1], podioMira: ['podio: altura que mira', 'podium: look height', 0, 6, 0.1], podioFov: ['podio: ángulo de visión', 'podium: field of view', 30, 100, 1],
+        podioEntra: ['podio: segundos en que entra', 'podium: seconds to move in', 0.1, 6, 0.1], podioDesde: ['podio: entra desde (× distancia)', 'podium: starts at (× distance)', 1, 4, 0.05],
+        podioVaiven: ['podio: cuánto se mece (rad)', 'podium: sway (rad)', 0, 1.5, 0.05], podioRitmo: ['podio: ritmo del vaivén', 'podium: sway speed', 0, 2, 0.05]
+    }],
+    ['lona', 'Lona en su caja (gestos)', 'Lona in her box (gestures)', {
+        largada: ['segundos de la bandera al largar', 'flag-drop seconds at the start', 0.4, 3, 0.05], aspiradora: ['segundos apuntando con la aspiradora', 'seconds aiming the vacuum', 0.4, 4, 0.05],
+        salto: ['salto al celebrar', 'hop when cheering', 0, 1, 0.05], ritmo: ['ritmo al celebrar', 'cheering speed', 2, 14, 0.5], rapidez: ['rapidez con que cambia de pose', 'pose change speed', 3, 30, 0.5]
+    }],
     ['tactil', 'Celular', 'Phone', { autoAcelerar: ['1 = acelera sola (sin botón ACELERAR)', '1 = auto gas (no GAS button)', 0, 1, 1] }],
     ['red', 'Varios jugadores (red)', 'Multiplayer (network)', {
         envios: ['veces por segundo que cada corredor manda su gata', 'times per second each racer sends its cat', 4, 30, 1],
