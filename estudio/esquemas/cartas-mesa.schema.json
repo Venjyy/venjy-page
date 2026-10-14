@@ -29,7 +29,20 @@
     "planoLucho": { "$ref": "#/$defs/camara", "description": "Cámara que mira a Lucho en su turno: lado, alto (sobre la mesa), z (hacia ti) y mira" },
     "planoMesa": { "$ref": "#/$defs/camara", "description": "Cámara sobre la mesa cuando Lucho juega una carta: lado, alto (sobre la mesa), z (hacia ti) y mira" },
     "coleccion": { "$ref": "#/$defs/numeros", "description": "Duelo: colección y mazo (cartas-coleccion.js). largo (cartas del mazo, 10-40), copias (máximo por carta, 1-4), azarExtra (cartas de más en la mano con el mazo al azar, 0-3), azarTodas (1 = el mazo al azar sale de todas las cartas, 0 = de tu colección), hechizosMin y hechizosMax (hechizos de un mazo al azar). Ver COLECCION" },
-    "duelo": { "$ref": "#/$defs/numeros", "description": "Duelo entre 2 jugadores de la sala (cartas-duelo.js, actividad duelo@lucho de actividades-red.js): vida (de cada uno), mano (cartas al empezar; el mazo al azar suma azarExtra), espera (segundos para aceptar el reto; 0 = sin límite). Ver DUELO" },
+    "duelo": { "$ref": "#/$defs/numeros", "description": "Duelo entre 2 jugadores de la sala (cartas-duelo.js, actividad duelo@<retador> de actividades-red.js): vida (de cada uno), mano (cartas al empezar; el mazo al azar suma azarExtra), espera (segundos para aceptar el reto; 0 = sin límite). Ver DUELO" },
+    "lugar": { "$ref": "#/$defs/numeros", "description": "Duelo entre jugadores donde están (con el MAZO apuntando al otro): dist (metros máximos hasta él), desnivel (diferencia de altura máxima). Ver MESA.lugar en cartas-mesa-modelo.js" },
+    "tronco": {
+      "type": "object",
+      "description": "Duelo sobre un tronco (alguno de los dos lleva troncos): alto (cara de arriba), ojos (cámara sentado en el suelo), asiento (distancia del borde a cada jugador), mano (altura de las cartas del rival), corteza y madera (colores)",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "corteza": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "madera": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      },
+      "additionalProperties": { "type": "number" }
+    },
+    "piso": { "$ref": "#/$defs/numeros", "description": "Duelo en el piso (nadie lleva tronco ni mesa): alto (altura de las cartas), ojos (cámara sentado), asiento (distancia del borde a cada jugador), mano (altura de las cartas del rival)" },
+    "planoRival": { "$ref": "#/$defs/camara", "description": "Cámara que mira al otro jugador en su turno: lado, alto (desde tus ojos), z (hacia ti) y mira (y desde tus ojos)" },
     "coleccionInicial": { "$ref": "#/$defs/numeros", "description": "Copias de cada carta (por clave de CARTAS) con que parte un jugador que nunca tocó su colección; 0 = no la tiene. Ver COLECCION_INICIAL en cartas-coleccion.js" },
     "tiendaCartas": { "$ref": "#/$defs/numeros", "description": "Tienda de cartas del Duelo (cartas-tienda.js; la vende el amigo con cartas: true en tienda-datos.js). activa (0/1), sobrePrecio (esmeraldas, 1-64), sobreCartas (1-10), sobreNuevas (cuántas salen de las que no tienes), sobreHechizos (mínimo por sobre), sueltaTope (1 = no vende una suelta si ya tienes las que caben en un mazo). Ver TIENDA_CARTAS" },
     "preciosCartas": { "$ref": "#/$defs/numeros", "description": "Esmeraldas por cada carta suelta (por clave de CARTAS), antes del descuento de amistad; 0 = no se vende suelta. Sin la clave: precioBase de cartas-tienda.js" },

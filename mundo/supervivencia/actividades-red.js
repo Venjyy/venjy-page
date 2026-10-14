@@ -13,7 +13,7 @@
 //   evento  ← del anfitrión a todos: { id, s, por, d } (s = orden global de la actividad: 0, 1, 2…; por = autor)
 //   no      ← del anfitrión a uno: { id, motivo } ('llena', 'otra', 'cerrada', 'orden')
 //   invitar → directo a otro jugador (para): { id, k, d } (lo muestra su interfaz; no pasa por el estado)
-//   resp    → directo al que invitó: { id, si }
+//   resp    → directo al que invitó: { id, si, motivo? } (motivo: por qué no; lo lee cada juego)
 //   ver     → al anfitrión: pide el estado y el registro de eventos (quien llega tarde o se pone a mirar)
 //   registro← del anfitrión a uno: { id, act, log }
 // Orden: el anfitrión acepta un `ev` solo si su `s` es el siguiente (si no, `no` con 'orden'); así los
@@ -106,7 +106,7 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
                 break;
             }
             case 'invitar': if (m.para === yo || !m.para) avisar(m.k, 'invitacion', { id: m.id, k: m.k, de: m.de, d: m.d }); break;
-            case 'resp': avisar(m.k, 'resp', { id: m.id, k: m.k, de: m.de, si: !!m.si }); break;
+            case 'resp': avisar(m.k, 'resp', { id: m.id, k: m.k, de: m.de, si: !!m.si, motivo: m.motivo }); break;
             case 'no': avisar(m.k, 'no', { id: m.id, k: m.k, motivo: m.motivo, s: m.s }); break;
             case 'registro': if (m.act) acts.set(m.id, copia(m.act)); avisar(m.act ? m.act.k : null, 'registro', copia(m.act), m.log || [], m.id); break;
         }
@@ -121,7 +121,7 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
         // Evento con el orden que espero (el siguiente de la actividad); quien lo manda ya lo aplicó
         evento(id, d) { const a = acts.get(id); const s = a ? a.s : 0; if (a && !esAnfitrion) a.s++; alAnfitrion({ op: 'ev', id, s, d }); return s; },
         invitar(para, id, k, d) { enviar({ op: 'invitar', id, k, d, para }); },
-        responder(para, id, k, si) { enviar({ op: 'resp', id, k, si: !!si, para }); },
+        responder(para, id, k, si, motivo) { enviar({ op: 'resp', id, k, si: !!si, para, ...(motivo ? { motivo } : {}) }); },
         ver(id) { alAnfitrion({ op: 'ver', id }); },
         // Anfitrión: alguien se fue de la sala (sale de todas sus actividades)
         salioJugador(quien) { if (esAnfitrion) for (const a of [...acts.values()]) sacar(a.id, quien); },

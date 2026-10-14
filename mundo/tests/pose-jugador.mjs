@@ -26,8 +26,8 @@ const entre = (v, a, b, msg) => ok(Number.isFinite(v) && v >= a - 1e-9 && v <= b
 
 // ---- 1. Bits de f ----
 {
-    const claves = ['agachado', 'muerto', 'corre', 'golpe', 'comiendo', 'tensando', 'bloqueando'];
-    for (let n = 0; n < 128; n++) {
+    const claves = ['agachado', 'muerto', 'corre', 'golpe', 'comiendo', 'tensando', 'bloqueando', 'sentado'];
+    for (let n = 0; n < 256; n++) {
         const e = {};
         claves.forEach((k, i) => { e[k] = !!(n & (1 << i)); });
         const f = P.codificarF(e);
