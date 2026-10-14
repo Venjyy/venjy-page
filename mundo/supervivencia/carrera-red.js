@@ -1,118 +1,168 @@
 // =========================================================
-// VENJY · Supervivencia · Carrera de gatas entre 2 jugadores (7h-1), sobre la base común actividades-red.js
-// Una sola pista (la Gatera): la actividad 'carrera@gatera' con cupo 2. Quien abre la carrera desde el panel de
-// Lona elige gata y queda esperando rival; el siguiente que la abre se lleva la otra gata y empieza. Con los dos
-// dentro, el primero manda `ini` (qué gata maneja cada uno) y cada equipo corre la cuenta regresiva al recibirlo.
-// Cada corredor es dueño de su gata (la simula en su equipo) y manda su estado unas 10 veces por segundo como
-// ráfaga (`rafaga`: el anfitrión la reparte a todos y no la guarda); al cruzar la meta manda `fin` con su tiempo
-// como evento libre (queda en el registro). Gana el menor tiempo: cada uno lo mide desde su propia cuenta, así
-// la demora de la red no favorece a nadie.
-// Público: todos en la sala reciben el `ini`, los estados y las llegadas (mirar no suma mensajes); quien llega
-// tarde pide `ver` y recibe el inicio y las llegadas del registro. Cualquiera alienta con un `hurra` (ráfaga).
+// VENJY · Supervivencia · Carrera de gatas con varios jugadores (7h-1), sobre la base común actividades-red.js
+// Una actividad 'carrera@living' (cupo 8, como la sala). Quien la abre desde el panel de Lona entra a la sala de
+// espera: elige gata (cada una la maneja uno solo) o se pone a mirar. El primero de la lista es el **líder**: elige
+// la dificultad de la IA y larga; manda `ini` (qué gata maneja cada uno, parrilla, dificultad y semilla) y lo deja
+// también en sus datos (`d.ini`), así quien entra tarde lo lee del estado sin pedir el registro.
+// En carrera:
+//   - cada corredor simula su gata y manda su estado ~12 veces por segundo (ráfaga `e`);
+//   - el líder simula la IA (y las gatas de quien se va) y es el dueño de los objetos: manda las gatas de la IA y
+//     los objetos tirados ~10 veces por segundo (ráfaga `L`) y cada caja, uso y golpe al momento (ráfaga `o`);
+//   - quien aprieta su objeto avisa al líder (ráfaga `u`) y lo usa allá;
+//   - al cruzar la meta, evento `fin` con el tiempo (cada uno mide el suyo desde su cuenta);
+//   - el público (los que miran) alienta con `h`.
+// Las ráfagas van solo a los de la carrera (`rafaga(id, d, true)`): la carrera es una sala aparte y el resto de la
+// sala no la ve ni gasta mensajes en ella.
+// Si se va el líder, el siguiente de la lista toma la IA y los objetos (`al.lider(true)`); si se va un corredor, su
+// gata sigue con la IA del líder (`al.abandono(k)`).
 // Sin DOM: se prueba en Node (mundo/tests/carrera.mjs).
 // =========================================================
 export const TIPO_CARRERA = 'carrera';
-export const ID_CARRERA = 'carrera@gatera';
-const otraGata = c => (c === 'mila' ? 'gala' : 'mila');
+export const ID_CARRERA = 'carrera@living';
+export const CUPO_CARRERA = 8;
 
-// al = { espera(), inicio(ini, mia, gatas), estado(gata, d), meta(gata, tf, quien), hurra(quien, gata), abandono(gata),
-//        rechazo(motivo), mirar(ini, act), cerrada() }
-export function crearCarreraRed({ acts, yo, al = {}, azar = Math.random }) {
-    let fase = 'libre', mia = null, gatas = null; // gatas: { id: 'mila' | 'gala' } de la carrera en curso (también mirando)
-    const avisar = (que, ...a) => { if (al[que]) al[que](...a); };
-    const gataDe = id => (gatas && gatas[id]) || null;
-    function iniciar(ini) {
-        gatas = { ...ini.gatas }; fase = 'corriendo'; mia = gatas[yo];
-        avisar('inicio', ini, mia, gatas);
+// Reparte las gatas: cada corredor la que eligió (si dos eligen la misma, se la queda el primero de la lista y el
+// otro recibe la primera libre); con más corredores que gatas, los que sobran miran. Los que siguen en la carrera
+// anterior (`fuera`: aún no vuelven a la sala de espera) no corren esta. Parrilla: la IA adelante y los
+// jugadores atrás, en el orden de la lista (como en los karts). Puro: lo usan el líder y la prueba.
+export function repartirGatas(jug, datos, claves) {
+    const gatas = {}, usadas = new Set();
+    const corredores = jug.filter(id => !(datos[id] && (datos[id].mira || datos[id].fuera)));
+    const pendientes = [];
+    for (const id of corredores) {
+        const k = claves.indexOf(datos[id] && datos[id].gata);
+        if (k >= 0 && !usadas.has(k)) { gatas[id] = k; usadas.add(k); } else pendientes.push(id);
     }
-    function terminar() {
-        const habia = fase;
-        fase = 'libre'; mia = null;
-        if (habia !== 'libre') acts.salir(ID_CARRERA);
+    for (const id of pendientes) {
+        const k = claves.findIndex((_, i) => !usadas.has(i));
+        if (k < 0) break; // no quedan gatas: mira
+        gatas[id] = k; usadas.add(k);
+    }
+    const humanas = jug.filter(id => id in gatas).map(id => gatas[id]);
+    const orden = claves.map((_, i) => i).filter(i => !usadas.has(i)).concat(humanas);
+    return { gatas, orden };
+}
+
+// al = { sala(act), inicio(ini, mia, soyLider), estado(k, pack), lider(soy), paquete(m), objetos(evs), usar(k, atras, objeto),
+//        meta(k, tf, quien), hurra(quien, k), abandono(k), rechazo(motivo), cerrada() }
+//   mia = índice de mi gata (null si miro). paquete(m) = la ráfaga del líder ({ t, g: { k: pack }, w }).
+export function crearCarreraRed({ acts, yo, al = {}, azar = Math.random }) {
+    let fase = 'libre', ini = null, lider = null, unido = false, visto = null; // fase: libre | sala | corre
+    const avisar = (que, ...a) => { if (al[que]) al[que](...a); };
+    const act = () => acts.actividad(ID_CARRERA);
+    const dueno = k => { if (!ini) return null; for (const id in ini.gatas) if (ini.gatas[id] === k) return id; return null; };
+    const misDatos = () => { const a = act(); return (a && a.d[yo]) || {}; };
+    // Empieza la carrera (o la miro): quedo `fuera` de la sala de espera hasta volver (el líder ya lo dijo al largar)
+    function empezar(i, avisarDatos = true) {
+        ini = { ...i, gatas: { ...i.gatas } }; fase = 'corre'; // (copia: los abandonos se quitan de aquí)
+        const a = act(); lider = a ? a.jug[0] : null;
+        if (avisarDatos) acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { ...misDatos(), fuera: 1 });
+        avisar('inicio', ini, ini.gatas[yo] ?? null, lider === yo);
     }
 
     acts.escuchar(TIPO_CARRERA, {
-        estado(act, antes, cual) {
+        estado(a, antes, cual) {
             if (cual !== ID_CARRERA) return;
-            const jug = act ? act.jug : [];
-            if (!act) { if (fase === 'libre') { gatas = null; avisar('cerrada'); } return; }
-            // Los dos dentro: el primero (quien esperaba) arma la carrera
-            if (fase === 'esperando' && jug.length === 2 && jug[0] === yo) {
-                const ini = { t: 'ini', gatas: { [jug[0]]: act.d[jug[0]].gata, [jug[1]]: act.d[jug[1]].gata }, semilla: (azar() * 1e9) | 0 };
-                acts.eventoLibre(ID_CARRERA, ini);
-                iniciar(ini);
-                return;
+            if (!a) { if (fase !== 'libre') { fase = 'libre'; ini = null; } avisar('cerrada'); return; }
+            if (fase === 'libre') return;
+            if (!a.jug.includes(yo)) { if (unido) { fase = 'libre'; ini = null; avisar('rechazo', 'cerrada'); } return; } // (antes de verme: un estado que ya venía)
+            unido = true;
+            const nuevo = a.jug[0];
+            if (fase === 'corre' && ini) {
+                // Corredores que se fueron: su gata queda para la IA del líder
+                for (const id of Object.keys(ini.gatas)) if (!a.jug.includes(id)) { const k = ini.gatas[id]; delete ini.gatas[id]; avisar('abandono', k); }
+                if (nuevo !== lider) { lider = nuevo; avisar('lider', lider === yo); }
             }
-            // El rival se fue (salió de la carrera o de la sala)
-            if (fase === 'corriendo' && gatas) {
-                const rival = Object.keys(gatas).find(id => id !== yo);
-                if (rival && !jug.includes(rival)) avisar('abandono', gatas[rival]);
-            }
-            if (fase === 'uniendo' && !jug.includes(yo)) { fase = 'libre'; avisar('rechazo', 'cerrada'); }
+            lider = nuevo;
+            // Llegué tarde (o volví a la sala de espera) y el líder ya largó: miro su carrera
+            const di = a.d[nuevo] && a.d[nuevo].ini;
+            if (fase === 'sala' && di && (!ini || di.n !== ini.n) && di.n !== visto) { empezar(di); return; }
+            avisar('sala', a);
         },
         no(m) {
-            if (m.id !== ID_CARRERA) return;
-            if (fase === 'uniendo' || fase === 'esperando') { fase = 'libre'; mia = null; avisar('rechazo', m.motivo); }
+            if (m.id !== ID_CARRERA || fase !== 'sala') return;
+            fase = 'libre'; avisar('rechazo', m.motivo);
         },
-        evento(ev, act, cual) {
+        evento(ev, a, cual) {
             if (cual !== ID_CARRERA || !ev.d) return;
             const d = ev.d;
-            if (d.t === 'ini') {
-                if (fase === 'uniendo' && act && act.jug.includes(yo)) iniciar(d);
-                else if (fase === 'libre') { gatas = { ...d.gatas }; avisar('mirar', d, act); }
-                return;
+            if (d.t === 'ini' && fase === 'sala' && ev.de !== yo) { empezar(d); return; }
+            if (d.t === 'fin' && fase === 'corre' && ini && d.n === ini.n && ev.de !== yo) {
+                const k = ini.gatas[ev.de]; if (k !== undefined) avisar('meta', k, d.tf, ev.de);
             }
-            if (d.t === 'fin') avisar('meta', gataDe(ev.de), d.tf, ev.de);
         },
         rafaga(r, cual) {
-            if (cual !== ID_CARRERA || !r.d) return;
-            if (r.d.t === 'e') { const g = gataDe(r.de); if (g) avisar('estado', g, r.d); }
-            else if (r.d.t === 'h') avisar('hurra', r.de, r.d.g);
-        },
-        registro(act, log, cual) {
-            if (cual !== ID_CARRERA || fase !== 'libre') return;
-            if (!act || act.jug.length < 2) return;
-            let k = -1;
-            for (let i = log.length - 1; i >= 0; i--) if (log[i].d && log[i].d.t === 'ini') { k = i; break; }
-            if (k < 0) return;
-            gatas = { ...log[k].d.gatas };
-            avisar('mirar', log[k].d, act);
-            for (const x of log.slice(k + 1)) if (x.d && x.d.t === 'fin') avisar('meta', gataDe(x.de), x.d.tf, x.de);
+            if (cual !== ID_CARRERA || !r.d || fase !== 'corre' || !ini) return;
+            const d = r.d;
+            if (d.n !== undefined && d.n !== ini.n) return; // de una carrera anterior
+            if (d.t === 'e') { const k = ini.gatas[r.de]; if (k !== undefined) avisar('estado', k, d); }
+            else if (d.t === 'L') { if (r.de === lider) avisar('paquete', d); }
+            else if (d.t === 'o') { if (r.de === lider) avisar('objetos', d.e || []); }
+            else if (d.t === 'u') { const k = ini.gatas[r.de]; if (lider === yo && k !== undefined) avisar('usar', k, !!d.a, d.o); }
+            else if (d.t === 'h') avisar('hurra', r.de, d.g);
         }
     });
 
+    const rf = d => acts.rafaga(ID_CARRERA, { ...d, n: ini ? ini.n : 0 }, true);
     return {
         get fase() { return fase; },
-        get mia() { return mia; },
-        get gatas() { return gatas ? { ...gatas } : null; },
-        // La carrera abierta con alguien esperando rival (y no soy yo), o null
-        esperando() { const a = acts.actividad(ID_CARRERA); return a && a.jug.length === 1 && a.jug[0] !== yo ? a : null; },
-        // ¿Se está corriendo una carrera ajena? (para mirarla)
-        enCurso() { const a = acts.actividad(ID_CARRERA); return !!(a && a.jug.length === 2 && !a.jug.includes(yo)); },
-        // Abrir la carrera desde el panel de Lona: si alguien espera, me uno con la otra gata; si no, espero con la mía
-        abrir(pref = 'mila') {
+        get ini() { return ini; },
+        get soyLider() { const a = act(); return !!(a && a.jug[0] === yo); },
+        get mia() { return ini && yo in ini.gatas ? ini.gatas[yo] : null; },
+        dueno,
+        // La carrera abierta (sala de espera o corriendo), o null
+        abierta: () => act(),
+        // Entrar a la sala de espera con la gata que quiero (o a mirar)
+        entrar(gata, mira = false) {
             if (fase !== 'libre') return false;
-            const a = acts.actividad(ID_CARRERA);
-            if (a && a.jug.length >= 2) { avisar('rechazo', 'llena'); return false; }
-            if (a && a.jug.length === 1 && a.jug[0] !== yo) {
-                mia = otraGata(a.d[a.jug[0]] && a.d[a.jug[0]].gata);
-                fase = 'uniendo';
-                acts.unir(ID_CARRERA, TIPO_CARRERA, 2, { gata: mia });
-                return true;
-            }
-            mia = pref === 'gala' ? 'gala' : 'mila';
-            fase = 'esperando';
-            acts.unir(ID_CARRERA, TIPO_CARRERA, 2, { gata: mia, espera: 1 });
-            avisar('espera');
+            const a = act();
+            if (a && a.jug.length >= a.cupo) { avisar('rechazo', 'llena'); return false; }
+            fase = 'sala'; ini = null; unido = false; visto = null;
+            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { gata, mira: mira ? 1 : 0 });
             return true;
         },
-        // Mientras corro: mi estado (empacar de carrera-modelo.js) y mi llegada
-        estado(d) { if (fase === 'corriendo') acts.rafaga(ID_CARRERA, { ...d, t: 'e' }); },
-        meta(tf) { if (fase === 'corriendo') acts.eventoLibre(ID_CARRERA, { t: 'fin', tf: Math.round(tf * 100) / 100 }); },
-        // Alentar a una gata (corredor o público)
-        hurra(g) { acts.rafaga(ID_CARRERA, { t: 'h', g }); },
-        // Público que llega tarde: pide el inicio y las llegadas
-        mirar() { if (fase === 'libre') acts.ver(ID_CARRERA); },
-        salir() { terminar(); }
+        // En la sala de espera: cambiar de gata o pasar a mirar (los datos se reemplazan enteros)
+        elegir(gata, mira = false) {
+            if (fase !== 'sala') return;
+            const d = misDatos();
+            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { ...d, gata, mira: mira ? 1 : 0 });
+        },
+        // Líder: larga la carrera. claves = R.gatas (clave de cada una); dificultad de la IA
+        largar(claves, dificultad) {
+            const a = act();
+            if (fase !== 'sala' || !a || a.jug[0] !== yo) return null;
+            const { gatas, orden } = repartirGatas(a.jug, a.d, claves);
+            // n: número de esta carrera (al azar: distinto aunque cambie el líder)
+            const i = { t: 'ini', n: 1 + ((azar() * 1e9) | 0), gatas, orden, dificultad, semilla: (azar() * 1e9) | 0 };
+            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { ...misDatos(), ini: i, fuera: 1 });
+            acts.eventoLibre(ID_CARRERA, i);
+            empezar(i, false);
+            return i;
+        },
+        // Volver a la sala de espera tras el final (sigo en la actividad); no vuelve a entrar a la misma carrera.
+        // El líder borra su `ini`: quien llegue ahora espera la próxima
+        aLaSala() {
+            if (fase !== 'corre') return;
+            visto = ini ? ini.n : null;
+            fase = 'sala'; ini = null;
+            const d = { ...misDatos(), fuera: 0 };
+            delete d.ini;
+            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, d);
+        },
+        // Mientras corro: mi gata (empacar de carrera-modelo.js) y mi llegada
+        estado(pack) { if (fase === 'corre' && this.mia !== null) rf({ ...pack, t: 'e' }); },
+        meta(tf) { if (fase === 'corre' && this.mia !== null) acts.eventoLibre(ID_CARRERA, { t: 'fin', n: ini.n, tf: Math.round(tf * 100) / 100 }); },
+        // Líder: la IA y los objetos tirados (g = { k: pack }, w = empacarObjetos) y los sucesos de los objetos
+        paquete(g, w, tc) { if (fase === 'corre') rf({ t: 'L', g, w, tc: Math.round(tc * 100) / 100 }); },
+        objetos(evs) { if (fase === 'corre' && evs.length) rf({ t: 'o', e: evs }); },
+        // Corredor: usa su objeto (atras = con el freno); el líder lo lanza allá
+        usar(atras, o) { if (fase === 'corre') rf({ t: 'u', a: atras ? 1 : 0, o }); },
+        // Alentar a una gata (sobre todo el público)
+        hurra(k) { if (fase === 'corre') rf({ t: 'h', g: k }); },
+        salir() {
+            if (fase === 'libre') return;
+            fase = 'libre'; ini = null; unido = false;
+            acts.salir(ID_CARRERA);
+        }
     };
 }

@@ -1050,6 +1050,15 @@
       },
       "additionalProperties": false
     },
+    "red": {
+      "type": "object",
+      "properties": {
+        "envios": { "type": "number", "minimum": 4, "maximum": 30 },
+        "paquetes": { "type": "number", "minimum": 4, "maximum": 30 },
+        "hurra": { "type": "number", "minimum": 0.1, "maximum": 5 }
+      },
+      "additionalProperties": false
+    },
     "premio": {
       "type": "object",
       "properties": {

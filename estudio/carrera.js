@@ -51,6 +51,11 @@ const GRUPOS = [
         fov: ['ángulo de visión', 'field of view', 40, 110, 1], fovTurbo: ['ángulo con turbo', 'field of view on boost', 40, 120, 1], suave: ['rapidez con que te sigue', 'follow speed', 1, 30, 0.5]
     }],
     ['tactil', 'Celular', 'Phone', { autoAcelerar: ['1 = acelera sola (sin botón ACELERAR)', '1 = auto gas (no GAS button)', 0, 1, 1] }],
+    ['red', 'Varios jugadores (red)', 'Multiplayer (network)', {
+        envios: ['veces por segundo que cada corredor manda su gata', 'times per second each racer sends its cat', 4, 30, 1],
+        paquetes: ['veces por segundo que el líder manda la IA y los objetos', 'times per second the leader sends AI and items', 4, 30, 1],
+        hurra: ['segundos entre dos hurras del público', 'seconds between two cheers from the crowd', 0.1, 5, 0.1]
+    }],
     ['sala', 'La sala (living)', 'The room', {
         ancho: ['ancho', 'width', 60, 500, 1], fondo: ['fondo', 'depth', 60, 500, 1], alto: ['alto', 'height', 20, 150, 1], x: ['centro x', 'center x', -150, 150, 0.5], z: ['centro z', 'center z', -150, 150, 0.5]
     }]

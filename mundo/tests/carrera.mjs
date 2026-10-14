@@ -2,7 +2,8 @@
 // Prueba de la carrera de gatas (7h-1, «Gran Premio del Living»): pista, física (salto, derrape con niveles, turbo,
 // placas, truco, huecos y caída, paredes, choques), vueltas, IA en las tres dificultades con seis gatas, objetos (cajas,
 // ruleta por puesto, pluma, ovillo, caja de cartón, pescado, hierba gatera y aspiradora; la IA los usa), y la red
-// (carrera-red.js sobre actividades-red.js con una sala falsa en estrella). node mundo/tests/carrera.mjs
+// (carrera-red.js sobre actividades-red.js con una sala falsa en estrella: sala de espera, líder con la IA y los objetos,
+// corredores, público, quien llega tarde, quien se va y otra carrera). node mundo/tests/carrera.mjs
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
@@ -12,7 +13,7 @@ const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '../../');
 const imp = p => import(pathToFileURL(resolve(raiz, p)).href);
 const M = await imp('mundo/supervivencia/carrera-modelo.js');
 const { crearActividades } = await imp('mundo/supervivencia/actividades-red.js');
-const { crearCarreraRed, ID_CARRERA } = await imp('mundo/supervivencia/carrera-red.js');
+const { crearCarreraRed, repartirGatas, ID_CARRERA } = await imp('mundo/supervivencia/carrera-red.js');
 
 let fallos = 0;
 const falla = msg => { if (fallos < 30) console.error('FALLO: ' + msg); fallos++; };
@@ -411,11 +412,59 @@ const conObjetos = {};
 }
 
 // ---------- 6. Red (sala falsa en estrella) ----------
+// Modelo: lo que viaja de una gata y de los objetos
+{
+    const g = M.nuevaGata(P, R, R.gatas[0], 0);
+    for (let i = 0; i < 90; i++) M.pasoGata(g, { ad: 1 }, DT, R, P, i * DT);
+    g.aturdida = 0.8;
+    const m = M.empacar(g);
+    if (JSON.stringify(m).length > 160) falla(`una gata empacada pesa ${JSON.stringify(m).length} B`);
+    const h = M.desempacar(M.nuevaGata(P, R, R.gatas[0], 0), m);
+    if (Math.abs(h.x - g.x) > 0.01 || Math.abs(h.s - g.s) > 0.01 || Math.abs(h.lat - g.lat) > 0.01 || h.aturdida < 0.7) falla('desempacar no copia la gata');
+    // Seguir: se acerca a donde va (sin saltos) y el efecto se acaba solo
+    const lejos = { ...m, x: m.x + 2 };
+    M.recibirRed(h, lejos);
+    const x0 = h.x;
+    M.seguirRed(h, DT, P);
+    if (!(h.x > x0 && h.x < lejos.x + 1)) falla('seguirRed no se acerca suave');
+    for (let i = 0; i < 60; i++) M.seguirRed(h, DT, P);
+    if (h.aturdida > 0) falla('el efecto no se acaba en la gata ajena');
+    // Un efecto puesto por el líder no lo borra un estado viejo
+    h.come = 1; M.recibirRed(h, m); if (h.come < 1) falla('un estado viejo borra el pescado');
+    // Efectos que manda el líder
+    const k = M.nuevaGata(P, R, R.gatas[1], 1); k.v = 20;
+    M.efectoObjeto(k, { k: 1, e: 'golpe', o: 'ovillo' }, R);
+    if (!(k.aturdida > 0) || k.v >= 20) falla('efectoObjeto golpe');
+    M.efectoObjeto(k, { k: 1, e: 'caja', o: 'pluma' }, R);
+    if (k.objeto !== 'pluma' || !(k.ruleta > 0)) falla('efectoObjeto caja');
+    M.efectoObjeto(k, { k: 1, e: 'reves', o: 'hierba' }, R); if (!(k.reves > 0)) falla('efectoObjeto hierba');
+    k.suelo = true; M.efectoObjeto(k, { k: 1, e: 'susto', o: 'aspiradora' }, R); if (!(k.susto > 0) || k.suelo) falla('efectoObjeto aspiradora');
+    // Objetos: ida y vuelta, y el ovillo sigue rodando entre paquetes
+    const W = M.nuevosObjetos(R, P);
+    W.t = 5; W.cajas[0].hasta = 7;
+    W.sueltos.push({ id: 3, tipo: 'ovillo', s: 10, lat: 1, y: 0, v: 30, de: 0, gracia: 0, vida: 4 }, { id: 4, tipo: 'caja', s: 40, lat: -1, y: 0, v: 0, de: 1, gracia: 0, vida: 30 });
+    const w = M.empacarObjetos(W), W2 = M.aplicarObjetos(M.nuevosObjetos(R, P), w);
+    if (W2.cajas[0].hasta !== 7 || W2.cajas[1].hasta !== 0 || W2.sueltos.length !== 2 || W2.sueltos[0].tipo !== 'ovillo' || W2.sueltos[1].s !== 40) falla('objetos de ida y vuelta');
+    M.avanzarObjetos(W2, 0.1, P);
+    if (Math.abs(W2.sueltos[0].s - 13) > 0.01 || Math.abs(W2.t - 5.1) > 1e-6) falla('el ovillo no sigue rodando entre paquetes');
+    console.log(`  red: gata ${JSON.stringify(m).length} B · objetos ${JSON.stringify(w).length} B`);
+}
+// Reparto de gatas: la elegida; si se repite, la primera libre; los que miran o siguen en la carrera anterior, no
+{
+    const claves = R.gatas.map(g => g.clave);
+    const { gatas, orden } = repartirGatas(['a', 'b', 'c', 'd', 'e'], { a: { gata: 'gala' }, b: { gata: 'gala' }, c: { gata: 'tigre', mira: 1 }, d: { gata: 'mila', fuera: 1 }, e: {} }, claves);
+    const ia = claves.indexOf('gala');
+    if (gatas.a !== ia || gatas.b === ia || gatas.b === undefined || 'c' in gatas || 'd' in gatas || gatas.e === undefined) falla(`reparto: ${JSON.stringify(gatas)}`);
+    if (orden.length !== claves.length || new Set(orden).size !== claves.length) falla('la parrilla no tiene a todas');
+    if (orden[orden.length - 3] !== gatas.a || orden[orden.length - 1] !== gatas.e) falla('los jugadores no parten atrás en orden');
+    const ocho = repartirGatas(['1', '2', '3', '4', '5', '6', '7', '8'], {}, claves);
+    if (Object.keys(ocho.gatas).length !== claves.length) falla('con más jugadores que gatas, sobran gatas o faltan');
+}
 function sala(ids) {
     const nodos = new Map(), cola = [];
     let enviados = 0;
     for (const id of ids) {
-        const n = { id };
+        const n = { id, recibidos: 0 };
         n.acts = crearActividades({ yo: id, esAnfitrion: id === ids[0], anfitrion: ids[0], enviar: m => { enviados++; cola.push({ de: id, m }); } });
         nodos.set(id, n);
     }
@@ -423,7 +472,7 @@ function sala(ids) {
         let g = 0;
         while (cola.length && g++ < 100000) {
             const { de, m } = cola.shift();
-            for (const [id, n] of nodos) if (id !== de && (!m.para || m.para === id)) n.acts.recibir({ ...m, de });
+            for (const [id, n] of nodos) if (id !== de && (!m.para || m.para === id)) { n.recibidos++; n.acts.recibir({ ...m, de }); }
         }
     }
     return { nodos, entregar, get enviados() { return enviados; } };
@@ -435,38 +484,79 @@ function controlador(S, id) {
     return n;
 }
 const ultimo = (n, k) => [...n.log].reverse().find(x => x[0] === k);
+const cuenta = (n, k) => n.log.filter(x => x[0] === k).length;
 {
-    const S = sala(['A', 'B', 'C', 'D']);
-    const A = controlador(S, 'A'), B = controlador(S, 'B'), C = controlador(S, 'C'), D = controlador(S, 'D');
-    B.red.abrir('gala'); S.entregar();
-    if (B.red.fase !== 'esperando' || !A.red.esperando()) falla('B no queda esperando');
-    A.red.abrir('gala'); S.entregar();
-    const iA = ultimo(A, 'inicio'), iB = ultimo(B, 'inicio');
-    if (!iA || !iB || iA[2] !== 'mila' || iB[2] !== 'gala') falla('no empieza la carrera con una gata cada uno');
-    if (!ultimo(C, 'mirar')) falla('el público no ve el inicio');
-    const g = M.nuevaGata(P, R, R.gatas[0], 0);
-    for (let i = 0; i < 5; i++) { g.x += 1; A.red.estado(M.empacar(g)); }
+    // A es el anfitrión de la sala y no corre; B abre la carrera (líder), C y D se suman, F mira; E no entra
+    const S = sala(['A', 'B', 'C', 'D', 'E', 'F']);
+    const [A, B, C, D, E, F] = ['A', 'B', 'C', 'D', 'E', 'F'].map(id => controlador(S, id));
+    const claves = R.gatas.map(g => g.clave);
+    B.red.entrar('mila'); S.entregar();
+    if (B.red.fase !== 'sala' || !B.red.soyLider || !ultimo(B, 'sala')) falla('B no queda en la sala de espera como líder');
+    C.red.entrar('mila'); D.red.entrar('gala'); F.red.entrar('mila', true); S.entregar();
+    if (C.red.soyLider || ultimo(C, 'sala')[1].jug.length !== 4) falla('la sala de espera no tiene a los cuatro');
+    C.red.elegir('tigre'); S.entregar();
+    if (S.nodos.get('B').acts.actividad(ID_CARRERA).d.C.gata !== 'tigre') falla('elegir no cambia la gata');
+    if (C.red.largar(claves, 'normal')) falla('larga quien no es el líder');
+    B.red.largar(claves, 'dificil'); S.entregar();
+    const [iB, iC, iD, iF] = [B, C, D, F].map(n => ultimo(n, 'inicio'));
+    if (!iB || !iC || !iD || !iF) falla('no todos reciben el inicio');
+    else {
+        if (iB[2] !== claves.indexOf('mila') || iC[2] !== claves.indexOf('tigre') || iD[2] !== claves.indexOf('gala') || iF[2] !== null) falla('las gatas no son las elegidas');
+        if (!iB[3] || iC[3]) falla('el líder no es B');
+        if (iC[1].semilla !== iB[1].semilla || iC[1].dificultad !== 'dificil' || iC[1].orden.join() !== iB[1].orden.join()) falla('la carrera no es la misma en todos');
+    }
+    if (E.log.length || A.log.length) falla('quien no está en la carrera recibe algo de ella');
+    const kB = B.red.mia, kC = C.red.mia, kD = D.red.mia;
+    // Estados de los corredores: a los de la carrera y a nadie más
+    const g = M.nuevaGata(P, R, R.gatas[kC], 0);
+    const rE = S.nodos.get('E').recibidos, antes = S.enviados;
+    for (let i = 0; i < 5; i++) { g.x += 1; C.red.estado(M.empacar(g)); }
     S.entregar();
-    if (B.log.filter(x => x[0] === 'estado').length !== 5 || C.log.filter(x => x[0] === 'estado').length !== 5) falla('los estados no llegan a todos');
-    C.red.hurra('gala'); S.entregar();
-    for (const n of [A, B, D]) if (!ultimo(n, 'hurra')) falla(`${n.id} no ve el hurra`);
-    D.log.length = 0; D.red.mirar(); S.entregar();
-    if (!ultimo(D, 'mirar')) falla('quien llega tarde no recibe la carrera');
-    B.red.meta(41.5); A.red.meta(43.25); S.entregar();
-    const mC = C.log.filter(x => x[0] === 'meta').map(x => x[1] + '@' + x[2]).sort().join(',');
-    if (mC !== 'gala@41.5,mila@43.25') falla(`llegadas que ve el público: ${mC}`);
-    const antes = S.enviados; B.red.estado(M.empacar(g)); S.entregar();
-    if (S.enviados - antes > 4) falla('un estado cuesta demasiados mensajes');
-    A.red.salir(); B.red.salir(); S.entregar();
-    if (A.acts.lista.length) falla('la actividad queda abierta');
-    console.log(`  red: estado de ${JSON.stringify({ op: 'rafaga', id: ID_CARRERA, d: { t: 'e', ...M.empacar(g) } }).length} B`);
+    for (const n of [B, D, F]) if (n.log.filter(x => x[0] === 'estado' && x[1] === kC).length !== 5) falla(`${n.id} no recibe los estados de C`);
+    if (S.nodos.get('E').recibidos !== rE) falla('el estado llega a quien no está en la carrera');
+    if ((S.enviados - antes) / 5 > 4) falla(`un estado cuesta ${(S.enviados - antes) / 5} mensajes`);
+    // El líder: IA y objetos; usar, golpes, hurras y llegadas
+    B.red.paquete({ 0: M.empacar(g) }, M.empacarObjetos(M.nuevosObjetos(R, P)), 12.5); S.entregar();
+    if (!ultimo(C, 'paquete') || !ultimo(F, 'paquete') || ultimo(F, 'paquete')[1].tc !== 12.5) falla('el paquete del líder no llega');
+    C.red.paquete({ 0: M.empacar(g) }, null, 1); S.entregar();
+    if (cuenta(D, 'paquete') !== 1) falla('se acepta un paquete de quien no es el líder');
+    C.red.usar(true, 'ovillo'); S.entregar();
+    const u = ultimo(B, 'usar');
+    if (!u || u[1] !== kC || u[2] !== true || u[3] !== 'ovillo') falla('el líder no recibe el uso del objeto');
+    if (ultimo(D, 'usar')) falla('el uso le llega a quien no es el líder');
+    B.red.objetos([{ k: kC, e: 'golpe', o: 'ovillo', de: kB }]); S.entregar();
+    if (!ultimo(C, 'objetos') || ultimo(C, 'objetos')[1][0].e !== 'golpe') falla('los golpes no llegan');
+    F.red.hurra(kD); S.entregar();
+    for (const n of [B, C, D]) if (!ultimo(n, 'hurra') || ultimo(n, 'hurra')[2] !== kD) falla(`${n.id} no ve el hurra`);
+    C.red.meta(50.123); S.entregar();
+    for (const n of [B, D, F]) { const m = ultimo(n, 'meta'); if (!m || m[1] !== kC || m[2] !== 50.12) falla(`${n.id} no ve la llegada de C`); }
+    // Llega tarde: mira la carrera en curso
+    E.red.entrar('sombra'); S.entregar();
+    if (!ultimo(E, 'inicio') || ultimo(E, 'inicio')[2] !== null) falla('quien llega tarde no mira la carrera');
+    // Se va el líder: C toma la IA y la gata de B
+    B.red.salir(); S.entregar();
+    if (!ultimo(C, 'lider') || ultimo(C, 'lider')[1] !== true) falla('C no queda de líder');
+    for (const n of [C, D]) if (!ultimo(n, 'abandono') || ultimo(n, 'abandono')[1] !== kB) falla(`${n.id} no se entera del abandono`);
+    // Otra carrera: C vuelve a la sala de espera; D, E y F siguen en la anterior y no corren la nueva
+    C.red.aLaSala(); S.entregar();
+    if (C.red.fase !== 'sala' || cuenta(C, 'inicio') !== 1) falla('C no vuelve a la sala de espera (o vuelve a la carrera vieja)');
+    const i2 = C.red.largar(claves, 'normal'); S.entregar();
+    if (!i2 || Object.keys(i2.gatas).join() !== 'C') falla(`la nueva carrera tiene a ${i2 && Object.keys(i2.gatas)}`);
+    if (cuenta(D, 'inicio') !== 1) falla('D entra a la nueva carrera sin volver a la sala');
+    D.red.aLaSala(); S.entregar();
+    if (cuenta(D, 'inicio') !== 2 || ultimo(D, 'inicio')[2] !== null) falla('D, al volver, no mira la carrera en curso');
+    for (const n of [C, D, E, F]) n.red.salir();
+    S.entregar();
+    if (S.nodos.get('A').acts.lista.length) falla('la actividad queda abierta');
 }
 {
-    const S = sala(['A', 'B']);
-    const A = controlador(S, 'A'), B = controlador(S, 'B');
-    A.red.abrir('mila'); S.entregar(); B.red.abrir('mila'); S.entregar();
-    A.acts.salioJugador('B'); B.red.salir(); S.entregar();
-    if (!ultimo(A, 'abandono')) falla('no se entera del abandono');
+    // Llena: con 8 dentro, el 9.º no entra
+    const ids = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+    const S = sala(ids);
+    const ns = ids.map(id => controlador(S, id));
+    for (const n of ns.slice(0, 8)) { n.red.entrar('mila'); S.entregar(); }
+    ns[8].red.entrar('mila'); S.entregar();
+    if (ns[8].red.fase !== 'libre' || !ultimo(ns[8], 'rechazo')) falla('entra un 9.º a la carrera');
 }
 
 for (const [d, c] of Object.entries(medidas)) if (c.gs) {
