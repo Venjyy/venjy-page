@@ -21,6 +21,11 @@ export const TXT_CARTAS_BOTON = {
     faltaMazo: t('Necesitas un Mazo de cartas (3 papeles + carbón)', 'You need a Card Deck (3 paper + coal)')
 };
 
+// Botón de la carrera de gatas en el panel de Lona (carrera.js se carga al usarlo)
+export const CARRERA_BOTON = {
+    boton: t('Gran Premio del Living (carrera de gatas)', 'Living Room Grand Prix (cat race)')
+};
+
 // Requisitos de la tienda que se cumplen con un minijuego (tienda-datos.js usa la clave como `req`)
 export const REQ_MINIJUEGOS = {
     'mj-boris': { titulo: t('Ganarle a Boris cortando leña', 'Beat Boris at chopping wood') },

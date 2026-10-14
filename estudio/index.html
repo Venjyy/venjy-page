@@ -20,6 +20,7 @@
             <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
+            <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
         </nav>
@@ -109,6 +110,24 @@
             </div>
             <div class="marco marco-juego">
                 <iframe id="juego" title="Juego" allow="fullscreen; autoplay"></iframe>
+            </div>
+            <div id="ca-zona" hidden>
+                <div class="fila-botones ca-barra">
+                    <button id="ca-deshacer" class="boton chico secundario" type="button" data-es="Deshacer (Ctrl+Z)" data-en="Undo (Ctrl+Z)">Deshacer (Ctrl+Z)</button>
+                    <button id="ca-encuadrar" class="boton chico secundario" type="button" data-es="Encuadrar" data-en="Fit view">Encuadrar</button>
+                    <select id="ca-tipo-mueble" aria-label="Mueble"></select>
+                    <button id="ca-agregar-mueble" class="boton chico secundario" type="button" data-es="Agregar mueble" data-en="Add furniture">Agregar mueble</button>
+                    <button id="ca-probar-ia" class="boton chico" type="button" data-es="Probar con la IA" data-en="Test with the AI">Probar con la IA</button>
+                    <button id="ca-pista-codigo" class="boton chico secundario" type="button" data-es="Volver a la pista del código" data-en="Back to the code track">Volver a la pista del código</button>
+                </div>
+                <p class="mensaje ca-ayuda" data-es="Arrastra los puntos (círculos) y los muebles. Doble clic sobre la pista agrega un punto; Supr lo borra. Rueda: zoom; botón derecho o Espacio + arrastrar: mover la vista; Alt: sin encajar. Abajo, el perfil: sube o baja cada punto para hacer rampas y saltos." data-en="Drag the points (circles) and the furniture. Double-click the track to add a point; Del removes it. Wheel: zoom; right button or Space + drag: pan; Alt: no snapping. Below, the profile: raise or lower each point to build ramps and jumps.">Arrastra los puntos (círculos) y los muebles. Doble clic sobre la pista agrega un punto; Supr lo borra. Rueda: zoom; botón derecho o Espacio + arrastrar: mover la vista; Alt: sin encajar. Abajo, el perfil: sube o baja cada punto para hacer rampas y saltos.</p>
+                <canvas id="ca-plano" class="ca-plano" width="800" height="440"></canvas>
+                <canvas id="ca-perfil" class="ca-perfil" width="800" height="150"></canvas>
+                <p id="ca-ia" class="mensaje" role="status"></p>
+                <div class="ca-abajo">
+                    <section id="ca-inspector" class="panel ca-inspector"></section>
+                    <section id="ca-avisos" class="panel ca-avisos"></section>
+                </div>
             </div>
             <div id="es-zona" hidden>
                 <div class="fila-aparato es-barra">
@@ -309,6 +328,26 @@
                         <button id="fo-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="fo-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-carrera" hidden>
+                <section class="panel">
+                    <h2 data-es="Carrera de gatas" data-en="Cat race">Carrera de gatas</h2>
+                    <p class="mensaje" data-es="Gran Premio del Living: seis gatas en una sala gigante. La pista y los muebles se editan en el plano bajo el juego; aquí, cómo corre cada gata, la IA, la cámara y el premio. Todo va en vivo. Guardar escribe mundo/datos/carrera.json." data-en="Living Room Grand Prix: six cats in a giant room. Edit the track and the furniture on the map under the game; here, how each cat runs, the AI, the camera and the prize. Everything is live. Save writes mundo/datos/carrera.json.">Gran Premio del Living: seis gatas en una sala gigante. La pista y los muebles se editan en el plano bajo el juego; aquí, cómo corre cada gata, la IA, la cámara y el premio. Todo va en vivo. Guardar escribe mundo/datos/carrera.json.</p>
+                    <div class="fila-botones">
+                        <button id="ca-ver" class="boton chico" type="button" data-es="Ver la pista" data-en="View the track">Ver la pista</button>
+                        <button id="ca-mila" class="boton chico" type="button" data-es="Correr con Mila" data-en="Race with Mila">Correr con Mila</button>
+                        <button id="ca-gala" class="boton chico" type="button" data-es="Correr con Gala" data-en="Race with Gala">Correr con Gala</button>
+                        <button id="ca-terminar" class="boton chico secundario" type="button" data-es="Terminar" data-en="End">Terminar</button>
+                    </div>
+                </section>
+                <div id="ca-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="ca-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="ca-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="ca-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>

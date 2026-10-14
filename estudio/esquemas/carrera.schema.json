@@ -1,0 +1,677 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carrera.schema.json",
+  "title": "Carrera de gatas: Gran Premio del Living (mundo/datos/carrera.json)",
+  "description": "Carrera de karts con seis gatas en una sala gigante (7h-1). Cada clave ajusta la del código (CARRERA en mundo/supervivencia/carrera-modelo.js); lo que falte usa el código. Las gatas se funden por clave. Se edita en /estudio/ → pestaña Carrera (plano de la pista, perfil de alturas y panel) y se aplica en vivo.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "$ref": "comun.schema.json#/$defs/version"
+    },
+    "nota": {
+      "$ref": "comun.schema.json#/$defs/nota"
+    },
+    "nombre": {
+      "$ref": "comun.schema.json#/$defs/texto"
+    },
+    "vueltas": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9
+    },
+    "cuenta": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "intro": {
+      "description": "Segundos de la presentación.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "tope": {
+      "description": "Segundos máximos de carrera.",
+      "type": "number",
+      "minimum": 60,
+      "maximum": 900
+    },
+    "dificultad": {
+      "enum": [
+        "facil",
+        "normal",
+        "dificil"
+      ]
+    },
+    "pista": {
+      "type": "object",
+      "properties": {
+        "paso": {
+          "description": "Muestreo (bloques).",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 2
+        },
+        "ancho": {
+          "description": "Ancho base (bloques).",
+          "type": "number",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "salida": {
+          "description": "Bloques antes de la línea para la 1.ª fila.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "puntos": {
+          "description": "Puntos [x, y, z, ancho?] en bloques sobre el piso del living, en orden; se cierra solo; la salida en el primero.",
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 64,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "description": "x",
+                "type": "number",
+                "minimum": -150,
+                "maximum": 150
+              },
+              {
+                "description": "y (altura sobre el piso)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 30
+              },
+              {
+                "description": "z",
+                "type": "number",
+                "minimum": -150,
+                "maximum": 150
+              },
+              {
+                "description": "ancho propio (opcional)",
+                "type": "number",
+                "minimum": 2,
+                "maximum": 20
+              }
+            ],
+            "minItems": 3,
+            "maxItems": 4
+          }
+        },
+        "huecos": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "properties": {
+              "punto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 63
+              },
+              "largo": {
+                "description": "bloques",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 30
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "punto"
+            ]
+          }
+        },
+        "turbos": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "properties": {
+              "punto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 63
+              },
+              "avance": {
+                "description": "bloques después del punto",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 60
+              },
+              "lado": {
+                "description": "-1 izquierda .. 1 derecha",
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              },
+              "largo": {
+                "description": "bloques",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 20
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "punto"
+            ]
+          }
+        },
+        "tuneles": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "properties": {
+              "desde": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 63
+              },
+              "hasta": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 63
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "desde"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "sala": {
+      "type": "object",
+      "properties": {
+        "ancho": {
+          "description": "",
+          "type": "number",
+          "minimum": 60,
+          "maximum": 300
+        },
+        "fondo": {
+          "description": "",
+          "type": "number",
+          "minimum": 60,
+          "maximum": 300
+        },
+        "alto": {
+          "description": "",
+          "type": "number",
+          "minimum": 20,
+          "maximum": 120
+        },
+        "x": {
+          "description": "",
+          "type": "number",
+          "minimum": -60,
+          "maximum": 60
+        },
+        "z": {
+          "description": "",
+          "type": "number",
+          "minimum": -60,
+          "maximum": 60
+        }
+      },
+      "additionalProperties": false
+    },
+    "muebles": {
+      "type": "array",
+      "maxItems": 60,
+      "items": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "enum": [
+              "sofa",
+              "mesa",
+              "alfombra",
+              "ovillo",
+              "lampara",
+              "caja",
+              "pecera",
+              "cojin",
+              "raton",
+              "podio"
+            ]
+          },
+          "x": {
+            "description": "",
+            "type": "number",
+            "minimum": -150,
+            "maximum": 150
+          },
+          "z": {
+            "description": "",
+            "type": "number",
+            "minimum": -150,
+            "maximum": 150
+          },
+          "a": {
+            "description": "ancho (x)",
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 80
+          },
+          "f": {
+            "description": "fondo (z)",
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 80
+          },
+          "h": {
+            "description": "alto",
+            "type": "number",
+            "minimum": 0.02,
+            "maximum": 60
+          },
+          "g": {
+            "description": "giro en grados",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "tipo",
+          "x",
+          "z",
+          "a",
+          "f",
+          "h"
+        ]
+      }
+    },
+    "gata": {
+      "type": "object",
+      "properties": {
+        "vel": {
+          "description": "vel",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "acel": {
+          "description": "acel",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "freno": {
+          "description": "freno",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "roce": {
+          "description": "roce",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "atras": {
+          "description": "atras",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "giro": {
+          "description": "giro",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "gravedad": {
+          "description": "gravedad",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "salto": {
+          "description": "salto",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "derrapeGiro": {
+          "description": "derrapeGiro",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "derrapeMando": {
+          "description": "derrapeMando",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "turbo": {
+          "description": "turbo",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "placa": {
+          "description": "placa",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "truco": {
+          "description": "truco",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "pared": {
+          "description": "pared",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "radio": {
+          "description": "radio",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "caida": {
+          "description": "caida",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "niveles": {
+          "type": "array",
+          "items": {
+            "description": "segundos de carga",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 6
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "turbos": {
+          "type": "array",
+          "items": {
+            "description": "segundos de turbo",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 4
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "gatas": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "properties": {
+          "clave": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,20}$"
+          },
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 14
+          },
+          "vel": {
+            "description": "",
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1.2
+          },
+          "acel": {
+            "description": "",
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1.2
+          },
+          "giro": {
+            "description": "",
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1.2
+          },
+          "escala": {
+            "description": "",
+            "type": "number",
+            "minimum": 0.7,
+            "maximum": 1.4
+          },
+          "panuelo": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "pelaje": {
+            "type": "object",
+            "properties": {
+              "base": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "mancha": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "panza": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "ojos": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "patron": {
+                "enum": [
+                  "liso",
+                  "atigrado",
+                  "manchas",
+                  "siames"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "clave"
+        ]
+      }
+    },
+    "ia": {
+      "type": "object",
+      "properties": {
+        "niveles": {
+          "type": "object",
+          "properties": {
+            "facil": {
+              "description": "",
+              "type": "number",
+              "minimum": 0.4,
+              "maximum": 1.2
+            },
+            "normal": {
+              "description": "",
+              "type": "number",
+              "minimum": 0.4,
+              "maximum": 1.2
+            },
+            "dificil": {
+              "description": "",
+              "type": "number",
+              "minimum": 0.4,
+              "maximum": 1.2
+            }
+          },
+          "additionalProperties": false
+        },
+        "mira": {
+          "description": "",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 20
+        },
+        "linea": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "curva": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "derrapa": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.3
+        },
+        "error": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "empuje": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.3
+        }
+      },
+      "additionalProperties": false
+    },
+    "camara": {
+      "type": "object",
+      "properties": {
+        "distancia": {
+          "description": "",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 14
+        },
+        "alto": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 8
+        },
+        "mira": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "fov": {
+          "description": "",
+          "type": "number",
+          "minimum": 40,
+          "maximum": 110
+        },
+        "fovTurbo": {
+          "description": "",
+          "type": "number",
+          "minimum": 40,
+          "maximum": 120
+        },
+        "suave": {
+          "description": "",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 30
+        }
+      },
+      "additionalProperties": false
+    },
+    "tactil": {
+      "type": "object",
+      "properties": {
+        "autoAcelerar": {
+          "enum": [
+            0,
+            1
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "premio": {
+      "type": "object",
+      "properties": {
+        "puestos": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Z0-9_]{1,40}$"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 64
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        "resto": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9_]{1,40}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 64
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

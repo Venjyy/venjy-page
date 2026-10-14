@@ -51,6 +51,11 @@ async function aplicar(nombre, datos) {
         const v = window.__venjy;
         if (!v || !v.mundo) throw new Error('el juego todavía no está listo');
         v.mundo.aplicarFormas(datos);
+    } else if (nombre === 'carrera') {
+        // 7h-1: la carrera lee estos datos en cada cuadro (el circuito se vuelve a armar si cambió)
+        const v = window.__venjy;
+        if (!v) throw new Error('el juego todavía no está listo');
+        v.datosCarrera = datos;
     } else if (nombre === 'cartas-arte') {
         const m = await import('../mundo/supervivencia/cartas-arte.js');
         m.aplicarArte(datos);
@@ -224,6 +229,15 @@ const responder = crearManejador({
         else if (!v.mesaCartas || !v.mesaCartas.activo) throw new Error('primero abre la mesa');
         else if (accion === 'animar') { if (!v.mesaCartas.repetirAnimacion()) throw new Error('primero haz una jugada en la mesa'); }
         else v.mesaCartas.cambiarVista();
+    },
+    async carrera({ accion }) {
+        const v = window.__venjy;
+        if (!v || !v.cargarCarrera) throw new Error('el juego todavía no está listo');
+        const k = await v.cargarCarrera();
+        if (!k) throw new Error('no se pudo cargar la carrera');
+        if (accion === 'terminar') { k.terminar(); return; }
+        if (accion === 'ver') { if (!k.ver()) throw new Error('ahora no se puede: cierra lo que tengas abierto'); return; }
+        k.elegir(accion, 'normal');
     },
     // Pestaña Objetos: deja en tu mano (barra rápida) el objeto o bloque pedido, dándotelo si no lo tienes
     objeto({ clave }) {

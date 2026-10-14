@@ -67,7 +67,7 @@ import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
 import { crearComandosDev } from './comandos-dev.js';
-import { TXT_CARTAS_BOTON } from './minijuegos-datos.js';
+import { TXT_CARTAS_BOTON, CARRERA_BOTON } from './minijuegos-datos.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { crearCofresCompaneros } from './cofres-companeros.js';
@@ -985,18 +985,20 @@ async function arrancar(guardado, cx = null) {
                 const motivo = inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo);
                 return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo, extra: tutoCartasVisto() && !motivo ? [{ texto: textoCartas(TXT_CARTAS_BOTON.tuto), modo: 'tutorial' }] : [] };
             }
+            if (clave === 'lona') return { texto: textoCartas(CARRERA_BOTON.boton), motivo: null };
             return minijuegos.botonPara(clave);
         },
         // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
         jugar: (clave, modo) => {
             const b = clave === 'lucho'
                 ? { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) }
-                : minijuegos.botonPara(clave);
+                : clave === 'lona' ? { texto: textoCartas(CARRERA_BOTON.boton), motivo: null } : minijuegos.botonPara(clave);
             if (!b || b.motivo) return;
             capaPanel.hidden = true; capaPanel.textContent = '';
             document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             if (clave === 'lucho') { abrirMesaCartas(modo === 'tutorial' || !tutoCartasVisto() ? 'tutorial' : 'facil'); return; }
+            if (clave === 'lona') { cargarCarrera().then(k => { if (!k || !k.abrir()) { uiAbierta = false; if (!vida.muerto) entrar(); } }); return; }
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
@@ -1288,6 +1290,23 @@ async function arrancar(guardado, cx = null) {
         for (const x of colaAct.splice(0)) actividades.recibir(x);
     }).catch(err => console.error('No se pudieron cargar las actividades compartidas', err));
     function recibirActividad(m) { if (actividades) actividades.recibir(m); else colaAct.push(m); }
+    // Carrera de gatas (7h-1, «Gran Premio del Living»: carrera.js y su escena propia): se carga al abrirla desde el panel
+    // de Lona; mientras corres, su escena se dibuja en lugar del mundo (el mundo sigue andando: sala, cooperativo)
+    let carrera = null, cargandoCarrera = null;
+    function cargarCarrera() {
+        if (!cargandoCarrera) cargandoCarrera = Promise.all([import('./carrera.js'), cargarDatos('carrera')]).then(([m, json]) => {
+            carrera = m.crearCarrera({
+                jugador, gatas, npcs, inventario, entidades, hud, misiones, idioma,
+                datos: () => window.__venjy?.datosCarrera || json,
+                tactil: () => !!tactil,
+                puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera(),
+                bloquear: () => bloquearEscena(true), liberar: liberarEscena
+            });
+            return carrera;
+        }).catch(err => { cargandoCarrera = null; console.error('No se pudo cargar la carrera de gatas', err); return null; });
+        return cargandoCarrera;
+    }
+    const uiCarrera = () => !!(carrera && carrera.activa);
     // Anfitrión: quien entra a la sala sabe qué actividades hay (y puede mirar un duelo que ya empezó)
     function entroAActividades(id) { if (actividades) actividades.entroJugador(id); }
     function salioDeActividades(id) {
@@ -1953,6 +1972,8 @@ async function arrancar(guardado, cx = null) {
         get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
         // Actividades compartidas (7g-1) y duelo entre jugadores: lista de actividades, controlador del duelo
         get actividades() { return actividades; }, get duelo() { return duelo; },
+        // Carrera de gatas (7h-1): cargarCarrera().then(k => k.elegir('mila', 'normal')); carrera.saltarIntro(), carrera.saltarA(3)
+        get carrera() { return carrera; }, cargarCarrera: () => cargarCarrera(),
         // Abrir un sobre de prueba (Estudio → Mesa, «Probar el sobre»): la escena de cartas-sobre.js sin cobrar ni sumar cartas
         probarSobre: () => Promise.all([import('./cartas-sobre.js'), import('./cartas-tienda.js'), cargarDatos('cartas-mesa')]).then(([s, t, d]) => {
             const D = window.__venjy?.datosMesa || d;
@@ -2014,6 +2035,7 @@ async function arrancar(guardado, cx = null) {
         escenasGatas.actualizar(corre ? dt : 0);
         escenaCuello.actualizar(corre ? dt : 0);
         minijuegos.actualizar(corre ? dt : 0);
+        if (carrera) carrera.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
         if (mesaCartas) mesaCartas.actualizar(corre ? dt : 0);
         if (mesaMirar) mesaMirar.actualizar(corre ? dt : 0);
@@ -2050,9 +2072,11 @@ async function arrancar(guardado, cx = null) {
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
-        renderer.render(scene, camara);
-        if (mesaCartas) mesaCartas.dibujar(); // la mesa de cartas: vista de arriba (3.ª persona) y tu mano
-        if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();
+        if (!(carrera && carrera.dibuja(renderer))) { // la carrera de gatas se dibuja en lugar del mundo
+            renderer.render(scene, camara);
+            if (mesaCartas) mesaCartas.dibujar(); // la mesa de cartas: vista de arriba (3.ª persona) y tu mano
+            if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();
+        }
         const msCuadro = performance.now() - tBucle;
         cuadrosMs.agregar(msCuadro);
         if (medicion.activa && medicion.cuadros) medicion.cuadros.push(msCuadro); // /medir romper

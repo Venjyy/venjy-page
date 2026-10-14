@@ -8,7 +8,7 @@ export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
 // Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas; fase 6: poses;
 // pestaña Píxeles: iconos y cartas-arte). borradores.json no: el juego lo ignora.
-export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas'];
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 // Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json
@@ -34,6 +34,7 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
 //   objeto({ clave })             pone en tu mano ese objeto de OBJETOS (o un id numérico), dándotelo si no lo tienes (pestaña Objetos)
 //   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
+//   carrera({ accion })           'ver' | 'mila' | 'gala' | 'terminar': la carrera de gatas (7h-1; 'ver' = la sala sin menú)
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
@@ -115,6 +116,13 @@ export function crearManejador(juego) {
                     if (!['abrir', 'cerrar', 'vista', 'animar', 'tutorial'].includes(m.accion)) return error('accion de mesa no válida');
                     if (!juego.mesa) return error('este juego no tiene la mesa de cartas');
                     await juego.mesa({ accion: m.accion });
+                    return { ...base, tipo: 'ok' };
+                }
+                case 'carrera': {
+                    // Carrera de gatas (7h-1): abrirla con Mila o con Gala, o terminarla
+                    if (!['ver', 'mila', 'gala', 'terminar'].includes(m.accion)) return error('accion de carrera no válida');
+                    if (!juego.carrera) return error('este juego no tiene la carrera de gatas');
+                    await juego.carrera({ accion: m.accion });
                     return { ...base, tipo: 'ok' };
                 }
                 case 'objeto': {

@@ -80,6 +80,12 @@
       "fase": 11,
       "que": "Formas de los bloques que no son un cubo entero (losas, escalones, trampilla, vallas de jardín, farol, cartel; y el contorno y las grietas de cama, antorcha, flores y cultivos): cajas en 1/16, cuánto sube solo el jugador (paso) y el color del contorno y de las grietas; main.js lo pide y se aplica en vivo con supervivencia.html?estudio"
     },
+    "carrera": {
+      "esquema": "carrera",
+      "lee": "mundo/supervivencia/carrera.js",
+      "fase": 12,
+      "que": "Carrera de gatas «Gran Premio del Living» (7h-1): pista (puntos 3D, huecos, turbos y túneles), muebles y medidas de la sala, cómo corre una gata (derrape, turbos, salto), las seis gatas (carácter y pelaje), IA, cámara, celular y premio por puesto; main.js lo pide al abrir la carrera; se edita en la pestaña Carrera (plano y perfil de la pista) y se aplica en vivo con supervivencia.html?estudio"
+    },
     "borradores": {
       "esquema": "borradores",
       "lee": null,
