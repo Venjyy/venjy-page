@@ -99,7 +99,7 @@ if (medidas.facil.gs && medidas.dificil.gs) {
 
 // ---------- 4. Física ----------
 const G0 = R.gatas[0];
-const enRecta = () => { const g = M.nuevaGata(P, R, G0, 0); for (let i = 0; i < 150; i++) M.pasoGata(g, { ad: 1 }, DT, R, P); return g; };
+const enRecta = () => { const g = M.nuevaGata(P, R, G0, 0); for (let i = 0; i < 100; i++) M.pasoGata(g, { ad: 1 }, DT, R, P); return g; };
 // Acelera en la recta hasta su tope
 {
     const g = enRecta(), F = M.fisicaDe(R, g);

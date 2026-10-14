@@ -39,7 +39,8 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
     const bloque = (w, h, d, m, x, y, z, padre = scene) => { const b = caja(w, h, d, m); b.position.set(x, y, z); padre.add(b); recursos.push(b.geometry); return b; };
     const sala = R.sala;
     scene.background = new THREE.Color('#2a1c14');
-    scene.fog = new THREE.Fog(new THREE.Color('#3a2a20'), 90, 200);
+    const lado = Math.max(R.sala.ancho, R.sala.fondo);
+    scene.fog = new THREE.Fog(new THREE.Color('#3a2a20'), lado * 0.6, lado * 1.4); // se adapta al tamaño de la sala
 
     // ---------- Sala ----------
     const tabla = tx(16, 16, (x, y, r) => {

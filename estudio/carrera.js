@@ -16,7 +16,7 @@ const clonar = o => JSON.parse(JSON.stringify(o));
 const GRUPOS = [
     [null, 'Carrera', 'Race', {
         vueltas: ['vueltas', 'laps', 1, 9, 1], cuenta: ['segundos del semáforo', 'countdown seconds', 1, 6, 1],
-        intro: ['segundos de la presentación', 'intro seconds', 0, 20, 0.5], tope: ['segundos máximos de carrera', 'max race seconds', 60, 900, 10]
+        intro: ['segundos de la presentación', 'intro seconds', 0, 20, 0.5], tope: ['segundos máximos de carrera', 'max race seconds', 60, 1800, 10]
     }],
     ['pista', 'Pista', 'Track', {
         ancho: ['ancho base (bloques)', 'base width (blocks)', 3, 20, 0.5], paso: ['muestreo (bloques; menos = más fino)', 'sampling (blocks; lower = finer)', 0.25, 2, 0.05],
@@ -43,7 +43,7 @@ const GRUPOS = [
     }],
     ['tactil', 'Celular', 'Phone', { autoAcelerar: ['1 = acelera sola (sin botón ACELERAR)', '1 = auto gas (no GAS button)', 0, 1, 1] }],
     ['sala', 'La sala (living)', 'The room', {
-        ancho: ['ancho', 'width', 60, 300, 1], fondo: ['fondo', 'depth', 60, 300, 1], alto: ['alto', 'height', 20, 120, 1], x: ['centro x', 'center x', -60, 60, 0.5], z: ['centro z', 'center z', -60, 60, 0.5]
+        ancho: ['ancho', 'width', 60, 500, 1], fondo: ['fondo', 'depth', 60, 500, 1], alto: ['alto', 'height', 20, 150, 1], x: ['centro x', 'center x', -150, 150, 0.5], z: ['centro z', 'center z', -150, 150, 0.5]
     }]
 ];
 const PATRONES = ['liso', 'atigrado', 'manchas', 'siames'];
