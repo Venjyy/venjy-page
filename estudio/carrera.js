@@ -3,12 +3,13 @@
 // Edita mundo/datos/carrera.json. Debajo del juego, el editor de pista (carrera-pista.js: plano del living con la
 // carretera y los muebles para arrastrar, perfil de alturas, inspector, avisos y «Probar con la IA»). En el panel:
 // la carrera (vueltas, cuenta, presentación, tope, dificultad), la pista (ancho, muestreo, salida), la física de una
-// gata (velocidad, giro, salto, derrape y sus 3 niveles, turbos, paredes, caída), las seis gatas (nombre, carácter,
+// gata (velocidad, giro, salto, derrape y sus 3 niveles, turbos, paredes, caída), los objetos (cajas, ruleta y los
+// seis: peso según el puesto, efecto, nombre y color; dónde van las cajas se elige en el plano), las seis gatas (nombre, carácter,
 // pelaje y pañuelo), la IA, la cámara, el celular, la sala y el premio por puesto. Los valores que muestra son los
 // reales (código + JSON) de carrera-modelo.js. «Ver la pista» abre la sala en el juego (cámara que la recorre);
 // «Correr con…» empieza una carrera. Cada cambio va en vivo (mensaje `datos`). Guardar escribe con If-Match.
 // =========================================================
-import { reglasCarrera } from '../mundo/supervivencia/carrera-modelo.js';
+import { reglasCarrera, OBJETOS } from '../mundo/supervivencia/carrera-modelo.js';
 import { montarEditorPista } from './carrera-pista.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
@@ -30,12 +31,20 @@ const GRUPOS = [
         derrapeGiro: ['derrape: giro propio (rad/s)', 'drift: own turn (rad/s)', 0.2, 4, 0.05], derrapeMando: ['derrape: cuánto lo abre o cierra el mando', 'drift: steering control', 0, 3, 0.05],
         turbo: ['velocidad con turbo (×)', 'boost speed (×)', 1, 2.5, 0.05], placa: ['segundos de turbo de una placa', 'boost pad seconds', 0, 4, 0.05],
         truco: ['segundos de turbo de un truco', 'trick boost seconds', 0, 3, 0.05], pared: ['velocidad que queda al chocar la pared', 'speed kept on a wall hit', 0, 1, 0.05],
-        radio: ['radio de la gata (choques)', 'cat radius (bumps)', 0.2, 1.2, 0.05], caida: ['segundos hasta que Lona te devuelve', 'seconds until Lona brings you back', 0.3, 5, 0.1]
+        roza: ['ángulo desde el que choca (menos = se desliza)', 'angle that counts as a hit (lower = slides)', 0.05, 1, 0.05], rozaRoce: ['roce al deslizarse por el borde', 'friction sliding on the edge', 0, 5, 0.1],
+        radio: ['radio de la gata (choques)', 'cat radius (bumps)', 0.2, 1.2, 0.05], caida: ['segundos hasta que Lona te devuelve', 'seconds until Lona brings you back', 0.3, 5, 0.1],
+        vuelve: ['bloques antes del hueco donde te deja Lona', 'blocks before the gap where Lona drops you', 2, 40, 0.5]
     }],
     ['ia', 'Gatas del juego (IA)', 'Game-driven cats (AI)', {
         mira: ['bloques que mira adelante', 'blocks it looks ahead', 2, 20, 0.5], linea: ['se corre al interior de la curva (0-1)', 'inside line (0-1)', 0, 1, 0.05],
         curva: ['cuánto frena en las curvas', 'how much it brakes in turns', 0, 40, 0.5], derrapa: ['derrapa desde esta curvatura', 'drifts from this curvature', 0.01, 0.3, 0.005],
         error: ['errores en la línea (fácil y normal)', 'line mistakes (easy and normal)', 0, 2, 0.05], empuje: ['ayuda si va muy atrás tuyo (fracción)', 'catch-up help (fraction)', 0, 0.3, 0.01]
+    }],
+    ['objetos', 'Objetos (cajas en la pista)', 'Items (boxes on the track)', {
+        activos: ['1 = con objetos, 0 = sin', '1 = items on, 0 = off', 0, 1, 1], cuantas: ['cajas por fila (si la fila no dice)', 'boxes per row (default)', 1, 8, 1],
+        ruleta: ['segundos de la ruleta', 'roulette seconds', 0, 4, 0.1], reaparece: ['segundos hasta que vuelve una caja', 'seconds until a box returns', 0.5, 20, 0.5],
+        radioCaja: ['tamaño de la caja (para tomarla)', 'box size (pickup)', 0.3, 2, 0.05], gracia: ['segundos sin pegarle a quien lo lanza', 'seconds it skips the thrower', 0, 2, 0.05],
+        inmune: ['segundos sin otro golpe después de uno', 'seconds safe after a hit', 0, 5, 0.1]
     }],
     ['camara', 'Cámara', 'Camera', {
         distancia: ['distancia detrás de tu gata', 'distance behind your cat', 2, 14, 0.1], alto: ['altura', 'height', 0.5, 8, 0.1], mira: ['mira adelante (bloques)', 'looks ahead (blocks)', 0, 12, 0.5],
@@ -47,6 +56,17 @@ const GRUPOS = [
     }]
 ];
 const PATRONES = ['liso', 'atigrado', 'manchas', 'siames'];
+// Cada objeto: además de su peso según el puesto (`primera`, `ultima`), nombre y color
+const OBJ_TITULO = { pluma: ['Pluma (turbo)', 'Feather (boost)'], ovillo: ['Ovillo (se tira adelante; con S, atrás)', 'Yarn (thrown ahead; with S, back)'], caja: ['Caja de cartón (se deja atrás)', 'Cardboard box (dropped behind)'], pescado: ['Pescado (atrae y se lo comen)', 'Fish (pulls cats in)'], hierba: ['Hierba gatera (controles al revés)', 'Catnip (reversed controls)'], aspiradora: ['Aspiradora de Lona (las de adelante se asustan)', "Lona's vacuum (scares the ones ahead)"] };
+const RADIO = ['tamaño del golpe', 'hit size', 0.3, 2, 0.05];
+const OBJ_CAMPOS = {
+    pluma: { turbo: ['segundos de turbo', 'boost seconds', 0.2, 4, 0.05] },
+    ovillo: { vel: ['velocidad (bloques/s)', 'speed (blocks/s)', 10, 60, 1], vida: ['segundos que rueda', 'seconds rolling', 1, 15, 0.5], radio: RADIO, golpe: ['segundos aturdida', 'stun seconds', 0.2, 4, 0.1] },
+    caja: { vida: ['segundos en la pista', 'seconds on the track', 5, 120, 1], radio: RADIO, golpe: ['segundos aturdida', 'stun seconds', 0.2, 4, 0.1] },
+    pescado: { adelante: ['bloques adelante (si vas 1.ª)', 'blocks ahead (when leading)', 5, 60, 1], vida: ['segundos en la pista', 'seconds on the track', 2, 40, 1], atrae: ['distancia a la que atrae', 'pull distance', 2, 30, 0.5], fuerza: ['fuerza con que atrae (bloques/s)', 'pull strength (blocks/s)', 0, 12, 0.25], radio: RADIO, come: ['segundos comiendo', 'eating seconds', 0.2, 4, 0.1] },
+    hierba: { alcance: ['alcance (bloques adelante o atrás)', 'reach (blocks ahead or behind)', 5, 120, 1], segundos: ['segundos al revés', 'reversed seconds', 0.5, 8, 0.1] },
+    aspiradora: { segundos: ['segundos del susto', 'scare seconds', 0.3, 5, 0.1], freno: ['velocidad que les queda (fracción)', 'speed they keep (fraction)', 0.1, 1, 0.05], salto: ['salto del susto (× el salto)', 'scare hop (× hop)', 0, 2, 0.05] }
+};
 
 export async function montarCarrera(ctx) {
     const $ = id => document.getElementById(id);
@@ -110,6 +130,20 @@ export async function montarCarrera(ctx) {
                     sec.appendChild(numero(t(`derrape ${nom}: segundos de carga`, `${nom} drift: charge seconds`), R.gata.niveles[j], 0.1, 6, 0.05, v => { datos.gata = datos.gata || {}; datos.gata.niveles = clonar(real().gata.niveles); datos.gata.niveles[j] = v; cambio(); }));
                     sec.appendChild(numero(t(`derrape ${nom}: segundos de turbo`, `${nom} drift: boost seconds`), R.gata.turbos[j], 0.1, 4, 0.05, v => { datos.gata = datos.gata || {}; datos.gata.turbos = clonar(real().gata.turbos); datos.gata.turbos[j] = v; cambio(); }));
                 });
+            }
+            if (g === 'objetos') for (const ob of OBJETOS) {
+                const D = R.objetos[ob], f = document.createElement('div'); f.className = 'panel';
+                const h = document.createElement('strong'); h.textContent = t(...OBJ_TITULO[ob]); f.appendChild(h);
+                const propio = () => { datos.objetos = datos.objetos || {}; return (datos.objetos[ob] = datos.objetos[ob] || {}); };
+                for (const l of ['es', 'en']) {
+                    const n = document.createElement('input'); n.type = 'text'; n.value = D.nombre[l] || ''; n.maxLength = 24; n.title = l.toUpperCase();
+                    n.addEventListener('change', () => { const v = n.value.trim(); if (v) { propio().nombre = { ...clonar(real().objetos[ob].nombre), [l]: v }; cambio(); } });
+                    f.appendChild(n);
+                }
+                const campos = { primera: ['peso si va 1.ª', 'weight when 1st', 0, 5, 0.1], ultima: ['peso si va última', 'weight when last', 0, 5, 0.1], ...OBJ_CAMPOS[ob] };
+                for (const [k, [ces, cen, min, max, paso]] of Object.entries(campos)) f.appendChild(numero(t(ces, cen), D[k], min, max, paso, v => { propio()[k] = v; cambio(); }));
+                f.appendChild(color(t('color', 'color'), D.color, v => { propio().color = v; cambio(); }));
+                sec.appendChild(f);
             }
             if (g === 'ia') for (const [k, es2, en2] of [['facil', 'fácil', 'easy'], ['normal', 'normal', 'normal'], ['dificil', 'difícil', 'hard']])
                 sec.appendChild(numero(t(`velocidad en ${es2} (fracción)`, `speed on ${en2} (fraction)`), R.ia.niveles[k], 0.4, 1.2, 0.01, v => { datos.ia = datos.ia || {}; datos.ia.niveles = { ...real().ia.niveles, [k]: v }; cambio(); }));

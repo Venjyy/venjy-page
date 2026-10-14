@@ -1,14 +1,14 @@
 // =========================================================
 // VENJY · Estudio · Editor de pista de la carrera de gatas (7h-1)
 // Debajo del juego (pestaña Carrera): el living visto desde arriba con sus muebles y la carretera tal como la arma el
-// juego (huecos, turbos, túnel, línea de salida y el sentido de la carrera), y abajo el perfil de alturas (la vuelta
+// juego (huecos, turbos, túnel, cajas de objetos, línea de salida y el sentido de la carrera), y abajo el perfil de alturas (la vuelta
 // estirada de lado). Se edita a mano:
 //   · arrastrar un punto (círculo numerado) lo mueve; en el perfil, arrastrarlo arriba o abajo cambia su altura;
 //   · doble clic sobre la pista agrega un punto ahí; Supr o «Quitar» lo borra (mínimo 4);
 //   · arrastrar un mueble lo mueve; «Agregar mueble» pone uno nuevo en el centro;
 //   · rueda: acercar/alejar; arrastrar con el botón derecho (o con Espacio apretado): mover la vista;
 //   · Alt al arrastrar: sin encajar a medio bloque; Ctrl+Z deshace.
-// El inspector muestra el punto o el mueble elegido (números, hueco, turbos y túnel desde ese punto). Los avisos
+// El inspector muestra el punto o el mueble elegido (números, hueco, turbos, túnel y cajas de objetos desde ese punto). Los avisos
 // (pista que se cruza, muebles encima, cuestas muy empinadas…) salen en rojo en el plano y en la lista; «Probar con la
 // IA» corre una carrera entera al instante. Los cambios van al juego al soltar (mensaje `datos`).
 // Lo puro está en pista-modelo.mjs.
@@ -32,7 +32,7 @@ export function montarEditorPista(ctx, api) {
     const historia = [];
 
     // ---- Datos: copias propias de pista y muebles al primer cambio ----
-    function pistaPropia() { const d = api.datos(); if (!d.pista) d.pista = {}; const R = api.real(); for (const k of ['puntos', 'huecos', 'turbos', 'tuneles']) if (!d.pista[k]) d.pista[k] = clonar(R.pista[k] || []); return d.pista; }
+    function pistaPropia() { const d = api.datos(); if (!d.pista) d.pista = {}; const R = api.real(); for (const k of ['puntos', 'huecos', 'turbos', 'tuneles', 'cajas']) if (!d.pista[k]) d.pista[k] = clonar(R.pista[k] || []); return d.pista; }
     function mueblesPropios() { const d = api.datos(); if (!d.muebles) d.muebles = clonar(api.real().muebles || []); return d.muebles; }
     function guardarHistoria() { const d = api.datos(); historia.push(clonar({ pista: d.pista || null, muebles: d.muebles || null })); if (historia.length > 60) historia.shift(); }
     function deshacer() {
@@ -115,6 +115,13 @@ export function montarEditorPista(ctx, api) {
                 k.strokeStyle = Math.floor(a.s / 2) % 2 ? '#f0f0f0' : '#d22a2a';
                 k.beginPath(); k.moveTo(...lat(a, l * a.ancho / 2)); k.lineTo(...lat(b, l * b.ancho / 2)); k.stroke();
             }
+        }
+        // Cajas de objetos (cuadros amarillos con «?»)
+        for (const c of M.cajasDe(R, P)) {
+            const q = M.puntoPista(P, c.s, c.lat), [px, pz] = aPx(q.x, q.z), w = Math.max(5, 1.2 * vista.e);
+            k.fillStyle = '#f6c440'; k.strokeStyle = '#000'; k.lineWidth = 1.5;
+            k.fillRect(px - w / 2, pz - w / 2, w, w); k.strokeRect(px - w / 2, pz - w / 2, w, w);
+            if (w > 9) { k.fillStyle = '#fff'; k.font = `${Math.round(w * 0.8)}px PixelCraft, monospace`; k.textAlign = 'center'; k.fillText('?', px, pz + w * 0.3); }
         }
         // Línea de salida y flechas del sentido
         { const q = P.m[0]; k.strokeStyle = '#fff'; k.lineWidth = 4; k.setLineDash([4, 4]); k.beginPath(); k.moveTo(...lat(q, q.ancho / 2)); k.lineTo(...lat(q, -q.ancho / 2)); k.stroke(); k.setLineDash([]); }
@@ -221,7 +228,17 @@ export function montarEditorPista(ctx, api) {
                 campo(ft, t('largo', 'length'), tb.largo || 4, 0.5, v => { tt().largo = v; }, 1, 20);
                 botonI(ft, 'Quitar turbo', 'Remove boost', () => { guardarHistoria(); pistaPropia().turbos.splice(j, 1); api.cambio(); pintar(); });
             });
+            // Filas de cajas de objetos desde este punto
+            (pista.cajas || []).forEach((cj, j) => {
+                if (cj.punto !== i) return;
+                const fc = document.createElement('div'); fc.className = 'campos'; insp.appendChild(fc);
+                const cc = () => pistaPropia().cajas[j];
+                campo(fc, t('cajas: bloques después', 'item boxes: blocks after'), cj.avance || 0, 0.5, v => { cc().avance = v; }, 0, 60);
+                campo(fc, t('cuántas a lo ancho', 'how many across'), cj.cuantas || R.objetos.cuantas, 1, v => { cc().cuantas = Math.round(v); }, 1, 8);
+                botonI(fc, 'Quitar las cajas', 'Remove item boxes', () => { guardarHistoria(); pistaPropia().cajas.splice(j, 1); api.cambio(); pintar(); });
+            });
             const fb = document.createElement('div'); fb.className = 'fila-botones'; insp.appendChild(fb);
+            botonI(fb, 'Cajas de objetos aquí', 'Item boxes here', () => { guardarHistoria(); pistaPropia().cajas.push({ punto: i, avance: 1 }); api.cambio(); pintar(); });
             botonI(fb, 'Agregar turbo aquí', 'Add boost here', () => { guardarHistoria(); pistaPropia().turbos.push({ punto: i, avance: 1, lado: 0, largo: 4 }); api.cambio(); pintar(); });
             const tunel = (pista.tuneles || []).find(x => x.desde === i);
             if (tunel) botonI(fb, 'Quitar el túnel', 'Remove tunnel', () => { guardarHistoria(); const pp = pistaPropia(); pp.tuneles = pp.tuneles.filter(x => x.desde !== i); api.cambio(); pintar(); });
@@ -413,7 +430,7 @@ export function montarEditorPista(ctx, api) {
     $('ca-pista-codigo').addEventListener('click', () => {
         guardarHistoria();
         const d = api.datos();
-        if (d.pista) { for (const k of ['puntos', 'huecos', 'turbos', 'tuneles']) delete d.pista[k]; if (!Object.keys(d.pista).length) delete d.pista; }
+        if (d.pista) { for (const k of ['puntos', 'huecos', 'turbos', 'tuneles', 'cajas']) delete d.pista[k]; if (!Object.keys(d.pista).length) delete d.pista; }
         delete d.muebles; sel = null; api.cambio(); pintar();
     });
     $('ca-probar-ia').addEventListener('click', () => {
@@ -423,8 +440,8 @@ export function montarEditorPista(ctx, api) {
             const f = s => (s == null ? '--' : s.toFixed(1).replace('.', ','));
             iaEl.className = 'mensaje ' + (r.ok && !r.caidas ? 'ok' : r.ok ? '' : 'error');
             iaEl.textContent = r.ok
-                ? t(`La IA terminó: ganó ${r.porGata[0].nombre} en ${f(r.mejor)} s, la última en ${f(r.ultimo)} s · ${r.derrapes} derrapes · ${r.turbos} turbos · ${r.caidas} caídas · vuelta de ${r.largo.toFixed(0)} bloques`,
-                    `The AI finished: ${r.porGata[0].nombre} won in ${f(r.mejor)} s, last in ${f(r.ultimo)} s · ${r.derrapes} drifts · ${r.turbos} boosts · ${r.caidas} falls · ${r.largo.toFixed(0)}-block lap`)
+                ? t(`La IA terminó: ganó ${r.porGata[0].nombre} en ${f(r.mejor)} s, la última en ${f(r.ultimo)} s · ${r.derrapes} derrapes · ${r.turbos} turbos · ${r.caidas} caídas · ${r.objetos} objetos usados (${r.golpes} golpes) · vuelta de ${r.largo.toFixed(0)} bloques`,
+                    `The AI finished: ${r.porGata[0].nombre} won in ${f(r.mejor)} s, last in ${f(r.ultimo)} s · ${r.derrapes} drifts · ${r.turbos} boosts · ${r.caidas} falls · ${r.objetos} items used (${r.golpes} hits) · ${r.largo.toFixed(0)}-block lap`)
                 : t(`La IA no terminó (${r.porGata.filter(g => g.fin === null).length} gatas atascadas): revisa curvas muy cerradas o un hueco imposible`, `The AI did not finish: check very tight turns or an impossible gap`);
         }, 20);
     });

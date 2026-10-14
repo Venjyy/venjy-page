@@ -1,6 +1,7 @@
 // =========================================================
 // Prueba de la carrera de gatas (7h-1, «Gran Premio del Living»): pista, física (salto, derrape con niveles, turbo,
-// placas, truco, huecos y caída, paredes, choques), vueltas, IA en las tres dificultades con seis gatas, y la red
+// placas, truco, huecos y caída, paredes, choques), vueltas, IA en las tres dificultades con seis gatas, objetos (cajas,
+// ruleta por puesto, pluma, ovillo, caja de cartón, pescado, hierba gatera y aspiradora; la IA los usa), y la red
 // (carrera-red.js sobre actividades-red.js con una sala falsa en estrella). node mundo/tests/carrera.mjs
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -210,7 +211,8 @@ const enRecta = () => { const g = M.nuevaGata(P, R, G0, 0); for (let i = 0; i < 
 {
     const g = M.nuevaGata(P, R, G0, 0);
     g.yaw += Math.PI;
-    for (let i = 0; i < 600; i++) M.pasoGata(g, { ad: 1 }, DT, R, P);
+    // (siempre mirando hacia atrás: si rebota en una curva y se da vuelta, ya va bien)
+    for (let i = 0; i < 600; i++) { M.pasoGata(g, { ad: 1 }, DT, R, P); g.yaw = M.enPista(P, g.s).yaw + Math.PI; }
     if (g.av > 0 || g.fin !== null) falla('hacia atrás suma avance');
 }
 // Choques entre gatas
@@ -250,6 +252,162 @@ const enRecta = () => { const g = M.nuevaGata(P, R, G0, 0); for (let i = 0; i < 
     // Probar con la IA
     const r = PM.probarIA(R);
     if (!r.ok || r.porGata.length !== R.gatas.length) falla('probarIA no termina con la pista del código');
+}
+
+// Pegada al borde doblando contra él: se desliza y sigue avanzando (antes quedaba quieta)
+{
+    const g = M.nuevaGata(P, R, R.gatas[0], 0), s0 = P.puntos[0] + 2, borde = -(M.enPista(P, s0).ancho / 2 - R.gata.radio);
+    const q = M.puntoPista(P, s0, borde);
+    Object.assign(g, { s: s0, av: s0, lat: borde, x: q.x, y: q.y, z: q.z, yaw: q.yaw, v: R.gata.vel * 0.9 });
+    let paredes = 0;
+    for (let i = 0; i < 90; i++) paredes += M.pasoGata(g, { ad: 1, giro: -1 }, DT, R, P, 0).filter(e => e === 'pared').length;
+    if (!(g.v > R.gata.vel * 0.6)) falla(`empujando el borde se queda pegada (v ${g.v.toFixed(1)})`);
+    if (!(g.av - s0 > 20)) falla(`empujando el borde no avanza (${(g.av - s0).toFixed(1)} bloques en 1,5 s)`);
+    if (paredes > 1) falla(`rozar el borde cuenta ${paredes} choques`);
+}
+
+// ---------- 5b. Objetos: cajas, ruleta por puesto, los seis objetos y la IA que los usa ----------
+const conObjetos = {};
+{
+    const PM = await imp('estudio/pista-modelo.mjs');
+    const O = R.objetos;
+    if (!O || !O.activos) falla('objetos apagados en el código');
+    if (M.reglasCarrera({ objetos: { ovillo: { vel: 50 } } }).objetos.ovillo.golpe !== M.CARRERA.objetos.ovillo.golpe) falla('fundir objetos pierde valores');
+    const cajas = M.cajasDe(R, P);
+    if (cajas.length !== R.pista.cajas.length * O.cuantas) falla(`cajas: ${cajas.length}`);
+    for (const c of cajas) if (!M.enPista(P, c.s).piso) falla('una caja sobre el hueco');
+    if (M.cajasDe(M.reglasCarrera({ objetos: { activos: 0 } }), P).length) falla('sin objetos igual hay cajas');
+    // Ruleta según el puesto: la primera nunca saca la aspiradora y saca menos plumas que la última
+    const rr = M.azar(5), cuenta = (p) => { const c = {}; for (let i = 0; i < 3000; i++) { const k = M.sortearObjeto(R, p, 6, rr); c[k] = (c[k] || 0) + 1; } return c; };
+    const c1 = cuenta(0), c6 = cuenta(5);
+    if (c1.aspiradora) falla('la primera sacó la aspiradora');
+    if (!c6.aspiradora) falla('la última nunca saca la aspiradora');
+    if (!((c6.pluma || 0) > (c1.pluma || 0))) falla('la última no saca más plumas que la primera');
+    if (Object.keys(c6).length !== M.OBJETOS.length) falla(`a la última le faltan objetos: ${Object.keys(c6)}`);
+    // Montaje: tres gatas en una recta (k0 atrás, k1 al medio, k2 adelante), quietas
+    const sR = P.puntos[1] + 2;
+    const armar = (lats = [0, 0, 0], sep = 6) => {
+        const gs = [0, 1, 2].map(k => M.nuevaGata(P, R, R.gatas[k], k));
+        gs.forEach((g, k) => { const s = sR + k * sep, q = M.puntoPista(P, s, lats[k]); Object.assign(g, { s, av: s, lat: lats[k], x: q.x, y: q.y, z: q.z, yaw: q.yaw, v: 0 }); });
+        return { gs, W: { cajas: [], sueltos: [], t: 0, sig: 1 } };
+    };
+    const nada = [{}, {}, {}];
+    const correr = (gs, W, seg, ents = nada) => { const ev = []; for (let t = 0; t < seg; t += DT) { gs.forEach((g, i) => M.pasoGata(g, ents[i] || {}, DT, R, P, t)); ev.push(...M.pasoObjetos(W, gs, ents, DT, R, P, M.azar(1))); } return ev; };
+    const usar = (gs, W, k, tipo, ent = {}) => { gs[k].objeto = tipo; gs[k].ruleta = 0; const e = [{}, {}, {}]; e[k] = { usar: true, ...ent }; return M.pasoObjetos(W, gs, e, DT, R, P, M.azar(1)); };
+    // Tomar una caja: ruleta, luego listo; la caja vuelve a los `reaparece` s
+    {
+        const { gs, W } = armar();
+        W.cajas.push({ s: gs[0].s, lat: gs[0].lat, hasta: 0 });
+        const ev = M.pasoObjetos(W, gs, nada, DT, R, P, M.azar(2));
+        if (!ev.some(e => e.e === 'caja' && e.k === 0) || !gs[0].objeto || !(gs[0].ruleta > 0)) falla('no toma la caja');
+        if (!(W.cajas[0].hasta > W.t)) falla('la caja tomada no desaparece');
+        const ev2 = correr(gs, W, O.ruleta + 0.1);
+        if (!ev2.some(e => e.e === 'listo')) falla('la ruleta no termina');
+        if (gs[0].ruleta) falla('la ruleta sigue');
+        const ob = gs[0].objeto; correr(gs, W, O.reaparece);
+        if (gs[0].objeto !== ob) falla('se tomó otra caja teniendo objeto');
+    }
+    // Pluma: turbo
+    { const { gs, W } = armar(); usar(gs, W, 0, 'pluma'); if (!(gs[0].turbo >= O.pluma.turbo - 1e-9) || gs[0].objeto) falla('la pluma no da turbo'); }
+    // Ovillo: corre adelante y le pega a la de adelante (no a quien lo tiró)
+    {
+        const { gs, W } = armar();
+        gs[1].v = 5;
+        usar(gs, W, 0, 'ovillo');
+        if (W.sueltos.length !== 1) falla('el ovillo no sale');
+        const ev = correr(gs, W, 1);
+        const g = ev.find(e => e.e === 'golpe');
+        if (!g || g.k !== 1 || g.de !== 0) falla(`el ovillo no le pega a la de adelante (${JSON.stringify(g)})`);
+        if (gs[0].aturdida > 0) falla('el ovillo le pegó a quien lo tiró');
+        if (!(gs[1].aturdida > 0 || gs[1].inmune > 0)) falla('la golpeada no queda aturdida');
+        // con freno: hacia atrás
+        const b = armar(); usar(b.gs, b.W, 2, 'ovillo', { ad: -1 });
+        const evb = correr(b.gs, b.W, 1); if (!evb.some(e => e.e === 'golpe' && e.k === 1)) falla('el ovillo con freno no va atrás');
+    }
+    // Aturdida: no acelera
+    {
+        const { gs } = armar(); gs[0].aturdida = 1; gs[0].v = 10;
+        for (let i = 0; i < 30; i++) M.pasoGata(gs[0], { ad: 1 }, DT, R, P, 0);
+        if (!(gs[0].v < 5)) falla(`aturdida igual acelera (${gs[0].v.toFixed(1)})`);
+    }
+    // Caja de cartón: se deja atrás y la que viene choca
+    {
+        const { gs, W } = armar([0, 0, 0], 4);
+        usar(gs, W, 2, 'caja');
+        if (W.sueltos[0].s > gs[2].s) falla('la caja no queda atrás');
+        gs[1].v = 8;
+        const ev = correr(gs, W, 1.5, [{}, { ad: 1 }, {}]);
+        if (!ev.some(e => e.e === 'golpe' && e.k === 1 && e.o === 'caja')) falla('la caja no golpea a la que viene');
+    }
+    // Pescado: cae delante de la que va adelante, la atrae de lado y se lo come
+    {
+        const { gs, W } = armar([0, 3, 0], 6);
+        usar(gs, W, 0, 'pescado');
+        const pz = W.sueltos[0];
+        if (!pz || pz.s < gs[1].s) falla('el pescado no cae delante de la que va adelante');
+        pz.lat = -2.5; pz.s = gs[1].s + 18; // (la de adelante viene corriendo; aquí parte quieta)
+        const lat0 = gs[1].lat;
+        const ev = [];
+        for (let t = 0; t < 3; t += DT) {
+            const ents = [{}, M.entradaIA(gs[1], R, P, null, null, { gs, W }), {}]; // la del medio maneja sola
+            gs.forEach((g, i) => M.pasoGata(g, ents[i], DT, R, P, t)); ev.push(...M.pasoObjetos(W, gs, ents, DT, R, P, M.azar(1)));
+        }
+        if (!ev.some(e => e.e === 'come' && e.k === 1)) falla(`no se come el pescado (lat ${lat0} → ${gs[1].lat.toFixed(2)})`);
+        if (gs[0].come > 0) falla('el pescado atrajo a quien lo tiró');
+    }
+    // Hierba gatera: controles al revés para las que están cerca
+    {
+        const { gs, W } = armar([0, 0, 0], 6);
+        gs[2].av += O.hierba.alcance + 20; // muy lejos
+        usar(gs, W, 0, 'hierba');
+        if (!(gs[1].reves > 0)) falla('la hierba no da vuelta los controles');
+        if (gs[2].reves > 0) falla('la hierba alcanza a una muy lejana');
+        if (gs[0].reves > 0) falla('la hierba le da a quien la usa');
+        const a = armar(); a.gs[1].reves = 2; a.gs[1].v = 10; a.gs[2].v = 10;
+        const y1 = a.gs[1].yaw, y2 = a.gs[2].yaw;
+        for (let i = 0; i < 10; i++) { M.pasoGata(a.gs[1], { giro: 1 }, DT, R, P, 0); M.pasoGata(a.gs[2], { giro: 1 }, DT, R, P, 0); }
+        if (Math.sign(a.gs[1].yaw - y1) === Math.sign(a.gs[2].yaw - y2)) falla('con la hierba dobla para el mismo lado');
+    }
+    // Aspiradora: las de adelante saltan del susto y frenan; las de atrás no
+    {
+        const { gs, W } = armar();
+        gs.forEach(g => { g.v = 15; });
+        usar(gs, W, 1, 'aspiradora');
+        if (!(gs[2].susto > 0) || gs[2].suelo || !(gs[2].v < 15)) falla('la aspiradora no asusta a la de adelante');
+        if (gs[0].susto > 0) falla('la aspiradora asusta a la de atrás');
+        const F = M.fisicaDe(R, gs[2]);
+        correr(gs, W, 0.5, [{}, {}, { ad: 1 }]);
+        if (gs[2].v > F.vel * O.aspiradora.freno + 0.5) falla('asustada corre a toda velocidad');
+    }
+    // Carreras de la IA con objetos: todas terminan, los usan y es reproducible
+    const conObj = (dif, semilla = 7) => {
+        const r = { ...R, dificultad: dif }, rnd = M.azar(semilla), W = M.nuevosObjetos(r, P);
+        const gs = r.gatas.map((d, k) => M.nuevaGata(P, r, d, k)), cuenta = {};
+        let t = 0;
+        while (gs.some(g => g.fin === null) && t < r.tope) {
+            const ents = gs.map(g => M.entradaIA(g, r, P, rnd, null, { gs, W }));
+            gs.forEach((g, i) => M.pasoGata(g, ents[i], DT, r, P, t));
+            for (const e of M.pasoObjetos(W, gs, ents, DT, r, P, rnd)) cuenta[e.e === 'usa' ? e.o : e.e] = (cuenta[e.e === 'usa' ? e.o : e.e] || 0) + 1;
+            M.chocarGatas(gs, r); t += DT;
+        }
+        return { gs, cuenta };
+    };
+    for (const d of ['facil', 'normal', 'dificil']) {
+        const c = conObj(d); conObjetos[d] = c;
+        if (c.gs.some(g => g.fin === null)) falla(`${d} con objetos: no terminan todas`);
+        const usados = M.OBJETOS.reduce((a, k) => a + (c.cuenta[k] || 0), 0);
+        if (usados < 12) falla(`${d}: la IA casi no usa objetos (${usados})`);
+        if (!c.cuenta.golpe) falla(`${d}: ningún golpe en toda la carrera`);
+    }
+    if (conObj('normal', 4).gs.map(g => g.fin).join() !== conObj('normal', 4).gs.map(g => g.fin).join()) falla('la carrera con objetos no es reproducible');
+    // Editor: insertar y quitar puntos corre o quita las cajas; aviso si quedan sobre el hueco
+    const iC = R.pista.cajas[1].punto;
+    if (PM.insertarPunto(R.pista, 0, [0, 0, 0]).cajas[1].punto !== iC + 1) falla('insertar no corre las cajas');
+    if (PM.quitarPunto(R.pista, iC).cajas.length !== R.pista.cajas.length - 1) falla('quitar el punto no quita sus cajas');
+    const iH = R.pista.huecos[0].punto;
+    const sobreHueco = M.reglasCarrera({ pista: { cajas: [{ punto: iH, avance: 2 }] } });
+    if (!PM.avisosPista(sobreHueco).some(a => a.es.includes('cajas'))) falla('no avisa de cajas sobre el hueco');
+    if (!(PM.probarIA(R).objetos > 0)) falla('probarIA no usa objetos');
 }
 
 // ---------- 6. Red (sala falsa en estrella) ----------
@@ -315,6 +473,7 @@ for (const [d, c] of Object.entries(medidas)) if (c.gs) {
     const o = M.puestos(c.gs);
     console.log(`  ${d}: ganó ${o[0].clave} en ${o[0].fin?.toFixed(1)} s · último ${o[o.length - 1].fin?.toFixed(1)} s · derrapes ${c.derrapes} · turbos ${c.turbos} · caídas ${c.caidas} · choques ${c.choques}`);
 }
+for (const [d, c] of Object.entries(conObjetos)) { const o = M.puestos(c.gs); console.log(`  ${d} con objetos: ganó ${o[0].clave} en ${o[0].fin?.toFixed(1)} s · último ${o[o.length - 1].fin?.toFixed(1)} s · ${JSON.stringify(c.cuenta)}`); }
 console.log(`  pista ${P.largo.toFixed(1)} bloques × ${R.vueltas} vueltas`);
 if (fallos) { console.error(`\n${fallos} fallos`); process.exit(1); }
-console.log('OK: carrera de gatas (pista, física, IA y red)');
+console.log('OK: carrera de gatas (pista, física, IA, objetos y red)');

@@ -39,6 +39,8 @@ export const CARRERA = {
         turbos: [{ punto: 1, avance: 4, lado: 0.45, largo: 4 }, { punto: 4, avance: 2, lado: -0.4, largo: 4 }, { punto: 8, avance: 2, lado: 0, largo: 3 }, { punto: 15, avance: 6, lado: 0.4, largo: 4 }],
         // Túneles (bajo la mesa): del punto `desde` al `hasta`; solo se dibujan
         tuneles: [{ desde: 12, hasta: 13 }],
+        // Filas de cajas de objetos: `avance` bloques después del punto, `cuantas` cajas a lo ancho (sin el número: objetos.cuantas)
+        cajas: [{ punto: 2, avance: 0 }, { punto: 11, avance: 3 }, { punto: 16, avance: 4 }],
         salida: 4       // bloques antes de la línea donde parte la primera fila
     },
     // Muebles y adornos del living (carrera-escena.js los dibuja; los del piso no pueden pisar la pista: lo revisa la prueba).
@@ -75,9 +77,12 @@ export const CARRERA = {
         turbo: 1.4,     // velocidad con turbo (× vel)
         placa: 1.1,     // segundos de turbo de una placa
         truco: 0.6,     // segundos de turbo por un truco en el aire
-        pared: 0.55,    // al chocar la pared se queda con esta fracción de la velocidad
+        pared: 0.55,    // al chocar la pared de frente se queda con esta fracción de la velocidad
+        roza: 0.35,     // con un ángulo menor (seno) contra la pared, no choca: se desliza por el borde
+        rozaRoce: 0.6,  // cuánto frena por segundo al deslizarse por el borde
         radio: 0.45,    // radio de la gata (choques)
-        caida: 1.4      // segundos hasta que Lona te devuelve a la pista
+        caida: 1.4,     // segundos hasta que Lona te devuelve a la pista
+        vuelve: 14      // bloques antes del hueco donde te deja (para tomar impulso y saltarlo)
     },
     // Corredoras: Mila y Gala usan su modelo del mundo; las demás, su pelaje (carrera-escena.js)
     gatas: [
@@ -96,6 +101,23 @@ export const CARRERA = {
         derrapa: 0.06,  // curvatura (1/bloques) desde la que derrapa
         error: 0.25,    // ruido en la línea (bloques; solo fácil y normal)
         empuje: 0.05    // ayuda si va muy atrás de ti (fracción de vel)
+    },
+    // Objetos: salen de las cajas según el puesto (peso `primera` para la que va 1.ª y `ultima` para la última; entre
+    // medio se mezclan). La IA también los usa. Tiempos en segundos, distancias en bloques.
+    objetos: {
+        activos: 1,     // 0 = carrera sin objetos
+        cuantas: 4,     // cajas por fila (a lo ancho)
+        ruleta: 1.1,    // segundos que gira la ruleta antes de poder usarlo
+        reaparece: 3,   // segundos hasta que vuelve una caja tomada
+        radioCaja: 0.8,
+        gracia: 0.4,    // segundos en que lo lanzado no golpea a quien lo lanzó
+        inmune: 1.2,    // después de un golpe, segundos sin recibir otro
+        pluma: { nombre: { es: 'Pluma', en: 'Feather' }, primera: 1, ultima: 3, turbo: 1.4, color: '#f4f0e6' },
+        ovillo: { nombre: { es: 'Ovillo de lana', en: 'Ball of yarn' }, primera: 3, ultima: 1, vel: 34, vida: 5, radio: 0.7, golpe: 1.1, color: '#d8455a' },
+        caja: { nombre: { es: 'Caja de cartón', en: 'Cardboard box' }, primera: 3, ultima: 0.6, vida: 40, radio: 0.9, golpe: 0.9, color: '#c49660' },
+        pescado: { nombre: { es: 'Pescado', en: 'Fish' }, primera: 1, ultima: 2, adelante: 22, vida: 12, atrae: 10, fuerza: 3.5, radio: 0.9, come: 1.4, color: '#7ab0d8' },
+        hierba: { nombre: { es: 'Hierba gatera', en: 'Catnip' }, primera: 0.4, ultima: 2, alcance: 30, segundos: 3.5, color: '#5ac85a' },
+        aspiradora: { nombre: { es: 'Aspiradora de Lona', en: 'Lona\'s vacuum' }, primera: 0, ultima: 1.4, segundos: 1.6, freno: 0.55, salto: 0.7, color: '#c8384a' }
     },
     camara: { distancia: 6, alto: 2.5, mira: 6, fov: 72, fovTurbo: 90, suave: 8 },
     tactil: { autoAcelerar: 1 },
@@ -243,7 +265,8 @@ export function nuevaGata(pista, R, def, k) {
         clave: def.clave, k, def, x: p.x, y: p.y, z: p.z, yaw: p.yaw, v: 0, vy: 0, suelo: true,
         s: ss, lat: g0.lat, av: g0.s, // av: avance total (negativo antes de cruzar la línea la primera vez)
         derrape: 0, carga: 0, nivel: -1, turbo: 0, saltoAntes: false, enAire: 0, truco: false, trucoHecho: false,
-        cayendo: 0, choque: 0, fin: null, tiempos: [], ultimaVuelta: 0
+        cayendo: 0, choque: 0, fin: null, tiempos: [], ultimaVuelta: 0,
+        objeto: null, ruleta: 0, objetoT: 0, usarAntes: false, aturdida: 0, come: 0, susto: 0, reves: 0, inmune: 0
     };
 }
 export function fisicaDe(R, g) {
@@ -258,12 +281,14 @@ export function pasoGata(g, ent, dt, R, pista, t = 0) {
     const ev = [];
     const F = fisicaDe(R, g);
     if (g.fin !== null) ent = { ad: 0, giro: 0, salto: false };
+    // Efectos de los objetos (se acaban solos)
+    for (const k of ['aturdida', 'come', 'susto', 'reves', 'inmune']) if (g[k] > 0) g[k] = Math.max(0, g[k] - dt);
     // Caída por un hueco: Lona la recoge y la deja en la pista, quieta
     if (g.cayendo > 0) {
         g.cayendo -= dt; g.y -= 14 * dt;
         if (g.cayendo <= 0) {
             let s = g.s; for (let k = 0; k < 400 && !enPista(pista, s).piso; k++) s -= pista.paso; // atrás hasta tener piso
-            s -= 3;
+            s -= F.vuelve ?? 14;
             const p = puntoPista(pista, s, 0);
             let ds = s - g.s; ds -= Math.round(ds / pista.largo) * pista.largo; g.av += ds; // el avance retrocede lo mismo
             g.x = p.x; g.z = p.z; g.y = p.y; g.yaw = p.yaw; g.s = ((s % pista.largo) + pista.largo) % pista.largo; g.lat = 0;
@@ -272,12 +297,13 @@ export function pasoGata(g, ent, dt, R, pista, t = 0) {
         }
         return ev;
     }
-    const ad = lim(ent.ad || 0, -1, 1), giro = lim(ent.giro || 0, -1, 1), salto = !!ent.salto;
+    const quieta = g.aturdida > 0 || g.come > 0; // golpeada o comiendo: no acelera ni salta
+    const ad = quieta ? 0 : lim(ent.ad || 0, -1, 1), giro = lim(ent.giro || 0, -1, 1) * (g.reves > 0 ? -1 : 1), salto = !quieta && !!ent.salto;
     const pulsa = salto && !g.saltoAntes;
     g.saltoAntes = salto;
     const aqui = enPista(pista, g.s);
     // --- Velocidad ---
-    const tope = F.vel * (g.turbo > 0 ? F.turbo : 1);
+    const tope = F.vel * (g.turbo > 0 ? F.turbo : 1) * (g.susto > 0 ? (R.objetos?.aspiradora?.freno ?? 1) : 1);
     if (g.suelo) {
         if (ad > 0) { if (g.v < tope) g.v = Math.min(tope, g.v + F.acel * ad * dt * (g.turbo > 0 ? 2.5 : 1)); } // acelerar llega hasta el tope, no lo pasa
         else if (ad < 0) g.v -= (g.v > 0.3 ? F.freno : F.acel) * -ad * dt;
@@ -288,6 +314,7 @@ export function pasoGata(g, ent, dt, R, pista, t = 0) {
     if (g.turbo > 0) g.v = Math.max(g.v, tope * 0.98);
     if (g.v > tope) g.v = Math.max(tope, g.v - F.freno * 0.5 * dt);
     g.v = Math.max(g.v, -F.vel * F.atras);
+    if (quieta) g.v *= Math.max(0, 1 - 4 * dt);
     // --- Salto y derrape ---
     if (pulsa && g.suelo && g.fin === null) { g.vy = F.salto; g.suelo = false; g.enAire = 0; g.trucoHecho = true; ev.push('salto'); }
     else if (pulsa && !g.suelo && !g.trucoHecho && g.enAire > 0.12) { g.truco = true; g.trucoHecho = true; ev.push('truco'); }
@@ -324,8 +351,12 @@ export function pasoGata(g, ent, dt, R, pista, t = 0) {
         const q = puntoPista(pista, g.s, g.lat);
         g.x = q.x; g.z = q.z;
         const rel = angDif(g.yaw, p.yaw);
-        // Rebote: si va hacia la pared, el rumbo se refleja sobre el eje de la pista (hacia adelante o hacia atrás) y se aplana
-        if (Math.sin(rel) * lado > 0) { g.yaw = Math.abs(rel) < Math.PI / 2 ? p.yaw - rel * 0.35 : p.yaw + Math.PI - angDif(g.yaw, p.yaw + Math.PI) * 0.35; g.v *= F.pared; g.choque = 0.3; if (g.derrape) { g.derrape = 0; g.carga = 0; g.nivel = -1; } ev.push('pared'); }
+        // Rebote: si va de frente contra la pared, el rumbo se refleja sobre el eje de la pista (hacia adelante o hacia
+        // atrás) y se aplana. Si la roza (o la sigue empujando), se desliza a lo largo del borde con un poco de roce:
+        // antes cada cuadro contaba como choque y la gata quedaba pegada, quieta.
+        const golpe = Math.abs(Math.sin(rel));
+        if (Math.sin(rel) * lado > 0 && (golpe < F.roza || g.choque > 0)) { g.yaw = Math.abs(rel) < Math.PI / 2 ? p.yaw : p.yaw + Math.PI; g.v -= g.v * F.rozaRoce * dt; }
+        else if (Math.sin(rel) * lado > 0) { g.yaw =Math.abs(rel) < Math.PI / 2 ? p.yaw - rel * 0.35 : p.yaw + Math.PI - angDif(g.yaw, p.yaw + Math.PI) * 0.35; g.v *= F.pared; g.choque = 0.3; if (g.derrape) { g.derrape = 0; g.carga = 0; g.nivel = -1; } ev.push('pared'); }
     }
     g.choque = Math.max(0, g.choque - dt);
     // --- Altura: en el suelo sigue la pista; si la pista cae más rápido que la gravedad, vuela ---
@@ -396,7 +427,8 @@ export function puestos(gs) {
 // IA: línea por dentro de la curva que viene, frena según la curvatura, derrapa en las cerradas y va por los turbos.
 // rnd() opcional (fácil y normal: un poco de ruido en la línea). jugador = la gata del jugador (ayuda si va muy atrás)
 // ---------------------------------------------------------
-export function entradaIA(g, R, pista, rnd = null, jugador = null) {
+// extra = { gs (todas las gatas), W (objetos: nuevosObjetos) }: con eso esquiva las cajas tiradas y usa sus objetos
+export function entradaIA(g, R, pista, rnd = null, jugador = null, extra = null) {
     const I = R.ia, F = fisicaDe(R, g);
     const nivel = I.niveles[R.dificultad] ?? I.niveles.normal;
     const lejos = enPista(pista, g.s + I.mira), cerca = enPista(pista, g.s + I.mira * 0.5);
@@ -406,6 +438,13 @@ export function entradaIA(g, R, pista, rnd = null, jugador = null) {
     for (let k = 2; k < 14; k += 2) { const q = enPista(pista, g.s + k); if (q.turbo) { lat = -q.turbo.lado * q.ancho * 0.3; break; } }
     if (g.ruido === undefined) g.ruido = 0;
     if (rnd && R.dificultad !== 'dificil') { g.ruido += (rnd() - 0.5) * 0.4; g.ruido *= 0.97; lat += lim(g.ruido, -1, 1) * I.error * lejos.ancho * 0.1; }
+    // Esquiva las cajas de cartón tiradas adelante; un pescado cerca la tienta (en difícil, lo esquiva)
+    if (extra && extra.W) for (const o of extra.W.sueltos) {
+        let ds = o.s - g.s; ds -= Math.round(ds / pista.largo) * pista.largo;
+        if (o.tipo === 'pescado' && R.dificultad !== 'dificil') { if (ds > 0 && ds < (R.objetos.pescado.atrae || 10) * 1.5 && o.de !== g.k) lat = o.lat; continue; }
+        if (o.tipo !== 'caja' && o.tipo !== 'pescado') continue;
+        if (ds > 0 && ds < 14 && Math.abs(o.lat - lat) < 2.2) { const q = enPista(pista, o.s); lat = lim(o.lat + (lat >= o.lat ? 2.6 : -2.6), -q.ancho / 2 + 1, q.ancho / 2 - 1); }
+    }
     const objetivo = puntoPista(pista, g.s + I.mira, lat);
     const d = angDif(Math.atan2(objetivo.x - g.x, objetivo.z - g.z), g.yaw);
     let giro = lim(d * 2.2, -1, 1);
@@ -421,7 +460,156 @@ export function entradaIA(g, R, pista, rnd = null, jugador = null) {
     const hueco = !enPista(pista, g.s + 6).piso || !enPista(pista, g.s + 3).piso;
     if (hueco) { quiere = F.vel * 1.2; salto = false; }
     const ad = g.v < quiere ? 1 : g.v > quiere + 1.5 ? -0.5 : 0;
-    return { ad, giro, salto };
+    const usar = !!(extra && extra.gs && quiereUsar(g, R, extra.gs, curvaMax, hueco));
+    return { ad, giro, salto, usar };
+}
+// ¿Usa ya su objeto? La pluma en una recta, el ovillo con una rival cerca adelante y alineada, la caja con una rival
+// pegada atrás, el pescado con una rival adelante, la hierba con rivales cerca, la aspiradora si alguien va adelante.
+// Si lo guarda mucho rato, lo usa igual. En fácil tarda un poco más en decidirse.
+function quiereUsar(g, R, gs, curvaMax, hueco) {
+    if (!g.objeto || g.ruleta > 0 || g.fin !== null || g.cayendo > 0) return false;
+    const T = g.objetoT || 0, D = R.objetos[g.objeto] || {};
+    if (R.dificultad === 'facil' && T < 1.5) return false;
+    let delante = null, detras = null;
+    for (const x of gs) {
+        if (x === g || x.fin !== null) continue;
+        const d = x.av - g.av;
+        if (d > 0 && (!delante || d < delante.av - g.av)) delante = x;
+        if (d < 0 && (!detras || d > detras.av - g.av)) detras = x;
+    }
+    switch (g.objeto) {
+        case 'pluma': return (g.suelo && !hueco && curvaMax < R.ia.derrapa) || T > 6;
+        case 'ovillo': return (delante && delante.av - g.av < 25 && Math.abs(delante.lat - g.lat) < 2.5 && curvaMax < R.ia.derrapa * 1.5) || T > 8;
+        case 'caja': return (detras && g.av - detras.av < 8) || T > 10;
+        case 'pescado': return (delante && delante.av - g.av < (D.adelante || 22) * 2) || T > 6;
+        case 'hierba': return gs.some(x => x !== g && x.fin === null && Math.abs(x.av - g.av) < (D.alcance || 30) * 0.8) || T > 6;
+        case 'aspiradora': return !!delante || T > 3;
+    }
+    return T > 5;
+}
+
+// ---------------------------------------------------------
+// Objetos: cajas en la pista (se toman pasando por encima; vuelven a los `reaparece` s), una ruleta que decide qué
+// sale según el puesto, y lo que se tira (`sueltos`: el ovillo corre por la pista, la caja de cartón se queda, el
+// pescado atrae a las que pasan cerca). La pluma, la hierba y la aspiradora hacen efecto al instante.
+// Todo en coordenadas de pista (s, lat). W = nuevosObjetos(R, pista); pasoObjetos una vez por paso, después de pasoGata.
+// ---------------------------------------------------------
+export const OBJETOS = ['pluma', 'ovillo', 'caja', 'pescado', 'hierba', 'aspiradora'];
+const envolver = (s, L) => ((s % L) + L) % L;
+const difS = (a, b, L) => { let d = a - b; d -= Math.round(d / L) * L; return d; };
+
+// Dónde van las cajas: una fila por cada `pista.cajas`, a lo ancho
+export function cajasDe(R, pista) {
+    const O = R.objetos || {}, r = [];
+    if (!O.activos) return r;
+    for (const c of R.pista.cajas || []) {
+        if (!c || !Number.isFinite(c.punto) || c.punto < 0 || c.punto >= pista.puntos.length) continue;
+        const s = envolver(pista.puntos[c.punto] + (c.avance || 0), pista.largo), q = enPista(pista, s);
+        const n = Math.max(1, Math.min(8, Math.round(c.cuantas || O.cuantas || 4)));
+        for (let k = 0; k < n; k++) r.push({ s, lat: ((k + 0.5) / n - 0.5) * q.ancho * 0.8 });
+    }
+    return r;
+}
+export function nuevosObjetos(R, pista) {
+    return { cajas: cajasDe(R, pista).map(c => ({ ...c, hasta: 0 })), sueltos: [], t: 0, sig: 1 };
+}
+// Qué sale de una caja: puesto 0 = la primera, n - 1 = la última (los pesos se mezclan entre `primera` y `ultima`)
+export function sortearObjeto(R, puesto, n, rnd = Math.random) {
+    const O = R.objetos, f = n > 1 ? lim(puesto / (n - 1), 0, 1) : 0;
+    const pesos = OBJETOS.map(k => { const D = O[k] || {}; return Math.max(0, (D.primera ?? 1) * (1 - f) + (D.ultima ?? 1) * f); });
+    let r = rnd() * pesos.reduce((a, b) => a + b, 0);
+    if (!(r > 0)) return 'pluma';
+    for (let i = 0; i < OBJETOS.length; i++) { r -= pesos[i]; if (r < 0) return OBJETOS[i]; }
+    return OBJETOS[OBJETOS.length - 1];
+}
+// Un golpe (ovillo, caja) o un pescado que se come: queda quieta un rato y pierde el derrape y el turbo
+function golpear(g, tipo, R) {
+    const O = R.objetos, D = O[tipo] || {};
+    if (tipo === 'pescado') { g.come = D.come || 1; g.v *= 0.2; }
+    else { g.aturdida = D.golpe || 1; g.v *= 0.35; }
+    g.derrape = 0; g.carga = 0; g.nivel = -1; g.turbo = 0; g.inmune = O.inmune || 1;
+}
+function usarObjeto(W, gs, k, ent, R, pista, ev) {
+    const g = gs[k], O = R.objetos, tipo = g.objeto, D = O[tipo] || {}, L = pista.largo;
+    g.objeto = null; g.objetoT = 0;
+    ev.push({ k, e: 'usa', o: tipo });
+    const atras = (ent.ad || 0) < 0; // con el freno apretado, el ovillo sale hacia atrás
+    const soltar = (s, lat, extra) => {
+        const q = enPista(pista, s);
+        W.sueltos.push({ id: W.sig++, tipo, s: envolver(s, L), lat: lim(lat, -q.ancho / 2 + 0.6, q.ancho / 2 - 0.6), y: q.y, v: 0, de: k, gracia: O.gracia, vida: D.vida || 5, ...extra });
+    };
+    if (tipo === 'pluma') g.turbo = Math.max(g.turbo, D.turbo || 1);
+    else if (tipo === 'ovillo') soltar(g.s + (atras ? -1.5 : 1.5), g.lat, { v: atras ? -D.vel * 0.6 : D.vel + Math.max(0, g.v) * 0.3 });
+    else if (tipo === 'caja') soltar(g.s - 1.6, g.lat);
+    else if (tipo === 'pescado') {
+        // Cae delante de la que va justo adelante (o a `adelante` bloques si vas primera); a quien lo tira no la atrae
+        let blanco = null;
+        for (const x of gs) if (x !== g && x.fin === null && x.av > g.av && x.av - g.av < D.adelante * 2 && (!blanco || x.av < blanco.av)) blanco = x;
+        soltar(blanco ? blanco.s + 7 : g.s + D.adelante, blanco ? blanco.lat : g.lat, { gracia: 1e9 });
+    } else if (tipo === 'hierba') {
+        for (let j = 0; j < gs.length; j++) {
+            const x = gs[j];
+            if (x === g || x.fin !== null || x.cayendo > 0 || x.inmune > 0 || Math.abs(x.av - g.av) > D.alcance) continue;
+            x.reves = D.segundos; ev.push({ k: j, e: 'reves', o: tipo, de: k });
+        }
+    } else if (tipo === 'aspiradora') {
+        for (let j = 0; j < gs.length; j++) {
+            const x = gs[j];
+            if (x === g || x.fin !== null || x.cayendo > 0 || x.av <= g.av) continue;
+            x.susto = D.segundos; x.v *= D.freno; x.derrape = 0; x.carga = 0; x.nivel = -1; x.turbo = 0;
+            if (x.suelo) { x.vy = R.gata.salto * (D.salto ?? 0.7); x.suelo = false; x.enAire = 0; x.trucoHecho = true; } // saltan del susto
+            ev.push({ k: j, e: 'susto', o: tipo, de: k });
+        }
+    }
+}
+// Un paso: tomar cajas, la ruleta, usar (ent.usar al apretar), mover lo tirado y sus golpes. ents = la entrada de cada
+// gata en este paso. Devuelve [{ k (gata), e: 'caja'|'listo'|'usa'|'golpe'|'come'|'reves'|'susto', o (objeto), de (quién) }]
+export function pasoObjetos(W, gs, ents, dt, R, pista, rnd = Math.random) {
+    const O = R.objetos, ev = [], L = pista.largo, rad = R.gata.radio;
+    if (!O || !O.activos || !W) return ev;
+    W.t += dt;
+    const orden = puestos(gs);
+    for (let k = 0; k < gs.length; k++) {
+        const g = gs[k], ent = (ents && ents[k]) || {};
+        if (g.ruleta > 0) { g.ruleta = Math.max(0, g.ruleta - dt); if (!g.ruleta) ev.push({ k, e: 'listo', o: g.objeto }); }
+        else if (g.objeto) g.objetoT = (g.objetoT || 0) + dt;
+        const pulsa = !!ent.usar && !g.usarAntes;
+        g.usarAntes = !!ent.usar;
+        if (g.fin !== null || g.cayendo > 0) continue;
+        if (!g.objeto) for (const c of W.cajas) {
+            if (c.hasta > W.t || Math.abs(difS(g.s, c.s, L)) > O.radioCaja + rad || Math.abs(g.lat - c.lat) > O.radioCaja + rad) continue;
+            if (Math.abs(g.y - enPista(pista, c.s).y) > 2.5) continue;
+            c.hasta = W.t + O.reaparece;
+            g.objeto = sortearObjeto(R, orden.indexOf(g), gs.length, rnd); g.ruleta = O.ruleta; g.objetoT = 0;
+            ev.push({ k, e: 'caja', o: g.objeto });
+            break;
+        }
+        if (pulsa && g.objeto && !g.ruleta) usarObjeto(W, gs, k, ent, R, pista, ev);
+    }
+    for (let i = W.sueltos.length - 1; i >= 0; i--) {
+        const o = W.sueltos[i], D = O[o.tipo] || {};
+        o.vida -= dt; o.gracia -= dt;
+        if (o.v) { o.s = envolver(o.s + o.v * dt, L); const q = enPista(pista, o.s); if (!q.piso) o.vida = 0; o.y = q.y; }
+        if (o.vida <= 0) { W.sueltos.splice(i, 1); continue; }
+        let pego = false;
+        for (let k = 0; k < gs.length && !pego; k++) {
+            const g = gs[k];
+            if (g.cayendo > 0 || g.fin !== null || (k === o.de && o.gracia > 0) || Math.abs(g.y - o.y) > 1.6) continue;
+            const ds = difS(g.s, o.s, L);
+            // El pescado atrae: corre hacia él a las que pasan cerca
+            if (o.tipo === 'pescado' && Math.abs(ds) < D.atrae && !g.come && g.suelo) {
+                const dl = g.lat - o.lat;
+                g.lat -= Math.sign(dl) * Math.min(Math.abs(dl), D.fuerza * dt);
+                const q = puntoPista(pista, g.s, g.lat); g.x = q.x; g.z = q.z;
+            }
+            if (g.inmune > 0 || Math.abs(ds) > D.radio + rad || Math.abs(g.lat - o.lat) > D.radio + rad) continue;
+            golpear(g, o.tipo, R);
+            ev.push({ k, e: o.tipo === 'pescado' ? 'come' : 'golpe', o: o.tipo, de: o.de });
+            pego = true;
+        }
+        if (pego) W.sueltos.splice(i, 1);
+    }
+    return ev;
 }
 
 // Azar con semilla (mulberry32): para la IA, reproducible
