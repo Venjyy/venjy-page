@@ -78,7 +78,9 @@ import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
 import { nivelDeMs, barrasDeMs } from '../online/ping.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
-import { datosInicio, fraseAlAzar, consejoAlAzar, avanceCarga } from './inicio-datos.js';
+import { datosInicio, fraseAlAzar, consejoAlAzar, avanceCarga, fondoActivo } from './inicio-datos.js';
+import { presentacion } from './presentacion.js';
+import { crearFondoMenu } from './fondo-menu.js';
 import { aplicarPoses } from '../datos/gestos.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
@@ -529,6 +531,30 @@ function ocultarCarga() {
     setTimeout(() => { pant.hidden = true; pant.classList.remove('saliendo'); }, seg * 1000 + 30);
 }
 
+// Fondo de cine detrás del menú (fondo-menu.js; inicio.json → fondo). Estudio → Inicio «Ver»: ?plano=N repite solo
+// ese plano y #fondo=<json> trae lo que aún no se guarda.
+let fondo = null;
+async function iniciarFondo() {
+    const d = datosInicio(await cargarDatos('inicio'));
+    const q = new URLSearchParams(location.search);
+    try { const h = new URLSearchParams(location.hash.slice(1)).get('fondo'); if (h) d.fondo = { ...d.fondo, ...JSON.parse(h) }; } catch (e) { /* hash roto: el guardado */ }
+    const soloPlano = q.has('plano') ? Number(q.get('plano')) : null;
+    const tactil = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    if (!fondoActivo(d, tactil) && soloPlano === null) return;
+    if (enJuego) return;
+    fondo = crearFondoMenu({ renderer, terreno, materiales, datos: d, velo: $('fondo-velo'), tactil, soloPlano });
+    $('inicio').style.setProperty('--fondo-oscurecer', d.fondo.oscurecer);
+    $('inicio').classList.add('con-fondo');
+    window.__venjy = Object.assign(window.__venjy || {}, { fondo });
+    await fondo.listo;
+}
+function cerrarFondo() {
+    if (!fondo) return;
+    fondo.destruir();
+    fondo = null;
+    $('inicio').classList.remove('con-fondo');
+}
+
 function iniciarJuego(guardado, cx = null) {
     if (enJuego) return;
     enJuego = true;
@@ -538,6 +564,7 @@ function iniciarJuego(guardado, cx = null) {
     $('carga').hidden = true;
     cargarDatos('inicio').then(j => datosInicio(j)).then(d => {
         abrirCarga(d);
+        cerrarFondo(); // la carga ya tapa la pantalla: se libera el mundo del fondo antes de crear el del juego
         setTimeout(() => arrancar(guardado, cx).catch(err => {
             console.error(err);
             $('carga-etapa').textContent = 'Error: ' + err.message;
@@ -2058,4 +2085,9 @@ let seguir = null;
 try { seguir = sessionStorage.getItem('venjy-seguir'); sessionStorage.removeItem('venjy-seguir'); } catch (e) { /* sin almacenamiento */ }
 // Con ?estudio (el puente abre el mundo «Estudio» por el menú) se salta la pantalla de título
 const sinTitulo = new URLSearchParams(location.search).has('estudio');
-if (seguir) jugar(seguir).catch(() => pintarMenu()); else if (sinTitulo) pintarMenu(); else pintarTitulo();
+if (seguir) jugar(seguir).catch(() => pintarMenu()); else if (sinTitulo) pintarMenu();
+else {
+    pintarTitulo();
+    // La presentación «Venjy presenta» se cierra cuando el fondo tiene su primer plano (o no hay fondo)
+    iniciarFondo().catch(err => console.error('[fondo]', err)).finally(() => presentacion.listo());
+}

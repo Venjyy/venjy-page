@@ -72,4 +72,39 @@ const estudioHtml = readFileSync(resolve(raiz, 'estudio/index.html'), 'utf8');
 for (const id of ['in-c-vista', 'in-c-textos', 'in-c-aspecto', 'in-consejos', 'in-c-agregar', 'in-c-otro', 'in-c-sel'])
     ok(estudioHtml.includes(`id="${id}"`), `estudio/index.html tiene #${id}`);
 
+// Presentación «Venjy presenta»: valores base, mezcla, logo y HTML
+const { planosValidos, fondoActivo, planoEn, siguientePlano, veloEn } = await importar('mundo/supervivencia/inicio-datos.js');
+const { decodificar } = await importar('mundo/datos/pixeles.js');
+const P = INICIO.presentacion;
+ok(P.nombre.es && P.nombre.en && P.lema.es && P.lema.en, 'presentación con nombre y lema ES/EN');
+ok(P.logo.filas.every(f => f.length === P.logo.filas[0].length), 'filas del logo del mismo ancho');
+ok(decodificar(P.logo, P.logo.filas[0].length, P.logo.filas.length).some(Boolean), 'el logo dibuja algo');
+ok(P.tiempos.maximo > P.tiempos.minimo, 'la presentación tiene un máximo mayor que el mínimo');
+const dp = datosInicio({ presentacion: { lema: { es: 'hace', en: 'makes' }, tiempos: { minimo: 1 } } });
+ok(dp.presentacion.lema.en === 'makes' && dp.presentacion.nombre.es === P.nombre.es && dp.presentacion.tiempos.maximo === P.tiempos.maximo, 'la presentación se mezcla por clave');
+for (const id of ['presentacion', 'pres-logo', 'pres-nombre', 'pres-lema', 'fondo-velo']) ok(html.includes(`id="${id}"`), `supervivencia.html tiene #${id}`);
+ok(html.indexOf('presentacion.js') > 0 && html.indexOf('presentacion.js') < html.indexOf('supervivencia/main.js'), 'presentacion.js se carga antes que main.js');
+ok(html.includes('data-sin-presentacion'), 'el <head> salta la presentación con ?estudio');
+
+// Fondo de cine: planos, cámara, orden, velo y cuándo se muestra
+const F = INICIO.fondo;
+ok(planosValidos(base).length === F.planos.length && F.planos.length >= 3, 'los planos del código valen (al menos 3)');
+ok(planosValidos(datosInicio({ fondo: { planos: [{ desde: [1, 2], mira: [0, 0, 0], duracion: 5 }, { desde: [1, 2, 3], mira: [0, 0, 0], duracion: 0 }] } })).length === 0, 'planos sin 3 números o sin duración no valen');
+ok(fondoActivo(base) && fondoActivo(base, true), 'el fondo sale en PC y en celular por defecto');
+ok(!fondoActivo(datosInicio({ fondo: { enCelular: false } }), true) && fondoActivo(datosInicio({ fondo: { enCelular: false } }), false), 'enCelular apaga solo en táctil');
+ok(!fondoActivo(datosInicio({ fondo: { activo: false } })) && !fondoActivo(datosInicio({ fondo: { planos: [] } })), 'apagado o sin planos = sin fondo');
+const pl = { desde: [0, 10, 0], hasta: [10, 20, 0], mira: [0, 0, 5], duracion: 4 };
+ok(planoEn(pl, 0).pos.join() === '0,10,0' && planoEn(pl, 0.5).pos.join() === '5,15,0' && planoEn(pl, 2).pos.join() === '10,20,0', 'la cámara va de desde a hasta');
+ok(planoEn(pl, 0.7).mira.join() === '0,0,5', 'sin miraHasta mira siempre al mismo punto');
+ok(planoEn({ desde: [1, 1, 1], mira: [0, 0, 0], duracion: 3 }, 0.5).pos.join() === '1,1,1', 'sin hasta la cámara queda quieta');
+ok(siguientePlano(0, 3) === 1 && siguientePlano(2, 3) === 0 && siguientePlano(0, 1) === 0, 'orden seguido y en bucle');
+for (const a of [0, 0.3, 0.6, 0.9999]) ok(siguientePlano(1, 3, 'azar', () => a) !== 1, 'al azar nunca repite el mismo plano');
+ok(veloEn(0, 10, 1) === 1 && veloEn(0.5, 10, 1) === 0.5 && veloEn(5, 10, 1) === 0 && veloEn(10, 10, 1) === 1, 'el velo entra y sale con el fundido');
+ok(veloEn(3, 10, 0) === 0, 'sin fundido no hay velo');
+ok(main.includes('cerrarFondo()') && main.includes('presentacion.listo()'), 'main.js libera el fondo al entrar y avisa a la presentación');
+for (const id of ['in-p-vista', 'in-p-logo', 'in-p-campos', 'in-p-paleta', 'in-f-campos', 'in-f-planos', 'in-f-agregar'])
+    ok(estudioHtml.includes(`id="${id}"`), `estudio/index.html tiene #${id}`);
+ok(validar({ version: 1, fondo: { planos: [{ desde: [0, 0], mira: [0, 0, 0], duracion: 5 }] } }, 'inicio').length > 0, 'el esquema rechaza un punto sin 3 números');
+ok(validar({ version: 1, fondo: { orden: 'otro' } }, 'inicio').length > 0, 'el esquema rechaza un orden desconocido');
+
 console.log('inicio OK');
