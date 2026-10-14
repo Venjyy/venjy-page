@@ -258,6 +258,33 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
     ok(r.w.estado === 'sin-camino', `encerrado: se rinde (${r.w.estado})`);
 }
 
+{
+    // Destino dentro de una torre: cercaPisable lo deja junto a ella; destino imposible: pocas búsquedas y se rinde
+    const C = juguete(80, 80);
+    C.caja(40, 1, 40, 44, 12, 44, SOLIDO); // torre maciza
+    const p = N.cercaPisable(C, 42.5, 1, 42.5);
+    ok(p && (p.x < 40 || p.x > 45 || p.z < 40 || p.z > 45) && p.y === 1 && Math.hypot(p.x - 42.5, p.z - 42.5) < 5, `cercaPisable: junto a la torre (${JSON.stringify(p)})`);
+    ok(N.cercaPisable(C, 42.5, 1, 42.5, op({ radioPisable: 1 })) === null, 'cercaPisable: null si no hay nada a su alcance');
+    const r = caminarHasta(C, { x: 5.5, y: 1, z: 5.5, yaw: 0 }, p);
+    ok(r.w.estado === 'llego', `torre: llega al punto pisable (${r.w.estado})`);
+    // Sala cerrada en medio del campo: el destino no se alcanza nunca
+    const C2 = juguete(120, 120);
+    C2.caja(60, 1, 60, 70, 3, 60, SOLIDO); C2.caja(60, 1, 70, 70, 3, 70, SOLIDO); C2.caja(60, 1, 60, 60, 3, 70, SOLIDO); C2.caja(70, 1, 60, 70, 3, 70, SOLIDO);
+    const nav = N.crearNavegador(C2, { ajustes: () => op({ nodosMax: 20000 }) });
+    let pedidas = 0; const pedir = nav.pedir; nav.pedir = (...x) => { pedidas++; return pedir(...x); };
+    const cuerpo = { x: 5.5, y: 1, z: 5.5, yaw: 0 };
+    const w = N.crearCaminante(nav, cuerpo, { ajustes: () => op({ nodosMax: 20000 }) });
+    w.ir({ x: 65.5, y: 1, z: 65.5 });
+    for (let i = 0; i < 60 * 300 && w.estado !== 'sin-camino' && w.estado !== 'llego'; i++) { nav.actualizar(); w.actualizar(1 / 60); }
+    ok(w.estado === 'sin-camino', `sala cerrada: se rinde (${w.estado})`);
+    ok(pedidas <= 4, `sala cerrada: pocas búsquedas, la última sin avance la corta (${pedidas})`);
+    ok(Math.hypot(cuerpo.x - 65.5, cuerpo.z - 65.5) < 8, 'sala cerrada: queda junto a la pared más cercana');
+    // Parcial que termina cerca (aceptable): cuenta como llegada
+    const C3 = juguete(40, 40); C3.caja(20, 1, 18, 22, 3, 22, SOLIDO); C3.caja(21, 1, 20, 21, 3, 20, LIBRE); C3.caja(21, 4, 20, 21, 4, 20, SOLIDO);
+    const r3 = caminarHasta(C3, { x: 5.5, y: 1, z: 20.5, yaw: 0 }, { x: 21.5, y: 1, z: 20.5 });
+    ok(r3.w.estado === 'llego', `hueco tapado a 2 bloques: llegó igual (${r3.w.estado})`);
+}
+
 // ---------------------------------------------------------
 // 4. Terreno real de la supervivencia
 // ---------------------------------------------------------
@@ -354,6 +381,23 @@ const L = k => T.lugares.find(l => l.clave === k);
     ok(paseos.estado('ana').estado === 'alla' && Math.hypot(ana.x - 50.5, ana.z - 50.5) < 2, `paseos: sin camino y sin nadie mirando, aparece allá (${paseos.estado('ana').estado})`);
     paseos.volverTodos();
     ok(!ana.paseo && ana.x === 5.5 && ana.z === 5.5, 'paseos: volverTodos los deja en su sitio');
+    // A la vista y sin camino: pocos reintentos, cada vez más espaciados, y se queda donde llegó
+    jugador.pos.x = 10; jugador.pos.z = 10;
+    let pedidas = 0; const pedir = paseos.nav.pedir; paseos.nav.pedir = (...x) => { pedidas++; return pedir(...x); };
+    ok(paseos.ir('ana', { x: 50.5, y: 1, z: 50.5 }), 'paseos: encerrada y a la vista');
+    correr(200);
+    ok(paseos.estado('ana').estado === 'alla', `paseos: a la vista y sin camino se queda donde llegó (${paseos.estado('ana').estado})`);
+    ok(pedidas <= 4 * (1 + 2), `paseos: reintentos acotados (${pedidas} búsquedas: hasta 4 por intento, 1 + reintentosVista intentos)`);
+    const antes = pedidas; correr(60);
+    ok(pedidas === antes, 'paseos: después no vuelve a buscar');
+    paseos.nav.pedir = pedir;
+    paseos.volverTodos();
+    // Destino dentro de un bloque (como el centro de un lugar): va al punto pisable de al lado
+    C.caja(0, 1, 20, 29, 3, 20, LIBRE); C.caja(60, 1, 60, 64, 8, 64, SOLIDO);
+    ok(paseos.ir('ana', { x: 62.5, y: 1, z: 62.5 }), 'paseos: destino dentro de una torre');
+    correr(120, () => paseos.estado('ana').estado === 'alla');
+    ok(paseos.estado('ana').estado === 'alla' && Math.hypot(ana.x - 62.5, ana.z - 62.5) < 6, `paseos: llega junto a la torre (${paseos.estado('ana').estado})`);
+    paseos.volverTodos();
     ok(!paseos.ir('nadie', 'aqui') && !paseos.ir('ana', 'un-lugar-que-no-existe'), 'paseos: persona o destino desconocidos');
 }
 

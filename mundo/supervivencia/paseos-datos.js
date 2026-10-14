@@ -9,7 +9,8 @@ import { fijarNavegacion } from '../navegacion.js';
 export const PASEO_BASE = {
     amplitud: 0.6,          // cuánto balancea piernas y brazos al caminar
     acomodar: 0.5,          // segundos para acomodarse en su sitio exacto al volver
-    reintento: 4,           // sin camino y a la vista: segundos antes de volver a intentarlo
+    reintento: 4,           // sin camino y a la vista: segundos antes de volver a intentarlo (cada vez el doble)
+    reintentosVista: 2,     // cuántas veces lo reintenta a la vista antes de quedarse donde llegó
     distanciaVisita: 1.8,   // a qué distancia de la persona que visita se queda
     mirarJugador: 5         // de pie y sin a quién mirar: mira al jugador si está a menos de esto
 };

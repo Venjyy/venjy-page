@@ -11,7 +11,7 @@
 // jugador avanza a saltos (sin mirar bloques ni animar), y si no hay camino y nadie la ve, aparece allá.
 // Valores: paseos-datos.js (PASEO_BASE) + mundo/datos/navegacion.json (`paseo`; `caminar` va a navegacion.js).
 // =========================================================
-import { consultaMundo, crearNavegador, crearCaminante, ajustesNavegacion } from '../navegacion.js';
+import { consultaMundo, crearNavegador, crearCaminante, ajustesNavegacion, cercaPisable } from '../navegacion.js';
 import { fijarPaseo, ajustesPaseo } from './paseos-datos.js';
 import { TIPO } from '../texturas.js';
 import { NIVEL_AGUA } from '../voxeles.js';
@@ -78,7 +78,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         let a = activos.get(clave);
         if (destino.sitio) {
             if (!a) return true; // ya está en su sitio
-            a.vuelta = true; a.mirar = null;
+            a.vuelta = true; a.mirar = null; a.fallos = 0; a.espera = 0;
             a.w.ir({ x: a.casa.x, y: a.casa.y, z: a.casa.z });
             return true;
         }
@@ -92,7 +92,10 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         a.mirar = opciones.mirar !== undefined ? opciones.mirar : destino.mirar || destino.persona || null;
         let p = destino;
         if (destino.persona) { const otra = persona(destino.persona); if (!otra) return false; p = junto(a.cuerpo, otra); }
-        a.destino = p;
+        // El destino tiene que poder pisarse: el centro de un lugar suele estar dentro de la construcción
+        const pis = cercaPisable(consulta, p.x, p.y, p.z, ajustesNavegacion());
+        if (pis) p = pis;
+        a.destino = p; a.fallos = 0; a.espera = 0;
         a.w.ir(p);
         return true;
     }
@@ -135,10 +138,13 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             const antes = w.estado;
             const estado = w.actualizar(dt, { detalle: dJ < Math.min(A.radioDetalle, RADIO_VISIBLE) });
             if (estado === 'sin-camino') {
-                // Nadie lo ve: aparece allá (como los lobos de Minecraft). Si lo ven, espera y vuelve a intentar
+                // Nadie lo ve: aparece allá (como los lobos de Minecraft). Si lo ven, reintenta pocas veces y cada vez más
+                // espaciado (`reintento`, el doble, …); de ida, al agotarlos se queda donde llegó; de vuelta espera a
+                // que nadie lo vea para aparecer en su sitio. Nunca busca sin parar.
                 if (dJ > RADIO_VISIBLE * 0.5) { const d = a.vuelta ? a.casa : a.destino; cuerpo.x = d.x; cuerpo.z = d.z; if (Number.isFinite(d.y)) cuerpo.y = d.y; w.estado = 'llego'; }
-                else if ((a.espera += dt) > paseo.reintento) { a.espera = 0; w.ir(a.vuelta ? a.casa : a.destino); }
-            } else a.espera = 0;
+                else if (a.fallos >= paseo.reintentosVista) { if (!a.vuelta) w.estado = 'llego'; }
+                else if ((a.espera += dt) > paseo.reintento * 2 ** a.fallos) { a.espera = 0; a.fallos++; w.ir(a.vuelta ? a.casa : a.destino); }
+            }
             if (w.estado === 'llego' && antes !== 'llego') a.acomoda = 0;
             if (w.estado === 'llego' && a.vuelta) {
                 // Se acomoda en su sitio exacto y suelta el gancho: vuelve su animación de siempre
