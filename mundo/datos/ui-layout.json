@@ -12,7 +12,7 @@
         "sv-usar": { "ancla": "id", "x": 14, "y": 88, "desde": "pie", "w": 76, "h": 76 },
         "sv-romper": { "ancla": "id", "x": 98, "y": 88, "desde": "pie", "w": 76, "h": 76 },
         "sv-acariciar": { "ancla": "id", "x": 14, "y": 176, "desde": "pie", "w": 96, "h": 40, "letra": 0.8 },
-        "sv-inventario": { "ancla": "si", "x": 12, "y": 84, "w": 64, "h": 40, "letra": 0.8 },
+        "sv-inventario": { "ancla": "si", "x": 12, "y": 86, "w": 64, "h": 40, "letra": 0.8 },
         "sv-soltar": { "ancla": "si", "x": 12, "y": 130, "w": 64, "h": 40, "letra": 0.8 },
         "sv-camara": { "ancla": "si", "x": 12, "y": 176, "w": 64, "h": 40, "letra": 0.8 },
         "sv-comando": { "ancla": "si", "x": 12, "y": 222, "w": 64, "h": 40, "letra": 0.9 },
@@ -27,19 +27,20 @@
       "botones": {
         "sv-usar": { "y": 22, "w": 66, "h": 66, "x": 34 },
         "sv-romper": { "y": 24, "w": 66, "h": 66, "x": 134 },
-        "sv-acariciar": { "x": 374, "y": -8 },
-        "mision": { "y": 4, "x": 240 },
+        "sv-acariciar": { "x": 426, "y": -4 },
+        "mision": { "y": 6, "x": 162 },
         "joy": { "x": 60, "y": -70, "w": 136, "h": 126 },
-        "sv-comando": { "x": 2, "w": 24, "y": 218, "h": 42 },
-        "sv-camara": { "x": 508, "y": 12, "w": 44, "h": 44 },
-        "sv-soltar": { "x": 2, "w": 66, "y": 154 },
-        "sv-inventario": { "x": 2, "h": 58, "y": 92 },
+        "sv-comando": { "x": 2, "w": 24, "h": 42, "y": 250 },
+        "sv-camara": { "x": 576, "y": 12, "w": 44, "h": 44 },
+        "sv-soltar": { "x": 2, "w": 66, "y": 196 },
+        "sv-inventario": { "x": 2, "h": 58, "y": 134 },
         "bajar": { "y": -64, "x": 144 },
         "saltar": { "y": -78, "x": 32, "w": 94, "h": 92 },
         "minimapa": { "ancla": "sd", "seguro": false, "x": 8, "y": 8, "w": 134, "h": 120 },
         "coords": { "x": 12, "y": 8 },
         "fps": { "x": 12, "y": 46 },
-        "hora": { "x": 76, "y": 92 }
+        "hora": { "y": 84 },
+        "sv-gestos": { "ancla": "id", "desde": "pie", "x": 26, "y": 116, "w": 76, "h": 40 }
       }
     }
   }
