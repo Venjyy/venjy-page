@@ -2,17 +2,21 @@
 // VENJY · Supervivencia · Tienda
 // Pestaña «Tienda» del panel de cada amigo (misiones.js): comprar con esmeraldas o por trueque
 // y vender cosas a cambio de esmeraldas. Los datos y los diálogos únicos viven en tienda-datos.js.
+// Un amigo con `cartas: true` (Lucho) vende además cartas del Duelo: cartas-tienda-ui.js con import() la primera vez.
 // =========================================================
 import { TIENDAS } from './tienda-datos.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
 import { sonidos } from './sonidos.js';
+import { cargarDatos } from '../datos/cargador.js';
 
 const TXT = {
     es: { hablar: 'Hablar', mision: 'Misión', tienda: 'Tienda', precioAmigo: 'Precio de amigo', comprar: 'Comprar', vender: 'Vender', por: 'por', cerrar: 'Cerrar', tienes: 'Esmeraldas:', compras: 'Comprar', ventas: 'Vender',
-        bloqueada: t => `Se desbloquea al completar: ${t}`, comprado: 'Compraste', vendido: 'Vendiste' },
+        bloqueada: t => `Se desbloquea al completar: ${t}`, comprado: 'Compraste', vendido: 'Vendiste', cartas: n => (n === 1 ? 'Nueva carta en tu colección' : `${n} cartas nuevas en tu colección`),
+        tope: 'Ya tienes las que caben en un mazo.', cargando: 'Cargando cartas…' },
     en: { hablar: 'Talk', mision: 'Quest', tienda: 'Shop', precioAmigo: 'Friend price', comprar: 'Buy', vender: 'Sell', por: 'for', cerrar: 'Close', tienes: 'Emeralds:', compras: 'Buy', ventas: 'Sell',
-        bloqueada: t => `Unlocks after completing: ${t}`, comprado: 'You bought', vendido: 'You sold' }
+        bloqueada: t => `Unlocks after completing: ${t}`, comprado: 'You bought', vendido: 'You sold', cartas: n => (n === 1 ? 'New card in your collection' : `${n} new cards in your collection`),
+        tope: 'You already own as many as a deck allows.', cargando: 'Loading cards…' }
 };
 
 // ctx: inventario, hud, hechas() -> Set de ids, tituloDe(id) -> {es,en}, nombres (NOMBRES_AMIGO), dar(lista),
@@ -28,6 +32,45 @@ export function crearTienda(ctx) {
     const tiene = clave => !!TIENDAS[clave];
     const desbloqueada = o => !o.req || hechas().has(o.req);
     const alcanza = pide => pide.every(([id, n]) => inventario.contar(id) >= n);
+
+    // ---- Cartas del Duelo (amigo con `cartas: true`): datos de cartas-mesa.json o lo último del Estudio ----
+    let cartas = null, cargandoCartas = null, ultimoSobre = null;
+    const datosMesa = () => (typeof window !== 'undefined' && window.__venjy && window.__venjy.datosMesa) || (cartas && cartas.datos);
+    function cargarCartas() {
+        if (!cargandoCartas) cargandoCartas = Promise.all([import('./cartas-tienda-ui.js'), cargarDatos('cartas-mesa')])
+            .then(([m, datos]) => (cartas = { m, datos }))
+            .catch(err => { cargandoCartas = null; console.error('No se pudo cargar la tienda de cartas', err); return null; });
+        return cargandoCartas;
+    }
+    // Descuento de amistad igual que una oferta de un objeto (precio en esmeraldas por 1 carta)
+    const precioCartas = clave => n => { const pr = precio(clave, { da: [['carta-duelo', 1]], pide: [[O.ESMERALDA, n]] }); return { n: pr.pide[0][1], rebaja: pr.rebaja }; };
+    function seccionCartas(clave, caja) {
+        caja.appendChild(cartas.m.seccionCartas({
+            idioma, inventario, datos: datosMesa(), esm: O.ESMERALDA, precio: precioCartas(clave), ultimo: ultimoSobre,
+            alComprar: (res, tipo) => compraCartas(clave, res, tipo)
+        }));
+    }
+    function compraCartas(clave, res, tipo) {
+        const def = TIENDAS[clave];
+        if (!res.ok) {
+            const txt = res.motivo === 'tope' ? tx().tope : L(def.noAlcanza);
+            sonidos.danio(); decir(clave, txt); abrir(clave, txt); return;
+        }
+        ultimoSobre = tipo === 'sobre' ? res.cartas : null;
+        decir(clave, L(def.compraOk));
+        hud.mensaje(tx().cartas(res.cartas.length));
+        if (ctx.alComprar) ctx.alComprar(clave);
+        // Sobre: lo rasgas tú y salen las cartas (cartas-sobre.js); al terminar vuelves a la tienda con lo que salió
+        const D = datosMesa();
+        const escena = tipo === 'sobre' && cartas.m.escenaSobre({ cartas: res.cartas, col: (inventario.cartas && inventario.cartas.c) || null, datos: D, idioma, alTerminar: () => abrir(clave, L(def.compraOk)) });
+        if (escena) {
+            abrirPanel(escena);
+            if (ctx.alAbrir) ctx.alAbrir(clave, escena);
+            return;
+        }
+        sonidos.nivel();
+        abrir(clave, L(def.compraOk));
+    }
 
     // Fila con iconos: [icono ×n] ...
     function pila(lista) {
@@ -77,6 +120,7 @@ export function crearTienda(ctx) {
     function abrir(clave, frase) {
         const def = TIENDAS[clave];
         if (!def) return;
+        if (!frase) ultimoSobre = null; // el sobre abierto se muestra solo justo después de comprarlo
         const el = document.createElement('section');
         el.className = 'panel-mision panel-tienda';
         const h = document.createElement('h2'); h.textContent = nombres[clave];
@@ -92,6 +136,16 @@ export function crearTienda(ctx) {
             compras.appendChild(fila(pr.da, pr.pide, tx().comprar, () => comprar(clave, o), libre ? null : tx().bloqueada(L(tituloDe(o.req))), libre && pr.rebaja));
         }
         el.appendChild(compras);
+
+        if (def.cartas) {
+            const caja = document.createElement('div');
+            el.appendChild(caja);
+            if (cartas) seccionCartas(clave, caja);
+            else {
+                caja.textContent = tx().cargando;
+                cargarCartas().then(c => { caja.textContent = ''; if (c && caja.isConnected) seccionCartas(clave, caja); });
+            }
+        }
 
         if (def.compra && def.compra.length) {
             const t = document.createElement('p'); t.className = 'titulo-mision'; t.textContent = tx().ventas; el.appendChild(t);

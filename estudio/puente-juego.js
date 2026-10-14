@@ -214,6 +214,7 @@ const responder = crearManejador({
         } else if (accion === 'tutorial') {
             if (v.mesaCartas && v.mesaCartas.activo) v.mesaCartas.iniciarTutorial(); else v.abrirMesa('tutorial');
         } else if (accion === 'cerrar') { if (v.mesaCartas) v.mesaCartas.cerrar(); }
+        else if (accion === 'sobre') { if (v.mesaCartas && v.mesaCartas.activo) v.mesaCartas.cerrar(); await v.probarSobre(); }
         else if (!v.mesaCartas || !v.mesaCartas.activo) throw new Error('primero abre la mesa');
         else if (accion === 'animar') { if (!v.mesaCartas.repetirAnimacion()) throw new Error('primero haz una jugada en la mesa'); }
         else v.mesaCartas.cambiarVista();

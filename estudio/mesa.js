@@ -4,7 +4,8 @@
 // Lucho y las cámaras (1.ª persona, enfoque y la lista de 3.ª persona). Comparte pantalla con el juego (pestaña
 // Mesa = el iframe de Juego más este panel). Cada cambio va en vivo (mensaje `datos`); «Abrir la mesa»,
 // «Abrir el tutorial» y «Cambiar vista» usan el mensaje `mesa`. Guardar escribe el JSON con If-Match, como Posiciones.
-// También los límites del mazo y la colección inicial del duelo (grupos «Colección y mazo» y «Colección inicial»).
+// También los límites del mazo y la colección inicial del duelo (grupos «Colección y mazo» y «Colección inicial»)
+// y la tienda de cartas de Lucho (grupos «Tienda de cartas», «Precio de cada carta suelta» y «Sobres: peso de cada carta»).
 // =========================================================
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
@@ -34,12 +35,21 @@ const GRUPOS = [
     // Colección y mazo (etapa A, punto 3): límites del armado y del mazo al azar, y con qué cartas parte cada jugador
     ['coleccion', 'Colección y mazo', 'Collection and deck', { largo: 'cartas del mazo', copias: 'máximo de cada carta', azarExtra: 'cartas de más en la mano (mazo al azar)', azarTodas: '1 = al azar de todas las cartas, 0 = de tu colección', hechizosMin: 'mínimo de hechizos (al azar)', hechizosMax: 'máximo de hechizos (al azar)' }],
     ['coleccionInicial', 'Colección inicial (copias de cada carta)', 'Starting collection (copies of each card)', {}],
+    // Tienda de cartas (etapa A, punto 3, PR 2): sobres y cartas sueltas que vende Lucho, en esmeraldas
+    ['tiendaCartas', 'Tienda de cartas', 'Card shop', { activa: '1 = Lucho vende cartas, 0 = no', sobrePrecio: 'esmeraldas por sobre', sobreCartas: 'cartas por sobre', sobreNuevas: 'cuántas salen de las que no tienes', sobreHechizos: 'hechizos mínimos por sobre', sueltaTope: '1 = no vende una suelta si ya tienes las que caben en un mazo' }],
+    ['preciosCartas', 'Precio de cada carta suelta (0 = no se vende)', 'Price of each single card (0 = not sold)', {}],
+    ['pesosSobre', 'Sobres: peso de cada carta (0 = nunca sale)', 'Packs: weight of each card (0 = never drops)', {}],
+    // Abrir el sobre (cartas-sobre.js): «Probar el sobre» la muestra en el juego con estos valores
+    ['sobreAnim', 'Sobre: abrir (rasgar y voltear)', 'Pack: opening (tear and flip)', { activa: '1 = lo rasgas tú, 0 = sin escena', rasgar: 'cuánto arrastrar (1 = todo el ancho)', toques: 'toques que lo abren', salir: 'segundos que sale cada carta', voltear: 'segundos que se da vuelta', entre: 'segundos entre cartas', tapa: 'segundos que vuela la tapa', ancho: 'ancho del sobre (px)', sacudir: '1 = tiembla al rasgar', sonido: 'volumen (0 = mudo)' }],
     ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
 // Enteros con su tope (colección y mazo); el resto, según el valor
-const ENTEROS = { coleccion: { largo: [10, 40], copias: [1, 4], azarExtra: [0, 3], azarTodas: [0, 1], hechizosMin: [0, 40], hechizosMax: [0, 40] }, coleccionInicial: {} };
-const rangoGrupo = (g, k, v) => (ENTEROS[g] ? [...(ENTEROS[g][k] || [0, 4]), 1] : rango(k, v));
+const ENTEROS = { coleccion: { largo: [10, 40], copias: [1, 4], azarExtra: [0, 3], azarTodas: [0, 1], hechizosMin: [0, 40], hechizosMax: [0, 40] }, coleccionInicial: {},
+    tiendaCartas: { activa: [0, 1], sobrePrecio: [1, 64], sobreCartas: [1, 10], sobreNuevas: [0, 10], sobreHechizos: [0, 10], sueltaTope: [0, 1] }, preciosCartas: {}, pesosSobre: {} };
+// Sin tope propio: 0-4 (copias); precios hasta 10 esmeraldas y pesos hasta 5 (con el número se puede poner más)
+const TOPE = { preciosCartas: [0, 10], pesosSobre: [0, 5] };
+const rangoGrupo = (g, k, v) => (ENTEROS[g] ? [...(ENTEROS[g][k] || TOPE[g] || [0, 4]), 1] : rango(k, v));
 const rango = (k, v) => GRADOS.has(k) ? [-180, 180, 1] : v > 10 ? [0, Math.max(600, v * 2), 1] : v > 3 ? [0, Math.max(10, v * 2), 0.1] : [-3, 3, 0.01];
 
 export async function montarMesa(ctx) {
@@ -128,6 +138,7 @@ export async function montarMesa(ctx) {
     $('me-vista').addEventListener('click', () => mesa('vista'));
     $('me-animar').addEventListener('click', () => mesa('animar'));
     $('me-tutorial').addEventListener('click', async () => { await mesa('tutorial'); ctx.puente.enviarDatos('cartas-mesa', datos); });
+    $('me-sobre').addEventListener('click', async () => { ctx.puente.enviarDatos('cartas-mesa', datos); await mesa('sobre'); });
     $('me-cerrar').addEventListener('click', () => mesa('cerrar'));
     $('me-descartar').addEventListener('click', () => { datos = clonar(original); cambio(); pintar(); });
     btnGuardar.addEventListener('click', guardar);
