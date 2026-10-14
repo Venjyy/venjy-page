@@ -60,6 +60,7 @@ import { tono, ruido } from './sonidos.js';
 import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearVidaAmigos } from './vida-amigos.js';
+import { crearPaseos } from './paseos.js';
 import { crearMinijuegos } from './minijuego.js';
 import { NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
@@ -748,6 +749,8 @@ async function arrancar(guardado, cx = null) {
     const amigos = crearAmigos(vista.grupo, { ...ctxCriaturas, npcs, idioma });
     // Vida entre amigos (bloque 6d): charlas y bromas en la fogata y el iglú sin el jugador; los guiones se cargan al acercarse
     const vidaAmigos = crearVidaAmigos({ amigos, jugador: vista.jugador, idioma: () => idioma, libre: () => !vida.muerto });
+    // 6d etapa 2: los amigos dejan su sitio y caminan buscando camino sobre el terreno (mundo/navegacion.js)
+    const paseos = crearPaseos({ amigos, terreno, mundo: vista.mundo, jugador: vista.jugador });
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
@@ -1091,7 +1094,8 @@ async function arrancar(guardado, cx = null) {
             skin: () => skinActual,
             ponerSkin: d => ponerSkin(d),
             callar: v => escenas.callar(v),
-            vida: vidaAmigos // 6d: /amistad vida-<id>
+            vida: vidaAmigos, // 6d: /amistad vida-<id>
+            paseos // 6d etapa 2: /caminar <persona> <destino>
         },
         medir: { mundo, jugador, minado, entidades, terreno, irA, hud, B, DY, chunkForzado } // /medir romper (7b-1)
     });
@@ -1965,7 +1969,7 @@ async function arrancar(guardado, cx = null) {
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
-        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, guardarYa, estadoActual,
+        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos, ruleta,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
@@ -2063,6 +2067,7 @@ async function arrancar(guardado, cx = null) {
         gatas.actualizar(dtC);
         npcs.actualizar(dtC, false);
         animales.actualizar(dtC, false);
+        paseos.actualizar(dtC);
         vidaAmigos.actualizar(dtC);
         amigos.actualizar(dtC, false);
         venjys.actualizar(dtC, false);

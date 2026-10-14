@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "navegacion.schema.json",
+  "title": "Navegación de las personas (mundo/datos/navegacion.json)",
+  "description": "Cómo buscan camino y caminan los amigos cuando dejan su sitio (6d etapa 2): `caminar` ajusta NAV_BASE de mundo/navegacion.js (búsqueda A* sobre el terreno y el caminante) y `paseo` ajusta PASEO_BASE de mundo/supervivencia/paseos.js (animación, volver al sitio, visitas). Lo que falte usa el código. Se edita en /estudio/ → pestaña Vida y se aplica en vivo.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "$ref": "comun.schema.json#/$defs/version"
+    },
+    "nota": {
+      "$ref": "comun.schema.json#/$defs/nota"
+    },
+    "caminar": {
+      "description": "Búsqueda de camino y caminante (mundo/navegacion.js).",
+      "type": "object",
+      "properties": {
+        "velocidad": {
+          "description": "Caminando, bloques por segundo (el jugador camina a ~4,3).",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 6
+        },
+        "subida": {
+          "description": "Cuánto sube de un paso, en bloques enteros (1 = como en Minecraft; 0 = solo camina en plano o bajando).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "caida": {
+          "description": "Cuánto se deja caer de un paso, en bloques.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "alto": {
+          "description": "Bloques libres que necesita sobre los pies (2 = una persona).",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "costoSubida": {
+          "description": "Costo extra de subir un bloque al buscar camino (más alto = prefiere rodear los cerros).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "costoBajada": {
+          "description": "Costo extra por bloque de bajada.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "costoAgua": {
+          "description": "Costo extra de pisar agua bajita (0 = nunca pisa agua).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "codicia": {
+          "description": "Más de 1 busca más rápido y el camino sale un poco más largo; 1 = siempre el más corto.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "nodosPorCuadro": {
+          "description": "Tope de nodos de búsqueda por cuadro entre todas las personas (rendimiento).",
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "nodosMax": {
+          "description": "Tope de nodos por búsqueda; al llegar camina el mejor tramo y sigue buscando desde ahí.",
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 1000000
+        },
+        "llegada": {
+          "description": "A esta distancia (bloques, en planta) del destino ya llegó.",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 6
+        },
+        "atasco": {
+          "description": "Segundos sin acercarse antes de volver a buscar camino desde donde está.",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 10
+        },
+        "reintentos": {
+          "description": "Búsquedas de nuevo antes de rendirse (sin camino: si nadie lo ve, aparece allá).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "saltoLejos": {
+          "description": "Lejos del jugador: segundos entre saltos de posición (no se anima ni se miran bloques).",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 5
+        },
+        "radioDetalle": {
+          "description": "A menos de esto del jugador camina mirando cada bloque; más lejos avanza a saltos.",
+          "type": "number",
+          "minimum": 16,
+          "maximum": 160
+        },
+        "giro": {
+          "description": "Qué tan rápido gira hacia donde camina (por segundo).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "suavizado": {
+          "description": "Cuántos puntos hacia adelante intenta unir en línea recta al suavizar el camino.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      },
+      "additionalProperties": false
+    },
+    "paseo": {
+      "description": "Paseos de los amigos (mundo/supervivencia/paseos.js).",
+      "type": "object",
+      "properties": {
+        "amplitud": {
+          "description": "Cuánto balancea piernas y brazos al caminar (0,6 = paso normal).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.2
+        },
+        "acomodar": {
+          "description": "Segundos para acomodarse en su sitio exacto al volver.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "reintento": {
+          "description": "Sin camino y a la vista del jugador: segundos antes de volver a intentarlo.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "distanciaVisita": {
+          "description": "A qué distancia (bloques) de la persona que visita se queda.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "mirarJugador": {
+          "description": "De pie y sin a quién mirar: mira al jugador si está a menos de esto (bloques).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 16
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false
+}

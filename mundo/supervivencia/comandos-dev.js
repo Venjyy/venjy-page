@@ -365,5 +365,30 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
             }
         };
     }
+    // 6d etapa 2: /caminar <persona> <aqui|sitio|persona|lugar> lleva a un amigo buscando camino sobre el terreno
+    // (paseos.js + mundo/navegacion.js); /caminar <persona> sin destino dice cómo va
+    const paseos = amistad && amistad.paseos;
+    if (paseos) {
+        const personas = () => paseos.personas();
+        cmds['/caminar'] = {
+            ayuda: { es: '/caminar <persona> <aqui|sitio|persona|lugar> (sin destino: cómo va)', en: '/caminar <person> <aqui|sitio|person|place> (no target: status)' },
+            sugerir: () => personas().flatMap(c => [c, `${c} aqui`, `${c} sitio`, ...paseos.lugares().map(l => `${c} ${l}`)]),
+            fn(arg) {
+                const [quien, ...resto] = sinTildes(arg).split(/\s+/).filter(Boolean);
+                const c = quien && personas().find(a => a === quien || a.startsWith(quien));
+                if (!c) { hud.mensaje(t.amNo(arg || '?'), 4); return; }
+                const nombre = amistad.nombre(c);
+                const nom = typeof nombre === 'string' ? nombre : nombre[idioma] || nombre.es;
+                if (!resto.length) {
+                    const e = paseos.estado(c);
+                    hud.mensaje(idioma === 'en' ? `${nom}: ${e.estado}${e.restante !== undefined ? ` · ${e.restante} blocks left` : ''}` : `${nom}: ${e.estado}${e.restante !== undefined ? ` · faltan ${e.restante} bloques` : ''}`, 5);
+                    return;
+                }
+                const destino = resto.join(' ');
+                if (!paseos.ir(c, destino)) { hud.mensaje(idioma === 'en' ? `No place called "${destino}"` : `No conozco el destino «${destino}»`, 4); return; }
+                hud.mensaje(idioma === 'en' ? `${nom} walks to: ${destino}` : `${nom} camina a: ${destino}`, 4);
+            }
+        };
+    }
     return cmds;
 }
