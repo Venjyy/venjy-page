@@ -103,6 +103,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `cartas-mesa-anim.js` (~330) | Animaciones del Duelo desde los eventos de `aplicar` (robar, jugar, atacar, daño, cementerio, hechizos, turno). `crearAnimador` |
 | `cartas-coleccion.js` (~150) | Duelo: tu colección y tu mazo (puro): `inventario.cartas`, reglas de `cartas-mesa.json` (`coleccion`, `coleccionInicial`), `mazoParaPartida` (armado o al azar con cartas de más en la mano), `sumarCarta` |
 | `cartas-tienda.js` (~130) | Duelo: tienda de cartas (puro): sobres (`sacarSobre`, pesos), cartas sueltas (`catalogo`, precios), `comprarSobre` / `comprarSuelta` con esmeraldas → `inventario.cartas`; reglas en `cartas-mesa.json` (`tiendaCartas`, `preciosCartas`, `pesosSobre`) |
+| `cartas-sobre.js` (~150) | Escena de abrir un sobre: rasgar la franja (arrastrar, tocar o Espacio), la tapa vuela y las cartas se dan vuelta; valores `sobreAnim` (parte pura en `cartas-tienda.js`) |
 | `cartas-tienda-ui.js` (~110) | Sección «Cartas del Duelo» de la pestaña Tienda (amigo con `cartas: true`, hoy Lucho); `tienda.js` la carga con `import()` |
 | `cartas-armar.js` (~150) | Panel para armar tu mazo (clic derecho con el MAZO): colección con arte, poner/quitar, completar al azar, elegir armado o al azar |
 | `cartas-mesa-sonido.js` (~75) | Sonido del Duelo: recetas con `tono`/`ruido`; `sonar(sonidoDe(paso))` al empezar cada paso de la animación y `sonidoFin` al terminar |

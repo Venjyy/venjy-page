@@ -32,6 +32,17 @@
     "coleccionInicial": { "$ref": "#/$defs/numeros", "description": "Copias de cada carta (por clave de CARTAS) con que parte un jugador que nunca tocó su colección; 0 = no la tiene. Ver COLECCION_INICIAL en cartas-coleccion.js" },
     "tiendaCartas": { "$ref": "#/$defs/numeros", "description": "Tienda de cartas del Duelo (cartas-tienda.js; la vende el amigo con cartas: true en tienda-datos.js). activa (0/1), sobrePrecio (esmeraldas, 1-64), sobreCartas (1-10), sobreNuevas (cuántas salen de las que no tienes), sobreHechizos (mínimo por sobre), sueltaTope (1 = no vende una suelta si ya tienes las que caben en un mazo). Ver TIENDA_CARTAS" },
     "preciosCartas": { "$ref": "#/$defs/numeros", "description": "Esmeraldas por cada carta suelta (por clave de CARTAS), antes del descuento de amistad; 0 = no se vende suelta. Sin la clave: precioBase de cartas-tienda.js" },
+    "sobreAnim": {
+      "type": "object",
+      "description": "Abrir un sobre comprado (cartas-sobre.js): activa (0/1), rasgar (fracción del ancho a arrastrar), toques, salir / voltear / entre / tapa (segundos), ancho (px), sacudir (0/1), sonido (volumen), color / franja / letra (colores del sobre). Ver SOBRE_ANIM",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "franja": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "letra": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      },
+      "additionalProperties": { "type": "number" }
+    },
     "pesosSobre": { "$ref": "#/$defs/numeros", "description": "Qué tan seguido sale cada carta (por clave de CARTAS) en un sobre: 1 = normal, 2 = el doble, 0 = nunca. Sin la clave: 1" },
     "tutorial": {
       "type": "object",

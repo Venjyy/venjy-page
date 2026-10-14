@@ -57,10 +57,18 @@ export function crearTienda(ctx) {
             sonidos.danio(); decir(clave, txt); abrir(clave, txt); return;
         }
         ultimoSobre = tipo === 'sobre' ? res.cartas : null;
-        sonidos.nivel();
         decir(clave, L(def.compraOk));
         hud.mensaje(tx().cartas(res.cartas.length));
         if (ctx.alComprar) ctx.alComprar(clave);
+        // Sobre: lo rasgas tú y salen las cartas (cartas-sobre.js); al terminar vuelves a la tienda con lo que salió
+        const D = datosMesa();
+        const escena = tipo === 'sobre' && cartas.m.escenaSobre({ cartas: res.cartas, col: (inventario.cartas && inventario.cartas.c) || null, datos: D, idioma, alTerminar: () => abrir(clave, L(def.compraOk)) });
+        if (escena) {
+            abrirPanel(escena);
+            if (ctx.alAbrir) ctx.alAbrir(clave, escena);
+            return;
+        }
+        sonidos.nivel();
         abrir(clave, L(def.compraOk));
     }
 

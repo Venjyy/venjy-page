@@ -122,3 +122,35 @@ export function comprarSuelta(inv, datos, id, esm, precio) {
     sumarCarta(inv, id, 1, datos);
     return { ok: true, motivo: null, cartas: [id] };
 }
+
+// ---- Abrir el sobre (la escena está en cartas-sobre.js; esto es lo puro: valores, rasgado y tiempos) ----
+// activa = 0: sin escena (la tienda muestra las cartas al tiro); rasgar = cuánto del ancho de la franja hay que
+// arrastrar (1 = de punta a punta); toques = toques o Espacio que lo abren; salir / voltear / entre = segundos
+// (sale cada carta, se da vuelta, espera entre cartas); tapa = segundos que vuela la tapa; ancho = px del sobre;
+// sacudir = 1: tiembla mientras lo rasgas; sonido = volumen (0 = mudo); color / franja / letra = colores del sobre
+export const SOBRE_ANIM = { activa: 1, rasgar: 0.8, toques: 5, salir: 0.45, voltear: 0.4, entre: 0.35, tapa: 0.6, ancho: 200, sacudir: 1, sonido: 1, color: '#2f6b2a', franja: '#ffd24a', letra: '#ffffff' };
+
+const num = (v, min, max, base) => (Number.isFinite(v) ? Math.max(min, Math.min(max, v)) : base);
+const color = (v, base) => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : base);
+
+export function reglasSobreAnim(datos) {
+    const d = (datos && datos.sobreAnim) || {}, B = SOBRE_ANIM;
+    return {
+        activa: num(d.activa, 0, 1, B.activa) >= 0.5 ? 1 : 0,
+        rasgar: num(d.rasgar, 0.2, 3, B.rasgar),
+        toques: Math.round(num(d.toques, 1, 20, B.toques)),
+        salir: num(d.salir, 0, 3, B.salir),
+        voltear: num(d.voltear, 0, 3, B.voltear),
+        entre: num(d.entre, 0, 3, B.entre),
+        tapa: num(d.tapa, 0, 3, B.tapa),
+        ancho: Math.round(num(d.ancho, 120, 360, B.ancho)),
+        sacudir: num(d.sacudir, 0, 1, B.sacudir) >= 0.5 ? 1 : 0,
+        sonido: num(d.sonido, 0, 2, B.sonido),
+        color: color(d.color, B.color), franja: color(d.franja, B.franja), letra: color(d.letra, B.letra)
+    };
+}
+// Cuánto va rasgado (0-1): arrastrar `px` en una franja de `ancho` px, o un toque
+export const avanceArrastre = (av, px, ancho, R) => Math.min(1, av + Math.abs(px) / Math.max(1, ancho * R.rasgar));
+export const avanceToque = (av, R) => Math.min(1, av + 1 / R.toques);
+// Cuándo se da vuelta la carta i (s desde que se abrió el sobre)
+export const momentoCarta = (i, R) => R.tapa * 0.6 + R.salir + i * (R.entre + R.voltear * 0.5);

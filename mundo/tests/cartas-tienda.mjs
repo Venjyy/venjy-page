@@ -7,6 +7,7 @@
 //   2. sobre: cuántas trae, las nuevas primero, hechizos mínimos, pesos 0 nunca salen, sin colección llena
 //   3. comprar: cobra esmeraldas, suma a la colección (inventario.cartas), no alcanza, tope de copias, cerrada
 //   4. la tienda: Lucho vende cartas y el JSON trae precio y peso de cada carta jugable
+//   5. abrir el sobre: valores de la escena, rasgar con toques o arrastrando, orden de las cartas
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -98,6 +99,22 @@ const esHechizo = id => D.CARTAS[id].tipo === 'hechizo';
     ok(TIENDAS.lucho && TIENDAS.lucho.cartas === true, 'Lucho vende cartas');
     ok(Object.values(TIENDAS).filter(t => t.cartas).length === 1, 'solo un amigo vende cartas');
     ok(K.jugables().every(id => Number.isFinite(JSON_MESA.preciosCartas[id]) && Number.isFinite(JSON_MESA.pesosSobre[id])), 'el JSON trae precio y peso de cada carta jugable');
+}
+
+// ---- 5. Abrir el sobre (parte pura de cartas-sobre.js) ----
+{
+    const R = T.reglasSobreAnim(null);
+    ok(R.activa === 1 && R.toques === 5 && R.color === '#2f6b2a', 'escena del sobre: valores del código');
+    const J = T.reglasSobreAnim(JSON_MESA);
+    for (const k of Object.keys(T.SOBRE_ANIM)) ok(J[k] === JSON_MESA.sobreAnim[k], `JSON: sobreAnim.${k} se lee`);
+    const raro = T.reglasSobreAnim({ sobreAnim: { toques: 0, ancho: 9999, color: 'rojo', activa: 0.2 } });
+    ok(raro.toques === 1 && raro.ancho === 360 && raro.color === T.SOBRE_ANIM.color && raro.activa === 0, 'escena: fuera de rango se acota y un color malo vuelve al del código');
+    let av = 0;
+    for (let i = 0; i < R.toques; i++) av = T.avanceToque(av, R);
+    ok(av === 1, `se abre con ${R.toques} toques`);
+    ok(T.avanceToque(0, R) < 1, 'un toque no basta');
+    ok(T.avanceArrastre(0, 200 * R.rasgar, 200, R) === 1 && T.avanceArrastre(0, -100 * R.rasgar, 200, R) === 0.5, 'arrastrar en cualquier sentido rasga; el ancho pedido lo abre');
+    ok(T.momentoCarta(1, R) > T.momentoCarta(0, R) && T.momentoCarta(0, R) > 0, 'las cartas se dan vuelta una tras otra');
 }
 
 console.log(fallos ? `${fallos} fallo(s)` : 'cartas-tienda: todo bien');

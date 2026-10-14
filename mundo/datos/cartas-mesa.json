@@ -266,5 +266,21 @@
     "revivir": 1,
     "abrazo": 1,
     "once": 1
+  },
+  "sobreAnim": {
+    "nota": "Abrir un sobre comprado (cartas-sobre.js): activa = 1 lo rasgas tú (0 = sin escena); rasgar = cuánto del ancho de la franja hay que arrastrar; toques = toques o Espacio que lo abren; salir, voltear, entre y tapa en segundos; ancho del sobre en px; sacudir = 1 tiembla al rasgar; sonido = volumen; color, franja y letra = colores del sobre",
+    "activa": 1,
+    "rasgar": 0.8,
+    "toques": 5,
+    "salir": 0.45,
+    "voltear": 0.4,
+    "entre": 0.35,
+    "tapa": 0.6,
+    "ancho": 200,
+    "sacudir": 1,
+    "sonido": 1,
+    "color": "#2f6b2a",
+    "franja": "#ffd24a",
+    "letra": "#ffffff"
   }
 }

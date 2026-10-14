@@ -8,6 +8,7 @@ import { CARTAS } from './cartas-datos.js';
 import { miniCarta } from './cartas-armar.js';
 import { reglasTienda, catalogo, comprarSobre, comprarSuelta } from './cartas-tienda.js';
 import { coleccionDe, totalColeccion } from './cartas-coleccion.js';
+export { escenaSobre } from './cartas-sobre.js'; // abrir el sobre comprado (tienda.js)
 
 const t = (es, en) => ({ es, en });
 export const TXT_TIENDA_CARTAS = {

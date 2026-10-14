@@ -1492,6 +1492,12 @@ async function arrancar(guardado, cx = null) {
         get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
         // Mesa del duelo (7h-2b): abrirMesa('facil'|'medio'|'tutorial') sin pedir el mazo; mesaCartas, para pruebas y el Estudio
         get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
+        // Abrir un sobre de prueba (Estudio → Mesa, «Probar el sobre»): la escena de cartas-sobre.js sin cobrar ni sumar cartas
+        probarSobre: () => Promise.all([import('./cartas-sobre.js'), import('./cartas-tienda.js'), cargarDatos('cartas-mesa')]).then(([s, t, d]) => {
+            const D = window.__venjy?.datosMesa || d;
+            const el = s.escenaSobre({ cartas: t.sacarSobre({}, D), col: {}, datos: { ...D, sobreAnim: { ...(D && D.sobreAnim), activa: 1 } }, idioma, alTerminar: () => cerrarPanel() });
+            if (el) abrirPanel(el);
+        }),
         dar(id, n = 1) { return inventario.agregar(id, n); },
         O, B, nombreDe
     };

@@ -39,6 +39,8 @@ const GRUPOS = [
     ['tiendaCartas', 'Tienda de cartas', 'Card shop', { activa: '1 = Lucho vende cartas, 0 = no', sobrePrecio: 'esmeraldas por sobre', sobreCartas: 'cartas por sobre', sobreNuevas: 'cuántas salen de las que no tienes', sobreHechizos: 'hechizos mínimos por sobre', sueltaTope: '1 = no vende una suelta si ya tienes las que caben en un mazo' }],
     ['preciosCartas', 'Precio de cada carta suelta (0 = no se vende)', 'Price of each single card (0 = not sold)', {}],
     ['pesosSobre', 'Sobres: peso de cada carta (0 = nunca sale)', 'Packs: weight of each card (0 = never drops)', {}],
+    // Abrir el sobre (cartas-sobre.js): «Probar el sobre» la muestra en el juego con estos valores
+    ['sobreAnim', 'Sobre: abrir (rasgar y voltear)', 'Pack: opening (tear and flip)', { activa: '1 = lo rasgas tú, 0 = sin escena', rasgar: 'cuánto arrastrar (1 = todo el ancho)', toques: 'toques que lo abren', salir: 'segundos que sale cada carta', voltear: 'segundos que se da vuelta', entre: 'segundos entre cartas', tapa: 'segundos que vuela la tapa', ancho: 'ancho del sobre (px)', sacudir: '1 = tiembla al rasgar', sonido: 'volumen (0 = mudo)' }],
     ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
@@ -136,6 +138,7 @@ export async function montarMesa(ctx) {
     $('me-vista').addEventListener('click', () => mesa('vista'));
     $('me-animar').addEventListener('click', () => mesa('animar'));
     $('me-tutorial').addEventListener('click', async () => { await mesa('tutorial'); ctx.puente.enviarDatos('cartas-mesa', datos); });
+    $('me-sobre').addEventListener('click', async () => { ctx.puente.enviarDatos('cartas-mesa', datos); await mesa('sobre'); });
     $('me-cerrar').addEventListener('click', () => mesa('cerrar'));
     $('me-descartar').addEventListener('click', () => { datos = clonar(original); cambio(); pintar(); });
     btnGuardar.addEventListener('click', guardar);
