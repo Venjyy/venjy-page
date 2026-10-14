@@ -61,8 +61,8 @@ export const MESA = {
     mueble: { madera: '#7a5230', oscura: '#4e3218', pano: '#2f6a34' },
     // Superficies (sin mesa): alto = la cara de arriba, ojos = altura de la cámara sentado en el suelo, asiento =
     // distancia del borde a cada jugador, mano = altura de las cartas del rival sobre la superficie; colores del tronco
-    tronco: { alto: 0.5, ojos: 1.05, asiento: 0.55, mano: 0.3, corteza: '#5a3c1e', madera: '#a8824e' },
-    piso: { alto: 0.02, ojos: 1.0, asiento: 0.5, mano: 0.45 },
+    tronco: { alto: 0.5, ojos: 1.05, asiento: 0.85, mano: 0.3, corteza: '#5a3c1e', madera: '#a8824e' },
+    piso: { alto: 0.02, ojos: 1.0, asiento: 0.8, mano: 0.45 },
     // Turno del otro jugador: la cámara lo mira (como planoLucho). alto y mira[1] van desde tus ojos (sentado o de pie)
     planoRival: { lado: 0.3, alto: 0.1, z: 0.55, mira: [0, -0.1, -1.0] },
     // mirar = 1: en el turno del otro jugador la cámara lo mira (planoRival) y va a la mesa cuando juega (planoMesa);
