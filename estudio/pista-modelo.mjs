@@ -66,7 +66,7 @@ export function avisosPista(R) {
     if (peor) av.push({ tipo: 'error', es: 'La pista se cruza consigo misma a la misma altura', en: 'The track crosses itself at the same height', x: peor.x, z: peor.z });
     // Muebles del piso que pisan la pista
     for (const m of R.muebles || []) {
-        if (['alfombra', 'sofa', 'mesa'].includes(m.tipo)) continue;
+        if ([...M.MUEBLES_PLANOS, ...M.MUEBLES_ENCIMA, ...M.MUEBLES_TUNEL].includes(m.tipo)) continue;
         if (R.pista.apoyar && M.subeEncima(m)) continue; // la pista sube sola encima (rampa)
         for (const q of P.m) {
             if (q.y > m.h + 1) continue;
@@ -74,13 +74,14 @@ export function avisosPista(R) {
             if (Math.hypot(dx, dz) < q.ancho / 2) { av.push({ tipo: 'error', es: `${m.tipo} pisa la pista`, en: `${m.tipo} is on the track`, x: m.x, z: m.z }); break; }
         }
     }
-    // Patas de la mesa sobre la pista
-    for (const m of R.muebles || []) if (m.tipo === 'mesa') {
+    // Patas de la mesa (o la silla, la banca, el estanque) sobre la pista, y la pista muy alta debajo
+    for (const m of R.muebles || []) if (M.MUEBLES_TUNEL.includes(m.tipo)) {
+        const a = (m.g || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
         for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-            const lx = m.x + px * (m.a / 2 - 1), lz = m.z + pz * (m.f / 2 - 1);
-            if (P.m.some(q => q.y < m.h && Math.hypot(q.x - lx, q.z - lz) < q.ancho / 2 + 0.8)) { av.push({ tipo: 'error', es: 'Una pata de la mesa queda sobre la pista', en: 'A table leg is on the track', x: lx, z: lz }); break; }
+            const ux = px * (m.a / 2 - 1), uz = pz * (m.f / 2 - 1), lx = m.x + ux * ca + uz * sa, lz = m.z - ux * sa + uz * ca;
+            if (P.m.some(q => q.y < m.h && Math.hypot(q.x - lx, q.z - lz) < q.ancho / 2 + 0.8)) { av.push({ tipo: 'error', es: `Una pata de ${m.tipo} queda sobre la pista`, en: `A ${m.tipo} leg is on the track`, x: lx, z: lz }); break; }
         }
-        if (P.m.some(q => q.y + 2.2 > m.h && Math.abs(q.x - m.x) < m.a / 2 && Math.abs(q.z - m.z) < m.f / 2)) av.push({ tipo: 'error', es: 'La pista choca con la mesa (muy alta bajo la mesa)', en: 'The track hits the table (too high under it)', x: m.x, z: m.z });
+        if (P.m.some(q => q.y + 2.2 > m.h && M.techoMuebles([m], q.x, q.z) > 0)) av.push({ tipo: 'error', es: `La pista choca con ${m.tipo} (muy alta debajo)`, en: `The track hits the ${m.tipo} (too high under it)`, x: m.x, z: m.z });
     }
     // Fuera de la sala
     const S = R.sala;

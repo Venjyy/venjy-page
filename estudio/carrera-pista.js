@@ -19,9 +19,19 @@ import * as M from '../mundo/supervivencia/carrera-modelo.js';
 import { insertarPunto, quitarPunto, segmentoCercano, avisosPista, probarIA, PIEZAS, MEDIDAS, medidasDe, ponerPieza, rehacerPieza, quitarPieza, piezaDe } from './pista-modelo.mjs';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
-const TIPOS = ['ovillo', 'caja', 'cojin', 'lampara', 'pecera', 'raton', 'sofa', 'mesa', 'alfombra', 'podio'];
-const COLOR_MUEBLE = { sofa: '#5c7a9c', mesa: '#8a5a32', alfombra: '#a8343c', ovillo: '#d8455a', lampara: '#c8b070', caja: '#c49660', pecera: '#7ac0dc', cojin: '#e7b13a', raton: '#96969c', podio: '#f2c43c' };
-const NUEVO = { ovillo: { a: 7, f: 7, h: 7, color: '#4a8ad8' }, caja: { a: 10, f: 8, h: 7, g: 0 }, cojin: { a: 9, f: 9, h: 3, color: '#e7b13a', g: 0 }, lampara: { a: 6, f: 6, h: 30 }, pecera: { a: 8, f: 8, h: 9 }, raton: { a: 2, f: 3, h: 1.4, g: 0 }, sofa: { a: 40, f: 18, h: 6.8 }, mesa: { a: 20, f: 16, h: 9 }, alfombra: { a: 40, f: 16, h: 0.12 }, podio: { a: 10, f: 4, h: 3, g: 180 } };
+// Los muebles del escenario de la pista primero, después los de los otros escenarios y los de todas
+const tiposDe = R => { const e = (R.escenario && R.escenario.tipo) || 'living', D = M.MUEBLES_DE; return [...new Set([...(D[e] || []), ...D.todas, ...Object.values(D).flat()])]; };
+const REDONDOS = ['ovillo', 'lampara', 'olla', 'taza', 'pelota', 'arbol', 'macetero'];
+const CON_COLOR = ['ovillo', 'cojin', 'alfombra', 'silla', 'banca', 'taza', 'macetero', 'pelota'];
+const COLOR_MUEBLE = {
+    sofa: '#5c7a9c', mesa: '#8a5a32', alfombra: '#a8343c', ovillo: '#d8455a', lampara: '#c8b070', caja: '#c49660', pecera: '#7ac0dc', cojin: '#e7b13a', raton: '#96969c', podio: '#f2c43c',
+    encimera: '#b08a5a', refri: '#e8eaec', silla: '#b07a48', olla: '#9a9ea8', taza: '#e85a4a', piscina: '#4ab4e8', banca: '#a06a3a', arbol: '#4c9634', macetero: '#ba6040', pelota: '#e8483a',
+    tanque: '#96b0c4', chimenea: '#a8483a', antena: '#9696a0', panel: '#2a4482', claraboya: '#a8dcf0'
+};
+const NUEVO = { ovillo: { a: 7, f: 7, h: 7, color: '#4a8ad8' }, caja: { a: 10, f: 8, h: 7, g: 0 }, cojin: { a: 9, f: 9, h: 3, color: '#e7b13a', g: 0 }, lampara: { a: 6, f: 6, h: 30 }, pecera: { a: 8, f: 8, h: 9 }, raton: { a: 2, f: 3, h: 1.4, g: 0 }, sofa: { a: 40, f: 18, h: 6.8 }, mesa: { a: 20, f: 16, h: 9 }, alfombra: { a: 40, f: 16, h: 0.12 }, podio: { a: 10, f: 4, h: 3, g: 180 },
+    encimera: { a: 50, f: 18, h: 10 }, refri: { a: 22, f: 18, h: 50 }, silla: { a: 16, f: 16, h: 10, color: '#b07a48', g: 0 }, olla: { a: 14, f: 14, h: 10 }, taza: { a: 7, f: 7, h: 8, color: '#e85a4a' },
+    piscina: { a: 14, f: 16, h: 1.8 }, banca: { a: 14, f: 14, h: 10, color: '#a06a3a', g: 0 }, arbol: { a: 14, f: 14, h: 36 }, macetero: { a: 7, f: 7, h: 11, color: '#e05a8a' }, pelota: { a: 9, f: 9, h: 9, color: '#e8483a' },
+    tanque: { a: 18, f: 16, h: 11 }, chimenea: { a: 10, f: 10, h: 18 }, antena: { a: 6, f: 6, h: 30 }, panel: { a: 16, f: 12, h: 2.4, g: 0 }, claraboya: { a: 12, f: 9, h: 2, g: 0 } };
 
 // ctx: el del Estudio; api = { datos(), cambio(enviar = true), real() (reglas fundidas), alPintar() }
 export function montarEditorPista(ctx, api) {
@@ -76,23 +86,25 @@ export function montarEditorPista(ctx, api) {
         const k = kp, W = plano.width, H = plano.height;
         k.fillStyle = '#1a120c'; k.fillRect(0, 0, W, H);
         const S = R.sala;
-        // Piso de tablas y cuadrícula de 4 bloques
+        // Piso (del color del escenario, más oscuro) y cuadrícula de 4 bloques; en el techo, el callejón
+        const Es = R.escenario || {}, oscuro = h => { const n = parseInt(String(h || '#6e4a2a').slice(1), 16); return `rgb(${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(v * 0.72))})`; };
         const [sx0, sz0] = aPx(S.x - S.ancho / 2, S.z - S.fondo / 2), [sx1, sz1] = aPx(S.x + S.ancho / 2, S.z + S.fondo / 2);
-        k.fillStyle = '#6e4a2a'; k.fillRect(sx0, sz0, sx1 - sx0, sz1 - sz0);
+        k.fillStyle = oscuro(Es.piso); k.fillRect(sx0, sz0, sx1 - sx0, sz1 - sz0);
+        if (Es.tipo === 'techo' && Es.callejon && Es.callejon.ancho > 0) { const [c0] = aPx(Es.callejon.x - Es.callejon.ancho / 2, 0), [c1] = aPx(Es.callejon.x + Es.callejon.ancho / 2, 0); k.fillStyle = '#141216'; k.fillRect(c0, sz0, c1 - c0, sz1 - sz0); }
         k.strokeStyle = 'rgba(0,0,0,0.18)'; k.lineWidth = 1; k.beginPath();
         for (let x = Math.ceil((S.x - S.ancho / 2) / 4) * 4; x < S.x + S.ancho / 2; x += 4) { const [px] = aPx(x, 0); k.moveTo(px, sz0); k.lineTo(px, sz1); }
         for (let z = Math.ceil((S.z - S.fondo / 2) / 4) * 4; z < S.z + S.fondo / 2; z += 4) { const [, pz] = aPx(0, z); k.moveTo(sx0, pz); k.lineTo(sx1, pz); }
         k.stroke();
-        k.strokeStyle = '#e2cfa0'; k.lineWidth = 4; k.strokeRect(sx0, sz0, sx1 - sx0, sz1 - sz0);
+        k.strokeStyle = Es.pared || '#e2cfa0'; k.lineWidth = 4; k.strokeRect(sx0, sz0, sx1 - sx0, sz1 - sz0);
         // Muebles (los que van bajo la pista, primero)
         const orden = R.muebles.map((m, i) => i).sort((a, b) => (R.muebles[a].tipo === 'alfombra' ? -1 : 0) - (R.muebles[b].tipo === 'alfombra' ? -1 : 0));
         for (const i of orden) {
             const m = R.muebles[i], [px, pz] = aPx(m.x, m.z);
             k.save(); k.translate(px, pz); k.rotate(-(m.g || 0) * Math.PI / 180);
-            k.fillStyle = m.color && ['ovillo', 'cojin'].includes(m.tipo) ? m.color : COLOR_MUEBLE[m.tipo] || '#888';
+            k.fillStyle = m.color && CON_COLOR.includes(m.tipo) ? m.color : COLOR_MUEBLE[m.tipo] || '#888';
             k.globalAlpha = m.tipo === 'alfombra' ? 0.55 : 0.85;
             const w = m.a * vista.e, h = m.f * vista.e;
-            if (m.tipo === 'ovillo' || m.tipo === 'lampara') { k.beginPath(); k.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); k.fill(); }
+            if (REDONDOS.includes(m.tipo)) { k.beginPath(); k.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); k.fill(); }
             else k.fillRect(-w / 2, -h / 2, w, h);
             k.globalAlpha = 1;
             if (sel && sel.tipo === 'mueble' && sel.i === i) { k.strokeStyle = '#ffff55'; k.lineWidth = 3; k.strokeRect(-w / 2 - 2, -h / 2 - 2, w + 4, h + 4); }
@@ -173,10 +185,10 @@ export function montarEditorPista(ctx, api) {
             if (!q.piso) { k.fillStyle = 'rgba(220,40,40,0.35)'; k.fillRect(x, 0, P.paso * E.ex + 1, H); }
             if (q.turbo) { k.fillStyle = 'rgba(232,138,42,0.5)'; k.fillRect(x, H - 12, P.paso * E.ex + 1, 10); }
         }
-        // Mesa: su altura donde la pista pasa bajo ella
-        for (const m of R.muebles) if (m.tipo === 'mesa') {
+        // Mesa (o silla, banca, estanque): su altura donde la pista pasa bajo ella
+        for (const m of R.muebles) if (M.MUEBLES_TUNEL.includes(m.tipo)) {
             k.strokeStyle = '#c08040'; k.setLineDash([5, 4]); k.lineWidth = 2; k.beginPath(); let dentro = false;
-            for (const q of P.m) { const en = Math.abs(q.x - m.x) < m.a / 2 && Math.abs(q.z - m.z) < m.f / 2; if (en) { const x = sAPx(q.s, E), y = yAPx(m.h, E); if (!dentro) k.moveTo(x, y); else k.lineTo(x, y); } dentro = en; }
+            for (const q of P.m) { const en = M.techoMuebles([m], q.x, q.z) > 0; if (en) { const x = sAPx(q.s, E), y = yAPx(m.h, E); if (!dentro) k.moveTo(x, y); else k.lineTo(x, y); } dentro = en; }
             k.stroke(); k.setLineDash([]);
         }
         // Muebles con rampa sola bajo la pista (su alto)
@@ -267,19 +279,19 @@ export function montarEditorPista(ctx, api) {
             h.textContent = t(`Mueble: ${m.tipo}`, `Furniture: ${m.tipo}`);
             const mm = () => mueblesPropios()[i];
             const tipo = document.createElement('select');
-            for (const k of TIPOS) tipo.appendChild(new Option(k, k));
+            for (const k of tiposDe(R)) tipo.appendChild(new Option(k, k));
             tipo.value = m.tipo;
             tipo.addEventListener('change', () => { guardarHistoria(); mm().tipo = tipo.value; api.cambio(); pintar(); });
             g.appendChild(tipo);
             for (const [k, es, en, paso, min, max] of [['x', 'x', 'x', 0.5, -250, 250], ['z', 'z', 'z', 0.5, -250, 250], ['a', 'ancho (x)', 'width (x)', 0.5, 0.5, 160], ['f', 'fondo (z)', 'depth (z)', 0.5, 0.5, 160], ['h', 'alto', 'height', 0.1, 0.02, 60], ['g', 'giro (grados)', 'turn (degrees)', 5, -180, 180]])
                 campo(g, t(es, en), m[k] ?? 0, paso, v => { mm()[k] = v; }, min, max);
-            if (['ovillo', 'cojin'].includes(m.tipo)) {
+            if (CON_COLOR.includes(m.tipo)) {
                 const l = document.createElement('label'); l.className = 'campo'; const s = document.createElement('span'); s.textContent = 'color';
                 const c = document.createElement('input'); c.type = 'color'; c.value = m.color || '#888888';
                 c.addEventListener('change', () => { guardarHistoria(); mm().color = c.value; api.cambio(); pintar(); });
                 l.append(s, c); g.appendChild(l);
             }
-            if (!['sofa', 'mesa', 'alfombra', 'podio'].includes(m.tipo)) {
+            if (![...M.MUEBLES_ENCIMA, ...M.MUEBLES_TUNEL, ...M.MUEBLES_PLANOS, 'podio'].includes(m.tipo)) {
                 const l = document.createElement('label'); l.className = 'campo'; const s = document.createElement('span');
                 s.textContent = t('La pista sube encima (rampa sola)', 'Track climbs over it (automatic ramp)');
                 const c = document.createElement('input'); c.type = 'checkbox'; c.checked = M.subeEncima(m);
@@ -314,7 +326,7 @@ export function montarEditorPista(ctx, api) {
         if (!avisos.length) { const p = document.createElement('p'); p.className = 'mensaje ok'; p.textContent = t('Sin avisos: la pista se ve bien.', 'No warnings: the track looks fine.'); avisosEl.appendChild(p); return; }
         for (const a of avisos) { const p = document.createElement('p'); p.className = 'mensaje ' + (a.tipo === 'error' ? 'error' : ''); p.textContent = (a.tipo === 'error' ? t('Error: ', 'Error: ') : t('Ojo: ', 'Note: ')) + t(a.es, a.en); avisosEl.appendChild(p); }
     }
-    function pintar() { ajustarTamano(); recalcular(); pintarPlano(); pintarPerfil(); pintarInspector(); pintarAvisos(); if (api.alPintar) api.alPintar(); }
+    function pintar() { ajustarTamano(); recalcular(); llenarTipos(); pintarPlano(); pintarPerfil(); pintarInspector(); pintarAvisos(); if (api.alPintar) api.alPintar(); }
     // Solo el dibujo (mientras se arrastra: sin rehacer el inspector)
     function redibujar() { recalcular(); pintarPlano(); pintarPerfil(); }
 
@@ -451,8 +463,15 @@ export function montarEditorPista(ctx, api) {
     window.addEventListener('resize', () => { if (ctx.pestana === 'carrera') pintar(); });
 
     // ---- Barra ----
+    // (la lista se rehace al cambiar de pista: primero los muebles de su escenario)
     const tipoNuevo = $('ca-tipo-mueble');
-    for (const k of TIPOS) tipoNuevo.appendChild(new Option(k, k));
+    let tiposFirma = '';
+    function llenarTipos() {
+        const L = tiposDe(R || api.real()), f = L.join();
+        if (f === tiposFirma) return;
+        tiposFirma = f; tipoNuevo.textContent = '';
+        for (const k of L) tipoNuevo.appendChild(new Option(k, k));
+    }
     $('ca-agregar-mueble').addEventListener('click', () => {
         guardarHistoria();
         const k = tipoNuevo.value, ms = mueblesPropios();
@@ -504,5 +523,8 @@ export function montarEditorPista(ctx, api) {
         }, 20);
     });
 
-    return { pintar, get seleccion() { return sel; } };
+    // Otra pista (selector de la pestaña): la vista se encuadra de nuevo y se olvida la selección y el deshacer
+    function otraPista() { sel = null; vista = null; historia.length = 0; pintar(); }
+    llenarTipos();
+    return { pintar, otraPista, get seleccion() { return sel; } };
 }

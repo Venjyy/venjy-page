@@ -17,6 +17,10 @@
     "nombre": {
       "$ref": "comun.schema.json#/$defs/texto"
     },
+    "corto": {
+      "$ref": "comun.schema.json#/$defs/texto",
+      "description": "nombre corto (selector de pista del menú)"
+    },
     "vueltas": {
       "type": "integer",
       "minimum": 1,
@@ -47,396 +51,44 @@
       ]
     },
     "pista": {
-      "type": "object",
-      "properties": {
-        "paso": {
-          "description": "Muestreo (bloques).",
-          "type": "number",
-          "minimum": 0.25,
-          "maximum": 2
-        },
-        "ancho": {
-          "description": "Ancho base (bloques).",
-          "type": "number",
-          "minimum": 3,
-          "maximum": 20
-        },
-        "salida": {
-          "description": "Bloques antes de la línea para la 1.ª fila.",
-          "type": "number",
-          "minimum": 1,
-          "maximum": 12
-        },
-        "puntos": {
-          "description": "Puntos [x, y, z, ancho?] en bloques sobre el piso del living, en orden; se cierra solo; la salida en el primero.",
-          "type": "array",
-          "minItems": 4,
-          "maxItems": 256,
-          "items": {
-            "type": "array",
-            "prefixItems": [
-              {
-                "description": "x",
-                "type": "number",
-                "minimum": -250,
-                "maximum": 250
-              },
-              {
-                "description": "y (altura sobre el piso)",
-                "type": "number",
-                "minimum": 0,
-                "maximum": 60
-              },
-              {
-                "description": "z",
-                "type": "number",
-                "minimum": -250,
-                "maximum": 250
-              },
-              {
-                "description": "ancho propio (opcional)",
-                "type": "number",
-                "minimum": 2,
-                "maximum": 20
-              }
-            ],
-            "minItems": 3,
-            "maxItems": 4
-          }
-        },
-        "huecos": {
-          "type": "array",
-          "maxItems": 64,
-          "items": {
-            "type": "object",
-            "properties": {
-              "punto": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              },
-              "largo": {
-                "description": "bloques",
-                "type": "number",
-                "minimum": 1,
-                "maximum": 30
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "punto"
-            ]
-          }
-        },
-        "turbos": {
-          "type": "array",
-          "maxItems": 64,
-          "items": {
-            "type": "object",
-            "properties": {
-              "punto": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              },
-              "avance": {
-                "description": "bloques después del punto",
-                "type": "number",
-                "minimum": 0,
-                "maximum": 120
-              },
-              "lado": {
-                "description": "-1 izquierda .. 1 derecha",
-                "type": "number",
-                "minimum": -1,
-                "maximum": 1
-              },
-              "largo": {
-                "description": "bloques",
-                "type": "number",
-                "minimum": 1,
-                "maximum": 20
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "punto"
-            ]
-          }
-        },
-        "tuneles": {
-          "type": "array",
-          "maxItems": 32,
-          "items": {
-            "type": "object",
-            "properties": {
-              "desde": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              },
-              "hasta": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "desde"
-            ]
-          }
-        },
-        "cajas": {
-          "description": "Filas de cajas de objetos (una fila a lo ancho de la pista)",
-          "type": "array",
-          "maxItems": 32,
-          "items": {
-            "type": "object",
-            "properties": {
-              "punto": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              },
-              "avance": {
-                "description": "bloques después del punto",
-                "type": "number",
-                "minimum": 0,
-                "maximum": 120
-              },
-              "cuantas": {
-                "description": "cajas a lo ancho (sin el número: objetos.cuantas)",
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 8
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "punto"
-            ]
-          }
-        },
-        "apoyar": {
-          "description": "Rampa sola: 1 = la pista sube encima de los muebles que dejan subir (sube o tipo caja/cojín), 0 = no.",
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "rampa": {
-          "description": "Pendiente máxima de esa rampa (alto por bloque).",
-          "type": "number",
-          "minimum": 0.1,
-          "maximum": 0.7
-        },
-        "piezas": {
-          "description": "Piezas plantilla del editor (vuelta 360, espiral, horquilla, salto…): grupos de puntos [desde..hasta] que se mueven y rehacen juntos. El juego no las lee (solo los puntos).",
-          "type": "array",
-          "maxItems": 64,
-          "items": {
-            "type": "object",
-            "properties": {
-              "tipo": {
-                "enum": [
-                  "vuelta",
-                  "espiral",
-                  "bajada",
-                  "horquilla",
-                  "curva",
-                  "salto",
-                  "eses",
-                  "rampa"
-                ]
-              },
-              "desde": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              },
-              "hasta": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 255
-              },
-              "giro": {
-                "description": "grados: hacia dónde mira la entrada (0 = +z)",
-                "type": "number",
-                "minimum": -360,
-                "maximum": 360
-              },
-              "vueltas": {
-                "type": "number",
-                "minimum": 0.5,
-                "maximum": 4
-              },
-              "radio": {
-                "type": "number",
-                "minimum": 8,
-                "maximum": 60
-              },
-              "sube": {
-                "type": "number",
-                "minimum": -40,
-                "maximum": 40
-              },
-              "lado": {
-                "type": "number",
-                "minimum": -1,
-                "maximum": 1
-              },
-              "angulo": {
-                "type": "number",
-                "minimum": 15,
-                "maximum": 270
-              },
-              "alto": {
-                "type": "number",
-                "minimum": 1,
-                "maximum": 12
-              },
-              "largo": {
-                "type": "number",
-                "minimum": 6,
-                "maximum": 140
-              },
-              "hueco": {
-                "type": "number",
-                "minimum": 2,
-                "maximum": 16
-              },
-              "curvas": {
-                "type": "number",
-                "minimum": 2,
-                "maximum": 8
-              },
-              "ancho": {
-                "type": "number",
-                "minimum": 2,
-                "maximum": 20
-              }
-            },
-            "additionalProperties": false,
-            "required": [
-              "tipo",
-              "desde",
-              "hasta"
-            ]
-          }
-        }
-      },
-      "additionalProperties": false
+      "$ref": "#/$defs/pista"
     },
     "sala": {
-      "type": "object",
-      "properties": {
-        "ancho": {
-          "description": "",
-          "type": "number",
-          "minimum": 60,
-          "maximum": 500
-        },
-        "fondo": {
-          "description": "",
-          "type": "number",
-          "minimum": 60,
-          "maximum": 500
-        },
-        "alto": {
-          "description": "",
-          "type": "number",
-          "minimum": 20,
-          "maximum": 150
-        },
-        "x": {
-          "description": "",
-          "type": "number",
-          "minimum": -150,
-          "maximum": 150
-        },
-        "z": {
-          "description": "",
-          "type": "number",
-          "minimum": -150,
-          "maximum": 150
-        }
-      },
-      "additionalProperties": false
+      "$ref": "#/$defs/sala"
     },
     "muebles": {
-      "type": "array",
-      "maxItems": 120,
-      "items": {
+      "$ref": "#/$defs/muebles"
+    },
+    "escenario": {
+      "$ref": "#/$defs/escenario"
+    },
+    "pistas": {
+      "description": "Más pistas (cocina, patio, techo…): cada una con su nombre, escenario, sala, muebles y pista; lo que no traiga sale del código (y de `pista` de arriba: ancho, paso, salida, rampa)",
+      "type": "object",
+      "additionalProperties": {
         "type": "object",
         "properties": {
-          "tipo": {
-            "enum": [
-              "sofa",
-              "mesa",
-              "alfombra",
-              "ovillo",
-              "lampara",
-              "caja",
-              "pecera",
-              "cojin",
-              "raton",
-              "podio"
-            ]
+          "nombre": {
+            "$ref": "comun.schema.json#/$defs/texto"
           },
-          "x": {
-            "description": "",
-            "type": "number",
-            "minimum": -250,
-            "maximum": 250
+          "escenario": {
+            "$ref": "#/$defs/escenario"
           },
-          "z": {
-            "description": "",
-            "type": "number",
-            "minimum": -250,
-            "maximum": 250
+          "sala": {
+            "$ref": "#/$defs/sala"
           },
-          "a": {
-            "description": "ancho (x)",
-            "type": "number",
-            "minimum": 0.5,
-            "maximum": 160
+          "pista": {
+            "$ref": "#/$defs/pista"
           },
-          "f": {
-            "description": "fondo (z)",
-            "type": "number",
-            "minimum": 0.5,
-            "maximum": 160
+          "muebles": {
+            "$ref": "#/$defs/muebles"
           },
-          "h": {
-            "description": "alto",
-            "type": "number",
-            "minimum": 0.02,
-            "maximum": 60
-          },
-          "g": {
-            "description": "giro en grados",
-            "type": "number",
-            "minimum": -180,
-            "maximum": 180
-          },
-          "color": {
-            "type": "string",
-            "pattern": "^#[0-9a-fA-F]{6}$"
-          },
-          "sube": {
-            "description": "la pista sube encima sola (rampa); sin esto, según el tipo (caja y cojín sí)",
-            "type": "boolean"
+          "corto": {
+            "$ref": "comun.schema.json#/$defs/texto",
+            "description": "nombre corto (selector de pista del menú)"
           }
         },
-        "additionalProperties": false,
-        "required": [
-          "tipo",
-          "x",
-          "z",
-          "a",
-          "f",
-          "h"
-        ]
+        "additionalProperties": false
       }
     },
     "gata": {
@@ -1232,5 +884,488 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "pista": {
+      "type": "object",
+      "properties": {
+        "paso": {
+          "description": "Muestreo (bloques).",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 2
+        },
+        "ancho": {
+          "description": "Ancho base (bloques).",
+          "type": "number",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "salida": {
+          "description": "Bloques antes de la línea para la 1.ª fila.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "puntos": {
+          "description": "Puntos [x, y, z, ancho?] en bloques sobre el piso del living, en orden; se cierra solo; la salida en el primero.",
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 256,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "description": "x",
+                "type": "number",
+                "minimum": -250,
+                "maximum": 250
+              },
+              {
+                "description": "y (altura sobre el piso)",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 60
+              },
+              {
+                "description": "z",
+                "type": "number",
+                "minimum": -250,
+                "maximum": 250
+              },
+              {
+                "description": "ancho propio (opcional)",
+                "type": "number",
+                "minimum": 2,
+                "maximum": 20
+              }
+            ],
+            "minItems": 3,
+            "maxItems": 4
+          }
+        },
+        "huecos": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "properties": {
+              "punto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "largo": {
+                "description": "bloques",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 30
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "punto"
+            ]
+          }
+        },
+        "turbos": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "properties": {
+              "punto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "avance": {
+                "description": "bloques después del punto",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 120
+              },
+              "lado": {
+                "description": "-1 izquierda .. 1 derecha",
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              },
+              "largo": {
+                "description": "bloques",
+                "type": "number",
+                "minimum": 1,
+                "maximum": 20
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "punto"
+            ]
+          }
+        },
+        "tuneles": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "properties": {
+              "desde": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "hasta": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "desde"
+            ]
+          }
+        },
+        "cajas": {
+          "description": "Filas de cajas de objetos (una fila a lo ancho de la pista)",
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "properties": {
+              "punto": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "avance": {
+                "description": "bloques después del punto",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 120
+              },
+              "cuantas": {
+                "description": "cajas a lo ancho (sin el número: objetos.cuantas)",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 8
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "punto"
+            ]
+          }
+        },
+        "apoyar": {
+          "description": "Rampa sola: 1 = la pista sube encima de los muebles que dejan subir (sube o tipo caja/cojín), 0 = no.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rampa": {
+          "description": "Pendiente máxima de esa rampa (alto por bloque).",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 0.7
+        },
+        "piezas": {
+          "description": "Piezas plantilla del editor (vuelta 360, espiral, horquilla, salto…): grupos de puntos [desde..hasta] que se mueven y rehacen juntos. El juego no las lee (solo los puntos).",
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "properties": {
+              "tipo": {
+                "enum": [
+                  "vuelta",
+                  "espiral",
+                  "bajada",
+                  "horquilla",
+                  "curva",
+                  "salto",
+                  "eses",
+                  "rampa"
+                ]
+              },
+              "desde": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "hasta": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "giro": {
+                "description": "grados: hacia dónde mira la entrada (0 = +z)",
+                "type": "number",
+                "minimum": -360,
+                "maximum": 360
+              },
+              "vueltas": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 4
+              },
+              "radio": {
+                "type": "number",
+                "minimum": 8,
+                "maximum": 60
+              },
+              "sube": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 40
+              },
+              "lado": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              },
+              "angulo": {
+                "type": "number",
+                "minimum": 15,
+                "maximum": 270
+              },
+              "alto": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 12
+              },
+              "largo": {
+                "type": "number",
+                "minimum": 6,
+                "maximum": 140
+              },
+              "hueco": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 16
+              },
+              "curvas": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 8
+              },
+              "ancho": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 20
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "tipo",
+              "desde",
+              "hasta"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "sala": {
+      "type": "object",
+      "properties": {
+        "ancho": {
+          "description": "",
+          "type": "number",
+          "minimum": 60,
+          "maximum": 500
+        },
+        "fondo": {
+          "description": "",
+          "type": "number",
+          "minimum": 60,
+          "maximum": 500
+        },
+        "alto": {
+          "description": "alto de las paredes (en el patio, la valla; en el techo, el parapeto)",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 150
+        },
+        "x": {
+          "description": "",
+          "type": "number",
+          "minimum": -150,
+          "maximum": 150
+        },
+        "z": {
+          "description": "",
+          "type": "number",
+          "minimum": -150,
+          "maximum": 150
+        }
+      },
+      "additionalProperties": false
+    },
+    "muebles": {
+      "type": "array",
+      "maxItems": 120,
+      "items": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "enum": [
+              "sofa",
+              "mesa",
+              "alfombra",
+              "ovillo",
+              "lampara",
+              "caja",
+              "pecera",
+              "cojin",
+              "raton",
+              "podio",
+              "encimera",
+              "refri",
+              "silla",
+              "olla",
+              "taza",
+              "piscina",
+              "banca",
+              "arbol",
+              "macetero",
+              "pelota",
+              "tanque",
+              "chimenea",
+              "antena",
+              "panel",
+              "claraboya"
+            ]
+          },
+          "x": {
+            "description": "",
+            "type": "number",
+            "minimum": -250,
+            "maximum": 250
+          },
+          "z": {
+            "description": "",
+            "type": "number",
+            "minimum": -250,
+            "maximum": 250
+          },
+          "a": {
+            "description": "ancho (x)",
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 160
+          },
+          "f": {
+            "description": "fondo (z)",
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 160
+          },
+          "h": {
+            "description": "alto",
+            "type": "number",
+            "minimum": 0.02,
+            "maximum": 60
+          },
+          "g": {
+            "description": "giro en grados",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "sube": {
+            "description": "la pista sube encima sola (rampa); sin esto, según el tipo (caja y cojín sí)",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "tipo",
+          "x",
+          "z",
+          "a",
+          "f",
+          "h"
+        ]
+      }
+    },
+    "escenario": {
+      "description": "Cómo se ve el escenario de la pista: tipo y colores (carrera-escena.js)",
+      "type": "object",
+      "properties": {
+        "tipo": {
+          "enum": [
+            "living",
+            "cocina",
+            "patio",
+            "techo"
+          ]
+        },
+        "piso": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "piso2": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "pared": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "pared2": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "techo": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "cielo": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "fondo": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "niebla": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "pilares": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "callejon": {
+          "description": "Solo el techo: el callejón entre los dos techos (sin piso); la pista lo cruza con un hueco",
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": -250,
+              "maximum": 250
+            },
+            "ancho": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 40
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }

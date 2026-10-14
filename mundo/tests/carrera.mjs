@@ -537,13 +537,17 @@ const cuenta = (n, k) => n.log.filter(x => x[0] === k).length;
     C.red.elegir('tigre'); S.entregar();
     if (S.nodos.get('B').acts.actividad(ID_CARRERA).d.C.gata !== 'tigre') falla('elegir no cambia la gata');
     if (C.red.largar(claves, 'normal')) falla('larga quien no es el líder');
-    B.red.largar(claves, 'dificil'); S.entregar();
+    B.red.pista('techo'); S.entregar();
+    const dB = S.nodos.get('C').acts.actividad(ID_CARRERA).d.B;
+    if (dB.pista !== 'techo' || dB.gata !== 'mila') falla('la pista del líder no queda en sus datos');
+    B.red.largar(claves, 'dificil', 'techo'); S.entregar();
     const [iB, iC, iD, iF] = [B, C, D, F].map(n => ultimo(n, 'inicio'));
     if (!iB || !iC || !iD || !iF) falla('no todos reciben el inicio');
     else {
         if (iB[2] !== claves.indexOf('mila') || iC[2] !== claves.indexOf('tigre') || iD[2] !== claves.indexOf('gala') || iF[2] !== null) falla('las gatas no son las elegidas');
         if (!iB[3] || iC[3]) falla('el líder no es B');
         if (iC[1].semilla !== iB[1].semilla || iC[1].dificultad !== 'dificil' || iC[1].orden.join() !== iB[1].orden.join()) falla('la carrera no es la misma en todos');
+        if (iC[1].pista !== 'techo' || iF[1].pista !== 'techo') falla('la pista no viaja en el inicio');
     }
     if (E.log.length || A.log.length) falla('quien no está en la carrera recibe algo de ella');
     const kB = B.red.mia, kC = C.red.mia, kD = D.red.mia;
@@ -597,6 +601,37 @@ const cuenta = (n, k) => n.log.filter(x => x[0] === k).length;
     for (const n of ns.slice(0, 8)) { n.red.entrar('mila'); S.entregar(); }
     ns[8].red.entrar('mila'); S.entregar();
     if (ns[8].red.fase !== 'libre' || !ultimo(ns[8], 'rechazo')) falla('entra un 9.º a la carrera');
+}
+
+// ---------- Más pistas (cocina, patio, techo): cada una con su escenario, sala, muebles y pista ----------
+{
+    const PM = await imp('estudio/pista-modelo.mjs');
+    const lista = M.reglasCarrera({}).listaPistas;
+    if (lista.join() !== 'living,cocina,patio,techo') falla(`pistas: ${lista.join()}`);
+    for (const k of lista) {
+        const Rk = M.reglasCarrera(json, k);
+        if (Rk.pistaClave !== k || !Rk.nombres[k] || !Rk.cortos[k]) falla(`${k}: sin clave o sin nombre`);
+        if (k !== 'living' && (Rk.escenario.tipo !== k || Rk.nombre.es === R.nombre.es)) falla(`${k}: no trae su escenario o su nombre`);
+        const av = PM.avisosPista(Rk).filter(a => a.tipo === 'error');
+        if (av.length) falla(`${k}: la pista del código tiene errores: ${av.map(a => a.es).join('; ')}`);
+        for (const d of ['facil', 'normal', 'dificil']) for (const semilla of [11, 7]) {
+            const r = PM.probarIA(Rk, { dificultad: d, semilla });
+            if (!r.ok) falla(`${k} ${d} (semilla ${semilla}): la IA no termina`);
+            else if (r.caidas > 6) falla(`${k} ${d}: ${r.caidas} caídas`);
+            if (!r.derrapes) falla(`${k} ${d}: la IA no derrapa`);
+        }
+        console.log(`  pista ${k}: ${M.armarPista(Rk).largo.toFixed(1)} bloques · ${Rk.muebles.length} muebles`);
+    }
+    // Lo general sale de la raíz; las listas, solo de la pista (no se cuelan los huecos del living)
+    const r = M.reglasCarrera({ pista: { ancho: 7 }, pistas: { cocina: { pista: { huecos: [] }, sala: { ancho: 200 } } } }, 'cocina');
+    if (r.pista.ancho !== 7 || r.pista.huecos.length || r.pista.puntos.length !== M.CARRERA.pistas.cocina.pista.puntos.length) falla('pista de la cocina: mezcla mal la raíz y lo suyo');
+    if (r.sala.ancho !== 200 || r.sala.fondo !== M.CARRERA.pistas.cocina.sala.fondo) falla('sala de la cocina: no funde por clave');
+    if (M.reglasCarrera({ pistas: { cocina: { muebles: [] } } }, 'cocina').muebles.length) falla('muebles de la cocina: el JSON no los reemplaza');
+    if (M.reglasCarrera({}, 'luna').pistaClave !== 'living') falla('una pista que no existe no vuelve al living');
+    if (M.reglasCarrera({ pistas: { cocina: { escenario: { tipo: 'patio' } } } }, 'cocina').escenario.cielo !== M.ESCENARIO_BASE.patio.cielo) falla('cambiar el tipo de escenario no trae sus colores');
+    // Una pista nueva solo en el JSON
+    const n = M.reglasCarrera({ pistas: { nieve: { nombre: { es: 'Nieve', en: 'Snow' }, pista: { puntos: [[0, 0, 0], [30, 0, 0], [30, 0, 30], [0, 0, 30]] } } } }, 'nieve');
+    if (n.pistaClave !== 'nieve' || !n.listaPistas.includes('nieve') || n.pista.puntos.length !== 4 || n.muebles.length) falla('una pista nueva del JSON no se arma');
 }
 
 for (const [d, c] of Object.entries(medidas)) if (c.gs) {

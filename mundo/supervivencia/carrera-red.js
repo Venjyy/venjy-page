@@ -2,7 +2,7 @@
 // VENJY · Supervivencia · Carrera de gatas con varios jugadores (7h-1), sobre la base común actividades-red.js
 // Una actividad 'carrera@living' (cupo 8, como la sala). Quien la abre desde el panel de Lona entra a la sala de
 // espera: elige gata (cada una la maneja uno solo) o se pone a mirar. El primero de la lista es el **líder**: elige
-// la dificultad de la IA y larga; manda `ini` (qué gata maneja cada uno, parrilla, dificultad y semilla) y lo deja
+// la pista y la dificultad de la IA y larga; manda `ini` (qué gata maneja cada uno, parrilla, pista, dificultad y semilla) y lo deja
 // también en sus datos (`d.ini`), así quien entra tarde lo lee del estado sin pedir el registro.
 // En carrera:
 //   - cada corredor simula su gata y manda su estado ~12 veces por segundo (ráfaga `e`);
@@ -112,14 +112,19 @@ export function crearCarreraRed({ acts, yo, al = {}, azar = Math.random }) {
         dueno,
         // La carrera abierta (sala de espera o corriendo), o null
         abierta: () => act(),
-        // Entrar a la sala de espera con la gata que quiero (o a mirar)
-        entrar(gata, mira = false) {
+        // Entrar a la sala de espera con la gata que quiero (o a mirar) y la pista que elegí (vale si soy el líder)
+        entrar(gata, mira = false, pista = 'living') {
             if (fase !== 'libre') return false;
             const a = act();
             if (a && a.jug.length >= a.cupo) { avisar('rechazo', 'llena'); return false; }
             fase = 'sala'; ini = null; unido = false; visto = null;
-            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { gata, mira: mira ? 1 : 0 });
+            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { gata, mira: mira ? 1 : 0, pista });
             return true;
+        },
+        // Líder: la pista que eligió (los demás la ven en la sala de espera)
+        pista(clave) {
+            if (fase !== 'sala') return;
+            acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { ...misDatos(), pista: clave });
         },
         // En la sala de espera: cambiar de gata o pasar a mirar (los datos se reemplazan enteros)
         elegir(gata, mira = false) {
@@ -127,13 +132,13 @@ export function crearCarreraRed({ acts, yo, al = {}, azar = Math.random }) {
             const d = misDatos();
             acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { ...d, gata, mira: mira ? 1 : 0 });
         },
-        // Líder: larga la carrera. claves = R.gatas (clave de cada una); dificultad de la IA
-        largar(claves, dificultad) {
+        // Líder: larga la carrera. claves = R.gatas (clave de cada una); dificultad de la IA; pista ('living', 'cocina'…)
+        largar(claves, dificultad, pista = 'living') {
             const a = act();
             if (fase !== 'sala' || !a || a.jug[0] !== yo) return null;
             const { gatas, orden } = repartirGatas(a.jug, a.d, claves);
             // n: número de esta carrera (al azar: distinto aunque cambie el líder)
-            const i = { t: 'ini', n: 1 + ((azar() * 1e9) | 0), gatas, orden, dificultad, semilla: (azar() * 1e9) | 0 };
+            const i = { t: 'ini', n: 1 + ((azar() * 1e9) | 0), gatas, orden, dificultad, pista, semilla: (azar() * 1e9) | 0 };
             acts.unir(ID_CARRERA, TIPO_CARRERA, CUPO_CARRERA, { ...misDatos(), ini: i, fuera: 1 });
             acts.eventoLibre(ID_CARRERA, i);
             empezar(i, false);

@@ -31,6 +31,8 @@ const t = (es, en) => ({ es, en });
 export const TXT_CARRERA = {
     elegir: t('Elige tu gata', 'Choose your cat'),
     dificultad: t('Dificultad', 'Difficulty'),
+    pista: t('Pista (P)', 'Track (P)'),
+    pistaLider: t('Pista: {x} (la elige quien larga)', 'Track: {x} (picked by the race starter)'),
     niveles: { facil: t('Fácil', 'Easy'), normal: t('Normal', 'Normal'), dificil: t('Difícil', 'Hard') },
     stats: [t('Velocidad', 'Speed'), t('Aceleración', 'Acceleration'), t('Giro', 'Handling')],
     correr: t('¡A correr! (Enter)', 'Race! (Enter)'),
@@ -66,7 +68,7 @@ export const TXT_CARRERA = {
     unirse: t('Unirse a la carrera de {x} · {n} dentro (R)', "Join {x}'s race · {n} in (R)"),
     sala: t('Sala de la carrera', 'Race lobby'),
     entrando: t('Entrando…', 'Joining…'),
-    eresLider: t('Eres quien larga: elige la dificultad de la IA y larga cuando estén todos', 'You start the race: pick the AI difficulty and go when everyone is in'),
+    eresLider: t('Eres quien larga: elige la pista y la dificultad de la IA y larga cuando estén todos', 'You start the race: pick the track and the AI difficulty and go when everyone is in'),
     esperaLider: t('Elige tu gata. Larga {x}', 'Pick your cat. {x} starts the race'),
     ia: t('IA', 'AI'),
     publico: t('Miran', 'Watching'),
@@ -172,7 +174,7 @@ export function crearCarrera(ctx) {
     const { inventario, entidades, misiones, jugador } = ctx;
     let L = ctx.idioma || 'es';
     const tx = o => (o ? o[L] || o.es : '');
-    const reglas = () => M.reglasCarrera(ctx.datos && ctx.datos());
+    const reglas = () => M.reglasCarrera(ctx.datos && ctx.datos(), pistaSel);
 
     // ---------- DOM ----------
     const estilo = document.createElement('style'); estilo.textContent = CSS; document.head.appendChild(estilo);
@@ -211,6 +213,7 @@ export function crearCarrera(ctx) {
         if (c.fase === 'menu' && c.vista) { if (e.code === 'Escape') { e.preventDefault(); cerrar(); } return; }
         if (c.fase === 'sala') {
             if (e.code === 'Enter') { e.preventDefault(); largar(); }
+            else if (e.code === 'KeyP') { e.preventDefault(); if (red && red.soyLider) cambiarPista(1); }
             else if (e.code === 'Escape') { e.preventDefault(); salirSala(); }
             else if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowLeft' || e.code === 'KeyA' ? -1 : 1); }
             else if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowUp' || e.code === 'KeyW' ? -3 : 3); }
@@ -220,6 +223,7 @@ export function crearCarrera(ctx) {
         if (c.fase === 'menu') {
             if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); correr(); }
             else if (e.code === 'KeyR' && redLista()) { e.preventDefault(); entrarSala(); }
+            else if (e.code === 'KeyP') { e.preventDefault(); cambiarPista(1); }
             else if (e.code === 'Escape') { e.preventDefault(); cerrar(); }
             else if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowLeft' || e.code === 'KeyA' ? -1 : 1); }
             else if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowUp' || e.code === 'KeyW' ? -3 : 3); }
@@ -289,8 +293,8 @@ export function crearCarrera(ctx) {
     let c = null, esc = null, escClave = '';
     const cam = new THREE.PerspectiveCamera(70, 1, 0.1, 500);
     const camPos = new THREE.Vector3(), camMira = new THREE.Vector3();
-    let sel = 0, dificultad = 'normal';
-    const claveEscena = R => JSON.stringify([R.pista, R.muebles, R.sala, R.gatas.map(g => [g.clave, g.pelaje, g.escala, g.panuelo]), R.objetos.activos, R.objetos.cuantas, M.OBJETOS.map(k => R.objetos[k] && R.objetos[k].color), L]);
+    let sel = 0, dificultad = 'normal', pistaSel = 'living'; // pistaSel: 'living' o una de R.pistas (carrera-modelo.js)
+    const claveEscena = R => JSON.stringify([R.pistaClave, R.nombre, R.escenario, R.pista, R.muebles, R.sala, R.gatas.map(g => [g.clave, g.pelaje, g.escala, g.panuelo]), R.objetos.activos, R.objetos.cuantas, M.OBJETOS.map(k => R.objetos[k] && R.objetos[k].color), L]);
 
     function prepararEscena(R) {
         const clave = claveEscena(R);
@@ -315,6 +319,7 @@ export function crearCarrera(ctx) {
             b.addEventListener('click', () => { sel = i; pintarMenu(); });
             b.addEventListener('dblclick', () => { sel = i; correr(); });
         });
+        pistas(pintarMenu);
         niveles(pintarMenu);
         const bt = el('cr-botones', menuEl);
         boton(bt, tx(TXT_CARRERA.correr), correr);
@@ -339,6 +344,28 @@ export function crearCarrera(ctx) {
         const nv = el('cr-niveles', menuEl);
         el('', nv, 'span').textContent = tx(TXT_CARRERA.dificultad) + ':';
         for (const k of ['facil', 'normal', 'dificil']) { const b = boton(nv, tx(TXT_CARRERA.niveles[k]), () => { dificultad = k; repintar(); }); if (k === dificultad) b.classList.add('sel'); }
+    }
+    // Selector de pista (living, cocina, patio, techo…): la escena se vuelve a armar sola en actualizar()
+    function pistas(repintar) {
+        const R = c.R;
+        if (!R.listaPistas || R.listaPistas.length < 2) return;
+        const nv = el('cr-niveles', menuEl);
+        el('', nv, 'span').textContent = tx(TXT_CARRERA.pista) + ':';
+        for (const k of R.listaPistas) { const b = boton(nv, tx(R.cortos[k]), () => elegirPista(k, repintar)); if (k === R.pistaClave) b.classList.add('sel'); }
+    }
+    function elegirPista(k, repintar = null) {
+        if (!c || !c.R.listaPistas.includes(k)) return;
+        pistaSel = k;
+        if (c.fase === 'sala' && red) red.pista(k);
+        rearmar();
+        if (repintar) repintar(); else if (c.fase === 'sala') pintarSala(); else pintarMenu();
+    }
+    function cambiarPista(d) { const L2 = c.R.listaPistas, i = L2.indexOf(pistaSel); elegirPista(L2[((i + d) % L2.length + L2.length) % L2.length]); }
+    // Vuelve a armar la escena y la parrilla si cambió la pista (o sus datos)
+    function rearmar() {
+        const R2 = reglas();
+        if (claveEscena(R2) === escClave) { c.R = R2; return; }
+        prepararEscena(R2); c.R = R2; c.P = esc.P; c.gs = R2.gatas.map((d, k) => M.nuevaGata(esc.P, R2, d, k));
     }
     function moverSel(d) {
         const n = c.R.gatas.length; sel = ((sel + d) % n + n) % n;
@@ -407,7 +434,7 @@ export function crearCarrera(ctx) {
     function entrarSala() {
         const r = redLista();
         if (!r || !c || c.fase !== 'menu') return;
-        if (!r.entrar(c.R.gatas[sel].clave)) return;
+        if (!r.entrar(c.R.gatas[sel].clave, false, pistaSel)) return;
         c.fase = 'sala';
         pintarSala();
     }
@@ -417,7 +444,11 @@ export function crearCarrera(ctx) {
         c.fase = 'menu'; pintarMenu();
     }
     function pintarSala(a = red && red.abierta()) {
-        const R = c.R, yo = yoId(), lider = !!(a && a.jug[0] === yo), md = (a && a.d[yo]) || {};
+        const yo = yoId(), lider = !!(a && a.jug[0] === yo), md = (a && a.d[yo]) || {};
+        // La pista la elige quien larga: los demás ven la suya
+        const pl = a && !lider && a.d[a.jug[0]] && a.d[a.jug[0]].pista;
+        if (pl && pl !== pistaSel && c.R.listaPistas.includes(pl)) { pistaSel = pl; rearmar(); }
+        const R = c.R;
         menuEl.textContent = '';
         menuEl.classList.add('visible');
         el('', menuEl, 'h2').textContent = tx(TXT_CARRERA.sala);
@@ -436,7 +467,8 @@ export function crearCarrera(ctx) {
         });
         if (mirando.length) el('cr-publico', menuEl).textContent = `${tx(TXT_CARRERA.publico)}: ${mirando.join(', ')}`;
         if (afuera.length) el('cr-publico', menuEl).textContent = `${tx(TXT_CARRERA.enCarrera)}: ${afuera.join(', ')}`;
-        if (lider) niveles(() => pintarSala());
+        if (lider) { pistas(() => pintarSala()); niveles(() => pintarSala()); }
+        else el('cr-publico', menuEl).textContent = tx(TXT_CARRERA.pistaLider).replace('{x}', tx(R.nombre));
         const bt = el('cr-botones', menuEl);
         if (lider) boton(bt, tx(TXT_CARRERA.largar), largar);
         boton(bt, tx(md.mira ? TXT_CARRERA.aCorrer : TXT_CARRERA.aMirar), () => { red.elegir(R.gatas[sel].clave, !md.mira); }, 'boton secundario');
@@ -444,10 +476,11 @@ export function crearCarrera(ctx) {
     }
     function largar() {
         if (!red || !c || c.fase !== 'sala' || !red.soyLider) return;
-        red.largar(c.R.gatas.map(g => g.clave), dificultad); // empieza con al.inicio
+        red.largar(c.R.gatas.map(g => g.clave), dificultad, pistaSel); // empieza con al.inicio
     }
     // La carrera que largó el líder: la misma parrilla, dificultad y azar en todos los equipos
     function correrRed(ini, mia, soyLider) {
+        if (ini.pista) pistaSel = ini.pista;
         const R = { ...reglas(), dificultad: ini.dificultad || 'normal' };
         prepararEscena(R);
         const P = esc.P, n = R.gatas.length;
@@ -664,7 +697,8 @@ export function crearCarrera(ctx) {
         cam.lookAt(q2.x, q2.y, q2.z); cam.fov = 70; cam.updateProjectionMatrix();
     }
     function camaraMenu() {
-        const a = c.t * (c.vista ? 0.06 : 0.12), S = c.R.sala, alto = c.vista ? 70 : 36;
+        const a = c.t * (c.vista ? 0.06 : 0.12), S = c.R.sala, abierto = ['patio', 'techo'].includes(c.R.escenario && c.R.escenario.tipo);
+        const alto = Math.min(c.vista ? 70 : 36, abierto ? 200 : S.alto - 3); // (bajo el techo de la sala)
         cam.position.set(S.x + Math.sin(a) * S.ancho * 0.42, alto, S.z + Math.cos(a) * S.fondo * 0.4); cam.lookAt(S.x, 2, S.z); cam.fov = 62; cam.updateProjectionMatrix();
     }
     function camaraPodio() {
@@ -844,8 +878,7 @@ export function crearCarrera(ctx) {
         }
         if (c.fase === 'menu' || c.fase === 'sala') {
             // En el menú (y en «Ver la pista» del Estudio) también: si cambió la pista o los muebles, se rearma la sala
-            const R2 = reglas();
-            if (claveEscena(R2) !== escClave) { prepararEscena(R2); c.R = R2; c.P = esc.P; c.gs = R2.gatas.map((d, k) => M.nuevaGata(esc.P, R2, d, k)); if (c.fase === 'sala') pintarSala(); else if (!c.vista) pintarMenu(); }
+            if (claveEscena(reglas()) !== escClave) { rearmar(); if (c.fase === 'sala') pintarSala(); else if (!c.vista) pintarMenu(); }
             c.t += dt; esc.dibujar(c.gs, dt, c.tc); camaraMenu(); return;
         }
         if (c.fase === 'intro') { esc.dibujar(c.gs, dt, c.tc); esc.animarLona('quieta', c.tc); camaraIntro(); if (c.tc >= c.R.intro) empezarCuenta(); return; }
@@ -882,6 +915,9 @@ export function crearCarrera(ctx) {
         ver() { if (!c && !abrir()) return false; if (c.fase !== 'menu') { cerrar(); if (!abrir()) return false; } c.vista = true; menuEl.classList.remove('visible'); return true; },
         // Depuración
         elegir(clave, dif = 'normal') { if (!c) abrir(clave); const i = c.R.gatas.findIndex(g => g.clave === clave); if (i >= 0) sel = i; dificultad = dif; correr(); },
+        // Elegir la pista (Estudio, depuración): 'living', 'cocina', 'patio', 'techo'…
+        usarPista(k) { if (typeof k !== 'string') return; if (c && (c.fase === 'menu' || c.fase === 'sala')) elegirPista(k); else pistaSel = k; },
+        get pista() { return pistaSel; },
         saltarIntro: () => empezarCuenta(),
         saltarA(n) { if (c && c.gs) { const g = c.gs[c.yo]; g.av = (n - 1) * c.P.largo + g.s; } }
     };

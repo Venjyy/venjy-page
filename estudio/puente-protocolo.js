@@ -119,10 +119,11 @@ export function crearManejador(juego) {
                     return { ...base, tipo: 'ok' };
                 }
                 case 'carrera': {
-                    // Carrera de gatas (7h-1): abrirla con Mila o con Gala, o terminarla
+                    // Carrera de gatas (7h-1): abrirla con Mila o con Gala, o terminarla; `pista` = la que se edita
                     if (!['ver', 'mila', 'gala', 'terminar'].includes(m.accion)) return error('accion de carrera no válida');
+                    if (m.pista !== undefined && (typeof m.pista !== 'string' || !/^[a-z0-9_]{1,24}$/.test(m.pista))) return error('pista no válida');
                     if (!juego.carrera) return error('este juego no tiene la carrera de gatas');
-                    await juego.carrera({ accion: m.accion });
+                    await juego.carrera({ accion: m.accion, pista: m.pista });
                     return { ...base, tipo: 'ok' };
                 }
                 case 'objeto': {

@@ -9,6 +9,10 @@
 // derrape, fuego del turbo, estrellas del truco y confeti del podio. Objetos: cajas «?» que giran (se esconden al
 // tomarlas), ovillo que rueda, caja de cartón, pescado que salta, la aspiradora de Lona que pasa volando, y los
 // efectos en las gatas (golpeada da vueltas, hierba = remolino verde, susto = gotas, comiendo = agachada).
+// Más pistas (R.escenario.tipo): cocina (baldosas a cuadros, azulejos, ventana; encimera con lavaplatos, refri, silla,
+// olla, tazas), patio (pasto, valla, la pared de la casa, sol y nubes; piscina inflable, banca, árbol, maceteros,
+// pelota) y techo al atardecer (tejas en dos techos con el callejón entre medio, parapeto, ciudad lejos; estanque,
+// chimeneas, antena, paneles solares, claraboya). Los colores de cada escenario vienen de R.escenario (Estudio).
 // Todo con MeshBasicMaterial y sombra por cara (crearTinte), como las criaturas: sin luces.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
@@ -40,36 +44,110 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
     const recursos = [];
     const bloque = (w, h, d, m, x, y, z, padre = scene) => { const b = caja(w, h, d, m); b.position.set(x, y, z); padre.add(b); recursos.push(b.geometry); return b; };
     const sala = R.sala;
-    scene.background = new THREE.Color('#2a1c14');
+    // Escenario (living, cocina, patio o techo) con sus colores (R.escenario, editables en el Estudio)
+    const E = R.escenario || {}, tipoE = E.tipo || 'living';
+    const cP = hex(E.piso || '#96663a'), cP2 = hex(E.piso2 || '#86592f'), cW = hex(E.pared || '#e2cea0'), cW2 = hex(E.pared2 || '#c4a878');
+    const cT = hex(E.techo || '#eee8de'), cC = hex(E.cielo || '#80baec');
+    scene.background = new THREE.Color(E.fondo || '#2a1c14');
     const lado = Math.max(R.sala.ancho, R.sala.fondo);
-    scene.fog = new THREE.Fog(new THREE.Color('#3a2a20'), lado * 0.6, lado * 1.4); // se adapta al tamaño de la sala
-
-    // ---------- Sala ----------
-    const tabla = tx(16, 16, (x, y, r) => {
+    const abierto = tipoE === 'patio' || tipoE === 'techo'; // al aire libre: la niebla parte más lejos
+    scene.fog = new THREE.Fog(new THREE.Color(E.niebla || '#3a2a20'), lado * (abierto ? 0.9 : 0.6), lado * (abierto ? 2.2 : 1.4)); // se adapta al tamaño de la sala
+    const H = sala.alto, A = sala.ancho, F = sala.fondo;
+    const tela = (c, s = 0.1) => tx(8, 8, (x, y, r) => ajustar(c, 1 - s + r() * s * 2));
+    const paredes = (w, d, x, z) => [[A, d, sala.x, sala.z - F / 2], [A, d, sala.x, sala.z + F / 2], [w, F, sala.x - A / 2, sala.z], [w, F, sala.x + A / 2, sala.z]];
+    // Ventana con cielo en la pared del fondo y su luz en el piso (living y cocina)
+    function ventana(vx, y0, ancho, alto) {
+        const cielo = tx(16, 16, (x, y, r) => (y > 10 && (x + y) % 5 === 0) ? [248, 248, 252] : ajustar(cC, 0.82 + y * 0.025));
+        const marco = mats(tx(4, 4, () => [244, 240, 232]));
+        const vz = sala.z - F / 2 + 0.7, yc = y0 + alto / 2;
+        bloque(ancho, alto, 0.2, mats(cielo), vx, yc, vz);
+        for (const [w, h, x, y] of [[ancho + 2, 1.6, 0, alto / 2 + 0.8], [ancho + 2, 1.6, 0, -alto / 2 - 0.8], [1.6, alto, -ancho / 2 - 0.5, 0], [1.6, alto, ancho / 2 + 0.5, 0], [1.2, alto, 0, 0], [ancho + 2, 1, 0, 0]]) bloque(w, h, 0.6, marco, vx + x, yc + y, vz + 0.2);
+        const luz = new THREE.Mesh(new THREE.PlaneGeometry(ancho * 0.9, 30), new THREE.MeshBasicMaterial({ color: '#fff3c8', transparent: true, opacity: 0.12, depthWrite: false }));
+        luz.rotation.x = -Math.PI / 2; luz.position.set(vx + 6, 0.06, vz + 30); scene.add(luz); recursos.push(luz.geometry);
+    }
+    // Cielo abierto: sol y nubes cuadradas (patio y techo)
+    function cieloAbierto(solY, solColor) {
+        const nube = mats(tela([250, 250, 252], 0.03));
+        const sol = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.MeshBasicMaterial({ color: solColor, fog: false, side: THREE.DoubleSide }));
+        sol.position.set(sala.x + A * 0.3, solY, sala.z - lado * 1.3); scene.add(sol); recursos.push(sol.geometry);
+        for (let k = 0; k < 9; k++) {
+            const nx = sala.x + ((k * 53) % 9 - 4) * A * 0.22, nz = sala.z + ((k * 31) % 7 - 3) * F * 0.3, ny = 70 + (k % 3) * 12;
+            bloque(30 + (k % 4) * 10, 3, 14 + (k % 3) * 6, nube, nx, ny, nz);
+            bloque(16, 3, 10, nube, nx + 6, ny + 2.5, nz - 2);
+        }
+    }
+    if (tipoE === 'cocina') {
+        // Baldosas a cuadros, azulejos con su junta, techo y la ventana sobre la encimera
+        const baldosa = tx(16, 16, (x, y, r) => (x % 8 === 0 || y % 8 === 0) ? ajustar(cP, 0.78) : ((x < 8) !== (y < 8) ? ajustar(cP2, 0.94 + r() * 0.1) : ajustar(cP, 0.95 + r() * 0.08)));
+        bloque(A, 1, F, mats(repetir(baldosa, A / 8, F / 8)), sala.x, -0.5, sala.z);
+        const azulejo = tx(8, 8, (x, y, r) => (x === 0 || y === 0) ? cW2 : ajustar(cW, 0.96 + r() * 0.06));
+        for (const [w, d, x, z] of paredes(1, 1)) bloque(w, H, d, mats(repetir(azulejo, Math.max(w, d) / 4, H / 4)), x, H / 2, z);
+        bloque(A, 1, F, mats(repetir(tela(cT, 0.03), A / 8, F / 8)), sala.x, H + 0.5, sala.z);
+        ventana(sala.x + 8, 22, 34, 18);
+    } else if (tipoE === 'patio') {
+        // Pasto, valla de tablas alrededor, la pared de la casa al fondo (con su ventana y su puerta) y el cielo
+        const pasto = tx(16, 16, (x, y, r) => (r() < 0.12 ? ajustar(cP2, 0.9 + r() * 0.2) : ajustar(cP, 0.9 + r() * 0.16)));
+        bloque(A + 120, 1, F + 120, mats(repetir(pasto, (A + 120) / 6, (F + 120) / 6)), sala.x, -0.5, sala.z);
+        const tabla = tx(8, 16, (x, y, r) => (x === 0 ? cW2 : y === 15 && x % 4 === 2 ? ajustar(cW2, 0.8) : ajustar(cW, 0.92 + r() * 0.12)));
+        for (const [w, d, x, z] of paredes(1, 1).slice(1)) bloque(w, H, d, mats(repetir(tabla, Math.max(w, d) / 3, H / 6)), x, H / 2, z);
+        const yeso = tx(8, 8, (x, y, r) => ajustar(cT, 0.94 + r() * 0.08));
+        const fz = sala.z - F / 2;
+        bloque(A + 2, 64, 2, mats(repetir(yeso, A / 8, 8)), sala.x, 32, fz);
+        bloque(A + 6, 2, 6, mats(tela(cW2, 0.05)), sala.x, 64, fz + 2);                // alero
+        const vid = mats(tx(8, 8, (x, y) => (x === 0 || y === 0) ? [240, 240, 236] : ajustar(cC, 0.85 + y * 0.03)));
+        for (const vx of [-A * 0.28, A * 0.22]) bloque(28, 18, 0.4, vid, sala.x + vx, 34, fz + 1.2);
+        bloque(16, 30, 0.6, mats(tela([120, 78, 46], 0.08)), sala.x - 2, 15, fz + 1.3);    // puerta
+        cieloAbierto(95, '#fff2a8');
+    } else if (tipoE === 'techo') {
+        // Tejas sobre dos techos con un callejón entre medio (escenario.callejon), parapeto bajo, ciudad lejos y el atardecer
+        const teja = tx(16, 16, (x, y, r) => { const fila = Math.floor(y / 4), c = (x + (fila % 2) * 4) % 8; return (y % 4 === 3 || c === 0) ? ajustar(cP2, 0.8) : ajustar(y % 4 === 0 ? cP : cP2, 0.94 + r() * 0.12); });
+        const cj = E.callejon || {}, cw = Math.max(0, cj.ancho || 0), cx = cj.x ?? sala.x;
+        const x0 = sala.x - A / 2, x1 = sala.x + A / 2;
+        const ladrillo = tx(16, 16, (x, y, r) => (y % 4 === 3 || (x + (Math.floor(y / 4) % 2) * 4) % 8 === 0) ? [190, 180, 168] : ajustar([150, 70, 52], 0.9 + r() * 0.15));
+        const piso = (a, b) => { if (b - a < 0.5) return; bloque(b - a, 1, F, mats(repetir(teja, (b - a) / 6, F / 6)), (a + b) / 2, -0.5, sala.z); bloque(b - a, 50, F, mats(repetir(ladrillo, (b - a) / 6, 50 / 6)), (a + b) / 2, -26, sala.z); };
+        if (cw > 0) { piso(x0, cx - cw / 2); piso(cx + cw / 2, x1); bloque(cw + 2, 1, F + 40, mats(tela([52, 50, 56], 0.1)), cx, -52, sala.z); } // fondo del callejón
+        else piso(x0, x1);
+        const muro = mats(repetir(tx(8, 8, (x, y, r) => (y === 0 ? cW2 : ajustar(cW, 0.94 + r() * 0.08))), 1, 1));
+        for (const [w, d, x, z] of paredes(1.2, 1.2)) {
+            if (cw > 0 && w === A) { for (const [a, b] of [[x0, cx - cw / 2], [cx + cw / 2, x1]]) if (b - a > 0.5) bloque(b - a, H, d, muro, (a + b) / 2, H / 2, z); }
+            else bloque(w, H, d, muro, x, H / 2, z);
+        }
+        // Ciudad lejos (siluetas de edificios con ventanas encendidas)
+        const ciudad = tx(8, 16, (x, y, r) => (x % 3 === 1 && y % 4 === 1 && r() < 0.5) ? [255, 214, 120] : ajustar(cW2, 0.55 + r() * 0.06));
+        for (let k = 0; k < 28; k++) {
+            const ang = (k / 28) * Math.PI * 2, rad = lado * (1.25 + (k % 3) * 0.15), w = 18 + (k * 7) % 16, h = 4 + (k * 13) % 34;
+            const b = bloque(w, h + 60, w, mats(repetir(ciudad, w / 8, (h + 60) / 16)), sala.x + Math.cos(ang) * rad, (h + 60) / 2 - 60, sala.z + Math.sin(ang) * rad);
+            b.rotation.y = -ang;
+        }
+        cieloAbierto(18, '#ffe08a');
+    } else {
+        // Living: piso de tablas, papel mural con zócalo, techo y la ventana con cielo
+        const tabla = tx(16, 16, (x, y, r) => {
+            const fila = Math.floor(y / 4), corte = (x + fila * 7) % 16 === 0;
+            const base = [cP, ajustar(cP, 0.93), ajustar(cP, 1.05), cP2][fila];
+            return corte || y % 4 === 3 ? ajustar(base, 0.72) : ajustar(base, 0.9 + r() * 0.16);
+        });
+        bloque(sala.ancho, 1, sala.fondo, mats(repetir(tabla, sala.ancho / 4, sala.fondo / 4)), sala.x, -0.5, sala.z);
+        const mural = tx(16, 16, (x, y, r) => ((x + y) % 8 === 0 || (x - y + 16) % 8 === 0) ? cW2 : ajustar(cW, 0.94 + r() * 0.08));
+        const zocalo = tx(8, 8, (x, y, r) => y === 0 ? [240, 236, 226] : ajustar([226, 220, 206], 0.95 + r() * 0.06));
+        for (const [w, d, x, z] of paredes(1, 1)) {
+            bloque(w, H, d, mats(repetir(mural, Math.max(w, d) / 6, H / 6)), x, H / 2, z);
+            bloque(w + 0.4, 2, d + 0.4, mats(repetir(zocalo, Math.max(w, d) / 4, 1)), x, 1, z);
+        }
+        bloque(A, 1, F, mats(repetir(tx(8, 8, (x, y, r) => ajustar(cT, 0.95 + r() * 0.05)), A / 8, F / 8)), sala.x, H + 0.5, sala.z);
+        ventana(sala.x - 10, 19, 40, 22);
+    }
+    // La tabla de madera del living también la usa la mesa
+    const madera = tx(16, 16, (x, y, r) => {
         const fila = Math.floor(y / 4), corte = (x + fila * 7) % 16 === 0;
         const base = [[150, 102, 58], [140, 94, 52], [158, 110, 64], [134, 90, 50]][fila];
         return corte || y % 4 === 3 ? ajustar(base, 0.72) : ajustar(base, 0.9 + r() * 0.16);
     });
-    bloque(sala.ancho, 1, sala.fondo, mats(repetir(tabla, sala.ancho / 4, sala.fondo / 4)), sala.x, -0.5, sala.z);
-    const mural = tx(16, 16, (x, y, r) => ((x + y) % 8 === 0 || (x - y + 16) % 8 === 0) ? [196, 168, 120] : ajustar([226, 206, 160], 0.94 + r() * 0.08));
-    const zocalo = tx(8, 8, (x, y, r) => y === 0 ? [240, 236, 226] : ajustar([226, 220, 206], 0.95 + r() * 0.06));
-    const H = sala.alto, A = sala.ancho, F = sala.fondo;
-    for (const [w, d, x, z] of [[A, 1, sala.x, sala.z - F / 2], [A, 1, sala.x, sala.z + F / 2], [1, F, sala.x - A / 2, sala.z], [1, F, sala.x + A / 2, sala.z]]) {
-        bloque(w, H, d, mats(repetir(mural, Math.max(w, d) / 6, H / 6)), x, H / 2, z);
-        bloque(w + 0.4, 2, d + 0.4, mats(repetir(zocalo, Math.max(w, d) / 4, 1)), x, 1, z);
-    }
-    bloque(A, 1, F, mats(repetir(tx(8, 8, (x, y, r) => ajustar([238, 232, 222], 0.95 + r() * 0.05)), A / 8, F / 8)), sala.x, H + 0.5, sala.z);
-    // Ventana con cielo (pared del fondo) y su luz en el piso
-    const cielo = tx(16, 16, (x, y, r) => (y > 10 && (x + y) % 5 === 0) ? [248, 248, 252] : [128 + y * 4, 186 + y * 2, 236]);
-    const marco = mats(tx(4, 4, () => [244, 240, 232]));
-    const vx = sala.x - 10, vz = sala.z - F / 2 + 0.7;
-    bloque(40, 22, 0.2, mats(cielo), vx, 30, vz);
-    for (const [w, h, x, y] of [[42, 1.6, 0, 41], [42, 1.6, 0, 19], [1.6, 22, -20.5, 30], [1.6, 22, 20.5, 30], [1.2, 22, 0, 30], [42, 1, 0, 30]]) bloque(w, h, 0.6, marco, vx + x, y, vz + 0.2);
-    const luz = new THREE.Mesh(new THREE.PlaneGeometry(36, 30), new THREE.MeshBasicMaterial({ color: '#fff3c8', transparent: true, opacity: 0.12, depthWrite: false }));
-    luz.rotation.x = -Math.PI / 2; luz.position.set(vx + 6, 0.06, vz + 30); scene.add(luz); recursos.push(luz.geometry);
 
     // ---------- Muebles ----------
-    const tela = (c, s = 0.1) => tx(8, 8, (x, y, r) => ajustar(c, 1 - s + r() * s * 2));
+    // Un «cilindro» de cajas apiladas (ovillo, pelota, olla, taza): k capas, ancho según el perfil f(u) (u de 0 a 1)
+    const capas = (g, m, mat, k, y0, alto, perfil) => { for (let i = 0; i < k; i++) { const u = (i + 0.5) / k, an = Math.max(0.3, perfil(u) * m.a); bloque(an, alto / k + 0.04, an * (m.f / m.a), mat, 0, y0 + alto * u, 0, g); } };
+    const esfera = u => Math.sqrt(Math.max(0, 1 - (2 * u - 1) ** 2));
     for (const m of R.muebles || []) {
         const g = new THREE.Group(); g.position.set(m.x, 0, m.z); g.rotation.y = (m.g || 0) * Math.PI / 180; scene.add(g);
         const c = hex(m.color);
@@ -81,14 +159,15 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
             for (const lado of [-1, 1]) bloque(4, m.h + 1.6, m.f, tapizO, lado * (m.a / 2 - 2), (m.h + 1.6) / 2 + 1.5, 0, g); // posabrazos
             for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bloque(1.4, 1.5, 1.4, mats(tela([60, 40, 28])), px * (m.a / 2 - 1.5), 0.75, pz * (m.f / 2 - 1.5), g);
         } else if (m.tipo === 'mesa') {
-            const madera = mats(repetir(tabla, m.a / 4, m.f / 4));
-            bloque(m.a, 1.2, m.f, madera, 0, m.h + 0.6, 0, g);
-            for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bloque(1.5, m.h, 1.5, madera, px * (m.a / 2 - 1), m.h / 2, pz * (m.f / 2 - 1), g);
+            const mad = mats(repetir(madera, m.a / 4, m.f / 4));
+            bloque(m.a, 1.2, m.f, mad, 0, m.h + 0.6, 0, g);
+            for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bloque(1.5, m.h, 1.5, mad, px * (m.a / 2 - 1), m.h / 2, pz * (m.f / 2 - 1), g);
             // un florero y un libro encima
             bloque(2, 4, 2, mats(tela([210, 230, 236])), 3, m.h + 3.2, -2, g);
             bloque(5, 1, 3.5, mats(tela([170, 52, 46])), -4, m.h + 1.7, 3, g);
         } else if (m.tipo === 'alfombra') {
-            const alf = tx(16, 16, (x, y, r) => (x < 1 || y < 1 || x > 14 || y > 14) ? [222, 184, 84] : ((x + y) % 6 < 2 ? [150, 36, 44] : ajustar([176, 48, 52], 0.92 + r() * 0.12)));
+            const fondo = m.color ? c : [176, 48, 52], franja = m.color ? ajustar(c, 0.75) : [150, 36, 44];
+            const alf = tx(16, 16, (x, y, r) => (x < 1 || y < 1 || x > 14 || y > 14) ? [222, 184, 84] : ((x + y) % 6 < 2 ? franja : ajustar(fondo, 0.92 + r() * 0.12)));
             bloque(m.a, Math.min(m.h, 0.04), m.f, mats(repetir(alf, m.a / 12, m.f / 12)), 0, Math.min(m.h, 0.04) / 2, 0, g); // bajo la pista
         } else if (m.tipo === 'ovillo') {
             const lana = mats(tx(8, 8, (x, y, r) => (x + y * 2) % 5 === 0 ? ajustar(c, 0.7) : ajustar(c, 0.92 + r() * 0.14)));
@@ -116,6 +195,97 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
             bloque(m.a, m.h, m.f, gris, 0, m.h / 2, 0, g);
             for (const l of [-1, 1]) bloque(0.8, 0.8, 0.2, mats(tela([236, 160, 170])), l * 0.6, m.h + 0.3, m.f / 2 - 0.4, g);
             const cola = bloque(0.15, 0.15, 3, gris, 0, 0.3, -m.f / 2 - 1.4, g); cola.rotation.y = 0.4;
+        } else if (m.tipo === 'encimera') {
+            // Muebles de cocina con puertas, cubierta de piedra, lavaplatos con su llave y el muro de azulejos detrás
+            const puerta = tx(8, 16, (x, y, r) => (x === 0 || y === 0 || y === 15) ? [150, 104, 64] : (x === 6 && y > 5 && y < 10) ? [210, 210, 214] : ajustar([196, 150, 102], 0.94 + r() * 0.08));
+            bloque(m.a, m.h - 1, m.f - 1, mats(repetir(puerta, m.a / 6, 1)), 0, (m.h - 1) / 2, 0.5, g);
+            bloque(m.a, 0.6, m.f - 2, mats(tela([40, 40, 46], 0.04)), 0, 0.3, 1, g);                        // zócalo oscuro
+            const piedra = mats(repetir(tx(8, 8, (x, y, r) => (r() < 0.1 ? [210, 206, 200] : ajustar([92, 92, 100], 0.9 + r() * 0.14))), m.a / 6, m.f / 6));
+            bloque(m.a + 1, 1, m.f, piedra, 0, m.h - 0.5, 0, g);
+            bloque(10, 0.2, 8, mats(tela([170, 180, 188], 0.05)), -1.5, m.h + 0.02, m.f / 2 - 7, g);             // lavaplatos (bajo el salto)
+            bloque(10.5, 0.15, 8.5, mats(tela([60, 64, 70], 0.05)), -1.5, m.h - 0.05, m.f / 2 - 7, g);
+            const llave = mats(tela([200, 204, 210], 0.03));
+            bloque(1, 5, 1, llave, -1.5, m.h + 2.5, -m.f / 2 + 1.5, g); bloque(1, 1, 4, llave, -1.5, m.h + 5, -m.f / 2 + 3, g);
+            for (const [x, w, cc] of [[-m.a / 2 + 6, 5, [230, 230, 236]], [m.a / 2 - 8, 7, [214, 74, 60]]]) bloque(w, 5, 4, mats(tela(cc, 0.05)), x, m.h + 2.5, -m.f / 2 + 2.5, g); // tostadora y frasco al fondo
+        } else if (m.tipo === 'refri') {
+            const blanco = mats(tela([238, 240, 242], 0.03)), metal = mats(tela([160, 164, 170], 0.04));
+            bloque(m.a, m.h, m.f, blanco, 0, m.h / 2, 0, g);
+            bloque(m.a + 0.1, 0.4, m.f + 0.1, mats(tela([170, 176, 182], 0.03)), 0, m.h * 0.66, 0, g);       // separa el congelador
+            for (const y of [m.h * 0.33, m.h * 0.83]) bloque(1, m.h * 0.18, 1, metal, m.a / 2 - 3, y, m.f / 2 + 0.5, g);
+            for (const [x, y, cc] of [[-4, m.h * 0.5, [228, 72, 72]], [2, m.h * 0.55, [72, 140, 228]], [-1, m.h * 0.42, [244, 200, 60]]]) bloque(2, 2, 0.3, mats(tela(cc, 0.05)), x, y, m.f / 2 + 0.15, g); // imanes
+        } else if (m.tipo === 'silla' || m.tipo === 'banca') {
+            // Patas, asiento de tablas y respaldo (la pista pasa por debajo, entre las patas)
+            const mad = mats(repetir(tx(8, 8, (x, y, r) => (y % 4 === 3 ? ajustar(c, 0.7) : ajustar(c, 0.92 + r() * 0.12))), m.a / 4, m.f / 4));
+            bloque(m.a, 1.2, m.f, mad, 0, m.h + 0.6, 0, g);
+            for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bloque(1.4, m.h, 1.4, mad, px * (m.a / 2 - 1), m.h / 2, pz * (m.f / 2 - 1), g);
+            const alto = m.tipo === 'silla' ? 13 : 8;
+            for (const px of [-1, 1]) bloque(1.4, alto, 1.4, mad, px * (m.a / 2 - 1), m.h + 1.2 + alto / 2, -m.f / 2 + 0.7, g);
+            for (const y of m.tipo === 'silla' ? [alto - 2, alto - 6] : [alto - 2, alto - 5]) bloque(m.a - 1, 2, 0.8, mad, 0, m.h + 1.2 + y, -m.f / 2 + 0.7, g);
+        } else if (m.tipo === 'olla') {
+            const metal = mats(tx(8, 8, (x, y, r) => ajustar([150, 154, 162], x === 2 ? 1.2 : 0.9 + r() * 0.1)));
+            bloque(m.a, m.h, m.f, metal, 0, m.h / 2, 0, g);
+            bloque(m.a + 0.6, 0.8, m.f + 0.6, mats(tela([120, 124, 132], 0.04)), 0, m.h + 0.4, 0, g);     // tapa
+            bloque(2, 1.2, 2, mats(tela([40, 40, 44], 0.05)), 0, m.h + 1.4, 0, g);
+            for (const l of [-1, 1]) bloque(2, 1, 2.6, mats(tela([40, 40, 44], 0.05)), l * (m.a / 2 + 1), m.h * 0.75, 0, g); // asas
+        } else if (m.tipo === 'taza') {
+            capas(g, m, mats(tela(c, 0.06)), 4, 0, m.h, () => 1);
+            bloque(m.a * 0.8, 0.2, m.f * 0.8, mats(tela([90, 56, 32], 0.05)), 0, m.h - 0.6, 0, g);           // café
+            const asa = mats(tela(c, 0.06));
+            bloque(1, m.h * 0.6, 1, asa, m.a / 2 + 1.6, m.h * 0.5, 0, g);
+            for (const y of [m.h * 0.22, m.h * 0.78]) bloque(2, 1, 1, asa, m.a / 2 + 0.8, y, 0, g);
+        } else if (m.tipo === 'piscina') {
+            // Piscina inflable: anillo de rayas azul y blanco con agua (bajo el salto)
+            const raya = mats(tx(8, 8, (x, y) => (y < 4 ? [70, 150, 230] : [244, 244, 248])));
+            const w = 1.6;
+            for (const [a, f, x, z] of [[m.a, w, 0, -m.f / 2 + w / 2], [m.a, w, 0, m.f / 2 - w / 2], [w, m.f, -m.a / 2 + w / 2, 0], [w, m.f, m.a / 2 - w / 2, 0]]) bloque(a, m.h, f, raya, x, m.h / 2, z, g);
+            const agua = new THREE.Mesh(new THREE.PlaneGeometry(m.a - 2 * w, m.f - 2 * w), new THREE.MeshBasicMaterial({ color: '#4ab4e8', transparent: true, opacity: 0.8 }));
+            agua.rotation.x = -Math.PI / 2; agua.position.y = m.h * 0.7; agua.name = 'agua'; g.add(agua); recursos.push(agua.geometry);
+            const pato = bloque(1.6, 1.4, 2, mats(tela([244, 214, 60], 0.05)), 1, m.h * 0.7 + 0.7, 1, g); pato.name = 'pato';
+        } else if (m.tipo === 'arbol') {
+            const corteza = mats(repetir(tx(8, 8, (x, y, r) => (x % 3 === 0 ? [80, 56, 36] : ajustar([110, 78, 48], 0.9 + r() * 0.15))), 1, m.h / 8));
+            const tronco = m.a * 0.28;
+            bloque(tronco, m.h * 0.6, tronco, corteza, 0, m.h * 0.3, 0, g);
+            const hoja = mats(tx(8, 8, (x, y, r) => ajustar(r() < 0.2 ? [56, 120, 40] : [76, 150, 52], 0.88 + r() * 0.2)));
+            for (const [x, y, z, s] of [[0, 0.74, 0, 1.2], [0.3, 0.62, 0.2, 0.8], [-0.3, 0.64, -0.22, 0.85], [0.08, 0.9, -0.08, 0.8], [-0.18, 0.58, 0.3, 0.7]]) bloque(m.a * s, m.h * 0.24, m.f * s, hoja, x * m.a, m.h * y, z * m.f, g);
+        } else if (m.tipo === 'macetero') {
+            const greda = mats(tx(8, 8, (x, y, r) => (y === 0 ? [150, 70, 44] : ajustar([186, 96, 60], 0.92 + r() * 0.12))));
+            bloque(m.a, m.h * 0.4, m.f, greda, 0, m.h * 0.2, 0, g);
+            bloque(m.a + 0.8, 1, m.f + 0.8, greda, 0, m.h * 0.4 - 0.5, 0, g);
+            const tallo = mats(tela([70, 140, 52], 0.1));
+            for (const [x, z, k] of [[0, 0, 1], [-0.25, 0.2, 0.8], [0.25, -0.2, 0.85]]) {
+                bloque(0.5, m.h * 0.55 * k, 0.5, tallo, x * m.a, m.h * 0.4 + m.h * 0.27 * k, z * m.f, g);
+                bloque(m.a * 0.32, m.a * 0.32, m.a * 0.32, mats(tela(c, 0.08)), x * m.a, m.h * 0.4 + m.h * 0.55 * k, z * m.f, g); // flor
+            }
+        } else if (m.tipo === 'pelota') {
+            const gajo = mats(tx(8, 8, (x, y) => ((x >> 2) % 2 ? [244, 244, 244] : c)));
+            capas(g, m, gajo, 7, 0, m.h, esfera);
+        } else if (m.tipo === 'tanque') {
+            // Estanque de agua en sus cuatro patas (la pista pasa por debajo)
+            const fierro = mats(tela([90, 92, 100], 0.06));
+            for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bloque(1.2, m.h, 1.2, fierro, px * (m.a / 2 - 1), m.h / 2, pz * (m.f / 2 - 1), g);
+            bloque(m.a, 1, m.f, fierro, 0, m.h + 0.5, 0, g);
+            capas(g, { ...m, a: m.a * 0.9, f: m.f * 0.9 }, mats(tx(8, 8, (x, y, r) => (y === 0 ? [200, 206, 214] : ajustar([150, 176, 196], 0.92 + r() * 0.1)))), 5, m.h + 1, 12, () => 1);
+            bloque(m.a * 0.4, 1.2, m.f * 0.4, fierro, 0, m.h + 13.6, 0, g);
+        } else if (m.tipo === 'chimenea') {
+            const lad = tx(16, 16, (x, y, r) => (y % 4 === 3 || (x + (Math.floor(y / 4) % 2) * 4) % 8 === 0) ? [200, 190, 176] : ajustar([168, 72, 52], 0.9 + r() * 0.15));
+            bloque(m.a, m.h, m.f, mats(repetir(lad, m.a / 4, m.h / 4)), 0, m.h / 2, 0, g);
+            bloque(m.a + 1.2, 1, m.f + 1.2, mats(tela([120, 116, 112], 0.05)), 0, m.h + 0.5, 0, g);
+            bloque(m.a * 0.5, 0.4, m.f * 0.5, mats(tela([24, 22, 22], 0.02)), 0, m.h + 1.05, 0, g);
+        } else if (m.tipo === 'antena') {
+            const fierro = mats(tela([150, 150, 158], 0.05));
+            bloque(0.6, m.h, 0.6, fierro, 0, m.h / 2, 0, g);
+            bloque(m.a, 1, m.f, mats(tela([90, 90, 96], 0.05)), 0, 0.5, 0, g);
+            for (const [y, w] of [[0.7, 10], [0.82, 8], [0.94, 6]]) bloque(w, 0.4, 0.4, fierro, 0, m.h * y, 0, g);
+            const luz = bloque(0.9, 0.9, 0.9, new THREE.MeshBasicMaterial({ color: '#ff3a2a' }), 0, m.h + 0.5, 0, g); luz.name = 'luz';
+        } else if (m.tipo === 'panel') {
+            // Panel solar plano en patas bajas (la pista sube sola encima)
+            const celda = tx(8, 8, (x, y, r) => (x % 4 === 0 || y % 4 === 0) ? [190, 196, 210] : ajustar([40, 64, 130], 0.9 + r() * 0.15));
+            bloque(m.a, 0.5, m.f, mats(repetir(celda, m.a / 4, m.f / 4)), 0, m.h - 0.25, 0, g);
+            for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bloque(0.8, m.h - 0.5, 0.8, mats(tela([120, 120, 128], 0.05)), px * (m.a / 2 - 1), (m.h - 0.5) / 2, pz * (m.f / 2 - 1), g);
+        } else if (m.tipo === 'claraboya') {
+            const marco = mats(tela([200, 200, 206], 0.04));
+            bloque(m.a, m.h - 0.3, m.f, marco, 0, (m.h - 0.3) / 2, 0, g);
+            bloque(m.a - 1.2, 0.3, m.f - 1.2, new THREE.MeshBasicMaterial({ color: '#a8dcf0', transparent: true, opacity: 0.7 }), 0, m.h - 0.15, 0, g);
         }
     }
 
@@ -168,7 +338,8 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
         cinta(q => [l * q.ancho / 2, 0], [-0.6, 0.07], tx(4, 4, () => [80, 74, 78]), 2, 'pared', 0.6); // canto de la pista
     }
     // Pilares de libros bajo los tramos altos (desde el piso, el mueble de abajo o la vuelta de la pista que pasa por debajo)
-    const lomos = [[170, 52, 46], [52, 96, 160], [70, 130, 70], [210, 170, 60], [120, 70, 140]];
+    const lomos = (Array.isArray(E.pilares) && E.pilares.length ? E.pilares : ['#aa342e', '#3460a0', '#468246', '#d2aa3c', '#78468c']).map(hex);
+    const encima = (R.muebles || []).filter(m => M.MUEBLES_ENCIMA.includes(m.tipo)); // (la pista va sobre ellos: sin pilares)
     const debajo = (q, i) => {
         let b = q.apoyo || 0;
         const lejos = Math.round(20 / pista.paso); // (las muestras vecinas de la misma cuesta no cuentan)
@@ -181,7 +352,7 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
     for (let i = 0; i < N; i += 14) {
         const q = mm[i];
         if (!q.piso || q.y < 1.2) continue;
-        if ((R.muebles || []).some(m => m.tipo === 'sofa' && Math.abs(q.x - m.x) < m.a / 2 && Math.abs(q.z - m.z) < m.f / 2)) continue;
+        if (encima.length && M.techoMuebles(encima, q.x, q.z) > 0) continue;
         let y = debajo(q, i), k = 0;
         if (q.y - y < 1.2) continue;
         while (y < q.y - 0.1) {

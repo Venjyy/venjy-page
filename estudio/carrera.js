@@ -6,10 +6,12 @@
 // gata (velocidad, giro, salto, derrape y sus 3 niveles, turbos, paredes, caída), los objetos (cajas, ruleta y los
 // seis: peso según el puesto, efecto, nombre y color; dónde van las cajas se elige en el plano), las seis gatas (nombre, carácter,
 // pelaje y pañuelo), la IA, la cámara, el celular, la sala y el premio por puesto. Los valores que muestra son los
-// reales (código + JSON) de carrera-modelo.js. «Ver la pista» abre la sala en el juego (cámara que la recorre);
+// reales (código + JSON) de carrera-modelo.js. Hay varias pistas (living, cocina, patio, techo): el selector «Pista» sobre
+// el plano elige cuál se edita (plano, perfil, «Pista», «La sala» y «Escenario» van a `pistas.<clave>` del JSON; el living,
+// a la raíz). «Ver la pista» abre la sala en el juego (cámara que la recorre);
 // «Correr con…» empieza una carrera. Cada cambio va en vivo (mensaje `datos`). Guardar escribe con If-Match.
 // =========================================================
-import { reglasCarrera, OBJETOS } from '../mundo/supervivencia/carrera-modelo.js';
+import { reglasCarrera, OBJETOS, ESCENARIOS, ESCENARIO_BASE } from '../mundo/supervivencia/carrera-modelo.js';
 import { montarEditorPista } from './carrera-pista.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
@@ -19,7 +21,7 @@ const GRUPOS = [
         vueltas: ['vueltas', 'laps', 1, 9, 1], cuenta: ['segundos del semáforo', 'countdown seconds', 1, 6, 1],
         intro: ['segundos de la presentación', 'intro seconds', 0, 20, 0.5], tope: ['segundos máximos de carrera', 'max race seconds', 60, 1800, 10]
     }],
-    ['pista', 'Pista', 'Track', {
+    ['pista', 'Pista (la elegida)', 'Track (the selected one)', {
         ancho: ['ancho base (bloques)', 'base width (blocks)', 3, 20, 0.5], paso: ['muestreo (bloques; menos = más fino)', 'sampling (blocks; lower = finer)', 0.25, 2, 0.05],
         salida: ['bloques antes de la línea donde parte la 1.ª fila', 'blocks behind the line for row 1', 1, 12, 0.5],
         apoyar: ['rampa sola sobre los muebles que dejan subir (1 = sí, 0 = no)', 'automatic ramp over climbable furniture (1 = yes, 0 = no)', 0, 1, 1],
@@ -58,11 +60,21 @@ const GRUPOS = [
         paquetes: ['veces por segundo que el líder manda la IA y los objetos', 'times per second the leader sends AI and items', 4, 30, 1],
         hurra: ['segundos entre dos hurras del público', 'seconds between two cheers from the crowd', 0.1, 5, 0.1]
     }],
-    ['sala', 'La sala (living)', 'The room', {
+    ['sala', 'La sala (de la pista elegida)', 'The room (of the selected track)', {
         ancho: ['ancho', 'width', 60, 500, 1], fondo: ['fondo', 'depth', 60, 500, 1], alto: ['alto', 'height', 20, 150, 1], x: ['centro x', 'center x', -150, 150, 0.5], z: ['centro z', 'center z', -150, 150, 0.5]
     }]
 ];
 const PATRONES = ['liso', 'atigrado', 'manchas', 'siames'];
+// Grupos que van a la pista elegida (los demás son de toda la carrera)
+const DE_PISTA = ['pista', 'sala'];
+const NOMBRE_PISTA = { living: ['Living', 'Living room'], cocina: ['Cocina', 'Kitchen'], patio: ['Patio', 'Backyard'], techo: ['Techo', 'Rooftop'] };
+// Colores del escenario: [clave, ES, EN]
+const COLORES_ESC = [
+    ['piso', 'piso', 'floor'], ['piso2', 'piso, 2.º color (tablas, baldosas, pasto, tejas)', 'floor, 2nd color (boards, tiles, grass, roof tiles)'],
+    ['pared', 'paredes (papel mural, azulejos, valla, parapeto)', 'walls (wallpaper, tiles, fence, parapet)'], ['pared2', 'detalle de las paredes', 'wall detail'],
+    ['techo', 'techo de la sala (en el patio: la casa)', 'ceiling (in the backyard: the house)'], ['cielo', 'cielo (ventana o cielo abierto)', 'sky (window or open sky)'],
+    ['fondo', 'fondo', 'background'], ['niebla', 'niebla', 'fog']
+];
 // Cada objeto: además de su peso según el puesto (`primera`, `ultima`), nombre y color
 const OBJ_TITULO = { pluma: ['Pluma (turbo)', 'Feather (boost)'], ovillo: ['Ovillo (se tira adelante; con S, atrás)', 'Yarn (thrown ahead; with S, back)'], caja: ['Caja de cartón (se deja atrás)', 'Cardboard box (dropped behind)'], pescado: ['Pescado (atrae y se lo comen)', 'Fish (pulls cats in)'], hierba: ['Hierba gatera (controles al revés)', 'Catnip (reversed controls)'], aspiradora: ['Aspiradora de Lona (las de adelante se asustan)', "Lona's vacuum (scares the ones ahead)"] };
 const RADIO = ['tamaño del golpe', 'hit size', 0.3, 2, 0.05];
@@ -87,8 +99,24 @@ export async function montarCarrera(ctx) {
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
     const cambio = (enviar = true) => { if (enviar) ctx.puente.enviarDatos('carrera', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
-    const real = () => reglasCarrera(datos);
-    const editor = montarEditorPista(ctx, { datos: () => datos, cambio, real });
+    // La pista que se edita: el living va en la raíz del JSON; las demás, en pistas.<clave> (se crea al primer cambio)
+    let pistaEd = 'living';
+    const pistaDatos = () => { if (pistaEd === 'living') return datos; datos.pistas = datos.pistas || {}; return (datos.pistas[pistaEd] = datos.pistas[pistaEd] || {}); };
+    const real = () => reglasCarrera(datos, pistaEd);
+    const editor = montarEditorPista(ctx, { datos: pistaDatos, cambio, real });
+    const tx = o => (o ? o[ctx.idioma] || o.es : '');
+    const selPista = $('ca-pista');
+    function llenarPistas() {
+        const R = real();
+        selPista.textContent = '';
+        for (const k of R.listaPistas) selPista.appendChild(new Option(NOMBRE_PISTA[k] ? t(...NOMBRE_PISTA[k]) : k, k));
+        selPista.value = pistaEd;
+    }
+    selPista.addEventListener('change', () => {
+        pistaEd = selPista.value;
+        editor.otraPista(); pintar();
+        accion('ver'); // en el juego, la sala de esa pista
+    });
 
     function numero(etiqueta, valor, min, max, paso, poner) {
         const fila = document.createElement('label'); fila.className = 'campo';
@@ -129,7 +157,8 @@ export async function montarCarrera(ctx) {
             const sec = seccion(t(es, en), i < 1);
             for (const [k, [ces, cen, min, max, paso]] of Object.entries(campos)) {
                 const valor = g ? R[g][k] : R[k];
-                sec.appendChild(numero(t(ces, cen), valor, min, max, paso, v => { if (g) { datos[g] = datos[g] || {}; datos[g][k] = v; } else datos[k] = v; cambio(); }));
+                const dueno = () => (DE_PISTA.includes(g) ? pistaDatos() : datos);
+                sec.appendChild(numero(t(ces, cen), valor, min, max, paso, v => { if (g) { const d = dueno(); d[g] = d[g] || {}; d[g][k] = v; } else datos[k] = v; cambio(); }));
             }
             if (g === 'gata') {
                 // Los 3 niveles del derrape (azul, naranja, morado): segundos de carga y de turbo
@@ -155,6 +184,40 @@ export async function montarCarrera(ctx) {
             if (g === 'ia') for (const [k, es2, en2] of [['facil', 'fácil', 'easy'], ['normal', 'normal', 'normal'], ['dificil', 'difícil', 'hard']])
                 sec.appendChild(numero(t(`velocidad en ${es2} (fracción)`, `speed on ${en2} (fraction)`), R.ia.niveles[k], 0.4, 1.2, 0.01, v => { datos.ia = datos.ia || {}; datos.ia.niveles = { ...real().ia.niveles, [k]: v }; cambio(); }));
         });
+        // Escenario de la pista elegida: nombre, tipo, colores, pilares (y el callejón del techo)
+        {
+            const E = R.escenario, se = seccion(t('Escenario: ', 'Scenery: ') + tx(R.nombre), true);
+            const propio = () => { const d = pistaDatos(); return (d.escenario = d.escenario || {}); };
+            const f = document.createElement('div'); f.className = 'fila-botones';
+            for (const l of ['es', 'en']) {
+                const n = document.createElement('input'); n.type = 'text'; n.value = R.nombre[l] || ''; n.maxLength = 40; n.title = t('nombre ', 'name ') + l.toUpperCase();
+                n.addEventListener('change', () => { const v = n.value.trim(); if (v) { pistaDatos().nombre = { ...clonar(real().nombre), [l]: v }; cambio(); pintar(); } });
+                f.appendChild(n);
+            }
+            // Nombre corto: el botón del selector de pista en el menú del juego
+            const corto = R.cortos[pistaEd] || R.nombre;
+            for (const l of ['es', 'en']) {
+                const n = document.createElement('input'); n.type = 'text'; n.value = corto[l] || ''; n.maxLength = 16; n.style.width = '8em'; n.title = t('nombre corto (menú) ', 'short name (menu) ') + l.toUpperCase();
+                n.addEventListener('change', () => { const v = n.value.trim(); if (v) { pistaDatos().corto = { ...clonar(real().cortos[pistaEd] || {}), [l]: v }; cambio(); } });
+                f.appendChild(n);
+            }
+            se.appendChild(f);
+            const lt = document.createElement('label'); lt.className = 'campo';
+            const st = document.createElement('span'); st.textContent = t('tipo de escenario (al cambiarlo vuelve a sus colores)', 'scenery type (changing it resets its colors)');
+            const sl = document.createElement('select');
+            for (const k of ESCENARIOS) sl.appendChild(new Option(NOMBRE_PISTA[k] ? t(...NOMBRE_PISTA[k]) : k, k));
+            sl.value = E.tipo || 'living';
+            sl.addEventListener('change', () => { pistaDatos().escenario = { tipo: sl.value }; cambio(); pintar(); editor.pintar(); });
+            lt.append(st, sl); se.appendChild(lt);
+            for (const [k, es, en] of COLORES_ESC) se.appendChild(color(t(es, en), E[k], v => { propio()[k] = v; cambio(); editor.pintar(); }));
+            const pil = E.pilares || ESCENARIO_BASE.living.pilares;
+            pil.forEach((c, j) => se.appendChild(color(t('pilares bajo los tramos altos, color ', 'pillars under high sections, color ') + (j + 1), c, v => { const p = clonar(real().escenario.pilares || pil); p[j] = v; propio().pilares = p; cambio(); })));
+            if (E.tipo === 'techo') {
+                const cj = E.callejon || { x: 0, ancho: 0 };
+                se.appendChild(numero(t('callejón entre los techos: centro x', 'alley between the roofs: center x'), cj.x ?? 0, -150, 150, 0.5, v => { propio().callejon = { ...clonar(real().escenario.callejon || cj), x: v }; cambio(); }));
+                se.appendChild(numero(t('callejón: ancho (0 = sin callejón; ponle un hueco a la pista encima)', 'alley: width (0 = none; put a gap in the track over it)'), cj.ancho ?? 0, 0, 40, 0.5, v => { propio().callejon = { ...clonar(real().escenario.callejon || cj), ancho: v }; cambio(); }));
+            }
+        }
         // Las gatas corredoras
         const sg = seccion(t('Gatas corredoras', 'Racing cats'));
         for (const g of R.gatas) {
@@ -202,6 +265,7 @@ export async function montarCarrera(ctx) {
             cambio(); pintar(); editor.pintar();
         }));
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
+        llenarPistas();
     }
     async function guardar() {
         rotular('Guardando…', 'Saving…');
@@ -217,7 +281,7 @@ export async function montarCarrera(ctx) {
     async function accion(a) {
         try {
             ctx.puente.enviarDatos('carrera', datos);
-            await ctx.puente.enviar('carrera', { accion: a });
+            await ctx.puente.enviar('carrera', { accion: a, pista: pistaEd });
             if (a === 'ver') rotular('Listo: la cámara recorre la sala; cada cambio se ve al soltar.', 'Done: the camera tours the room; each change shows when you release.', 'ok');
             else if (a !== 'terminar') rotular('Listo: haz clic en el juego y maneja con W A S D y Espacio.', 'Done: click the game and drive with W A S D and Space.', 'ok');
         } catch (e) { rotular(e.message, e.message, 'error'); }
