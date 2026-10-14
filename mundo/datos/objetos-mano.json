@@ -2,6 +2,60 @@
   "$schema": "../../estudio/esquemas/objetos-mano.schema.json",
   "version": 1,
   "nota": "Vacío = todo como en el código. Se edita en /estudio/ → pestaña Objetos (pos en bloques, rot en grados).",
-  "tipos": {},
-  "objetos": {}
+  "tipos": {
+    "herramienta": {
+      "mano1": {
+        "pos": [-0.03, 0.14, 0.01],
+        "rot": [0, -68, 37.2],
+        "escala": 0.5
+      }
+    }
+  },
+  "objetos": {
+    "espada_hierro": {
+      "mano1": {
+        "pos": [-0.03, 0.16, 0.01],
+        "rot": [0, -68, 37.2],
+        "escala": 0.5
+      }
+    },
+    "guitarra": {
+      "mano1": {
+        "pos": [-0.1, 0.12, 0.53],
+        "rot": [0, -157, 7],
+        "escala": 0.4
+      }
+    },
+    "tambor": {
+      "mano3": {
+        "pos": [0, 0.8, 0.32],
+        "rot": [28.6, 0, 0],
+        "escala": 1
+      }
+    },
+    "teclado": {
+      "mano3": {
+        "pos": [0, 0.8, 0.22],
+        "rot": [-25, -3, -180],
+        "escala": 1
+      },
+      "mano1": {
+        "pos": [-0.12, 0.12, -0.02],
+        "rot": [-5, 7, 5.7],
+        "escala": 0.88
+      }
+    },
+    "cana": {
+      "mano3": {
+        "pos": [0, -0.96, 0.63],
+        "rot": [45, 85, 0],
+        "escala": 0.62
+      },
+      "mano1": {
+        "pos": [-0.04, 0.2, -0.1],
+        "rot": [0, -68, -13],
+        "escala": 0.5
+      }
+    }
+  }
 }

@@ -800,6 +800,9 @@ async function arrancar(guardado, cx = null) {
                 scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma, inventario, // inventario: tu colección y tu mazo
                 tinte: materiales.solido.color,
                 lucho: () => amigos.lista.find(n => n.clave === 'lucho') || null,
+                // Duelo entre jugadores: el controlador (null sin sala) y los demás jugadores de la sala para retarlos
+                duelo: () => duelo,
+                jugadores: () => (coop ? [...coop.remotos].map(([id, r]) => ({ id, nombre: r.nombre })) : []),
                 alCerrar: liberarEscena,
                 alTutorial: () => misiones.estado.minijuegos.add('cartas-tuto'), // ganaste el tutorial: la próxima vez, elegir nivel
                 alPanel: n => { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); }
@@ -827,7 +830,8 @@ async function arrancar(guardado, cx = null) {
     }
     function abrirMesaCartas(n = 'facil') {
         bloquearEscena(true);
-        cargarMesaCartas().then(m => { if (!m || !m.abrir(n)) { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); } });
+        // Con sala, el duelo entre jugadores se carga antes: la mesa ofrece retar a los demás
+        Promise.all([cargarMesaCartas(), coop ? cargarDuelo() : null]).then(([m]) => { if (!m || !m.abrir(n)) { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); } });
     }
     // Duelo: la primera vez (sin la marca 'cartas-tuto') el botón abre el tutorial; después, «Repasar el tutorial» aparte
     const tutoCartasVisto = () => misiones.estado.minijuegos.has('cartas-tuto');
@@ -1001,6 +1005,8 @@ async function arrancar(guardado, cx = null) {
             estadoActual: () => estadoActual(),
             amanecerLocal, iluminar: iluminarCaja,
             alCambiarJugadores: () => pintarCoop(),
+            alActividad: m => recibirActividad(m),
+            alSalirJugador: id => salioDeActividades(id),
             alCerrar: motivo => terminarCoop(motivo)
         });
         // Pestaña en segundo plano: el navegador detiene el bucle, pero la red sigue (bloques, latidos)
@@ -1097,6 +1103,76 @@ async function arrancar(guardado, cx = null) {
     document.addEventListener('keyup', e => { if (e.code === 'Tab') ocultarTab(); });
     window.addEventListener('blur', ocultarTab);
     if (coop) setInterval(() => { if (!document.hidden && (verMs || !tabLista.hidden || !$('coop-pausa').hidden)) pintarPing(); }, 1000);
+    // ---- Actividades compartidas (7g-1, actividades-red.js) y duelo de cartas entre jugadores (cartas-duelo.js) ----
+    // La capa común se carga con la sala; el duelo, la primera vez que alguien reta o te retan.
+    let actividades = null, duelo = null, cargandoDuelo = null;
+    const colaAct = [];
+    if (coop) import('./actividades-red.js').then(m => {
+        actividades = m.crearActividades({ yo: coop.yoId, esAnfitrion: coop.esAnfitrion, anfitrion: coop.idAnfitrion, enviar: x => coop.actividad(x) });
+        // Antes de cargar el duelo: una invitación lo carga
+        actividades.escuchar('duelo', { invitacion: inv => cargarDuelo().then(d => { if (d) avisoReto(inv); }) });
+        for (const x of colaAct.splice(0)) actividades.recibir(x);
+    }).catch(err => console.error('No se pudieron cargar las actividades compartidas', err));
+    function recibirActividad(m) { if (actividades) actividades.recibir(m); else colaAct.push(m); }
+    function salioDeActividades(id) {
+        if (actividades) actividades.salioJugador(id);
+        if (duelo) duelo.rivalSalio(id);
+    }
+    function cargarDuelo() {
+        if (!coop) return Promise.resolve(null);
+        if (!cargandoDuelo) cargandoDuelo = Promise.all([import('./cartas-duelo.js'), import('./cartas-coleccion.js'), cargarDatos('cartas-mesa')]).then(([D, K, datos]) => {
+            if (!datosCartas) datosCartas = datos;
+            const L = () => window.__venjy?.datosMesa || datosCartas;
+            const persona = id => ({ id, nombre: coop.nombreDe(id) });
+            duelo = D.crearDuelo({
+                acts: actividades, yo: coop.yoId,
+                reglas: () => D.reglasDuelo(L()),
+                propio: () => K.mazoParaPartida(inventario, L(), (Math.random() * 1e9) | 0),
+                al: {
+                    invitacion: inv => avisoReto(inv),
+                    inicio: (e, rival) => mesaCartas && mesaCartas.dueloInicio(e, persona(rival)),
+                    jugada: (a, h) => mesaCartas && mesaCartas.dueloJugada(a, h),
+                    fin: motivo => mesaCartas && mesaCartas.dueloFin(motivo),
+                    rechazo: motivo => mesaCartas && mesaCartas.dueloRechazo(motivo)
+                }
+            });
+            duelo.textos = D.TXT_RETO; duelo.espera = () => D.reglasDuelo(L()).espera;
+            return duelo;
+        }).catch(err => { cargandoDuelo = null; console.error('No se pudo cargar el duelo entre jugadores', err); return null; });
+        return cargandoDuelo;
+    }
+    // Aviso «X te reta»: Aceptar (Y o clic) abre la mesa de Lucho y entra al duelo con tu mazo; No (N) lo rechaza
+    let reto = null;
+    function avisoReto(inv) {
+        if (!duelo) return;
+        if (reto) { duelo.rechazar(inv); return; } // ya tienes uno a la vista
+        const T = duelo.textos, el = document.createElement('div');
+        el.className = 'reto-aviso';
+        const p = document.createElement('p'); p.textContent = textoCartas(T.titulo).replace('{x}', coop.nombreDe(inv.de));
+        const boton = (texto, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'boton'; b.textContent = texto; b.addEventListener('click', ev => { ev.stopPropagation(); fn(); }); return b; };
+        el.append(p, boton(textoCartas(T.si), () => responderReto(true)), boton(textoCartas(T.no), () => responderReto(false)));
+        document.body.appendChild(el);
+        const s = duelo.espera();
+        reto = { inv, el, timer: s > 0 ? setTimeout(() => responderReto(false), s * 1000) : null };
+    }
+    function responderReto(si) {
+        if (!reto) return;
+        const { inv, el, timer } = reto;
+        reto = null; el.remove(); if (timer) clearTimeout(timer);
+        if (!si) { duelo.rechazar(inv); return; }
+        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv); hud.mensaje(textoCartas(duelo.textos.faltaMazo), 4); return; }
+        if (uiAbierta || vida.muerto || jefes.enCurso || (mesaCartas && mesaCartas.activo)) { duelo.rechazar(inv); hud.mensaje(textoCartas(duelo.textos.ocupado), 4); return; }
+        bloquearEscena(true);
+        cargarMesaCartas().then(m => {
+            if (!m || !m.abrir('duelo')) { liberarEscena(); duelo.rechazar(inv); return; }
+            if (duelo.aceptar(inv)) m.dueloAceptado({ id: inv.de, nombre: coop.nombreDe(inv.de) });
+        });
+    }
+    document.addEventListener('keydown', ev => {
+        if (!reto || ev.repeat) return;
+        if (ev.code === 'KeyY') { ev.preventDefault(); responderReto(true); }
+        else if (ev.code === 'KeyN') { ev.preventDefault(); responderReto(false); }
+    });
     pintarCoop();
     if (coop && coop.local && coop.esAnfitrion) setTimeout(() => hud.mensaje(tx().avisoLocal, 6), 1500);
     // Anfitrión sin internet: invitación (QR) → respuesta del invitado (QR o texto). Una a la vez.
@@ -1492,6 +1568,8 @@ async function arrancar(guardado, cx = null) {
         get amistadEscena() { return escenaAmistad; }, cargarAmistad: () => cargarEscenaAmistad(),
         // Mesa del duelo (7h-2b): abrirMesa('facil'|'medio'|'tutorial') sin pedir el mazo; mesaCartas, para pruebas y el Estudio
         get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
+        // Actividades compartidas (7g-1) y duelo entre jugadores: lista de actividades, controlador del duelo
+        get actividades() { return actividades; }, get duelo() { return duelo; },
         // Abrir un sobre de prueba (Estudio → Mesa, «Probar el sobre»): la escena de cartas-sobre.js sin cobrar ni sumar cartas
         probarSobre: () => Promise.all([import('./cartas-sobre.js'), import('./cartas-tienda.js'), cargarDatos('cartas-mesa')]).then(([s, t, d]) => {
             const D = window.__venjy?.datosMesa || d;

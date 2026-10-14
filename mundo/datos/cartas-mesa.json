@@ -132,6 +132,12 @@
     "mira": [0, 0, -0.12]
   },
   "tutorial": { "color": "#ffe14a", "opacidad": 0.95, "pulso": 1.6, "borde": 1.14, "leer": 4 },
+  "duelo": {
+    "nota": "Duelo entre 2 jugadores de la sala (cartas-duelo.js): vida y mano inicial de cada uno (el mazo al azar suma azarExtra); espera = segundos para aceptar el reto (0 = sin límite)",
+    "vida": 4000,
+    "mano": 4,
+    "espera": 30
+  },
   "coleccion": {
     "nota": "Duelo: tu colección y tu mazo (cartas-coleccion.js). largo = cartas del mazo; copias = máximo de cada carta; azarExtra = cartas de más en la mano con el mazo al azar; azarTodas = 1 si el mazo al azar sale de todas las cartas (0: de tu colección); hechizosMin y hechizosMax = hechizos de un mazo al azar",
     "largo": 25,
