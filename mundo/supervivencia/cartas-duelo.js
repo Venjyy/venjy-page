@@ -11,6 +11,10 @@
 // Espejo: las acciones de cartas.js son relativas al jugador de turno (m = tu mano, z = tu zona, obj = la
 // del rival), así que el invitado juega sobre la partida espejada (él es el jugador 0 de su mesa) y aplica
 // las mismas acciones. La mesa no cambia: siempre eres el 0. La huella se toma de la canónica.
+// Revancha (PR 4): al terminar, cada uno la pide con un `invitar` directo ({ revancha: 1 }, fuera del orden de la
+// actividad, así no chocan si la piden a la vez); con las dos pedidas el retador manda otro `ini` en la misma actividad.
+// Mirar desde afuera (PR 4): quien no juega pide `ver` y recibe el registro (`ini` + jugadas); arma la partida
+// canónica y la sigue con los eventos que el anfitrión ya reparte a toda la sala (mirar no suma mensajes por jugada).
 // Sin DOM: se prueba en Node (mundo/tests/cartas-duelo.mjs).
 // =========================================================
 import { nuevaPartida, aplicar, esLegal } from './cartas.js';
@@ -113,9 +117,12 @@ export function armarInicio(d0, d1, R, azar = Math.random) {
 
 // Controlador de un jugador. acts = crearActividades(...); propio() = { mazo, extra, sup, x, y, z, mesa } (mazoParaPartida,
 // la superficie que llevas, dónde estás y la mesa colocada junto a ti, si hay); al = { invitacion(m), espera(rival), inicio(e, rival, lugar, lado),
-// jugada(a), fin(motivo), rechazo(motivo) } (la interfaz; lado 0 = el retador, 1 = el invitado)
+// jugada(a), fin(motivo), rechazo(motivo), revancha('pide' | 'fue'), mirar(e, jug, lugar), mirarJugada(ev, a), mirarFin() }
+// (la interfaz; lado 0 = el retador, 1 = el invitado; inicio trae un 5.º argumento true en la revancha)
 export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, azar = Math.random }) {
     let fase = 'libre', rival = null, idx = 0, e = null, vistos = 0, timer = null, id = null; // id: la actividad del duelo
+    let otra = { yo: false, el: false };  // revancha pedida por mí / por el rival
+    let mira = null;                      // duelo ajeno que miro: { id, e (canónica), jug, lugar, sig (siguiente s), listo }
     const avisar = (que, ...a) => { if (al[que]) al[que](...a); };
     const canonica = () => (idx === 0 ? e : espejo(e));
     const limpiarTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
@@ -127,17 +134,71 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
         // Una partida ya terminada no tiene «fin» de abandono: salir después del cartel es normal
         if (habia === 'jugando' && motivo && e && e.ganador === null) avisar('fin', motivo);
     }
-    function iniciar(ini, jug) {
+    function iniciar(ini, jug, revancha = false) {
         idx = jug.indexOf(yo);
         rival = jug[1 - idx];
         const c = partidaDuelo(ini);
         e = idx === 0 ? c : espejo(c);
-        vistos = 0; fase = 'jugando';
-        avisar('inicio', e, rival, ini.lugar || null, idx);
+        vistos = 0; fase = 'jugando'; otra = { yo: false, el: false };
+        avisar('inicio', e, rival, ini.lugar || null, idx, revancha);
     }
+    // Con la revancha pedida por los dos, el retador arma la nueva partida (mismos mazos y lugar: los datos de la actividad)
+    function revisarOtra() {
+        if (!otra.yo || !otra.el || idx !== 0 || fase !== 'jugando') return;
+        const act = acts.actividad(id);
+        if (!act || act.jug.length < 2 || act.jug[0] !== yo) return;
+        const ini = armarInicio(act.d[act.jug[0]], act.d[act.jug[1]], reglas(), azar);
+        acts.evento(id, ini);
+        iniciar(ini, act.jug, true);
+    }
+    const terminada = () => !!(e && e.ganador !== null);
+
+    // ---------- Mirar un duelo ajeno ----------
+    // Arma la partida canónica desde el último `ini` del registro y le aplica las jugadas que vienen después
+    function armarVista(act, log) {
+        let k = -1;
+        for (let i = log.length - 1; i >= 0; i--) if (log[i].d && log[i].d.t === 'ini') { k = i; break; }
+        mira.jug = act.jug.slice(); mira.listo = true; mira.sig = act.s;
+        if (k < 0) { mira.e = null; return; } // aún no empieza (o el registro ya no trae el inicio): espera el próximo `ini`
+        const c = partidaDuelo(log[k].d);
+        for (const x of log.slice(k + 1)) {
+            if (!x.d || x.d.t !== 'a') continue;
+            if (!esLegal(c, x.d.a)) { mira.e = null; return; }
+            aplicar(c, x.d.a);
+        }
+        mira.e = c; mira.lugar = log[k].d.lugar || null;
+        avisar('mirar', c, mira.jug, mira.lugar);
+    }
+    function verEvento(ev, act) {
+        if (!mira.listo || ev.s < mira.sig) return; // lo de antes ya venía en el registro
+        mira.sig = ev.s + 1;
+        if (ev.d.t === 'ini') {
+            mira.e = partidaDuelo(ev.d); mira.lugar = ev.d.lugar || null; if (act) mira.jug = act.jug.slice();
+            avisar('mirar', mira.e, mira.jug, mira.lugar);
+            return;
+        }
+        if (ev.d.t !== 'a' || !mira.e) return;
+        // Algo no calza (me perdí un evento): pido el registro de nuevo
+        if (!esLegal(mira.e, ev.d.a)) { mira.listo = false; acts.ver(mira.id); return; }
+        const r = aplicar(mira.e, ev.d.a);
+        if (ev.d.h && ev.d.h !== huella(mira.e)) { mira.listo = false; acts.ver(mira.id); return; }
+        avisar('mirarJugada', r, ev.d.a);
+    }
+    function cortarMira() { if (!mira) return; mira = null; avisar('mirarFin'); }
 
     acts.escuchar(TIPO_DUELO, {
-        invitacion(m) { if (fase === 'libre') avisar('invitacion', m); else acts.responder(m.de, m.id, TIPO_DUELO, false, 'ocupado'); },
+        invitacion(m) {
+            if (m.d && m.d.revancha) { // el rival pide la revancha (no es un reto nuevo)
+                if (fase === 'jugando' && m.id === id && m.de === rival && terminada() && !otra.el) { otra.el = true; avisar('revancha', 'pide'); revisarOtra(); }
+                return;
+            }
+            if (fase === 'libre') avisar('invitacion', m); else acts.responder(m.de, m.id, TIPO_DUELO, false, 'ocupado');
+        },
+        registro(act, log, cual) {
+            if (!mira || cual !== mira.id) return;
+            if (!act || act.jug.length < 2) { cortarMira(); return; }
+            armarVista(act, log);
+        },
         resp(m) {
             if (fase !== 'retando' || m.de !== rival || m.id !== id) return;
             if (!m.si) { terminar(); avisar('rechazo', m.motivo || 'no'); }
@@ -148,9 +209,10 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
             else if (fase === 'jugando') terminar('desincronizado'); // un evento mío fuera de orden o de una actividad cerrada
         },
         estado(act, antes, cual) {
+            if (mira && cual === mira.id && (!act || act.jug.length < 2)) { cortarMira(); return; }
             if (cual !== id) return;
             const jug = act ? act.jug : [];
-            if (fase === 'jugando' && !jug.includes(rival)) { terminar('abandono'); return; }
+            if (fase === 'jugando' && !jug.includes(rival)) { const fin = terminada(); terminar('abandono'); if (fin) avisar('revancha', 'fue'); return; }
             // El retador se fue (canceló o se le acabó la espera) antes de empezar
             if (fase === 'aceptando' && (act ? act.jug.includes(yo) && !jug.includes(rival) : antes && antes.jug.includes(yo))) { terminar(); avisar('rechazo', 'cancelado'); return; }
             // Los dos dentro: el retador arma la partida
@@ -162,8 +224,12 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
             }
         },
         evento(ev, act, cual) {
-            if (cual !== id || !ev.d) return;
+            if (!ev.d) return;
+            if (mira && cual === mira.id) { verEvento(ev, act); return; }
+            if (cual !== id) return;
             if (ev.d.t === 'ini' && fase === 'aceptando' && ev.de === rival && act && act.jug.includes(yo)) { iniciar(ev.d, act.jug); return; }
+            // La revancha: el retador mandó otro `ini` en la misma actividad
+            if (ev.d.t === 'ini' && fase === 'jugando' && terminada() && otra.yo && ev.de === rival && act && act.jug.includes(yo)) { iniciar(ev.d, act.jug, true); return; }
             if (fase !== 'jugando' || ev.de === yo || ev.d.t !== 'a') return;
             if (ev.de !== rival) return;
             const a = ev.d.a;
@@ -177,6 +243,28 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
         get rival() { return rival; },
         get estado() { return e; },
         get jugadas() { return vistos; },
+        get revanchaPedida() { return { ...otra }; },
+        get mirando() { return mira ? mira.id : null; },
+        get vista() { return mira && mira.e ? { e: mira.e, jug: mira.jug.slice(), lugar: mira.lugar } : null; },
+        // Duelos de la sala que se pueden mirar (con los dos dentro, y que no son el mío)
+        duelosAbiertos() { return acts.lista.filter(a => a.k === TIPO_DUELO && a.jug.length === 2 && !a.jug.includes(yo)); },
+        // Mirar un duelo ajeno: pido el registro (la vista llega por al.mirar)
+        mirar(cual) {
+            if (!cual || (fase !== 'libre' && cual === id)) return false;
+            if (mira && mira.id === cual) return true;
+            cortarMira();
+            mira = { id: cual, e: null, jug: [], lugar: null, sig: 0, listo: false };
+            acts.ver(cual);
+            return true;
+        },
+        dejarDeMirar() { cortarMira(); },
+        // Pedir la revancha al terminar (los dos siguen en la actividad); false si ya no se puede
+        revancha() {
+            if (fase !== 'jugando' || !terminada() || !rival) return false;
+            if (!otra.yo) { otra.yo = true; acts.invitar(rival, id, TIPO_DUELO, { revancha: 1 }); }
+            revisarOtra();
+            return true;
+        },
         // Retar a otro jugador de la sala: entro a mi duelo (duelo@yo) con mi mazo y lo invito
         retar(para, d = {}) {
             if (fase !== 'libre' || !para || para === yo) return false;
@@ -216,6 +304,6 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
         // Salir (cerrar la mesa, cancelar el reto, la partida terminó)
         salir() { terminar(); rival = null; e = null; },
         // El rival se fue de la sala (coop: alSalir); el anfitrión también lo saca de la actividad
-        rivalSalio(id) { if (fase === 'jugando' && id === rival) terminar('abandono'); else if ((fase === 'retando' || fase === 'aceptando') && id === rival) { terminar(); avisar('rechazo', 'salio'); } }
+        rivalSalio(id) { if (fase === 'jugando' && id === rival) { const fin = terminada(); terminar('abandono'); if (fin) avisar('revancha', 'fue'); } else if ((fase === 'retando' || fase === 'aceptando') && id === rival) { terminar(); avisar('rechazo', 'salio'); } }
     };
 }

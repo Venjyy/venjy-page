@@ -29,8 +29,8 @@ const ok = (c, msg) => { if (!c) { fallos++; console.log('FALLA:', msg); } };
 
 // ---------- Sala falsa en estrella ----------
 function crearSala(ids) {
-    const anf = ids[0], cola = [], nodos = new Map();
-    const entregar = (para, m) => cola.push([para, m]);
+    const anf = ids[0], cola = [], nodos = new Map(), cuenta = { n: 0, bytes: 0 }; // cuenta: mensajes entregados (medir)
+    const entregar = (para, m) => { cuenta.n++; cuenta.bytes += JSON.stringify(m).length; cola.push([para, m]); };
     for (const id of ids) {
         const esAnfitrion = id === anf;
         const enviar = dato => {
@@ -53,7 +53,7 @@ function crearSala(ids) {
         }
         return n;
     }
-    return { nodos, correr, n: id => nodos.get(id) };
+    return { nodos, correr, cuenta, n: id => nodos.get(id) };
 }
 
 // ---------- 1. Actividades ----------
@@ -121,12 +121,16 @@ const R = { vida: 4000, mano: 4, espera: 0 };
 function jugadores(s, ids, mazos) {
     const J = {};
     for (const id of ids) {
-        const j = { id, fines: [], rechazos: [], invitaciones: [], inicio: 0 };
+        const j = { id, fines: [], rechazos: [], invitaciones: [], inicio: 0, otras: 0, revanchas: [], miradas: 0, mjug: 0, mfin: 0, mira: null };
         j.d = Du.crearDuelo({
             acts: s.n(id).acts, yo: id, reglas: () => R, propio: () => mazos[id] || { mazo: D.MAZOS.jugador, extra: 0 },
             al: {
                 invitacion: m => j.invitaciones.push(m),
-                inicio: (e, r, lugar, lado) => { j.inicio++; j.lugar = lugar; j.lado = lado; },
+                inicio: (e, r, lugar, lado, otra) => { j.inicio++; if (otra) j.otras++; j.lugar = lugar; j.lado = lado; },
+                revancha: x => j.revanchas.push(x),
+                mirar: e => { j.miradas++; j.mira = e; },
+                mirarJugada: () => j.mjug++,
+                mirarFin: () => j.mfin++,
                 jugada: (a, h) => j.d.aplicarRival(a, h),
                 fin: mot => j.fines.push(mot),
                 rechazo: mot => j.rechazos.push(mot)
@@ -264,6 +268,53 @@ function jugarHastaFin(s, a, b) {
     });
     J.h.d.retar('g1'); s.correr(); J.g1.d.aceptar(J.g1.invitaciones[0]); s.correr();
     ok(J.h.lugar && J.g1.lugar && J.h.lugar.fija === 1 && J.h.lugar.x === J.g1.lugar.x && J.h.lugar.g === J.g1.lugar.g, 'los dos juegan en la misma mesa colocada');
+}
+
+// ---------- 7. Mirar desde afuera, revancha y mensajes (PR 4) ----------
+{
+    const s = crearSala(['h', 'g1', 'g2', 'g3']);
+    const J = jugadores(s, ['h', 'g1', 'g2', 'g3'], {});
+    const id = Du.idDuelo('g1');
+    J.g1.d.retar('g2'); s.correr(); J.g2.d.aceptar(J.g2.invitaciones[0]); s.correr();
+    for (let i = 0; i < 10; i++) { const q = J.g1.d.estado.turno === 0 ? J.g1 : J.g2; q.d.jugar(C.jugadaIA(C.clonar(q.d.estado), 'medio')); s.correr(); }
+    // g3 llega a la sala después: no sabe del duelo hasta que el anfitrión se lo cuenta
+    s.n('g3').acts.recibir({ op: 'estado', id, act: null, k: 'duelo', de: 'h' });
+    ok(!J.g3.d.duelosAbiertos().length, 'recién llegado: no conoce el duelo');
+    s.n('h').acts.entroJugador('g3'); s.correr();
+    ok(J.g3.d.duelosAbiertos().map(a => a.id).join() === id, 'entró a la sala: el anfitrión le cuenta el duelo abierto');
+    ok(!J.g1.d.duelosAbiertos().length, 'el duelo propio no sale para mirar');
+    // Mirar: arma la partida desde el registro y la sigue en vivo
+    ok(J.g3.d.mirar(id), 'mirar'); s.correr();
+    ok(J.g3.miradas === 1 && J.g3.mira && A.huella(J.g3.mira) === A.huella(J.g1.d.estado), 'mirar: el registro arma la misma partida (canónica)');
+    s.cuenta.n = 0; s.cuenta.bytes = 0;
+    const antes = J.g1.d.jugadas; // (cada uno cuenta las suyas y las del rival)
+    jugarHastaFin(s, J.g1, J.g2);
+    const jugadas = J.g1.d.jugadas - antes;
+    ok(J.g1.d.estado.ganador !== null && A.huella(J.g3.d.vista.e) === A.huella(J.g1.d.estado), 'quien mira llega al mismo final');
+    ok(J.g3.mjug === jugadas, `quien mira ve cada jugada (${J.g3.mjug} de ${jugadas})`);
+    // Medir: cada jugada es 1 mensaje al anfitrión + 1 a cada otro de la sala (mirar no suma nada por jugada)
+    const porJugada = s.cuenta.n / Math.max(1, jugadas), bytes = s.cuenta.bytes / Math.max(1, s.cuenta.n);
+    ok(porJugada <= 4, `mensajes por jugada en una sala de 4: ${porJugada.toFixed(2)}`);
+    console.log(`  medido: ${jugadas} jugadas, ${porJugada.toFixed(2)} mensajes por jugada (sala de 4), ${bytes.toFixed(0)} bytes por mensaje`);
+    // Revancha: la pide uno y después el otro; misma actividad, partida nueva, quien mira la sigue
+    ok(!J.g3.d.revancha(), 'quien mira no pide revancha');
+    ok(J.g2.d.revancha(), 'g2 pide la revancha'); s.correr();
+    ok(J.g1.revanchas.join() === 'pide' && J.g1.inicio === 1, 'g1 ve que g2 la pidió (aún no empieza)');
+    J.g1.d.revancha(); s.correr();
+    ok(J.g1.otras === 1 && J.g2.otras === 1, 'revancha: los dos empiezan otra vez sin volver a invitar');
+    ok(J.g1.d.estado.ganador === null && A.huella(J.g1.d.estado) === A.huella(Du.espejo(J.g2.d.estado)), 'revancha: misma partida nueva');
+    ok(J.g3.miradas === 2 && A.huella(J.g3.mira) === A.huella(J.g1.d.estado), 'quien mira ve la revancha');
+    // Las dos pedidas a la vez: un solo `ini`
+    jugarHastaFin(s, J.g1, J.g2);
+    J.g1.d.revancha(); J.g2.d.revancha(); s.correr();
+    ok(J.g1.otras === 2 && J.g2.otras === 2 && !J.g1.fines.length && !J.g2.fines.length, 'revancha pedida a la vez: empiezan una vez, sin desincronizar');
+    jugarHastaFin(s, J.g1, J.g2);
+    ok(A.huella(J.g1.d.estado) === A.huella(Du.espejo(J.g2.d.estado)) && A.huella(J.g3.d.vista.e) === A.huella(J.g1.d.estado), 'la tercera partida termina igual en los tres');
+    // Uno se va después del final: el otro ve que ya no hay revancha; quien mira deja de mirar
+    J.g2.d.salir(); s.correr();
+    ok(J.g1.revanchas.includes('fue') && !J.g1.d.revancha() && !J.g1.fines.length, 'se fue tras el final: «fue», sin abandono');
+    J.g1.d.salir(); s.correr();
+    ok(J.g3.mfin === 1 && J.g3.d.mirando === null, 'la mesa se cierra: quien mira deja de mirar');
 }
 
 // ---------- 6. La sala de verdad escucha los mensajes de las actividades ----------

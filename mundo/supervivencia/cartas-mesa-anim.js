@@ -18,6 +18,8 @@ import { ALTO_CARTA, posZona, posManoRival, posMazo, posDesc, posMano } from './
 //   pantalla(x, y, z) → { x, y } px desde arriba (o null), desdePantalla(x, yAbajo, dist) → Vector3 local,
 //   destinoMano(i) → { x, y, w, h, giro } de tu carta i, efectoDe(id), capa (DOM para los números),
 //   texto(evento turno), vida(j, n), refrescar(), alTerminar(), sonido(paso) (opcional: suena al empezar cada paso)
+//   mirando (opcional, quien mira un duelo ajeno): las dos manos van boca abajo en la mesa (manoMesh = la del lado 0)
+//   y texto() puede devolver null (sin cartel de turno)
 export function crearAnimador(api) {
     let plan = null, t = 0, pend = [0, 0];
     const fantasmas = new Map(); // segmento → malla
@@ -73,7 +75,9 @@ export function crearAnimador(api) {
     const enZona = (j, z, y = 0.004) => { const p = posZona(L(), j, z); return v.set(p.x, alto() + y, p.z).clone(); };
     const enMazo = j => { const p = posMazo(L(), j); return new THREE.Vector3(p.x, alto() + 0.05, p.z); };
     const enDesc = j => { const p = posDesc(L(), j); return new THREE.Vector3(p.x, alto() + 0.01, p.z); };
-    const enManoRival = (i, n) => { const p = posManoRival(L(), i, Math.max(1, n)); return new THREE.Vector3(p.x, p.y, p.z); };
+    // La mano en la mesa del lado j (la del lado 0 solo se dibuja ahí para quien mira: espejada)
+    const enManoRival = (i, n, j = 1) => { const p = posManoRival(L(), i, Math.max(1, n)); return j === 1 ? new THREE.Vector3(p.x, p.y, p.z) : new THREE.Vector3(-p.x, p.y, -p.z); };
+    const enMano = (j, m, n) => (j === 0 && !api.mirando ? enManoPropia(m, n) : enManoRival(m, n, j));
     function enManoPropia(m, n) {
         const T = api.tam(), p = posMano(L(), Math.max(0, m), Math.max(1, n), T.x, T.y);
         return api.desdePantalla(p.x, p.y, 0.45);
@@ -85,7 +89,7 @@ export function crearAnimador(api) {
         if (p.de === 'mesa') return enZona(p.j, p.z);
         const n = e.jug[p.j].mano.length - plan.manos[p.j].length + 1;
         const m = p.m ?? Math.floor(n / 2);
-        return p.j === 0 ? enManoPropia(m, n) : enManoRival(m, n);
+        return enMano(p.j, m, n);
     }
     // La carta que ocupa (j, z) en el paso k: un fantasma (se va en esta jugada) o la del estado final
     function actor(j, z, k) {
@@ -203,7 +207,7 @@ export function crearAnimador(api) {
             case 'vuelve': {
                 const m = tocar(actor(p.j, p.z, k)); if (!m || u <= 0) break;
                 const e = api.estado(), n = e.jug[p.j].mano.length;
-                const a = p.j === 0 ? enManoPropia(Math.floor(n / 2), n) : enManoRival(Math.floor(n / 2), n);
+                const a = enMano(p.j, Math.floor(n / 2), n);
                 m.position.lerpVectors(enZona(p.j, p.z), a, s); m.position.y += arco(u);
                 m.material.opacity = 1 - tramo(u, 0.6, 1);
                 break;
@@ -236,7 +240,8 @@ export function crearAnimador(api) {
             }
             case 'turno': {
                 if (u <= 0 || u >= 1) break;
-                const d = banner(k, api.texto(p));
+                const tx = api.texto(p); if (!tx) break;
+                const d = banner(k, tx);
                 d.style.opacity = String(Math.min(1, tramo(u, 0, 0.2) * 1, 1 - tramo(u, 0.75, 1)));
                 d.style.transform = `translate(-50%, -50%) scale(${0.85 + 0.15 * sale0(tramo(u, 0, 0.3))})`;
                 break;
@@ -264,6 +269,12 @@ export function crearAnimador(api) {
         const T = api.tam();
         for (const r of plan.manos[0]) {
             const p = plan.pasos[r.k], u = avance(p); if (u <= 0 || u >= 1) continue;
+            if (api.mirando) { // quien mira: la mano del lado 0 también está en la mesa
+                const m = tocar(api.manoMesh(r.i)); if (!m) continue;
+                const o = r.de === 'desc' ? enDesc(0) : r.de === 'mesa' && r.z != null ? enZona(1, r.z) : enMazo(0);
+                m.position.lerpVectors(o, m.userData.base.p, suave(u)); m.position.y += arco(u);
+                continue;
+            }
             const m = api.manoMesh(r.i); if (!m) continue;
             const o = r.de === 'desc' ? enDesc(0) : r.de === 'mesa' && r.z != null ? enZona(1, r.z) : enMazo(0);
             const q = api.pantalla(o.x, o.y, o.z) || { x: T.x * 0.8, y: T.y * 0.6 };
