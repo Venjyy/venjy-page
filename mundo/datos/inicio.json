@@ -1,0 +1,19 @@
+{
+  "$schema": "../../estudio/esquemas/inicio.schema.json",
+  "version": 1,
+  "titulo": {
+    "logo": { "es": "VENJY", "en": "VENJY" },
+    "sub": { "es": "Supervivencia", "en": "Survival" },
+    "pie": { "es": "El mapa del portafolio, ahora para sobrevivir.", "en": "The portfolio map, now to survive in." },
+    "frases": [
+      { "es": "¡Con gatas!", "en": "With cats!" },
+      { "es": "¡Hecho bloque a bloque!", "en": "Built block by block!" },
+      { "es": "¡Ahora con duelo de cartas!", "en": "Now with a card duel!" },
+      { "es": "¡Hasta 8 amigos!", "en": "Up to 8 friends!" },
+      { "es": "¡También sin internet!", "en": "Works offline too!" },
+      { "es": "¡Cuidado con los jefes!", "en": "Beware of the bosses!" },
+      { "es": "¡Hecho en Chile!", "en": "Made in Chile!" }
+    ],
+    "frase": { "color": "#ffff55", "giro": -18, "pulso": 0.08, "ritmo": 1.6, "x": -10, "y": 40 }
+  }
+}

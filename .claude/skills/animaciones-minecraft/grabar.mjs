@@ -36,6 +36,7 @@ await pagina.addInitScript(() => {
     window.__paso = ms => { window.__reloj += ms; const c = cola; cola = []; for (const f of c) f(window.__reloj); };
 });
 await pagina.goto('http://localhost:5510/supervivencia.html');
+await pagina.waitForSelector('#ir-un-jugador', { timeout: 30000 }); await pagina.click('#ir-un-jugador');
 await pagina.waitForSelector('#nuevo-mundo:not([hidden])', { timeout: 30000 });
 await pagina.click('#nuevo-mundo');
 await pagina.fill('#nombre-mundo', 'Video');

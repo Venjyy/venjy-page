@@ -78,6 +78,7 @@ import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
 import { nivelDeMs, barrasDeMs } from '../online/ping.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
+import { datosInicio, fraseAlAzar } from './inicio-datos.js';
 import { aplicarPoses } from '../datos/gestos.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
@@ -228,7 +229,7 @@ const guardarRend = () => { try { localStorage.setItem(CLAVE_REND, JSON.stringif
 // Menú de mundos
 // ---------------------------------------------------------
 const $ = id => document.getElementById(id);
-const pantallas = ['menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin', 'copia-llena', 'hospedar-modo', 'panel-qr'];
+const pantallas = ['menu-titulo', 'menu-amigos', 'menu-mundos', 'crear-mundo', 'pausa', 'muerte', 'pantalla-skin', 'coop-fin', 'copia-llena', 'hospedar-modo', 'panel-qr'];
 function mostrar(id) {
     $('inicio').hidden = !id;
     for (const p of pantallas) $(p).hidden = p !== id;
@@ -237,6 +238,28 @@ function mostrar(id) {
 const datos = generarDatos('h');
 const terreno = prepararTerreno(datos, { supervivencia: true });
 
+// Menú de inicio: pantalla de título (logo, pie y una frase al azar de mundo/datos/inicio.json)
+async function pintarTitulo() {
+    mostrar('menu-titulo');
+    const d = datosInicio(await cargarDatos('inicio'));
+    const poner = (id, txt) => { const el = $(id); el.dataset.es = txt.es; el.dataset.en = txt.en; el.textContent = txt[idioma] || txt.es; };
+    poner('logo-texto', d.titulo.logo); poner('logo-sub', d.titulo.sub); poner('pie-inicio', d.titulo.pie);
+    const f = $('frase-inicio'), v = d.titulo.frase;
+    f.textContent = fraseAlAzar(d, idioma);
+    f.hidden = !f.textContent;
+    f.style.setProperty('--frase-color', v.color);
+    f.style.setProperty('--frase-giro', v.giro + 'deg');
+    f.style.setProperty('--frase-pulso', 1 + v.pulso);
+    f.style.setProperty('--frase-x', v.x + '%');
+    f.style.setProperty('--frase-y', v.y + '%');
+    f.style.setProperty('--frase-ritmo', v.ritmo > 0 ? (1 / v.ritmo).toFixed(3) + 's' : '0s');
+}
+$('ir-un-jugador').addEventListener('click', () => pintarMenu());
+$('ir-amigos').addEventListener('click', () => pintarAmigos());
+$('volver-titulo').addEventListener('click', () => pintarTitulo());
+$('volver-titulo-amigos').addEventListener('click', () => pintarTitulo());
+
+// Un jugador: tus mundos
 async function pintarMenu() {
     mostrar('menu-mundos');
     $('carga').hidden = true;
@@ -262,10 +285,9 @@ async function pintarMenu() {
         const botones = document.createElement('div');
         botones.className = 'botones-mundo';
         const bj = boton(tx().jugar, () => jugar(m.id));
-        const bh = boton(tx().hospedar, () => elegirHospedar(m.id), 'secundario');
         const be = boton(tx().exportar, () => exportarMundo(m.id).catch(err => alert(err.message)), 'secundario');
         const bb = boton(tx().borrar, async () => { if (confirm(tx().confirmarBorrar(m.nombre))) { await borrarMundo(m.id); pintarMenu(); } }, 'secundario peligro');
-        botones.append(bj, bh, be, bb);
+        botones.append(bj, be, bb);
         li.append(info, botones);
         ul.appendChild(li);
     }
@@ -273,8 +295,35 @@ async function pintarMenu() {
     $('nuevo-mundo').disabled = lista.length >= MAX_MUNDOS;
     $('nuevo-mundo').title = lista.length >= MAX_MUNDOS ? tx().lleno : '';
     $('importar').hidden = false;
-    $('coop-menu').hidden = false; // sin internet también se juega (QR)
+    $('volver-titulo').hidden = false;
+}
+
+// Con amigos: entrar con un código o un QR, u hospedar uno de tus mundos (sin internet también se juega, con QR)
+async function pintarAmigos() {
+    mostrar('menu-amigos');
     $('coop-fila-codigo').hidden = !ONLINE_ACTIVO;
+    let lista = [];
+    try { lista = await listarMundos(); } catch (e) { /* sin almacenamiento: solo se puede entrar a una sala */ }
+    const ul = $('lista-hospedar');
+    ul.textContent = '';
+    if (!lista.length) {
+        const li = document.createElement('li'); li.className = 'vacio'; li.textContent = tx().vacio; ul.appendChild(li);
+    }
+    for (const m of lista) {
+        const li = document.createElement('li');
+        li.className = 'tarjeta-mundo';
+        const info = document.createElement('div');
+        info.className = 'info-mundo';
+        const n = document.createElement('b'); n.textContent = m.nombre;
+        const d = document.createElement('span');
+        d.textContent = [tx().dificultades[m.dificultad] || '', tx().dia(m.dias + 1)].filter(Boolean).join(' · ');
+        info.append(n, d);
+        const botones = document.createElement('div');
+        botones.className = 'botones-mundo';
+        botones.append(boton(tx().hospedar, () => elegirHospedar(m.id)));
+        li.append(info, botones);
+        ul.appendChild(li);
+    }
 }
 
 // ---------------------------------------------------------
@@ -306,9 +355,9 @@ function elegirHospedar(id) {
     mundoPorHospedar = id;
     mostrar('hospedar-modo');
 }
-$('hospedar-internet').addEventListener('click', () => { pintarMenu(); hospedarMundo(mundoPorHospedar, false); });
-$('hospedar-local').addEventListener('click', () => { pintarMenu(); hospedarMundo(mundoPorHospedar, true); });
-$('hospedar-cancelar').addEventListener('click', () => pintarMenu());
+$('hospedar-internet').addEventListener('click', () => { pintarAmigos(); hospedarMundo(mundoPorHospedar, false); });
+$('hospedar-local').addEventListener('click', () => { pintarAmigos(); hospedarMundo(mundoPorHospedar, true); });
+$('hospedar-cancelar').addEventListener('click', () => pintarAmigos());
 async function hospedarMundo(id, local) {
     if (ocupadoCoop) return;
     const nombre = leerNombre();
@@ -348,7 +397,7 @@ $('coop-qr').addEventListener('click', async () => {
     ocupadoCoop = true;
     estadoCoop('');
     let cancelado = false;
-    panelQR.abrir({ titulo: tx().unirseTitulo, cancelar: () => { cancelado = true; pintarMenu(); } });
+    panelQR.abrir({ titulo: tx().unirseTitulo, cancelar: () => { cancelado = true; pintarAmigos(); } });
     mostrar('panel-qr');
     try {
         for (;;) {
@@ -420,7 +469,7 @@ function abrirEditorSkin(volver) {
     editor = crearEditorSkin({
         contenedor: $('pantalla-skin'), idioma,
         alGuardar: d => { if (juego) juego.ponerSkin(d); },
-        alVolver: () => { editor.destruir(); editor = null; if (volver === 'pausa') mostrar('pausa'); else pintarMenu(); }
+        alVolver: () => { editor.destruir(); editor = null; if (volver === 'pausa') mostrar('pausa'); else pintarTitulo(); }
     });
 }
 $('ir-skin').addEventListener('click', () => abrirEditorSkin('menu'));
@@ -440,7 +489,7 @@ function iniciarJuego(guardado, cx = null) {
     enJuego = true;
     mostrar('menu-mundos');
     $('lista-mundos').hidden = true;
-    for (const id of ['nuevo-mundo', 'importar', 'coop-menu']) $(id).hidden = true;
+    for (const id of ['nuevo-mundo', 'importar', 'volver-titulo']) $(id).hidden = true;
     $('carga').hidden = false;
     $('carga').textContent = tx().generando;
     setTimeout(() => arrancar(guardado, cx).catch(err => { console.error(err); $('carga').textContent = 'Error: ' + err.message; }), 30);
@@ -1951,4 +2000,6 @@ async function arrancar(guardado, cx = null) {
 // «Seguir jugando esta copia» (7a · 26): tras salir de la sala se abre el mundo recién guardado
 let seguir = null;
 try { seguir = sessionStorage.getItem('venjy-seguir'); sessionStorage.removeItem('venjy-seguir'); } catch (e) { /* sin almacenamiento */ }
-if (seguir) jugar(seguir).catch(() => pintarMenu()); else pintarMenu();
+// Con ?estudio (el puente abre el mundo «Estudio» por el menú) se salta la pantalla de título
+const sinTitulo = new URLSearchParams(location.search).has('estudio');
+if (seguir) jugar(seguir).catch(() => pintarMenu()); else if (sinTitulo) pintarMenu(); else pintarTitulo();

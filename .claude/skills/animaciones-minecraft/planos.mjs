@@ -21,6 +21,7 @@ const b = await abrirNavegador();
 const p = await b.newPage({ viewport: { width: 960, height: 540 } });
 p.on('pageerror', e => console.log('ERROR DE PÁGINA:', e.message));
 await p.goto('http://localhost:5510/supervivencia.html');
+await p.waitForSelector('#ir-un-jugador', { timeout: 30000 }); await p.click('#ir-un-jugador');
 await p.waitForSelector('#nuevo-mundo:not([hidden])', { timeout: 30000 });
 await p.click('#nuevo-mundo'); await p.fill('#nombre-mundo', 'Planos');
 await p.check('input[name="dificultad"][value="0"]'); await p.click('#crear');

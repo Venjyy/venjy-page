@@ -32,6 +32,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `entidades.js` (215) | Objetos tirados; se juntan los iguales a < 1 bloque también al soltar (7b-1). `crearEntidades:69` |
 | `particulas.js` (~100) | Partículas con un InstancedMesh; `factor` (0-1) descarta emisiones (menú de rendimiento, 7b-2). `crearParticulas:11` |
 | `dia.js` (41) | Día de 10 min. `crearDia:15` |
+| `inicio-datos.js` (~40) | Menú de inicio, sin DOM: `INICIO` (logo, sub, pie, frases y aspecto de la frase), `datosInicio(json)` (mezcla con `mundo/datos/inicio.json`) y `fraseAlAzar`. Lo pinta `pintarTitulo` de `main.js`; lo edita la pestaña Inicio del Estudio. Prueba `mundo/tests/inicio.mjs` |
 | `reloj.js` (19) | 7j-0, sin DOM: hora de reloj (24 h, 1 h = 25 s de media) desde `horaDe`. `minutosDe` `textoHora` `textoDiaHora` `enTramo`. Lo pinta `pintarHora` de `main.js` (HUD, pausa, Reloj en la mano) |
 | `horarios-datos.js` (22) | 7j-0: horario y lugar ES/EN de cada amigo con posición (`HORARIOS`); lo muestra `hablar.js`; lo leerán las rutinas de 6d |
 | `subsuelo.js` (~230) | Roca madre, cuevas, lava, menas. `llenarSubsuelo:128` · `buscarSubsuelo` (pistas de 7d-2: mena o piedra luminosa más cercana con la misma generación) |

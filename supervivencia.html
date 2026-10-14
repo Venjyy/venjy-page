@@ -35,22 +35,44 @@
     <div id="ventana" class="ventana" hidden></div>
 
     <main id="inicio">
-        <!-- Menú de mundos -->
-        <section class="panel" id="menu-mundos">
-            <h1 data-es="Supervivencia" data-en="Survival">Supervivencia</h1>
-            <p class="sub" data-es="El mapa del portafolio, ahora para sobrevivir. Ayuda a los amigos y enfrenta a los jefes."
-               data-en="The portfolio map, now to survive in. Help your friends and face the bosses.">El mapa del portafolio, ahora para sobrevivir. Ayuda a los amigos y enfrenta a los jefes.</p>
+        <!-- Menú de inicio: pantalla de título (textos y frases en mundo/datos/inicio.json, pestaña Inicio del Estudio) -->
+        <section class="titulo-inicio" id="menu-titulo">
+            <div class="logo-inicio">
+                <h1 id="logo-texto" class="logo-texto" data-es="VENJY" data-en="VENJY">VENJY</h1>
+                <p id="logo-sub" class="logo-sub" data-es="Supervivencia" data-en="Survival">Supervivencia</p>
+                <span id="frase-inicio" class="frase-inicio" aria-hidden="true"></span>
+            </div>
+            <div class="botones-titulo">
+                <button id="ir-un-jugador" class="boton" type="button" data-es="Un jugador" data-en="Singleplayer">Un jugador</button>
+                <button id="ir-amigos" class="boton" type="button" data-es="Con amigos" data-en="With friends">Con amigos</button>
+                <button id="ir-skin" class="boton" type="button" data-es="Mi skin" data-en="My skin">Mi skin</button>
+                <div class="fila-botones">
+                    <a id="ir-creativo" class="boton secundario" href="mundo.html" data-es="Modo creativo" data-en="Creative mode">Modo creativo</a>
+                    <a id="volver" class="boton secundario" href="index.html" data-es="Volver al portafolio" data-en="Back to portfolio">Volver al portafolio</a>
+                </div>
+            </div>
+            <p id="pie-inicio" class="pie-inicio" data-es="El mapa del portafolio, ahora para sobrevivir." data-en="The portfolio map, now to survive in.">El mapa del portafolio, ahora para sobrevivir.</p>
+        </section>
+
+        <!-- Un jugador: tus mundos -->
+        <section class="panel" id="menu-mundos" hidden>
+            <h1 data-es="Un jugador" data-en="Singleplayer">Un jugador</h1>
+            <p class="sub" data-es="Ayuda a los amigos y enfrenta a los jefes."
+               data-en="Help your friends and face the bosses.">Ayuda a los amigos y enfrenta a los jefes.</p>
             <p id="carga" class="carga" data-es="Cargando…" data-en="Loading…">Cargando…</p>
             <ul id="lista-mundos" class="lista-mundos" hidden></ul>
             <button id="nuevo-mundo" class="boton" type="button" hidden data-es="Crear mundo nuevo" data-en="Create new world">Crear mundo nuevo</button>
-            <button id="ir-skin" class="boton secundario" type="button" data-es="Mi skin" data-en="My skin">Mi skin</button>
             <div class="fila-botones">
                 <button id="importar" class="boton secundario" type="button" hidden data-es="Importar partida" data-en="Import world">Importar partida</button>
                 <input id="archivo-importar" type="file" accept=".venjy,application/octet-stream,application/gzip" hidden>
             </div>
-            <!-- Jugar con amigos: hospedar un mundo (botón en cada tarjeta) o entrar con un código -->
-            <div id="coop-menu" class="coop-menu" hidden>
-                <h2 data-es="Jugar con amigos" data-en="Play with friends">Jugar con amigos</h2>
+            <button id="volver-titulo" class="boton secundario" type="button" data-es="Volver" data-en="Back">Volver</button>
+        </section>
+
+        <!-- Con amigos: hospedar uno de tus mundos o entrar con un código o un QR -->
+        <section class="panel" id="menu-amigos" hidden>
+            <h1 data-es="Con amigos" data-en="With friends">Con amigos</h1>
+            <div id="coop-menu" class="coop-menu">
                 <p class="nota" data-es="Para invitar, pulsa «Hospedar» en uno de tus mundos. Con internet pasas un código; sin internet (misma red), cada amigo entra con un QR. Hasta 8 jugadores."
                    data-en="To invite, press «Host» on one of your worlds. Online you share a code; offline (same network) each friend joins with a QR. Up to 8 players.">Para invitar, pulsa «Hospedar» en uno de tus mundos. Con internet pasas un código; sin internet (misma red), cada amigo entra con un QR. Hasta 8 jugadores.</p>
                 <label class="campo">
@@ -67,8 +89,9 @@
                 <button id="coop-qr" class="boton secundario" type="button" data-es="Unirse con QR (sin internet)" data-en="Join with QR (offline)">Unirse con QR (sin internet)</button>
                 <p id="coop-estado" class="coop-estado" hidden></p>
             </div>
-            <a id="ir-creativo" class="boton secundario" href="mundo.html" data-es="Modo creativo" data-en="Creative mode">Modo creativo</a>
-            <a id="volver" class="boton secundario" href="index.html" data-es="Volver al portafolio" data-en="Back to portfolio">Volver al portafolio</a>
+            <h2 data-es="Hospedar uno de tus mundos" data-en="Host one of your worlds">Hospedar uno de tus mundos</h2>
+            <ul id="lista-hospedar" class="lista-mundos"></ul>
+            <button id="volver-titulo-amigos" class="boton secundario" type="button" data-es="Volver" data-en="Back">Volver</button>
         </section>
 
         <!-- Crear mundo -->

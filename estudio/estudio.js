@@ -1,7 +1,7 @@
 // =========================================================
 // VENJY · Estudio · cáscara: idioma ES/EN, estado del servidor y pestañas
 // Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout. Fase 2: Juego. Fase 3: Textos. Fase 4: Posiciones.
-// Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20).
+// Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20). Inicio: menú de la supervivencia (§21).
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
@@ -12,6 +12,7 @@ import { montarPoses } from './poses.js';
 import { montarMesa } from './mesa.js';
 import { montarObjetos } from './objetos.js';
 import { montarPixeles } from './pixeles.js';
+import { montarInicio } from './inicio.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -74,6 +75,7 @@ await montarPoses(ctx);
 await montarMesa(ctx);
 await montarObjetos(ctx);
 await montarPixeles(ctx);
+await montarInicio(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.

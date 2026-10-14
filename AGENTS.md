@@ -30,6 +30,7 @@ Portafolio personal de Venjy con estética Minecraft: una página (`index.html`)
   la supervivencia). No se agregan imágenes para eso.
 - Nombres de archivos, funciones y endpoints en español.
 - **Todo lo que se desarrolle debe poder modificarse y ajustarse desde el Estudio (`/estudio/`) por el dueño**: posiciones, giros, escalas, colores, tiempos, textos, medidas y cualquier valor que afecte cómo se ve o se siente. Los valores van en `mundo/datos/*.json` (o con su valor base en el código y un ajuste en el JSON, como `objetos-mano.json`), con esquema en `estudio/esquemas/` y control en la pestaña que corresponda. Si algo nuevo no cabe en ninguna pestaña, crear el campo o la pestaña, o dejarlo anotado en `mundo/PENDIENTES.md` y en el PR como «no editable aún». Nunca dejar números mágicos que solo se cambien tocando el código.
+- **El modo creativo (`mundo.html`) no se toca**: es el portafolio web 3D. Todo lo nuevo del juego va en la supervivencia.
 - Contenido del portafolio y datos de ProcedimientoSeguro: `PRODUCT.md`.
 
 ## Contenido en JSON (`mundo/datos/`)
