@@ -11,7 +11,8 @@
 //   ev      → al anfitrión: { id, s, d } evento del juego; el anfitrión lo numera y lo reparte a todos
 //             (con `libre: 1` no se revisa el orden: juegos en tiempo real donde cada uno manda lo suyo a la vez)
 //   rf      → al anfitrión: { id, d } ráfaga (posición de una gata, un hurra…): la reparte a todos como `rafaga`
-//             sin numerarla ni guardarla en el registro; la puede mandar cualquiera de la sala (el público alienta)
+//             sin numerarla ni guardarla en el registro; la puede mandar cualquiera de la sala (el público alienta);
+//             con `p: 1`, solo a los participantes (actividades en su propia escena: la carrera de gatas)
 //   estado  ← del anfitrión a todos: { act } (act = null y id si se cerró)
 //   evento  ← del anfitrión a todos: { id, s, por, d } (s = orden global de la actividad: 0, 1, 2…; por = autor)
 //   no      ← del anfitrión a uno: { id, motivo } ('llena', 'otra', 'cerrada', 'orden')
@@ -79,7 +80,10 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
         },
         rf(m) {
             const a = acts.get(m.id);
-            if (a) aTodos({ op: 'rafaga', id: a.id, k: a.k, por: m.de, d: m.d });
+            if (!a) return;
+            const r = { op: 'rafaga', id: a.id, k: a.k, por: m.de, d: m.d };
+            if (m.p) { for (const j of a.jug) if (j !== m.de) aUno(j, r); } // solo a los participantes
+            else aTodos(r);
         },
         ver(m) {
             const a = acts.get(m.id);
@@ -134,7 +138,8 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
         // Evento sin orden (tiempo real): el anfitrión le pone el número que toque; quien lo manda ya lo aplicó
         eventoLibre(id, d) { alAnfitrion({ op: 'ev', id, libre: 1, d }); },
         // Ráfaga: a todos, sin registro (estado continuo que se pisa con el siguiente)
-        rafaga(id, d) { alAnfitrion({ op: 'rf', id, d }); },
+        // dentro = true: solo a los participantes (una actividad en su propia escena, como la carrera de gatas)
+        rafaga(id, d, dentro = false) { alAnfitrion(dentro ? { op: 'rf', id, d, p: 1 } : { op: 'rf', id, d }); },
         invitar(para, id, k, d) { enviar({ op: 'invitar', id, k, d, para }); },
         responder(para, id, k, si, motivo) { enviar({ op: 'resp', id, k, si: !!si, para, ...(motivo ? { motivo } : {}) }); },
         ver(id) { alAnfitrion({ op: 'ver', id }); },

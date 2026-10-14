@@ -13,6 +13,8 @@
 // ovillo sale hacia atrás). Lo que te pasa (golpe, pescado, hierba, aspiradora) sale como aviso grande y sonido.
 // HUD: vuelta, puesto, tiempo, tabla en vivo, minimapa, avisos grandes; líneas de velocidad con turbo; música de
 // 8 bits que se apura en la última vuelta y sonidos sintetizados (sin archivos).
+// Con sala: «Correr con la sala» abre la sala de espera (carrera-red.js); el primero larga y su equipo lleva la IA y
+// los objetos; cada uno maneja su gata; quien mira sigue una gata (A/D) y alienta (Espacio). Ver simular() y alRed.
 // Premio por puesto y amistad con Lona (minijuego `carrera`). Valores: mundo/datos/carrera.json (Estudio → Carrera).
 // No editable aún: los textos (TXT_CARRERA), la música, los colores del HUD y los íconos de los objetos (ICONO_OBJ).
 // Depuración: __venjy.carrera (abrir(), estado, elegir(clave, dificultad), saltarIntro(), saltarA(vuelta)).
@@ -23,6 +25,7 @@ import { O, nombreDe } from './objetos.js';
 import { tono, ruido } from './sonidos.js';
 import * as M from './carrera-modelo.js';
 import { crearEscenaCarrera } from './carrera-escena.js';
+import { crearCarreraRed } from './carrera-red.js';
 
 const t = (es, en) => ({ es, en });
 export const TXT_CARRERA = {
@@ -57,7 +60,27 @@ export const TXT_CARRERA = {
     come: t('¡Ñam! Un pescado', 'Yum! A fish'),
     reves: t('¡Hierba gatera! Todo al revés', 'Catnip! Everything is backwards'),
     susto: t('¡LA ASPIRADORA!', 'THE VACUUM!'),
-    aspiradora: t('¡Lona prendió la aspiradora!', 'Lona turned on the vacuum!')
+    aspiradora: t('¡Lona prendió la aspiradora!', 'Lona turned on the vacuum!'),
+    // Varios jugadores (sala de espera, público)
+    conSala: t('Correr con la sala (R)', 'Race with the room (R)'),
+    unirse: t('Unirse a la carrera de {x} · {n} dentro (R)', "Join {x}'s race · {n} in (R)"),
+    sala: t('Sala de la carrera', 'Race lobby'),
+    entrando: t('Entrando…', 'Joining…'),
+    eresLider: t('Eres quien larga: elige la dificultad de la IA y larga cuando estén todos', 'You start the race: pick the AI difficulty and go when everyone is in'),
+    esperaLider: t('Elige tu gata. Larga {x}', 'Pick your cat. {x} starts the race'),
+    ia: t('IA', 'AI'),
+    publico: t('Miran', 'Watching'),
+    enCarrera: t('Aún en la carrera', 'Still racing'),
+    largar: t('¡Largar! (Enter)', 'Start! (Enter)'),
+    aMirar: t('Solo mirar', 'Just watch'),
+    aCorrer: t('Quiero correr', 'I want to race'),
+    salirSala: t('Salir (Esc)', 'Leave (Esc)'),
+    otraCarrera: t('Otra carrera', 'Another race'),
+    esperaLlegada: t('Espera a que lleguen todos', 'Wait for everyone to finish'),
+    miras: t('Miras a {g} · A/D cambia · Espacio alienta · Esc salir', 'Watching {g} · A/D switch · Space cheer · Esc leave'),
+    hurra: t('HURRA', 'CHEER'),
+    alienta: t('¡{x} alienta a {g}!', '{x} cheers for {g}!'),
+    rechazo: { llena: t('La carrera está llena', 'The race is full'), otra: t('Estás en otra actividad', 'You are in another activity'), cerrada: t('La carrera se cerró', 'The race closed') }
 };
 // Íconos de los objetos (12×12, se pintan en canvas; sin imágenes ni emojis). a = color del objeto (carrera.json),
 // b = el mismo más oscuro, c y d = fijos de cada uno
@@ -130,6 +153,10 @@ body.en-carrera #hud, body.en-carrera .mira, body.en-carrera .tactil { display: 
 .cr-final table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
 .cr-final td { padding: 3px 8px; }
 .cr-final tr.yo td { color: #ffff55; }
+.cr-gata small { display: block; margin-top: 4px; font-size: 0.7rem; color: #ffff55; min-height: 1em; }
+.cr-gata.tomada { background: #3a2a1c; }
+.cr-gata.tomada small { color: #ff9a5a; }
+.cr-menu .cr-publico { margin: 8px 0 0; text-align: center; font-size: 0.8rem; color: #c6c6c6; }
 .cr-final .premio { margin-top: 8px; color: #7aff7a; text-align: center; font-size: 0.9rem; }
 .cr-botonesT { position: absolute; inset: auto 0 calc(4vh + env(safe-area-inset-bottom, 0px)) 0; display: none; justify-content: space-between; padding: 0 3vw; }
 .cr-botonesT.visible { display: flex; }
@@ -139,7 +166,8 @@ body.en-carrera #hud, body.en-carrera .mira, body.en-carrera .tactil { display: 
 @media (max-width: 700px) { .cr-gatas { grid-template-columns: repeat(2, minmax(130px, 1fr)); } .cr-puesto { font-size: 2.2rem; } .cr-tabla, .cr-ayuda { display: none !important; } .cr-mapa { width: 120px; height: 100px; bottom: auto; top: 76px; } .cr-titulo { font-size: 1.5rem; } .cr-aviso { font-size: 2rem; } .cr-objeto { right: auto; left: 12px; top: 76px; } }
 `;
 
-// ctx: { jugador, inventario, entidades, hud, misiones, gatas, npcs, idioma, tactil(), puede(), bloquear(), liberar(), datos() }
+// ctx: { jugador, inventario, entidades, hud, misiones, gatas, npcs, idioma, tactil(), puede(), bloquear(), liberar(), datos(),
+//        acts() (actividades de la sala, o null), yo() (mi id en la sala), nombreJugador(id) }
 export function crearCarrera(ctx) {
     const { inventario, entidades, misiones, jugador } = ctx;
     let L = ctx.idioma || 'es';
@@ -181,8 +209,17 @@ export function crearCarrera(ctx) {
     document.addEventListener('keydown', e => {
         if (!c) return;
         if (c.fase === 'menu' && c.vista) { if (e.code === 'Escape') { e.preventDefault(); cerrar(); } return; }
+        if (c.fase === 'sala') {
+            if (e.code === 'Enter') { e.preventDefault(); largar(); }
+            else if (e.code === 'Escape') { e.preventDefault(); salirSala(); }
+            else if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowLeft' || e.code === 'KeyA' ? -1 : 1); }
+            else if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowUp' || e.code === 'KeyW' ? -3 : 3); }
+            e.stopPropagation();
+            return;
+        }
         if (c.fase === 'menu') {
             if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); correr(); }
+            else if (e.code === 'KeyR' && redLista()) { e.preventDefault(); entrarSala(); }
             else if (e.code === 'Escape') { e.preventDefault(); cerrar(); }
             else if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowLeft' || e.code === 'KeyA' ? -1 : 1); }
             else if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS'].includes(e.code)) { e.preventDefault(); moverSel(e.code === 'ArrowUp' || e.code === 'KeyW' ? -3 : 3); }
@@ -190,15 +227,16 @@ export function crearCarrera(ctx) {
             return;
         }
         if (c.fase === 'final') { if (e.code === 'Enter') { e.preventDefault(); revancha(); } else if (e.code === 'Escape') { e.preventDefault(); cerrar(); } e.stopPropagation(); return; }
-        if (e.code === 'Escape' && !e.repeat) { e.preventDefault(); pausar(!c.pausa); e.stopPropagation(); return; }
-        if (c.fase === 'intro' && (e.code === 'Space' || e.code === 'Enter') && !e.repeat) { e.preventDefault(); empezarCuenta(); e.stopPropagation(); return; }
+        if (e.code === 'Escape' && !e.repeat) { e.preventDefault(); pausar(!pausaEl.classList.contains('visible')); e.stopPropagation(); return; }
+        if (c.fase === 'intro' && !c.on && (e.code === 'Space' || e.code === 'Enter') && !e.repeat) { e.preventDefault(); empezarCuenta(); e.stopPropagation(); return; }
         if (MANEJO.has(e.code)) { e.preventDefault(); teclas.add(e.code); e.stopPropagation(); }
     }, true);
     document.addEventListener('keyup', e => teclas.delete(e.code), true);
-    window.addEventListener('blur', () => { teclas.clear(); if (c && c.fase === 'corre') pausar(true); });
-    capa.addEventListener('pointerdown', () => { if (c && c.fase === 'intro') empezarCuenta(); });
+    window.addEventListener('blur', () => { teclas.clear(); if (c && c.fase === 'corre' && !c.on) pausar(true); }); // (con otros no se detiene)
+    capa.addEventListener('pointerdown', () => { if (c && c.fase === 'intro' && !c.on) empezarCuenta(); });
     const tiene = (...ks) => ks.some(k => teclas.has(k));
     function entrada() {
+        if (c.menuPausa) return { ad: 0, giro: 0, salto: false, usar: false };
         const auto = c.tactil && c.R.tactil.autoAcelerar && !pulsado.has('freno');
         const ad = (tiene('KeyW', 'ArrowUp') || pulsado.has('acel') || auto ? 1 : 0) - (tiene('KeyS', 'ArrowDown') || pulsado.has('freno') ? 1 : 0);
         const giro = (tiene('KeyA', 'ArrowLeft') || pulsado.has('izq') ? 1 : 0) - (tiene('KeyD', 'ArrowRight') || pulsado.has('der') ? 1 : 0);
@@ -273,23 +311,203 @@ export function crearCarrera(ctx) {
         el('', menuEl, 'p').textContent = tx(TXT_CARRERA.elegir);
         const grid = el('cr-gatas', menuEl);
         R.gatas.forEach((g, i) => {
-            const b = el('cr-gata' + (i === sel ? ' sel' : ''), grid, 'button'); b.type = 'button';
-            const nom = el('', b, 'b'); const ic = el('', nom, 'i'); ic.style.background = esc.gatas[i] ? esc.gatas[i].color : '#888'; nom.append(g.nombre);
-            ['vel', 'acel', 'giro'].forEach((k, j) => {
-                const f = el('cr-stat', b); el('', f, 'span').textContent = tx(TXT_CARRERA.stats[j]);
-                const u = el('', f, 'u'); const em = el('', u, 'em'); em.style.width = `${Math.max(6, Math.min(100, ((g[k] ?? 1) - 0.88) / 0.24 * 100))}%`;
-            });
+            const b = celdaGata(grid, g, i, i === sel ? ' sel' : '');
             b.addEventListener('click', () => { sel = i; pintarMenu(); });
             b.addEventListener('dblclick', () => { sel = i; correr(); });
         });
-        const nv = el('cr-niveles', menuEl);
-        el('', nv, 'span').textContent = tx(TXT_CARRERA.dificultad) + ':';
-        for (const k of ['facil', 'normal', 'dificil']) { const b = boton(nv, tx(TXT_CARRERA.niveles[k]), () => { dificultad = k; pintarMenu(); }); if (k === dificultad) b.classList.add('sel'); }
+        niveles(pintarMenu);
         const bt = el('cr-botones', menuEl);
         boton(bt, tx(TXT_CARRERA.correr), correr);
+        // Con sala: la carrera entre jugadores (sala de espera); si ya hay una abierta, unirse
+        const r = redLista();
+        if (r) {
+            const a = r.abierta();
+            boton(bt, a ? tx(TXT_CARRERA.unirse).replace('{x}', nombreJ(a.jug[0])).replace('{n}', a.jug.length) : tx(TXT_CARRERA.conSala), entrarSala);
+        }
         boton(bt, tx(TXT_CARRERA.volver), cerrar, 'boton secundario');
     }
-    function moverSel(d) { const n = c.R.gatas.length; sel = ((sel + d) % n + n) % n; pintarMenu(); }
+    function celdaGata(padre, g, i, extra = '') {
+        const b = el('cr-gata' + extra, padre, 'button'); b.type = 'button';
+        const nom = el('', b, 'b'); const ic = el('', nom, 'i'); ic.style.background = esc.gatas[i] ? esc.gatas[i].color : '#888'; nom.append(g.nombre);
+        ['vel', 'acel', 'giro'].forEach((k, j) => {
+            const f = el('cr-stat', b); el('', f, 'span').textContent = tx(TXT_CARRERA.stats[j]);
+            const u = el('', f, 'u'); const em = el('', u, 'em'); em.style.width = `${Math.max(6, Math.min(100, ((g[k] ?? 1) - 0.88) / 0.24 * 100))}%`;
+        });
+        return b;
+    }
+    function niveles(repintar) {
+        const nv = el('cr-niveles', menuEl);
+        el('', nv, 'span').textContent = tx(TXT_CARRERA.dificultad) + ':';
+        for (const k of ['facil', 'normal', 'dificil']) { const b = boton(nv, tx(TXT_CARRERA.niveles[k]), () => { dificultad = k; repintar(); }); if (k === dificultad) b.classList.add('sel'); }
+    }
+    function moverSel(d) {
+        const n = c.R.gatas.length; sel = ((sel + d) % n + n) % n;
+        if (c.fase === 'sala') { red.elegir(c.R.gatas[sel].clave); pintarSala(); } else pintarMenu();
+    }
+
+    // ---------- Varios jugadores (carrera-red.js): sala de espera, carrera y público ----------
+    // Solo con sala (cooperativo). El primero de la sala de espera larga; su equipo maneja la IA y los objetos.
+    let red = null;
+    const yoId = () => (ctx.yo ? ctx.yo() : null);
+    const nombreJ = id => (ctx.nombreJugador ? ctx.nombreJugador(id) : String(id));
+    function redLista() {
+        if (red) return red;
+        const acts = ctx.acts && ctx.acts();
+        if (!acts || !yoId()) return null;
+        red = crearCarreraRed({ acts, yo: yoId(), al: alRed });
+        return red;
+    }
+    // ¿Esta gata la simula mi equipo? (la mía; la IA y las de quien se fue, si soy el líder)
+    const localDe = i => !c.on || c.on.dueno[i] === yoId() || (c.on.dueno[i] === null && c.on.lider);
+    const nombreGata = i => { const g = c.gs[i], d = c.on && c.on.dueno[i]; return g.def.nombre + (d ? ` · ${d === yoId() ? tx(TXT_CARRERA.tu) : nombreJ(d)}` : ''); };
+    const alRed = {
+        sala: a => { if (c && c.fase === 'sala') pintarSala(a); },
+        inicio: (ini, mia, soyLider) => { if (c && c.fase === 'sala') correrRed(ini, mia, soyLider); },
+        estado: (k, m) => {
+            const g = c && c.on && c.gs[k];
+            if (g && !localDe(k)) (g.red ? M.recibirRed(g, m) : M.desempacar(g, m));
+        },
+        paquete: m => {
+            if (!c || !c.on || c.on.lider) return;
+            for (const k in m.g || {}) { const g = c.gs[k]; if (g && !localDe(+k)) (g.red ? M.recibirRed(g, m.g[k]) : M.desempacar(g, m.g[k])); }
+            if (m.w) M.aplicarObjetos(c.W, m.w);
+            // Llegué tarde a mirar: la carrera ya iba
+            if (c.espectador && m.tc > 1 && (c.fase === 'intro' || c.fase === 'cuenta')) {
+                if (c.fase === 'intro') empezarCuenta();
+                c.fase = 'corre'; c.t = m.tc; semEl.classList.remove('visible');
+            }
+        },
+        objetos: evs => {
+            if (!c || !c.on || c.on.lider || !['corre', 'fin', 'final'].includes(c.fase)) return;
+            for (const e of evs) {
+                const propia = !c.espectador && e.k === c.yo;
+                if (propia && e.e === 'usa') continue; // ya lo hice al apretar
+                if (propia) M.efectoObjeto(c.gs[c.yo], e, c.R);
+                if (c.fase !== 'final') alObjeto(e);
+            }
+        },
+        usar: (k, atras, o) => { if (c && c.on && c.on.lider) c.on.usar.set(k, { atras, o }); },
+        meta: (k, tf) => { const g = c && c.on && c.gs[k]; if (g && g.fin === null) g.fin = tf; },
+        hurra: (quien, k) => { if (c && c.on && c.fase !== 'final') alentar(quien, k); },
+        abandono: k => { if (c && c.on) c.on.dueno[k] = null; },
+        lider: soy => {
+            if (!c || !c.on) return;
+            c.on.lider = soy;
+            if (!soy) return;
+            // Tomo la IA y los objetos donde iban (lo tirado sigue con la vida que trae su objeto)
+            for (const o of c.W.sueltos) { const D = c.R.objetos[o.tipo] || {}; o.vida = o.vida ?? D.vida ?? 1; o.gracia = o.gracia ?? 0; o.de = o.de ?? -1; }
+            c.W.sig = c.W.sueltos.reduce((a, o) => Math.max(a, o.id + 1), c.W.sig);
+        },
+        rechazo: motivo => {
+            if (!c || c.fase !== 'sala') return;
+            c.fase = 'menu'; pintarMenu();
+            aviso(tx(TXT_CARRERA.rechazo[motivo] || TXT_CARRERA.rechazo.cerrada), 2);
+        }
+    };
+    function entrarSala() {
+        const r = redLista();
+        if (!r || !c || c.fase !== 'menu') return;
+        if (!r.entrar(c.R.gatas[sel].clave)) return;
+        c.fase = 'sala';
+        pintarSala();
+    }
+    function salirSala() {
+        if (red) red.salir();
+        if (!c) return;
+        c.fase = 'menu'; pintarMenu();
+    }
+    function pintarSala(a = red && red.abierta()) {
+        const R = c.R, yo = yoId(), lider = !!(a && a.jug[0] === yo), md = (a && a.d[yo]) || {};
+        menuEl.textContent = '';
+        menuEl.classList.add('visible');
+        el('', menuEl, 'h2').textContent = tx(TXT_CARRERA.sala);
+        el('', menuEl, 'p').textContent = !a || !a.jug.includes(yo) ? tx(TXT_CARRERA.entrando) : lider ? tx(TXT_CARRERA.eresLider) : tx(TXT_CARRERA.esperaLider).replace('{x}', nombreJ(a.jug[0]));
+        const quien = {}, mirando = [], afuera = [];
+        if (a) for (const id of a.jug) {
+            const d = a.d[id] || {}, n = id === yo ? tx(TXT_CARRERA.tu) : nombreJ(id);
+            if (d.fuera) afuera.push(n); else if (d.mira) mirando.push(n); else (quien[d.gata] = quien[d.gata] || []).push(n);
+        }
+        const grid = el('cr-gatas', menuEl);
+        R.gatas.forEach((g, i) => {
+            const mia = !md.mira && md.gata === g.clave;
+            const b = celdaGata(grid, g, i, (mia ? ' sel' : '') + (quien[g.clave] && !mia ? ' tomada' : ''));
+            el('', b, 'small').textContent = quien[g.clave] ? quien[g.clave].join(', ') : tx(TXT_CARRERA.ia);
+            b.addEventListener('click', () => { sel = i; red.elegir(g.clave); pintarSala(); });
+        });
+        if (mirando.length) el('cr-publico', menuEl).textContent = `${tx(TXT_CARRERA.publico)}: ${mirando.join(', ')}`;
+        if (afuera.length) el('cr-publico', menuEl).textContent = `${tx(TXT_CARRERA.enCarrera)}: ${afuera.join(', ')}`;
+        if (lider) niveles(() => pintarSala());
+        const bt = el('cr-botones', menuEl);
+        if (lider) boton(bt, tx(TXT_CARRERA.largar), largar);
+        boton(bt, tx(md.mira ? TXT_CARRERA.aCorrer : TXT_CARRERA.aMirar), () => { red.elegir(R.gatas[sel].clave, !md.mira); }, 'boton secundario');
+        boton(bt, tx(TXT_CARRERA.salirSala), salirSala, 'boton secundario');
+    }
+    function largar() {
+        if (!red || !c || c.fase !== 'sala' || !red.soyLider) return;
+        red.largar(c.R.gatas.map(g => g.clave), dificultad); // empieza con al.inicio
+    }
+    // La carrera que largó el líder: la misma parrilla, dificultad y azar en todos los equipos
+    function correrRed(ini, mia, soyLider) {
+        const R = { ...reglas(), dificultad: ini.dificultad || 'normal' };
+        prepararEscena(R);
+        const P = esc.P, n = R.gatas.length;
+        const gs = new Array(n);
+        (ini.orden || []).forEach((i, k) => { if (i < n && !gs[i]) gs[i] = M.nuevaGata(P, R, R.gatas[i], k); });
+        for (let i = 0; i < n; i++) if (!gs[i]) gs[i] = M.nuevaGata(P, R, R.gatas[i], i);
+        const dueno = R.gatas.map(() => null);
+        for (const id in ini.gatas) if (ini.gatas[id] < n) dueno[ini.gatas[id]] = id;
+        const espectador = mia === null || mia === undefined || mia >= n;
+        const foco = espectador ? Math.max(0, dueno.findIndex(d => d !== null)) : mia;
+        iniciarCarrera(R, P, gs, foco, M.azar(ini.semilla), { dueno, lider: soyLider, usar: new Map(), envio: 0, paquete: 0 }, espectador);
+    }
+    // Espectador: cambiar de gata y alentar (teclado o botones; los mismos controles que para manejar)
+    function mirarEntrada() {
+        const e = entrada();
+        if (e.giro && !c.mGiro) { const n = c.gs.length; c.yo = (c.yo + (e.giro > 0 ? -1 : 1) + n) % n; firmaTabla = ''; }
+        c.mGiro = e.giro;
+        if (e.salto && !c.mSalto && c.tc >= (c.hurraT || 0)) { c.hurraT = c.tc + c.R.red.hurra; red.hurra(c.yo); alentar(yoId(), c.yo); }
+        c.mSalto = e.salto;
+    }
+    function alentar(quien, k) {
+        const g = c.gs[k];
+        if (!g) return;
+        esc.estrellas(g.x, g.y, g.z);
+        if (c.espectador || k === c.yo) aviso(tx(TXT_CARRERA.alienta).replace('{x}', quien === yoId() ? tx(TXT_CARRERA.tu) : nombreJ(quien)).replace('{g}', g.def.nombre), 1);
+        if (!c.espectador && k === c.yo) sfx.miau();
+    }
+    function enviarRed(dt) {
+        const on = c.on, Rr = c.R.red;
+        on.envio -= dt; on.paquete -= dt;
+        if (!c.espectador && on.envio <= 0) { on.envio = 1 / Rr.envios; red.estado(M.empacar(c.gs[c.yo])); }
+        if (on.lider && on.paquete <= 0) {
+            on.paquete = 1 / Rr.paquetes;
+            const g = {};
+            c.gs.forEach((x, i) => { if (on.dueno[i] === null) g[i] = M.empacar(x); });
+            red.paquete(g, M.empacarObjetos(c.W), c.t);
+        }
+    }
+    // Sin ser el líder: la ruleta y el uso de mi objeto (lo uso al tiro y le aviso al líder, que lo lanza allá)
+    function usarPropio(g, ent, dt) {
+        if (g.ruleta > 0) { g.ruleta = Math.max(0, g.ruleta - dt); if (!g.ruleta) alObjeto({ k: c.yo, e: 'listo', o: g.objeto }); }
+        const pulsa = !!ent.usar && !g.usarAntes;
+        g.usarAntes = !!ent.usar;
+        if (!pulsa || !g.objeto || g.ruleta > 0 || g.fin !== null || g.cayendo > 0) return;
+        const o = g.objeto;
+        g.objeto = null; g.objetoT = 0;
+        if (o === 'pluma') g.turbo = Math.max(g.turbo, (c.R.objetos.pluma || {}).turbo || 1);
+        red.usar((ent.ad || 0) < 0, o);
+        alObjeto({ k: c.yo, e: 'usa', o });
+    }
+    // Al final, «Otra carrera»: de vuelta a la sala de espera (el líder espera a que lleguen los demás: lleva la IA)
+    function otraCarreraRed() {
+        if (c.on.lider && c.gs.some((g, i) => c.on.dueno[i] !== null && g.fin === null)) { aviso(tx(TXT_CARRERA.esperaLlegada), 1.6); return; }
+        red.aLaSala();
+        c.on = null; c.espectador = false; c.fase = 'sala';
+        for (const e of [finalEl, avisoEl]) e.classList.remove('visible');
+        esc.podio.visible = false;
+        c.gs = c.R.gatas.map((d, k) => M.nuevaGata(c.P, c.R, d, k));
+        pintarSala();
+    }
 
     // ---------- Abrir y cerrar ----------
     function abrir(pref = null) {
@@ -320,14 +538,19 @@ export function crearCarrera(ctx) {
         const orden = R.gatas.map((d, i) => i).filter(i => i !== sel); orden.push(sel);
         const gs = new Array(R.gatas.length);
         orden.forEach((i, k) => { gs[i] = M.nuevaGata(P, R, R.gatas[i], k); });
+        iniciarCarrera(R, P, gs, sel, M.azar((Math.random() * 1e9) | 0), null, false);
+    }
+    // on = null (solo) o { dueno: [id del jugador o null = IA], lider, usar, envio, paquete } (con otros);
+    // espectador: miro sin gata (c.yo = la gata que sigo)
+    function iniciarCarrera(R, P, gs, yo, rnd, on, espectador) {
         esc.podio.visible = false;
         const tactil = c ? c.tactil : !!(ctx.tactil && ctx.tactil());
-        c = { fase: 'intro', R, P, gs, yo: sel, t: 0, tc: 0, rnd: M.azar((Math.random() * 1e9) | 0), ultima: false, pausa: false, tactil, sacudir: 0, acelCuenta: 0, mapaEsc: null, W: M.nuevosObjetos(R, P), firmaObj: '' };
+        c = { fase: 'intro', R, P, gs, yo, t: 0, tc: 0, rnd, ultima: false, pausa: false, tactil, sacudir: 0, acelCuenta: 0, mapaEsc: null, W: M.nuevosObjetos(R, P), firmaObj: '', on, espectador };
         firmaTabla = '';
         for (const e of [menuEl, finalEl, pausaEl, avisoEl, velEl]) e.classList.remove('visible');
         for (const e of [arriba, tablaEl, mapa, ayudaEl, objEl]) mostrar(e, false);
         tituloEl.textContent = ''; tituloEl.append(tx(R.nombre));
-        const sm = document.createElement('small'); sm.textContent = tx(TXT_CARRERA.saltarIntro); tituloEl.appendChild(sm);
+        if (!on) { const sm = document.createElement('small'); sm.textContent = tx(TXT_CARRERA.saltarIntro); tituloEl.appendChild(sm); } // (con otros la presentación no se salta: la cuenta va a la par)
         mostrar(tituloEl, true);
         luces.forEach(b => { b.className = ''; });
         musPaso = 0; musT = 0;
@@ -338,15 +561,17 @@ export function crearCarrera(ctx) {
         mostrar(tituloEl, false);
         semEl.classList.add('visible');
         for (const e of [arriba, tablaEl, mapa]) mostrar(e, true);
-        mostrar(objEl, !!c.R.objetos.activos); mostrar(bObjeto, !!c.R.objetos.activos);
-        mostrar(ayudaEl, !c.tactil); ayudaEl.textContent = tx(TXT_CARRERA.ayuda);
+        mostrar(objEl, !!c.R.objetos.activos && !c.espectador); mostrar(bObjeto, !!c.R.objetos.activos && !c.espectador);
+        mostrar(ayudaEl, !c.tactil || c.espectador); ayudaEl.textContent = tx(TXT_CARRERA.ayuda);
         tact.classList.toggle('visible', c.tactil);
         bIzq.textContent = TXT_CARRERA.teclas.izq; bDer.textContent = TXT_CARRERA.teclas.der; bSalto.textContent = tx(TXT_CARRERA.teclas.salto); bFreno.textContent = tx(TXT_CARRERA.teclas.freno); bAcel.textContent = tx(TXT_CARRERA.teclas.acel); bObjeto.textContent = tx(TXT_CARRERA.teclas.objeto);
-        mostrar(bAcel, !c.R.tactil.autoAcelerar);
+        mostrar(bAcel, !c.R.tactil.autoAcelerar && !c.espectador); mostrar(bFreno, !c.espectador);
+        if (c.espectador) bSalto.textContent = tx(TXT_CARRERA.hurra);
         c.camLista = false;
     }
     function cerrar() {
         if (!c) return;
+        if (red) red.salir();
         c = null;
         for (const e of [menuEl, pausaEl, finalEl, semEl, avisoEl, velEl, tact]) e.classList.remove('visible');
         capa.classList.remove('visible');
@@ -356,46 +581,49 @@ export function crearCarrera(ctx) {
     }
     function pausar(v) {
         if (!c || !['intro', 'cuenta', 'corre', 'fin'].includes(c.fase)) return;
-        c.pausa = v;
+        // Con otros la carrera no se detiene: el menú queda encima y tu gata suelta los controles
+        if (c.on) c.menuPausa = v; else c.pausa = v;
         pausaEl.classList.toggle('visible', v);
         if (v) {
             pausaEl.textContent = '';
             el('', pausaEl, 'h2').textContent = tx(TXT_CARRERA.pausa);
             const bt = el('cr-botones', pausaEl);
             boton(bt, tx(TXT_CARRERA.seguir), () => pausar(false));
-            boton(bt, tx(TXT_CARRERA.revancha), revancha, 'boton secundario');
+            if (!c.on) boton(bt, tx(TXT_CARRERA.revancha), revancha, 'boton secundario');
             boton(bt, tx(TXT_CARRERA.salir), cerrar, 'boton secundario');
         }
     }
-    function revancha() { correr(); }
+    function revancha() { if (c && c.on) otraCarreraRed(); else correr(); }
     function aviso(txt, dur = 1.4) { avisoEl.textContent = txt; avisoEl.classList.add('visible'); c.avisoHasta = c.tc + dur; }
 
     // ---------- Final ----------
     function terminarCarrera() {
-        c.fase = 'final'; c.tFinal = 0;
-        const orden = M.puestos(c.gs), mia = c.gs[c.yo], puesto = orden.indexOf(mia);
+        c.fase = 'final'; c.tFinal = 0; c.menuPausa = false; pausaEl.classList.remove('visible');
+        const orden = M.puestos(c.gs), mia = c.espectador ? null : c.gs[c.yo], puesto = orden.indexOf(c.gs[c.yo]);
         esc.ponerPodio(orden);
         semEl.classList.remove('visible'); velEl.classList.remove('visible'); tact.classList.remove('visible'); avisoEl.classList.remove('visible');
         for (const e of [arriba, tablaEl, mapa, ayudaEl, objEl]) mostrar(e, false);
         finalEl.textContent = '';
-        el('', finalEl, 'h2').textContent = `${tx(TXT_CARRERA.resultados)} · ${ORD[L][puesto] || ORD.es[puesto]}`;
+        el('', finalEl, 'h2').textContent = mia ? `${tx(TXT_CARRERA.resultados)} · ${ORD[L][puesto] || ORD.es[puesto]}` : tx(TXT_CARRERA.resultados);
         const tb = el('', finalEl, 'table');
         orden.forEach((g, i) => {
             const tr = el(g === mia ? 'yo' : '', tb, 'tr');
             el('', tr, 'td').textContent = ORD[L][i] || i + 1;
-            el('', tr, 'td').textContent = g.def.nombre + (g === mia ? ` (${tx(TXT_CARRERA.tu)})` : '');
+            el('', tr, 'td').textContent = c.on ? nombreGata(c.gs.indexOf(g)) : g.def.nombre + (g === mia ? ` (${tx(TXT_CARRERA.tu)})` : '');
             el('', tr, 'td').textContent = g.fin !== null ? `${g.fin.toFixed(2).replace('.', ',')} s` : '--';
             el('', tr, 'td').textContent = g.tiempos.length ? `${tx(TXT_CARRERA.mejor)} ${Math.min(...g.tiempos).toFixed(2).replace('.', ',')}` : '';
         });
-        const dados = darPremio(c.R.premio.puestos[puesto] || c.R.premio.resto);
+        const dados = mia ? darPremio(c.R.premio.puestos[puesto] || c.R.premio.resto) : [];
         if (dados.length) el('premio', finalEl).textContent = `${tx(TXT_CARRERA.premio)}: ${dados.join(', ')}`;
         const bt = el('cr-botones', finalEl);
-        boton(bt, tx(TXT_CARRERA.revancha) + ' (Enter)', revancha);
+        boton(bt, tx(c.on ? TXT_CARRERA.otraCarrera : TXT_CARRERA.revancha) + ' (Enter)', revancha);
         boton(bt, tx(TXT_CARRERA.salir) + ' (Esc)', cerrar, 'boton secundario');
         const yo = c;
         setTimeout(() => { if (c === yo && c.fase === 'final') finalEl.classList.add('visible'); }, 1800);
-        misiones.estado.minijuegos.add('carrera');
-        if (misiones.alMinijuego) misiones.alMinijuego('carrera', puesto === 0 ? 'gana' : 'pierde');
+        if (mia) {
+            misiones.estado.minijuegos.add('carrera');
+            if (misiones.alMinijuego) misiones.alMinijuego('carrera', puesto === 0 ? 'gana' : 'pierde');
+        }
         c.puesto = puesto;
     }
     function darPremio(lista) {
@@ -463,12 +691,13 @@ export function crearCarrera(ctx) {
             firmaTabla = firma; tablaEl.textContent = '';
             orden.forEach((x, i) => {
                 const fila = el(x === g ? 'yo' : '', tablaEl);
-                fila.append(`${i + 1}`); const ic = el('', fila, 'i'); ic.style.background = esc.gatas[c.gs.indexOf(x)].color; fila.append(x.def.nombre);
+                fila.append(`${i + 1}`); const ic = el('', fila, 'i'); ic.style.background = esc.gatas[c.gs.indexOf(x)].color; fila.append(c.on ? nombreGata(c.gs.indexOf(x)) : x.def.nombre);
             });
         }
-        velEl.classList.toggle('visible', g.turbo > 0 && c.fase === 'corre');
+        velEl.classList.toggle('visible', g.turbo > 0 && c.fase === 'corre' && !c.espectador);
+        if (c.espectador) { const txt = tx(TXT_CARRERA.miras).replace('{g}', nombreGata(c.yo)); if (ayudaEl.textContent !== txt) ayudaEl.textContent = txt; }
         // Casilla del objeto: la ruleta pasa por los íconos y se detiene en el que salió
-        if (R.objetos.activos) {
+        if (R.objetos.activos && !c.espectador) {
             const ruleta = g.ruleta > 0, clave = ruleta ? M.OBJETOS[Math.floor(c.tc * 14) % M.OBJETOS.length] : g.objeto;
             const firma = `${clave}|${ruleta}`;
             if (firma !== c.firmaObj) {
@@ -511,7 +740,7 @@ export function crearCarrera(ctx) {
             if (n !== antes && n > 0 && n <= R.cuenta) sfx.luz(false);
             esc.animarLona(c.t > -R.cuenta ? 'arriba' : 'quieta', c.tc);
             // Arranque turbo: acelerar solo en el último segundo (antes de tiempo no vale)
-            const ad = entrada().ad > 0;
+            const ad = !c.espectador && entrada().ad > 0;
             if (ad) c.acelCuenta = -c.t < 1 ? c.acelCuenta + dt : -9;
             if (c.t >= 0) {
                 c.fase = 'corre'; c.t = 0;
@@ -519,20 +748,41 @@ export function crearCarrera(ctx) {
                 aviso(tx(TXT_CARRERA.ya), 0.8);
                 esc.animarLona('baja', c.tc);
                 const g = c.gs[c.yo];
-                if (c.acelCuenta > 0.1 && c.acelCuenta < 0.8) { g.turbo = M.fisicaDe(R, g).turbos[1]; aviso(tx(TXT_CARRERA.turbo), 1); sfx.turbo(); }
+                if (!c.espectador && c.acelCuenta > 0.1 && c.acelCuenta < 0.8) { g.turbo = M.fisicaDe(R, g).turbos[1]; aviso(tx(TXT_CARRERA.turbo), 1); sfx.turbo(); }
                 const yo = c;
                 setTimeout(() => { if (c === yo) semEl.classList.remove('visible'); }, 900);
             }
             return;
         }
         if (c.fase !== 'corre' && c.fase !== 'fin') return;
+        simular(dt);
+        if (c.fase === 'fin') esc.animarLona('agita', c.tc);
+        // Cierre: 5 s después de tu llegada (las que faltan quedan con el puesto que llevan) o al llegar todas.
+        // Mirando: cuando llegaron todos los jugadores
+        const humanasListas = c.on && c.gs.every((g, i) => c.on.dueno[i] === null || g.fin !== null);
+        if (c.fase === 'fin' && (c.t - c.tMeta > 5 || c.gs.every(g => g.fin !== null))) terminarCarrera();
+        else if (c.fase === 'corre' && (c.t > R.tope || (c.espectador && humanasListas))) { c.fase = 'fin'; c.tMeta = c.t; }
+    }
+    // Un paso de la carrera: física de las gatas que simula este equipo (todas si corres solo), objetos y red
+    function simular(dt) {
+        const R = c.R, P = c.P, on = c.on;
         c.t += dt;
         const extra = { gs: c.gs, W: c.W };
-        const ents = c.gs.map((g, i) => (i === c.yo && c.fase === 'corre' ? entrada() : M.entradaIA(g, R, P, c.rnd, c.gs[c.yo], extra)));
+        const mia = c.espectador ? null : c.gs[c.yo];
+        const ents = c.gs.map((g, i) => {
+            if (!localDe(i)) {
+                // Gata de otro jugador: el líder recibe cuándo usa su objeto y lo usa aquí
+                const u = on.lider && on.usar.get(i);
+                if (u) { g.objeto = u.o; g.ruleta = 0; return { usar: true, ad: u.atras ? -1 : 0 }; }
+                return {};
+            }
+            return g === mia && c.fase === 'corre' ? entrada() : M.entradaIA(g, R, P, c.rnd, mia || c.gs[c.yo], extra);
+        });
         for (let i = 0; i < c.gs.length; i++) {
             const g = c.gs[i];
+            if (!localDe(i)) { M.seguirRed(g, dt, P); continue; }
             const ev = M.pasoGata(g, ents[i], dt, R, P, c.t);
-            if (i !== c.yo) continue;
+            if (g !== mia || c.fase === 'final') continue;
             for (const e of ev) {
                 if (e === 'salto') sfx.salto();
                 else if (e === 'nivel') sfx.nivel(g.nivel);
@@ -543,34 +793,41 @@ export function crearCarrera(ctx) {
                 else if (e === 'aterriza') { sfx.aterriza(); c.sacudir = Math.max(c.sacudir, 0.1); }
                 else if (e === 'cae') { sfx.cae(); aviso(tx(TXT_CARRERA.cae), 1.6); }
                 else if (e === 'vuelta') { sfx.vuelta(); if (M.vueltaDe(g, R, P) === R.vueltas) { c.ultima = true; aviso(tx(TXT_CARRERA.ultima), 2); } }
-                else if (e === 'meta') { sfx.meta(); aviso(tx(TXT_CARRERA.meta), 2.2); c.fase = 'fin'; c.tMeta = c.t; esc.confeti(g.x, g.y, g.z); }
+                else if (e === 'meta') { sfx.meta(); aviso(tx(TXT_CARRERA.meta), 2.2); c.fase = 'fin'; c.tMeta = c.t; esc.confeti(g.x, g.y, g.z); if (on) red.meta(g.fin); }
             }
         }
-        // Objetos: cajas, ruleta, lo que se usa y a quién le pega
-        for (const e of M.pasoObjetos(c.W, c.gs, ents, dt, R, P, c.rnd)) {
-            const g = c.gs[e.k], mia = e.k === c.yo, mio = e.de === c.yo;
-            if (e.e === 'usa' && e.o === 'aspiradora') {
-                const delante = c.gs.filter(x => x.av > g.av && x.fin === null).reduce((a, x) => Math.max(a, x.av), g.av);
-                esc.lanzarAspiradora(g.av, delante + 8, R.objetos.aspiradora.segundos * 0.7);
-                sfx.aspiradora(); if (!mia) aviso(tx(TXT_CARRERA.aspiradora), 1.4);
-            }
-            if (e.e === 'usa' && e.o === 'hierba') for (let k = 0; k < 18; k++) esc.emitir(g.x, g.y + 0.8, g.z, (Math.random() - 0.5) * 8, 1 + Math.random() * 2, (Math.random() - 0.5) * 8, k % 2 ? '#5ac85a' : '#a8f07a', 0.8, 0.22, 2);
-            if (e.e === 'golpe') esc.estrellas(g.x, g.y, g.z);
-            if (mia) {
-                if (e.e === 'caja') sfx.caja();
-                else if (e.e === 'listo') sfx.listo();
-                else if (e.e === 'usa') { if (e.o === 'pluma') { sfx.turbo(); aviso(tx(TXT_CARRERA.turbo), 0.8); } else if (e.o !== 'aspiradora') sfx.lanza(); }
-                else if (e.e === 'golpe') { sfx.golpe(); aviso(tx(TXT_CARRERA.golpe), 1.2); c.sacudir = 0.35; }
-                else if (e.e === 'come') { sfx.come(); aviso(tx(TXT_CARRERA.come), 1.4); }
-                else if (e.e === 'reves') { sfx.reves(); aviso(tx(TXT_CARRERA.reves), 1.8); }
-                else if (e.e === 'susto') { aviso(tx(TXT_CARRERA.susto), 1.4); c.sacudir = 0.3; }
-            } else if (mio && (e.e === 'golpe' || e.e === 'come')) sfx.miau(); // le diste a otra
+        // Objetos: cajas, ruleta, lo que se usa y a quién le pega (con otros, lo decide el líder y lo reparte)
+        if (!on || on.lider) {
+            const evs = M.pasoObjetos(c.W, c.gs, ents, dt, R, P, c.rnd);
+            if (c.fase !== 'final') for (const e of evs) alObjeto(e);
+            if (on) { on.usar.clear(); red.objetos(evs.filter(e => e.e !== 'listo')); }
+        } else {
+            M.avanzarObjetos(c.W, dt, P);
+            if (mia) usarPropio(mia, ents[c.yo], dt);
         }
         M.chocarGatas(c.gs, R);
-        if (c.fase === 'fin') esc.animarLona('agita', c.tc);
-        // Cierre: 5 s después de tu llegada (las que faltan quedan con el puesto que llevan) o al llegar todas
-        if (c.fase === 'fin' && (c.t - c.tMeta > 5 || c.gs.every(g => g.fin !== null))) terminarCarrera();
-        else if (c.fase === 'corre' && c.t > R.tope) { c.fase = 'fin'; c.tMeta = c.t; }
+        if (on) enviarRed(dt);
+    }
+    // Lo que pasa con un objeto (e de pasoObjetos): efectos, sonidos y avisos
+    function alObjeto(e) {
+        const R = c.R, g = c.gs[e.k], mia = !c.espectador && e.k === c.yo, mio = !c.espectador && e.de === c.yo;
+        if (!g) return;
+        if (e.e === 'usa' && e.o === 'aspiradora') {
+            const delante = c.gs.filter(x => x.av > g.av && x.fin === null).reduce((a, x) => Math.max(a, x.av), g.av);
+            esc.lanzarAspiradora(g.av, delante + 8, R.objetos.aspiradora.segundos * 0.7);
+            sfx.aspiradora(); if (!mia) aviso(tx(TXT_CARRERA.aspiradora), 1.4);
+        }
+        if (e.e === 'usa' && e.o === 'hierba') for (let k = 0; k < 18; k++) esc.emitir(g.x, g.y + 0.8, g.z, (Math.random() - 0.5) * 8, 1 + Math.random() * 2, (Math.random() - 0.5) * 8, k % 2 ? '#5ac85a' : '#a8f07a', 0.8, 0.22, 2);
+        if (e.e === 'golpe') esc.estrellas(g.x, g.y, g.z);
+        if (mia) {
+            if (e.e === 'caja') sfx.caja();
+            else if (e.e === 'listo') sfx.listo();
+            else if (e.e === 'usa') { if (e.o === 'pluma') { sfx.turbo(); aviso(tx(TXT_CARRERA.turbo), 0.8); } else if (e.o !== 'aspiradora') sfx.lanza(); }
+            else if (e.e === 'golpe') { sfx.golpe(); aviso(tx(TXT_CARRERA.golpe), 1.2); c.sacudir = 0.35; }
+            else if (e.e === 'come') { sfx.come(); aviso(tx(TXT_CARRERA.come), 1.4); }
+            else if (e.e === 'reves') { sfx.reves(); aviso(tx(TXT_CARRERA.reves), 1.8); }
+            else if (e.e === 'susto') { aviso(tx(TXT_CARRERA.susto), 1.4); c.sacudir = 0.3; }
+        } else if (mio && (e.e === 'golpe' || e.e === 'come')) sfx.miau(); // le diste a otra
     }
 
     function actualizar(dt) {
@@ -580,21 +837,27 @@ export function crearCarrera(ctx) {
         if (c.pausa) return;
         c.tc += dt;
         // Valores en vivo del Estudio: si cambió la pista o los muebles, se vuelve a armar la escena y la carrera
-        if (ctx.datos && c.fase !== 'menu' && c.fase !== 'final') {
+        if (ctx.datos && c.fase !== 'menu' && c.fase !== 'sala' && c.fase !== 'final') {
             const R2 = { ...reglas(), dificultad: c.R.dificultad };
-            if (claveEscena(R2) !== escClave) { correr(); return; }
-            c.R = R2;
+            if (claveEscena(R2) !== escClave) { if (!c.on) { correr(); return; } } // (con otros la pista sigue la de la carrera)
+            else c.R = R2;
         }
-        if (c.fase === 'menu') {
+        if (c.fase === 'menu' || c.fase === 'sala') {
             // En el menú (y en «Ver la pista» del Estudio) también: si cambió la pista o los muebles, se rearma la sala
             const R2 = reglas();
-            if (claveEscena(R2) !== escClave) { prepararEscena(R2); c.R = R2; c.P = esc.P; c.gs = R2.gatas.map((d, k) => M.nuevaGata(esc.P, R2, d, k)); if (!c.vista) pintarMenu(); }
+            if (claveEscena(R2) !== escClave) { prepararEscena(R2); c.R = R2; c.P = esc.P; c.gs = R2.gatas.map((d, k) => M.nuevaGata(esc.P, R2, d, k)); if (c.fase === 'sala') pintarSala(); else if (!c.vista) pintarMenu(); }
             c.t += dt; esc.dibujar(c.gs, dt, c.tc); camaraMenu(); return;
         }
         if (c.fase === 'intro') { esc.dibujar(c.gs, dt, c.tc); esc.animarLona('quieta', c.tc); camaraIntro(); if (c.tc >= c.R.intro) empezarCuenta(); return; }
+        if (c.espectador && c.fase !== 'final') mirarEntrada();
         paso(dt);
         if (!c) return;
-        if (c.fase === 'final') { c.tFinal += dt; esc.actualizarParticulas(dt); esc.animarLona('agita', c.tc); camaraPodio(); return; }
+        if (c.fase === 'final') {
+            // Con otros, la carrera sigue por detrás hasta que lleguen todos (el líder sigue con la IA)
+            if (c.on && c.tFinal > 0) simular(dt); // (el cuadro en que llegaste ya simuló)
+            if (c.avisoHasta && c.tc > c.avisoHasta) { avisoEl.classList.remove('visible'); c.avisoHasta = 0; }
+            c.tFinal += dt; esc.actualizarParticulas(dt); esc.animarLona('agita', c.tc); camaraPodio(); return;
+        }
         esc.dibujar(c.gs, dt, c.tc, c.W);
         if (c.fase === 'fin') camaraMeta(dt); else camaraSeguir(dt);
         if (c.avisoHasta && c.tc > c.avisoHasta) { avisoEl.classList.remove('visible'); c.avisoHasta = 0; }

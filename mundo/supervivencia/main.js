@@ -1300,7 +1300,9 @@ async function arrancar(guardado, cx = null) {
                 datos: () => window.__venjy?.datosCarrera || json,
                 tactil: () => !!tactil,
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera(),
-                bloquear: () => bloquearEscena(true), liberar: liberarEscena
+                bloquear: () => bloquearEscena(true), liberar: liberarEscena,
+                // Con sala: la carrera entre jugadores (carrera-red.js sobre las actividades compartidas)
+                acts: () => actividades, yo: () => (coop ? coop.yoId : null), nombreJugador: id => (coop ? coop.nombreDe(id) : String(id))
             });
             return carrera;
         }).catch(err => { cargandoCarrera = null; console.error('No se pudo cargar la carrera de gatas', err); return null; });

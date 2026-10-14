@@ -121,6 +121,8 @@ export const CARRERA = {
     },
     camara: { distancia: 6, alto: 2.5, mira: 6, fov: 72, fovTurbo: 90, suave: 8 },
     tactil: { autoAcelerar: 1 },
+    // Varios jugadores (carrera-red.js): veces por segundo que cada corredor manda su gata y el líder la IA y los objetos
+    red: { envios: 12, paquetes: 10, hurra: 0.5 }, // hurra: segundos entre dos hurras del público
     premio: {
         puestos: [[['BACALAO_COCIDO', 4], ['LANA', 3], ['ESMERALDA', 2]], [['BACALAO_COCIDO', 3], ['LANA', 2]], [['BACALAO_COCIDO', 2], ['LANA', 1]]],
         resto: [['LANA', 1]]
@@ -529,6 +531,10 @@ function golpear(g, tipo, R) {
     else { g.aturdida = D.golpe || 1; g.v *= 0.35; }
     g.derrape = 0; g.carga = 0; g.nivel = -1; g.turbo = 0; g.inmune = O.inmune || 1;
 }
+function asustar(x, D, R) {
+    x.susto = D.segundos; x.v *= D.freno; x.derrape = 0; x.carga = 0; x.nivel = -1; x.turbo = 0;
+    if (x.suelo) { x.vy = R.gata.salto * (D.salto ?? 0.7); x.suelo = false; x.enAire = 0; x.trucoHecho = true; } // saltan del susto
+}
 function usarObjeto(W, gs, k, ent, R, pista, ev) {
     const g = gs[k], O = R.objetos, tipo = g.objeto, D = O[tipo] || {}, L = pista.largo;
     g.objeto = null; g.objetoT = 0;
@@ -556,8 +562,7 @@ function usarObjeto(W, gs, k, ent, R, pista, ev) {
         for (let j = 0; j < gs.length; j++) {
             const x = gs[j];
             if (x === g || x.fin !== null || x.cayendo > 0 || x.av <= g.av) continue;
-            x.susto = D.segundos; x.v *= D.freno; x.derrape = 0; x.carga = 0; x.nivel = -1; x.turbo = 0;
-            if (x.suelo) { x.vy = R.gata.salto * (D.salto ?? 0.7); x.suelo = false; x.enAire = 0; x.trucoHecho = true; } // saltan del susto
+            asustar(x, D, R);
             ev.push({ k: j, e: 'susto', o: tipo, de: k });
         }
     }
@@ -618,12 +623,80 @@ export function azar(semilla) {
     return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-// Estado de una gata para la red (los otros PR: varios jugadores)
-const r2 = n => Math.round(n * 100) / 100;
-export const empacar = g => ({ x: r2(g.x), y: r2(g.y), z: r2(g.z), w: r2(g.yaw), v: r2(g.v), a: r2(g.av), d: g.derrape, n: g.nivel, tb: g.turbo > 0 ? 1 : 0, f: g.fin === null ? null : r2(g.fin) });
+// ---------------------------------------------------------
+// Red (varios jugadores, carrera-red.js): cada corredor manda su gata; el líder, la IA y los objetos
+// ---------------------------------------------------------
+const r2 = n => Math.round(n * 100) / 100, r1 = n => Math.round(n * 10) / 10;
+const EFECTOS = ['aturdida', 'come', 'susto', 'reves', 'inmune'];
+export const empacar = g => {
+    const m = { x: r2(g.x), y: r2(g.y), z: r2(g.z), w: r2(g.yaw), v: r2(g.v), a: r2(g.av), s: r2(g.s), l: r2(g.lat), d: g.derrape, n: g.nivel, tb: g.turbo > 0 ? 1 : 0, su: g.suelo ? 1 : 0, f: g.fin === null ? null : r2(g.fin) };
+    if (!g.suelo) m.vy = r1(g.vy);
+    if (g.cayendo > 0) m.c = r2(g.cayendo);
+    if (EFECTOS.some(k => g[k] > 0)) m.fx = EFECTOS.map(k => r1(g[k] || 0));
+    return m;
+};
+// Copia directa (la primera vez, o en Node)
 export function desempacar(g, m) {
     if (!m) return g;
-    g.x = m.x; g.y = m.y; g.z = m.z; g.yaw = m.w; g.v = m.v; g.av = m.a; g.derrape = m.d | 0; g.nivel = m.n ?? -1; g.turbo = m.tb ? 0.1 : 0;
+    g.x = m.x; g.y = m.y; g.z = m.z; g.yaw = m.w;
+    return recibirRed(g, m);
+}
+// Llega el estado de una gata ajena: lo de a saltos se copia; la posición la sigue seguirRed (suave, sin tirones).
+// Los efectos de los objetos se quedan con el mayor: el que puso el líder no lo borra un estado que venía en camino.
+export function recibirRed(g, m) {
+    if (!m) return g;
+    g.red = m; g.redEdad = 0;
+    g.v = m.v; g.av = m.a; g.derrape = m.d | 0; g.nivel = m.n ?? -1; g.turbo = m.tb ? Math.max(g.turbo, 0.1) : 0;
+    if (m.s !== undefined) { g.s = m.s; g.lat = m.l; }
+    g.suelo = m.su !== 0; g.vy = m.vy || 0; g.cayendo = m.c || 0;
+    EFECTOS.forEach((k, i) => { g[k] = Math.max(g[k] || 0, m.fx ? m.fx[i] : 0); });
     if (m.f !== null && m.f !== undefined && g.fin === null) g.fin = m.f;
     return g;
+}
+// Cada cuadro, para las gatas ajenas: se acerca a donde estaría ahora (lo último que llegó + lo que avanzó desde
+// entonces, hasta 0,3 s) y los efectos se acaban solos. Si quedó muy lejos (cayó y la devolvieron), salta.
+export function seguirRed(g, dt, pista) {
+    for (const k of EFECTOS) if (g[k] > 0) g[k] = Math.max(0, g[k] - dt);
+    const m = g.red;
+    if (!m) return g;
+    g.redEdad = (g.redEdad || 0) + dt;
+    const e = Math.min(g.redEdad, 0.3), v = g.cayendo > 0 ? 0 : m.v;
+    const tx = m.x + Math.sin(m.w) * v * e, tz = m.z + Math.cos(m.w) * v * e, ty = m.y + (m.vy || 0) * e;
+    const k = 1 - Math.exp(-dt * 12);
+    if (Math.hypot(tx - g.x, tz - g.z) > 6) { g.x = tx; g.z = tz; g.y = ty; g.yaw = m.w; }
+    else { g.x += (tx - g.x) * k; g.z += (tz - g.z) * k; g.y += (ty - g.y) * k; g.yaw += angDif(m.w, g.yaw) * k; }
+    if (m.s !== undefined) g.s = envolver(m.s + v * e, pista.largo);
+    g.av = m.a + v * e;
+    return g;
+}
+// Lo que le pasa a tu gata por un suceso de los objetos que manda el líder (pasoObjetos allá): caja (sale la ruleta),
+// golpe, pescado, hierba o susto. Quien la maneja lo aplica a la suya.
+export function efectoObjeto(g, e, R) {
+    const O = R.objetos || {}, D = O[e.o] || {};
+    if (e.e === 'caja') { g.objeto = e.o; g.ruleta = O.ruleta; g.objetoT = 0; }
+    else if (e.e === 'golpe' || e.e === 'come') golpear(g, e.o, R);
+    else if (e.e === 'reves') g.reves = D.segundos;
+    else if (e.e === 'susto') asustar(g, D, R);
+    return g;
+}
+// Los objetos para la red (líder → todos): cajas escondidas y lo tirado en la pista
+export function empacarObjetos(W) {
+    const c = [];
+    W.cajas.forEach((x, i) => { if (x.hasta > W.t) c.push([i, r2(x.hasta)]); });
+    return { t: r2(W.t), c, s: W.sueltos.map(o => [o.id, OBJETOS.indexOf(o.tipo), r2(o.s), r2(o.lat), r2(o.y), r1(o.v || 0)]) };
+}
+export function aplicarObjetos(W, m) {
+    if (!W || !m) return W;
+    W.t = m.t;
+    for (const x of W.cajas) x.hasta = 0;
+    for (const [i, h] of m.c || []) if (W.cajas[i]) W.cajas[i].hasta = h;
+    W.sueltos = (m.s || []).map(([id, ti, s, lat, y, v]) => ({ id, tipo: OBJETOS[ti], s, lat, y, v }));
+    return W;
+}
+// Entre un paquete y otro: el reloj de las cajas y lo que rueda (ovillo) siguen solos
+export function avanzarObjetos(W, dt, pista) {
+    if (!W) return W;
+    W.t += dt;
+    for (const o of W.sueltos) if (o.v) { o.s = envolver(o.s + o.v * dt, pista.largo); o.y = enPista(pista, o.s).y; }
+    return W;
 }
