@@ -317,6 +317,29 @@ function jugarHastaFin(s, a, b) {
     ok(J.g3.mfin === 1 && J.g3.d.mirando === null, 'la mesa se cierra: quien mira deja de mirar');
 }
 
+// ---------- 8. Esperar rival en una mesa colocada (PR 5) ----------
+{
+    const mesa = { x: 10.5, y: 70, z: 20.5, g: 0 };
+    const s = crearSala(['h', 'g1', 'g2']);
+    const J = jugadores(s, ['h', 'g1', 'g2'], {
+        g1: { mazo: D.MAZOS.jugador, extra: 0, x: 10, y: 70, z: 22, sup: 'piso' }, g2: { mazo: D.MAZOS.jugador, extra: 0, x: 10, y: 70, z: 18, sup: 'tronco' }
+    });
+    ok(J.g1.d.esperar(mesa) && J.g1.d.fase === 'esperando', 'esperar en la mesa'); s.correr();
+    const lista = J.g2.d.mesasEsperando();
+    ok(lista.length === 1 && lista[0].d.g1.mesa.x === 10.5, 'los demás ven la mesa con alguien esperando');
+    ok(!J.g1.d.mesasEsperando().length, 'la propia espera no sale en la lista');
+    ok(J.g2.d.unirse(lista[0]), 'unirse'); s.correr();
+    ok(J.g1.inicio === 1 && J.g2.inicio === 1 && J.g1.d.rival === 'g2' && J.g2.d.rival === 'g1', 'se sientan y empiezan sin invitación');
+    ok(J.g1.lugar && J.g1.lugar.fija === 1 && J.g1.lugar.x === 10.5 && J.g1.lugar.x === J.g2.lugar.x && J.g1.lado === 0 && J.g2.lado === 1, 'juegan en esa mesa, cada uno en su lado');
+    ok(J.h.d.unirse(lista[0]) === true && (s.correr(), J.h.rechazos.includes('llena')), 'un tercero llega tarde: «llena»');
+    jugarHastaFin(s, J.g1, J.g2);
+    ok(A.huella(J.g1.d.estado) === A.huella(Du.espejo(J.g2.d.estado)), 'la partida en la mesa termina igual en los dos');
+    J.g1.d.salir(); J.g2.d.salir(); s.correr();
+    // Esperar y cancelar: la mesa queda libre
+    J.g1.d.esperar(mesa); s.correr(); J.g1.d.salir(); s.correr();
+    ok(!J.g2.d.mesasEsperando().length && J.g1.d.fase === 'libre', 'cancelar la espera libera la mesa');
+}
+
 // ---------- 6. La sala de verdad escucha los mensajes de las actividades ----------
 // coop.js solo se suscribe a los tipos de TIPOS: un manejador que no esté ahí nunca recibe nada (el reto no llegaba)
 {

@@ -24,7 +24,8 @@ export const TIPO_DUELO = 'duelo';
 export const idDuelo = retador => `duelo@${retador}`;
 // Valores base (Estudio → Mesa → «Duelo entre jugadores»): vida y mano inicial de cada uno (más las
 // cartas de más del mazo al azar); espera = segundos que se espera la respuesta del invitado
-export const DUELO = { vida: 4000, mano: 4, espera: 30 };
+// esperaMesa = segundos que se espera rival sentado a una mesa colocada (0 = sin límite)
+export const DUELO = { vida: 4000, mano: 4, espera: 30, esperaMesa: 0 };
 export const reglasDuelo = datos => ({ ...DUELO, ...((datos && datos.duelo) || {}) });
 // Aviso del reto en el HUD de quien lo recibe ({x} = quien reta)
 const t = (es, en) => ({ es, en });
@@ -38,6 +39,11 @@ export const TXT_RETO = {
     lejos: t('Acércate más a {x} para retarlo', 'Get closer to {x} to challenge them'),
     esperando: t('Esperando a que {x} acepte el duelo…', 'Waiting for {x} to accept the duel…'),
     cancelar: t('Cancelar (N)', 'Cancel (N)'),
+    // Mesa colocada (PR 5): esperar rival en ella o sentarse frente a quien espera
+    esperandoMesa: t('Esperando rival en la mesa… (otro jugador: clic derecho en ella)', 'Waiting for an opponent at the table… (another player: right-click it)'),
+    esperaEn: t('{x} espera rival en una mesa de duelo: clic derecho en ella para jugar', '{x} is waiting at a duel table: right-click it to play'),
+    sinSala: t('Para jugar en la mesa hace falta una sala con otro jugador', 'You need a room with another player to play at the table'),
+    lejosMesa: t('Te alejaste de la mesa: dejaste de esperar', 'You walked away from the table: no longer waiting'),
     rechazo: {
         no: t('{x} no quiso jugar.', '{x} declined.'),
         tiempo: t('{x} no respondió.', '{x} did not answer.'),
@@ -49,7 +55,8 @@ export const TXT_RETO = {
         otra: t('Ya estás en otra actividad.', 'You are already in another activity.'),
         salio: t('{x} salió de la sala.', '{x} left the room.'),
         cancelado: t('{x} canceló el reto.', '{x} called off the challenge.'),
-        cerrada: t('El duelo ya no está.', 'The duel is gone.')
+        cerrada: t('El duelo ya no está.', 'The duel is gone.'),
+        sinRival: t('Nadie llegó a la mesa.', 'Nobody came to the table.')
     }
 };
 
@@ -215,8 +222,9 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
             if (fase === 'jugando' && !jug.includes(rival)) { const fin = terminada(); terminar('abandono'); if (fin) avisar('revancha', 'fue'); return; }
             // El retador se fue (canceló o se le acabó la espera) antes de empezar
             if (fase === 'aceptando' && (act ? act.jug.includes(yo) && !jug.includes(rival) : antes && antes.jug.includes(yo))) { terminar(); avisar('rechazo', 'cancelado'); return; }
-            // Los dos dentro: el retador arma la partida
-            if (fase === 'retando' && act && jug.length === 2 && jug[0] === yo && jug.includes(rival)) {
+            // Los dos dentro: el retador (o quien esperaba en la mesa) arma la partida
+            if (fase === 'esperando' && act && jug.length === 2 && jug[0] === yo) rival = jug[1];
+            if ((fase === 'retando' || fase === 'esperando') && act && jug.length === 2 && jug[0] === yo && jug.includes(rival)) {
                 limpiarTimer();
                 const ini = armarInicio(act.d[jug[0]], act.d[jug[1]], reglas(), azar);
                 acts.evento(id, ini);
@@ -274,6 +282,25 @@ export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, az
             avisar('espera', para);
             const s = reglas().espera;
             if (s > 0) timer = setTimeout(() => { if (fase === 'retando') { terminar(); avisar('rechazo', 'tiempo'); } }, s * 1000);
+            return true;
+        },
+        // Esperar rival en una mesa colocada (PR 5): entro a mi duelo con esa mesa (m = { x, y, z, g }) sin invitar a nadie;
+        // quien llegue se sienta enfrente con unirse(). El duelo se juega en la mesa (lugarEnMesa)
+        esperar(m) {
+            if (fase !== 'libre' || !m) return false;
+            fase = 'esperando'; rival = null; id = idDuelo(yo);
+            acts.unir(id, TIPO_DUELO, 2, { ...propio(), mesa: m, espera: 1 });
+            const s = reglas().esperaMesa;
+            if (s > 0) timer = setTimeout(() => { if (fase === 'esperando') { terminar(); avisar('rechazo', 'sinRival'); } }, s * 1000);
+            return true;
+        },
+        // Mesas donde alguien espera rival (sus actividades, con la mesa en d[quien].mesa)
+        mesasEsperando() { return acts.lista.filter(a => a.k === TIPO_DUELO && a.jug.length === 1 && a.jug[0] !== yo && a.d[a.jug[0]] && a.d[a.jug[0]].espera); },
+        // Sentarse frente a quien espera (act = una de mesasEsperando): como aceptar un reto, sin invitación
+        unirse(act) {
+            if (fase !== 'libre' || !act || act.jug.length !== 1 || act.jug[0] === yo) return false;
+            fase = 'aceptando'; rival = act.jug[0]; id = act.id;
+            acts.unir(id, TIPO_DUELO, 2, { ...propio(), mesa: act.d[rival].mesa });
             return true;
         },
         aceptar(inv) {
