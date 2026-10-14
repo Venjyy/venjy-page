@@ -1183,6 +1183,30 @@ Dos etapas; un chat por punto; dentro de cada etapa, de arriba a abajo. **Regla 
 7. Cierre: validar todo y anotar lo que no se pudo pasar, con el motivo.
 - **Fin de la etapa B: tag `portafolio-v1`.**
 
+**Modelo por punto (revisado 2026-10-14; criterio: lo más barato que no baje la calidad).** Haiku solo no alcanza para ningún punto entero: sirve como subagente para lo mecánico y fácil de verificar. Sonnet basta cuando el diseño ya está decidido y hay un patrón que copiar; Opus, cuando hay que decidir arquitectura, red, rendimiento o física.
+
+| Punto | Modelo | Por qué |
+|---|---|---|
+| A3 · Pantalla de carga (PR 2) | **Sonnet** (effort medium) | El patrón ya está (`inicio.json`, pestaña Inicio); medir las etapas reales de `arrancar` en `main.js` es acotado. |
+| A3 · Fondo de cine detrás del menú (PR 3) | **Opus** + subagente Haiku para los planos | Cargar el mundo detrás del menú cambia la carga y el rendimiento; los planos los arma Haiku con la skill de animaciones (Sonnet si fallan). |
+| A3 · 7f-2 bloques con forma | **Opus** | Malla, colisión, luz y atlas en varios archivos: errores difíciles de ver. |
+| A3 · 7h-1 carrera de gatas | **Opus** + Haiku (Sonnet si la cámara queda grande) | Como dice su bloque: juego nuevo con cámara y modo grupo. |
+| A4 · 6d etapa 2 (navegación de verdad, 7j-1) | **Opus** | Búsqueda de caminos sobre el terreno y rutinas: algoritmo y rendimiento. |
+| A4 · 7i acompañantes | **Opus** | Depende de 6d etapa 2; toca rutinas, red y escenas. |
+| A5 · Lalo vs Moisés | **Opus** + Haiku/Sonnet para animaciones | Deja la base de peleas cuerpo a cuerpo que reusan otros. |
+| A5 · 7g-1 (lo que falte de la base común) | **Opus** | Sincronía de red (lockstep, anfitrión). |
+| A5 · 7g-2 iglú con varios · 7g-3 leña con varios | **Sonnet** | Diseño decidido; siguen el patrón de 7g-1. |
+| A5 · 7h-3 concierto | **Opus** + Haiku | Audio sincronizado entre equipos. |
+| A5 · Minijuego Salonas | **Opus** para definirlo con el dueño → **Sonnet** para hacerlo | No está especificado. |
+| A · Opcional 7f-3 lugares · añadidos dudosos | **Sonnet** | Contenido con patrón ya hecho. |
+| B1 · Inventario con el CLI | **Sonnet** | Leer y clasificar; pide criterio leve. |
+| B2 · Pasar escenas y gestos que caben | **Sonnet** + subagente Haiku | La paridad la mide la prueba (diferencia máxima 0); Sonnet revisa. |
+| B3 · Motor genérico del Estudio | **Opus** | Diseño de motor con todos los casos de §13. |
+| B4 · Pasar el resto | **Sonnet** + subagente Haiku | Mecánico una vez hecho el motor. |
+| B5 · Personajes en datos | **Opus** | Cambia cómo nace una persona en todo el juego. |
+| B6 · Misiones, objetos, recetas, tienda y lugares en JSON | **Sonnet** | Migraciones con esquema y pruebas. |
+| B7 · Cierre y tag | **Sonnet** | Validar y anotar. |
+
 ### Fase 2 · Pulido Minecraft
 - [x] Casas con volumen: paredes de tablones, techo del color del mapa, interior hueco, puerta de 2×3 con felpudo a ras del suelo (hecho 2026-10-06). Ventanas de vidrio ya puestas. Techo a dos aguas, chimenea con hogar, cama, librero, mesa con antorcha, cofre y antorchas en las paredes (hecho). La casa naranja de las gatas se deja sin muebles para que ellas circulen.
 - [x] Mina: el foso se convirtió en una plaza de piedra a ras del camino y un túnel de 28 bloques con marcos de madera, vetas de mineral y un bloque de oro y otro de diamante al fondo (`colocarDecor`, tipo `mina`). Vías, antorchas y cofre ya puestos.
