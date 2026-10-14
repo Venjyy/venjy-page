@@ -459,6 +459,17 @@ body.cartas-mesa-abierta.en-cine .franja-cine { height: 0; }
     .cartas-tuto-globo { top: 96px; left: calc(50% + 66px); width: calc(100vw - 156px); padding: 6px 8px; }
     .cartas-tuto-globo p { font-size: .7rem; }
 }
+/* Celular en horizontal (cartas-mesa.js, medidasHud; medidas en Estudio → Mesa → hudHorizontal): botones bajo el
+   marcador y la carta que lees a la derecha, para no tapar la vida, el tablero ni tu mano */
+.cartas-mesa-hud.horizontal .cartas-mesa-marcador { font-size: .72rem; padding: 5px 10px; }
+.cartas-mesa-hud.horizontal .cartas-mesa-aviso { top: 34px; font-size: .68rem; }
+.cartas-mesa-hud.horizontal .cartas-mesa-botones { left: 6px; top: var(--hh-arriba); transform: none; width: var(--hh-ancho); gap: 4px; }
+.cartas-mesa-hud.horizontal .cartas-mesa-botones .cartas-boton { min-height: var(--hh-boton); padding: 2px 4px; font-size: .68rem; }
+.cartas-mesa-hud.horizontal .cartas-mesa-lector { left: auto; right: var(--hh-derecha); top: var(--hh-arriba); transform: none; width: var(--hh-lector); }
+.cartas-mesa-hud.horizontal .cartas-mesa-lector .cartas-boton { min-height: var(--hh-boton); font-size: .68rem; }
+.cartas-mesa-hud.horizontal .cartas-reglas { left: calc(var(--hh-ancho) + 14px); top: var(--hh-arriba); width: calc(100vw - var(--hh-ancho) - var(--hh-lector) - 40px); max-height: calc(100vh - var(--hh-arriba) - 8px); overflow: auto; }
+.cartas-mesa-hud.horizontal .cartas-tuto-globo { top: var(--hh-arriba); width: min(420px, calc(100vw - var(--hh-ancho) - var(--hh-lector) - 40px)); padding: 6px 8px; }
+.cartas-mesa-hud.horizontal .cartas-tuto-globo p { font-size: .7rem; }
 /* Cartas con arte (cartas-arte.js): lienzo de 50×76 píxeles escalado por enteros
    (--px = 2 en la mesa, 3 en la mano); los textos se colocan sobre las ZONAS del lienzo. */
 .carta-pixel.con-arte { --px: 2px; --f-nombre: 7px; --f-familia: 6px; --f-texto: 6px; --f-numero: 8px; position: relative; flex: 0 0 auto; width: calc(var(--px) * 50); height: calc(var(--px) * 76); min-height: 0; margin: 0 auto; padding: 0; gap: 0; overflow: visible; background: transparent no-repeat 0 0 / 100% 100%; border: 0; box-shadow: none; image-rendering: pixelated; filter: drop-shadow(0 var(--px) 0 rgb(0 0 0 / .55)); }

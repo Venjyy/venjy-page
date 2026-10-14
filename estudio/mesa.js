@@ -51,12 +51,16 @@ const GRUPOS = [
     ['tronco', 'Duelo sobre un tronco', 'Duel on a log', { alto: 'alto del tronco', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],
     ['piso', 'Duelo en el piso', 'Duel on the ground', { alto: 'alto de las cartas', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],
     ['planoRival', 'Cámara que mira al otro jugador', 'Camera looking at the other player', { lado: 'a tu derecha', alto: 'desde tus ojos', z: 'hacia ti' }],
+    ['turnoRival', 'Turno del otro jugador: cámara', "Other player's turn: camera", { mirar: '1 = lo mira (cámara de arriba), 0 = tu vista del tablero' }],
+    // Celular en horizontal: dónde van los botones y la carta grande (px)
+    ['hudHorizontal', 'Celular horizontal: botones y carta', 'Phone landscape: buttons and card', { altoMax: 'vale hasta este alto de pantalla', arriba: 'desde arriba', ancho: 'ancho de los botones', boton: 'alto de cada botón', lectorAncho: 'ancho de la carta grande', lectorDerecha: 'margen derecho de la carta' }],
     ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);
 // Enteros con su tope (colección y mazo); el resto, según el valor
 const ENTEROS = { coleccion: { largo: [10, 40], copias: [1, 4], azarExtra: [0, 3], azarTodas: [0, 1], hechizosMin: [0, 40], hechizosMax: [0, 40] }, coleccionInicial: {},
-    duelo: { vida: [500, 20000], mano: [1, 7], espera: [0, 120] },
+    duelo: { vida: [500, 20000], mano: [1, 7], espera: [0, 120] }, turnoRival: { mirar: [0, 1] },
+    hudHorizontal: { altoMax: [300, 900], arriba: [0, 200], ancho: [90, 260], boton: [20, 60], lectorAncho: [90, 320], lectorDerecha: [0, 200] },
     tiendaCartas: { activa: [0, 1], sobrePrecio: [1, 64], sobreCartas: [1, 10], sobreNuevas: [0, 10], sobreHechizos: [0, 10], sueltaTope: [0, 1], mesaPrecio: [0, 64] }, preciosCartas: {}, pesosSobre: {} };
 // Sin tope propio: 0-4 (copias); precios hasta 10 esmeraldas y pesos hasta 5 (con el número se puede poner más)
 const TOPE = { preciosCartas: [0, 10], pesosSobre: [0, 5] };

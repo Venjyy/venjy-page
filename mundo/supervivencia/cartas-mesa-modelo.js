@@ -64,6 +64,13 @@ export const MESA = {
     piso: { alto: 0.02, ojos: 1.0, asiento: 0.5, mano: 0.45 },
     // Turno del otro jugador: la cámara lo mira (como planoLucho). alto y mira[1] van desde tus ojos (sentado o de pie)
     planoRival: { lado: 0.3, alto: 0.1, z: 0.55, mira: [0, -0.1, -1.0] },
+    // mirar = 1: en el turno del otro jugador la cámara lo mira (planoRival) y va a la mesa cuando juega (planoMesa);
+    // 0: te quedas con tu vista del tablero
+    turnoRival: { mirar: 0 },
+    // Celular en horizontal (pantalla de poco alto): botones a la izquierda bajo el marcador y la carta que lees a la
+    // derecha, en px. arriba = desde el borde de arriba; ancho y boton = ancho de la columna y alto de cada botón;
+    // lectorAncho y lectorDerecha = ancho de la carta grande y margen derecho; altoMax = alto de pantalla hasta el que vale
+    hudHorizontal: { altoMax: 520, arriba: 56, ancho: 150, boton: 30, lectorAncho: 150, lectorDerecha: 10 },
     // Animaciones (anim, duraciones, sigue, colores): ver cartas-anim-modelo.js
     ...ANIM
 };
