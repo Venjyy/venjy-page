@@ -285,6 +285,30 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
     ok(r3.w.estado === 'llego', `hueco tapado a 2 bloques: llegó igual (${r3.w.estado})`);
 }
 
+{
+    // Lejos sobre una loma: a mitad de un tramo suavizado la altura sigue al terreno (antes quedaba la del punto
+    // anterior y, al acercarse el jugador, el caminante se rendía en el aire)
+    const C = juguete(200, 20);
+    for (let i = 0; i < 4; i++) C.caja(60 + i, 1, 0, 140 - i, 1 + i, 19, SOLIDO);
+    const alto = x => { const bx = Math.floor(x); return bx >= 60 && bx <= 140 ? 1 + Math.min(4, bx - 59, 141 - bx) : 1; };
+    const cuerpo = { x: 2.5, y: 1, z: 10.5, yaw: 0 };
+    let peor = 0;
+    const r = caminarHasta(C, cuerpo, { x: 190.5, y: 1, z: 10.5 }, { detalle: false, alCuadro() { peor = Math.max(peor, Math.abs(cuerpo.y - alto(cuerpo.x))); } });
+    ok(r.w.estado === 'llego' && peor <= 1, `lejos sobre una loma: pisa el terreno (${r.w.estado}, desfase ${peor})`);
+    // Viene de lejos en el aire y pasa a cerca: baja al suelo y sigue (no se rinde flotando)
+    const C2 = juguete();
+    const c2 = { x: 5.5, y: 6, z: 5.5, yaw: 0 };
+    const r2 = caminarHasta(C2, c2, { x: 25.5, y: 1, z: 5.5 });
+    ok(r2.w.estado === 'llego' && c2.y === 1, `en el aire al pasar a cerca: baja al suelo y llega (${r2.w.estado}, y ${c2.y})`);
+    ok(N.inicio(C2, { x: 5.5, y: 6, z: 5.5 }).y === 1, 'inicio: desde el aire parte del suelo de abajo');
+    // Quieto en el aire (llegó a saltos): asentar lo baja; sentado en un bloque no lo mueve
+    const w = N.crearCaminante(N.crearNavegador(C2), c2);
+    c2.y = 4;
+    for (let i = 0; i < 60; i++) w.asentar(1 / 60);
+    ok(c2.y === 1, `asentar: del aire al suelo (y ${c2.y})`);
+    C2.poner(5, 1, 5, SOLIDO); c2.y = 1;
+    ok(!w.asentar(1 / 60) && c2.y === 1, 'asentar: metido en un bloque (sentado en un tronco) no lo mueve');
+}
 // ---------------------------------------------------------
 // 4. Terreno real de la supervivencia
 // ---------------------------------------------------------
@@ -332,6 +356,34 @@ const L = k => T.lugares.find(l => l.clave === k);
     const rB = caminarHasta(C, cuerpo, { x: b.x, y: b.y, z: b.z }, { max: 60 * 400 });
     ok(rB.w.estado === 'llego' && rB.malos === 0, `campamento → atalaya cruzando lo cargado y lo no cargado (${rB.w.estado}, ${rB.malos})`);
     console.log(`  Hadad → Boris: ${rB.w.distancia.toFixed(0)} bloques caminados en ${rB.t.toFixed(0)} s`);
+
+    // Visitas largas con el jugador acercándose a mitad (6d etapa 2, PR 2): va lejos a saltos con el mapa de alturas y, al
+    // pasar a cerca (se cargan los chunks alrededor), sigue caminando y llega con piso bajo los pies (antes quedaba en el
+    // aire o metido en el follaje y se rendía ahí)
+    const viaje = (de, aQuien, corte) => {
+        chunks.clear();
+        const o = sitio(de), d0 = sitio(aQuien);
+        if (!(o.y >= 1)) Object.assign(o, N.cercaPisable(C, o.x, undefined, o.z)); // Braulio y Conejeros: y = «suelo»
+        const destino = N.cercaPisable(C, d0.x + 1.5, undefined, d0.z);
+        const cargar = (x, z, r) => { const a0 = Math.floor(x / CH), b0 = Math.floor(z / CH); for (let cx = a0 - r; cx <= a0 + r; cx++) for (let cz = b0 - r; cz <= b0 + r; cz++) if (!chunks.has(cx + ',' + cz)) chunks.set(cx + ',' + cz, V.llenarChunk(T, cx, cz)); };
+        const nav = N.crearNavegador(C), c = { ...o, yaw: 0 }, w = N.crearCaminante(nav, c);
+        w.ir(destino);
+        let total = null, cerca = false;
+        for (let i = 0; i < 60 * 900 && w.estado !== 'sin-camino'; i++) {
+            nav.actualizar();
+            if (!cerca && w.camino && total === null) total = w.restante;
+            if (!cerca && total && (w.restante < total * (1 - corte) || w.estado === 'llego')) { cerca = true; cargar(c.x, c.z, 4); cargar(destino.x, destino.z, 4); }
+            if (cerca && i % 30 === 0) cargar(c.x, c.z, 3);
+            w.actualizar(1 / 60, { detalle: cerca });
+            if (cerca && w.estado === 'llego') break;
+        }
+        const abajo = C.celda(Math.floor(c.x), Math.round(c.y) - 1, Math.floor(c.z));
+        return { estado: w.estado, piso: abajo === N.SOLIDO || abajo === N.AGUA };
+    };
+    for (const [de, aQuien, corte] of [['andy', 'braulio', 0.4], ['andy', 'braulio', 0.85], ['conejeros', 'braulio', 0.7]]) {
+        const r = viaje(de, aQuien, corte);
+        ok(r.estado === 'llego' && r.piso, `${de} → ${aQuien}, el jugador se acerca al ${corte * 100}% del viaje: llega con piso (${r.estado}, ${r.piso ? 'piso' : 'EN EL AIRE'})`);
+    }
 }
 
 // ---------------------------------------------------------

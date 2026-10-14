@@ -16,6 +16,8 @@
         "gesto": { "description": "Segundos que dura el gesto al llegar (y el de quien contesta).", "type": "number", "minimum": 0.5, "maximum": 10 },
         "frase": { "description": "Segundos que se ve cada globo del saludo.", "type": "number", "minimum": 1, "maximum": 12 },
         "respuesta": { "description": "Segundos después de llegar en que contesta quien recibe la visita.", "type": "number", "minimum": 0, "maximum": 8 },
+        "girar": { "description": "Segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse).", "type": "number", "minimum": 0.1, "maximum": 3 },
+        "cuello": { "description": "Cuánto puede girar el cuello quien recibe para mirar a quien llegó (radianes; 1,1 ≈ 63°).", "type": "number", "minimum": 0.2, "maximum": 1.6 },
         "radioSaludo": { "description": "El saludo (gestos y globos) solo se dibuja con el jugador a menos de esto, en bloques.", "type": "number", "minimum": 4, "maximum": 80 },
         "saludoLejos": { "description": "1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo.", "type": "integer", "minimum": 0, "maximum": 1 },
         "anticipar": { "description": "1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale justo a la hora `de` (entre 0 y 1, parte del viaje).", "type": "number", "minimum": 0, "maximum": 1.5 },

@@ -32,14 +32,20 @@ export const TEXTOS_RUTINA = {
 const PARTES = { cx: ['cuello', 'x'], cy: ['cuello', 'y'], cz: ['cuello', 'z'], bDx: ['brazoD', 'x'], bDz: ['brazoD', 'z'], bIx: ['brazoI', 'x'], bIz: ['brazoI', 'z'], inc: ['cuerpo', 'x'], rz: ['cuerpo', 'z'] };
 const suave = u => u * u * (3 - 2 * u);
 const lim01 = v => Math.max(0, Math.min(1, v));
-// Gesto encima de la pose que ya tiene (solo de la cintura para arriba: sirve sentado o de pie). cy se suma (mirada).
-export function ponerGesto(p, meta, w) {
+// Gesto encima de la pose que ya tiene (solo de la cintura para arriba: sirve sentado o de pie). El giro del cuello
+// del gesto (cy) va sobre `cyBase` (hacia dónde mira: a quien visita o a quien lo visita).
+export function ponerGesto(p, meta, w, cyBase = 0) {
     if (!meta || w <= 0) return;
     for (const [k, [parte, eje]] of Object.entries(PARTES)) {
         if (meta[k] === undefined || !p[parte]) continue;
-        const r = p[parte].rotation;
-        r[eje] = k === 'cy' ? r[eje] + meta[k] * w : r[eje] + (meta[k] - r[eje]) * w;
+        const r = p[parte].rotation, obj = k === 'cy' ? cyBase + meta[k] : meta[k];
+        r[eje] += (obj - r[eje]) * w;
     }
+}
+// Giro del cuello (relativo a su cuerpo) para mirar de n a o, con tope para no torcerse
+export function mirarA(n, o, tope = 1.1) {
+    const a = Math.atan2(o.x - n.x, o.z - n.z) - (n.yaw || 0);
+    return Math.max(-tope, Math.min(tope, Math.atan2(Math.sin(a), Math.cos(a))));
 }
 // Peso del gesto: entra y sale en 0,3 s (o un sexto del tramo si es corto)
 const peso = (t, T) => { if (t < 0 || t > T) return 0; const r = Math.min(0.3, T / 6); return suave(lim01(Math.min(t / r, (T - t) / r))); };
@@ -96,7 +102,10 @@ export function crearRutinas(ctx) {
     // ¿Puede salir ahora? Sin escena, sin minijuego ni ronda y con quien visita en su sitio (si no, espera)
     function puede(n, v) {
         if (n.escena || (ctx.libre && !ctx.libre(n))) return false;
-        if (v.visita) { const o = persona(v.visita); if (!o || paseos.fuera(v.visita)) return false; }
+        if (v.visita) {
+            const o = persona(v.visita);
+            if (!o || paseos.fuera(v.visita) || (R[v.visita] && R[v.visita].estado === 'acompanando')) return false;
+        }
         return true;
     }
     function salir(c, v) {
@@ -119,7 +128,8 @@ export function crearRutinas(ctx) {
         const n = persona(c);
         if (n && n.paseo) n.paseo.texto = '';
         paseos.adornar && paseos.adornar(c, null);
-        if (v && v.visita) { const o = persona(v.visita); if (o && o.visita && o.visita.de === c) delete o.visita; }
+        // Quien recibía deja de mirarlo de a poco (el gancho se saca solo al terminar la salida)
+        if (v && v.visita) { const o = persona(v.visita); if (o && o.visita && o.visita.de === c) { o.visita.fin = true; o.visita.texto = ''; } }
     }
     function empezarSaludo(c, v) {
         const A = ajustesRutinas(), n = persona(c);
@@ -133,17 +143,28 @@ export function crearRutinas(ctx) {
             const g = v.llegada.gesto && gestoDe && gestoDe(v.llegada.gesto);
             if (g) ponerGesto(p, g(lim01(r.t / A.gesto), r.t, { s: false, j: false, esc: n.escala || 1 }), peso(r.t, A.gesto));
         });
-        // Quien recibe: gancho n.visita (amigos.js lo dibuja encima de su animación de siempre y usa su texto de globo)
+        // Quien recibe: gancho n.visita mientras dure la visita (amigos.js lo dibuja encima de su animación de siempre y
+        // usa su texto de globo): gira la cabeza hacia quien llegó, contesta con su gesto y su frase y lo sigue mirando
         const o = v.visita && persona(v.visita);
-        if (o && !o.escena && (v.respuesta.gesto || v.respuesta.texto)) {
-            o.visita = {
-                de: c, texto: '',
-                animar() {
+        if (o) {
+            const h = {
+                de: c, texto: '', w: 0, fin: false, base: 0, escrito: NaN,
+                animar(dt = 1 / 60) {
+                    h.w = lim01(h.w + (h.fin ? -dt : dt) / A.girar);
+                    const cu = o.p.cuello && o.p.cuello.rotation;
+                    // Giro de su animación de siempre: si no tocó el cuello desde el cuadro anterior, el que tenía antes de mirarlo
+                    if (cu && cu.y !== h.escrito) h.base = cu.y;
+                    if (h.fin && h.w <= 0) { if (cu) cu.y = h.base; if (o.visita === h) delete o.visita; return; }
+                    if (!cu) return;
+                    const cy = mirarA(o, n, A.cuello);
+                    cu.y = h.base + (cy - h.base) * suave(h.w);
                     const t = r.t - A.respuesta;
-                    const g = v.respuesta.gesto && gestoDe && gestoDe(v.respuesta.gesto);
-                    if (g && t >= 0) ponerGesto(o.p, g(lim01(t / A.gesto), t, { s: false, j: false, esc: o.escala || 1 }), peso(t, A.gesto));
+                    const g = !h.fin && v.respuesta.gesto && gestoDe && gestoDe(v.respuesta.gesto);
+                    if (g && t >= 0) ponerGesto(o.p, g(lim01(t / A.gesto), t, { s: false, j: false, esc: o.escala || 1 }), peso(t, A.gesto), cy);
+                    h.escrito = cu.y;
                 }
             };
+            o.visita = h;
         }
     }
     // Globos del saludo según el tiempo desde que llegó
@@ -158,7 +179,6 @@ export function crearRutinas(ctx) {
         if (o && o.visita && o.visita.de === c) {
             const t = r.t - A.respuesta;
             o.visita.texto = cerca && v.respuesta.texto && t >= 0 && t < A.frase ? L(v.respuesta.texto) : '';
-            if (t > Math.max(A.frase, A.gesto)) delete o.visita;
         }
         if (r.forzada && r.t > A.respuesta + Math.max(A.frase, A.gesto) + 4) volver(c); // la prueba del Estudio termina sola
     }
@@ -175,6 +195,8 @@ export function crearRutinas(ctx) {
             if (r.estado === 'en-sitio') {
                 if (fuera) continue; // otro lo movió (/caminar, el Estudio): no lo pelea
                 if (v && puede(n, v)) salir(c, v);
+            } else if ((r.estado === 'yendo' || r.estado === 'visitando') && v && v.visita && R[v.visita] && R[v.visita].estado === 'acompanando') {
+                volver(c); // a quien iba a ver se lo llevó el jugador: se devuelve
             } else if (r.estado === 'yendo') {
                 if (!fuera) { r.estado = 'en-sitio'; r.v = null; } // lo mandaron a su sitio de golpe (volverTodos)
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
@@ -203,10 +225,13 @@ export function crearRutinas(ctx) {
         },
         // 7j-1: el jugador se lo lleva (7i lo mueve con paseos.js). La rutina queda en pausa hasta retomar().
         acompanar(c) {
-            if (!persona(c)) return false;
+            const n = persona(c);
+            if (!n) return false;
             const r = estadoDe(c);
             terminarSaludo(c);
             r.estado = 'acompanando'; r.v = null; r.forzada = null;
+            // Quienes venían a verlo se devuelven (en el próximo `revisar`); quien lo visitaba deja de mirarlo
+            if (n.visita) { n.visita.fin = true; n.visita.texto = ''; }
             return true;
         },
         // Retoma la rutina en el tramo que toca según la hora: si a esta hora tenía visita va directo allá; si no, a su sitio
@@ -223,9 +248,9 @@ export function crearRutinas(ctx) {
         probar(claveVisita) {
             const v = visitas()[claveVisita];
             if (!v || !persona(v.quien)) return false;
+            if (v.visita && R[v.visita] && R[v.visita].estado === 'acompanando') return false; // a quien va a ver lo tiene el jugador
             const r = estadoDe(v.quien);
-            if (r.estado === 'acompanando') return false;
-            terminarSaludo(v.quien);
+            terminarSaludo(v.quien); // también saca de «acompanando»: lo pidió el dueño (Estudio o /rutina)
             r.forzada = claveVisita;
             if (!salir(v.quien, v)) { r.forzada = null; return false; }
             return true;

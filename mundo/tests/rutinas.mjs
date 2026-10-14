@@ -137,12 +137,17 @@ const VIS = {
     // Gesto encima de la pose
     const antes = P.ana.p.brazoD.rotation.x;
     ok(antes === 0, 'pose de partida');
+    // Quien recibe gira la cabeza hacia quien llegó (Ana está en x 0, Beto en x 10: mira hacia -x, con tope)
+    P.beto.visita.animar(1);
+    ok(P.beto.p.cuello.rotation.y < -0.5, `quien recibe mira a quien llegó, con su gesto encima (cuello ${P.beto.p.cuello.rotation.y.toFixed(2)})`);
     paso(A.frase + A.gesto);
-    ok(P.ana.paseo.texto === '' && !P.beto.visita, 'el saludo termina: sin globos y sin gancho en quien recibe');
+    ok(P.ana.paseo.texto === '' && P.beto.visita && P.beto.visita.texto === '', 'el saludo termina: sin globos; quien recibe lo sigue mirando');
     ok(r.texto('ana') === 'Está de visita donde BETO.', `panel de visita: «${r.texto('ana')}»`);
     ok(r.texto('ana', 'en').startsWith('Visiting BETO'), `panel en inglés: «${r.texto('ana', 'en')}»`);
     reloj.h = 12; paso();
     ok(r.estado('ana').estado === 'volviendo' && llamadas.some(l => l[0] === 'volver' && l[1] === 'ana'), 'a las 12 vuelve a su sitio');
+    for (let i = 0; i < 5 && P.beto.visita; i++) P.beto.visita.animar(0.5);
+    ok(!P.beto.visita && Math.abs(P.beto.p.cuello.rotation.y) < 1e-6, 'al irse, quien recibía vuelve la cabeza y suelta el gancho');
     ok(r.texto('ana').startsWith('Va de vuelta'), `panel de vuelta: «${r.texto('ana')}»`);
     paseos.casa('ana'); paso();
     ok(r.estado('ana').estado === 'en-sitio' && r.texto('ana') === '', 'de vuelta en su sitio, sin línea en el panel');
@@ -192,6 +197,18 @@ const VIS = {
     ok(!r.acompanar('nadie'), 'acompanar a alguien que no existe: false');
 }
 {
+    // Acompañando: no lo visitan; si ya iban, se devuelven; Probar no lo pisa
+    const { r, P, reloj, paso } = armar({ visitas: VIS, hora: 10 });
+    r.acompanar('beto'); paso();
+    ok(r.estado('ana').estado === 'en-sitio', 'a quien te acompaña no lo van a ver');
+    ok(!r.probar('ana-beto'), 'probar: tampoco si te acompaña');
+    r.retomar('beto'); paso();
+    ok(r.estado('ana').estado === 'yendo', 'al soltarlo, la visita sigue');
+    r.acompanar('beto'); paso();
+    ok(r.estado('ana').estado === 'volviendo', 'se lo llevan mientras iba: se devuelve');
+    reloj.h = 10; P.beto.escena = null;
+}
+{
     // «Probar ahora» (Estudio): sin mirar la hora, llega, saluda y vuelve solo
     const { r, paseos, paso, reloj } = armar({ visitas: VIS, hora: 20 });
     ok(r.probar('ana-beto') && r.estado('ana').estado === 'yendo' && r.estado('ana').forzada, 'probar: sale aunque no sea la hora');
@@ -211,7 +228,11 @@ const VIS = {
     const p = rig();
     p.cuello.rotation.y = 0.2;
     R.ponerGesto(p, { bDx: -2, cy: 0.5, nada: 3 }, 0.5);
-    ok(Math.abs(p.brazoD.rotation.x + 1) < 1e-9 && Math.abs(p.cuello.rotation.y - 0.45) < 1e-9, 'ponerGesto: mezcla con el peso y suma la mirada');
+    ok(Math.abs(p.brazoD.rotation.x + 1) < 1e-9 && Math.abs(p.cuello.rotation.y - 0.35) < 1e-9, 'ponerGesto: mezcla con el peso');
+    p.cuello.rotation.y = 0;
+    R.ponerGesto(p, { cy: 0.2 }, 1, -0.5);
+    ok(Math.abs(p.cuello.rotation.y + 0.3) < 1e-9, 'ponerGesto: el giro del gesto va sobre hacia dónde mira');
+    ok(Math.abs(R.mirarA({ x: 0, z: 0, yaw: 0 }, { x: 0, z: 5 })) < 1e-9 && R.mirarA({ x: 0, z: 0, yaw: 0 }, { x: 0, z: -5 }, 1.1) === 1.1, 'mirarA: de frente 0; atrás, el tope');
     R.ponerGesto(p, { bDx: 5 }, 0);
     ok(Math.abs(p.brazoD.rotation.x + 1) < 1e-9, 'ponerGesto: peso 0 no toca nada');
 }

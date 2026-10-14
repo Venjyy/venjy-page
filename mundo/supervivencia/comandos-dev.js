@@ -390,7 +390,8 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
             }
         };
     }
-    // /rutina <persona> [acompanar|retomar|cortar|<visita>] (rutinas.js): sin más, su estado; con una visita, la hace ya
+    // /rutina <persona> [acompanar|retomar|cortar|<visita>] (rutinas.js): sin más, su estado; con una visita, la hace ya.
+    // acompanar corta su rutina y lo trae a tu lado una vez (seguirte de verdad es 7i); retomar lo devuelve a su horario
     const rutinas = amistad && amistad.rutinas;
     if (paseos && rutinas) {
         cmds['/rutina'] = {
@@ -400,7 +401,7 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
                 const [quien, accion] = sinTildes(arg).split(/\s+/).filter(Boolean);
                 const c = quien && paseos.personas().find(a => a === quien || a.startsWith(quien));
                 if (!c) { hud.mensaje(JSON.stringify(rutinas.resumen()), 6); return; }
-                const ok = !accion ? true : accion === 'acompanar' ? rutinas.acompanar(c) : accion === 'retomar' ? rutinas.retomar(c) : accion === 'cortar' ? (rutinas.cortar(c), true) : rutinas.probar(accion);
+                const ok = !accion ? true : accion === 'acompanar' ? rutinas.acompanar(c) && paseos.ir(c, 'aqui') : accion === 'retomar' ? rutinas.retomar(c) : accion === 'cortar' ? (rutinas.cortar(c), true) : rutinas.probar(accion);
                 const e = rutinas.estado(c);
                 hud.mensaje(ok ? `${c}: ${e.estado}${e.visita ? ' · ' + e.visita : ''}` : (idioma === 'en' ? `Could not: ${accion}` : `No se pudo: ${accion}`), 5);
             }

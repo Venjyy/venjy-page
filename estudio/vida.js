@@ -51,6 +51,8 @@ const RUTINA = {
     gesto: ['el gesto al llegar dura (s)', 'arrival gesture lasts (s)', 0.5, 10, 0.1],
     frase: ['cada globo del saludo dura (s)', 'each greeting bubble lasts (s)', 1, 12, 0.5],
     respuesta: ['quien recibe contesta tras (s)', 'the host answers after (s)', 0, 8, 0.1],
+    girar: ['quien recibe gira la cabeza en (s)', 'the host turns their head in (s)', 0.1, 3, 0.1],
+    cuello: ['quien recibe gira el cuello hasta (rad)', 'the host turns their neck up to (rad)', 0.2, 1.6, 0.05],
     radioSaludo: ['el saludo se ve a menos de (bloques)', 'greeting shows within (blocks)', 4, 80, 1],
     saludoLejos: ['lejos el saludo pasa igual (1 sí, 0 no)', 'far away the greeting still happens (1 yes, 0 no)', 0, 1, 1],
     anticipar: ['sale antes según la distancia (1 = llega a la hora; 0 = sale a la hora)', 'leaves early by distance (1 = arrives on time; 0 = leaves on time)', 0, 1.5, 0.05],

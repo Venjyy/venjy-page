@@ -58,7 +58,9 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
     function junto(n, otra) {
         const dx = n.x - otra.x, dz = n.z - otra.z, d = Math.hypot(dx, dz) || 1;
         const r = ajustesPaseo().distanciaVisita;
-        return { x: otra.x + dx / d * r, y: otra.y, z: otra.z + dz / d * r };
+        // Sin su altura todavía (Braulio y Conejeros buscan su suelo al cargarse su chunk: `cargado` false): sin y,
+        // cercaPisable usa el mapa de alturas
+        return { x: otra.x + dx / d * r, y: otra.cargado === false ? undefined : otra.y, z: otra.z + dz / d * r };
     }
 
     function soltar(a) {
@@ -156,7 +158,9 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
                 cuerpo.yaw += Math.atan2(Math.sin(a.casa.yaw - cuerpo.yaw), Math.cos(a.casa.yaw - cuerpo.yaw)) * u;
                 if (u >= 1) { n.x = a.casa.x; n.y = a.casa.y; n.z = a.casa.z; n.yaw = a.casa.yaw; soltar(a); continue; }
             } else if (w.estado === 'llego' || w.estado === 'quieto') {
-                // De pie allá: gira hacia quien mira
+                // De pie allá: con piso bajo los pies (si llegó a saltos, lejos, puede haber quedado en el aire)
+                if (dJ < Math.min(A.radioDetalle, RADIO_VISIBLE)) w.asentar(dt);
+                // Gira hacia quien mira
                 const o = a.mirar === 'jugador' ? (dJ < paseo.mirarJugador * 3 ? jugador.pos : null) : a.mirar ? persona(a.mirar) : (dJ < paseo.mirarJugador ? jugador.pos : null);
                 if (o) {
                     a.mirarYaw = Math.atan2(o.x - cuerpo.x, o.z - cuerpo.z);

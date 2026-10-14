@@ -138,6 +138,19 @@ function deP(C, A, x, y, z) {
     }
     return true;
 }
+// Suelo donde se puede estar de pie en la columna (x, z), el más cercano a yRef (primero a esa altura, luego uno
+// arriba, uno abajo…) hasta `alcance` bloques. Para dejar en el piso a quien quedó en el aire (lejos avanza a
+// saltos y entre dos puntos del camino no mira el terreno). NaN si no hay.
+export function suelo(C, x, z, yRef, op = ajustes, alcance = 24) {
+    const bx = Math.floor(x), bz = Math.floor(z), y0 = Math.round(yRef);
+    for (let k = 0; k <= alcance; k++) {
+        if (y0 - k >= 1 && deP(C, op, bx, y0 - k, bz)) return y0 - k;
+        if (k && deP(C, op, bx, y0 + k, bz)) return y0 + k;
+    }
+    return NaN;
+}
+// ¿Tiene aire (o agua) bajo los pies? Sentado en un tronco o metido en un bloque no cuenta: solo el aire de verdad
+const enElAire = (C, x, y, z) => { const c = C.celda(Math.floor(x), Math.round(y) - 1, Math.floor(z)); return c === LIBRE || c === AGUA; };
 // Celda de partida: la suya a su altura; si está metido en algo (sentado en un tronco, en una silla), una vecina a
 // la misma altura; si no, la suya un poco más arriba o abajo. null si no hay dónde pararse.
 export function inicio(C, desde, op = ajustes) {
@@ -145,7 +158,10 @@ export function inicio(C, desde, op = ajustes) {
     if (deP(C, op, x, y, z)) return { x, y, z };
     for (const [dx, dz] of DIRS) if (deP(C, op, x + dx, y, z + dz)) return { x: x + dx, y, z: z + dz };
     const ya = apoyo(C, desde.x, desde.y, desde.z, op);
-    return Number.isFinite(ya) ? { x, y: ya, z } : null;
+    if (Number.isFinite(ya)) return { x, y: ya, z };
+    if (!enElAire(C, desde.x, desde.y, desde.z)) return null;
+    const ys = suelo(C, desde.x, desde.z, desde.y, op); // quedó en el aire: parte desde el suelo de abajo (o de arriba)
+    return Number.isFinite(ys) ? { x, y: ys, z } : null;
 }
 
 // Punto pisable más cercano a (x, y, z), en anillos hasta `radioPisable` bloques y unos bloques arriba o abajo:
@@ -382,11 +398,11 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
     const op = () => opciones.ajustes ? opciones.ajustes() : ajustes;
     const C = navegador.consulta;
     const w = {
-        estado: 'quieto', camino: null, i: 0, destino: null, busqueda: null,
+        estado: 'quieto', camino: null, i: 0, destino: null, busqueda: null, asentando: NaN, deLejos: false,
         moviendo: false, fase: 0, distancia: 0, reintentos: 0,
         ir(destino) {
             w.destino = { x: destino.x, y: destino.y, z: destino.z };
-            w.reintentos = 0; w.ultimaD = Infinity;
+            w.reintentos = 0; w.ultimaD = Infinity; w.asentando = NaN;
             buscar();
         },
         parar() {
@@ -400,6 +416,22 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
             cuerpo.x = fin.x; cuerpo.z = fin.z; if (Number.isFinite(fin.y)) cuerpo.y = fin.y;
             w.camino = null; w.estado = 'llego'; w.moviendo = false;
         },
+        // Quieto (llegó o espera): si quedó sin piso (lo dejaron a saltos, rompieron el bloque de abajo) baja o sube al
+        // suelo más cercano. Devuelve true si lo movió. Cerca del jugador; lejos no hace falta.
+        asentar(dt = 1) {
+            const A = op();
+            let ys = w.asentando;
+            if (!Number.isFinite(ys)) {
+                if (!enElAire(C, cuerpo.x, cuerpo.y, cuerpo.z) || deP(C, A, Math.floor(cuerpo.x), Math.round(cuerpo.y), Math.floor(cuerpo.z))) return false;
+                ys = suelo(C, cuerpo.x, cuerpo.z, cuerpo.y, A);
+                if (!Number.isFinite(ys)) return false;
+            }
+            cuerpo.y += (ys - cuerpo.y) * Math.min(1, dt * 10);
+            w.asentando = ys;
+            if (Math.abs(ys - cuerpo.y) < 0.02) { cuerpo.y = ys; w.asentando = NaN; }
+            cuerpo.yObj = ys;
+            return true;
+        },
         // Lo que falta por recorrer (bloques, en planta)
         get restante() {
             if (!w.camino) return w.destino ? Math.hypot(w.destino.x - cuerpo.x, w.destino.z - cuerpo.z) : 0;
@@ -409,18 +441,38 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         },
         actualizar(dt, { detalle = true } = {}) {
             w.moviendo = false;
+            // Primer cuadro cerca después de avanzar a saltos: el mapa de alturas no tiene árboles ni lo que pusiste;
+            // si quedó sin piso o metido en algo, a un lugar donde quepa y busca de nuevo desde ahí
+            if (detalle && w.deLejos) { w.deLejos = false; if (reubicar() && w.destino && w.estado !== 'llego') buscar(); }
+            if (!detalle && w.estado !== 'quieto') w.deLejos = true;
             if (w.estado === 'buscando') {
                 const b = w.busqueda;
                 if (!b || b.estado === 'buscando') return w.estado;
                 w.busqueda = null;
                 if (b.estado === 'sin-camino' || b.estado === 'cancelada' || !b.camino || b.camino.length < 1) return rendirse();
-                w.camino = b.camino; w.i = 1; w.parcial = b.estado === 'parcial';
+                // El camino parte del centro de su celda: si está lejos de ese punto (al borde, junto a un tronco), primero va
+                // ahí; ir derecho al segundo punto puede rozar la esquina que el camino suavizado sí esquivaba
+                w.camino = b.camino; w.parcial = b.estado === 'parcial';
+                w.i = Math.hypot(b.camino[0].x - cuerpo.x, b.camino[0].z - cuerpo.z) > 0.25 ? 0 : 1;
                 w.estado = 'caminando'; w.lejos = 0; w.reloj = 0; w.mejor = Infinity;
             }
             if (w.estado !== 'caminando') return w.estado;
             return detalle ? pasoCerca(dt) : pasoLejos(dt);
         }
     };
+    // Si no se puede estar de pie donde está (en el aire o metido en follaje), al punto pisable más cercano. true si lo movió
+    function reubicar() {
+        const A = op();
+        if (deP(C, A, Math.floor(cuerpo.x), Math.round(cuerpo.y), Math.floor(cuerpo.z))) return false;
+        if (enElAire(C, cuerpo.x, cuerpo.y, cuerpo.z)) {
+            const ys = suelo(C, cuerpo.x, cuerpo.z, cuerpo.y, A);
+            if (Number.isFinite(ys)) { cuerpo.y = cuerpo.yObj = ys; return true; }
+        }
+        const q = cercaPisable(C, cuerpo.x, cuerpo.y, cuerpo.z, { ...A, radioPisable: Math.min(A.radioPisable, 6) });
+        if (!q) return false;
+        cuerpo.x = q.x; cuerpo.y = cuerpo.yObj = q.y; cuerpo.z = q.z;
+        return true;
+    }
     function buscar() {
         if (w.busqueda) navegador.cancelar(w.busqueda);
         w.camino = null;
@@ -454,8 +506,15 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         while (resto > 0 && w.i < w.camino.length) {
             const p = w.camino[w.i], dx = p.x - cuerpo.x, dz = p.z - cuerpo.z, d = Math.hypot(dx, dz);
             if (d <= resto) { cuerpo.x = p.x; cuerpo.z = p.z; cuerpo.y = p.y; resto -= d; w.distancia += d; w.i++; }
-            else { cuerpo.x += dx / d * resto; cuerpo.z += dz / d * resto; w.distancia += resto; cuerpo.yaw = Math.atan2(dx, dz); resto = 0; }
+            else {
+                // A mitad de un tramo: la altura del terreno de ahí (el tramo suavizado puede cruzar lomas)
+                const yi = cuerpo.y + (p.y - cuerpo.y) * (resto / d);
+                cuerpo.x += dx / d * resto; cuerpo.z += dz / d * resto; w.distancia += resto; cuerpo.yaw = Math.atan2(dx, dz); resto = 0;
+                const ys = suelo(C, cuerpo.x, cuerpo.z, yi, A);
+                cuerpo.y = Number.isFinite(ys) ? ys : yi;
+            }
         }
+        cuerpo.yObj = cuerpo.y;
         w.reloj = 0; w.mejor = Infinity;
         return w.i >= w.camino.length ? finDeCamino() : w.estado;
     }
@@ -467,8 +526,10 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         if (d < 0.08) { cuerpo.x = p.x; cuerpo.z = p.z; w.i++; return w.i >= w.camino.length ? finDeCamino() : w.estado; }
         const paso = Math.min(d, A.velocidad * dt);
         const nx = cuerpo.x + dx / d * paso, nz = cuerpo.z + dz / d * paso;
-        const yPies = Math.round(cuerpo.y);
         const bx = Math.floor(cuerpo.x), bz = Math.floor(cuerpo.z), nbx = Math.floor(nx), nbz = Math.floor(nz);
+        // Sin piso bajo los pies (venía de lejos, a saltos): al suelo antes de seguir (pasa a radioDetalle, no se ve)
+        if (enElAire(C, cuerpo.x, cuerpo.y, cuerpo.z) && !deP(C, A, bx, Math.round(cuerpo.y), bz)) { const ys = suelo(C, cuerpo.x, cuerpo.z, cuerpo.y, A); if (Number.isFinite(ys)) cuerpo.y = cuerpo.yObj = ys; }
+        const yPies = Math.round(cuerpo.y);
         let yObj = yPies;
         if (nbx !== bx || nbz !== bz) {
             yObj = pie(C, A, nbx, nbz, yPies, bx, bz);

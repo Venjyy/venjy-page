@@ -12,6 +12,8 @@ export const RUTINA_BASE = {
     gesto: 2.4,         // segundos que dura el gesto al llegar
     frase: 4,           // segundos que se ve el globo al llegar
     respuesta: 1.4,     // segundos después de llegar en que contesta quien recibe la visita
+    girar: 0.6,         // segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse)
+    cuello: 1.1,        // cuánto puede girar el cuello quien recibe para mirarlo (radianes; si hace falta más, queda en el tope)
     radioSaludo: 24,    // el saludo (gestos y globos) solo se dibuja con el jugador a menos de esto (bloques)
     saludoLejos: 1,     // 1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo
     anticipar: 1,       // 1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale a la hora `de`
