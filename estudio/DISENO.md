@@ -1007,3 +1007,10 @@ Editor de píxeles en `estudio/pixeles.js` (sección propia, no comparte pantall
 - **CLI**: `resumen iconos|cartas-arte|borradores [filtro] [--dibujo] [--completo]`; `validar` revisa medidas e índices, y avisa si una clave no existe en `OBJETOS`/`CARTAS` o si un borrador ya tiene su clave en el juego.
 - **No hecho**: los íconos de `script.js` (la página principal); el marco no se pinta píxel a píxel (solo colores); el panel 2D del Duelo no se repinta solo al llegar un cambio en vivo.
 
+## 21. Pestaña Inicio: el menú de inicio de la supervivencia (etapa A punto 3, 2026-10-14)
+
+- **Juego**: `supervivencia.html` abre en una pantalla de título (`#menu-titulo`): logo, subtítulo, pie y una frase amarilla al azar que late junto al logo; botones Un jugador (`#menu-mundos`: tus mundos), Con amigos (`#menu-amigos`: nombre, código, QR y la lista para hospedar), Mi skin, Modo creativo y Volver. Con `?estudio` se salta el título (el puente busca `#lista-mundos` visible).
+- **Datos**: `mundo/datos/inicio.json` (esquema `inicio`): `titulo.logo|sub|pie` (texto ES/EN), `titulo.frases` (lista; reemplaza a la del código) y `titulo.frase` (`color`, `giro` en grados, `pulso` 0-1, `ritmo` latidos/s, `x`/`y` en % respecto al logo). Valores base en `INICIO` de `mundo/supervivencia/inicio-datos.js`.
+- **Editor** (`estudio/inicio.js`): vista previa con las mismas reglas de CSS, campos ES/EN, frases (agregar, quitar, enfocar una la muestra), aspecto de la frase y «Abrir el menú real». Guarda con If-Match. No va en vivo al juego: el menú se ve al abrir `supervivencia.html` sin `?estudio`.
+- **Siguiente** (mismo archivo, solo añadir claves): `carga` (pantalla de carga: etapas, consejos, colores y tiempos) y, en un chat propio, `fondo` (planos de cine detrás del menú).
+

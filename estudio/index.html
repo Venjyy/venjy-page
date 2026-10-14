@@ -20,6 +20,7 @@
             <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
+            <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
         </nav>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
         <div class="idiomas" role="group" aria-label="Idioma">
@@ -599,6 +600,45 @@
                     <button id="px-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                 </div>
                 <p id="px-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-inicio" class="seccion" hidden>
+        <section class="escritorio">
+            <div class="in-vista" aria-label="Vista previa">
+                <div class="in-logo">
+                    <p id="in-v-logo" class="in-logo-texto"></p>
+                    <p id="in-v-sub" class="in-logo-sub"></p>
+                    <span id="in-v-frase" class="in-frase"></span>
+                </div>
+                <p id="in-v-pie" class="in-pie"></p>
+            </div>
+            <div class="fila-botones">
+                <button id="in-otra" class="boton chico" type="button" data-es="Otra frase" data-en="Another splash">Otra frase</button>
+                <a class="boton chico secundario" href="../supervivencia.html" target="_blank" rel="noopener" data-es="Abrir el menú real" data-en="Open the real menu">Abrir el menú real</a>
+            </div>
+            <h2 class="in-titulo" data-es="Frases junto al logo (sale una al azar)" data-en="Splashes next to the logo (one at random)">Frases junto al logo (sale una al azar)</h2>
+            <div id="in-frases" class="lista-textos"></div>
+            <button id="in-agregar" class="boton chico" type="button" data-es="Agregar frase" data-en="Add splash">Agregar frase</button>
+            <p class="ayuda" data-es="Lo que dejes vacío usa el valor del código (mundo/supervivencia/inicio-datos.js). Ctrl+S guarda."
+               data-en="Anything left empty uses the code value (mundo/supervivencia/inicio-datos.js). Ctrl+S saves.">Lo que dejes vacío usa el valor del código (mundo/supervivencia/inicio-datos.js). Ctrl+S guarda.</p>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Logo y pie" data-en="Logo and footer">Logo y pie</h2>
+                <div id="in-textos" class="campos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Cómo se ve la frase" data-en="Splash look">Cómo se ve la frase</h2>
+                <div id="in-aspecto" class="campos"></div>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="in-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                    <button id="in-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                </div>
+                <p id="in-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>
