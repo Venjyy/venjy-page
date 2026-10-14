@@ -230,11 +230,12 @@ const responder = crearManejador({
         else if (accion === 'animar') { if (!v.mesaCartas.repetirAnimacion()) throw new Error('primero haz una jugada en la mesa'); }
         else v.mesaCartas.cambiarVista();
     },
-    async carrera({ accion }) {
+    async carrera({ accion, pista }) {
         const v = window.__venjy;
         if (!v || !v.cargarCarrera) throw new Error('el juego todavía no está listo');
         const k = await v.cargarCarrera();
         if (!k) throw new Error('no se pudo cargar la carrera');
+        if (pista && k.usarPista) k.usarPista(pista); // la pista que se edita en el Estudio
         if (accion === 'terminar') { k.terminar(); return; }
         if (accion === 'ver') { if (!k.ver()) throw new Error('ahora no se puede: cierra lo que tengas abierto'); return; }
         k.elegir(accion, 'normal');

@@ -16,6 +16,7 @@
 // Valores base (Estudio → Carrera; mundo/datos/carrera.json los ajusta por clave)
 export const CARRERA = {
     nombre: { es: 'Gran Premio del Living', en: 'Living Room Grand Prix' },
+    corto: { es: 'Living', en: 'Living room' }, // en el selector de pista del menú
     vueltas: 3,
     cuenta: 3,          // segundos de la cuenta regresiva
     intro: 6,           // segundos del vuelo de cámara por la pista antes de la cuenta
@@ -65,6 +66,102 @@ export const CARRERA = {
         { tipo: 'raton', x: 4, z: 4, a: 2, f: 3, h: 1.4, g: 40 },
         { tipo: 'podio', x: -6, z: 55, a: 10, f: 4, h: 3, g: 180 }    // donde suben las tres primeras al final (mira hacia el frente: g)
     ],
+    // Cómo se ve el escenario (carrera-escena.js): tipo = living | cocina | patio | techo; colores del piso (y su 2.º
+    // color: tablas, baldosas, pasto, tejas), de las paredes (papel mural, azulejos, valla, parapeto) y su detalle, el
+    // cielo (ventana o el cielo abierto), el fondo y la niebla, y los colores de los pilares bajo los tramos altos
+    escenario: { tipo: 'living', piso: '#96663a', piso2: '#86592f', pared: '#e2cea0', pared2: '#c4a878', techo: '#eee8de', cielo: '#80baec', fondo: '#2a1c14', niebla: '#3a2a20', pilares: ['#aa342e', '#3460a0', '#468246', '#d2aa3c', '#78468c'] },
+    // Más pistas (el menú las ofrece después del living; en la sala de espera elige el líder). Cada una con su nombre,
+    // escenario, sala, muebles y pista (puntos, huecos, turbos, túneles, cajas; lo que no traiga sale de `pista` de arriba:
+    // ancho, paso, salida, rampa). Se editan en el Estudio con el mismo editor (selector «Pista»).
+    pistas: {
+        cocina: {
+            nombre: { es: 'Gran Premio de la Cocina', en: 'Kitchen Grand Prix' }, corto: { es: 'Cocina', en: 'Kitchen' },
+            // Sube a la encimera, salta el lavaplatos, baja y pasa bajo la silla
+            escenario: { tipo: 'cocina', piso: '#ece8de', piso2: '#3c3c48', pared: '#d6ecea', pared2: '#a8c8c4', techo: '#f2f0ea', cielo: '#9cd2f4', fondo: '#1c2426', niebla: '#2e3a3c', pilares: ['#e8e4d8', '#d84a3a', '#e8c040', '#4a8ad8', '#f2f0ea'] },
+            sala: { ancho: 170, fondo: 140, alto: 56, x: 0, z: -2 },
+            pista: {
+                puntos: [
+                    [-27, 0, 48], [0, 0, 49.5], [27, 0, 46.5], [48, 0, 34.5], [57, 0, 13.5], [54, 0, -9],
+                    [46.5, 4, -28.5], [36, 10.4, -48, 8], [21, 10.4, -57, 8], [7.5, 10.4, -58.5, 8], [-4.5, 10.4, -58.5, 8],
+                    [-16.5, 10.4, -57, 8], [-30, 6, -49.5], [-40.5, 1.5, -36], [-46.5, 0, -18], [-46.5, 0, 7.5],
+                    [-38, 0, 22], [-41, 0, 38]
+                ],
+                huecos: [{ punto: 9, largo: 6 }],
+                turbos: [{ punto: 1, avance: 4, lado: -0.4, largo: 4 }, { punto: 6, avance: 6, lado: 0, largo: 4 }, { punto: 10, avance: 4, lado: 0.4, largo: 3 }, { punto: 15, avance: 4, lado: 0, largo: 4 }],
+                tuneles: [{ desde: 14, hasta: 15 }],
+                cajas: [{ punto: 2, avance: 0 }, { punto: 8, avance: 2 }, { punto: 16, avance: 2 }]
+            },
+            muebles: [
+                { tipo: 'encimera', x: 9, z: -62, a: 62, f: 18, h: 10 },      // la pista corre encima (a mano, como el sofá)
+                { tipo: 'refri', x: -64, z: -60, a: 22, f: 18, h: 50 },
+                { tipo: 'silla', x: -46.5, z: -5, a: 16, f: 16, h: 10, color: '#b07a48' }, // el túnel pasa por debajo
+                { tipo: 'olla', x: 18, z: 13.5, a: 14, f: 14, h: 10 },
+                { tipo: 'taza', x: -8, z: 24, a: 7, f: 7, h: 8, color: '#e85a4a' },
+                { tipo: 'taza', x: -20, z: 12, a: 6, f: 6, h: 7, color: '#4a8ad8' },
+                { tipo: 'alfombra', x: 0, z: 48, a: 56, f: 15, h: 0.12, color: '#4a8a5a' },
+                { tipo: 'caja', x: 34, z: -9, a: 10, f: 9, h: 6, g: -10 },
+                { tipo: 'raton', x: 0, z: 0, a: 2, f: 3, h: 1.4, g: 20 },
+                { tipo: 'podio', x: 0, z: 61, a: 10, f: 4, h: 3, g: 180 }
+            ]
+        },
+        patio: {
+            nombre: { es: 'Gran Premio del Patio', en: 'Backyard Grand Prix' }, corto: { es: 'Patio', en: 'Backyard' },
+            // Salto sobre la piscina inflable, túnel bajo la banca y eses entre los maceteros
+            escenario: { tipo: 'patio', piso: '#5c9e3c', piso2: '#4a8a30', pared: '#c8945a', pared2: '#9a6a3a', techo: '#ffffff', cielo: '#8ec8f2', fondo: '#8ec8f2', niebla: '#cfe6f4', pilares: ['#b4523a', '#c8643e', '#9a4430', '#d8b48a', '#a85a3a'] },
+            sala: { ancho: 170, fondo: 150, alto: 20, x: 0, z: 2 },
+            pista: {
+                puntos: [
+                    [-30, 0, 49.5], [-15, 0, 54], [0, 0, 51], [14.5, 0, 45], [30, 0, 46.5], [43.5, 0, 42.5], [52.5, 0, 31.5],
+                    [60, 0, 7.5], [52.5, 0, -13.5], [39, 3, -27], [24, 6.5, -36], [12, 4.6, -40.5], [0, 2.2, -42], [-13.5, 0, -40.5],
+                    [-33, 0, -37.5], [-52.5, 0, -27], [-57, 0, -6], [-39, 0, 4.5], [-22.5, 0, 12], [-39, 0, 22.5], [-52.5, 0, 36], [-39, 0, 39.5]
+                ],
+                huecos: [{ punto: 10, largo: 9 }],
+                turbos: [{ punto: 2, avance: 6, lado: 0.4, largo: 4 }, { punto: 9, avance: 4, lado: 0, largo: 5 }, { punto: 14, avance: 4, lado: -0.4, largo: 4 }, { punto: 19, avance: 2, lado: 0, largo: 3 }],
+                tuneles: [{ desde: 14, hasta: 15 }],
+                cajas: [{ punto: 4, avance: 2 }, { punto: 13, avance: 2 }, { punto: 18, avance: 0 }]
+            },
+            muebles: [
+                { tipo: 'piscina', x: 16.5, z: -39, a: 14, f: 16, h: 1.8 },    // bajo el salto
+                { tipo: 'banca', x: -41.5, z: -34.5, a: 14, f: 14, h: 10, g: 23, color: '#a06a3a' }, // el túnel pasa por debajo
+                { tipo: 'arbol', x: 13.5, z: 10.5, a: 14, f: 14, h: 36 },
+                { tipo: 'macetero', x: -10, z: 4, a: 7, f: 7, h: 11, color: '#e05a8a' },
+                { tipo: 'macetero', x: -64, z: 16, a: 6, f: 6, h: 9, color: '#f2d040' },
+                { tipo: 'macetero', x: -68, z: 52, a: 7, f: 7, h: 11, color: '#8a5ad8' },
+                { tipo: 'pelota', x: 37.5, z: 13.5, a: 9, f: 9, h: 9, color: '#e8483a' },
+                { tipo: 'cojin', x: 72, z: -30, a: 10, f: 10, h: 3, color: '#4ab86a', g: 10 },
+                { tipo: 'raton', x: -7.5, z: 26, a: 2, f: 3, h: 1.4, g: 70 },
+                { tipo: 'podio', x: 0, z: 66, a: 10, f: 4, h: 3, g: 180 }
+            ]
+        },
+        techo: {
+            nombre: { es: 'Gran Premio del Techo', en: 'Rooftop Grand Prix' }, corto: { es: 'Techo', en: 'Rooftop' },
+            // Al atardecer: salto del callejón entre los dos techos, túnel bajo el estanque de agua y los paneles solares
+            escenario: { tipo: 'techo', piso: '#a8483a', piso2: '#8a3a30', pared: '#8a8a90', pared2: '#6a6a72', techo: '#ffffff', cielo: '#f2a05a', fondo: '#f2a05a', niebla: '#f6c08a', pilares: ['#a8544a', '#8a8a90', '#b8823a', '#c86a4a', '#6a6a72'], callejon: { x: 6, ancho: 8 } },
+            sala: { ancho: 180, fondo: 140, alto: 3, x: 0, z: 4 },
+            pista: {
+                puntos: [
+                    [-33, 0, 45], [-4.5, 0, 46.5], [22.5, 0, 43.5], [46.5, 0, 31.5], [55.5, 0, 9], [48, 0, -13.5],
+                    [30, 0, -22.5], [18, 4.5, -27], [12, 6, -28.5], [-3, 4.5, -30], [-13.5, 0, -31.5],
+                    [-34.5, 0, -33], [-54, 0, -22.5], [-58.5, 0, 0], [-45, 0, 16.5], [-51, 0, 36]
+                ],
+                huecos: [{ punto: 8, largo: 10 }],
+                turbos: [{ punto: 1, avance: 4, lado: 0, largo: 4 }, { punto: 6, avance: 0, lado: 0, largo: 5 }, { punto: 11, avance: 4, lado: 0.4, largo: 4 }, { punto: 14, avance: 4, lado: -0.4, largo: 3 }],
+                tuneles: [{ desde: 12, hasta: 13 }],
+                cajas: [{ punto: 2, avance: 2 }, { punto: 10, avance: 4 }, { punto: 14, avance: 0 }]
+            },
+            muebles: [
+                { tipo: 'tanque', x: -57, z: -10.5, a: 18, f: 16, h: 11 },      // el túnel pasa por debajo
+                { tipo: 'chimenea', x: 13.5, z: 3, a: 10, f: 10, h: 18 },
+                { tipo: 'chimenea', x: -30, z: 4.5, a: 8, f: 8, h: 14 },
+                { tipo: 'antena', x: 30, z: 12, a: 6, f: 6, h: 30 },
+                { tipo: 'panel', x: 37.5, z: 37.5, a: 16, f: 12, h: 2.4 },       // la pista sube sola encima
+                { tipo: 'claraboya', x: -18, z: -12, a: 12, f: 9, h: 2 },
+                { tipo: 'caja', x: 62, z: -40, a: 9, f: 8, h: 6, g: 15 },
+                { tipo: 'raton', x: -7.5, z: 18, a: 2, f: 3, h: 1.4, g: 10 },
+                { tipo: 'podio', x: -4.5, z: 62, a: 10, f: 4, h: 3, g: 180 }
+            ]
+        }
+    },
     gata: {
         vel: 21,        // velocidad máxima (bloques/s)
         acel: 16,
@@ -144,16 +241,57 @@ function fundir(base, extra) {
     }
     return r;
 }
-// Reglas = base + JSON (lo que falte, del código). Las gatas del JSON se funden por clave con las del código
-export function reglasCarrera(datos) {
+// Reglas = base + JSON (lo que falte, del código). Las gatas del JSON se funden por clave con las del código.
+// `pista` = clave de la pista ('living' o una de `pistas`): su nombre, escenario, sala, muebles y pista quedan arriba
+// (R.pista, R.muebles…), así el resto del juego no sabe de pistas. R.pistaClave dice cuál es; R.listaPistas, todas;
+// R.nombres y R.cortos, el nombre de cada una (el corto va en el selector del menú).
+export function reglasCarrera(datos, pista = 'living') {
     const d = datos || {};
     const R = fundir(CARRERA, { ...d, gatas: undefined });
     if (!Array.isArray(R.pista.puntos) || R.pista.puntos.length < 4) R.pista = { ...R.pista, puntos: CARRERA.pista.puntos };
     const porClave = new Map(CARRERA.gatas.map(g => [g.clave, g]));
     if (Array.isArray(d.gatas)) for (const g of d.gatas) if (g && g.clave) porClave.set(g.clave, fundir(porClave.get(g.clave) || {}, g));
     R.gatas = [...porClave.values()].slice(0, 8);
+    R.listaPistas = ['living', ...Object.keys(R.pistas || {}).filter(k => esObj(R.pistas[k]))];
+    R.nombres = Object.fromEntries(R.listaPistas.map(k => [k, (k !== 'living' && R.pistas[k].nombre) || R.nombre]));
+    R.cortos = Object.fromEntries(R.listaPistas.map(k => [k, (k !== 'living' ? R.pistas[k].corto || R.pistas[k].nombre : R.corto) || R.nombres[k]]));
+    R.pistaClave = 'living';
+    const p = pista !== 'living' && esObj(R.pistas) ? R.pistas[pista] : null;
+    if (p) {
+        const base = CARRERA.pistas[pista] || {}, PP = p.pista || {};
+        // Lo general de la pista (ancho, paso, salida, rampa) viene de `pista`; las listas, solo de la suya
+        const listas = Object.fromEntries(LISTAS_PISTA.map(k => [k, Array.isArray(PP[k]) ? PP[k] : []]));
+        R.pista = { ...R.pista, ...PP, ...listas };
+        if (R.pista.puntos.length < 4) R.pista.puntos = (base.pista && base.pista.puntos) || CARRERA.pista.puntos;
+        R.nombre = p.nombre || R.nombre;
+        R.escenario = escenarioDe((base.escenario) || null, d.pistas && d.pistas[pista] && d.pistas[pista].escenario);
+        R.sala = fundir(R.sala, p.sala);
+        R.muebles = Array.isArray(p.muebles) ? p.muebles : [];
+        R.pistaClave = pista;
+    } else R.escenario = escenarioDe(CARRERA.escenario, d.escenario);
     return R;
 }
+// Colores del escenario: los del código si el JSON no cambia el tipo; si lo cambia, los de ese tipo (y encima lo del JSON)
+function escenarioDe(codigo, json) {
+    const j = esObj(json) ? json : {}, tipo = j.tipo || (codigo && codigo.tipo) || 'living';
+    return fundir(codigo && codigo.tipo === tipo ? codigo : ESCENARIO_BASE[tipo] || CARRERA.escenario, j);
+}
+export const LISTAS_PISTA = ['puntos', 'huecos', 'turbos', 'tuneles', 'cajas', 'piezas'];
+// Colores base de cada tipo de escenario (los de la pista del código; una pista nueva parte de estos)
+export const ESCENARIO_BASE = Object.fromEntries([['living', CARRERA.escenario], ...Object.values(CARRERA.pistas).map(p => [p.escenario.tipo, p.escenario])]);
+export const ESCENARIOS = Object.keys(ESCENARIO_BASE);
+// Muebles: los que propone el editor para cada escenario (cualquiera se puede poner en cualquiera)
+export const MUEBLES_DE = {
+    living: ['sofa', 'mesa', 'ovillo', 'lampara', 'pecera', 'cojin'],
+    cocina: ['encimera', 'refri', 'silla', 'olla', 'taza'],
+    patio: ['piscina', 'banca', 'arbol', 'macetero', 'pelota'],
+    techo: ['tanque', 'chimenea', 'antena', 'panel', 'claraboya'],
+    todas: ['caja', 'alfombra', 'raton', 'podio']
+};
+// La pista pasa por debajo (entre sus patas) / corre encima a mano (sus alturas en los puntos) / es plano (bajo la pista)
+export const MUEBLES_TUNEL = ['mesa', 'silla', 'banca', 'tanque'];
+export const MUEBLES_ENCIMA = ['sofa', 'encimera'];
+export const MUEBLES_PLANOS = ['alfombra'];
 
 // ---------------------------------------------------------
 // Pista
@@ -174,7 +312,7 @@ const angDif = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // Muebles sobre los que la pista sube sola (los demás son obstáculos: la pista los rodea o pasa por arriba a mano)
-export const SUBE_TIPOS = ['caja', 'cojin'];
+export const SUBE_TIPOS = ['caja', 'cojin', 'panel', 'claraboya'];
 export const subeEncima = m => !!(m && (m.sube ?? SUBE_TIPOS.includes(m.tipo)));
 // Altura del mueble más alto bajo (x, z), con su planta agrandada `margen` bloques (0 si no hay ninguno)
 export function techoMuebles(muebles, x, z, margen = 0) {
@@ -491,12 +629,15 @@ export function entradaIA(g, R, pista, rnd = null, jugador = null, extra = null)
     if (jugador && jugador !== g && jugador.av - g.av > pista.largo * 0.08) quiere *= 1 + I.empuje;
     // Derrape: en curva cerrada, con velocidad, mientras la curva siga
     let salto = false;
-    if (g.derrape) salto = curvaMax > I.derrapa * 0.6 && Math.sign(cerca.curva || lejos.curva) === g.derrape;
-    else salto = g.suelo && curvaMax > I.derrapa && g.v > F.vel * 0.55 && Math.abs(giro) > 0.3 && !g.saltoAntes;
+    // (lo suelta si ya mira muy lejos de donde va: si no, gira de más y queda al revés contra el borde)
+    if (g.derrape) salto = curvaMax > I.derrapa * 0.6 && Math.sign(cerca.curva || lejos.curva) === g.derrape && Math.abs(d) < 0.9;
+    else if (!g.suelo) salto = !!g.iaDerrapa && curvaMax > I.derrapa * 0.6; // saltó para derrapar: lo mantiene hasta caer
+    else salto = g.iaDerrapa = curvaMax > I.derrapa && g.v > F.vel * 0.55 && Math.abs(giro) > 0.3 && !g.saltoAntes;
     if (g.derrape) giro = lim(giro, g.derrape > 0 ? -0.3 : -1, g.derrape > 0 ? 1 : 0.3);
     // Antes de un hueco, a fondo y derecho
     const hueco = !enPista(pista, g.s + 6).piso || !enPista(pista, g.s + 3).piso;
-    if (hueco) { quiere = F.vel * 1.2; salto = false; }
+    // (en un hueco sobre plano, sin cresta que la lance, salta justo al borde)
+    if (hueco) { quiere = F.vel * 1.2; salto = g.suelo && !enPista(pista, g.s + 1.2).piso && enPista(pista, g.s + 1.2).pend > -0.15 && !g.saltoAntes; }
     const ad = g.v < quiere ? 1 : g.v > quiere + 1.5 ? -0.5 : 0;
     const usar = !!(extra && extra.gs && quiereUsar(g, R, extra.gs, curvaMax, hueco));
     return { ad, giro, salto, usar };
