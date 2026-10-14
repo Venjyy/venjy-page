@@ -253,6 +253,46 @@ const enRecta = () => { const g = M.nuevaGata(P, R, G0, 0); for (let i = 0; i < 
     // Probar con la IA
     const r = PM.probarIA(R);
     if (!r.ok || r.porGata.length !== R.gatas.length) falla('probarIA no termina con la pista del código');
+
+    // Rampa sola: una caja sobre la recta levanta la pista encima (con pendiente ≤ rampa) y no avisa; un ovillo sigue avisando
+    const ovalo = { puntos: [[-100, 0, 70], [100, 0, 70], [115, 0, 40], [100, 0, -60], [-100, 0, -60], [-115, 0, 40]], huecos: [], turbos: [], tuneles: [], cajas: [] };
+    const enRecta = M.armarPista(M.reglasCarrera({ pista: ovalo, muebles: [] })).m.find(q => q.x > 0);
+    const conCaja = M.reglasCarrera({ pista: ovalo, muebles: [{ tipo: 'caja', x: enRecta.x, z: enRecta.z, a: 10, f: 14, h: 5 }] });
+    const PC = M.armarPista(conCaja), sobre = PC.m.filter(q => Math.hypot(q.x - enRecta.x, q.z - enRecta.z) < 2);
+    if (!sobre.length || sobre.some(q => q.y < 5)) falla('la pista no sube sobre la caja');
+    if (PC.m.some(q => Math.abs(q.pend) > conCaja.pista.rampa + 0.05)) falla('la rampa sola es más empinada que `rampa`');
+    if (PM.avisosPista(conCaja).some(a => a.es.includes('pisa'))) falla('avisa de una caja con rampa sola');
+    if (M.armarPista(M.reglasCarrera({ pista: { ...ovalo, apoyar: 0 }, muebles: conCaja.muebles })).m.some(q => q.y > 0.01)) falla('apoyar = 0 no apaga la rampa');
+    if (!PM.probarIA(conCaja).ok) falla('la IA no termina con la rampa sobre la caja');
+    // Piezas plantilla: cada una se pone en la recta, la IA termina, se rehace con otra medida y se quita dejando la pista como estaba
+    for (const tipo of Object.keys(PM.PIEZAS)) {
+        let p = PM.ponerPieza(ovalo, 0, tipo);
+        if (PM.PIEZAS[tipo].gen === 'curva') continue; // (se dan vuelta: en esta recta no conectan)
+        const z = p.piezas[0];
+        if (z.desde !== 1 || z.hasta !== p.puntos.length - ovalo.puntos.length) falla(`${tipo}: rango de la pieza`);
+        const Rp = M.reglasCarrera({ pista: { ...p, puntos: tipo === 'bajada' ? p.puntos.map((q, i) => (i <= z.hasta ? q : [q[0], q[1] + 14, q[2]])) : p.puntos }, muebles: [] });
+        if (tipo !== 'bajada' && PM.avisosPista(Rp).some(a => a.tipo === 'error')) falla(`${tipo}: ${PM.avisosPista(Rp).map(a => a.es).join('; ')}`);
+        if (tipo !== 'bajada' && !PM.probarIA(Rp).ok) falla(`${tipo}: la IA no termina`);
+        const med = PM.MEDIDAS[PM.PIEZAS[tipo].gen][0];
+        const p2 = PM.rehacerPieza(p, 0, { [med[0]]: med[4] });
+        if (p2.piezas[0].hasta !== p2.puntos.length - ovalo.puntos.length || p2.piezas[0][med[0]] !== med[4]) falla(`${tipo}: rehacer no corre el rango`);
+        if (p2.huecos.length !== PM.generarPieza(p2.piezas[0]).huecos.length) falla(`${tipo}: rehacer duplica o pierde el hueco`);
+        const p3 = PM.quitarPieza(p2, 0);
+        if (JSON.stringify(p3.puntos) !== JSON.stringify(ovalo.puntos) || p3.huecos.length || p3.turbos.length || p3.piezas.length) falla(`${tipo}: quitar la pieza no deja la pista como estaba`);
+    }
+    // La vuelta 360 pasa por encima de sí misma (sin avisar de cruce) y tiene su hueco de altura
+    {
+        const p = PM.ponerPieza(ovalo, 0, 'vuelta'), Pv = M.armarPista(M.reglasCarrera({ pista: p, muebles: [] }));
+        if (Math.max(...Pv.m.map(q => q.y)) < 5) falla('la vuelta 360 no sube');
+    }
+    // Un punto insertado dentro de una pieza la suelta; uno antes corre su rango
+    {
+        const p = PM.ponerPieza(ovalo, 0, 'vuelta');
+        if (PM.insertarPunto(p, 3, [0, 0, 0]).piezas.length) falla('insertar dentro de una pieza no la suelta');
+        if (PM.insertarPunto(p, 0, [0, 0, 0]).piezas[0].desde !== 2) falla('insertar antes no corre la pieza');
+        if (PM.quitarPunto(p, 0).piezas[0].desde !== 0) falla('quitar antes no corre la pieza');
+        if (PM.piezaDe(p, 4) !== 0 || PM.piezaDe(p, 0) !== -1) falla('piezaDe');
+    }
 }
 
 // Pegada al borde doblando contra él: se desliza y sigue avanzando (antes quedaba quieta)

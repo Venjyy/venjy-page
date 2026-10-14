@@ -167,13 +167,23 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
         cinta(q => [l * q.ancho / 2, 0], [0, 0.9], baranda, 2, 'pared', 0.8);
         cinta(q => [l * q.ancho / 2, 0], [-0.6, 0.07], tx(4, 4, () => [80, 74, 78]), 2, 'pared', 0.6); // canto de la pista
     }
-    // Pilares de libros bajo los tramos altos
+    // Pilares de libros bajo los tramos altos (desde el piso, el mueble de abajo o la vuelta de la pista que pasa por debajo)
     const lomos = [[170, 52, 46], [52, 96, 160], [70, 130, 70], [210, 170, 60], [120, 70, 140]];
+    const debajo = (q, i) => {
+        let b = q.apoyo || 0;
+        const lejos = Math.round(20 / pista.paso); // (las muestras vecinas de la misma cuesta no cuentan)
+        mm.forEach((o, j) => {
+            const d = Math.abs(i - j);
+            if (Math.min(d, N - d) > lejos && o.piso && o.y < q.y - 1 && o.y > b && Math.hypot(o.x - q.x, o.z - q.z) < o.ancho / 2 + 1) b = o.y;
+        });
+        return b;
+    };
     for (let i = 0; i < N; i += 14) {
         const q = mm[i];
         if (!q.piso || q.y < 1.2) continue;
         if ((R.muebles || []).some(m => m.tipo === 'sofa' && Math.abs(q.x - m.x) < m.a / 2 && Math.abs(q.z - m.z) < m.f / 2)) continue;
-        let y = 0, k = 0;
+        let y = debajo(q, i), k = 0;
+        if (q.y - y < 1.2) continue;
         while (y < q.y - 0.1) {
             const h = Math.min(q.y - y, 0.9 + ((i + k) % 3) * 0.3);
             const lib = bloque(q.ancho * 0.55, h, 3.2, mats(tela(lomos[(i + k) % lomos.length], 0.06)), q.x, y + h / 2, q.z);

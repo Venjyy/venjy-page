@@ -71,7 +71,7 @@
           "description": "Puntos [x, y, z, ancho?] en bloques sobre el piso del living, en orden; se cierra solo; la salida en el primero.",
           "type": "array",
           "minItems": 4,
-          "maxItems": 128,
+          "maxItems": 256,
           "items": {
             "type": "array",
             "prefixItems": [
@@ -85,7 +85,7 @@
                 "description": "y (altura sobre el piso)",
                 "type": "number",
                 "minimum": 0,
-                "maximum": 30
+                "maximum": 60
               },
               {
                 "description": "z",
@@ -113,7 +113,7 @@
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 127
+                "maximum": 255
               },
               "largo": {
                 "description": "bloques",
@@ -137,7 +137,7 @@
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 127
+                "maximum": 255
               },
               "avance": {
                 "description": "bloques después del punto",
@@ -173,12 +173,12 @@
               "desde": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 127
+                "maximum": 255
               },
               "hasta": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 127
+                "maximum": 255
               }
             },
             "additionalProperties": false,
@@ -197,7 +197,7 @@
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 127
+                "maximum": 255
               },
               "avance": {
                 "description": "bloques después del punto",
@@ -215,6 +215,112 @@
             "additionalProperties": false,
             "required": [
               "punto"
+            ]
+          }
+        },
+        "apoyar": {
+          "description": "Rampa sola: 1 = la pista sube encima de los muebles que dejan subir (sube o tipo caja/cojín), 0 = no.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rampa": {
+          "description": "Pendiente máxima de esa rampa (alto por bloque).",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 0.7
+        },
+        "piezas": {
+          "description": "Piezas plantilla del editor (vuelta 360, espiral, horquilla, salto…): grupos de puntos [desde..hasta] que se mueven y rehacen juntos. El juego no las lee (solo los puntos).",
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "properties": {
+              "tipo": {
+                "enum": [
+                  "vuelta",
+                  "espiral",
+                  "bajada",
+                  "horquilla",
+                  "curva",
+                  "salto",
+                  "eses",
+                  "rampa"
+                ]
+              },
+              "desde": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "hasta": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "giro": {
+                "description": "grados: hacia dónde mira la entrada (0 = +z)",
+                "type": "number",
+                "minimum": -360,
+                "maximum": 360
+              },
+              "vueltas": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 4
+              },
+              "radio": {
+                "type": "number",
+                "minimum": 8,
+                "maximum": 60
+              },
+              "sube": {
+                "type": "number",
+                "minimum": -40,
+                "maximum": 40
+              },
+              "lado": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              },
+              "angulo": {
+                "type": "number",
+                "minimum": 15,
+                "maximum": 270
+              },
+              "alto": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 12
+              },
+              "largo": {
+                "type": "number",
+                "minimum": 6,
+                "maximum": 140
+              },
+              "hueco": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 16
+              },
+              "curvas": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 8
+              },
+              "ancho": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 20
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "tipo",
+              "desde",
+              "hasta"
             ]
           }
         }
@@ -316,6 +422,10 @@
           "color": {
             "type": "string",
             "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "sube": {
+            "description": "la pista sube encima sola (rampa); sin esto, según el tipo (caja y cojín sí)",
+            "type": "boolean"
           }
         },
         "additionalProperties": false,
@@ -1053,9 +1163,21 @@
     "red": {
       "type": "object",
       "properties": {
-        "envios": { "type": "number", "minimum": 4, "maximum": 30 },
-        "paquetes": { "type": "number", "minimum": 4, "maximum": 30 },
-        "hurra": { "type": "number", "minimum": 0.1, "maximum": 5 }
+        "envios": {
+          "type": "number",
+          "minimum": 4,
+          "maximum": 30
+        },
+        "paquetes": {
+          "type": "number",
+          "minimum": 4,
+          "maximum": 30
+        },
+        "hurra": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5
+        }
       },
       "additionalProperties": false
     },

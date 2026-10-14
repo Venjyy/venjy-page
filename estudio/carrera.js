@@ -21,7 +21,9 @@ const GRUPOS = [
     }],
     ['pista', 'Pista', 'Track', {
         ancho: ['ancho base (bloques)', 'base width (blocks)', 3, 20, 0.5], paso: ['muestreo (bloques; menos = más fino)', 'sampling (blocks; lower = finer)', 0.25, 2, 0.05],
-        salida: ['bloques antes de la línea donde parte la 1.ª fila', 'blocks behind the line for row 1', 1, 12, 0.5]
+        salida: ['bloques antes de la línea donde parte la 1.ª fila', 'blocks behind the line for row 1', 1, 12, 0.5],
+        apoyar: ['rampa sola sobre los muebles que dejan subir (1 = sí, 0 = no)', 'automatic ramp over climbable furniture (1 = yes, 0 = no)', 0, 1, 1],
+        rampa: ['pendiente de esa rampa (alto por bloque)', 'slope of that ramp (rise per block)', 0.1, 0.7, 0.05]
     }],
     ['gata', 'Cómo corre una gata', 'How a cat runs', {
         vel: ['velocidad máxima (bloques/s)', 'top speed (blocks/s)', 4, 30, 0.5], acel: ['aceleración', 'acceleration', 2, 40, 0.5],
