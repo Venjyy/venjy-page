@@ -90,6 +90,7 @@ cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
 // ---------------------------------------------------------
 let idioma = 'es';
 let panelCartas = null, mesaCartas = null, armarMazo = null;
+let mesaMirar = null; // otra mesa (cartas-mesa.js con espectador): el duelo ajeno que miras de cerca (duelo 2J, PR 4)
 try {
     const param = new URLSearchParams(location.search).get('lang');
     const guardado = localStorage.getItem('preferredLanguage');
@@ -813,6 +814,16 @@ async function arrancar(guardado, cx = null) {
         }).catch(err => { cargandoMesa = null; console.error('No se pudo cargar la mesa de cartas', err); return null; });
         return cargandoMesa;
     }
+    // Mirar un duelo ajeno (duelo 2J, PR 4): otra instancia de la mesa, sin cámara ni controles (ctx.espectador)
+    let cargandoMirar = null;
+    function cargarMesaMirar() {
+        if (!cargandoMirar) cargandoMirar = Promise.all([import('./cartas-mesa.js'), cargarDatos('cartas-mesa')]).then(([m, datos]) => {
+            if (!datosCartas) datosCartas = datos;
+            mesaMirar = m.crearMesaCartas({ espectador: true, datos: window.__venjy?.datosMesa || datos, scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma, tinte: materiales.solido.color });
+            return mesaMirar;
+        }).catch(err => { cargandoMirar = null; console.error('No se pudo cargar la mesa para mirar', err); return null; });
+        return cargandoMirar;
+    }
     // Armar tu mazo (etapa A, punto 3): clic derecho con el MAZO en la mano; cartas-armar.js con import() la primera vez.
     // Lee las reglas y la colección inicial de cartas-mesa.json (o lo último que mandó el Estudio)
     let cargandoArmar = null;
@@ -1024,6 +1035,7 @@ async function arrancar(guardado, cx = null) {
             alCambiarJugadores: () => pintarCoop(),
             alActividad: m => recibirActividad(m),
             alSalirJugador: id => salioDeActividades(id),
+            alEntrarJugador: id => entroAActividades(id),
             alCerrar: motivo => terminarCoop(motivo)
         });
         // Pestaña en segundo plano: el navegador detiene el bucle, pero la red sigue (bloques, latidos)
@@ -1066,7 +1078,7 @@ async function arrancar(guardado, cx = null) {
     function filasJugadores() {
         const t = tx(), filas = [];
         filas.push({ nombre: cx.nombre + (coop.esAnfitrion ? t.tuAnf : t.tuyo), ms: coop.esAnfitrion ? null : coop.pingPropio(), anf: coop.esAnfitrion });
-        for (const [id, r] of coop.remotos) filas.push({ nombre: r.nombre + (r.anf ? t.anfitrion : ''), ms: r.anf ? null : coop.pingDe(id), anf: r.anf });
+        for (const [id, r] of coop.remotos) filas.push({ id, nombre: r.nombre + (r.anf ? t.anfitrion : ''), ms: r.anf ? null : coop.pingDe(id), anf: r.anf });
         return filas;
     }
     function pintarFilas(cont) {
@@ -1077,6 +1089,8 @@ async function arrancar(guardado, cx = null) {
             const nom = document.createElement('span');
             nom.textContent = f.nombre;
             fila.appendChild(nom);
+            const et = f.id ? etiquetaDuelo(f.id) : '';
+            if (et) { const d = document.createElement('span'); d.className = 'reto-tab'; d.textContent = et; fila.appendChild(d); }
             if (!f.anf) {
                 fila.appendChild(senalDe(f.ms));
                 const ms = document.createElement('span');
@@ -1087,6 +1101,15 @@ async function arrancar(guardado, cx = null) {
             nodos.push(fila);
         }
         cont.replaceChildren(...nodos);
+    }
+    // Lista Tab y de la pausa: quién te reta (con Y / N) y quién está en un duelo (duelo 2J, PR 4)
+    const TXT_TAB_DUELO = { reta: { es: 'te reta: Y / N', en: 'challenges you: Y / N' }, duelo: { es: 'en un duelo', en: 'in a duel' } };
+    function etiquetaDuelo(id) {
+        try { // (reto y actividades se declaran más abajo: antes de eso no hay nada que mostrar)
+            if (reto && reto.inv.de === id) return textoCartas(TXT_TAB_DUELO.reta);
+            if (actividades && (actividades.dondeEsta(id) || '').startsWith('duelo@')) return textoCartas(TXT_TAB_DUELO.duelo);
+        } catch { /* aún sin declarar */ }
+        return '';
     }
     function pintarPing() {
         if (!coop) return;
@@ -1127,10 +1150,13 @@ async function arrancar(guardado, cx = null) {
     if (coop) import('./actividades-red.js').then(m => {
         actividades = m.crearActividades({ yo: coop.yoId, esAnfitrion: coop.esAnfitrion, anfitrion: coop.idAnfitrion, enviar: x => coop.actividad(x) });
         // Antes de cargar el duelo: una invitación lo carga
-        actividades.escuchar('duelo', { invitacion: inv => cargarDuelo().then(d => { if (d) avisoReto(inv); }) });
+        // (y un duelo con los dos dentro también: alguien cerca puede mirarlo)
+        actividades.escuchar('duelo', { invitacion: inv => cargarDuelo().then(d => { if (d) avisoReto(inv); }), estado: act => { if (act && act.jug.length === 2) cargarDuelo(); } });
         for (const x of colaAct.splice(0)) actividades.recibir(x);
     }).catch(err => console.error('No se pudieron cargar las actividades compartidas', err));
     function recibirActividad(m) { if (actividades) actividades.recibir(m); else colaAct.push(m); }
+    // Anfitrión: quien entra a la sala sabe qué actividades hay (y puede mirar un duelo que ya empezó)
+    function entroAActividades(id) { if (actividades) actividades.entroJugador(id); }
     function salioDeActividades(id) {
         if (actividades) actividades.salioJugador(id);
         if (duelo) duelo.rivalSalio(id);
@@ -1180,9 +1206,15 @@ async function arrancar(guardado, cx = null) {
                 al: {
                     invitacion: inv => avisoReto(inv),
                     espera: id => mostrarEspera(id),
-                    inicio: (e, rival, lugar, lado) => empezarDueloLugar(e, rival, lugar, lado),
+                    // La revancha empieza en la mesa ya abierta (mismo rival y lugar)
+                    inicio: (e, rival, lugar, lado, otra) => { if (otra && mesaCartas && mesaCartas.rival) { colaJugadas.length = 0; mesaCartas.dueloOtra(e); } else empezarDueloLugar(e, rival, lugar, lado); },
                     jugada: (a, h) => { if (!mesaCartas || !mesaCartas.dueloJugada(a, h)) colaJugadas.push([a, h]); },
                     fin: motivo => mesaCartas && mesaCartas.dueloFin(motivo),
+                    revancha: que => mesaCartas && mesaCartas.dueloRevancha(que),
+                    // Mirar un duelo ajeno: la vista llega armada (y se rehace en la revancha); cada jugada ya viene aplicada
+                    mirar: () => cargarMesaMirar().then(m => { const v = duelo.vista; if (m && v) m.mirar(v.lugar, v.e); }),
+                    mirarJugada: ev => mesaMirar && mesaMirar.mirarJugada(ev),
+                    mirarFin: () => mesaMirar && mesaMirar.dejarDeMirar(),
                     rechazo: motivo => {
                         const nombre = coop.nombreDe(espera ? espera.id : duelo.rival);
                         quitarEspera();
@@ -1197,6 +1229,29 @@ async function arrancar(guardado, cx = null) {
         }).catch(err => { cargandoDuelo = null; console.error('No se pudo cargar el duelo entre jugadores', err); return null; });
         return cargandoDuelo;
     }
+    // Mirar desde afuera: cada segundo, el duelo ajeno más a mano (hasta lugar.mirar metros de su mesa o de uno de los que
+    // juegan) se pide y se dibuja; al alejarte (un 25 % más) o al jugar tú, se deja. lugar.mirar = 0 lo apaga
+    function revisarMirar() {
+        if (!duelo) return;
+        const max = duelo.lugar().mirar ?? 12, p = jugador.pos;
+        if (!(max > 0) || duelo.fase !== 'libre') { if (duelo.mirando) duelo.dejarDeMirar(); return; }
+        const dist = a => {
+            const v = duelo.mirando === a.id ? duelo.vista : null;
+            if (v && v.lugar) return Math.hypot(v.lugar.x - p.x, v.lugar.z - p.z);
+            let d = Infinity;
+            for (const id of a.jug) { const g = coop.remotos.get(id)?.modelo?.g; if (g && g.visible) d = Math.min(d, Math.hypot(g.position.x - p.x, g.position.z - p.z)); }
+            return d;
+        };
+        const abiertos = duelo.duelosAbiertos();
+        if (duelo.mirando) {
+            const a = abiertos.find(a => a.id === duelo.mirando);
+            if (!a || dist(a) > max * 1.25) duelo.dejarDeMirar();
+            return;
+        }
+        const a = abiertos.find(a => dist(a) <= max);
+        if (a) duelo.mirar(a.id);
+    }
+    if (coop) setInterval(revisarMirar, 1000);
     const persona = id => ({ id, nombre: coop.nombreDe(id) });
     const ocupadoParaDuelo = () => uiAbierta || vida.muerto || jefes.enCurso || (mesaCartas && mesaCartas.activo);
     // Empieza (los dos dentro, `ini` recibido): la mesa abre en el lugar, sobre su superficie
@@ -1785,6 +1840,7 @@ async function arrancar(guardado, cx = null) {
         minijuegos.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
         if (mesaCartas) mesaCartas.actualizar(corre ? dt : 0);
+        if (mesaMirar) mesaMirar.actualizar(corre ? dt : 0);
         if (mesasColocadas) mesasColocadas.actualizar();
         ruleta.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);

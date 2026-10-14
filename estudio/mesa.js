@@ -45,7 +45,7 @@ const GRUPOS = [
     // Duelo entre 2 jugadores de la sala (cartas-duelo.js): cada uno con su mazo
     ['duelo', 'Duelo entre jugadores', 'Player duel', { vida: 'vida de cada uno', mano: 'cartas en la mano al empezar', espera: 'segundos para aceptar el reto (0 = sin límite)' }],
     // Duelo donde están los dos (PR 2): retar con el MAZO apuntando al otro; se juega en el piso o sobre un tronco
-    ['lugar', 'Duelo entre jugadores: retar', 'Player duel: challenge', { dist: 'metros máx. hasta el otro', desnivel: 'diferencia de altura máx.', mesaCerca: 'metros máx. hasta una mesa colocada para jugar en ella' }],
+    ['lugar', 'Duelo entre jugadores: retar', 'Player duel: challenge', { dist: 'metros máx. hasta el otro', desnivel: 'diferencia de altura máx.', mesaCerca: 'metros máx. hasta una mesa colocada para jugar en ella', mirar: 'metros hasta un duelo ajeno para verlo (0 = no)' }],
     // Mesa de duelo (PR 3): colores del mueble (la de Lucho, la que se lleva y la colocada en el mundo)
     ['mueble', 'Mesa de duelo: colores', 'Duel table: colors', {}],
     ['tronco', 'Duelo sobre un tronco', 'Duel on a log', { alto: 'alto del tronco', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],

@@ -16,6 +16,8 @@
 //   resp    → directo al que invitó: { id, si, motivo? } (motivo: por qué no; lo lee cada juego)
 //   ver     → al anfitrión: pide el estado y el registro de eventos (quien llega tarde o se pone a mirar)
 //   registro← del anfitrión a uno: { id, act, log }
+// Quien entra a la sala recibe del anfitrión el `estado` de cada actividad abierta (entroJugador): así sabe qué
+// se juega y puede pedir `ver` para mirarla.
 // Orden: el anfitrión acepta un `ev` solo si su `s` es el siguiente (si no, `no` con 'orden'); así los
 // equipos aplican los mismos eventos en el mismo orden (lockstep). Quien manda aplica su evento al tiro
 // (optimista): sirve para juegos por turnos o donde cada uno es dueño de lo suyo.
@@ -123,6 +125,8 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
         invitar(para, id, k, d) { enviar({ op: 'invitar', id, k, d, para }); },
         responder(para, id, k, si, motivo) { enviar({ op: 'resp', id, k, si: !!si, para, ...(motivo ? { motivo } : {}) }); },
         ver(id) { alAnfitrion({ op: 'ver', id }); },
+        // Anfitrión: alguien entró a la sala (le cuento las actividades abiertas)
+        entroJugador(quien) { if (esAnfitrion && quien !== yo) for (const a of acts.values()) aUno(quien, { op: 'estado', id: a.id, act: copia(a) }); },
         // Anfitrión: alguien se fue de la sala (sale de todas sus actividades)
         salioJugador(quien) { if (esAnfitrion) for (const a of [...acts.values()]) sacar(a.id, quien); },
         actividad: id => copia(acts.get(id) || null),

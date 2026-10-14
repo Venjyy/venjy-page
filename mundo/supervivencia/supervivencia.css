@@ -846,5 +846,6 @@ body.en-cine .consola-ayuda { display: none; }
 .reto-aviso { position: fixed; top: 96px; left: 50%; transform: translateX(-50%); z-index: 90; max-width: calc(100% - 32px); padding: 10px 14px; color: #fff; text-align: center; background: rgb(0 0 0 / 0.78); border: 4px solid #000; }
 .reto-aviso p { margin: 0 0 8px; color: var(--amarillo); text-shadow: 2px 2px 0 #3f3f15; }
 .reto-aviso .boton { display: inline-block; width: auto; margin: 0 4px; }
+.reto-tab { color: var(--amarillo); text-shadow: 2px 2px 0 #3f3f15; } /* lista Tab y pausa: «te reta» o «en un duelo» */
 .reto-aviso.reto-breve { top: 180px; pointer-events: none; }
 .reto-aviso.reto-breve p { margin: 0; }

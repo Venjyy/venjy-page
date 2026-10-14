@@ -285,6 +285,7 @@ export function crearCoop(cx, ctx) {
         const r = agregarRemoto(m.id, m);
         if (r && !r.saludado) { r.saludado = true; hud.mensaje(L(`${m.nombre} entró a la sala`, `${m.nombre} joined`), 3); }
         enviarPerfil();
+        if (ctx.alEntrarJugador) ctx.alEntrarJugador(m.id);
         ctx.alCambiarJugadores && ctx.alCambiarJugadores();
     };
     cx.alActualizar = m => agregarRemoto(m.id, m); // cambió su skin: se rehace el modelo

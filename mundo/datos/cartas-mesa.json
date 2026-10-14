@@ -142,7 +142,8 @@
     "nota": "Duelo entre jugadores donde están (con el MAZO en la mano, apuntando al otro): dist = metros máximos hasta él; desnivel = diferencia de altura máxima",
     "dist": 4,
     "desnivel": 1.5,
-    "mesaCerca": 3
+    "mesaCerca": 3,
+    "mirar": 12
   },
   "mueble": {
     "nota": "Colores de la mesa de duelo (la de Lucho, la que se lleva en el inventario y la colocada en el mundo; mesas-colocadas.js, armarMesa). Las medidas son las del grupo mesa",
