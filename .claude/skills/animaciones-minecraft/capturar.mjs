@@ -39,7 +39,8 @@ export async function capturarEscena({ preparar = '', paso = '', tiempos = [0.5,
 
         await pagina.goto(url);
         // Mundo nuevo en Pacífico (sin monstruos que molesten las capturas)
-        await pagina.waitForSelector('#nuevo-mundo:not([hidden])', { timeout: 30000 });
+        await pagina.waitForSelector('#ir-un-jugador', { timeout: 30000 }); await pagina.click('#ir-un-jugador');
+await pagina.waitForSelector('#nuevo-mundo:not([hidden])', { timeout: 30000 });
         await pagina.click('#nuevo-mundo');
         await pagina.fill('#nombre-mundo', 'Capturas');
         await pagina.check('input[name="dificultad"][value="0"]');

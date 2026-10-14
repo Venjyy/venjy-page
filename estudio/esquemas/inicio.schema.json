@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "inicio.schema.json",
+  "title": "Menú de inicio de la supervivencia (mundo/datos/inicio.json)",
+  "description": "Pantalla de título de supervivencia.html: logo, subtítulo, pie y las frases amarillas que saltan junto al logo (una al azar cada vez). Lo que falte usa el código (INICIO en mundo/supervivencia/inicio-datos.js). Se edita en el Estudio, pestaña Inicio.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "titulo": {
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "logo": { "$ref": "comun.schema.json#/$defs/texto" },
+        "sub": { "$ref": "comun.schema.json#/$defs/texto" },
+        "pie": { "$ref": "comun.schema.json#/$defs/texto" },
+        "frases": {
+          "description": "Frases cortas; sale una al azar cada vez que se abre el menú. Lista vacía = sin frase.",
+          "type": "array",
+          "items": { "$ref": "comun.schema.json#/$defs/texto" },
+          "maxItems": 200
+        },
+        "frase": {
+          "description": "Cómo se ve la frase: color, giro en grados, cuánto crece al latir (0.1 = 10 %), latidos por segundo y dónde queda (x: % desde el borde derecho del logo hacia adentro, negativo = sale del logo; y: % desde abajo del logo).",
+          "type": "object",
+          "properties": {
+            "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "giro": { "type": "number", "minimum": -90, "maximum": 90 },
+            "pulso": { "type": "number", "minimum": 0, "maximum": 1 },
+            "ritmo": { "type": "number", "minimum": 0, "maximum": 10 },
+            "x": { "type": "number", "minimum": -100, "maximum": 100 },
+            "y": { "type": "number", "minimum": -100, "maximum": 150 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false
+}

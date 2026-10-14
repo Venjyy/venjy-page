@@ -68,6 +68,12 @@
       "fase": 9,
       "que": "Arte de las cartas del Duelo: retrato de 40×26 por carta, reverso de 50×76 y colores del marco por familia (mesa 3D y panel 2D); se pinta en la pestaña Píxeles y se aplica en vivo con supervivencia.html?estudio"
     },
+    "inicio": {
+      "esquema": "inicio",
+      "lee": "mundo/supervivencia/inicio-datos.js",
+      "fase": 10,
+      "que": "Menú de inicio de la supervivencia: logo, subtítulo, pie y las frases amarillas junto al logo (una al azar; color, giro y latido); se edita en la pestaña Inicio del Estudio"
+    },
     "borradores": {
       "esquema": "borradores",
       "lee": null,

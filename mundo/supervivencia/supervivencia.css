@@ -849,3 +849,28 @@ body.en-cine .consola-ayuda { display: none; }
 .reto-tab { color: var(--amarillo); text-shadow: 2px 2px 0 #3f3f15; } /* lista Tab y pausa: «te reta» o «en un duelo» */
 .reto-aviso.reto-breve { top: 180px; pointer-events: none; }
 .reto-aviso.reto-breve p { margin: 0; }
+
+/* ---------- Menú de inicio: pantalla de título (inicio-datos.js; textos y frase en mundo/datos/inicio.json) ---------- */
+.titulo-inicio { width: min(560px, 100%); display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+.logo-inicio { position: relative; padding: 0 12px; }
+.logo-texto {
+    margin: 0; font-weight: normal; line-height: 1; letter-spacing: 0.06em;
+    font-size: clamp(3.2rem, 15vw, 6.5rem); color: #d0d0d0;
+    text-shadow: 0 4px 0 #6b6b6b, 0 8px 0 #3a3a3a, 0 12px 0 #000;
+}
+.logo-sub { margin: 14px 0 0; font-size: clamp(1rem, 4vw, 1.4rem); letter-spacing: 0.2em; color: var(--blanco); text-shadow: 2px 2px 0 #3f3f3f; }
+.frase-inicio {
+    position: absolute; right: var(--frase-x, -10%); bottom: var(--frase-y, 40%); white-space: nowrap; pointer-events: none;
+    font-size: clamp(0.85rem, 3.4vw, 1.2rem); color: var(--frase-color, #ffff55); text-shadow: 2px 2px 0 #3f3f15;
+    transform: rotate(var(--frase-giro, -18deg));
+    animation: latido-frase var(--frase-ritmo, 0.6s) ease-in-out infinite alternate;
+}
+@keyframes latido-frase {
+    from { transform: rotate(var(--frase-giro, -18deg)) scale(1); }
+    to { transform: rotate(var(--frase-giro, -18deg)) scale(var(--frase-pulso, 1.08)); }
+}
+.botones-titulo { width: min(400px, 100%); }
+.botones-titulo .fila-botones .boton { margin-top: 0; }
+.pie-inicio { margin: 0; color: var(--gris); font-size: 0.85rem; text-shadow: 2px 2px 0 #000; }
+#menu-amigos h2 { margin: 18px 0 6px; font-size: 1.1rem; font-weight: normal; text-shadow: 2px 2px 0 #3f3f3f; }
+@media (prefers-reduced-motion: reduce) { .frase-inicio { animation: none; } }
