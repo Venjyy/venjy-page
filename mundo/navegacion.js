@@ -33,6 +33,8 @@ export const NAV_BASE = {
     nodosPorCuadro: 800,  // tope de nodos de búsqueda por cuadro entre todos (~1,5 ms en un PC medio)
     nodosMax: 200000,     // tope por búsqueda; al llegar entrega el mejor tramo parcial
     llegada: 1.2,         // a esta distancia (horizontal) del destino ya llegó
+    aceptable: 4,         // un camino parcial que termina a menos de esto del destino también cuenta como llegada
+    radioPisable: 12,     // si el destino no se puede pisar (dentro de una torre), busca el punto pisable más cercano hasta aquí
     atasco: 2.5,          // segundos sin acercarse antes de volver a buscar desde donde está
     reintentos: 3,        // búsquedas de nuevo antes de rendirse (sin camino)
     saltoLejos: 1,        // lejos del jugador, segundos entre saltos de posición
@@ -143,6 +145,28 @@ export function inicio(C, desde, op = ajustes) {
     for (const [dx, dz] of DIRS) if (deP(C, op, x + dx, y, z + dz)) return { x: x + dx, y, z: z + dz };
     const ya = apoyo(C, desde.x, desde.y, desde.z, op);
     return Number.isFinite(ya) ? { x, y: ya, z } : null;
+}
+
+// Punto pisable más cercano a (x, y, z), en anillos hasta `radioPisable` bloques y unos bloques arriba o abajo:
+// convierte «el centro de la atalaya» (dentro de la torre) en «junto a la torre». null si no hay ninguno.
+export function cercaPisable(C, x, y, z, op = ajustes) {
+    const bx = Math.floor(x), bz = Math.floor(z), by = Number.isFinite(y) ? Math.round(y) : NaN;
+    const R = Math.max(0, op.radioPisable | 0);
+    for (let r = 0; r <= R; r++) {
+        let mejor = null, mejorD = Infinity;
+        for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
+            if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue; // solo el borde del anillo
+            const cx = bx + dx, cz = bz + dz;
+            let cy = NaN;
+            if (Number.isFinite(by)) { for (const d of [0, 1, -1, 2, -2, 3, -3, 4, -4]) if (deP(C, op, cx, by + d, cz)) { cy = by + d; break; } }
+            else { const col = C.columna(cx, cz); if (col && !col.agua) cy = col.y; }
+            if (!Number.isFinite(cy)) continue;
+            const d = dx * dx + dz * dz + (Number.isFinite(by) ? (cy - by) * (cy - by) : 0);
+            if (d < mejorD) { mejorD = d; mejor = { x: cx + 0.5, y: cy, z: cz + 0.5 }; }
+        }
+        if (mejor) return mejor;
+    }
+    return null;
 }
 
 // ---------------------------------------------------------
@@ -361,7 +385,7 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         moviendo: false, fase: 0, distancia: 0, reintentos: 0,
         ir(destino) {
             w.destino = { x: destino.x, y: destino.y, z: destino.z };
-            w.reintentos = 0;
+            w.reintentos = 0; w.ultimaD = Infinity;
             buscar();
         },
         parar() {
@@ -407,14 +431,16 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         w.estado = 'sin-camino'; w.camino = null;
         return w.estado;
     }
-    // Terminó el camino: si era parcial, busca el resto desde aquí
+    // Terminó el camino. Si quedó cerca (`aceptable`), llegó. Si era parcial y este tramo acercó al menos un bloque, busca
+    // el resto desde aquí; si no acercó (el destino no se alcanza), se rinde: nunca busca en vano una y otra vez
     function finDeCamino() {
-        const d = w.destino;
-        if (d && Math.hypot(d.x - cuerpo.x, d.z - cuerpo.z) > op().llegada + 0.5) {
-            if (w.reintentos++ < op().reintentos + 8) { buscar(); return w.estado; }
-            w.estado = 'sin-camino'; w.camino = null; return w.estado;
-        }
-        w.estado = 'llego'; w.camino = null;
+        const d = w.destino, A = op();
+        const dist = d ? Math.hypot(d.x - cuerpo.x, d.z - cuerpo.z) : 0;
+        if (dist <= Math.max(A.llegada + 0.5, A.aceptable)) { w.estado = 'llego'; w.camino = null; return w.estado; }
+        const avanzo = dist < w.ultimaD - 1;
+        w.ultimaD = Math.min(w.ultimaD, dist);
+        if (avanzo && w.reintentos++ < A.reintentos + 8) { buscar(); return w.estado; }
+        w.estado = 'sin-camino'; w.camino = null;
         return w.estado;
     }
     // Lejos: nadie mira. Junta el tiempo y cada `saltoLejos` s avanza de un viaje lo que habría caminado

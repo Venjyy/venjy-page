@@ -23,6 +23,8 @@ const CAMINAR = {
     nodosPorCuadro: ['nodos de búsqueda por cuadro (rendimiento)', 'search nodes per frame (performance)', 100, 10000, 100],
     nodosMax: ['tope de nodos por búsqueda', 'node cap per search', 5000, 1000000, 5000],
     llegada: ['llegó a menos de (bloques)', 'arrived within (blocks)', 0.5, 6, 0.1],
+    aceptable: ['camino parcial: también llegó a menos de (bloques)', 'partial path: also arrived within (blocks)', 1, 16, 0.5],
+    radioPisable: ['destino que no se pisa: busca al lado hasta (bloques)', 'unwalkable target: look nearby up to (blocks)', 0, 32, 1],
     atasco: ['atascado: busca de nuevo tras (s)', 'stuck: search again after (s)', 0.5, 10, 0.5],
     reintentos: ['reintentos antes de rendirse', 'retries before giving up', 0, 10, 1],
     saltoLejos: ['lejos: un salto cada (s)', 'far away: one jump every (s)', 0.2, 5, 0.1],
@@ -33,7 +35,8 @@ const CAMINAR = {
 const PASEO = {
     amplitud: ['balanceo al caminar', 'walk swing', 0, 1.2, 0.05],
     acomodar: ['se acomoda en su sitio en (s)', 'settles into place in (s)', 0, 3, 0.1],
-    reintento: ['sin camino y a la vista: reintenta cada (s)', 'no path and in view: retry every (s)', 1, 20, 0.5],
+    reintento: ['sin camino y a la vista: reintenta cada (s, luego el doble)', 'no path and in view: retry every (s, then double)', 1, 20, 0.5],
+    reintentosVista: ['reintentos a la vista antes de quedarse', 'retries in view before staying', 0, 6, 1],
     distanciaVisita: ['distancia a quien visita (bloques)', 'distance to the friend visited (blocks)', 1, 5, 0.1],
     mirarJugador: ['de pie, te mira a menos de (bloques)', 'standing, looks at you within (blocks)', 0, 16, 0.5]
 };

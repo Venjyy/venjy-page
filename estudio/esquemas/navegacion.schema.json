@@ -84,6 +84,18 @@
           "minimum": 0.5,
           "maximum": 6
         },
+        "aceptable": {
+          "description": "Un camino parcial (el destino no se alcanza del todo) que termina a menos de esto (bloques) del destino también cuenta como llegada.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "radioPisable": {
+          "description": "Si el destino no se puede pisar (el centro de un lugar, dentro de la construcción), busca el punto pisable más cercano hasta esta distancia (bloques; 0 = no busca).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
         "atasco": {
           "description": "Segundos sin acercarse antes de volver a buscar camino desde donde está.",
           "type": "number",
@@ -140,10 +152,16 @@
           "maximum": 3
         },
         "reintento": {
-          "description": "Sin camino y a la vista del jugador: segundos antes de volver a intentarlo.",
+          "description": "Sin camino y a la vista del jugador: segundos antes de volver a intentarlo (cada intento espera el doble).",
           "type": "number",
           "minimum": 1,
           "maximum": 20
+        },
+        "reintentosVista": {
+          "description": "Cuántas veces lo reintenta a la vista del jugador; al agotarlas se queda donde llegó (de vuelta: aparece en su sitio cuando nadie lo ve).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
         },
         "distanciaVisita": {
           "description": "A qué distancia (bloques) de la persona que visita se queda.",
