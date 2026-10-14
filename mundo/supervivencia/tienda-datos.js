@@ -154,6 +154,7 @@ export const TIENDAS = {
         noAlcanza: t('Con esa bolsa no corto ni una rama. Vuelve con más.', 'With that bag I cannot cut a single branch. Come back with more.')
     },
     lucho: {
+        cartas: true, // vende cartas del Duelo (cartas-tienda.js; precios y sobres en cartas-mesa.json)
         ofertas: [
             of([[O.HILO, 4]], E(1)),
             of([[O.ARCO, 1]], E(1)),

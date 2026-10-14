@@ -42,6 +42,30 @@ const ORDEN = ['monstruo', 'mito', 'amigo', 'animal', 'hechizo'];
 const familia = id => (CARTAS[id].tipo === 'hechizo' ? 'hechizo' : CARTAS[id].familia);
 const contar = mazo => { const o = {}; for (const id of mazo) o[id] = (o[id] || 0) + 1; return o; };
 
+// Carta en miniatura con su arte y los textos encima (mismas clases que el panel 2D); la usa también la tienda de cartas.
+// L = texto en el idioma ({es, en} -> string)
+export function miniCarta(id, L) {
+    const d = CARTAS[id], c = document.createElement('div');
+    c.className = 'carta-pixel';
+    const img = arteCarta(id);
+    c.innerHTML = '<span class="carta-nombre"></span><span class="carta-familia"></span><span class="carta-estadisticas"></span><span class="carta-texto"></span>';
+    c.children[0].textContent = L(d.nombre);
+    c.children[1].textContent = d.tipo === 'criatura' ? L(FAMILIAS[d.familia]) : L(TXT_CARTAS.hechizo);
+    c.children[3].textContent = L(d.texto);
+    if (img) {
+        c.classList.add('con-arte', d.tipo === 'hechizo' ? 'es-hechizo' : 'es-criatura');
+        if (L(d.nombre).length >= 26) c.classList.add('nombre-largo');
+        c.style.backgroundImage = `url(${img})`;
+        if (d.tipo === 'criatura') {
+            const a = document.createElement('span'), b = document.createElement('span');
+            a.className = 'carta-atk'; a.textContent = String(d.atk); b.className = 'carta-def'; b.textContent = String(d.def);
+            c.children[2].append(a, b);
+        }
+    } else if (d.tipo === 'criatura') c.children[2].textContent = `${L(TXT_CARTAS.atk)} ${d.atk} / ${L(TXT_CARTAS.def)} ${d.def}`;
+    c.title = `${L(d.nombre)} · ${L(d.texto)}`;
+    return c;
+}
+
 export function crearArmarMazo(ctx) {
     const { inventario, abrirPanel, cerrarPanel } = ctx;
     let idioma = ctx.idioma || 'es', mazo = [], el = null, aviso = '';
@@ -54,28 +78,7 @@ export function crearArmarMazo(ctx) {
         b.addEventListener('click', ev => { ev.stopPropagation(); fn(); });
         return b;
     };
-    // Carta en miniatura con su arte y los textos encima (mismas clases que el panel 2D)
-    function carta(id) {
-        const d = CARTAS[id], c = document.createElement('div');
-        c.className = 'carta-pixel';
-        const img = arteCarta(id);
-        c.innerHTML = '<span class="carta-nombre"></span><span class="carta-familia"></span><span class="carta-estadisticas"></span><span class="carta-texto"></span>';
-        c.children[0].textContent = L(d.nombre);
-        c.children[1].textContent = d.tipo === 'criatura' ? L(FAMILIAS[d.familia]) : L(TXT_CARTAS.hechizo);
-        c.children[3].textContent = L(d.texto);
-        if (img) {
-            c.classList.add('con-arte', d.tipo === 'hechizo' ? 'es-hechizo' : 'es-criatura');
-            if (L(d.nombre).length >= 26) c.classList.add('nombre-largo');
-            c.style.backgroundImage = `url(${img})`;
-            if (d.tipo === 'criatura') {
-                const a = document.createElement('span'), b = document.createElement('span');
-                a.className = 'carta-atk'; a.textContent = String(d.atk); b.className = 'carta-def'; b.textContent = String(d.def);
-                c.children[2].append(a, b);
-            }
-        } else if (d.tipo === 'criatura') c.children[2].textContent = `${L(TXT_CARTAS.atk)} ${d.atk} / ${L(TXT_CARTAS.def)} ${d.def}`;
-        c.title = `${L(d.nombre)} · ${L(d.texto)}`;
-        return c;
-    }
+    const carta = id => miniCarta(id, L);
 
     function pintar() {
         if (!el) return;
