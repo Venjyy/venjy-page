@@ -32,6 +32,7 @@ const CAMINAR = {
     radioPisable: ['destino que no se pisa: busca al lado hasta (bloques)', 'unwalkable target: look nearby up to (blocks)', 0, 32, 1],
     atasco: ['atascado: busca de nuevo tras (s)', 'stuck: search again after (s)', 0.5, 10, 0.5],
     reintentos: ['reintentos antes de rendirse', 'retries before giving up', 0, 10, 1],
+    avanceReintentos: ['si avanzó (bloques), los reintentos vuelven a 0', 'if it advanced (blocks), retries reset', 1, 64, 1],
     saltoLejos: ['lejos: un salto cada (s)', 'far away: one jump every (s)', 0.2, 5, 0.1],
     rapidezLejos: ['lejos (nadie lo ve): camina más rápido (×)', 'far away (unseen): walks faster (×)', 1, 10, 0.5],
     radioDetalle: ['camina mirando bloques a menos de (bloques)', 'walks checking blocks within (blocks)', 16, 160, 4],
@@ -295,7 +296,7 @@ export async function montarVida(ctx) {
     const ESTADOS = {
         'en-sitio': ['en su sitio', 'at their spot'], buscando: ['buscando camino', 'finding a path'], caminando: ['caminando', 'walking'],
         alla: ['llegó', 'arrived'], volviendo: ['volviendo', 'going back'], acomodando: ['acomodándose', 'settling in'],
-        'sin-camino': ['sin camino', 'no path'], quieto: ['de pie', 'standing']
+        'sin-camino': ['sin camino', 'no path'], quieto: ['de pie', 'standing'], atascado: ['se quedó corto (lo intenta de nuevo)', 'stuck short (will retry)']
     };
     async function caminar(destino) {
         const persona = selPersona.value;

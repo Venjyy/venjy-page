@@ -286,6 +286,17 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
 }
 
 {
+    // Viaje largo con cosas que aparecen en el camino (chunks que se cargan mientras camina): cada choque busca de nuevo,
+    // pero si avanzó desde la última búsqueda no cuenta como fracaso (antes, al tercer árbol se rendía a mitad de camino)
+    const C = juguete(200, 20);
+    const cuerpo = { x: 2.5, y: 1, z: 10.5, yaw: 0 };
+    const postes = [30, 60, 90, 120, 150, 180].map(x => ({ x, puesto: false }));
+    const r = caminarHasta(C, cuerpo, { x: 195.5, y: 1, z: 10.5 }, { alCuadro() {
+        for (const p of postes) if (!p.puesto && cuerpo.x > p.x - 6) { p.puesto = true; C.caja(p.x, 1, 8, p.x, 2, 12, SOLIDO); }
+    } });
+    ok(r.w.estado === 'llego' && postes.every(p => p.puesto), `seis choques en un viaje largo: llega igual (${r.w.estado})`);
+}
+{
     // Lejos sobre una loma: a mitad de un tramo suavizado la altura sigue al terreno (antes quedaba la del punto
     // anterior y, al acercarse el jugador, el caminante se rendía en el aire)
     const C = juguete(200, 20);
@@ -433,16 +444,23 @@ const L = k => T.lugares.find(l => l.clave === k);
     ok(paseos.estado('ana').estado === 'alla' && Math.hypot(ana.x - 50.5, ana.z - 50.5) < 2, `paseos: sin camino y sin nadie mirando, aparece allá (${paseos.estado('ana').estado})`);
     paseos.volverTodos();
     ok(!ana.paseo && ana.x === 5.5 && ana.z === 5.5, 'paseos: volverTodos los deja en su sitio');
-    // A la vista y sin camino: pocos reintentos, cada vez más espaciados, y se queda donde llegó
+    // A la vista y sin camino: pocos reintentos, cada vez más espaciados, y se queda donde llegó, pero «atascado» (no
+    // «alla»: las rutinas no saludan a la nada); de vez en cuando lo intenta de nuevo y, si dejas de verlo, aparece allá
     jugador.pos.x = 10; jugador.pos.z = 10;
     let pedidas = 0; const pedir = paseos.nav.pedir; paseos.nav.pedir = (...x) => { pedidas++; return pedir(...x); };
     ok(paseos.ir('ana', { x: 50.5, y: 1, z: 50.5 }), 'paseos: encerrada y a la vista');
-    correr(200);
-    ok(paseos.estado('ana').estado === 'alla', `paseos: a la vista y sin camino se queda donde llegó (${paseos.estado('ana').estado})`);
+    correr(60, () => paseos.estado('ana').estado === 'atascado');
+    ok(paseos.estado('ana').estado === 'atascado', `paseos: a la vista y sin camino se queda donde llegó, atascado (${paseos.estado('ana').estado})`);
     ok(pedidas <= 4 * (1 + 2), `paseos: reintentos acotados (${pedidas} búsquedas: hasta 4 por intento, 1 + reintentosVista intentos)`);
-    const antes = pedidas; correr(60);
-    ok(pedidas === antes, 'paseos: después no vuelve a buscar');
+    const antes = pedidas; correr(10);
+    ok(pedidas === antes, 'paseos: después no vuelve a buscar enseguida');
+    correr(30);
+    ok(pedidas > antes && pedidas <= antes + 4 * 3, `paseos: cada tanto lo intenta de nuevo (${pedidas - antes} búsquedas en 30 s)`);
     paseos.nav.pedir = pedir;
+    jugador.pos.x = 400; jugador.pos.z = 400;
+    correr(30, () => paseos.estado('ana').estado === 'alla');
+    ok(paseos.estado('ana').estado === 'alla' && Math.hypot(ana.x - 50.5, ana.z - 50.5) < 2, `paseos: atascado, al dejar de verla aparece allá (${paseos.estado('ana').estado})`);
+    jugador.pos.x = 10; jugador.pos.z = 10;
     paseos.volverTodos();
     // Destino dentro de un bloque (como el centro de un lugar): va al punto pisable de al lado
     C.caja(0, 1, 20, 29, 3, 20, LIBRE); C.caja(60, 1, 60, 64, 8, 64, SOLIDO);

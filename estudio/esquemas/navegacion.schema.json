@@ -108,6 +108,12 @@
           "minimum": 0,
           "maximum": 10
         },
+        "avanceReintentos": {
+          "description": "Si avanzó estos bloques hacia el destino desde la última búsqueda, los reintentos vuelven a 0 (en viajes largos aparecen árboles que el mapa de alturas no tenía y cada choque busca de nuevo).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 64
+        },
         "saltoLejos": {
           "description": "Lejos del jugador: segundos entre saltos de posición (no se anima ni se miran bloques).",
           "type": "number",

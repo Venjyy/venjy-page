@@ -37,6 +37,7 @@ export const NAV_BASE = {
     radioPisable: 12,     // si el destino no se puede pisar (dentro de una torre), busca el punto pisable más cercano hasta aquí
     atasco: 2.5,          // segundos sin acercarse antes de volver a buscar desde donde está
     reintentos: 3,        // búsquedas de nuevo antes de rendirse (sin camino)
+    avanceReintentos: 8,  // si avanzó esto (bloques) hacia el destino desde la última búsqueda, los reintentos vuelven a 0
     saltoLejos: 1,        // lejos del jugador, segundos entre saltos de posición
     rapidezLejos: 4,      // lejos del jugador (nadie lo ve) camina esto más rápido: las visitas entre lugares lejanos caben en el día
     radioDetalle: 160,    // a menos de esto (del jugador) camina mirando los bloques; más lejos avanza a saltos
@@ -398,11 +399,11 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
     const op = () => opciones.ajustes ? opciones.ajustes() : ajustes;
     const C = navegador.consulta;
     const w = {
-        estado: 'quieto', camino: null, i: 0, destino: null, busqueda: null, asentando: NaN, deLejos: false,
+        estado: 'quieto', camino: null, i: 0, destino: null, busqueda: null, asentando: NaN, deLejos: false, dBuscar: Infinity,
         moviendo: false, fase: 0, distancia: 0, reintentos: 0,
         ir(destino) {
             w.destino = { x: destino.x, y: destino.y, z: destino.z };
-            w.reintentos = 0; w.ultimaD = Infinity; w.asentando = NaN;
+            w.reintentos = 0; w.ultimaD = Infinity; w.asentando = NaN; w.dBuscar = Infinity;
             buscar();
         },
         parar() {
@@ -473,7 +474,15 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         cuerpo.x = q.x; cuerpo.y = cuerpo.yObj = q.y; cuerpo.z = q.z;
         return true;
     }
+    // En un viaje largo aparecen árboles y cosas que el mapa de alturas no tenía (los chunks se cargan mientras camina):
+    // cada choque busca de nuevo. Si desde la última búsqueda avanzó de verdad, eso no cuenta como fracaso
+    function avance() {
+        if (!w.destino) return;
+        const d = Math.hypot(w.destino.x - cuerpo.x, w.destino.z - cuerpo.z);
+        if (d < w.dBuscar - op().avanceReintentos) { w.reintentos = 0; w.dBuscar = d; }
+    }
     function buscar() {
+        if (w.destino) w.dBuscar = Math.min(w.dBuscar, Math.hypot(w.destino.x - cuerpo.x, w.destino.z - cuerpo.z));
         if (w.busqueda) navegador.cancelar(w.busqueda);
         w.camino = null;
         w.busqueda = navegador.pedir({ x: cuerpo.x, y: cuerpo.y, z: cuerpo.z }, w.destino);
@@ -516,6 +525,7 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         }
         cuerpo.yObj = cuerpo.y;
         w.reloj = 0; w.mejor = Infinity;
+        avance();
         return w.i >= w.camino.length ? finDeCamino() : w.estado;
     }
     // Cerca: camina de verdad, mirando cada columna nueva; si cambió algo, busca de nuevo desde aquí
@@ -548,6 +558,7 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         da = Math.atan2(Math.sin(da), Math.cos(da));
         cuerpo.yaw += da * Math.min(1, dt * A.giro);
         w.moviendo = true; w.distancia += paso;
+        avance();
         w.fase += paso * 2.6; // ~un paso por bloque, como caminar() de cuerpo.js
         // Atasco: si en `atasco` s no se acercó medio bloque al punto siguiente, busca de nuevo
         w.reloj += dt;

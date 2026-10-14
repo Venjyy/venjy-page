@@ -80,7 +80,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         let a = activos.get(clave);
         if (destino.sitio) {
             if (!a) return true; // ya está en su sitio
-            a.vuelta = true; a.mirar = null; a.fallos = 0; a.espera = 0;
+            a.vuelta = true; a.mirar = null; a.fallos = 0; a.espera = 0; a.corto = false;
             a.w.ir({ x: a.casa.x, y: a.casa.y, z: a.casa.z });
             return true;
         }
@@ -97,7 +97,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         // El destino tiene que poder pisarse: el centro de un lugar suele estar dentro de la construcción
         const pis = cercaPisable(consulta, p.x, p.y, p.z, ajustesNavegacion());
         if (pis) p = pis;
-        a.destino = p; a.fallos = 0; a.espera = 0;
+        a.destino = p; a.fallos = 0; a.espera = 0; a.corto = false;
         a.w.ir(p);
         return true;
     }
@@ -143,11 +143,17 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             const estado = w.actualizar(dt, { detalle: dJ < Math.min(A.radioDetalle, RADIO_VISIBLE) });
             if (estado === 'sin-camino') {
                 // Nadie lo ve: aparece allá (como los lobos de Minecraft). Si lo ven, reintenta pocas veces y cada vez más
-                // espaciado (`reintento`, el doble, …); de ida, al agotarlos se queda donde llegó; de vuelta espera a
-                // que nadie lo vea para aparecer en su sitio. Nunca busca sin parar.
-                if (dJ > RADIO_VISIBLE * 0.5) { const d = a.vuelta ? a.casa : a.destino; cuerpo.x = d.x; cuerpo.z = d.z; if (Number.isFinite(d.y)) cuerpo.y = d.y; w.estado = 'llego'; }
-                else if (a.fallos >= paseo.reintentosVista) { if (!a.vuelta) w.estado = 'llego'; }
+                // espaciado (`reintento`, el doble, …); de ida, al agotarlos se queda donde llegó, pero «atascado» (no
+                // llegó: las rutinas no saludan) y lo intenta de nuevo de vez en cuando; de vuelta espera a que nadie lo
+                // vea para aparecer en su sitio. Nunca busca sin parar.
+                if (dJ > RADIO_VISIBLE * 0.5) { const d = a.vuelta ? a.casa : a.destino; cuerpo.x = d.x; cuerpo.z = d.z; if (Number.isFinite(d.y)) cuerpo.y = d.y; w.estado = 'llego'; a.corto = false; }
+                else if (a.fallos >= paseo.reintentosVista) { if (!a.vuelta) { w.estado = 'llego'; a.corto = true; a.espera = 0; } }
                 else if ((a.espera += dt) > paseo.reintento * 2 ** a.fallos) { a.espera = 0; a.fallos++; w.ir(a.vuelta ? a.casa : a.destino); }
+            }
+            // Se quedó corto (a la vista y sin camino): si dejas de verlo aparece allá; si no, cada tanto lo intenta de nuevo
+            if (a.corto && !a.vuelta && w.estado === 'llego') {
+                if (dJ > RADIO_VISIBLE * 0.5) { cuerpo.x = a.destino.x; cuerpo.z = a.destino.z; if (Number.isFinite(a.destino.y)) cuerpo.y = a.destino.y; a.corto = false; }
+                else if ((a.espera += dt) > paseo.reintento * 2 ** (paseo.reintentosVista + 1)) { a.corto = false; a.fallos = 0; a.espera = 0; w.ir(a.destino); }
             }
             if (w.estado === 'llego' && antes !== 'llego') a.acomoda = 0;
             if (w.estado === 'llego' && a.vuelta) {
@@ -186,7 +192,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         estado(clave) {
             const a = activos.get(clave);
             if (!a) return { estado: 'en-sitio' };
-            return { estado: a.vuelta ? (a.w.estado === 'llego' ? 'acomodando' : 'volviendo') : a.w.estado === 'llego' ? 'alla' : a.w.estado, restante: Math.round(a.w.restante), x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z), nodos: a.w.busqueda ? a.w.busqueda.nodos : 0 };
+            return { estado: a.vuelta ? (a.w.estado === 'llego' ? 'acomodando' : 'volviendo') : a.w.estado === 'llego' ? (a.corto ? 'atascado' : 'alla') : a.w.estado, restante: Math.round(a.w.restante), x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z), nodos: a.w.busqueda ? a.w.busqueda.nodos : 0 };
         },
         actualizar
     };

@@ -104,6 +104,7 @@ function armar({ visitas, hora = 7, jugador = { pos: { x: 0, z: 0 } } } = {}) {
         resolverDestino: l => (l === 'faro' ? { x: 100, z: 0 } : null),
         // de la prueba
         llegar(c) { fuera.get(c).estado = 'alla'; },
+        poner(c, e) { fuera.get(c).estado = e; },
         casa(c) { fuera.delete(c); P[c].paseo = null; }
     };
     const reloj = { h: hora }, permiso = { libre: true };
@@ -125,6 +126,10 @@ const VIS = {
     ok(r.estado('ana').estado === 'yendo' && r.estado('ana').visita === 'ana-beto', `a las 10 va a ver a Beto (${r.estado('ana').estado})`);
     ok(llamadas[0][0] === 'ir' && llamadas[0][2].persona === 'beto' && llamadas[0][3].mirar === 'beto', 'sale con paseos.ir hacia Beto y mirándolo');
     ok(r.texto('ana') === 'Va a ver a BETO.', `panel: «${r.texto('ana')}»`);
+    // Se quedó corto (a la vista y sin camino): no saluda a la nada, sigue yendo
+    llamadas.length = 0;
+    paseos.poner('ana', 'atascado'); paso(1);
+    ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === '' && !P.beto.visita, 'atascado a medio camino: sigue «yendo», sin saludo');
     paseos.llegar('ana'); paso(0.5);
     ok(r.estado('ana').estado === 'visitando', 'al llegar queda de visita');
     await new Promise(res => setTimeout(res, 0)); // los gestos se cargan con import()
