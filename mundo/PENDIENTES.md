@@ -1204,7 +1204,8 @@ Dos etapas; un chat por punto; dentro de cada etapa, de arriba a abajo. **Regla 
 | B3 · Motor genérico del Estudio | **Opus** | Diseño de motor con todos los casos de §13. |
 | B4 · Pasar el resto | **Sonnet** + subagente Haiku | Mecánico una vez hecho el motor. |
 | B5 · Personajes en datos | **Opus** | Cambia cómo nace una persona en todo el juego. |
-| B6 · Misiones, objetos, recetas, tienda y lugares en JSON | **Sonnet** | Migraciones con esquema y pruebas. |
+| B6 · Misiones, objetos, recetas y tienda en JSON | **Sonnet** | Migraciones con esquema y pruebas. |
+| B6 · Lugares y construcciones en datos (gizmo de Posiciones) | **Opus** | Los decorados y la luz se generan en código: es diseño, base de los mapas nuevos. |
 | B7 · Cierre y tag | **Sonnet** | Validar y anotar. |
 
 ### Fase 2 · Pulido Minecraft
