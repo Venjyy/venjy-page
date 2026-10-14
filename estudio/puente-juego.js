@@ -61,6 +61,10 @@ async function aplicar(nombre, datos) {
         m.aplicarArte(datos);
         const v = window.__venjy;
         if (v && v.mesaCartas) v.mesaCartas.refrescarArte();
+    } else if (nombre === 'musica') {
+        // musica-datos.js: musica.js y carrera-musica.js lo consultan en cada paso (el próximo paso ya suena con lo nuevo)
+        const m = await import('../mundo/supervivencia/musica-datos.js');
+        m.aplicarMusica(datos);
     } else aplicarDatosVivos(nombre, datos);
 }
 const canal = new BroadcastChannel(CANAL);
@@ -258,6 +262,11 @@ const responder = crearManejador({
         const m = window.__venjy && window.__venjy.misiones;
         if (!m || !m.decir) throw new Error('el juego todavía no está listo');
         m.decir(persona, texto);
+    },
+    // Pestaña Música: vista previa de un tema en el juego (estudio/musica-juego.js, se carga la primera vez)
+    async musica(o) {
+        const m = await import('./musica-juego.js');
+        m.musicaPrueba(o);
     },
     teletransportar,
     elegir,

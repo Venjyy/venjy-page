@@ -86,6 +86,12 @@
       "fase": 12,
       "que": "Carrera de gatas «Gran Premio del Living» (7h-1): pista (puntos 3D, huecos, turbos y túneles), muebles y medidas de la sala, cómo corre una gata (derrape, turbos, salto), las seis gatas (carácter y pelaje), IA, cámara, celular y premio por puesto; main.js lo pide al abrir la carrera; se edita en la pestaña Carrera (plano y perfil de la pista) y se aplica en vivo con supervivencia.html?estudio"
     },
+    "musica": {
+      "esquema": "musica",
+      "lee": "mundo/supervivencia/musica-datos.js",
+      "fase": 13,
+      "que": "Música: temas de capas (ritmo, notas sobre el acorde, acordes, melodía, arpegio) con progresión y niveles, y sintetizadores propios (onda, envolvente, filtro, voces, armónicos); un tema con la clave de uno del código lo reemplaza (carrera: living, cocina, patio, techo, podio; mundo: ambiente, venjy, pony, lona, campamento, iglu, lenera, playa, jefe) y con borrador: true el juego no lo usa; se edita en la pestaña Música y se aplica en vivo con supervivencia.html?estudio"
+    },
     "borradores": {
       "esquema": "borradores",
       "lee": null,

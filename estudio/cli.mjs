@@ -20,6 +20,7 @@ import { leerGlifos, tablaDeRangos } from './glifos.mjs';
 import { reglasEscenas } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
+import { USOS } from '../mundo/supervivencia/musica-motor.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATOS = path.join(RAIZ, 'mundo', 'datos');
@@ -74,6 +75,10 @@ function cuentaTextos(d) {
 }
 
 const RESUMEN_JSON = {
+    musica: d => {
+        const t = Object.entries(d.temas || {}), b = t.filter(([, x]) => x.borrador).map(([k]) => k);
+        return `${t.length} temas (${b.length ? 'borradores: ' + b.join(', ') : 'ningún borrador'}), ${Object.keys(d.instrumentos || {}).length} instrumentos propios`;
+    },
     'ui-layout': d => {
         const s = d.supervivencia || {};
         const n = Object.keys((s.normal && s.normal.botones) || {}).length;
@@ -327,7 +332,25 @@ function filasBorradores(d, filtro, op) {
     return filas;
 }
 
-const FILAS_JSON = { iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
+// musica: un tema por fila (y a quién reemplaza en el juego); con una clave, sus capas
+function filasMusica(d, filtro) {
+    const temas = d.temas || {};
+    if (filtro && temas[filtro]) {
+        const T = temas[filtro];
+        return (T.capas || []).map((c, n) => {
+            const tipo = ['ritmo', 'rel', 'acorde', 'notas', 'arpegio'].find(x => c[x] !== undefined) || '?';
+            return { clave: `${n + 1}. ${c.nombre || c.inst}`, texto: `${tipo} · ${c.inst} · vol ${c.vol}${c.niveles ? ' · ' + c.niveles.join('/') : ''}${c.mudo ? ' · muda' : ''}` };
+        });
+    }
+    const filas = Object.entries(temas).filter(([k]) => !filtro || k.includes(filtro)).map(([k, T]) => {
+        const reemplaza = Object.entries(USOS).find(([, u]) => [].concat(Array.isArray(u.temas) ? u.temas : Object.keys(u.temas)).includes(k));
+        const estado = T.borrador ? 'BORRADOR' : reemplaza ? `suena: reemplaza a ${k} (${reemplaza[0]})` : 'listo (no reemplaza a ninguno)';
+        return { clave: k, texto: `${estado} · ${T.bpm} bpm · ${(T.prog || []).join(' ')} · ${(T.capas || []).length} capas` };
+    });
+    for (const [k, I] of Object.entries(d.instrumentos || {})) if (!filtro || k.includes(filtro)) filas.push({ clave: 'inst:' + k, texto: `${I.onda || 'square'}${I.filtro ? ' · filtro ' + I.filtro.tipo : ''}${I.voces > 1 ? ' · ' + I.voces + ' voces' : ''}` });
+    return filas;
+}
+const FILAS_JSON = { musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {

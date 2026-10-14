@@ -1,0 +1,50 @@
+{
+  "$schema": "../../estudio/esquemas/musica.schema.json",
+  "version": 1,
+  "nota": "Temas e instrumentos de la pestaña Música del Estudio. Un tema con la clave de uno del código lo reemplaza; con borrador: true el juego no lo usa.",
+  "instrumentos": {
+    "campana": {
+      "nombre": { "es": "Campana", "en": "Bell" },
+      "onda": "sine",
+      "ataque": 0.002,
+      "caida": 1.2,
+      "largo": 0,
+      "vol": 0.8,
+      "armonicos": [
+        { "onda": "sine", "ratio": 2.76, "vol": 0.25 },
+        { "onda": "sine", "ratio": 5.4, "vol": 0.1 }
+      ]
+    }
+  },
+  "temas": {
+    "ejemplo": {
+      "nombre": { "es": "Ejemplo", "en": "Example" },
+      "borrador": true,
+      "uso": "libre",
+      "bpm": 100,
+      "pasos": 16,
+      "vol": 0.09,
+      "prog": ["C", "Am", "F", "G"],
+      "capas": [
+        {
+          "nombre": "bajo",
+          "inst": "bajo",
+          "rel": [0, null, null, null, 7, null, null, null, 0, null, null, null, 7, null, 12, null],
+          "octava": -12,
+          "dur": 2,
+          "vol": 0.45
+        },
+        { "nombre": "bombo", "inst": "kick", "ritmo": "x.......x.......", "vol": 0.6 },
+        { "nombre": "caja", "inst": "caja", "ritmo": "....x.......x...", "vol": 0.3 },
+        {
+          "nombre": "campana",
+          "inst": "campana",
+          "arpegio": [0, null, 1, null, 2, null, 1, null],
+          "octava": 24,
+          "dur": 1,
+          "vol": 0.25
+        }
+      ]
+    }
+  }
+}
