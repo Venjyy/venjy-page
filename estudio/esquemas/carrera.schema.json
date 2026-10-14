@@ -37,7 +37,7 @@
       "description": "Segundos máximos de carrera.",
       "type": "number",
       "minimum": 60,
-      "maximum": 900
+      "maximum": 1800
     },
     "dificultad": {
       "enum": [
@@ -71,15 +71,15 @@
           "description": "Puntos [x, y, z, ancho?] en bloques sobre el piso del living, en orden; se cierra solo; la salida en el primero.",
           "type": "array",
           "minItems": 4,
-          "maxItems": 64,
+          "maxItems": 128,
           "items": {
             "type": "array",
             "prefixItems": [
               {
                 "description": "x",
                 "type": "number",
-                "minimum": -150,
-                "maximum": 150
+                "minimum": -250,
+                "maximum": 250
               },
               {
                 "description": "y (altura sobre el piso)",
@@ -90,8 +90,8 @@
               {
                 "description": "z",
                 "type": "number",
-                "minimum": -150,
-                "maximum": 150
+                "minimum": -250,
+                "maximum": 250
               },
               {
                 "description": "ancho propio (opcional)",
@@ -106,14 +106,14 @@
         },
         "huecos": {
           "type": "array",
-          "maxItems": 16,
+          "maxItems": 64,
           "items": {
             "type": "object",
             "properties": {
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               },
               "largo": {
                 "description": "bloques",
@@ -130,20 +130,20 @@
         },
         "turbos": {
           "type": "array",
-          "maxItems": 32,
+          "maxItems": 64,
           "items": {
             "type": "object",
             "properties": {
               "punto": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               },
               "avance": {
                 "description": "bloques después del punto",
                 "type": "number",
                 "minimum": 0,
-                "maximum": 60
+                "maximum": 120
               },
               "lado": {
                 "description": "-1 izquierda .. 1 derecha",
@@ -166,19 +166,19 @@
         },
         "tuneles": {
           "type": "array",
-          "maxItems": 16,
+          "maxItems": 32,
           "items": {
             "type": "object",
             "properties": {
               "desde": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               },
               "hasta": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 63
+                "maximum": 127
               }
             },
             "additionalProperties": false,
@@ -197,38 +197,38 @@
           "description": "",
           "type": "number",
           "minimum": 60,
-          "maximum": 300
+          "maximum": 500
         },
         "fondo": {
           "description": "",
           "type": "number",
           "minimum": 60,
-          "maximum": 300
+          "maximum": 500
         },
         "alto": {
           "description": "",
           "type": "number",
           "minimum": 20,
-          "maximum": 120
+          "maximum": 150
         },
         "x": {
           "description": "",
           "type": "number",
-          "minimum": -60,
-          "maximum": 60
+          "minimum": -150,
+          "maximum": 150
         },
         "z": {
           "description": "",
           "type": "number",
-          "minimum": -60,
-          "maximum": 60
+          "minimum": -150,
+          "maximum": 150
         }
       },
       "additionalProperties": false
     },
     "muebles": {
       "type": "array",
-      "maxItems": 60,
+      "maxItems": 120,
       "items": {
         "type": "object",
         "properties": {
@@ -249,26 +249,26 @@
           "x": {
             "description": "",
             "type": "number",
-            "minimum": -150,
-            "maximum": 150
+            "minimum": -250,
+            "maximum": 250
           },
           "z": {
             "description": "",
             "type": "number",
-            "minimum": -150,
-            "maximum": 150
+            "minimum": -250,
+            "maximum": 250
           },
           "a": {
             "description": "ancho (x)",
             "type": "number",
             "minimum": 0.5,
-            "maximum": 80
+            "maximum": 160
           },
           "f": {
             "description": "fondo (z)",
             "type": "number",
             "minimum": 0.5,
-            "maximum": 80
+            "maximum": 160
           },
           "h": {
             "description": "alto",

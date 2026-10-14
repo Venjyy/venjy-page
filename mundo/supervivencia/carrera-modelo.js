@@ -43,7 +43,8 @@ export const CARRERA = {
     },
     // Muebles y adornos del living (carrera-escena.js los dibuja; los del piso no pueden pisar la pista: lo revisa la prueba).
     // x, z = centro; a = ancho (x), f = fondo (z), h = alto (bloques); g = giro en grados (solo los adornos sueltos)
-    sala: { ancho: 150, fondo: 130, alto: 60, x: -2, z: 4 },
+    // (grande a propósito: espacio para alargar la pista en el Estudio con la que ya hay al centro)
+    sala: { ancho: 260, fondo: 220, alto: 70, x: -2, z: 4 },
     muebles: [
         { tipo: 'sofa', x: 29, z: -31, a: 42, f: 18, h: 6.8 },      // el asiento queda bajo la pista del sofá
         { tipo: 'mesa', x: -27, z: -25, a: 20, f: 16, h: 9 },       // el túnel pasa por debajo
@@ -59,15 +60,15 @@ export const CARRERA = {
         { tipo: 'podio', x: -6, z: 55, a: 10, f: 4, h: 3, g: 180 }    // donde suben las tres primeras al final (mira hacia el frente: g)
     ],
     gata: {
-        vel: 15,        // velocidad máxima (bloques/s)
-        acel: 11,
-        freno: 22,
+        vel: 21,        // velocidad máxima (bloques/s)
+        acel: 16,
+        freno: 30,
         roce: 5,
         atras: 0.3,
-        giro: 2.2,      // rad/s a buena velocidad
-        gravedad: 34,
-        salto: 6.5,     // impulso del salto (Espacio)
-        derrapeGiro: 1.1,   // rad/s base al derrapar (hacia el lado del derrape)
+        giro: 2.6,      // rad/s a buena velocidad
+        gravedad: 40,
+        salto: 7,     // impulso del salto (Espacio)
+        derrapeGiro: 1.4,   // rad/s base al derrapar (hacia el lado del derrape)
         derrapeMando: 0.9,  // cuánto abre o cierra el derrape el mando
         niveles: [0.75, 1.6, 2.6],      // segundos de carga para azul, naranja, morado
         turbos: [0.55, 1.0, 1.6],       // segundos de turbo de cada nivel
@@ -96,7 +97,7 @@ export const CARRERA = {
         error: 0.25,    // ruido en la línea (bloques; solo fácil y normal)
         empuje: 0.05    // ayuda si va muy atrás de ti (fracción de vel)
     },
-    camara: { distancia: 5.2, alto: 2.3, mira: 4, fov: 70, fovTurbo: 86, suave: 7 },
+    camara: { distancia: 6, alto: 2.5, mira: 6, fov: 72, fovTurbo: 90, suave: 8 },
     tactil: { autoAcelerar: 1 },
     premio: {
         puestos: [[['BACALAO_COCIDO', 4], ['LANA', 3], ['ESMERALDA', 2]], [['BACALAO_COCIDO', 3], ['LANA', 2]], [['BACALAO_COCIDO', 2], ['LANA', 1]]],
