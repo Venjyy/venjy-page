@@ -685,7 +685,8 @@ async function arrancar(guardado, cx = null) {
         return !!(e && e.animal && ganado.interactuar(e.animal));
     };
     const usosObjetos = crearUsosObjetos({ minimapa, gatas, jugador, sonido: { tono, ruido } });
-    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : p.id === O.MAZO ? abrirArmarMazo() : usosObjetos.usar(p) || combate.usar(p));
+    // MAZO: apuntando a otro jugador de la sala lo reta a un duelo ahí mismo; si no, abre el armado del mazo
+    minado.usarObjeto = (o, p) => (p.id === O.CANA ? pesca.usar() : p.id === O.CUADERNO && cuaderno ? cuaderno.usar(p) : p.id === O.MAZO ? (retarApuntado() || abrirArmarMazo()) : usosObjetos.usar(p) || combate.usar(p));
     minado.usarSinNada = () => combate.bloquearConMano2();
     minado.alSoltarDerecho = () => combate.soltarDerecho();
     minado.alRomper = (id, x, y, z) => particulas.romper(id, x, y, z);
@@ -701,6 +702,7 @@ async function arrancar(guardado, cx = null) {
             corre: jugador.corre, golpe: minado.izquierdo, comiendo: minado.comiendo > 0,
             tensando: combate.tensando > 0, bloqueando: combate.bloqueando,
             objeto: id, objeto2: inventario.mano2 ? inventario.mano2.id : 0, escudo: id === O.ESCUDO ? 1 : 0,
+            sentado: !!(mesaCartas && mesaCartas.sentado), // duelo de cartas en el piso o el tronco
             ...(ruleta && ruleta.entrada())
         };
     };
@@ -800,9 +802,9 @@ async function arrancar(guardado, cx = null) {
                 scene, grupo: vista.grupo, dy: DY, camaras, renderer, jugador, idioma, inventario, // inventario: tu colección y tu mazo
                 tinte: materiales.solido.color,
                 lucho: () => amigos.lista.find(n => n.clave === 'lucho') || null,
-                // Duelo entre jugadores: el controlador (null sin sala) y los demás jugadores de la sala para retarlos
+                // Duelo entre jugadores: el controlador (null sin sala) y el cuerpo del rival (tocarlo = ataque directo)
                 duelo: () => duelo,
-                jugadores: () => (coop ? [...coop.remotos].map(([id, r]) => ({ id, nombre: r.nombre })) : []),
+                cuerpoDe: id => (coop && coop.remotos.get(id)?.modelo?.g) || null,
                 alCerrar: liberarEscena,
                 alTutorial: () => misiones.estado.minijuegos.add('cartas-tuto'), // ganaste el tutorial: la próxima vez, elegir nivel
                 alPanel: n => { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); }
@@ -830,8 +832,8 @@ async function arrancar(guardado, cx = null) {
     }
     function abrirMesaCartas(n = 'facil') {
         bloquearEscena(true);
-        // Con sala, el duelo entre jugadores se carga antes: la mesa ofrece retar a los demás
-        Promise.all([cargarMesaCartas(), coop ? cargarDuelo() : null]).then(([m]) => { if (!m || !m.abrir(n)) { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); } });
+        // (A otro jugador se lo reta donde está, con el MAZO: retarApuntado)
+        cargarMesaCartas().then(m => { if (!m || !m.abrir(n)) { jugador.congelado = false; jugador.sinMirar = false; abrirPanelCartas(n); } });
     }
     // Duelo: la primera vez (sin la marca 'cartas-tuto') el botón abre el tutorial; después, «Repasar el tutorial» aparte
     const tutoCartasVisto = () => misiones.estado.minijuegos.has('cartas-tuto');
@@ -1118,37 +1120,113 @@ async function arrancar(guardado, cx = null) {
         if (actividades) actividades.salioJugador(id);
         if (duelo) duelo.rivalSalio(id);
     }
+    // Duelo donde están los dos (duelo 2J, PR 2): se juega sobre la mejor superficie que lleve alguno (la mesa del
+    // PR 3, un tronco o el piso); los dos se sientan frente a frente entre donde estaban
+    const TRONCOS = [B.TRONCO, B.TRONCO_ABEDUL, B.TRONCO_PINO];
+    const superficiePropia = () => (TRONCOS.some(id => inventario.contar(id) > 0) ? 'tronco' : 'piso');
+    const colaJugadas = []; // jugadas del rival que llegan antes de que la mesa abra (la primera vez se carga con import())
     function cargarDuelo() {
         if (!coop) return Promise.resolve(null);
-        if (!cargandoDuelo) cargandoDuelo = Promise.all([import('./cartas-duelo.js'), import('./cartas-coleccion.js'), cargarDatos('cartas-mesa')]).then(([D, K, datos]) => {
+        if (!cargandoDuelo) cargandoDuelo = Promise.all([import('./cartas-duelo.js'), import('./cartas-coleccion.js'), import('./cartas-mesa-modelo.js'), cargarDatos('cartas-mesa')]).then(([D, K, MM, datos]) => {
             if (!datosCartas) datosCartas = datos;
             const L = () => window.__venjy?.datosMesa || datosCartas;
-            const persona = id => ({ id, nombre: coop.nombreDe(id) });
             duelo = D.crearDuelo({
                 acts: actividades, yo: coop.yoId,
                 reglas: () => D.reglasDuelo(L()),
-                propio: () => K.mazoParaPartida(inventario, L(), (Math.random() * 1e9) | 0),
+                // Tu mazo, la superficie que llevas y dónde estás (y sin el desnivel del modo supervivencia, como los amigos)
+                propio: () => ({ ...K.mazoParaPartida(inventario, L(), (Math.random() * 1e9) | 0), sup: superficiePropia(), x: jugador.pos.x, y: jugador.pos.y - DY, z: jugador.pos.z }),
                 al: {
                     invitacion: inv => avisoReto(inv),
-                    inicio: (e, rival) => mesaCartas && mesaCartas.dueloInicio(e, persona(rival)),
-                    jugada: (a, h) => mesaCartas && mesaCartas.dueloJugada(a, h),
+                    espera: id => mostrarEspera(id),
+                    inicio: (e, rival, lugar, lado) => empezarDueloLugar(e, rival, lugar, lado),
+                    jugada: (a, h) => { if (!mesaCartas || !mesaCartas.dueloJugada(a, h)) colaJugadas.push([a, h]); },
                     fin: motivo => mesaCartas && mesaCartas.dueloFin(motivo),
-                    rechazo: motivo => mesaCartas && mesaCartas.dueloRechazo(motivo)
+                    rechazo: motivo => {
+                        const nombre = coop.nombreDe(espera ? espera.id : duelo.rival);
+                        quitarEspera();
+                        const R = duelo.textos.rechazo;
+                        hud.mensaje(textoCartas(R[motivo] || R.cerrada).replace('{x}', nombre), 4);
+                    }
                 }
             });
             duelo.textos = D.TXT_RETO; duelo.espera = () => D.reglasDuelo(L()).espera;
+            duelo.lugar = () => ({ ...MM.MESA.lugar, ...(L() && L().lugar) }); // distancia y desnivel para retar
             return duelo;
         }).catch(err => { cargandoDuelo = null; console.error('No se pudo cargar el duelo entre jugadores', err); return null; });
         return cargandoDuelo;
     }
-    // Aviso «X te reta»: Aceptar (Y o clic) abre la mesa de Lucho y entra al duelo con tu mazo; No (N) lo rechaza
+    const persona = id => ({ id, nombre: coop.nombreDe(id) });
+    const ocupadoParaDuelo = () => uiAbierta || vida.muerto || jefes.enCurso || (mesaCartas && mesaCartas.activo);
+    // Empieza (los dos dentro, `ini` recibido): la mesa abre en el lugar, sobre su superficie
+    function empezarDueloLugar(e, rival, lugar, lado) {
+        quitarEspera();
+        colaJugadas.length = 0;
+        if (!lugar || ocupadoParaDuelo()) { duelo.salir(); return; }
+        bloquearEscena(true);
+        cargarMesaCartas().then(m => {
+            if (!m || !m.abrirDuelo(lugar, lado, e, persona(rival))) { liberarEscena(); duelo.salir(); return; }
+            for (const [a, h] of colaJugadas.splice(0)) m.dueloJugada(a, h);
+        });
+    }
+    // Otro jugador de la sala en la mira (rayo desde la cámara; hasta `max` metros): { id, g, t } o null
+    const dirMira = new THREE.Vector3();
+    function jugadorEnLaMira(max) {
+        if (!coop || !coop.remotos.size) return null;
+        const o = camara.position; camara.getWorldDirection(dirMira);
+        let mejor = null;
+        for (const [id, r] of coop.remotos) {
+            const g = r.modelo && r.modelo.g;
+            if (!g || !g.visible) continue;
+            const dx = g.position.x - o.x, dy = g.position.y + 1 - o.y, dz = g.position.z - o.z;
+            const t = dx * dirMira.x + dy * dirMira.y + dz * dirMira.z;
+            if (t <= 0 || t > max) continue;
+            const lejos = Math.sqrt(Math.max(0, dx * dx + dy * dy + dz * dz - t * t)); // distancia del cuerpo al rayo
+            if (lejos < 0.8 && (!mejor || t < mejor.t)) mejor = { id, g, t };
+        }
+        return mejor;
+    }
+    // Clic derecho con el MAZO apuntando a otro jugador: lo retas ahí mismo (después del tutorial de Lucho).
+    // true = había alguien en la mira (el clic no abre el armado del mazo)
+    function retarApuntado() {
+        if (!coop || uiAbierta) return false;
+        const o = jugadorEnLaMira(16);
+        if (!o) return false;
+        const nombre = coop.nombreDe(o.id);
+        cargarDuelo().then(d => {
+            if (!d || espera || reto || d.fase !== 'libre') return;
+            const T = d.textos, R = d.lugar();
+            if (!tutoCartasVisto()) { hud.mensaje(textoCartas(T.sinTuto), 4); return; }
+            const dh = Math.hypot(o.g.position.x - jugador.pos.x, o.g.position.z - jugador.pos.z);
+            if (dh > R.dist || Math.abs(o.g.position.y - jugador.pos.y) > R.desnivel) { hud.mensaje(textoCartas(T.lejos).replace('{x}', nombre), 4); return; }
+            if (d.retar(o.id)) cargarMesaCartas(); // que la mesa esté lista cuando acepte
+        });
+        return true;
+    }
+    // Mientras el otro responde: «Esperando a X…» con Cancelar (N o clic)
+    let espera = null;
+    function mostrarEspera(id) {
+        quitarEspera();
+        const el = document.createElement('div'); el.className = 'reto-aviso';
+        const p = document.createElement('p'); p.textContent = textoCartas(duelo.textos.esperando).replace('{x}', coop.nombreDe(id));
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'boton'; b.textContent = textoCartas(duelo.textos.cancelar);
+        b.addEventListener('click', ev => { ev.stopPropagation(); cancelarReto(); });
+        el.append(p, b); document.body.appendChild(el);
+        espera = { id, el };
+    }
+    function quitarEspera() { if (espera) { espera.el.remove(); espera = null; } }
+    function cancelarReto() { if (!espera) return; quitarEspera(); duelo.salir(); }
+    // Aviso «X te reta»: Aceptar (Y o clic) entra al duelo con tu mazo (la mesa abre donde están cuando llega `ini`);
+    // No (N) lo rechaza. Sin el tutorial de Lucho o sin MAZO se rechaza solo, con el motivo
     let reto = null;
     function avisoReto(inv) {
         if (!duelo) return;
-        if (reto) { duelo.rechazar(inv); return; } // ya tienes uno a la vista
-        const T = duelo.textos, el = document.createElement('div');
+        const T = duelo.textos, quien = coop.nombreDe(inv.de);
+        if (reto || espera) { duelo.rechazar(inv, 'ocupado'); return; } // ya tienes uno a la vista
+        if (!tutoCartasVisto()) { duelo.rechazar(inv, 'sinTuto'); hud.mensaje(`${textoCartas(T.titulo).replace('{x}', quien)}: ${textoCartas(T.sinTuto)}`, 5); return; }
+        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv, 'faltaMazo'); hud.mensaje(`${textoCartas(T.titulo).replace('{x}', quien)}: ${textoCartas(T.faltaMazo)}`, 5); return; }
+        const el = document.createElement('div');
         el.className = 'reto-aviso';
-        const p = document.createElement('p'); p.textContent = textoCartas(T.titulo).replace('{x}', coop.nombreDe(inv.de));
+        const p = document.createElement('p'); p.textContent = textoCartas(T.titulo).replace('{x}', quien);
         const boton = (texto, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'boton'; b.textContent = texto; b.addEventListener('click', ev => { ev.stopPropagation(); fn(); }); return b; };
         el.append(p, boton(textoCartas(T.si), () => responderReto(true)), boton(textoCartas(T.no), () => responderReto(false)));
         document.body.appendChild(el);
@@ -1160,18 +1238,20 @@ async function arrancar(guardado, cx = null) {
         const { inv, el, timer } = reto;
         reto = null; el.remove(); if (timer) clearTimeout(timer);
         if (!si) { duelo.rechazar(inv); return; }
-        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv); hud.mensaje(textoCartas(duelo.textos.faltaMazo), 4); return; }
-        if (uiAbierta || vida.muerto || jefes.enCurso || (mesaCartas && mesaCartas.activo)) { duelo.rechazar(inv); hud.mensaje(textoCartas(duelo.textos.ocupado), 4); return; }
-        bloquearEscena(true);
-        cargarMesaCartas().then(m => {
-            if (!m || !m.abrir('duelo')) { liberarEscena(); duelo.rechazar(inv); return; }
-            if (duelo.aceptar(inv)) m.dueloAceptado({ id: inv.de, nombre: coop.nombreDe(inv.de) });
-        });
+        const T = duelo.textos;
+        if (inventario.contar(O.MAZO) < 1) { duelo.rechazar(inv, 'faltaMazo'); hud.mensaje(textoCartas(T.faltaMazo), 4); return; }
+        if (ocupadoParaDuelo()) { duelo.rechazar(inv, 'ocupado'); hud.mensaje(textoCartas(T.ocupado), 4); return; }
+        // Te alejaste después del reto: el lugar quedaría lejos de los dos
+        const r = coop.remotos.get(inv.de), R = duelo.lugar();
+        if (r && r.modelo && Math.hypot(r.modelo.g.position.x - jugador.pos.x, r.modelo.g.position.z - jugador.pos.z) > R.dist * 2) {
+            duelo.rechazar(inv, 'lejos'); hud.mensaje(textoCartas(T.lejos).replace('{x}', coop.nombreDe(inv.de)), 4); return;
+        }
+        if (duelo.aceptar(inv)) cargarMesaCartas();
     }
     document.addEventListener('keydown', ev => {
-        if (!reto || ev.repeat) return;
-        if (ev.code === 'KeyY') { ev.preventDefault(); responderReto(true); }
-        else if (ev.code === 'KeyN') { ev.preventDefault(); responderReto(false); }
+        if ((!reto && !espera) || ev.repeat) return;
+        if (reto && ev.code === 'KeyY') { ev.preventDefault(); responderReto(true); }
+        else if (ev.code === 'KeyN') { ev.preventDefault(); if (reto) responderReto(false); else cancelarReto(); }
     });
     pintarCoop();
     if (coop && coop.local && coop.esAnfitrion) setTimeout(() => hud.mensaje(tx().avisoLocal, 6), 1500);

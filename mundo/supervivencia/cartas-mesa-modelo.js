@@ -4,6 +4,8 @@
 //   MESA                     → medidas por defecto (metros y grados). Son datos planos: el Estudio podrá
 //                              editarlas como un JSON más (`fusionar(MESA, datos)` en aplicarDatos de la mesa)
 //   marcoMesa(L, lucho)      → centro, giro y asiento del jugador en el mundo
+//   conSuperficie(L, sup) / marcoLugar(L, lugar, lado) → duelo entre jugadores donde están (sin Lucho): las
+//                              medidas con la superficie (piso, tronco o mesa) y el marco de cada lado
 //   aMundo(M, x, z)          → punto local de la mesa (x a tu derecha, z hacia ti) en coordenadas del mundo
 //   posZona / posManoRival / posMazo / posDesc / posMano → dónde va cada carta
 //   tocarCarta / tocarZona / elegirPostura / botonesMesa / zonasMarcadas
@@ -50,6 +52,15 @@ export const MESA = {
     // Tutorial: color, opacidad, pulsos por segundo y tamaño (× la carta) del marco de lo que toca usar;
     // leer = segundos que Lucho habla antes de jugar en su turno (tocar o «Seguir» lo salta)
     tutorial: { color: '#ffe14a', opacidad: 0.95, pulso: 1.6, borde: 1.14, leer: 4 },
+    // Duelo entre jugadores donde están (sin Lucho; cartas-duelo.js elige el lugar y la mejor superficie de los dos).
+    // lugar: dist = metros máximos hasta el jugador al que apuntas para retarlo, desnivel = diferencia de altura máxima.
+    lugar: { dist: 4, desnivel: 1.5 },
+    // Superficies (sin mesa): alto = la cara de arriba, ojos = altura de la cámara sentado en el suelo, asiento =
+    // distancia del borde a cada jugador, mano = altura de las cartas del rival sobre la superficie; colores del tronco
+    tronco: { alto: 0.5, ojos: 1.05, asiento: 0.55, mano: 0.3, corteza: '#5a3c1e', madera: '#a8824e' },
+    piso: { alto: 0.02, ojos: 1.0, asiento: 0.5, mano: 0.45 },
+    // Turno del otro jugador: la cámara lo mira (como planoLucho). alto y mira[1] van desde tus ojos (sentado o de pie)
+    planoRival: { lado: 0.3, alto: 0.1, z: 0.55, mira: [0, -0.1, -1.0] },
     // Animaciones (anim, duraciones, sigue, colores): ver cartas-anim-modelo.js
     ...ANIM
 };
@@ -65,6 +76,32 @@ export function marcoMesa(L, lucho) {
     const a = aMundo(M, 0, L.mesa.fondo / 2 + L.asiento.dist);
     M.asiento = { x: a.x, z: a.z, yaw: g }; // jugador.yaw = g: mira hacia -local z, a Lucho
     M.yawLucho = g;                          // amigo.yaw = g: mira hacia +local z, a ti
+    return M;
+}
+// ---------- Duelo entre jugadores donde están ----------
+// De peor a mejor: se juega en la mejor que tenga cualquiera de los dos (cartas-duelo.js, mejorSuperficie)
+export const SUPERFICIES = ['piso', 'tronco', 'mesa'];
+// Las medidas con la superficie: en el piso y en el tronco cambian la altura de la cara de arriba, los ojos
+// (sentado en el suelo), el asiento y la mano del rival; la mesa queda como la de Lucho (de pie)
+export function conSuperficie(L, sup) {
+    const S = sup !== 'mesa' && L[sup];
+    if (!S) return { ...L, superficie: 'mesa', sentado: false };
+    return {
+        ...L, superficie: sup, sentado: true,
+        mesa: { ...L.mesa, alto: S.alto },
+        camara1: { ...L.camara1, alto: S.ojos },
+        asiento: { ...L.asiento, dist: S.asiento },
+        manoRival: { ...L.manoRival, alto: S.mano }
+    };
+}
+// Marco del duelo en el lugar: lugar = { x, y, z, g } (g en radianes: el lado 0 mira hacia −local z). El lado 1
+// (el invitado, que juega la partida espejada) ve la misma mesa girada 180°: su asiento queda frente al tuyo.
+export function marcoLugar(L, lugar, lado = 0) {
+    const g = lugar.g + (lado ? Math.PI : 0), s = Math.sin(g), c = Math.cos(g);
+    const M = { x: lugar.x, y: lugar.y, z: lugar.z, g, s, c };
+    const a = aMundo(M, 0, L.mesa.fondo / 2 + L.asiento.dist);
+    M.asiento = { x: a.x, z: a.z, yaw: g };
+    M.yawLucho = g;
     return M;
 }
 // Local (x a tu derecha, z hacia ti) → mundo. Con g = 0, z local = +Z del mundo y x local = +X.
@@ -186,6 +223,7 @@ export const pausaAuto = e => (e.fase === 'robo' ? (e.turno === 0 ? 0.4 : 0.7) :
 
 // ---------- Turno de Lucho: cámara y pausa ----------
 // Qué plano usa la cámara: 'lucho' (lo mira a él), 'mesa' (su jugada) o null (la vista que eligió el jugador).
+// Contra otro jugador vale igual: 'lucho' es el rival (la mesa usa planoRival).
 // jugoMesa = su última acción fue sobre la mesa (invocar, hechizo, atacar, postura); reloj = segundos desde que terminó
 export function planoTurno(L, { e, tuto = false, intro = false, animando = false, jugoMesa = false, reloj = 0 }) {
     if (intro) return 'lucho';

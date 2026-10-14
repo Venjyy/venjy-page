@@ -349,7 +349,7 @@ export function crearCoop(cx, ctx) {
     // ---------- Posición propia (y monstruos y jefe propios en el mismo mensaje) ----------
     let ultimoTick = 0, ultimoPos = 0, ultimaPos = null;
     // 7c-1: el cuerpo viaja en `p`: bits de `f` (pose-jugador.js: 4 corre, 8 golpeó desde el último
-    // tick, 16 come, 32 tensa, 64 bloquea) e `i`/`i2` = lo que tienes en cada mano, solo al cambiar
+    // tick, 16 come, 32 tensa, 64 bloquea, 128 sentado en el suelo) e `i`/`i2` = lo que tienes en cada mano, solo al cambiar
     // (repetido en los 2 ticks siguientes: el canal de `p` no reintenta) y cada 5 s para quien entra tarde
     let golpePend = false, manos = null, repetirManos = 0, ultimasManos = 0;
     function enviarPosicion() {
@@ -759,7 +759,7 @@ export function crearCoop(cx, ctx) {
             r.gesto = pasoRemoto(r.gesto, dt, mov); // ruleta (7c-2)
             const eg = entradaGesto(r.gesto);
             posar(c, r.pose, {
-                mov, pitch: pit, agachado, golpe, corre: !!(b.f & 4), comiendo: !!(b.f & 16), tensando: !!(b.f & 32), bloqueando: !!(b.f & 64),
+                mov, pitch: pit, agachado, golpe, corre: !!(b.f & 4), comiendo: !!(b.f & 16), tensando: !!(b.f & 32), bloqueando: !!(b.f & 64), sentado: !!(b.f & 128),
                 objeto: eg ? 0 : r.objeto, objeto2: eg ? 0 : r.objeto2, ...eg
             }, dt, fabrica, r.objeto === O.ESCUDO ? 1 : 0);
             ctx.iluminar(r.luz, x, y, z);

@@ -138,6 +138,34 @@
     "mano": 4,
     "espera": 30
   },
+  "lugar": {
+    "nota": "Duelo entre jugadores donde están (con el MAZO en la mano, apuntando al otro): dist = metros máximos hasta él; desnivel = diferencia de altura máxima",
+    "dist": 4,
+    "desnivel": 1.5
+  },
+  "tronco": {
+    "nota": "Duelo sobre un tronco (si alguno de los dos lleva troncos): alto = cara de arriba; ojos = altura de la cámara sentado en el suelo; asiento = distancia del borde a cada jugador; mano = altura de las cartas del rival sobre el tronco; colores de la corteza y de la madera cortada",
+    "alto": 0.5,
+    "ojos": 1.05,
+    "asiento": 0.55,
+    "mano": 0.3,
+    "corteza": "#5a3c1e",
+    "madera": "#a8824e"
+  },
+  "piso": {
+    "nota": "Duelo en el piso (nadie lleva tronco ni mesa): alto = altura de las cartas; ojos = altura de la cámara sentado; asiento = distancia del borde a cada jugador; mano = altura de las cartas del rival",
+    "alto": 0.02,
+    "ojos": 1,
+    "asiento": 0.5,
+    "mano": 0.45
+  },
+  "planoRival": {
+    "nota": "Cámara en el turno del otro jugador (lo mira, como planoLucho): lado (a tu derecha), alto y mira[1] desde tus ojos, z (hacia ti)",
+    "lado": 0.3,
+    "alto": 0.1,
+    "z": 0.55,
+    "mira": [0, -0.1, -1]
+  },
   "coleccion": {
     "nota": "Duelo: tu colección y tu mazo (cartas-coleccion.js). largo = cartas del mazo; copias = máximo de cada carta; azarExtra = cartas de más en la mano con el mazo al azar; azarTodas = 1 si el mazo al azar sale de todas las cartas (0: de tu colección); hechizosMin y hechizosMax = hechizos de un mazo al azar",
     "largo": 25,

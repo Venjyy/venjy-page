@@ -6,6 +6,7 @@
 // «Abrir el tutorial» y «Cambiar vista» usan el mensaje `mesa`. Guardar escribe el JSON con If-Match, como Posiciones.
 // También los límites del mazo y la colección inicial del duelo (grupos «Colección y mazo» y «Colección inicial»)
 // y la tienda de cartas de Lucho (grupos «Tienda de cartas», «Precio de cada carta suelta» y «Sobres: peso de cada carta»).
+// Duelo entre jugadores donde están: grupos «retar», «sobre un tronco», «en el piso» y «Cámara que mira al otro jugador».
 // =========================================================
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
@@ -43,6 +44,11 @@ const GRUPOS = [
     ['sobreAnim', 'Sobre: abrir (rasgar y voltear)', 'Pack: opening (tear and flip)', { activa: '1 = lo rasgas tú, 0 = sin escena', rasgar: 'cuánto arrastrar (1 = todo el ancho)', toques: 'toques que lo abren', salir: 'segundos que sale cada carta', voltear: 'segundos que se da vuelta', entre: 'segundos entre cartas', tapa: 'segundos que vuela la tapa', ancho: 'ancho del sobre (px)', sacudir: '1 = tiembla al rasgar', sonido: 'volumen (0 = mudo)' }],
     // Duelo entre 2 jugadores de la sala (cartas-duelo.js): cada uno con su mazo
     ['duelo', 'Duelo entre jugadores', 'Player duel', { vida: 'vida de cada uno', mano: 'cartas en la mano al empezar', espera: 'segundos para aceptar el reto (0 = sin límite)' }],
+    // Duelo donde están los dos (PR 2): retar con el MAZO apuntando al otro; se juega en el piso o sobre un tronco
+    ['lugar', 'Duelo entre jugadores: retar', 'Player duel: challenge', { dist: 'metros máx. hasta el otro', desnivel: 'diferencia de altura máx.' }],
+    ['tronco', 'Duelo sobre un tronco', 'Duel on a log', { alto: 'alto del tronco', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],
+    ['piso', 'Duelo en el piso', 'Duel on the ground', { alto: 'alto de las cartas', ojos: 'cámara sentado', asiento: 'distancia del borde', mano: 'cartas del rival (alto)' }],
+    ['planoRival', 'Cámara que mira al otro jugador', 'Camera looking at the other player', { lado: 'a tu derecha', alto: 'desde tus ojos', z: 'hacia ti' }],
     ['tutorial', 'Tutorial: resaltado y lectura', 'Tutorial: highlight and reading', { opacidad: 'opacidad del marco (0-1)', pulso: 'pulsos por segundo', borde: 'tamaño del marco (× la carta)', leer: 'segundos que habla Lucho antes de jugar' }]
 ];
 const GRADOS = new Set(['giro', 'inclina']);

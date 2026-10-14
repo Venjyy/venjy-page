@@ -15,15 +15,15 @@
 // mientras hay cine, `cine.pose` o la ronda del iglú.
 // =========================================================
 
-// Bits de `f` en el mensaje `p` (1 y 2 ya existían)
-export const F = { AGACHADO: 1, MUERTO: 2, CORRE: 4, GOLPE: 8, COME: 16, TENSA: 32, BLOQUEA: 64 };
+// Bits de `f` en el mensaje `p` (1 y 2 ya existían). SENTADO: sentado en el suelo (duelo de cartas en el piso o el tronco)
+export const F = { AGACHADO: 1, MUERTO: 2, CORRE: 4, GOLPE: 8, COME: 16, TENSA: 32, BLOQUEA: 64, SENTADO: 128 };
 
 export function codificarF(e) {
     return (e.agachado ? F.AGACHADO : 0) | (e.muerto ? F.MUERTO : 0) | (e.corre ? F.CORRE : 0) | (e.golpe ? F.GOLPE : 0) |
-        (e.comiendo ? F.COME : 0) | (e.tensando ? F.TENSA : 0) | (e.bloqueando ? F.BLOQUEA : 0);
+        (e.comiendo ? F.COME : 0) | (e.tensando ? F.TENSA : 0) | (e.bloqueando ? F.BLOQUEA : 0) | (e.sentado ? F.SENTADO : 0);
 }
 export function decodificarF(f = 0) {
-    return { agachado: !!(f & F.AGACHADO), muerto: !!(f & F.MUERTO), corre: !!(f & F.CORRE), golpe: !!(f & F.GOLPE), comiendo: !!(f & F.COME), tensando: !!(f & F.TENSA), bloqueando: !!(f & F.BLOQUEA) };
+    return { agachado: !!(f & F.AGACHADO), muerto: !!(f & F.MUERTO), corre: !!(f & F.CORRE), golpe: !!(f & F.GOLPE), comiendo: !!(f & F.COME), tensando: !!(f & F.TENSA), bloqueando: !!(f & F.BLOQUEA), sentado: !!(f & F.SENTADO) };
 }
 
 // Duraciones y valores (Minecraft: el golpe dura 6 ticks = 0,3 s)

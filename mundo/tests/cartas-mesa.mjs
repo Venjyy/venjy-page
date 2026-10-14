@@ -231,5 +231,30 @@ ok(Mo.pausaAuto({ fase: 'robo', turno: 0 }) === 0.4 && Mo.pausaAuto({ fase: 'pri
     console.log(`tutorial: ${p} pasos con ${toques} toques`);
 }
 
+// ---------- 7. Duelo entre jugadores donde están (PR 2): superficie y marco de cada lado ----------
+{
+    const L = { ...Mo.MESA };
+    const P = Mo.conSuperficie(L, 'piso'), Tr = Mo.conSuperficie(L, 'tronco'), Me = Mo.conSuperficie(L, 'mesa');
+    ok(P.sentado && P.mesa.alto === L.piso.alto && P.camara1.alto === L.piso.ojos && P.asiento.dist === L.piso.asiento && P.manoRival.alto === L.piso.mano, 'piso: sentado, con sus medidas');
+    ok(Tr.sentado && Tr.superficie === 'tronco' && Tr.mesa.alto === L.tronco.alto && Tr.mesa.ancho === L.mesa.ancho, 'tronco: su alto, mismo ancho de mesa (las zonas caben)');
+    ok(!Me.sentado && Me.mesa.alto === L.mesa.alto && Me.camara1.alto === L.camara1.alto, 'mesa: de pie, como la de Lucho');
+    ok(L.mesa.alto === Mo.MESA.mesa.alto, 'conSuperficie no cambia las medidas base');
+    // Los dos lados: mismo centro, asientos enfrentados a la misma distancia, cada uno mirando al otro
+    for (const g of [0, 0.7, -2.1]) {
+        const lugar = { x: 10, y: 64, z: -5, g };
+        const A = Mo.marcoLugar(Tr, lugar, 0), B = Mo.marcoLugar(Tr, lugar, 1);
+        const d = Tr.mesa.fondo / 2 + Tr.asiento.dist;
+        ok(cerca(A.x, B.x) && cerca(A.z, B.z) && cerca(A.y, 64), `lugar g=${g}: mismo centro`);
+        ok(cerca(A.asiento.x + B.asiento.x, 2 * lugar.x) && cerca(A.asiento.z + B.asiento.z, 2 * lugar.z), `lugar g=${g}: asientos enfrentados`);
+        ok(cerca(Math.hypot(A.asiento.x - B.asiento.x, A.asiento.z - B.asiento.z), 2 * d), `lugar g=${g}: separados por la mesa y los dos asientos`);
+        // yaw = g: el jugador mira hacia −local z (el centro): desde su asiento, el centro queda adelante
+        const adelante = (M, s) => { const v = { x: M.x - s.x, z: M.z - s.z }; return v.x * -Math.sin(s.yaw) + v.z * -Math.cos(s.yaw) > 0; };
+        ok(adelante(A, A.asiento) && adelante(B, B.asiento), `lugar g=${g}: cada uno mira a la mesa`);
+    }
+    // El turno del otro jugador usa el mismo plano que el de Lucho (la mesa elige planoRival)
+    const e = C.nuevaPartida({ mazos: [D.MAZOS.facil, D.MAZOS.facil], semilla: 3, empieza: 1 });
+    ok(Mo.planoTurno(P, { e }) === 'lucho' && P.planoRival && P.planoRival.mira.length === 3, 'turno del rival: lo mira (planoRival)');
+}
+
 console.log(fallos ? `${fallos} fallos` : `cartas-mesa: todo bien (${probadas} jugadas por toques)`);
 process.exit(fallos ? 1 : 0);

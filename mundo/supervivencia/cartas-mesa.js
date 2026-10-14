@@ -13,18 +13,22 @@
 // Tutorial (pulido, PR 3): partida guiada con TUTORIAL (cartas-datos.js); Lucho habla en un globo, solo vale la
 // jugada que pide cada paso y lo que toca usar se ilumina (resaltadoTutorial). En el turno de Lucho (en el
 // tutorial y, con turnoLucho.enPartida, en toda partida) la cámara lo mira a él y va a la mesa cuando juega.
+// Duelo entre jugadores (duelo 2J, PR 2): abrirDuelo(lugar, lado, …) arma la mesa donde están los dos, sin Lucho,
+// sobre la superficie que toca (piso, tronco o mesa; conSuperficie); el invitado (lado 1) la ve girada 180°, cada
+// uno sentado en su lado; en el turno del otro la cámara lo mira (planoRival) y tocarlo es el ataque directo.
 // main.js la carga con import() la primera vez y llama a actualizar(dt) cada cuadro y a dibujar() después del render.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { CARTAS, FAMILIAS, NIVELES, TXT_CARTAS, TUTORIAL } from './cartas-datos.js';
 import { partidaNivel, nuevaPartida, aplicar, jugadaIA, atkDe, defDe, esLegal, accionTutorial, calzaTutorial } from './cartas.js';
 import { dibujarCarta, dibujarReverso, versionDeArte, ZONAS, ANCHO, ALTO } from './cartas-arte.js';
-import { MESA, ALTO_CARTA, marcoMesa, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto, pausaLucho, planoTurno, resaltadoTutorial } from './cartas-mesa-modelo.js';
+import { MESA, ALTO_CARTA, marcoMesa, conSuperficie, marcoLugar, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto, pausaLucho, planoTurno, resaltadoTutorial } from './cartas-mesa-modelo.js';
 import { fusionar } from '../datos/cargador.js';
 import { crearAnimador } from './cartas-mesa-anim.js';
 import { mazoParaPartida, juegaAlAzar, ponerAzar, reglasDe } from './cartas-coleccion.js';
 import { sonidoDe, sonidoFin } from './cartas-anim-modelo.js';
 import { sonar } from './cartas-mesa-sonido.js';
+import { crearEstado, avanzar, angulos, aplicarAngulos } from './pose-jugador.js';
 
 const t = (es, en) => ({ es, en });
 export const TXT_MESA = {
@@ -37,27 +41,13 @@ export const TXT_MESA = {
     tocaObjetivo: t('Ahora toca la criatura marcada en verde a la que apunta la carta', 'Now tap the green-highlighted creature the card targets'),
     tocaAbrazo: t('Ahora toca la segunda criatura tuya', 'Now tap your second creature'),
     noAtaca: t('Esta criatura no puede atacar ahora (entró este turno, está en Defensa o atada)', 'This creature cannot attack now (it entered this turn, is in Defense or is bound)'),
-    tocaRival: t('Toca una criatura de Lucho, o a Lucho para el ataque directo', 'Tap one of Lucho\'s creatures, or Lucho for a direct attack'),
+    tocaRival: t('Toca una criatura de {x}, o a {x} para el ataque directo', 'Tap one of {x}\'s creatures, or {x} for a direct attack'),
     seguir: t('Seguir', 'Continue'),
     mazoArmado: t('Mazo: el que armaste (toca para jugar al azar)', 'Deck: the one you built (tap for a random one)'),
     mazoAzar: t('Mazo: al azar, +{x} en la mano (toca para usar el tuyo)', 'Deck: random, +{x} in hand (tap to use yours)'),
     tutoEspera: t('Todavía no: haz lo que te pide Lucho (lo que brilla)', 'Not yet: do what Lucho asks (the glowing one)'),
-    // Duelo entre jugadores (cartas-duelo.js; {x} = el otro jugador)
-    retarTitulo: t('O reta a alguien de la sala:', 'Or challenge someone in the room:'),
-    retar: t('Retar a {x}', 'Challenge {x}'),
-    esperando: t('Esperando a que {x} acepte el duelo…', 'Waiting for {x} to accept the duel…'),
-    esperandoInicio: t('Preparando el duelo con {x}…', 'Setting up the duel with {x}…'),
-    cancelar: t('Cancelar', 'Cancel'),
+    // Duelo entre jugadores (cartas-duelo.js; {x} = el otro jugador). El reto y sus rechazos: TXT_RETO
     turnoDe: t('Turno de {x}', 'Turn: {x}'),
-    rechazo: {
-        no: t('{x} no quiso jugar.', '{x} declined.'),
-        tiempo: t('{x} no respondió.', '{x} did not answer.'),
-        llena: t('La mesa está ocupada.', 'The table is taken.'),
-        otra: t('Ya estás en otra actividad.', 'You are already in another activity.'),
-        salio: t('{x} salió de la sala.', '{x} left the room.'),
-        cancelado: t('{x} canceló el reto.', '{x} called off the challenge.'),
-        cerrada: t('El duelo ya no está.', 'The duel is gone.')
-    },
     motivo: {
         abandono: t('{x} dejó la mesa: ganas tú.', '{x} left the table: you win.'),
         desincronizado: t('Se perdió la sincronía con {x}: partida anulada.', 'Lost sync with {x}: game void.')
@@ -69,7 +59,8 @@ const COLOR_MARCA = { libre: 0x1d1d1d, valida: 0x55ff55, elegida: 0xffd24a };
 
 export function crearMesaCartas(ctx) {
     const { scene, grupo, dy, camaras, renderer, jugador, tinte } = ctx;
-    let idioma = ctx.idioma || 'es', L = fusionar(MESA, ctx.datos || null);
+    // Lb = medidas base (MESA + JSON); L = las que se usan (en un duelo en el lugar, con su superficie)
+    let idioma = ctx.idioma || 'es', Lb = fusionar(MESA, ctx.datos || null), L = Lb;
     let abierto = false, e = null, nivel = 'facil', sel = null, postura = 'ata', reloj = 0, vista = 1, tercera = 0, leida = null;
     let M = null, lucho = null, luchoAntes = null, aviso = '', encima = -1, mostrandoReglas = false;
     let leidaId = null; // carta abierta en el lector que no está en una zona (tu mano sin jugarla, el descarte)
@@ -78,11 +69,13 @@ export function crearMesaCartas(ctx) {
     // Tutorial: p = paso tuyo, l/li = turno de Lucho y jugada dentro de él, intro = frase de bienvenida que va; mal = jugada rechazada
     let tuto = null, resaltado = null, tiempo = 0;
     let primeraLucho = false, jugoMesa = false; // turno de Lucho: aún no juega nada / su última acción fue sobre la mesa
-    // Duelo entre jugadores (cartas-duelo.js, ctx.duelo()): rival = { id, nombre } en partida; reto = { id, nombre, fase:
-    // 'espera' | 'inicio' } mientras se espera. Contra un jugador eres siempre el 0 (la partida del invitado va espejada).
-    let rival = null, reto = null;
+    // Duelo entre jugadores (cartas-duelo.js, ctx.duelo()): rival = { id, nombre } en partida; enLugar = { lugar, lado }
+    // (donde están los dos, sin Lucho). Contra un jugador eres siempre el 0 (la partida del invitado va espejada).
+    let rival = null, enLugar = null;
+    const poseSentado = crearEstado(); // tu cuerpo en 3.ª persona, sentado en el suelo
+    const medidas = () => { L = enLugar ? conSuperficie(Lb, enLugar.lugar.sup) : Lb; };
     const nombreRival = () => (rival ? rival.nombre : Lx(TXT_CARTAS.lucho));
-    const conX = (o, x) => Lx(o).replace('{x}', x);
+    const conX = (o, x) => Lx(o).replaceAll('{x}', x);
     const enIntro = () => !!(tuto && tuto.intro < TUTORIAL.intro.length);
     const pasoTuto = () => (tuto && !enIntro() ? TUTORIAL.pasos[tuto.p]?.a || null : null);
     const Lx = o => (o && (o[idioma] || o.es)) || '';
@@ -167,14 +160,21 @@ export function crearMesaCartas(ctx) {
         marcas = [];
         const { ancho, fondo, alto } = L.mesa, cw = L.carta.ancho, ch = cw * ALTO_CARTA;
         geoCarta?.dispose(); geoCarta = new THREE.PlaneGeometry(cw, ch);
-        const madera = matTenido({ color: 0x7a5230 }), oscura = matTenido({ color: 0x4e3218 }), pano = matTenido({ color: 0x2f6a34 });
-        const tablero = new THREE.Mesh(new THREE.BoxGeometry(ancho, 0.06, fondo), [madera, madera, madera, oscura, madera, madera]);
-        tablero.position.y = alto - 0.03; fijos.add(tablero);
-        const tela = new THREE.Mesh(new THREE.PlaneGeometry(ancho - 0.1, fondo - 0.1), pano);
-        tela.rotation.x = -Math.PI / 2; tela.position.y = alto + 0.001; fijos.add(tela);
-        for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-            const pata = new THREE.Mesh(new THREE.BoxGeometry(0.08, alto - 0.06, 0.08), oscura);
-            pata.position.set(sx * (ancho / 2 - 0.08), (alto - 0.06) / 2, sz * (fondo / 2 - 0.08)); fijos.add(pata);
+        if (L.superficie === 'tronco') {
+            // Tronco tumbado a lo largo: corteza por los lados y la madera cortada arriba y en las puntas
+            const T = L.tronco, corteza = matTenido({ color: new THREE.Color(T.corteza).getHex() }), cara = matTenido({ color: new THREE.Color(T.madera).getHex() });
+            const tronco = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto, fondo), [cara, cara, cara, corteza, corteza, corteza]);
+            tronco.position.y = alto / 2; fijos.add(tronco);
+        } else if (L.superficie !== 'piso') { // la mesa de Lucho (en el piso solo van las marcas de las zonas)
+            const madera = matTenido({ color: 0x7a5230 }), oscura = matTenido({ color: 0x4e3218 }), pano = matTenido({ color: 0x2f6a34 });
+            const tablero = new THREE.Mesh(new THREE.BoxGeometry(ancho, 0.06, fondo), [madera, madera, madera, oscura, madera, madera]);
+            tablero.position.y = alto - 0.03; fijos.add(tablero);
+            const tela = new THREE.Mesh(new THREE.PlaneGeometry(ancho - 0.1, fondo - 0.1), pano);
+            tela.rotation.x = -Math.PI / 2; tela.position.y = alto + 0.001; fijos.add(tela);
+            for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+                const pata = new THREE.Mesh(new THREE.BoxGeometry(0.08, alto - 0.06, 0.08), oscura);
+                pata.position.set(sx * (ancho / 2 - 0.08), (alto - 0.06) / 2, sz * (fondo / 2 - 0.08)); fijos.add(pata);
+            }
         }
         for (const j of [0, 1]) for (let z = 0; z < 3; z++) {
             const p = posZona(L, j, z);
@@ -278,8 +278,13 @@ export function crearMesaCartas(ctx) {
     const terceraActual = () => L.terceras[tercera % Math.max(1, L.terceras.length)] || MESA.terceras[0];
     function objetivoCamara() {
         const atras = L.mesa.fondo / 2 + L.asiento.dist;
-        // Turno de Lucho (y su bienvenida en el tutorial): la cámara lo mira a él, o a la mesa cuando juega
-        const P = rival ? null : planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj });
+        // Turno de Lucho (y su bienvenida en el tutorial) o del otro jugador: la cámara lo mira, o a la mesa cuando juega
+        const P = planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj });
+        if (P === 'lucho' && rival) { // el rival: desde tus ojos (sentado o de pie)
+            const C = L.planoRival, ojos = L.camara1.alto;
+            local(C.lado, ojos + C.alto, C.z, v1); local(C.mira[0], ojos + C.mira[1], C.mira[2], v2);
+            return;
+        }
         if (P) {
             const C = P === 'mesa' ? L.planoMesa : L.planoLucho;
             local(C.lado, L.mesa.alto + C.alto, C.z, v1); local(C.mira[0], L.mesa.alto + C.mira[1], C.mira[2], v2);
@@ -334,18 +339,8 @@ export function crearMesaCartas(ctx) {
             // Con qué mazo juegas (se cambia aquí o al armarlo con el MAZO en la mano)
             const azar = !!ctx.inventario && juegaAlAzar(ctx.inventario);
             const mazoB = ctx.inventario ? [boton(azar ? Lx(TXT_MESA.mazoAzar).replace('{x}', reglasDe(L).azarExtra) : Lx(TXT_MESA.mazoArmado), () => { ponerAzar(ctx.inventario, !azar, L); pintarHud(); }, 'secundario')] : [];
-            if (reto) { // esperando al otro jugador
-                const q = document.createElement('p'); q.textContent = conX(reto.fase === 'espera' ? TXT_MESA.esperando : TXT_MESA.esperandoInicio, reto.nombre);
-                caja.append(h, q, boton(Lx(TXT_MESA.cancelar), () => { salirDuelo(); refrescarMesa(); }, 'secundario'));
-                hud.appendChild(caja); return;
-            }
+            // (A otro jugador se lo reta donde está, apuntándolo con el MAZO: main.js)
             caja.append(h, p, ...mazoB, boton(Lx(TXT_CARTAS.facil), () => iniciar('facil'), nivel === 'facil' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.medio), () => iniciar('medio'), nivel === 'medio' ? 'elegido' : ''), boton(Lx(TXT_CARTAS.botonTuto), iniciarTutorial, 'secundario'));
-            // Retar a otro jugador de la sala cooperativa (cada uno con su mazo)
-            const otros = ctx.duelo && ctx.duelo() && ctx.jugadores ? ctx.jugadores() : [];
-            if (otros.length) {
-                const r = document.createElement('p'); r.textContent = Lx(TXT_MESA.retarTitulo);
-                caja.append(r, ...otros.map(o => boton(conX(TXT_MESA.retar, o.nombre), () => retar(o))));
-            }
             if (aviso) { const a = document.createElement('p'); a.className = 'cartas-mesa-aviso'; a.textContent = aviso; caja.appendChild(a); }
             caja.appendChild(boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
             hud.appendChild(caja); return;
@@ -363,7 +358,8 @@ export function crearMesaCartas(ctx) {
         const guia = document.createElement('p'); guia.className = 'cartas-mesa-aviso';
         // Con algo elegido manda la guía del paso siguiente; si no, la última jugada
         const reemplaza = sel && sel.tipo === 'carta' && sel.acciones.some(a => a.t === 'invocar' && e.jug[0].zonas[a.z]);
-        const paso = !sel ? null : reemplaza ? TXT_CARTAS.reemplaza : sel.tipo === 'propia' ? (sel.acciones.some(a => a.t === 'atacar') ? TXT_MESA.tocaRival : TXT_MESA.noAtaca) : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
+        const tocaRival = { [idioma]: conX(TXT_MESA.tocaRival, nombreRival()) };
+        const paso = !sel ? null : reemplaza ? TXT_CARTAS.reemplaza : sel.tipo === 'propia' ? (sel.acciones.some(a => a.t === 'atacar') ? tocaRival : TXT_MESA.noAtaca) : sel.tipo === 'objetivo' ? TXT_MESA.tocaObjetivo : sel.tipo === 'abrazo' ? TXT_MESA.tocaAbrazo : TXT_MESA.tocaZona;
         guia.textContent = e.turno === 0 && e.fase === 'principal' && paso ? Lx(paso) : aviso || (e.turno === 0 && e.fase === 'principal' ? Lx(TXT_MESA.tocaCarta) : '');
         const B = botonesMesa(e, sel), fila = document.createElement('div'); fila.className = 'cartas-mesa-botones';
         // Tutorial: el botón que toca usar brilla (resaltadoTutorial → { tipo: 'boton', b })
@@ -406,7 +402,10 @@ export function crearMesaCartas(ctx) {
             const h = document.createElement('h2'); h.textContent = Lx(e.ganador === 0 ? TXT_CARTAS.ganaste : e.ganador === 1 ? TXT_CARTAS.perdiste : TXT_CARTAS.empate);
             const p = document.createElement('p'); p.textContent = TXT_MESA.motivo[e.motivo] ? conX(TXT_MESA.motivo[e.motivo], nombreRival()) : Lx(tuto && e.ganador === 0 ? TUTORIAL.fin : TXT_CARTAS.motivo[e.motivo]);
             // Al terminar el tutorial: «¿Jugamos de verdad?» lleva a elegir el nivel
-            fin.append(h, p, boton(Lx(tuto ? TUTORIAL.otra : TXT_CARTAS.otraVez), () => { salirDuelo(); e = null; sel = null; tuto = null; refrescarMesa(); }), boton(Lx(TXT_CARTAS.salir), () => cerrar(), 'secundario'));
+            // Contra otro jugador (donde están) solo queda salir: la revancha llega en el PR 3 del duelo
+            if (!enLugar) fin.append(h, p, boton(Lx(tuto ? TUTORIAL.otra : TXT_CARTAS.otraVez), () => { salirDuelo(); e = null; sel = null; tuto = null; refrescarMesa(); }));
+            else fin.append(h, p);
+            fin.append(boton(Lx(TXT_CARTAS.salir), () => cerrar(), enLugar ? '' : 'secundario'));
             hud.appendChild(fin);
         }
     }
@@ -481,11 +480,13 @@ export function crearMesaCartas(ctx) {
         }
         rayo.setFromCamera(ndc, cam);
         const objetos = [...dinamicos.children, ...marcas];
-        if (lucho && cam !== camMini) objetos.push(lucho.p.g);
+        // El rival: Lucho o el cuerpo del otro jugador (tocarlo = ataque directo; u.lucho vale para los dos)
+        const cuerpoRival = rival ? (ctx.cuerpoDe && ctx.cuerpoDe(rival.id)) || null : lucho ? lucho.p.g : null;
+        if (cuerpoRival && cam !== camMini) objetos.push(cuerpoRival);
         for (const x of rayo.intersectObjects(objetos, true)) {
             let o = x.object;
-            while (o && !Object.keys(o.userData).length && o !== lucho?.p.g) o = o.parent;
-            if (o === lucho?.p.g) return { lucho: true };
+            while (o && !Object.keys(o.userData).length && o !== cuerpoRival) o = o.parent;
+            if (o && o === cuerpoRival) return { lucho: true };
             if (o && o.userData) return o.userData;
         }
         return {};
@@ -552,9 +553,9 @@ export function crearMesaCartas(ctx) {
         const ev = !rival ? aplicar(e, a) : D ? (antes === 0 ? D.jugar(a) : D.aplicarRival(a, h)) : null;
         if (!ev) return;
         sel = null; reloj = 0; registrar(a, antes, id);
-        // Turno de Lucho: la cámara lo mira al empezar y va a la mesa con cada jugada suya sobre ella
+        // Turno de Lucho (o del otro jugador): la cámara lo mira al empezar y va a la mesa con cada jugada suya sobre ella
         primeraLucho = !rival && antes === 0 && e.turno === 1;
-        jugoMesa = !rival && antes === 1 && ['invocar', 'hechizo', 'atacar', 'modo'].includes(a.t);
+        jugoMesa = antes === 1 && ['invocar', 'hechizo', 'atacar', 'modo'].includes(a.t);
         if (tuto && antes === 1 && a.t === 'terminar') { tuto.l++; tuto.li = 0; }
         if (tuto && e.ganador === 0 && ctx.alTutorial) ctx.alTutorial(); // visto: la próxima vez se elige el nivel
         if (ctx.alEventos) ctx.alEventos(ev, a);
@@ -595,21 +596,15 @@ export function crearMesaCartas(ctx) {
         refrescarMesa();
     }
     // ---------- Duelo entre jugadores (el controlador vive en main.js: ctx.duelo()) ----------
-    function retar(o) {
-        const D = ctx.duelo && ctx.duelo();
-        if (!D || !D.retar(o.id)) return;
-        reto = { id: o.id, nombre: o.nombre, fase: 'espera' }; aviso = '';
-        refrescarMesa();
-    }
     function salirDuelo() {
         const D = ctx.duelo && ctx.duelo();
-        if ((rival || reto) && D) D.salir();
-        rival = null; reto = null;
+        if (rival && D) D.salir();
+        rival = null;
     }
     // Empieza la partida contra otro jugador: `estado` es la del controlador (la misma que se aplica)
     function empezarDuelo(estado, o) {
         anim.saltar(); ultimos = null; finSonado = false; tuto = null; primeraLucho = false; jugoMesa = false;
-        rival = { id: o.id, nombre: o.nombre }; reto = null;
+        rival = { id: o.id, nombre: o.nombre };
         e = estado; sel = null; postura = 'ata'; reloj = 0; aviso = ''; mostrandoReglas = false; leida = null; leidaId = null;
         refrescarMesa();
     }
@@ -620,7 +615,7 @@ export function crearMesaCartas(ctx) {
 
     // ---------- Abrir y cerrar ----------
     function colocar() {
-        M = marcoMesa(L, lucho);
+        M = enLugar ? marcoLugar(L, enLugar.lugar, enLugar.lado) : marcoMesa(L, lucho);
         raiz.position.set(M.x, M.y, M.z); raiz.rotation.y = M.g;
         raiz.updateMatrixWorld(true);
         construirMesa();
@@ -628,29 +623,51 @@ export function crearMesaCartas(ctx) {
         jugador.yaw = M.asiento.yaw; jugador.pitch = 0;
         colocarMini();
     }
+    // Lo común de abrir (con Lucho o donde están): cámara, capas y la fuente
+    function montar(centro) {
+        abierto = true; e = null; sel = null; tuto = null;
+        grupo.add(raiz);
+        colocar();
+        camaras.iniciarCine(centro || { x: M.x, y: M.y, z: M.z }, { escena: true, fundido: 0.35 });
+        primera = true; moverCamara(0);
+        camaras.manual = plano;
+        // Tu cuerpo solo se ve en 3.ª persona; en el suelo, sentado (pose-jugador.js, POSES.sentado)
+        camaras.pose = (cuerpo, dt = 1 / 60) => {
+            cuerpo.g.visible = vista === 3;
+            if (L.sentado && cuerpo.cuerpo) { avanzar(poseSentado, { sentado: true }, dt); aplicarAngulos(cuerpo, angulos(poseSentado, { sentado: true })); }
+        };
+        capa.hidden = false; hud.hidden = false; capaFx.hidden = false;
+        document.body.classList.add('cartas-mesa-abierta');
+        // La fuente PixelCraft puede llegar después: se redibujan las cartas con ella
+        if (document.fonts && document.fonts.load) document.fonts.load(fuente(30)).then(() => { if (abierto) { vaciarTexturas(); refrescarMesa(); } }).catch(() => {});
+    }
     function abrir(n = 'facil') {
         lucho = ctx.lucho();
         if (!lucho) return false;
-        nivel = NIVELES[n] ? n : 'facil'; abierto = true; e = null; sel = null; tuto = null;
-        grupo.add(raiz);
-        colocar();
+        enLugar = null; medidas();
+        nivel = NIVELES[n] ? n : 'facil';
+        montar(lucho);
         luchoAntes = { yaw: lucho.yaw, escena: lucho.escena };
         lucho.escena = (dt, base) => { const r = base(dt); lucho.yaw = M.yawLucho; return r; };
-        camaras.iniciarCine(lucho, { escena: true, fundido: 0.35 });
-        primera = true; moverCamara(0);
-        camaras.manual = plano;
-        camaras.pose = cuerpo => { cuerpo.g.visible = vista === 3; };
-        capa.hidden = false; hud.hidden = false; capaFx.hidden = false;
-        document.body.classList.add('cartas-mesa-abierta');
         if (n === 'tutorial') iniciarTutorial(); else refrescarMesa();
-        // La fuente PixelCraft puede llegar después: se redibujan las cartas con ella
-        if (document.fonts && document.fonts.load) document.fonts.load(fuente(30)).then(() => { if (abierto) { vaciarTexturas(); refrescarMesa(); } }).catch(() => {});
+        return true;
+    }
+    // Duelo con otro jugador donde están los dos (sin Lucho): lugar = { x, y, z, g, sup } de cartas-duelo.js
+    // (lugarDuelo); lado 0 = el retador, 1 = el invitado (ve la mesa girada); estado = la partida del controlador
+    function abrirDuelo(lugar, lado, estado, o) {
+        if (abierto || !lugar) return false;
+        lucho = null; luchoAntes = null;
+        enLugar = { lugar, lado: lado ? 1 : 0 }; medidas();
+        poseSentado.sentado = 0;
+        montar(null);
+        empezarDuelo(estado, o);
         return true;
     }
     function cerrar(avisar = true) {
         if (!abierto) return;
         anim.saltar();
         salirDuelo();
+        enLugar = null; medidas();
         abierto = false; e = null; sel = null; encima = -1; leida = null; leidaId = null; tuto = null; resaltado = null;
         marco3D.visible = false; marcoMano.visible = false;
         limpiarDinamicos(); pintarMano();
@@ -737,20 +754,16 @@ export function crearMesaCartas(ctx) {
         iniciarTutorial,
         // Duelo entre jugadores (main.js reparte lo que avisa el controlador de cartas-duelo.js)
         get rival() { return rival; },
-        dueloAceptado(o) { reto = { id: o.id, nombre: o.nombre, fase: 'inicio' }; e = null; tuto = null; aviso = ''; refrescarMesa(); },
-        dueloInicio(estado, o) { if (abierto) empezarDuelo(estado, o); },
-        dueloJugada(a, h) { if (abierto && rival) ejecutar(a, h || null); },
+        abrirDuelo,
+        // Sentado en el suelo jugando (piso o tronco): main.js lo manda en la pose de la red (pose-jugador.js, F.SENTADO)
+        get sentado() { return abierto && !!L.sentado; },
+        // false si la mesa no está en un duelo: main.js guarda la jugada hasta que abra
+        dueloJugada(a, h) { if (!abierto || !rival) return false; ejecutar(a, h || null); return true; },
         dueloFin(motivo) {
             if (!abierto || !rival || !e || e.ganador !== null) return;
             anim.saltar();
             e.ganador = motivo === 'abandono' ? 0 : 'empate'; e.motivo = motivo;
             refrescarMesa(); anunciarFin();
-        },
-        dueloRechazo(motivo) {
-            if (!abierto || !reto) return;
-            const R = TXT_MESA.rechazo[motivo] || TXT_MESA.rechazo.cerrada;
-            aviso = conX(R, reto.nombre); reto = null; e = null;
-            refrescarMesa();
         },
         // Pruebas y Estudio: dónde va el tutorial ({ p, l, li, intro } o null), qué se ilumina y el plano del turno de Lucho
         get tutorial() { return tuto ? { ...tuto } : null; },
@@ -758,7 +771,7 @@ export function crearMesaCartas(ctx) {
         get planoCamara() { return planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj }); },
         setIdioma(l) { idioma = l === 'en' ? 'en' : 'es'; if (abierto) { vaciarTexturas(); refrescarMesa(); } },
         // Estudio (más adelante, un JSON en mundo/datos/): medidas de la mesa y de las cámaras sin recargar
-        aplicarDatos(datos) { anim.saltar(); L = fusionar(MESA, datos || null); if (abierto) { colocar(); refrescarMesa(); } },
+        aplicarDatos(datos) { anim.saltar(); Lb = fusionar(MESA, datos || null); medidas(); if (abierto) { colocar(); refrescarMesa(); } },
         // Estudio: el arte de las cartas cambió (cartas-arte.json); la mesa abierta se repinta
         refrescarArte() { alDia(); if (abierto) { colocar(); refrescarMesa(); } },
         // Estudio: vuelve a animar la última jugada (si no hubo otra después), para ajustar tiempos y colores
@@ -775,7 +788,7 @@ export function crearMesaCartas(ctx) {
             if (anim.ocupado) { anim.actualizar(dt); return; } // la IA y el robo esperan a que termine
             if (!e || e.ganador !== null || enIntro()) return; // en el tutorial, Lucho saluda primero
             // Lucho juega solo; tu robo es automático salvo en el tutorial (el paso 1 es tocar el mazo)
-            if (rival && e.turno === 1) { reloj = 0; return; } // contra un jugador: su jugada llega por la red
+            if (rival && e.turno === 1) { reloj += dt; return; } // contra un jugador: su jugada llega por la red (reloj: la cámara en la mesa)
             if (e.turno === 1 || (e.fase === 'robo' && !tuto)) {
                 reloj += dt;
                 const espera = e.turno === 1 ? pausaLucho(L, e, { tuto: !!tuto, primera: primeraLucho, jugoMesa }) : pausaAuto(e);

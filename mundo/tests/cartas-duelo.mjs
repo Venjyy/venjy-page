@@ -122,7 +122,7 @@ function jugadores(s, ids, mazos) {
             acts: s.n(id).acts, yo: id, reglas: () => R, propio: () => mazos[id] || { mazo: D.MAZOS.jugador, extra: 0 },
             al: {
                 invitacion: m => j.invitaciones.push(m),
-                inicio: () => { j.inicio++; },
+                inicio: (e, r, lugar, lado) => { j.inicio++; j.lugar = lugar; j.lado = lado; },
                 jugada: (a, h) => j.d.aplicarRival(a, h),
                 fin: mot => j.fines.push(mot),
                 rechazo: mot => j.rechazos.push(mot)
@@ -149,7 +149,7 @@ function jugarHastaFin(s, a, b) {
     const J = jugadores(s, ['h', 'g1', 'g2'], { h: { mazo: D.MAZOS.medio, extra: 0 }, g1: { mazo: D.MAZOS.facil, extra: 1 } });
     ok(J.h.d.retar('g1'), 'retar'); s.correr();
     ok(J.g1.invitaciones.length === 1 && J.g1.invitaciones[0].de === 'h', 'g1 recibe la invitación');
-    ok(s.n('g2').acts.actividad(Du.ID_DUELO)?.jug.join() === 'h', 'quien mira ve la mesa ocupada por h');
+    ok(s.n('g2').acts.actividad(Du.idDuelo('h'))?.jug.join() === 'h', 'quien mira ve la mesa ocupada por h');
     J.g1.d.aceptar(J.g1.invitaciones[0]); s.correr();
     ok(J.h.inicio === 1 && J.g1.inicio === 1, 'los dos empiezan');
     const eh = J.h.d.estado, eg = J.g1.d.estado;
@@ -162,7 +162,7 @@ function jugarHastaFin(s, a, b) {
     ok(!J.h.fines.length && !J.g1.fines.length, 'sin abandono ni desincronización');
     J.h.d.salir(); J.g1.d.salir(); s.correr();
     ok(!J.h.fines.length && !J.g1.fines.length, 'salir después del final no es abandono');
-    ok(s.n('g2').acts.actividad(Du.ID_DUELO) === null, 'la mesa queda libre');
+    ok(s.n('g2').acts.actividad(Du.idDuelo('h')) === null, 'la mesa queda libre');
 }
 {
     // Entre dos invitados (todo pasa por el anfitrión), y el anfitrión no juega
@@ -175,7 +175,7 @@ function jugarHastaFin(s, a, b) {
     ok(J.g2.d.estado.ganador !== null && A.huella(J.g2.d.estado) === A.huella(Du.espejo(J.g1.d.estado)), 'invitado contra invitado: misma partida al final');
     // Otro reto con la mesa ocupada: el anfitrión dice «llena»
     J.h.d.retar('g1'); s.correr();
-    ok(J.h.rechazos.includes('llena') || J.h.rechazos.includes('no'), 'mesa ocupada: el reto no pasa');
+    ok(J.h.rechazos.includes('ocupado'), 'g1 ya juega: el reto vuelve con «ocupado»');
 }
 {
     // Rechazo, abandono y desincronización
@@ -184,7 +184,7 @@ function jugarHastaFin(s, a, b) {
     J.h.d.retar('g1'); s.correr();
     J.g1.d.rechazar(J.g1.invitaciones[0]); s.correr();
     ok(J.h.rechazos.includes('no') && J.h.d.fase === 'libre', 'rechazo: el retador queda libre');
-    ok(s.n('h').acts.actividad(Du.ID_DUELO) === null, 'rechazo: la mesa queda libre');
+    ok(s.n('h').acts.actividad(Du.idDuelo('h')) === null, 'rechazo: la mesa queda libre');
     J.h.d.retar('g1'); s.correr(); J.g1.d.aceptar(J.g1.invitaciones[1]); s.correr();
     // Unas jugadas y el invitado se va de la sala
     for (let i = 0; i < 6; i++) { const q = J.h.d.estado.turno === 0 ? J.h : J.g1; q.d.jugar(C.jugadaIA(C.clonar(q.d.estado), 'facil')); s.correr(); }
@@ -200,6 +200,41 @@ function jugarHastaFin(s, a, b) {
     C.aplicar(q.d.estado, a); // jugada local sin mandar: se separan
     q.d.jugar(C.jugadaIA(C.clonar(q.d.estado), 'facil')); s2.correr();
     ok(otro.fines.includes('desincronizado'), 'desincronización detectada (huella o jugada ilegal)');
+}
+
+// ---------- 4. Duelo donde están (PR 2): lugar, superficie, dos duelos a la vez y motivos ----------
+{
+    ok(Du.mejorSuperficie('piso', 'tronco') === 'tronco' && Du.mejorSuperficie('mesa', 'tronco') === 'mesa' && Du.mejorSuperficie(undefined, undefined) === 'piso', 'mejor superficie de los dos');
+    const L = Du.lugarDuelo({ x: 0, y: 70, z: 4, sup: 'tronco' }, { x: 0, y: 71, z: 0, sup: 'piso' });
+    ok(L && L.x === 0 && L.z === 2 && L.y === 70 && L.sup === 'tronco', 'lugar: en el medio, a la altura del retador, con la mejor superficie');
+    // g: el retador (lado 0) mira hacia −local z, o sea hacia el invitado
+    const M = { s: Math.sin(L.g), c: Math.cos(L.g) };
+    ok(Math.abs(M.s * 1 - 0) < 1e-3 && Math.abs(M.c - 1) < 1e-3, 'lugar: el retador queda en +local z, el invitado enfrente');
+    ok(Du.lugarDuelo({ mazo: [] }, { mazo: [] }) === null, 'sin posiciones no hay lugar');
+
+    const s = crearSala(['h', 'g1', 'g2', 'g3']);
+    const P = { x: 0, y: 70, z: 0 };
+    const J = jugadores(s, ['h', 'g1', 'g2', 'g3'], {
+        h: { mazo: D.MAZOS.jugador, extra: 0, ...P, sup: 'piso' }, g1: { mazo: D.MAZOS.jugador, extra: 0, x: 3, y: 70, z: 0, sup: 'tronco' },
+        g2: { mazo: D.MAZOS.jugador, extra: 0, x: 50, y: 64, z: 50, sup: 'piso' }, g3: { mazo: D.MAZOS.jugador, extra: 0, x: 50, y: 64, z: 53, sup: 'piso' }
+    });
+    J.h.d.retar('g1'); J.g2.d.retar('g3'); s.correr();
+    J.g1.d.aceptar(J.g1.invitaciones[0]); J.g3.d.aceptar(J.g3.invitaciones[0]); s.correr();
+    ok(J.h.inicio === 1 && J.g1.inicio === 1 && J.g2.inicio === 1 && J.g3.inicio === 1, 'dos duelos a la vez en la misma sala');
+    ok(J.h.lado === 0 && J.g1.lado === 1, 'lado: el retador 0, el invitado 1');
+    ok(J.h.lugar && J.g1.lugar && J.h.lugar.x === 1.5 && J.g1.lugar.g === J.h.lugar.g && J.h.lugar.sup === 'tronco', 'los dos reciben el mismo lugar (tronco del invitado)');
+    ok(J.g2.lugar && J.g2.lugar.z === 51.5 && J.g2.lugar.sup === 'piso', 'el otro duelo tiene su lugar');
+    jugarHastaFin(s, J.h, J.g1); jugarHastaFin(s, J.g2, J.g3);
+    ok(J.h.d.estado.ganador !== null && J.g2.d.estado.ganador !== null, 'los dos duelos terminan');
+    ok(A.huella(J.h.d.estado) === A.huella(Du.espejo(J.g1.d.estado)) && A.huella(J.g2.d.estado) === A.huella(Du.espejo(J.g3.d.estado)), 'cada duelo queda igual en sus dos jugadores');
+    ok(![J.h, J.g1, J.g2, J.g3].some(j => j.fines.length), 'sin abandono ni desincronización en ninguno');
+    // Rechazo con motivo (el invitado no jugó el tutorial)
+    for (const j of Object.values(J)) j.d.salir();
+    s.correr();
+    J.h.d.retar('g1'); s.correr();
+    J.g1.d.rechazar(J.g1.invitaciones.at(-1), 'sinTuto'); s.correr();
+    ok(J.h.rechazos.at(-1) === 'sinTuto' && Du.TXT_RETO.rechazo.sinTuto, 'rechazo con motivo: «sinTuto» y su texto');
+    ok(s.n('g2').acts.actividad(Du.idDuelo('h')) === null, 'rechazo con motivo: el duelo se cierra');
 }
 
 console.log(fallos ? `${fallos} fallo(s)` : 'cartas-duelo: todo bien');
