@@ -77,7 +77,7 @@ import { crearPanelQR } from './ui-qr.js';
 import { normalizarNombre, normalizarCodigo } from '../online/red.js';
 import { ONLINE_ACTIVO } from '../online/config.js';
 import { nivelDeMs, barrasDeMs } from '../online/ping.js';
-import { cargarDatos } from '../datos/cargador.js';
+import { cargarDatos, fusionar } from '../datos/cargador.js';
 import { aplicarPoses } from '../datos/gestos.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
@@ -950,12 +950,27 @@ async function arrancar(guardado, cx = null) {
         },
         medir: { mundo, jugador, minado, entidades, terreno, irA, hud, B, DY, chunkForzado } // /medir romper (7b-1)
     });
-    // /cartas [facil|medio] (7h-2b): abre la mesa del duelo sin pedir el mazo, para probarla
+    // /cartas [facil|medio] (7h-2b): abre la mesa del duelo sin pedir el mazo, para probarla.
+    // Duelo 2J (PR 3), para probar entre jugadores (cada uno en su pestaña): /cartas listo (tutorial visto + MAZO),
+    // /cartas mesa (te da una mesa de duelo) y /cartas retar (reta al jugador más cercano sin apuntarle)
+    const TXT_CARTAS_DEV = {
+        listo: { es: 'Tutorial del Duelo visto y un MAZO en el inventario: ya puedes retar.', en: 'Duel tutorial done and a DECK in your inventory: you can challenge now.' },
+        mesa: { es: 'Recibiste una mesa de duelo.', en: 'You got a duel table.' },
+        nadie: { es: 'No hay otro jugador en la sala.', en: 'There is no other player in the room.' }
+    };
     comandosDev['/cartas'] = {
-        ayuda: { es: '/cartas [facil|medio|tutorial] (mesa del duelo con Lucho)', en: '/cartas [facil|medio|tutorial] (card duel table with Lucho)' },
-        sugerir: () => ['facil', 'medio', 'tutorial'],
+        ayuda: { es: '/cartas [facil|medio|tutorial|listo|mesa|retar] (duelo: mesa de Lucho y pruebas entre jugadores)', en: '/cartas [facil|medio|tutorial|listo|mesa|retar] (duel: the table with Lucho and player tests)' },
+        sugerir: () => ['facil', 'medio', 'tutorial', 'listo', 'mesa', 'retar'],
         fn: arg => { // la consola se cierra y pide el puntero antes: se abre un momento después
-            const a = String(arg || '').trim(), n = a === 'medio' || a === 'tutorial' ? a : 'facil';
+            const a = String(arg || '').trim();
+            if (a === 'listo') {
+                misiones.estado.minijuegos.add('cartas-tuto');
+                if (inventario.contar(O.MAZO) < 1) inventario.agregar(O.MAZO, 1);
+                hud.mensaje(textoCartas(TXT_CARTAS_DEV.listo), 4); return;
+            }
+            if (a === 'mesa') { inventario.agregar(O.MESA_DUELO, 1); hud.mensaje(textoCartas(TXT_CARTAS_DEV.mesa), 3); return; }
+            if (a === 'retar') { setTimeout(() => { if (!retarCercano()) hud.mensaje(textoCartas(TXT_CARTAS_DEV.nadie), 3); }, 150); return; }
+            const n = a === 'medio' || a === 'tutorial' ? a : 'facil';
             setTimeout(() => { if (!uiAbierta && !vida.muerto && !camaras.enCine) abrirMesaCartas(n); }, 150);
         }
     };
@@ -1120,10 +1135,37 @@ async function arrancar(guardado, cx = null) {
         if (actividades) actividades.salioJugador(id);
         if (duelo) duelo.rivalSalio(id);
     }
-    // Duelo donde están los dos (duelo 2J, PR 2): se juega sobre la mejor superficie que lleve alguno (la mesa del
-    // PR 3, un tronco o el piso); los dos se sientan frente a frente entre donde estaban
+    // Duelo donde están los dos (duelo 2J, PR 2): se juega sobre la mejor superficie que lleve alguno (la mesa de duelo,
+    // un tronco o el piso); los dos se sientan frente a frente entre donde estaban
     const TRONCOS = [B.TRONCO, B.TRONCO_ABEDUL, B.TRONCO_PINO];
-    const superficiePropia = () => (TRONCOS.some(id => inventario.contar(id) > 0) ? 'tronco' : 'piso');
+    const superficiePropia = () => (inventario.contar(O.MESA_DUELO) > 0 ? 'mesa' : TRONCOS.some(id => inventario.contar(id) > 0) ? 'tronco' : 'piso');
+    // Mesas de duelo colocadas en el mundo (PR 3): bloques que dibuja mesas-colocadas.js (con import() solo si hay alguna).
+    // Quien reta o acepta junto a una juega en ella (lugar.mesaCerca metros)
+    let mesasColocadas = null, cargandoMesas = null;
+    const esMesaDuelo = id => id === B.MESA_DUELO || id === B.MESA_DUELO_Z;
+    function cargarMesasColocadas() {
+        if (!cargandoMesas) cargandoMesas = Promise.all([import('./mesas-colocadas.js'), import('./cartas-mesa-modelo.js'), cargarDatos('cartas-mesa')]).then(([MC, MM, datos]) => {
+            if (!datosCartas) datosCartas = datos;
+            let dc = null, Lc = null; // medidas de la mesa (MESA + JSON o lo último del Estudio), rehechas solo si cambian
+            const medidas = () => { const d = window.__venjy?.datosMesa || datosCartas; if (d !== dc || !Lc) { dc = d; Lc = fusionar(MM.MESA, d); } return Lc; };
+            mesasColocadas = MC.crearMesasColocadas({ grupo: vista.grupo, dy: DY, mundo, tinte: materiales.solido.color, medidas });
+            mesasColocadas.cargar();
+            return mesasColocadas;
+        }).catch(err => { cargandoMesas = null; console.error('No se pudieron cargar las mesas de duelo', err); return null; });
+        return cargandoMesas;
+    }
+    // Toda edición (tuya o del cooperativo) pasa por aquí: cargar() lee las ediciones ya guardadas, así que no hace falta cola
+    mundo.alEditar = lista => {
+        if (mesasColocadas) mesasColocadas.editar(lista);
+        else if (lista.some(e => esMesaDuelo(e[3]))) cargarMesasColocadas();
+    };
+    if (mundo.listaEdiciones().some(e => esMesaDuelo(e[3]))) cargarMesasColocadas();
+    // La mesa colocada junto a ti, sin el modelo 3D (viaja en el mensaje de la actividad): { x, y, z, g } o null
+    function mesaJuntoATi(D, R) {
+        if (!mesasColocadas) return null;
+        const m = D.mesaCercana(mesasColocadas.lista, { x: jugador.pos.x, y: jugador.pos.y - DY, z: jugador.pos.z }, R.mesaCerca ?? 3, R.desnivel ?? 1.5);
+        return m ? { x: m.x, y: m.y, z: m.z, g: m.g } : null;
+    }
     const colaJugadas = []; // jugadas del rival que llegan antes de que la mesa abra (la primera vez se carga con import())
     function cargarDuelo() {
         if (!coop) return Promise.resolve(null);
@@ -1134,7 +1176,7 @@ async function arrancar(guardado, cx = null) {
                 acts: actividades, yo: coop.yoId,
                 reglas: () => D.reglasDuelo(L()),
                 // Tu mazo, la superficie que llevas y dónde estás (y sin el desnivel del modo supervivencia, como los amigos)
-                propio: () => ({ ...K.mazoParaPartida(inventario, L(), (Math.random() * 1e9) | 0), sup: superficiePropia(), x: jugador.pos.x, y: jugador.pos.y - DY, z: jugador.pos.z }),
+                propio: () => ({ ...K.mazoParaPartida(inventario, L(), (Math.random() * 1e9) | 0), sup: superficiePropia(), x: jugador.pos.x, y: jugador.pos.y - DY, z: jugador.pos.z, mesa: mesaJuntoATi(D, duelo.lugar()) }),
                 al: {
                     invitacion: inv => avisoReto(inv),
                     espera: id => mostrarEspera(id),
@@ -1191,6 +1233,23 @@ async function arrancar(guardado, cx = null) {
         if (!coop || uiAbierta) return false;
         const o = jugadorEnLaMira(16);
         if (!o) return false;
+        retarA(o);
+        return true;
+    }
+    // /cartas retar (prueba): el jugador de la sala más cercano, sin apuntarle; false = no hay nadie
+    function retarCercano() {
+        if (!coop || uiAbierta) return false;
+        let o = null, dm = Infinity;
+        for (const [id, r] of coop.remotos) {
+            const g = r.modelo && r.modelo.g;
+            if (!g || !g.visible) continue;
+            const d = Math.hypot(g.position.x - jugador.pos.x, g.position.z - jugador.pos.z);
+            if (d < dm) { dm = d; o = { id, g }; }
+        }
+        if (o) retarA(o);
+        return !!o;
+    }
+    function retarA(o) {
         const nombre = coop.nombreDe(o.id);
         cargarDuelo().then(d => {
             if (!d || espera || reto || d.fase !== 'libre') return;
@@ -1200,7 +1259,6 @@ async function arrancar(guardado, cx = null) {
             if (dh > R.dist || Math.abs(o.g.position.y - jugador.pos.y) > R.desnivel) { hud.mensaje(textoCartas(T.lejos).replace('{x}', nombre), 4); return; }
             if (d.retar(o.id)) cargarMesaCartas(); // que la mesa esté lista cuando acepte
         });
-        return true;
     }
     // Mientras el otro responde: «Esperando a X…» con Cancelar (N o clic)
     let espera = null;
@@ -1712,6 +1770,7 @@ async function arrancar(guardado, cx = null) {
         minijuegos.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
         if (mesaCartas) mesaCartas.actualizar(corre ? dt : 0);
+        if (mesasColocadas) mesasColocadas.actualizar();
         ruleta.actualizar(corre ? dt : 0);
         camaras.actualizar(dt);
         // Correr (7c-1): en primera persona el campo de visión sube un 10 % suave, como en Minecraft

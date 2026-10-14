@@ -25,6 +25,7 @@ import { dibujarCarta, dibujarReverso, versionDeArte, ZONAS, ANCHO, ALTO } from 
 import { MESA, ALTO_CARTA, marcoMesa, conSuperficie, marcoLugar, posZona, posManoRival, posMazo, posDesc, posMano, tocarCarta, tocarZona, elegirPostura, botonesMesa, zonasMarcadas, pausaAuto, pausaLucho, planoTurno, resaltadoTutorial } from './cartas-mesa-modelo.js';
 import { fusionar } from '../datos/cargador.js';
 import { crearAnimador } from './cartas-mesa-anim.js';
+import { armarMesa } from './mesas-colocadas.js';
 import { mazoParaPartida, juegaAlAzar, ponerAzar, reglasDe } from './cartas-coleccion.js';
 import { sonidoDe, sonidoFin } from './cartas-anim-modelo.js';
 import { sonar } from './cartas-mesa-sonido.js';
@@ -165,16 +166,10 @@ export function crearMesaCartas(ctx) {
             const T = L.tronco, corteza = matTenido({ color: new THREE.Color(T.corteza).getHex() }), cara = matTenido({ color: new THREE.Color(T.madera).getHex() });
             const tronco = new THREE.Mesh(new THREE.BoxGeometry(ancho, alto, fondo), [cara, cara, cara, corteza, corteza, corteza]);
             tronco.position.y = alto / 2; fijos.add(tronco);
-        } else if (L.superficie !== 'piso') { // la mesa de Lucho (en el piso solo van las marcas de las zonas)
-            const madera = matTenido({ color: 0x7a5230 }), oscura = matTenido({ color: 0x4e3218 }), pano = matTenido({ color: 0x2f6a34 });
-            const tablero = new THREE.Mesh(new THREE.BoxGeometry(ancho, 0.06, fondo), [madera, madera, madera, oscura, madera, madera]);
-            tablero.position.y = alto - 0.03; fijos.add(tablero);
-            const tela = new THREE.Mesh(new THREE.PlaneGeometry(ancho - 0.1, fondo - 0.1), pano);
-            tela.rotation.x = -Math.PI / 2; tela.position.y = alto + 0.001; fijos.add(tela);
-            for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-                const pata = new THREE.Mesh(new THREE.BoxGeometry(0.08, alto - 0.06, 0.08), oscura);
-                pata.position.set(sx * (ancho / 2 - 0.08), (alto - 0.06) / 2, sz * (fondo / 2 - 0.08)); fijos.add(pata);
-            }
+        } else if (L.superficie !== 'piso' && !(enLugar && enLugar.lugar.fija)) {
+            // La mesa de Lucho o la que lleva alguno (en el piso solo van las marcas de las zonas; en una mesa colocada
+            // en el mundo, `fija`, ya está dibujada por mesas-colocadas.js)
+            armarMesa(fijos, L.mesa, L.mueble, o => matTenido(o));
         }
         for (const j of [0, 1]) for (let z = 0; z < 3; z++) {
             const p = posZona(L, j, z);

@@ -141,7 +141,14 @@
   "lugar": {
     "nota": "Duelo entre jugadores donde están (con el MAZO en la mano, apuntando al otro): dist = metros máximos hasta él; desnivel = diferencia de altura máxima",
     "dist": 4,
-    "desnivel": 1.5
+    "desnivel": 1.5,
+    "mesaCerca": 3
+  },
+  "mueble": {
+    "nota": "Colores de la mesa de duelo (la de Lucho, la que se lleva en el inventario y la colocada en el mundo; mesas-colocadas.js, armarMesa). Las medidas son las del grupo mesa",
+    "madera": "#7a5230",
+    "oscura": "#4e3218",
+    "pano": "#2f6a34"
   },
   "tronco": {
     "nota": "Duelo sobre un tronco (si alguno de los dos lleva troncos): alto = cara de arriba; ojos = altura de la cámara sentado en el suelo; asiento = distancia del borde a cada jugador; mano = altura de las cartas del rival sobre el tronco; colores de la corteza y de la madera cortada",
@@ -221,7 +228,8 @@
     "sobreCartas": 3,
     "sobreNuevas": 1,
     "sobreHechizos": 0,
-    "sueltaTope": 1
+    "sueltaTope": 1,
+    "mesaPrecio": 6
   },
   "preciosCartas": {
     "nota": "Esmeraldas por cada carta suelta (antes del descuento de amistad); 0 = no se vende suelta",

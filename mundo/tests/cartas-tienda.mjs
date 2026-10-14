@@ -8,6 +8,7 @@
 //   3. comprar: cobra esmeraldas, suma a la colección (inventario.cartas), no alcanza, tope de copias, cerrada
 //   4. la tienda: Lucho vende cartas y el JSON trae precio y peso de cada carta jugable
 //   5. abrir el sobre: valores de la escena, rasgar con toques o arrastrando, orden de las cartas
+//   6. la mesa de duelo (duelo 2J, PR 3): precio, compra, no alcanza, no se vende, inventario lleno
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -115,6 +116,21 @@ const esHechizo = id => D.CARTAS[id].tipo === 'hechizo';
     ok(T.avanceToque(0, R) < 1, 'un toque no basta');
     ok(T.avanceArrastre(0, 200 * R.rasgar, 200, R) === 1 && T.avanceArrastre(0, -100 * R.rasgar, 200, R) === 0.5, 'arrastrar en cualquier sentido rasga; el ancho pedido lo abre');
     ok(T.momentoCarta(1, R) > T.momentoCarta(0, R) && T.momentoCarta(0, R) > 0, 'las cartas se dan vuelta una tras otra');
+}
+
+// ---------- 6. La mesa de duelo (duelo 2J, PR 3) ----------
+{
+    ok(T.reglasTienda(null).mesaPrecio === T.TIENDA_CARTAS.mesaPrecio && T.reglasTienda(JSON_MESA).mesaPrecio >= 0, 'mesa: precio del código y del JSON');
+    ok(T.reglasTienda({ tiendaCartas: { mesaPrecio: 999 } }).mesaPrecio === 64, 'mesa: precio con tope');
+    const inv = conEsmeraldas(10);
+    const r = T.comprarMesa(inv, null, O.MESA_DUELO, O.ESMERALDA, 6);
+    ok(r.ok && inv.contar(O.MESA_DUELO) === 1 && inv.contar(O.ESMERALDA) === 4, 'mesa: cobra y la da');
+    ok(T.comprarMesa(inv, null, O.MESA_DUELO, O.ESMERALDA, 6).motivo === 'plata', 'mesa: no alcanza');
+    ok(T.comprarMesa(conEsmeraldas(10), { tiendaCartas: { mesaPrecio: 0 } }, O.MESA_DUELO, O.ESMERALDA, 0).motivo === 'cerrada', 'mesa: precio 0 = no se vende');
+    const lleno = conEsmeraldas(10);
+    for (let i = 0; i < 40; i++) lleno.agregar(O.MAZO, 1);
+    ok(T.comprarMesa(lleno, null, O.MESA_DUELO, O.ESMERALDA, 6).motivo === 'lleno' && lleno.contar(O.ESMERALDA) === 10, 'mesa: inventario lleno, no cobra');
+    ok(O.MESA_DUELO && JSON_MESA.mueble && /^#/.test(JSON_MESA.mueble.pano), 'mesa: el objeto existe y el JSON trae sus colores');
 }
 
 console.log(fallos ? `${fallos} fallo(s)` : 'cartas-tienda: todo bien');

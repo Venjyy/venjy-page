@@ -88,6 +88,7 @@ export function crearMinado(ctx) {
         ? (id, t) => t === 1 || t === 2 || t === 4 || t === 6 || t === 7 || id === B.AGUA || id === B.LAVA
         : (id, t) => t === 1 || t === 2 || t === 4 || t === 6 || t === 7);
 
+    const dirPoner = new THREE.Vector3(); // hacia dónde miras al colocar la mesa de duelo
     function chocaConJugador(x, y, z) {
         const p = jugador.pos, r = 0.3;
         return x + 1 > p.x - r && x < p.x + r && z + 1 > p.z - r && z < p.z + r && y + 1 > p.y && y < p.y + 1.8;
@@ -308,6 +309,19 @@ export function crearMinado(ctx) {
             mundo.editarLote([[x, y, z, B.PUERTA_ABAJO], [x, y + 1, z, B.PUERTA_ARRIBA]], true);
             inventario.gastarMano(1);
             sonidos.puerta(false);
+            return true;
+        }
+        // Mesa de duelo (duelo 2J, PR 3): un bloque marca dónde está y mesas-colocadas.js la dibuja. El largo queda de
+        // frente a ti (MESA_DUELO: a lo largo de X; MESA_DUELO_Z: de Z): miras de un lado largo al otro
+        if (p.id === O.MESA_DUELO) {
+            const destino = ponerEn(o);
+            if (!destino) return false;
+            const [x, y, z] = destino;
+            if (!REEMPLAZABLES.has(mundo.bloque(x, y, z)) || TIPO[mundo.bloque(x, y - 1, z)] !== 1 || chocaConJugador(x, y, z)) return false;
+            camara.getWorldDirection(dirPoner);
+            mundo.editar(x, y, z, Math.abs(dirPoner.z) >= Math.abs(dirPoner.x) ? B.MESA_DUELO : B.MESA_DUELO_Z);
+            inventario.gastarMano(1);
+            sonidos.poner(B.TABLONES);
             return true;
         }
         if (p.id === O.CAMA) {

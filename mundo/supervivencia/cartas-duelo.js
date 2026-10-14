@@ -52,11 +52,31 @@ export const TXT_RETO = {
 // Superficies de peor a mejor (SUPERFICIES de cartas-mesa-modelo.js): se juega en la mejor de los dos
 const RANGO = { piso: 0, tronco: 1, mesa: 2 };
 export const mejorSuperficie = (a, b) => ((RANGO[b] ?? -1) > (RANGO[a] ?? -1) ? b : a) || 'piso';
+const r2 = n => Math.round(n * 100) / 100, r3 = n => Math.round(n * 1000) / 1000;
+// Mesa colocada en el mundo (duelo 2J, PR 3): m = { x, y, z, g } (centro, suelo y ángulo de la mesa). Se juega en ella,
+// con el retador en el lado largo más cercano a él (g o g + π); `fija` = la mesa ya está en el mundo (la del duelo no pone otra)
+export function lugarEnMesa(m, d0) {
+    let g = Number.isFinite(m.g) ? m.g : 0;
+    if (d0 && Number.isFinite(d0.x) && (d0.x - m.x) * Math.sin(g) + (d0.z - m.z) * Math.cos(g) < 0) g += Math.PI;
+    return { sup: 'mesa', x: r2(m.x), y: r2(m.y), z: r2(m.z), g: r3(Math.atan2(Math.sin(g), Math.cos(g))), fija: 1 };
+}
+// La mesa colocada más cercana a p = { x, y, z } (en el plano, hasta `max` metros y `desnivel` de altura); o null
+export function mesaCercana(mesas, p, max, desnivel = 1.5) {
+    let mejor = null, dm = max;
+    for (const m of mesas) {
+        const d = Math.hypot(m.x - p.x, m.z - p.z);
+        if (d <= dm && Math.abs(m.y - p.y) <= desnivel) { mejor = m; dm = d; }
+    }
+    return mejor;
+}
 // Dónde se juega: en el medio de los dos, a la altura del retador; g (radianes) deja al retador (lado 0)
-// mirando al invitado. d0/d1 = lo que mandó cada uno al entrar ({ x, y, z, sup }); sin posiciones, null
+// mirando al invitado. d0/d1 = lo que mandó cada uno al entrar ({ x, y, z, sup, mesa }); sin posiciones, null.
+// Si alguno está junto a una mesa colocada (`mesa`, la del retador primero), se juega en ella
 export function lugarDuelo(d0, d1) {
     if (!d0 || !d1 || !Number.isFinite(d0.x) || !Number.isFinite(d1.x)) return null;
-    const r = n => Math.round(n * 100) / 100;
+    const m = [d0.mesa, d1.mesa].find(m => m && Number.isFinite(m.x) && Number.isFinite(m.z));
+    if (m) return lugarEnMesa(m, d0);
+    const r = r2;
     const dx = d0.x - d1.x, dz = d0.z - d1.z;
     return {
         sup: mejorSuperficie(d0.sup, d1.sup),
@@ -91,8 +111,8 @@ export function armarInicio(d0, d1, R, azar = Math.random) {
     };
 }
 
-// Controlador de un jugador. acts = crearActividades(...); propio() = { mazo, extra, sup, x, y, z } (mazoParaPartida,
-// la superficie que llevas y dónde estás); al = { invitacion(m), espera(rival), inicio(e, rival, lugar, lado),
+// Controlador de un jugador. acts = crearActividades(...); propio() = { mazo, extra, sup, x, y, z, mesa } (mazoParaPartida,
+// la superficie que llevas, dónde estás y la mesa colocada junto a ti, si hay); al = { invitacion(m), espera(rival), inicio(e, rival, lugar, lado),
 // jugada(a), fin(motivo), rechazo(motivo) } (la interfaz; lado 0 = el retador, 1 = el invitado)
 export function crearDuelo({ acts, yo, reglas = () => DUELO, propio, al = {}, azar = Math.random }) {
     let fase = 'libre', rival = null, idx = 0, e = null, vistos = 0, timer = null, id = null; // id: la actividad del duelo

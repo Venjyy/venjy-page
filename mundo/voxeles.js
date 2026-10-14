@@ -1260,6 +1260,7 @@ function mallarBuffers(cx, cz, relleno, y0 = 0, y1 = Infinity) {
                 const tipo = TIPO[id];
                 const def = BLOQUES[id];
                 const emite = LUZ_EMISION[id];
+                if (id === B.MESA_DUELO || id === B.MESA_DUELO_Z) continue; // la dibuja mesas-colocadas.js (duelo 2J, PR 3)
                 if (id === B.FAROL || id === B.CARTEL) { // objetos de cajas (7f-2)
                     mallarCajas(solido, ox + x - 1, y, oz + z - 1, luzEn(x, y, z), id === B.FAROL, id === B.FAROL ? CAJAS_FAROL : CAJAS_CARTEL);
                     continue;
@@ -1548,6 +1549,7 @@ export class MundoVoxel {
     }
 
     editarLote(lista, inmediato = false) {
+        if (this.alEditar) this.alEditar(lista); // quien sigue bloques puestos o quitados (las mesas de duelo); también los del cooperativo
         if (this.terreno.dy) return this.editarRapido(lista);
         const tocados = new Set();
         const ya = new Set(); // chunks ya remallados con todas las ediciones que los tocan (no se repiten)

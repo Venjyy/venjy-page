@@ -13,7 +13,8 @@ import { jugables, coleccionDe, reglasDe, sumarCarta } from './cartas-coleccion.
 // activa = 1: el amigo vende cartas; sobrePrecio = esmeraldas por sobre; sobreCartas = cartas por sobre;
 // sobreNuevas = cuántas del sobre salen de las que no tienes (si quedan); sobreHechizos = hechizos mínimos por sobre;
 // sueltaTope = 1: no vende una carta suelta si ya tienes las copias que caben en un mazo
-export const TIENDA_CARTAS = { activa: 1, sobrePrecio: 3, sobreCartas: 3, sobreNuevas: 1, sobreHechizos: 0, sueltaTope: 1 };
+// mesaPrecio = esmeraldas por la mesa de duelo (duelo 2J, PR 3; 0 = no la vende)
+export const TIENDA_CARTAS = { activa: 1, sobrePrecio: 3, sobreCartas: 3, sobreNuevas: 1, sobreHechizos: 0, sueltaTope: 1, mesaPrecio: 6 };
 
 const entero = (v, min, max, base) => (Number.isFinite(v) ? Math.max(min, Math.min(max, Math.round(v))) : base);
 
@@ -25,7 +26,8 @@ export function reglasTienda(datos) {
         sobreCartas: entero(d.sobreCartas, 1, 10, B.sobreCartas),
         sobreNuevas: entero(d.sobreNuevas, 0, 10, B.sobreNuevas),
         sobreHechizos: entero(d.sobreHechizos, 0, 10, B.sobreHechizos),
-        sueltaTope: entero(d.sueltaTope, 0, 1, B.sueltaTope)
+        sueltaTope: entero(d.sueltaTope, 0, 1, B.sueltaTope),
+        mesaPrecio: entero(d.mesaPrecio, 0, 64, B.mesaPrecio)
     };
     T.sobreNuevas = Math.min(T.sobreNuevas, T.sobreCartas);
     T.sobreHechizos = Math.min(T.sobreHechizos, T.sobreCartas);
@@ -121,6 +123,16 @@ export function comprarSuelta(inv, datos, id, esm, precio) {
     inv.quitar(esm, precio);
     sumarCarta(inv, id, 1, datos);
     return { ok: true, motivo: null, cartas: [id] };
+}
+// La mesa de duelo (duelo 2J, PR 3): un objeto del inventario (idMesa = O.MESA_DUELO). motivo 'lleno': no cabe
+export function comprarMesa(inv, datos, idMesa, esm, precio) {
+    const T = reglasTienda(datos);
+    if (!T.activa || !T.mesaPrecio) return { ok: false, motivo: 'cerrada', cartas: [] };
+    if (inv.contar(esm) < precio) return { ok: false, motivo: 'plata', cartas: [] };
+    if (inv.cabe && !inv.cabe(idMesa, 1)) return { ok: false, motivo: 'lleno', cartas: [] };
+    inv.quitar(esm, precio);
+    inv.agregar(idMesa, 1);
+    return { ok: true, motivo: null, cartas: [] };
 }
 
 // ---- Abrir el sobre (la escena está en cartas-sobre.js; esto es lo puro: valores, rasgado y tiempos) ----

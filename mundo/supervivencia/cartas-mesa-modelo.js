@@ -54,7 +54,10 @@ export const MESA = {
     tutorial: { color: '#ffe14a', opacidad: 0.95, pulso: 1.6, borde: 1.14, leer: 4 },
     // Duelo entre jugadores donde están (sin Lucho; cartas-duelo.js elige el lugar y la mejor superficie de los dos).
     // lugar: dist = metros máximos hasta el jugador al que apuntas para retarlo, desnivel = diferencia de altura máxima.
-    lugar: { dist: 4, desnivel: 1.5 },
+    // mesaCerca = metros máximos hasta una mesa de duelo colocada para jugar en ella (PR 3)
+    lugar: { dist: 4, desnivel: 1.5, mesaCerca: 3 },
+    // Colores de la mesa (la de Lucho, la que se lleva y la colocada en el mundo; mesas-colocadas.js, armarMesa)
+    mueble: { madera: '#7a5230', oscura: '#4e3218', pano: '#2f6a34' },
     // Superficies (sin mesa): alto = la cara de arriba, ojos = altura de la cámara sentado en el suelo, asiento =
     // distancia del borde a cada jugador, mano = altura de las cartas del rival sobre la superficie; colores del tronco
     tronco: { alto: 0.5, ojos: 1.05, asiento: 0.55, mano: 0.3, corteza: '#5a3c1e', madera: '#a8824e' },
