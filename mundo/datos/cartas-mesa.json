@@ -136,7 +136,8 @@
     "nota": "Duelo entre 2 jugadores de la sala (cartas-duelo.js): vida y mano inicial de cada uno (el mazo al azar suma azarExtra); espera = segundos para aceptar el reto (0 = sin límite)",
     "vida": 4000,
     "mano": 4,
-    "espera": 30
+    "espera": 30,
+    "esperaMesa": 0
   },
   "lugar": {
     "nota": "Duelo entre jugadores donde están (con el MAZO en la mano, apuntando al otro): dist = metros máximos hasta él; desnivel = diferencia de altura máxima",
@@ -155,7 +156,7 @@
     "nota": "Duelo sobre un tronco (si alguno de los dos lleva troncos): alto = cara de arriba; ojos = altura de la cámara sentado en el suelo; asiento = distancia del borde a cada jugador; mano = altura de las cartas del rival sobre el tronco; colores de la corteza y de la madera cortada",
     "alto": 0.5,
     "ojos": 1.05,
-    "asiento": 0.55,
+    "asiento": 0.85,
     "mano": 0.3,
     "corteza": "#5a3c1e",
     "madera": "#a8824e"
@@ -164,7 +165,7 @@
     "nota": "Duelo en el piso (nadie lleva tronco ni mesa): alto = altura de las cartas; ojos = altura de la cámara sentado; asiento = distancia del borde a cada jugador; mano = altura de las cartas del rival",
     "alto": 0.02,
     "ojos": 1,
-    "asiento": 0.5,
+    "asiento": 0.8,
     "mano": 0.45
   },
   "planoRival": {

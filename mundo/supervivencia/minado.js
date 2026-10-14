@@ -21,7 +21,7 @@ const CAEN = new Set([B.ARENA, B.GRAVA]);
 // Se reemplazan al poner encima (pasto alto)
 const REEMPLAZABLES = new Set([0, B.AGUA, B.LAVA, B.PASTO_ALTO]);
 const INTERACTIVOS = new Set([B.MESA, B.HORNO, B.HORNO_ENCENDIDO, B.COFRE, B.BARRIL, B.CAMA,
-    B.PUERTA_ABAJO, B.PUERTA_ARRIBA, B.PUERTA_ABIERTA_ABAJO, B.PUERTA_ABIERTA_ARRIBA]);
+    B.PUERTA_ABAJO, B.PUERTA_ARRIBA, B.PUERTA_ABIERTA_ABAJO, B.PUERTA_ABIERTA_ARRIBA, B.MESA_DUELO, B.MESA_DUELO_Z]);
 
 // Texturas de grietas (10 etapas), pintadas con código
 function crearGrietas() {
@@ -172,6 +172,8 @@ export function crearMinado(ctx) {
         if (id === B.MESA) { ventanas.abrir('mesa'); return true; }
         if (id === B.HORNO || id === B.HORNO_ENCENDIDO) { ventanas.abrir('horno', { estado: contenedores.obtener(x, y, z, id) }); return true; }
         if (id === B.COFRE || id === B.BARRIL) { ventanas.abrir('cofre', { estado: contenedores.obtener(x, y, z, id), barril: id === B.BARRIL }); sonidos.puerta(true); return true; }
+        // Mesa de duelo colocada (duelo 2J, PR 5): esperar rival en ella o sentarse frente a quien espera (main.js)
+        if (id === B.MESA_DUELO || id === B.MESA_DUELO_Z) return estado.usarMesaDuelo ? estado.usarMesaDuelo(o) : false;
         if (id === B.CAMA) { const m = estado.dormir && estado.dormir(x, y, z); if (m) hud.mensaje(m); return true; }
         if (id >= B.PUERTA_ABAJO && id <= B.PUERTA_ABIERTA_ARRIBA) {
             const abajo = id === B.PUERTA_ABAJO || id === B.PUERTA_ABIERTA_ABAJO ? y : y - 1;
