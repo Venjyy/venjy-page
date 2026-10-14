@@ -4,7 +4,9 @@
 //   · insertarPunto / quitarPunto: cambian `pista.puntos` y corrigen los índices de huecos, turbos, túneles y cajas;
 //   · avisosPista: lo que está mal o es riesgoso (la pista se pisa a sí misma, un mueble del piso la invade,
 //     un hueco sin rampa, puntos muy juntos, fuera de la sala);
-//   · probarIA: una carrera completa de las gatas del juego, al instante, y lo que pasó (tiempos, derrapes, caídas).
+//   · probarIA: una carrera completa de las gatas del juego, al instante, y lo que pasó (tiempos, derrapes, caídas);
+//   · piezas plantilla (PIEZAS: vuelta 360, espiral, horquilla, salto…): un grupo de puntos con entrada y salida que se
+//     pone después de un punto, se mueve y gira entero y se rehace al cambiar sus medidas (`pista.piezas`).
 // =========================================================
 import * as M from '../mundo/supervivencia/carrera-modelo.js';
 
@@ -19,6 +21,8 @@ export function insertarPunto(pista, i, punto) {
     for (const t of p.turbos || []) t.punto = mover(t.punto);
     for (const c of p.cajas || []) c.punto = mover(c.punto);
     for (const t of p.tuneles || []) { t.desde = mover(t.desde); t.hasta = mover(t.hasta); }
+    // Un punto dentro de una pieza la suelta (sus puntos quedan sueltos)
+    if (p.piezas) p.piezas = p.piezas.filter(z => !(i > z.desde && i <= z.hasta)).map(z => ({ ...z, desde: mover(z.desde), hasta: mover(z.hasta) }));
     return p;
 }
 export function quitarPunto(pista, i) {
@@ -31,6 +35,7 @@ export function quitarPunto(pista, i) {
     p.turbos = (p.turbos || []).filter(t => t.punto !== i).map(t => ({ ...t, punto: mover(t.punto) }));
     if (p.cajas) p.cajas = p.cajas.filter(c => c.punto !== i).map(c => ({ ...c, punto: mover(c.punto) }));
     p.tuneles = (p.tuneles || []).map(t => ({ ...t, desde: mover(t.desde), hasta: mover(t.hasta) })).filter(t => t.desde !== t.hasta);
+    if (p.piezas) p.piezas = p.piezas.filter(z => i < z.desde || i > z.hasta).map(z => ({ ...z, desde: mover(z.desde), hasta: mover(z.hasta) }));
     return p;
 }
 // El segmento (entre el punto i y el i+1) más cercano a (x, z): { i, d } (para insertar con doble clic)
@@ -62,6 +67,7 @@ export function avisosPista(R) {
     // Muebles del piso que pisan la pista
     for (const m of R.muebles || []) {
         if (['alfombra', 'sofa', 'mesa'].includes(m.tipo)) continue;
+        if (R.pista.apoyar && M.subeEncima(m)) continue; // la pista sube sola encima (rampa)
         for (const q of P.m) {
             if (q.y > m.h + 1) continue;
             const dx = Math.max(0, Math.abs(q.x - m.x) - m.a / 2), dz = Math.max(0, Math.abs(q.z - m.z) - m.f / 2);
@@ -122,3 +128,121 @@ export function probarIA(R, { dificultad = 'normal', semilla = 11, dt = 1 / 60 }
         derrapes, caidas, turbos, objetos, golpes, porGata: M.puestos(gs).map(g => ({ clave: g.clave, nombre: g.def.nombre, fin: g.fin }))
     };
 }
+
+// ---------------------------------------------------------
+// Piezas plantilla
+// ---------------------------------------------------------
+// Cada pieza es un grupo de puntos [desde..hasta] de `pista.puntos` con su entrada (el primero) y su salida (el último);
+// `pista.piezas` guarda { tipo, desde, hasta, giro (grados: hacia dónde mira la entrada) } y sus medidas. La pista
+// sigue siendo una lista de puntos (el juego no sabe de piezas): el dueño conecta la entrada y la salida con el resto.
+// Medidas por forma: [clave, es, en, mínimo, máximo, paso]
+export const MEDIDAS = {
+    espiral: [['vueltas', 'vueltas', 'turns', 0.5, 4, 0.25], ['radio', 'radio (bloques)', 'radius (blocks)', 8, 40, 0.5], ['sube', 'sube (bloques; menos = baja)', 'climbs (blocks; minus = down)', -40, 40, 0.5], ['lado', 'lado (1 izq., -1 der.)', 'side (1 left, -1 right)', -1, 1, 2]],
+    curva: [['angulo', 'ángulo (grados)', 'angle (degrees)', 15, 270, 15], ['radio', 'radio (bloques)', 'radius (blocks)', 8, 60, 0.5], ['sube', 'sube (bloques)', 'climbs (blocks)', -20, 20, 0.5], ['lado', 'lado (1 izq., -1 der.)', 'side (1 left, -1 right)', -1, 1, 2]],
+    salto: [['alto', 'alto de la rampa', 'ramp height', 1, 12, 0.5], ['largo', 'largo de la rampa', 'ramp length', 6, 40, 1], ['hueco', 'largo del hueco', 'gap length', 2, 16, 0.5]],
+    eses: [['curvas', 'curvas', 'bends', 2, 8, 1], ['ancho', 'cuánto se abre (bloques)', 'how wide (blocks)', 2, 20, 0.5], ['largo', 'largo (bloques)', 'length (blocks)', 20, 140, 2]],
+    recta: [['largo', 'largo (bloques)', 'length (blocks)', 8, 120, 2], ['sube', 'sube (bloques)', 'climbs (blocks)', -20, 20, 0.5]]
+};
+export const PIEZAS = {
+    vuelta: { es: 'Vuelta 360 (pasa por encima)', en: '360 loop (crosses over)', gen: 'espiral', vueltas: 1, radio: 13, sube: 6, lado: 1 },
+    espiral: { es: 'Subida en espiral', en: 'Spiral climb', gen: 'espiral', vueltas: 2, radio: 15, sube: 14, lado: 1 },
+    bajada: { es: 'Bajada en espiral', en: 'Spiral descent', gen: 'espiral', vueltas: 2, radio: 15, sube: -14, lado: 1 },
+    horquilla: { es: 'Horquilla (vuelta en U)', en: 'Hairpin (U-turn)', gen: 'curva', angulo: 180, radio: 12, sube: 0, lado: 1 },
+    curva: { es: 'Curva de 90°', en: '90° bend', gen: 'curva', angulo: 90, radio: 18, sube: 0, lado: 1 },
+    salto: { es: 'Rampa con salto', en: 'Ramp jump', gen: 'salto', alto: 3.5, largo: 14, hueco: 6 },
+    eses: { es: 'Eses', en: 'Chicane', gen: 'eses', curvas: 3, ancho: 7, largo: 56 },
+    rampa: { es: 'Recta con subida', en: 'Straight climb', gen: 'recta', largo: 30, sube: 6 }
+};
+const ENTRA = 6, SALE = 8; // bloques rectos antes y después (para que la pieza conecte derecha)
+const r1 = v => Math.round(v * 10) / 10;
+// Medidas de una pieza (las suyas o las de su plantilla)
+export const medidasDe = pz => Object.fromEntries((MEDIDAS[PIEZAS[pz.tipo]?.gen] || []).map(([k]) => [k, pz[k] ?? PIEZAS[pz.tipo][k]]));
+// Puntos locales: { puntos: [[u (a la izquierda), y, f (adelante)]], huecos: [{ punto, largo }], turbos } (índices locales)
+export function generarPieza(pz) {
+    const d = { ...medidasDe(pz) }, gen = PIEZAS[pz.tipo]?.gen;
+    const pts = [[0, 0, 0]], huecos = [], turbos = [];
+    if (gen === 'espiral' || gen === 'curva') {
+        const r = d.radio, lado = d.lado < 0 ? -1 : 1;
+        const total = gen === 'espiral' ? d.vueltas * Math.PI * 2 : d.angulo * Math.PI / 180;
+        const pasos = Math.max(2, Math.ceil(total / (Math.PI / 5)));
+        pts.push([0, 0, ENTRA]);
+        for (let k = 1; k <= pasos; k++) {
+            const a = (k / pasos) * total;
+            pts.push([lado * r * (1 - Math.cos(a)), d.sube * k / pasos, ENTRA + r * Math.sin(a)]);
+        }
+        const fin = pts[pts.length - 1];
+        pts.push([fin[0] + lado * Math.sin(total) * SALE, d.sube, fin[2] + Math.cos(total) * SALE]);
+    } else if (gen === 'salto') {
+        const top = ENTRA + d.largo, cae = top + d.hueco + 4;
+        pts.push([0, 0, ENTRA], [0, d.alto, top], [0, Math.max(0, d.alto - 0.5), cae], [0, 0, cae + d.largo], [0, 0, cae + d.largo + SALE]);
+        huecos.push({ punto: 2, largo: d.hueco });
+        turbos.push({ punto: 1, avance: 0, lado: 0, largo: 3 });
+    } else if (gen === 'eses') {
+        const n = Math.round(d.curvas);
+        for (let k = 1; k <= n; k++) pts.push([(k % 2 ? 1 : -1) * d.ancho, 0, d.largo * k / (n + 1)]);
+        pts.push([0, 0, d.largo], [0, 0, d.largo + SALE]);
+    } else {
+        pts.push([0, d.sube / 2, d.largo / 2], [0, d.sube, d.largo], [0, d.sube, d.largo + SALE]);
+    }
+    return { puntos: pts, huecos, turbos };
+}
+// La pieza en el mundo: entrada en (x, y, z) mirando hacia `giro` (grados; 0 = hacia +z)
+export function piezaEnMundo(pz, x, y, z) {
+    const g = (pz.giro || 0) * Math.PI / 180, sg = Math.sin(g), cg = Math.cos(g), G = generarPieza(pz);
+    return { ...G, puntos: G.puntos.map(([u, py, f]) => [r1(x + f * sg + u * cg), r1(Math.max(0, Math.min(60, y + py))), r1(z + f * cg - u * sg)]) };
+}
+// Cambia los puntos [desde..hasta] por `nuevos` y corre los índices de lo que viene después (lo de adentro se queda si cabe)
+function reemplazarTramo(p, desde, hasta, nuevos) {
+    const viejos = hasta - desde + 1, delta = nuevos.length - viejos;
+    p.puntos.splice(desde, viejos, ...nuevos);
+    const mover = k => (k > hasta ? k + delta : k < desde ? k : k - desde < nuevos.length ? k : -1);
+    const fil = (lista, f) => (lista || []).map(f).filter(Boolean);
+    p.huecos = fil(p.huecos, h => (mover(h.punto) < 0 ? null : { ...h, punto: mover(h.punto) }));
+    p.turbos = fil(p.turbos, t => (mover(t.punto) < 0 ? null : { ...t, punto: mover(t.punto) }));
+    if (p.cajas) p.cajas = fil(p.cajas, c => (mover(c.punto) < 0 ? null : { ...c, punto: mover(c.punto) }));
+    p.tuneles = fil(p.tuneles, t => (mover(t.desde) < 0 || mover(t.hasta) < 0 ? null : { ...t, desde: mover(t.desde), hasta: mover(t.hasta) }));
+    if (p.piezas) p.piezas = p.piezas.map(z => (z.desde > hasta ? { ...z, desde: z.desde + delta, hasta: z.hasta + delta } : z));
+}
+// Pone una pieza nueva después del punto i: su entrada, `ENTRA` bloques más allá, mirando hacia el punto siguiente
+export function ponerPieza(pista, i, tipo) {
+    const p = clonar(pista), n = p.puntos.length, a = p.puntos[i], b = p.puntos[(i + 1) % n];
+    const giro = Math.round(Math.atan2(b[0] - a[0], b[2] - a[2]) * 180 / Math.PI);
+    const pz = { tipo, giro, ...medidasDe({ tipo }) }, g = giro * Math.PI / 180;
+    const W = piezaEnMundo(pz, a[0] + Math.sin(g) * ENTRA, a[1], a[2] + Math.cos(g) * ENTRA);
+    let q = p;
+    W.puntos.forEach((pt, k) => { q = insertarPunto(q, i + 1 + k, pt); });
+    for (const h of W.huecos) (q.huecos = q.huecos || []).push({ punto: i + 1 + h.punto, largo: h.largo });
+    for (const t of W.turbos) (q.turbos = q.turbos || []).push({ ...t, punto: i + 1 + t.punto });
+    (q.piezas = q.piezas || []).push({ ...pz, desde: i + 1, hasta: i + W.puntos.length });
+    return q;
+}
+// Rehace la pieza k con `cambios` (medidas o giro), con la entrada donde está ahora
+export function rehacerPieza(pista, k, cambios = {}) {
+    const p = clonar(pista), z = p.piezas[k], e = p.puntos[z.desde];
+    const viejo = piezaEnMundo(z, e[0], e[1], e[2]);
+    // Quita los huecos y turbos que había puesto la pieza (los que agregó el dueño se quedan)
+    p.huecos = (p.huecos || []).filter(h => !viejo.huecos.some(v => z.desde + v.punto === h.punto && v.largo === h.largo));
+    p.turbos = (p.turbos || []).filter(t => !viejo.turbos.some(v => z.desde + v.punto === t.punto && v.largo === t.largo && v.avance === (t.avance || 0)));
+    Object.assign(z, cambios);
+    const W = piezaEnMundo(z, e[0], e[1], e[2]);
+    reemplazarTramo(p, z.desde, z.hasta, W.puntos);
+    z.hasta = z.desde + W.puntos.length - 1;
+    for (const h of W.huecos) p.huecos.push({ punto: z.desde + h.punto, largo: h.largo });
+    for (const t of W.turbos) p.turbos.push({ ...t, punto: z.desde + t.punto });
+    return p;
+}
+// Quita la pieza k con sus puntos (si quedan al menos 4)
+export function quitarPieza(pista, k) {
+    const p = clonar(pista), z = p.piezas[k];
+    if (p.puntos.length - (z.hasta - z.desde + 1) < 4) return p;
+    p.piezas.splice(k, 1);
+    const fuera = i => i >= z.desde && i <= z.hasta;
+    p.huecos = (p.huecos || []).filter(h => !fuera(h.punto));
+    p.turbos = (p.turbos || []).filter(t => !fuera(t.punto));
+    if (p.cajas) p.cajas = p.cajas.filter(c => !fuera(c.punto));
+    p.tuneles = (p.tuneles || []).filter(t => !fuera(t.desde) && !fuera(t.hasta));
+    reemplazarTramo(p, z.desde, z.hasta, []);
+    return p;
+}
+// La pieza que tiene el punto i (su índice en `pista.piezas`, o -1)
+export const piezaDe = (pista, i) => (pista.piezas || []).findIndex(z => i >= z.desde && i <= z.hasta);

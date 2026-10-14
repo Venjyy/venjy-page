@@ -41,7 +41,11 @@ export const CARRERA = {
         tuneles: [{ desde: 12, hasta: 13 }],
         // Filas de cajas de objetos: `avance` bloques después del punto, `cuantas` cajas a lo ancho (sin el número: objetos.cuantas)
         cajas: [{ punto: 2, avance: 0 }, { punto: 11, avance: 3 }, { punto: 16, avance: 4 }],
-        salida: 4       // bloques antes de la línea donde parte la primera fila
+        salida: 4,      // bloques antes de la línea donde parte la primera fila
+        // Rampa sola: si la pista pasa sobre un mueble que deja subir (`sube` o el tipo en SUBE_TIPOS), sube encima con
+        // esta pendiente máxima (alto/largo) y vuelve a bajar; apoyar = 0 lo apaga
+        apoyar: 1,
+        rampa: 0.35
     },
     // Muebles y adornos del living (carrera-escena.js los dibuja; los del piso no pueden pisar la pista: lo revisa la prueba).
     // x, z = centro; a = ancho (x), f = fondo (z), h = alto (bloques); g = giro en grados (solo los adornos sueltos)
@@ -154,26 +158,48 @@ export function reglasCarrera(datos) {
 // ---------------------------------------------------------
 // Pista
 // ---------------------------------------------------------
-const cr = (p0, p1, p2, p3, t) => {
-    const t2 = t * t, t3 = t2 * t;
-    return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
-};
+// Catmull-Rom centrípeta (no hace nudos ni se devuelve aunque los puntos queden muy disparejos, como al conectar una pieza)
+function crc(p0, p1, p2, p3, u) {
+    const d = (a, b) => Math.max(1e-3, Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])));
+    const t1 = d(p0, p1), t2 = t1 + d(p1, p2), t3 = t2 + d(p2, p3), t = t1 + (t2 - t1) * u;
+    const r = [];
+    for (let c = 0; c < 3; c++) {
+        const A1 = ((t1 - t) * p0[c] + t * p1[c]) / t1, A2 = ((t2 - t) * p1[c] + (t - t1) * p2[c]) / (t2 - t1), A3 = ((t3 - t) * p2[c] + (t - t2) * p3[c]) / (t3 - t2);
+        const B1 = ((t2 - t) * A1 + t * A2) / t2, B2 = ((t3 - t) * A2 + (t - t1) * A3) / (t3 - t1);
+        r.push(((t2 - t) * B1 + (t - t1) * B2) / (t2 - t1));
+    }
+    return r;
+}
 const angDif = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 
-// Muestras de la pista: { x, y, z, yaw, pend (dy/ds), ancho, curva (1/bloques, + = dobla a la izquierda), piso, turbo, tunel }
+// Muebles sobre los que la pista sube sola (los demás son obstáculos: la pista los rodea o pasa por arriba a mano)
+export const SUBE_TIPOS = ['caja', 'cojin'];
+export const subeEncima = m => !!(m && (m.sube ?? SUBE_TIPOS.includes(m.tipo)));
+// Altura del mueble más alto bajo (x, z), con su planta agrandada `margen` bloques (0 si no hay ninguno)
+export function techoMuebles(muebles, x, z, margen = 0) {
+    let h = 0;
+    for (const m of muebles) {
+        const a = (m.g || 0) * Math.PI / 180, dx = x - m.x, dz = z - m.z;
+        const lx = dx * Math.cos(a) - dz * Math.sin(a), lz = dx * Math.sin(a) + dz * Math.cos(a);
+        if (Math.abs(lx) < m.a / 2 + margen && Math.abs(lz) < m.f / 2 + margen && m.h > h) h = m.h;
+    }
+    return h;
+}
+
+// Muestras de la pista: { x, y, z, yaw, pend (dy/ds), ancho, curva (1/bloques, + = dobla a la izquierda), piso, turbo, tunel,
+// apoyo (alto del mueble que tiene debajo, o 0) }
 export function armarPista(R) {
     const P = R.pista, pts = P.puntos, n = pts.length;
     // Curva densa
-    const densos = [];
+    const densos = [], inicio = [];
     for (let i = 0; i < n; i++) {
         const a = pts[(i - 1 + n) % n], b = pts[i], c = pts[(i + 1) % n], d = pts[(i + 2) % n];
-        for (let k = 0; k < 24; k++) {
-            const t = k / 24;
-            densos.push({
-                x: cr(a[0], b[0], c[0], d[0], t), y: cr(a[1], b[1], c[1], d[1], t), z: cr(a[2], b[2], c[2], d[2], t),
-                ancho: (b[3] || P.ancho) + ((c[3] || P.ancho) - (b[3] || P.ancho)) * t
-            });
+        const cuantos = Math.max(24, Math.min(240, Math.ceil(Math.hypot(c[0] - b[0], c[2] - b[2]) / 0.75)));
+        inicio.push(densos.length);
+        for (let k = 0; k < cuantos; k++) {
+            const t = k / cuantos, [x, y, z] = crc(a, b, c, d, t);
+            densos.push({ x, y, z, ancho: (b[3] || P.ancho) + ((c[3] || P.ancho) - (b[3] || P.ancho)) * t });
         }
     }
     // Largo acumulado (en el plano) y remuestreo uniforme
@@ -183,7 +209,7 @@ export function armarPista(R) {
         acum.push(acum[i - 1] + Math.hypot(b.x - a.x, b.z - a.z));
     }
     const largo = acum[densos.length];
-    const sPunto = i => acum[(((i % n) + n) % n) * 24]; // distancia del punto de control i
+    const sPunto = i => acum[inicio[((i % n) + n) % n]]; // distancia del punto de control i
     const N = Math.max(16, Math.round(largo / P.paso));
     const m = [];
     let j = 0;
@@ -195,6 +221,16 @@ export function armarPista(R) {
         m.push({ x: a.x + (b.x - a.x) * u, y: Math.max(0, a.y + (b.y - a.y) * u), /* el suavizado no baja del piso */ z: a.z + (b.z - a.z) * u, ancho: a.ancho + (b.ancho - a.ancho) * u, s });
     }
     const paso = largo / N;
+    // Rampa sola sobre los muebles que dejan subir: cada muestra queda sobre el mueble que tiene debajo (con el ancho de
+    // la pista entero encima) y las vecinas suben y bajan con la pendiente `rampa` (una pasada hacia cada lado, dando la vuelta)
+    const sube = P.apoyar ? (R.muebles || []).filter(subeEncima) : [];
+    for (const q of m) q.apoyo = sube.length ? techoMuebles(sube, q.x, q.z, q.ancho / 2 + 0.5) : 0;
+    if (sube.length && m.some(q => q.apoyo > 0)) {
+        const baja = Math.max(0.05, P.rampa || 0.35) * paso, env = m.map(q => q.apoyo > 0 ? q.apoyo + 0.15 : 0);
+        for (let k = 0; k < 2 * N; k++) { const i = k % N; env[i] = Math.max(env[i], env[(i - 1 + N) % N] - baja); }
+        for (let k = 2 * N - 1; k >= 0; k--) { const i = k % N; env[i] = Math.max(env[i], env[(i + 1) % N] - baja); }
+        m.forEach((q, i) => { q.y = Math.max(q.y, env[i]); });
+    }
     for (let i = 0; i < N; i++) {
         const a = m[(i - 1 + N) % N], b = m[(i + 1) % N];
         m[i].yaw = Math.atan2(b.x - a.x, b.z - a.z);
