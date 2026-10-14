@@ -80,6 +80,12 @@
       "fase": 11,
       "que": "Formas de los bloques que no son un cubo entero (losas, escalones, trampilla, vallas de jardín, farol, cartel; y el contorno y las grietas de cama, antorcha, flores y cultivos): cajas en 1/16, cuánto sube solo el jugador (paso) y el color del contorno y de las grietas; main.js lo pide y se aplica en vivo con supervivencia.html?estudio"
     },
+    "carrera": {
+      "esquema": "carrera",
+      "lee": "mundo/supervivencia/carrera.js",
+      "fase": 12,
+      "que": "Carrera de gatas de la Gatera (7h-1): vueltas, circuito (puntos desde el centro de la Gatera y ancho), cómo corre una gata (velocidad, giro, derrape y turbo), el carácter de Mila y Gala, la IA, la red, el público y el premio; main.js lo pide al abrir la carrera y se aplica en vivo con supervivencia.html?estudio"
+    },
     "borradores": {
       "esquema": "borradores",
       "lee": null,

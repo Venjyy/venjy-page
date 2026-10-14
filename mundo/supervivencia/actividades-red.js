@@ -9,6 +9,9 @@
 //   unir    → al anfitrión (para): { id, k, cupo, d } entra (d = datos del participante, p. ej. su mazo)
 //   salir   → al anfitrión: { id } sale (también al desconectarse: salioJugador)
 //   ev      → al anfitrión: { id, s, d } evento del juego; el anfitrión lo numera y lo reparte a todos
+//             (con `libre: 1` no se revisa el orden: juegos en tiempo real donde cada uno manda lo suyo a la vez)
+//   rf      → al anfitrión: { id, d } ráfaga (posición de una gata, un hurra…): la reparte a todos como `rafaga`
+//             sin numerarla ni guardarla en el registro; la puede mandar cualquiera de la sala (el público alienta)
 //   estado  ← del anfitrión a todos: { act } (act = null y id si se cerró)
 //   evento  ← del anfitrión a todos: { id, s, por, d } (s = orden global de la actividad: 0, 1, 2…; por = autor)
 //   no      ← del anfitrión a uno: { id, motivo } ('llena', 'otra', 'cerrada', 'orden')
@@ -16,6 +19,7 @@
 //   resp    → directo al que invitó: { id, si, motivo? } (motivo: por qué no; lo lee cada juego)
 //   ver     → al anfitrión: pide el estado y el registro de eventos (quien llega tarde o se pone a mirar)
 //   registro← del anfitrión a uno: { id, act, log }
+//   rafaga  ← del anfitrión a todos: { id, por, d } (quien la mandó no la recibe de vuelta)
 // Quien entra a la sala recibe del anfitrión el `estado` de cada actividad abierta (entroJugador): así sabe qué
 // se juega y puede pedir `ver` para mirarla.
 // Orden: el anfitrión acepta un `ev` solo si su `s` es el siguiente (si no, `no` con 'orden'); así los
@@ -67,11 +71,15 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
         ev(m) {
             const a = acts.get(m.id);
             if (!a || !a.jug.includes(m.de)) return aUno(m.de, { op: 'no', id: m.id, k: a ? a.k : null, motivo: 'cerrada' });
-            if (m.s !== a.s) return aUno(m.de, { op: 'no', id: m.id, k: a.k, motivo: 'orden', s: a.s });
+            if (!m.libre && m.s !== a.s) return aUno(m.de, { op: 'no', id: m.id, k: a.k, motivo: 'orden', s: a.s });
             const ev = { s: a.s++, de: m.de, d: m.d };
             const log = logs.get(a.id);
             if (log) { log.push(ev); if (log.length > maxLog) log.shift(); }
             aTodos({ op: 'evento', id: a.id, s: ev.s, por: ev.de, d: ev.d }); // `por`: el autor (el `de` del mensaje es el anfitrión)
+        },
+        rf(m) {
+            const a = acts.get(m.id);
+            if (a) aTodos({ op: 'rafaga', id: a.id, k: a.k, por: m.de, d: m.d });
         },
         ver(m) {
             const a = acts.get(m.id);
@@ -110,6 +118,7 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
             case 'invitar': if (m.para === yo || !m.para) avisar(m.k, 'invitacion', { id: m.id, k: m.k, de: m.de, d: m.d }); break;
             case 'resp': avisar(m.k, 'resp', { id: m.id, k: m.k, de: m.de, si: !!m.si, motivo: m.motivo }); break;
             case 'no': avisar(m.k, 'no', { id: m.id, k: m.k, motivo: m.motivo, s: m.s }); break;
+            case 'rafaga': if (m.por !== yo) avisar(m.k, 'rafaga', { de: m.por, d: m.d }, m.id); break;
             case 'registro': if (m.act) acts.set(m.id, copia(m.act)); avisar(m.act ? m.act.k : null, 'registro', copia(m.act), m.log || [], m.id); break;
         }
     }
@@ -122,6 +131,10 @@ export function crearActividades({ yo, esAnfitrion, anfitrion, enviar, maxLog = 
         salir(id) { alAnfitrion({ op: 'salir', id }); },
         // Evento con el orden que espero (el siguiente de la actividad); quien lo manda ya lo aplicó
         evento(id, d) { const a = acts.get(id); const s = a ? a.s : 0; if (a && !esAnfitrion) a.s++; alAnfitrion({ op: 'ev', id, s, d }); return s; },
+        // Evento sin orden (tiempo real): el anfitrión le pone el número que toque; quien lo manda ya lo aplicó
+        eventoLibre(id, d) { alAnfitrion({ op: 'ev', id, libre: 1, d }); },
+        // Ráfaga: a todos, sin registro (estado continuo que se pisa con el siguiente)
+        rafaga(id, d) { alAnfitrion({ op: 'rf', id, d }); },
         invitar(para, id, k, d) { enviar({ op: 'invitar', id, k, d, para }); },
         responder(para, id, k, si, motivo) { enviar({ op: 'resp', id, k, si: !!si, para, ...(motivo ? { motivo } : {}) }); },
         ver(id) { alAnfitrion({ op: 'ver', id }); },

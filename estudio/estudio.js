@@ -3,6 +3,7 @@
 // Cada fase suma una pestaña (estudio/DISENO.md §4). Fase 1: Layout. Fase 2: Juego. Fase 3: Textos. Fase 4: Posiciones.
 // Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20). Inicio: menú de la supervivencia (§21).
 // Formas: cajas de losas, escalones, vallas… (§22).
+// Carrera: la carrera de gatas de la Gatera (7h-1).
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
@@ -15,6 +16,7 @@ import { montarObjetos } from './objetos.js';
 import { montarPixeles } from './pixeles.js';
 import { montarInicio } from './inicio.js';
 import { montarFormas } from './formas.js';
+import { montarCarrera } from './carrera.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -79,6 +81,7 @@ await montarObjetos(ctx);
 await montarPixeles(ctx);
 await montarInicio(ctx);
 await montarFormas(ctx);
+await montarCarrera(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
@@ -93,6 +96,7 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-mesa').hidden = ctx.pestana !== 'mesa';
         document.getElementById('panel-objetos').hidden = ctx.pestana !== 'objetos';
         document.getElementById('panel-formas').hidden = ctx.pestana !== 'formas';
+        document.getElementById('panel-carrera').hidden = ctx.pestana !== 'carrera';
         document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';
         document.getElementById('es-zona').hidden = ctx.pestana !== 'escenas';
         document.getElementById('seccion-juego').classList.toggle('modo-escenas', ctx.pestana === 'escenas');

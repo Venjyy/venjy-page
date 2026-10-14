@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carrera.schema.json",
+  "title": "Carrera de gatas (mundo/datos/carrera.json)",
+  "description": "Carrera de Mila contra Gala en un circuito alrededor de la Gatera (7h-1), al estilo de un juego de karts. Cada clave ajusta la del código (CARRERA en mundo/supervivencia/carrera-modelo.js); lo que falte usa el código. Se edita en /estudio/ → pestaña Carrera y se aplica en vivo (el circuito se vuelve a armar al momento).",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "$ref": "comun.schema.json#/$defs/version"
+    },
+    "nota": {
+      "$ref": "comun.schema.json#/$defs/nota"
+    },
+    "vueltas": {
+      "description": "Vueltas de la carrera.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9
+    },
+    "cuenta": {
+      "description": "Segundos de la cuenta regresiva de Lona.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "tope": {
+      "description": "Segundos máximos de carrera; después termina con el puesto que haya.",
+      "type": "number",
+      "minimum": 30,
+      "maximum": 600
+    },
+    "pista": {
+      "type": "object",
+      "properties": {
+        "ancho": {
+          "description": "Ancho de la pista en bloques; fuera de ella la gata va más lenta.",
+          "type": "number",
+          "minimum": 1.5,
+          "maximum": 8
+        },
+        "puntos": {
+          "description": "Circuito: puntos [x, z] en bloques desde el centro de la Gatera (+x este, +z sur), en orden; se cierra solo. La línea de salida está en el primero.",
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 40,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "description": "x",
+                "type": "number",
+                "minimum": -60,
+                "maximum": 60
+              },
+              {
+                "description": "z",
+                "type": "number",
+                "minimum": -60,
+                "maximum": 60
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "salida": {
+          "description": "Bloques antes de la línea donde parten las gatas.",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 6
+        }
+      },
+      "additionalProperties": false
+    },
+    "gata": {
+      "type": "object",
+      "properties": {
+        "vel": {
+          "description": "Velocidad máxima (bloques/s).",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 16
+        },
+        "acel": {
+          "description": "Aceleración.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "freno": {
+          "description": "Frenar.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "roce": {
+          "description": "Sin acelerar se va frenando.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "atras": {
+          "description": "Marcha atrás (fracción de vel).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "giro": {
+          "description": "Giro (rad/s).",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 6
+        },
+        "fuera": {
+          "description": "Fuera de la pista: fracción de vel.",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "derrape": {
+          "description": "Derrapando gira más (×).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "carga": {
+          "description": "Segundos derrapando para cargar el turbo.",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3
+        },
+        "turbo": {
+          "description": "Velocidad con turbo (× vel).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2.5
+        },
+        "turboDur": {
+          "description": "Segundos de turbo.",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3
+        },
+        "choque": {
+          "description": "Rebote al chocar (fracción de la velocidad).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "mila": {
+      "type": "object",
+      "properties": {
+        "vel": {
+          "description": "× velocidad",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        },
+        "acel": {
+          "description": "× aceleración",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        },
+        "giro": {
+          "description": "× giro",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        }
+      },
+      "additionalProperties": false
+    },
+    "gala": {
+      "type": "object",
+      "properties": {
+        "vel": {
+          "description": "× velocidad",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        },
+        "acel": {
+          "description": "× aceleración",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        },
+        "giro": {
+          "description": "× giro",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5
+        }
+      },
+      "additionalProperties": false
+    },
+    "ia": {
+      "type": "object",
+      "properties": {
+        "vel": {
+          "description": "Fracción de la velocidad máxima de la gata del juego.",
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 1.2
+        },
+        "mira": {
+          "description": "Bloques que mira adelante para doblar.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "carril": {
+          "description": "Se corre a un lado (bloques).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "derrapa": {
+          "description": "Dobla derrapando si el giro pasa de esto (0-1).",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "red": {
+      "type": "object",
+      "properties": {
+        "hz": {
+          "description": "Mensajes por segundo de cada corredor.",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 20
+        },
+        "suave": {
+          "description": "Suavizado de la gata ajena (s).",
+          "type": "number",
+          "minimum": 0.02,
+          "maximum": 0.5
+        }
+      },
+      "additionalProperties": false
+    },
+    "publico": {
+      "type": "object",
+      "properties": {
+        "mirar": {
+          "description": "Metros hasta el centro de la Gatera para ver la carrera de otros.",
+          "type": "number",
+          "minimum": 10,
+          "maximum": 120
+        }
+      },
+      "additionalProperties": false
+    },
+    "premio": {
+      "type": "object",
+      "properties": {
+        "gana": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9_]{1,40}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 64
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "pierde": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9_]{1,40}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 64
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

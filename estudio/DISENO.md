@@ -1028,3 +1028,10 @@ Editor de píxeles en `estudio/pixeles.js` (sección propia, no comparte pantall
 - **Editor**: lista de formas (y «General»), seis números por caja (desde/hasta x, y, z), agregar y quitar cajas, alto de choque, «Volver al valor del código», «Darme el bloque» (mensaje `objeto` con el id). Cada cambio va en vivo (`datos` → `puente-juego.js` → `mundo.aplicarFormas`, que vuelve a mallar los chunks cargados); Guardar escribe con If-Match.
 - **No editable aún**: qué bloques usan cada forma, la conexión de la valla y las texturas (tiles) de las cajas del farol y el cartel (están en el esquema, sin control en la pestaña).
 
+## 23. Pestaña Carrera: carrera de gatas (7h-1, 2026-10-14)
+
+- **Qué edita**: `mundo/datos/carrera.json` (esquema `carrera.schema.json`): `vueltas`, `cuenta`, `tope`, `pista` (`ancho`, `salida` y `puntos` [x, z] en bloques desde el centro de la Gatera, en orden, cerrados en lazo), `gata` (velocidad, aceleración, freno, roce, marcha atrás, giro, fuera de pista, derrape, carga, turbo y su duración, choque), `mila` y `gala` (carácter: × velocidad, aceleración y giro), `ia`, `red` (`hz`, `suave`), `publico.mirar` y `premio` (`gana` / `pierde`: [clave, cantidad]).
+- **Código**: `mundo/supervivencia/carrera-modelo.js` tiene `CARRERA` y `reglasCarrera(json)` (base + JSON, por clave). `carrera.js` lo lee en cada cuadro (`window.__venjy.datosCarrera` cuando lo manda el Estudio): si cambian los puntos o el ancho, rearma el circuito y las vallas al momento.
+- **Editor**: grupos de números con deslizador, el circuito como lista de puntos (agregar uno después, quitar; «Volver al circuito del código») y el premio (clave como `/dar` y cantidad). «Correr con Mila/Gala» y «Terminar» usan el mensaje `carrera` del puente. Guardar escribe con If-Match.
+- **No editable aún**: los textos (`TXT_CARRERA`, `CARRERA_BOTON`), los colores de las vallas, la cámara de persecución y el gesto de Lona.
+
