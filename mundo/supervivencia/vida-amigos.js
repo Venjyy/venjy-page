@@ -145,7 +145,8 @@ export function crearVidaAmigos(ctx) {
         }).catch(err => { cargando = null; console.error('No se pudo cargar la vida entre amigos', err); });
         return cargando;
     }
-    const ocupado = c => Object.values(porClave[c].actores).some(n => n.escena);
+    // Alguien en otra escena o de paseo lejos de su sitio (6d etapa 2, paseos.js) corta la interacción del lugar
+    const ocupado = c => Object.values(porClave[c].actores).some(n => n.escena || n.paseo);
     const listo = c => !(c === 'iglu' && iglu && iglu.enPase);
 
     // Pone (o saca) los ganchos n.vida de los actores del lugar

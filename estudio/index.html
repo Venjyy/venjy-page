@@ -21,6 +21,7 @@
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
+            <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
             <button class="pestana" type="button" data-pestana="musica" data-es="Música" data-en="Music">Música</button>
@@ -335,6 +336,29 @@
                         <button id="fo-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="fo-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-vida" hidden>
+                <section class="panel">
+                    <h2 data-es="Vida: caminar" data-en="Life: walking">Vida: caminar</h2>
+                    <p class="mensaje" data-es="Cómo buscan camino y caminan los amigos cuando dejan su sitio. Elige a alguien y un destino y pulsa Caminar: lo ves en el juego. Cada número va en vivo. Guardar escribe mundo/datos/navegacion.json." data-en="How friends find a path and walk when they leave their spot. Pick someone and a target and press Walk: watch it in the game. Every number is live. Save writes mundo/datos/navegacion.json.">Cómo buscan camino y caminan los amigos cuando dejan su sitio. Elige a alguien y un destino y pulsa Caminar: lo ves en el juego. Cada número va en vivo. Guardar escribe mundo/datos/navegacion.json.</p>
+                    <div class="fila-botones">
+                        <select id="vi-persona" aria-label="Persona"></select>
+                        <select id="vi-destino" aria-label="Destino"></select>
+                    </div>
+                    <div class="fila-botones">
+                        <button id="vi-ir" class="boton chico" type="button" data-es="Caminar" data-en="Walk">Caminar</button>
+                        <button id="vi-volver" class="boton chico secundario" type="button" data-es="Volver a su sitio" data-en="Back to their spot">Volver a su sitio</button>
+                        <button id="vi-estado" class="boton chico secundario" type="button" data-es="¿Cómo va?" data-en="How is it going?">¿Cómo va?</button>
+                    </div>
+                </section>
+                <div id="vi-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="vi-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="vi-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="vi-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-carrera" hidden>

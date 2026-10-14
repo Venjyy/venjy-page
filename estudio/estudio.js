@@ -4,6 +4,7 @@
 // Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20). Inicio: menú de la supervivencia (§21).
 // Formas: cajas de losas, escalones, vallas… (§22).
 // Carrera: la carrera de gatas de la Gatera (7h-1). Música: temas y sintetizadores de musica.json (§24).
+// Vida: cómo caminan los amigos al dejar su sitio, navegacion.json (6d etapa 2, §25).
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
@@ -18,6 +19,7 @@ import { montarInicio } from './inicio.js';
 import { montarFormas } from './formas.js';
 import { montarCarrera } from './carrera.js';
 import { montarMusica } from './musica.js';
+import { montarVida } from './vida.js';
 import { crearCliente } from './puente-cliente.js';
 
 const ctx = {
@@ -84,6 +86,7 @@ await montarInicio(ctx);
 await montarFormas(ctx);
 await montarCarrera(ctx);
 await montarMusica(ctx);
+await montarVida(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
@@ -98,6 +101,7 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-mesa').hidden = ctx.pestana !== 'mesa';
         document.getElementById('panel-objetos').hidden = ctx.pestana !== 'objetos';
         document.getElementById('panel-formas').hidden = ctx.pestana !== 'formas';
+        document.getElementById('panel-vida').hidden = ctx.pestana !== 'vida';
         document.getElementById('panel-carrera').hidden = ctx.pestana !== 'carrera';
         document.getElementById('ca-zona').hidden = ctx.pestana !== 'carrera';
         document.getElementById('seccion-juego').classList.toggle('modo-carrera', ctx.pestana === 'carrera');

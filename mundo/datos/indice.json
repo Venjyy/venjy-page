@@ -97,6 +97,12 @@
       "lee": null,
       "fase": 9,
       "que": "Objetos y cartas nuevos que el dueño crea en la pestaña Píxeles (dibujo + ficha) con estado borrador: el juego no los lee; un agente los lista con resumen borradores, los implementa y los marca hecho"
+    },
+    "navegacion": {
+      "esquema": "navegacion",
+      "lee": "mundo/supervivencia/paseos.js",
+      "fase": 14,
+      "que": "Navegación de las personas (6d etapa 2): cómo buscan camino sobre el terreno (A* por tramos: subida, caída, costos, topes de nodos) y cómo caminan y vuelven a su sitio los amigos que dejan su lugar; paseos.js lo pide al crear el mundo; se edita en la pestaña Vida y se aplica en vivo con supervivencia.html?estudio"
     }
   }
 }

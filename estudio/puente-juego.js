@@ -61,6 +61,10 @@ async function aplicar(nombre, datos) {
         m.aplicarArte(datos);
         const v = window.__venjy;
         if (v && v.mesaCartas) v.mesaCartas.refrescarArte();
+    } else if (nombre === 'navegacion') {
+        // 6d etapa 2: navegacion.js y paseos.js leen sus ajustes en cada paso (la próxima búsqueda ya usa los nuevos)
+        const m = await import('../mundo/supervivencia/paseos-datos.js');
+        m.fijarPaseo(datos);
     } else if (nombre === 'musica') {
         // musica-datos.js: musica.js y carrera-musica.js lo consultan en cada paso (el próximo paso ya suena con lo nuevo)
         const m = await import('../mundo/supervivencia/musica-datos.js');
@@ -267,6 +271,14 @@ const responder = crearManejador({
     async musica(o) {
         const m = await import('./musica-juego.js');
         m.musicaPrueba(o);
+    },
+    // Pestaña Vida: un amigo camina a un destino buscando camino (supervivencia/paseos.js); sin destino, cómo va
+    caminar({ persona, destino }) {
+        const v = window.__venjy;
+        if (!v || !v.paseos) throw new Error('el juego todavía no está listo');
+        if (!v.paseos.personas().includes(persona)) throw new Error(`no hay nadie llamado «${persona}» en este mundo`);
+        if (destino && !v.paseos.ir(persona, destino)) throw new Error(`no conozco el destino «${destino}»`);
+        return v.paseos.estado(persona);
     },
     teletransportar,
     elegir,
