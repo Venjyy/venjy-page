@@ -274,7 +274,7 @@ export function crearMesaCartas(ctx) {
     function objetivoCamara() {
         const atras = L.mesa.fondo / 2 + L.asiento.dist;
         // Turno de Lucho (y su bienvenida en el tutorial) o del otro jugador: la cámara lo mira, o a la mesa cuando juega
-        const P = planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj });
+        const P = rival && !L.turnoRival.mirar ? null : planoTurno(L, { e, tuto: !!tuto, intro: enIntro(), animando: anim.ocupado, jugoMesa, reloj });
         if (P === 'lucho' && rival) { // el rival: desde tus ojos (sentado o de pie)
             const C = L.planoRival, ojos = L.camara1.alto;
             local(C.lado, ojos + C.alto, C.z, v1); local(C.mira[0], ojos + C.mira[1], C.mira[2], v2);
@@ -323,8 +323,16 @@ export function crearMesaCartas(ctx) {
         if (!apagado) b.addEventListener('click', ev => { ev.stopPropagation(); fn(); });
         return b;
     };
+    // Celular en horizontal (hudHorizontal): la clase y las medidas que usa supervivencia.css
+    function medidasHud() {
+        const H = L.hudHorizontal;
+        hud.classList.toggle('horizontal', innerWidth > innerHeight && innerHeight <= H.altoMax);
+        for (const [k, v] of [['arriba', H.arriba], ['ancho', H.ancho], ['boton', H.boton], ['lector', H.lectorAncho], ['derecha', H.lectorDerecha]]) hud.style.setProperty(`--hh-${k}`, `${v}px`);
+    }
+    addEventListener('resize', () => { if (abierto) medidasHud(); });
     function pintarHud() {
         hud.textContent = '';
+        medidasHud();
         marco.hidden = !(abierto && e && vista === 3);
         if (!marco.hidden) { const r = rectMini(); Object.assign(marco.style, { left: `${r.x}px`, bottom: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` }); }
         if (!e) {

@@ -52,6 +52,8 @@
       },
       "additionalProperties": false
     },
+    "turnoRival": { "$ref": "#/$defs/numeros", "description": "Turno del otro jugador en un duelo: mirar = 1, la cámara lo mira (planoRival) y va a la mesa cuando juega; 0, te quedas con tu vista del tablero" },
+    "hudHorizontal": { "$ref": "#/$defs/numeros", "description": "Celular en horizontal (alto de pantalla hasta altoMax px): arriba (px desde arriba), ancho y boton (columna de botones), lectorAncho y lectorDerecha (carta grande a la derecha). Ver MESA.hudHorizontal" },
     "piso": { "$ref": "#/$defs/numeros", "description": "Duelo en el piso (nadie lleva tronco ni mesa): alto (altura de las cartas), ojos (cámara sentado), asiento (distancia del borde a cada jugador), mano (altura de las cartas del rival)" },
     "planoRival": { "$ref": "#/$defs/camara", "description": "Cámara que mira al otro jugador en su turno: lado, alto (desde tus ojos), z (hacia ti) y mira (y desde tus ojos)" },
     "coleccionInicial": { "$ref": "#/$defs/numeros", "description": "Copias de cada carta (por clave de CARTAS) con que parte un jugador que nunca tocó su colección; 0 = no la tiene. Ver COLECCION_INICIAL en cartas-coleccion.js" },
