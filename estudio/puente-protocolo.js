@@ -8,7 +8,7 @@ export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
 // Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas; fase 6: poses;
 // pestaña Píxeles: iconos y cartas-arte). borradores.json no: el juego lo ignora.
-export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera', 'musica', 'navegacion'];
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera', 'musica', 'navegacion', 'rutinas'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 // Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json
@@ -39,6 +39,8 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  'tocar' suena ese tema (vista previa de la pestaña Música; calla la música del juego) o 'parar'
 //   caminar({ persona, destino })  (6d etapa 2) lleva a esa persona caminando a `destino` ('aqui', 'sitio', otra persona o
 //                                  un lugar) buscando camino; destino '' solo pregunta. Devuelve su estado (paseos.js) o lanza
+//   rutina({ accion, visita?, persona? }) (6d etapa 2) 'probar' hace ya esa visita (sin mirar la hora), 'cortar' la corta
+//                                  y vuelve a su sitio, 'estado' solo pregunta. Devuelve el estado de esa persona (rutinas.js) o lanza
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
@@ -150,6 +152,15 @@ export function crearManejador(juego) {
                     if (!juego.caminar) return error('este juego no sabe hacer caminar a nadie');
                     const r = await juego.caminar({ persona: m.persona, destino: m.destino });
                     return { ...base, tipo: 'ok', paseo: r || null };
+                }
+                case 'rutina': {
+                    // Pestaña Vida → Rutinas: probar una visita ahora, cortarla o preguntar cómo va
+                    if (!['probar', 'cortar', 'estado'].includes(m.accion)) return error('acción de rutina no válida');
+                    if (m.visita !== undefined && (typeof m.visita !== 'string' || !NOMBRE_DESTINO.test(m.visita))) return error('visita no válida');
+                    if (m.persona !== undefined && (typeof m.persona !== 'string' || !NOMBRE_DESTINO.test(m.persona))) return error('persona no válida');
+                    if (!juego.rutina) return error('este juego no tiene rutinas');
+                    const r = await juego.rutina({ accion: m.accion, visita: m.visita || null, persona: m.persona || null });
+                    return { ...base, tipo: 'ok', rutina: r || null };
                 }
                 case 'objeto': {
                     // Pestaña Objetos: pone en tu mano ese objeto (clave de OBJETOS en cualquier caja, o un id numérico)

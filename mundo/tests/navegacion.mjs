@@ -237,7 +237,7 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
     ok(!cruzo, 'muro nuevo: no lo atraviesa');
 }
 {
-    // Lejos: avanza a saltos (solo cada saltoLejos) y tarda lo que dice la velocidad
+    // Lejos: avanza a saltos (solo cada saltoLejos) y tarda lo que dice la velocidad (× rapidezLejos)
     const C = juguete(200, 20);
     const cuerpo = { x: 2.5, y: 1, z: 10.5, yaw: 0 };
     let saltos = 0, ultimo = cuerpo.x;
@@ -245,7 +245,7 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
         detalle: false,
         alCuadro() { if (cuerpo.x !== ultimo) { saltos++; ultimo = cuerpo.x; } }
     });
-    const esperado = (188 - NAV_BASE.llegada) / NAV_BASE.velocidad;
+    const esperado = (188 - NAV_BASE.llegada) / (NAV_BASE.velocidad * NAV_BASE.rapidezLejos);
     ok(r.w.estado === 'llego', `lejos: llega (${r.w.estado})`);
     ok(Math.abs(r.t - esperado) < NAV_BASE.saltoLejos + 0.5, `lejos: tarda lo de su velocidad (${r.t.toFixed(1)} s, ~${esperado.toFixed(1)})`);
     ok(saltos <= Math.ceil(r.t / NAV_BASE.saltoLejos) + 1, `lejos: un salto por segundo (${saltos} saltos)`);

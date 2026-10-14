@@ -4,7 +4,7 @@
 // Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20). Inicio: menú de la supervivencia (§21).
 // Formas: cajas de losas, escalones, vallas… (§22).
 // Carrera: la carrera de gatas de la Gatera (7h-1). Música: temas y sintetizadores de musica.json (§24).
-// Vida: cómo caminan los amigos al dejar su sitio, navegacion.json (6d etapa 2, §25).
+// Vida: cómo caminan los amigos al dejar su sitio y sus visitas por horario, navegacion.json y rutinas.json (6d etapa 2, §25).
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';

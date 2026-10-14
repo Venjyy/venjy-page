@@ -114,6 +114,12 @@
           "minimum": 0.2,
           "maximum": 5
         },
+        "rapidezLejos": {
+          "description": "Lejos del jugador (más allá de radioDetalle, nadie lo ve) camina esto más rápido (1 = igual que cerca). Así las visitas entre lugares lejanos caben en el día.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
         "radioDetalle": {
           "description": "A menos de esto del jugador camina mirando cada bloque; más lejos avanza a saltos.",
           "type": "number",

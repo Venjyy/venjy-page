@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rutinas.schema.json",
+  "title": "Rutinas y visitas de los amigos (mundo/datos/rutinas.json)",
+  "description": "Con la hora del mundo, cada amigo con visitas deja su sitio, camina a ver a otra persona o a un lugar, saluda al llegar, se queda hasta la hora `a` y vuelve (6d etapa 2; mundo/supervivencia/rutinas.js). `ajustes` cambia RUTINA_BASE de rutinas-datos.js; `horarios` y `lugares`, el horario que muestra el panel de cada amigo; `textos`, las líneas del panel («Está de visita donde…»). Lo que falte usa el código. Se edita en /estudio/ → pestaña Vida.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "ajustes": {
+      "description": "Cómo deciden y saludan (RUTINA_BASE).",
+      "type": "object",
+      "properties": {
+        "revisar": { "description": "Cada cuántos segundos mira la hora y decide.", "type": "number", "minimum": 0.1, "maximum": 5 },
+        "gesto": { "description": "Segundos que dura el gesto al llegar (y el de quien contesta).", "type": "number", "minimum": 0.5, "maximum": 10 },
+        "frase": { "description": "Segundos que se ve cada globo del saludo.", "type": "number", "minimum": 1, "maximum": 12 },
+        "respuesta": { "description": "Segundos después de llegar en que contesta quien recibe la visita.", "type": "number", "minimum": 0, "maximum": 8 },
+        "radioSaludo": { "description": "El saludo (gestos y globos) solo se dibuja con el jugador a menos de esto, en bloques.", "type": "number", "minimum": 4, "maximum": 80 },
+        "saludoLejos": { "description": "1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo.", "type": "integer", "minimum": 0, "maximum": 1 },
+        "anticipar": { "description": "1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale justo a la hora `de` (entre 0 y 1, parte del viaje).", "type": "number", "minimum": 0, "maximum": 1.5 },
+        "rodeo": { "description": "Cuánto más largo que la línea recta es el camino de verdad (para calcular cuándo salir).", "type": "number", "minimum": 1, "maximum": 3 },
+        "segundosHora": { "description": "Segundos de juego que dura una hora del reloj (reloj.js: de media 25).", "type": "number", "minimum": 5, "maximum": 120 }
+      },
+      "additionalProperties": false
+    },
+    "visitas": {
+      "description": "Por clave (p. ej. «braulio-conejeros»). Un agente solo agrega claves; cambiar una existente, solo si el dueño lo pide.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "quien": { "description": "Quién sale (clave de posiciones.json).", "$ref": "comun.schema.json#/$defs/clave" },
+          "visita": { "description": "A quién va a ver (clave de posiciones.json). Si no está en su sitio, espera.", "$ref": "comun.schema.json#/$defs/clave" },
+          "lugar": { "description": "O a qué lugar va (ancla de posiciones.json o lugar del mapa), si no visita a nadie.", "$ref": "comun.schema.json#/$defs/clave" },
+          "de": { "description": "Hora del reloj (0-24, decimales: 13.5 = 13:30) desde la que está allá; sale antes según la distancia.", "type": "number", "minimum": 0, "maximum": 24 },
+          "a": { "description": "Hora a la que se va de vuelta.", "type": "number", "minimum": 0, "maximum": 24 },
+          "activa": { "description": "false = no la hace (sin borrarla).", "type": "boolean" },
+          "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+          "llegada": { "description": "Lo que hace al llegar.", "$ref": "#/$defs/accion" },
+          "respuesta": { "description": "Lo que contesta quien lo recibe (solo con `visita`).", "$ref": "#/$defs/accion" }
+        },
+        "required": ["quien", "de", "a"],
+        "additionalProperties": false
+      }
+    },
+    "horarios": {
+      "description": "Horario de cada amigo que muestra su panel (horarios-datos.js).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "ancla": { "description": "Su lugar (el ancla de posiciones.json).", "$ref": "comun.schema.json#/$defs/clave" },
+          "de": { "type": "number", "minimum": 0, "maximum": 24 },
+          "a": { "type": "number", "minimum": 0, "maximum": 24 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "lugares": {
+      "description": "Cómo se nombra cada lugar en el panel («en el naufragio»).",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+    },
+    "textos": {
+      "description": "Líneas del panel según el estado ({quien} = a quien visita, {lugar} = dónde). Faltan = TEXTOS_RUTINA de rutinas.js.",
+      "type": "object",
+      "properties": {
+        "yendo": { "$ref": "comun.schema.json#/$defs/texto" },
+        "yendoLugar": { "$ref": "comun.schema.json#/$defs/texto" },
+        "visitando": { "$ref": "comun.schema.json#/$defs/texto" },
+        "visitandoLugar": { "$ref": "comun.schema.json#/$defs/texto" },
+        "volviendo": { "$ref": "comun.schema.json#/$defs/texto" },
+        "acompanando": { "$ref": "comun.schema.json#/$defs/texto" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "accion": {
+      "type": "object",
+      "properties": {
+        "gesto": { "description": "Nombre de un gesto (moldes.js: los de 6b, 6c y las escenas de skin, p. ej. saluda, asiente, risa, brazosArriba, puno, brinda). Vacío = ninguno.", "type": "string", "pattern": "^[a-zA-Z0-9]*$" },
+        "texto": { "$ref": "comun.schema.json#/$defs/texto" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,256 @@
+// =========================================================
+// VENJY · Supervivencia · Rutinas y visitas de los amigos (6d etapa 2, PR 2; incluye 7j-1 «acompañando»)
+// Con la hora del mundo (reloj.js) cada amigo con visitas en mundo/datos/rutinas.json deja su sitio en su horario,
+// camina (paseos.js, que busca camino sobre el terreno) a ver a otra persona o a un lugar, saluda al llegar con un
+// gesto y una frase (y quien lo recibe contesta), se queda hasta que termina el tramo y vuelve a su sitio.
+//
+// Estados por persona: 'en-sitio' → 'yendo' → 'visitando' → 'volviendo' → 'en-sitio', más 'acompanando' (7j-1:
+// cortado por el jugador, lo usará 7i). retomar(clave) suelta ese estado y sigue en el tramo que toca según la hora
+// (si a esa hora tenía visita, va directo allá; si no, vuelve a su sitio). Lo que decide se mira cada
+// `revisar` segundos, no en cada cuadro; el saludo solo se dibuja cerca del jugador (`radioSaludo`).
+// Choques: una escena (`n.escena`: «Hablar», misiones, tienda, amistad, skin) no lo deja salir y paseos.js lo deja
+// quieto donde va; `libre(n)` (main.js: ronda del iglú, minijuegos, jefes) tampoco; si la persona que iba a
+// visitar no está en su sitio, espera. Si otro lo movió (/caminar, el Estudio) no lo pelea: espera a que vuelva.
+// crearRutinas() no usa three.js ni DOM (lo prueba mundo/tests/rutinas.mjs). Valores: rutinas-datos.js.
+// =========================================================
+import { ajustesRutinas, visitasRutinas, textosRutinas, fijarRutinas } from './rutinas-datos.js';
+import { enTramo } from './reloj.js';
+import { ajustesNavegacion } from '../navegacion.js';
+import { HORARIOS, LUGARES } from './horarios-datos.js';
+export { fijarRutinas } from './rutinas-datos.js';
+
+export const ESTADOS = ['en-sitio', 'yendo', 'visitando', 'volviendo', 'acompanando'];
+// Texto del panel de cada amigo (Hablar, Misión y Tienda) según su estado; {quien} = a quien visita, {lugar} = dónde
+export const TEXTOS_RUTINA = {
+    yendo: { es: 'Va a ver a {quien}, {lugar}.', en: 'On the way to see {quien}, {lugar}.' },
+    yendoLugar: { es: 'Va camino {lugar}.', en: 'On the way, {lugar}.' },
+    visitando: { es: 'Está de visita donde {quien}, {lugar}.', en: 'Visiting {quien}, {lugar}.' },
+    visitandoLugar: { es: 'Está de visita {lugar}.', en: 'Visiting, {lugar}.' },
+    volviendo: { es: 'Va de vuelta, {lugar}.', en: 'Heading back, {lugar}.' },
+    acompanando: { es: 'Te está acompañando.', en: 'Keeping you company.' }
+};
+const PARTES = { cx: ['cuello', 'x'], cy: ['cuello', 'y'], cz: ['cuello', 'z'], bDx: ['brazoD', 'x'], bDz: ['brazoD', 'z'], bIx: ['brazoI', 'x'], bIz: ['brazoI', 'z'], inc: ['cuerpo', 'x'], rz: ['cuerpo', 'z'] };
+const suave = u => u * u * (3 - 2 * u);
+const lim01 = v => Math.max(0, Math.min(1, v));
+// Gesto encima de la pose que ya tiene (solo de la cintura para arriba: sirve sentado o de pie). cy se suma (mirada).
+export function ponerGesto(p, meta, w) {
+    if (!meta || w <= 0) return;
+    for (const [k, [parte, eje]] of Object.entries(PARTES)) {
+        if (meta[k] === undefined || !p[parte]) continue;
+        const r = p[parte].rotation;
+        r[eje] = k === 'cy' ? r[eje] + meta[k] * w : r[eje] + (meta[k] - r[eje]) * w;
+    }
+}
+// Peso del gesto: entra y sale en 0,3 s (o un sexto del tramo si es corto)
+const peso = (t, T) => { if (t < 0 || t > T) return 0; const r = Math.min(0.3, T / 6); return suave(lim01(Math.min(t / r, (T - t) / r))); };
+
+// La visita que toca a esa hora para esa persona (la primera activa cuyo tramo incluye la hora). viaje(v): horas de
+// camino; sale ese tanto antes de `de` para llegar a la hora.
+export function visitaDeHora(visitas, quien, h, viaje = () => 0) {
+    for (const v of Object.values(visitas)) {
+        if (!v.activa || v.quien !== quien) continue;
+        const sale = (((v.de - viaje(v)) % 24) + 24) % 24;
+        if (enTramo(h, sale, v.a)) return v;
+    }
+    return null;
+}
+// Horas de camino para d bloques en línea recta (lejos del jugador, que es lo normal en un viaje largo)
+export function horasDeViaje(d, A = ajustesRutinas(), N = ajustesNavegacion()) {
+    if (!A.anticipar || !(d > 0)) return 0;
+    return Math.min(12, (d * A.rodeo) / (N.velocidad * (N.rapidezLejos || 1)) / A.segundosHora * A.anticipar);
+}
+
+// ctx: { paseos (paseos.js), persona(clave) → n, hora() → 0-24, libre(n) → bool, jugador: { pos }, idioma() → 'es'|'en',
+//        nombre(clave) → texto, cargarGestos() → Promise<(nombre) → (u, t, info) → meta> (moldes.js; opcional) }
+export function crearRutinas(ctx) {
+    const { paseos, persona, jugador } = ctx;
+    const R = {}; // clave → { estado, v (clave de la visita), t (s desde que llegó), forzada }
+    let reloj = 0, gestoDe = null, cargando = null;
+    const idioma = () => (ctx.idioma ? ctx.idioma() : 'es');
+    const L = o => (o ? o[idioma()] || o.es : '');
+    const estadoDe = c => (R[c] ||= { estado: 'en-sitio', v: null, t: 0 });
+    const dJ = n => (jugador ? Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z) : 0);
+    const visitas = () => visitasRutinas();
+    const distancias = {}; // clave de visita → bloques en línea recta desde su sitio (se mide con la persona en su sitio)
+    function viaje(v) {
+        if (!(v.clave in distancias) || !Number.isFinite(distancias[v.clave])) {
+            const n = persona(v.quien);
+            if (!n || paseos.fuera(v.quien) || (v.visita && paseos.fuera(v.visita))) return 0;
+            const o = v.visita ? persona(v.visita) : paseos.resolverDestino ? paseos.resolverDestino(v.lugar, n) : null;
+            if (!o || !Number.isFinite(o.x)) return 0;
+            distancias[v.clave] = Math.hypot(o.x - n.x, o.z - n.z);
+        }
+        return horasDeViaje(distancias[v.clave]);
+    }
+
+    function cargar() {
+        if (!ctx.cargarGestos || cargando) return;
+        cargando = Promise.resolve(ctx.cargarGestos()).then(f => { gestoDe = f; }).catch(() => { cargando = null; });
+    }
+    // La visita que quiere hacer ahora (la forzada por el Estudio manda sobre la hora)
+    function deseada(c) {
+        const r = estadoDe(c), V = visitas();
+        if (r.forzada) return V[r.forzada] || null;
+        return visitaDeHora(V, c, ctx.hora(), viaje);
+    }
+    // ¿Puede salir ahora? Sin escena, sin minijuego ni ronda y con quien visita en su sitio (si no, espera)
+    function puede(n, v) {
+        if (n.escena || (ctx.libre && !ctx.libre(n))) return false;
+        if (v.visita) { const o = persona(v.visita); if (!o || paseos.fuera(v.visita)) return false; }
+        return true;
+    }
+    function salir(c, v) {
+        const destino = v.visita ? { persona: v.visita } : v.lugar;
+        if (!paseos.ir(c, destino, { mirar: v.visita || null })) return false;
+        const r = estadoDe(c);
+        r.estado = 'yendo'; r.v = v.clave; r.t = 0;
+        return true;
+    }
+    function volver(c) {
+        const r = estadoDe(c);
+        terminarSaludo(c);
+        r.v = null; r.forzada = null;
+        if (paseos.fuera(c)) { paseos.volver(c); r.estado = 'volviendo'; } else r.estado = 'en-sitio';
+    }
+
+    // ---- Saludo al llegar: gesto y frase de quien llega; después contesta quien recibe ----
+    function terminarSaludo(c) {
+        const r = R[c], v = r && r.v && visitas()[r.v];
+        const n = persona(c);
+        if (n && n.paseo) n.paseo.texto = '';
+        paseos.adornar && paseos.adornar(c, null);
+        if (v && v.visita) { const o = persona(v.visita); if (o && o.visita && o.visita.de === c) delete o.visita; }
+    }
+    function empezarSaludo(c, v) {
+        const A = ajustesRutinas(), n = persona(c);
+        if (!n) return;
+        const cerca = dJ(n) < A.radioSaludo;
+        if (!cerca && !A.saludoLejos) return;
+        if (cerca) cargar();
+        const r = estadoDe(c);
+        // Quien llega: su gesto va encima de la animación de paseo (paseos.js → adornar)
+        if (paseos.adornar) paseos.adornar(c, (dt, p) => {
+            const g = v.llegada.gesto && gestoDe && gestoDe(v.llegada.gesto);
+            if (g) ponerGesto(p, g(lim01(r.t / A.gesto), r.t, { s: false, j: false, esc: n.escala || 1 }), peso(r.t, A.gesto));
+        });
+        // Quien recibe: gancho n.visita (amigos.js lo dibuja encima de su animación de siempre y usa su texto de globo)
+        const o = v.visita && persona(v.visita);
+        if (o && !o.escena && (v.respuesta.gesto || v.respuesta.texto)) {
+            o.visita = {
+                de: c, texto: '',
+                animar() {
+                    const t = r.t - A.respuesta;
+                    const g = v.respuesta.gesto && gestoDe && gestoDe(v.respuesta.gesto);
+                    if (g && t >= 0) ponerGesto(o.p, g(lim01(t / A.gesto), t, { s: false, j: false, esc: o.escala || 1 }), peso(t, A.gesto));
+                }
+            };
+        }
+    }
+    // Globos del saludo según el tiempo desde que llegó
+    function avanzarSaludo(c, dt) {
+        const r = R[c], v = visitas()[r.v], n = persona(c);
+        if (!v || !n) return;
+        const A = ajustesRutinas();
+        r.t += dt;
+        const cerca = dJ(n) < A.radioSaludo;
+        if (n.paseo) n.paseo.texto = cerca && v.llegada.texto && r.t < A.frase ? L(v.llegada.texto) : '';
+        const o = v.visita && persona(v.visita);
+        if (o && o.visita && o.visita.de === c) {
+            const t = r.t - A.respuesta;
+            o.visita.texto = cerca && v.respuesta.texto && t >= 0 && t < A.frase ? L(v.respuesta.texto) : '';
+            if (t > Math.max(A.frase, A.gesto)) delete o.visita;
+        }
+        if (r.forzada && r.t > A.respuesta + Math.max(A.frase, A.gesto) + 4) volver(c); // la prueba del Estudio termina sola
+    }
+
+    function decidir() {
+        const quienes = new Set([...Object.values(visitas()).map(v => v.quien), ...Object.keys(R)]);
+        for (const c of quienes) {
+            const n = persona(c);
+            if (!n) continue;
+            const r = estadoDe(c);
+            if (r.estado === 'acompanando') continue;
+            const v = deseada(c);
+            const fuera = paseos.fuera(c);
+            if (r.estado === 'en-sitio') {
+                if (fuera) continue; // otro lo movió (/caminar, el Estudio): no lo pelea
+                if (v && puede(n, v)) salir(c, v);
+            } else if (r.estado === 'yendo') {
+                if (!fuera) { r.estado = 'en-sitio'; r.v = null; } // lo mandaron a su sitio de golpe (volverTodos)
+                else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
+                else if (paseos.estado(c).estado === 'alla') { r.estado = 'visitando'; r.t = 0; empezarSaludo(c, v); }
+            } else if (r.estado === 'visitando') {
+                if (!fuera) { terminarSaludo(c); r.estado = 'en-sitio'; r.v = null; }
+                else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
+            } else if (r.estado === 'volviendo') {
+                if (!fuera) r.estado = 'en-sitio';
+                else if (v && puede(n, v)) salir(c, v);
+            }
+        }
+    }
+
+    return {
+        actualizar(dt) {
+            if (dt <= 0) return;
+            for (const c of Object.keys(R)) if (R[c].estado === 'visitando') avanzarSaludo(c, dt);
+            if ((reloj += dt) < ajustesRutinas().revisar) return;
+            reloj = 0;
+            decidir();
+        },
+        estado(c) {
+            const r = R[c] || { estado: 'en-sitio', v: null };
+            return { estado: r.estado, visita: r.v, forzada: !!r.forzada, paseo: paseos.estado(c) };
+        },
+        // 7j-1: el jugador se lo lleva (7i lo mueve con paseos.js). La rutina queda en pausa hasta retomar().
+        acompanar(c) {
+            if (!persona(c)) return false;
+            const r = estadoDe(c);
+            terminarSaludo(c);
+            r.estado = 'acompanando'; r.v = null; r.forzada = null;
+            return true;
+        },
+        // Retoma la rutina en el tramo que toca según la hora: si a esta hora tenía visita va directo allá; si no, a su sitio
+        retomar(c) {
+            const n = persona(c), r = estadoDe(c);
+            if (!n) return false;
+            r.estado = paseos.fuera(c) ? 'volviendo' : 'en-sitio';
+            const v = deseada(c);
+            if (v && puede(n, v)) salir(c, v);
+            else if (r.estado === 'volviendo') paseos.volver(c);
+            return true;
+        },
+        // Estudio (pestaña Vida → «Probar»): hace esa visita ahora, sin mirar la hora; null la corta y vuelve
+        probar(claveVisita) {
+            const v = visitas()[claveVisita];
+            if (!v || !persona(v.quien)) return false;
+            const r = estadoDe(v.quien);
+            if (r.estado === 'acompanando') return false;
+            terminarSaludo(v.quien);
+            r.forzada = claveVisita;
+            if (!salir(v.quien, v)) { r.forzada = null; return false; }
+            return true;
+        },
+        cortar(c) { if (R[c]) volver(c); },
+        // Línea del panel de cada amigo («Está de visita donde Braulio, en el naufragio»); '' si está en su sitio
+        texto(c, lengua) {
+            const r = R[c];
+            if (!r || r.estado === 'en-sitio') return '';
+            const T = { ...TEXTOS_RUTINA, ...textosRutinas() };
+            const Lx = o => (o ? o[lengua || idioma()] || o.es : '');
+            if (r.estado === 'acompanando') return Lx(T.acompanando);
+            const v = r.v && visitas()[r.v];
+            const casa = HORARIOS[c] && LUGARES[HORARIOS[c].ancla];
+            if (r.estado === 'volviendo' || !v) return Lx(T.volviendo).replace('{lugar}', Lx(casa) || '');
+            const destino = v.visita ? HORARIOS[v.visita] && LUGARES[HORARIOS[v.visita].ancla] : LUGARES[v.lugar] || { es: v.lugar, en: v.lugar };
+            const quien = v.visita ? (ctx.nombre ? ctx.nombre(v.visita) : v.visita) : '';
+            const k = (r.estado === 'yendo' ? 'yendo' : 'visitando') + (v.visita ? '' : 'Lugar');
+            return Lx(T[k]).replace('{quien}', quien).replace('{lugar}', Lx(destino) || '').replace(/,\s*\./, '.');
+        },
+        // Depuración (__venjy.rutinas): todo de un vistazo
+        visitas: () => Object.keys(visitas()),
+        quienDe: k => (visitas()[k] ? visitas()[k].quien : null),
+        resumen: () => Object.fromEntries(Object.entries(R).map(([c, r]) => [c, `${r.estado}${r.v ? ' · ' + r.v : ''}`])),
+        // Aplica rutinas.json (el juego al cargar, el Estudio en vivo) y vuelve a medir las distancias
+        fijar(d) { fijarRutinas(d); for (const k of Object.keys(distancias)) delete distancias[k]; }
+    };
+}

@@ -63,7 +63,8 @@ export function crearMisiones(ctx) {
         tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo, dar: lista => dar(lista),
         decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave), conversar: clave => conversar(clave),
         precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda'),
-        alAbrir: (clave, el) => retenerAmigo(clave, el)
+        alAbrir: (clave, el) => retenerAmigo(clave, el),
+        deVisita: clave => (ctx.deVisita ? ctx.deVisita(clave, idioma) : '')
     });
 
     // ---- Pestaña «Hablar»: hablar.js y dialogos-datos.js se cargan la primera vez que se abre ----

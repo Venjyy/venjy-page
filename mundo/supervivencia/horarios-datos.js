@@ -1,10 +1,11 @@
 // =========================================================
 // VENJY · Supervivencia · Horarios de los amigos (7j-0)
-// Solo datos para mostrar en su panel de «Hablar»: de qué hora a qué hora están en su lugar. Todavía no
-// mueven a nadie: las rutinas (6d etapa 2) leerán estos tramos. El lugar coincide con el `ancla` de
-// mundo/datos/posiciones.json (lo comprueba tests/hora.mjs). Horas de reloj 0-24 (ver reloj.js).
+// De qué hora a qué hora está cada amigo en su lugar (su panel de «Hablar», misiones y tienda). Son los valores
+// del código: mundo/datos/rutinas.json (`horarios`, `lugares`) los ajusta con fijarRutinas (rutinas-datos.js),
+// que cambia estos mismos objetos. Las visitas por horario están en rutinas.json → `visitas` (rutinas.js).
+// El lugar coincide con el `ancla` de mundo/datos/posiciones.json (lo comprueba tests/hora.mjs). Horas de reloj 0-24.
 // =========================================================
-const LUGARES = {
+export const LUGARES = {
     campamento: { es: 'en el campamento', en: 'at the camp' },
     iglu: { es: 'en el iglú', en: 'at the igloo' },
     atalaya: { es: 'en la atalaya', en: 'at the watchtower' },

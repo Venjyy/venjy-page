@@ -1,7 +1,7 @@
 // =========================================================
 // VENJY · Supervivencia · Paseos: los amigos dejan su sitio y caminan a otro punto (6d etapa 2)
 // Mueve a las personas de amigos.js con la navegación de mundo/navegacion.js (buscar camino sobre el terreno,
-// no rutas fijas). No decide adónde ir: eso lo piden las rutinas y visitas (PR 2), los comandos de depuración
+// no rutas fijas). No decide adónde ir: eso lo piden las rutinas y visitas (rutinas.js), los comandos de depuración
 // (/caminar) y el Estudio (pestaña Vida → «Probar»). Aquí solo: ir, quedarse de pie allá mirando a alguien y volver.
 //
 // Mientras una persona está fuera de su sitio lleva el gancho `n.paseo` (amigos.js): su animación de siempre
@@ -123,6 +123,8 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             cy = Math.max(-0.9, Math.min(0.9, cy));
         }
         ir(p.cuello.rotation, 'y', cy, k(dt, 5));
+        // Encima, de pie: el saludo al llegar de una visita (rutinas.js → adornar)
+        if (a.adorno && !a.w.moviendo) a.adorno(dt, p);
         return true;
     }
 
@@ -175,6 +177,8 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         // Todos a su sitio al tiro (al salir del mundo o para depurar)
         volverTodos() { for (const a of [...activos.values()]) { const { n } = a; n.x = a.casa.x; n.y = a.casa.y; n.z = a.casa.z; n.yaw = a.casa.yaw; soltar(a); } },
         fuera: clave => activos.has(clave),
+        // Algo que se dibuja encima mientras está de pie allá (rutinas.js: el gesto al llegar); null lo saca
+        adornar(clave, f) { const a = activos.get(clave); if (a) a.adorno = f || null; },
         estado(clave) {
             const a = activos.get(clave);
             if (!a) return { estado: 'en-sitio' };

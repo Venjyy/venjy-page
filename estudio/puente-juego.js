@@ -65,6 +65,11 @@ async function aplicar(nombre, datos) {
         // 6d etapa 2: navegacion.js y paseos.js leen sus ajustes en cada paso (la próxima búsqueda ya usa los nuevos)
         const m = await import('../mundo/supervivencia/paseos-datos.js');
         m.fijarPaseo(datos);
+    } else if (nombre === 'rutinas') {
+        // 6d etapa 2: rutinas.js mira las visitas cada `revisar` s (la próxima decisión ya usa lo nuevo)
+        const v = window.__venjy;
+        if (!v || !v.rutinas) throw new Error('el juego todavía no está listo');
+        v.rutinas.fijar(datos);
     } else if (nombre === 'musica') {
         // musica-datos.js: musica.js y carrera-musica.js lo consultan en cada paso (el próximo paso ya suena con lo nuevo)
         const m = await import('../mundo/supervivencia/musica-datos.js');
@@ -279,6 +284,20 @@ const responder = crearManejador({
         if (!v.paseos.personas().includes(persona)) throw new Error(`no hay nadie llamado «${persona}» en este mundo`);
         if (destino && !v.paseos.ir(persona, destino)) throw new Error(`no conozco el destino «${destino}»`);
         return v.paseos.estado(persona);
+    },
+    // Pestaña Vida → Rutinas: probar una visita ahora (sin mirar la hora), cortarla o preguntar cómo va
+    rutina({ accion, visita, persona }) {
+        const v = window.__venjy;
+        if (!v || !v.rutinas) throw new Error('el juego todavía no está listo');
+        let quien = persona;
+        if (visita) {
+            const datos = v.rutinas.visitas();
+            if (!datos.includes(visita)) throw new Error(`no hay una visita «${visita}» en este juego (¿guardaste o aplicaste rutinas.json?)`);
+            quien = quien || v.rutinas.quienDe(visita);
+        }
+        if (accion === 'probar' && !v.rutinas.probar(visita)) throw new Error(`«${visita}» no se pudo hacer ahora (¿están las dos personas en este mundo?)`);
+        if (accion === 'cortar' && quien) v.rutinas.cortar(quien);
+        return quien ? v.rutinas.estado(quien) : v.rutinas.resumen();
     },
     teletransportar,
     elegir,

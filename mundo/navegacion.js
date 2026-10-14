@@ -38,6 +38,7 @@ export const NAV_BASE = {
     atasco: 2.5,          // segundos sin acercarse antes de volver a buscar desde donde está
     reintentos: 3,        // búsquedas de nuevo antes de rendirse (sin camino)
     saltoLejos: 1,        // lejos del jugador, segundos entre saltos de posición
+    rapidezLejos: 4,      // lejos del jugador (nadie lo ve) camina esto más rápido: las visitas entre lugares lejanos caben en el día
     radioDetalle: 160,    // a menos de esto (del jugador) camina mirando los bloques; más lejos avanza a saltos
     giro: 8,              // qué tan rápido gira hacia donde camina (por segundo)
     suavizado: 64         // cuántos puntos hacia adelante intenta unir en línea recta al suavizar
@@ -443,12 +444,12 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
         w.estado = 'sin-camino'; w.camino = null;
         return w.estado;
     }
-    // Lejos: nadie mira. Junta el tiempo y cada `saltoLejos` s avanza de un viaje lo que habría caminado
+    // Lejos: nadie mira. Junta el tiempo y cada `saltoLejos` s avanza de un viaje lo que habría caminado (× `rapidezLejos`)
     function pasoLejos(dt) {
         const A = op();
         w.lejos += dt;
         if (w.lejos < A.saltoLejos) return w.estado;
-        let resto = A.velocidad * w.lejos;
+        let resto = A.velocidad * A.rapidezLejos * w.lejos;
         w.lejos = 0;
         while (resto > 0 && w.i < w.camino.length) {
             const p = w.camino[w.i], dx = p.x - cuerpo.x, dz = p.z - cuerpo.z, d = Math.hypot(dx, dz);

@@ -390,5 +390,21 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
             }
         };
     }
+    // /rutina <persona> [acompanar|retomar|cortar|<visita>] (rutinas.js): sin más, su estado; con una visita, la hace ya
+    const rutinas = amistad && amistad.rutinas;
+    if (paseos && rutinas) {
+        cmds['/rutina'] = {
+            ayuda: { es: '/rutina <persona> [acompanar|retomar|cortar|<visita>] (sin más: su estado)', en: '/rutina <person> [acompanar|retomar|cortar|<visit>] (nothing else: status)' },
+            sugerir: () => paseos.personas().flatMap(c => [c, `${c} acompanar`, `${c} retomar`, ...rutinas.visitas().filter(v => v.startsWith(c + '-')).map(v => `${c} ${v}`)]),
+            fn(arg) {
+                const [quien, accion] = sinTildes(arg).split(/\s+/).filter(Boolean);
+                const c = quien && paseos.personas().find(a => a === quien || a.startsWith(quien));
+                if (!c) { hud.mensaje(JSON.stringify(rutinas.resumen()), 6); return; }
+                const ok = !accion ? true : accion === 'acompanar' ? rutinas.acompanar(c) : accion === 'retomar' ? rutinas.retomar(c) : accion === 'cortar' ? (rutinas.cortar(c), true) : rutinas.probar(accion);
+                const e = rutinas.estado(c);
+                hud.mensaje(ok ? `${c}: ${e.estado}${e.visita ? ' · ' + e.visita : ''}` : (idioma === 'en' ? `Could not: ${accion}` : `No se pudo: ${accion}`), 5);
+            }
+        };
+    }
     return cmds;
 }
