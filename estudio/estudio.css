@@ -449,3 +449,12 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .fila-texto.in-fila { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: start; }
 #in-textos input[type="text"] { width: 100%; padding: 4px 6px; font: inherit; font-size: 0.9rem; color: var(--blanco); background: #000; border: 2px solid #6a6a6a; }
 #in-aspecto input[type="color"] { width: 100%; height: 30px; padding: 0; background: #000; border: 2px solid #6a6a6a; }
+.in-carga-vista { padding: 28px 20px 22px; margin-bottom: 10px; border: 4px solid #000; text-align: center; text-shadow: 2px 2px 0 #3f3f3f;
+    background-image: repeating-conic-gradient(var(--c-fondo2, #5a3d26) 0 25%, transparent 0 50%); background-size: var(--c-cuadro, 64px) var(--c-cuadro, 64px);
+    background-color: var(--c-fondo, #6b4a2f); color: var(--c-texto, #fff); }
+.in-c-titulo { margin: 0 0 14px; font-size: 1.6rem; }
+.in-c-barra { height: 20px; max-width: 420px; margin: 0 auto; border: 4px solid #000; background: var(--c-barra-fondo, #2b2b2b); }
+.in-c-barra i { display: block; height: 100%; width: 0; background: var(--c-barra, #5aa532); }
+.in-c-etapa { margin: 8px 0 18px; min-height: 1.2em; }
+.in-c-consejo { margin: 0; min-height: 2.4em; }
+.in-c-etapa-sel { margin-left: 8px; }

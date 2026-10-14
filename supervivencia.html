@@ -34,6 +34,16 @@
     <!-- Pantallas de inventario, mesa, horno y cofre (las arma ui-inventario.js) -->
     <div id="ventana" class="ventana" hidden></div>
 
+    <!-- Pantalla de carga a pantalla completa (textos, etapas, consejos y colores en mundo/datos/inicio.json → carga) -->
+    <div id="pantalla-carga" class="pantalla-carga" hidden role="status" aria-live="polite">
+        <div class="carga-centro">
+            <p id="carga-titulo" class="carga-titulo" data-es="Generando el mundo…" data-en="Generating the world…">Generando el mundo…</p>
+            <div id="carga-barra" class="carga-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="carga-relleno"></i></div>
+            <p id="carga-etapa" class="carga-etapa"></p>
+            <p id="carga-consejo" class="carga-consejo"></p>
+        </div>
+    </div>
+
     <main id="inicio">
         <!-- Menú de inicio: pantalla de título (textos y frases en mundo/datos/inicio.json, pestaña Inicio del Estudio) -->
         <section class="titulo-inicio" id="menu-titulo">

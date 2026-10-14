@@ -36,6 +36,56 @@
         }
       },
       "additionalProperties": false
+    },
+    "carga": {
+      "description": "Pantalla de carga a pantalla completa (al entrar a un mundo): título, consejos al azar, etapas reales con su peso en la barra, colores y tiempos. Las claves de etapas las fija main.js (terreno, sistemas, amigos, mundo, escenas, datos).",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "titulo": { "$ref": "comun.schema.json#/$defs/texto" },
+        "rotuloConsejo": { "$ref": "comun.schema.json#/$defs/texto" },
+        "etapas": {
+          "type": "object",
+          "properties": {
+            "terreno": { "type": "object", "properties": { "nombre": { "$ref": "comun.schema.json#/$defs/texto" }, "peso": { "type": "number", "minimum": 0.1, "maximum": 100 } }, "additionalProperties": false },
+            "sistemas": { "type": "object", "properties": { "nombre": { "$ref": "comun.schema.json#/$defs/texto" }, "peso": { "type": "number", "minimum": 0.1, "maximum": 100 } }, "additionalProperties": false },
+            "amigos": { "type": "object", "properties": { "nombre": { "$ref": "comun.schema.json#/$defs/texto" }, "peso": { "type": "number", "minimum": 0.1, "maximum": 100 } }, "additionalProperties": false },
+            "mundo": { "type": "object", "properties": { "nombre": { "$ref": "comun.schema.json#/$defs/texto" }, "peso": { "type": "number", "minimum": 0.1, "maximum": 100 } }, "additionalProperties": false },
+            "escenas": { "type": "object", "properties": { "nombre": { "$ref": "comun.schema.json#/$defs/texto" }, "peso": { "type": "number", "minimum": 0.1, "maximum": 100 } }, "additionalProperties": false },
+            "datos": { "type": "object", "properties": { "nombre": { "$ref": "comun.schema.json#/$defs/texto" }, "peso": { "type": "number", "minimum": 0.1, "maximum": 100 } }, "additionalProperties": false }
+          },
+          "additionalProperties": false
+        },
+        "consejos": {
+          "description": "Un consejo al azar por carga. Lista vacía = sin consejo.",
+          "type": "array",
+          "items": { "$ref": "comun.schema.json#/$defs/texto" },
+          "maxItems": 200
+        },
+        "aspecto": {
+          "description": "fondo y fondo2: los dos tonos de la tierra a cuadros; barra y barraFondo; texto; cuadro: tamaño en px de cada cuadro de tierra.",
+          "type": "object",
+          "properties": {
+            "fondo": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "fondo2": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "barra": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "barraFondo": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "texto": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "cuadro": { "type": "number", "minimum": 8, "maximum": 256 }
+          },
+          "additionalProperties": false
+        },
+        "tiempos": {
+          "description": "Segundos: minimo = lo menos que se ve la pantalla; salida = duración del desvanecido.",
+          "type": "object",
+          "properties": {
+            "minimo": { "type": "number", "minimum": 0, "maximum": 10 },
+            "salida": { "type": "number", "minimum": 0, "maximum": 3 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["version"],
