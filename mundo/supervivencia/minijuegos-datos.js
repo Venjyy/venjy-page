@@ -23,8 +23,7 @@ export const TXT_CARTAS_BOTON = {
 
 // Botón de la carrera de gatas en el panel de Lona (carrera.js se carga al usarlo)
 export const CARRERA_BOTON = {
-    boton: t('Carrera de gatas (con Mila)', 'Cat race (with Mila)'),
-    gala: t('Carrera con Gala', 'Race with Gala')
+    boton: t('Gran Premio del Living (carrera de gatas)', 'Living Room Grand Prix (cat race)')
 };
 
 // Requisitos de la tienda que se cumplen con un minijuego (tienda-datos.js usa la clave como `req`)

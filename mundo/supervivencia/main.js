@@ -985,7 +985,7 @@ async function arrancar(guardado, cx = null) {
                 const motivo = inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo);
                 return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo, extra: tutoCartasVisto() && !motivo ? [{ texto: textoCartas(TXT_CARTAS_BOTON.tuto), modo: 'tutorial' }] : [] };
             }
-            if (clave === 'lona') return { texto: textoCartas(CARRERA_BOTON.boton), motivo: null, extra: [{ texto: textoCartas(CARRERA_BOTON.gala), modo: 'gala' }] };
+            if (clave === 'lona') return { texto: textoCartas(CARRERA_BOTON.boton), motivo: null };
             return minijuegos.botonPara(clave);
         },
         // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
@@ -998,7 +998,7 @@ async function arrancar(guardado, cx = null) {
             document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             if (clave === 'lucho') { abrirMesaCartas(modo === 'tutorial' || !tutoCartasVisto() ? 'tutorial' : 'facil'); return; }
-            if (clave === 'lona') { cargarCarrera().then(k => { if (!k || !k.abrir(modo === 'gala' ? 'gala' : 'mila')) { uiAbierta = false; if (!vida.muerto) entrar(); } }); return; }
+            if (clave === 'lona') { cargarCarrera().then(k => { if (!k || !k.abrir()) { uiAbierta = false; if (!vida.muerto) entrar(); } }); return; }
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
@@ -1286,27 +1286,22 @@ async function arrancar(guardado, cx = null) {
         actividades = m.crearActividades({ yo: coop.yoId, esAnfitrion: coop.esAnfitrion, anfitrion: coop.idAnfitrion, enviar: x => coop.actividad(x) });
         // Antes de cargar el duelo: una invitación lo carga
         // (y un duelo con los dos dentro también: alguien cerca puede mirarlo)
-        actividades.escuchar('carrera', { estado: act => { if (act) cargarCarrera(); } }); // la reemplaza carrera-red.js al cargar
         actividades.escuchar('duelo', { invitacion: inv => cargarDuelo().then(d => { if (d) avisoReto(inv); }), estado: act => { if (act && act.jug.length === 2) cargarDuelo(); } });
         for (const x of colaAct.splice(0)) actividades.recibir(x);
     }).catch(err => console.error('No se pudieron cargar las actividades compartidas', err));
     function recibirActividad(m) { if (actividades) actividades.recibir(m); else colaAct.push(m); }
-    // Carrera de gatas (7h-1, carrera.js): se carga al abrirla desde el panel de Lona o cuando en la sala alguien la abre
-    // (para mirarla o correr contra quien espera). Con sala, carrera-red.js sobre las actividades
+    // Carrera de gatas (7h-1, «Gran Premio del Living»: carrera.js y su escena propia): se carga al abrirla desde el panel
+    // de Lona; mientras corres, su escena se dibuja en lugar del mundo (el mundo sigue andando: sala, cooperativo)
     let carrera = null, cargandoCarrera = null;
     function cargarCarrera() {
-        if (!cargandoCarrera) cargandoCarrera = Promise.all([import('./carrera.js'), cargarDatos('carrera'), actividades ? import('./carrera-red.js') : null]).then(([m, json, mr]) => {
+        if (!cargandoCarrera) cargandoCarrera = Promise.all([import('./carrera.js'), cargarDatos('carrera')]).then(([m, json]) => {
             carrera = m.crearCarrera({
-                grupo: vista.grupo, dy: DY, mundo, terreno, gatera: datos.P.gatera, tinteMundo: materiales.solido.color, jugador, camaras, gatas, npcs, inventario, entidades, hud, misiones, idioma,
+                jugador, gatas, npcs, inventario, entidades, hud, misiones, idioma,
                 datos: () => window.__venjy?.datosCarrera || json,
                 tactil: () => !!tactil,
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera(),
-                otrosEnSala: () => (coop ? coop.total - 1 : 0),
-                nombreDe: id => (coop ? coop.nombreDe(id) : ''),
-                yoNombre: coop ? coop.nombreDe(coop.yoId) : '',
                 bloquear: () => bloquearEscena(true), liberar: liberarEscena
             });
-            if (mr && actividades) carrera.conectar(mr.crearCarreraRed({ acts: actividades, yo: coop.yoId, al: carrera.alRed }));
             return carrera;
         }).catch(err => { cargandoCarrera = null; console.error('No se pudo cargar la carrera de gatas', err); return null; });
         return cargandoCarrera;
@@ -1977,7 +1972,7 @@ async function arrancar(guardado, cx = null) {
         get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
         // Actividades compartidas (7g-1) y duelo entre jugadores: lista de actividades, controlador del duelo
         get actividades() { return actividades; }, get duelo() { return duelo; },
-        // Carrera de gatas (7h-1): cargarCarrera().then(k => k.abrir('mila')); carrera.saltarA(3) lleva tu gata a la última vuelta
+        // Carrera de gatas (7h-1): cargarCarrera().then(k => k.elegir('mila', 'normal')); carrera.saltarIntro(), carrera.saltarA(3)
         get carrera() { return carrera; }, cargarCarrera: () => cargarCarrera(),
         // Abrir un sobre de prueba (Estudio → Mesa, «Probar el sobre»): la escena de cartas-sobre.js sin cobrar ni sumar cartas
         probarSobre: () => Promise.all([import('./cartas-sobre.js'), import('./cartas-tienda.js'), cargarDatos('cartas-mesa')]).then(([s, t, d]) => {
@@ -2077,9 +2072,11 @@ async function arrancar(guardado, cx = null) {
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
-        renderer.render(scene, camara);
-        if (mesaCartas) mesaCartas.dibujar(); // la mesa de cartas: vista de arriba (3.ª persona) y tu mano
-        if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();
+        if (!(carrera && carrera.dibuja(renderer))) { // la carrera de gatas se dibuja en lugar del mundo
+            renderer.render(scene, camara);
+            if (mesaCartas) mesaCartas.dibujar(); // la mesa de cartas: vista de arriba (3.ª persona) y tu mano
+            if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();
+        }
         const msCuadro = performance.now() - tBucle;
         cuadrosMs.agregar(msCuadro);
         if (medicion.activa && medicion.cuadros) medicion.cuadros.push(msCuadro); // /medir romper

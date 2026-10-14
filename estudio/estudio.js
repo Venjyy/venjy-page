@@ -97,6 +97,8 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-objetos').hidden = ctx.pestana !== 'objetos';
         document.getElementById('panel-formas').hidden = ctx.pestana !== 'formas';
         document.getElementById('panel-carrera').hidden = ctx.pestana !== 'carrera';
+        document.getElementById('ca-zona').hidden = ctx.pestana !== 'carrera';
+        document.getElementById('seccion-juego').classList.toggle('modo-carrera', ctx.pestana === 'carrera');
         document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';
         document.getElementById('es-zona').hidden = ctx.pestana !== 'escenas';
         document.getElementById('seccion-juego').classList.toggle('modo-escenas', ctx.pestana === 'escenas');

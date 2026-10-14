@@ -354,6 +354,19 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 #es-gesto { width: 100%; text-align: left; }
 /* En Escenas el juego se achica para que la línea de tiempo quepa sin bajar la pantalla */
 .modo-escenas .marco-juego iframe { aspect-ratio: auto; height: 38vh; min-height: 240px; }
+/* Carrera (7h-1): el editor de pista bajo el juego */
+.modo-carrera .marco-juego iframe { aspect-ratio: auto; height: 42vh; min-height: 260px; }
+#ca-zona[hidden], #panel-carrera[hidden] { display: none; }
+#ca-zona { margin-top: 12px; }
+.ca-barra { flex-wrap: wrap; margin-bottom: 6px; }
+.ca-ayuda { font-size: 0.75rem; margin: 0 0 6px; }
+.ca-plano, .ca-perfil { display: block; width: 100%; border: 3px solid #000; image-rendering: pixelated; cursor: crosshair; touch-action: none; }
+.ca-perfil { margin-top: 6px; cursor: ns-resize; }
+.ca-abajo { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 10px; margin-top: 8px; }
+.ca-inspector h3 { margin: 0 0 6px; font-size: 1rem; font-weight: normal; color: var(--amarillo, #ffff55); }
+.ca-inspector .campos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ca-avisos p { margin: 2px 0; font-size: 0.8rem; }
+@media (max-width: 900px) { .ca-abajo { grid-template-columns: 1fr; } }
 
 /* ---------- Poses (fase 6b) ---------- */
 #panel-poses[hidden], #po-zona[hidden], #po-curva-zona[hidden] { display: none; }

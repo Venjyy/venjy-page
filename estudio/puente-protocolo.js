@@ -34,7 +34,7 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
 //   objeto({ clave })             pone en tu mano ese objeto de OBJETOS (o un id numérico), dándotelo si no lo tienes (pestaña Objetos)
 //   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
-//   carrera({ accion })           'mila' | 'gala' | 'terminar': la carrera de gatas (7h-1)
+//   carrera({ accion })           'ver' | 'mila' | 'gala' | 'terminar': la carrera de gatas (7h-1; 'ver' = la sala sin menú)
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
@@ -120,7 +120,7 @@ export function crearManejador(juego) {
                 }
                 case 'carrera': {
                     // Carrera de gatas (7h-1): abrirla con Mila o con Gala, o terminarla
-                    if (!['mila', 'gala', 'terminar'].includes(m.accion)) return error('accion de carrera no válida');
+                    if (!['ver', 'mila', 'gala', 'terminar'].includes(m.accion)) return error('accion de carrera no válida');
                     if (!juego.carrera) return error('este juego no tiene la carrera de gatas');
                     await juego.carrera({ accion: m.accion });
                     return { ...base, tipo: 'ok' };

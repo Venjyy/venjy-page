@@ -236,8 +236,8 @@ const responder = crearManejador({
         const k = await v.cargarCarrera();
         if (!k) throw new Error('no se pudo cargar la carrera');
         if (accion === 'terminar') { k.terminar(); return; }
-        if (k.estado) k.terminar();
-        if (!k.abrir(accion)) throw new Error('ahora no se puede: cierra lo que tengas abierto');
+        if (accion === 'ver') { if (!k.ver()) throw new Error('ahora no se puede: cierra lo que tengas abierto'); return; }
+        k.elegir(accion, 'normal');
     },
     // Pestaña Objetos: deja en tu mano (barra rápida) el objeto o bloque pedido, dándotelo si no lo tienes
     objeto({ clave }) {
