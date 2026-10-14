@@ -640,5 +640,32 @@ for (const [d, c] of Object.entries(medidas)) if (c.gs) {
 }
 for (const [d, c] of Object.entries(conObjetos)) { const o = M.puestos(c.gs); console.log(`  ${d} con objetos: ganó ${o[0].clave} en ${o[0].fin?.toFixed(1)} s · último ${o[o.length - 1].fin?.toFixed(1)} s · ${JSON.stringify(c.cuenta)}`); }
 console.log(`  pista ${P.largo.toFixed(1)} bloques × ${R.vueltas} vueltas`);
+// ---------- Música (carrera-musica-datos.js): cada tema suena en cada nivel con notas e instrumentos válidos ----------
+{
+    const MU = await imp('mundo/supervivencia/carrera-musica-datos.js');
+    if (JSON.stringify(Object.keys(MU.TEMAS_CARRERA)) !== JSON.stringify(M.TEMAS_MUSICA)) falla('TEMAS_MUSICA no coincide con los temas de carrera-musica-datos.js');
+    for (const p of R.listaPistas) if (!M.TEMAS_MUSICA.includes(R.musica.temas[p])) falla(`la pista ${p} no tiene un tema válido`);
+    const notas = [], golpes = [];
+    const I = new Proxy({}, { get: (_, inst) => (c, o, t, a, dur, vol) => {
+        if (inst === 'ruido') { golpes.push(a); return; } // (platillo y caja grande)
+        if (!MU.INSTRUMENTOS.includes(inst)) falla(`instrumento desconocido: ${inst}`);
+        if (typeof a === 'number' && dur === undefined) golpes.push(a); // batería: (c, o, t, vol)
+        else for (const m of [].concat(a)) { notas.push(m); if (!(m >= 24 && m <= 108)) falla(`nota fuera de rango en ${inst}: ${m}`); if (!(dur > 0)) falla(`duración inválida en ${inst}`); }
+    } });
+    for (const [k, def] of Object.entries(MU.TEMAS_CARRERA)) {
+        for (const capa of def.capas) {
+            if (!MU.INSTRUMENTOS.includes(capa.inst)) falla(`${k}: instrumento ${capa.inst}`);
+            if (!capa.niveles.every(n => MU.NIVELES.includes(n))) falla(`${k}: nivel inválido`);
+            if (capa.ritmo && /[^xo.]/.test(capa.ritmo)) falla(`${k}: ritmo con letras raras`);
+        }
+        for (const nivel of MU.NIVELES) {
+            notas.length = 0; golpes.length = 0;
+            for (let compas = 0; compas < 8; compas++) for (let i = 0; i < 16; i++) MU.tocarPaso(I, def, null, null, 0, i, compas, 0.1, nivel);
+            if (notas.length < 16) falla(`${k} en ${nivel}: casi sin notas (${notas.length})`);
+            if (nivel !== 'menu' && golpes.length < 16) falla(`${k} en ${nivel}: sin batería`);
+        }
+    }
+}
+
 if (fallos) { console.error(`\n${fallos} fallos`); process.exit(1); }
-console.log('OK: carrera de gatas (pista, física, IA, objetos y red)');
+console.log('OK: carrera de gatas (pista, física, IA, objetos, red y música)');

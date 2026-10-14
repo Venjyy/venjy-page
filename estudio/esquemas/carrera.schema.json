@@ -962,6 +962,61 @@
       },
       "additionalProperties": false
     },
+    "musica": {
+      "type": "object",
+      "properties": {
+        "vol": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "menu": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "meta": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "podio": {
+          "description": "",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "tempo": {
+          "description": "",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.6
+        },
+        "ultima": {
+          "description": "",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1.5
+        },
+        "temas": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "living",
+              "cocina",
+              "patio",
+              "techo",
+              "podio"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "tactil": {
       "type": "object",
       "properties": {
