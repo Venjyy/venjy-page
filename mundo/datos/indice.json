@@ -74,6 +74,12 @@
       "fase": 10,
       "que": "Menú de inicio de la supervivencia: logo, subtítulo, pie y las frases amarillas junto al logo (una al azar; color, giro y latido); se edita en la pestaña Inicio del Estudio"
     },
+    "formas": {
+      "esquema": "formas",
+      "lee": "mundo/formas.js",
+      "fase": 11,
+      "que": "Formas de los bloques que no son un cubo entero (losas, escalones, trampilla, vallas de jardín, farol, cartel; y el contorno y las grietas de cama, antorcha, flores y cultivos): cajas en 1/16, cuánto sube solo el jugador (paso) y el color del contorno y de las grietas; main.js lo pide y se aplica en vivo con supervivencia.html?estudio"
+    },
     "borradores": {
       "esquema": "borradores",
       "lee": null,

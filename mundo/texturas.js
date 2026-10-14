@@ -450,8 +450,18 @@ const PINTORES = {
         return ajustar([186, 148, 92], (y % 4 === 0 ? 0.88 : 1) * (0.94 + r() * 0.12));
     },
     // Palo y cantos del cartel
-    cartel_poste: (x, y, r) => ajustar([118, 86, 48], (x % 4 === 0 ? 0.88 : 1) * (0.92 + r() * 0.16))
-};;
+    cartel_poste: (x, y, r) => ajustar([118, 86, 48], (x % 4 === 0 ? 0.88 : 1) * (0.92 + r() * 0.16)),
+    // 7f-2: trampilla de madera (marco, dos tablas y ranuras oscuras) y las maderas de las vallas de jardín
+    trampilla: (x, y, r) => {
+        const borde = x <= 1 || x >= 14 || y <= 1 || y >= 14;
+        if (borde) return ajustar([120, 88, 50], 0.86 + r() * 0.14);
+        if ((y === 5 || y === 10) && x >= 3 && x <= 12) return ajustar([58, 40, 22], 0.9 + r() * 0.15);
+        if (x === 7 || x === 8) return ajustar([132, 98, 56], 0.82 + r() * 0.1);
+        return ajustar([168, 128, 76], (y % 4 === 2 && r() < 0.35 ? 0.86 : 1) * (0.92 + r() * 0.12));
+    },
+    tablones_abedul: tablones('#d4c08a'),
+    tablones_pino: tablones('#7a5a36')
+};
 
 export const NOMBRES_TILE = Object.keys(PINTORES);
 export const TILE = Object.fromEntries(NOMBRES_TILE.map((n, i) => [n, i]));
@@ -527,7 +537,15 @@ export const B = {
     FAROL: 90, CARTEL: 91,
     // Duelo 2J, PR 3: la mesa de duelo colocada (dos orientaciones: el largo a lo largo de X o de Z). No se malla:
     // la dibuja supervivencia/mesas-colocadas.js con el modelo de la mesa de Lucho
-    MESA_DUELO: 92, MESA_DUELO_Z: 93
+    MESA_DUELO: 92, MESA_DUELO_Z: 93,
+    // 7f-2: bloques con forma (tipo 'f', cajas en mundo/formas.js). Losa abajo, arriba y doble (dos losas juntas);
+    // escalones y trampilla abierta con 4 ids seguidos, uno por giro (0 norte, 1 este, 2 sur, 3 oeste)
+    LOSA_PIEDRA: 94, LOSA_TABLONES: 95, LOSA_ADOQUIN: 96,
+    LOSA_PIEDRA_ARRIBA: 97, LOSA_TABLONES_ARRIBA: 98, LOSA_ADOQUIN_ARRIBA: 99,
+    LOSA_PIEDRA_DOBLE: 100, LOSA_TABLONES_DOBLE: 101, LOSA_ADOQUIN_DOBLE: 102,
+    ESCALONES_PIEDRA: 103, ESCALONES_TABLONES: 107, ESCALONES_ADOQUIN: 111,
+    TRAMPILLA: 115, TRAMPILLA_ARRIBA: 116, TRAMPILLA_ABIERTA: 117,
+    VALLA_ABEDUL: 121, VALLA_PINO: 122
 };
 
 export const BLOQUES = [];
@@ -622,12 +640,24 @@ BLOQUES[B.FAROL] = def('farol', 'p', 'farol');
 BLOQUES[B.CARTEL] = def('cartel', 'p', 'cartel');
 BLOQUES[B.MESA_DUELO] = def('mesa de duelo', 'p', 'tablones');
 BLOQUES[B.MESA_DUELO_Z] = def('mesa de duelo', 'p', 'tablones');
+// 7f-2: bloques con forma ('f'): chocan y se ven según sus cajas (mundo/formas.js); dejan pasar la luz
+for (const [clave, tile] of [['PIEDRA', 'piedra'], ['TABLONES', 'tablones'], ['ADOQUIN', 'adoquin']]) {
+    BLOQUES[B['LOSA_' + clave]] = def('losa de ' + tile, 'f', tile);
+    BLOQUES[B['LOSA_' + clave + '_ARRIBA']] = def('losa de ' + tile, 'f', tile);
+    BLOQUES[B['LOSA_' + clave + '_DOBLE']] = def('losa doble de ' + tile, 's', tile);
+    for (let g = 0; g < 4; g++) BLOQUES[B['ESCALONES_' + clave] + g] = def('escalones de ' + tile, 'f', tile);
+}
+BLOQUES[B.TRAMPILLA] = def('trampilla', 'f', 'trampilla');
+BLOQUES[B.TRAMPILLA_ARRIBA] = def('trampilla', 'f', 'trampilla');
+for (let g = 0; g < 4; g++) BLOQUES[B.TRAMPILLA_ABIERTA + g] = def('trampilla', 'f', 'trampilla');
+BLOQUES[B.VALLA_ABEDUL] = def('valla de jardin de abedul', 'f', 'tablones_abedul');
+BLOQUES[B.VALLA_PINO] = def('valla de jardin de pino', 'f', 'tablones_pino');
 
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz,
 // 5 lava (líquido opaco que se atraviesa), 6 panel que choca (puerta cerrada), 7 panel que se atraviesa
-// (puerta abierta, escalera de mano)
+// (puerta abierta, escalera de mano), 8 bloque con forma (losa, escalones, trampilla, valla de jardín: mundo/formas.js)
 export const TIPO = new Uint8Array(256);
-const TIPOS = { s: 1, h: 2, a: 3, p: 4, l: 5, d: 6, e: 7 };
+const TIPOS = { s: 1, h: 2, a: 3, p: 4, l: 5, d: 6, e: 7, f: 8 };
 BLOQUES.forEach((b, i) => { if (b) TIPO[i] = TIPOS[b.tipo]; });
 
 // Luz que emite cada id (0-15), como en Minecraft. La lee el cálculo de luz de voxeles.js

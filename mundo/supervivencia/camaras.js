@@ -53,7 +53,8 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
         cuerpo.g.visible = visible;
         if (!visible) { golpePend = false; return; }
         const p = jugador.pos;
-        cuerpo.g.position.set(p.x, p.y - (jugador.agachado ? 0.2 : 0), p.z);
+        // `subida`: al pisar una losa o un escalón el cuerpo sube suave como la cámara (jugador.js, formas.json → suavizado)
+        cuerpo.g.position.set(p.x, p.y + (jugador.subida || 0) - (jugador.agachado ? 0.2 : 0), p.z);
         cuerpo.g.rotation.y = (fijo ? fijo.yaw : jugador.yaw) + Math.PI;
         const mov = ultima ? Math.hypot(p.x - ultima.x, p.z - ultima.z) / Math.max(dt, 0.001) : 0;
         ultima = { x: p.x, z: p.z };
@@ -101,7 +102,7 @@ export function crearCamaras({ scene, camara, mundo, jugador, skin, tinteMundo, 
     // Órbita del gesto: la cámara mira al pecho del cuerpo desde donde apunta la mirada del jugador
     const ORBITA = { alto: 1.2, dist: 3.4 };
     function orbitar() {
-        ojo.set(jugador.pos.x, jugador.pos.y + ORBITA.alto, jugador.pos.z);
+        ojo.set(jugador.pos.x, jugador.pos.y + (jugador.subida || 0) + ORBITA.alto, jugador.pos.z);
         camara.getWorldDirection(dir);
         let d = ORBITA.dist;
         while (d > 0.6) { pos.copy(ojo).addScaledVector(dir, -d); if (libre(mundo, ojo, pos)) break; d -= 0.25; }

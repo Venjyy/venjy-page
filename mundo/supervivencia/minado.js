@@ -9,6 +9,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { B, TIPO } from '../texturas.js';
 import { ALTO } from '../voxeles.js';
 import { lanzarRayo } from '../rayo.js';
+import { cajasDe, aristasContorno, colocarForma, esTrampilla, alternarTrampilla, ajustesFormas, versionFormas } from '../formas.js';
 import { O, info, infoBloque, tiempoRomper, dropsDe, esBloqueColocable, nombreDe } from './objetos.js';
 import { pila } from './inventario.js';
 import { esTierraCultivo, esSueloBrote, etapasDe } from './agricultura.js';
@@ -21,7 +22,41 @@ const CAEN = new Set([B.ARENA, B.GRAVA]);
 // Se reemplazan al poner encima (pasto alto)
 const REEMPLAZABLES = new Set([0, B.AGUA, B.LAVA, B.PASTO_ALTO]);
 const INTERACTIVOS = new Set([B.MESA, B.HORNO, B.HORNO_ENCENDIDO, B.COFRE, B.BARRIL, B.CAMA,
-    B.PUERTA_ABAJO, B.PUERTA_ARRIBA, B.PUERTA_ABIERTA_ABAJO, B.PUERTA_ABIERTA_ARRIBA, B.MESA_DUELO, B.MESA_DUELO_Z]);
+    B.PUERTA_ABAJO, B.PUERTA_ARRIBA, B.PUERTA_ABIERTA_ABAJO, B.PUERTA_ABIERTA_ARRIBA, B.MESA_DUELO, B.MESA_DUELO_Z,
+    B.TRAMPILLA, B.TRAMPILLA_ARRIBA, B.TRAMPILLA_ABIERTA, B.TRAMPILLA_ABIERTA + 1, B.TRAMPILLA_ABIERTA + 2, B.TRAMPILLA_ABIERTA + 3]);
+const CUBO = [{ x0: 0, y0: 0, z0: 0, x1: 1, y1: 1, z1: 1 }];
+
+// Geometría de las grietas sobre las cajas de un bloque (un poco infladas): la textura se proyecta por la posición
+// dentro del bloque, así en una losa o una valla se ve el trozo que le toca, como en Minecraft
+function geometriaGrieta(cajas, e = 0.003) {
+    const p = [], uv = [], idx = [];
+    for (const c of cajas) {
+        const a = [c.x0 - e, c.y0 - e, c.z0 - e], b = [c.x1 + e, c.y1 + e, c.z1 + e];
+        for (let eje = 0; eje < 3; eje++) for (const lado of [0, 1]) {
+            const u = (eje + 1) % 3, v = (eje + 2) % 3, base = p.length / 3;
+            for (const [i, j] of [[0, 0], [1, 0], [1, 1], [0, 1]]) {
+                const q = [0, 0, 0];
+                q[eje] = lado ? b[eje] : a[eje]; q[u] = i ? b[u] : a[u]; q[v] = j ? b[v] : a[v];
+                p.push(...q);
+                uv.push(q[u], q[v]);
+            }
+            if (lado) idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+            else idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
+        }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx);
+    return g;
+}
+// Contorno: las aristas de las cajas (sin las que quedan dentro de una cara), apenas agrandado desde el centro
+function geometriaContorno(cajas, k = 1.004) {
+    const s = aristasContorno(cajas).map(v => 0.5 + (v - 0.5) * k);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(s, 3));
+    return g;
+}
 
 // Texturas de grietas (10 etapas), pintadas con código
 function crearGrietas() {
@@ -40,7 +75,7 @@ function crearGrietas() {
         const c = document.createElement('canvas');
         c.width = c.height = 16;
         const ctx = c.getContext('2d');
-        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillStyle = '#000'; // la opacidad la pone el material (grietas.opacidad de formas.json)
         const n = Math.round(((e + 1) / 10) * lineas.length);
         for (let i = 0; i < n; i++) for (const [x, y] of lineas[i].slice(0, 2 + Math.ceil(e * 0.6))) if (x >= 0 && y >= 0 && x < 16 && y < 16) ctx.fillRect(x, y, 1, 1);
         const t = new THREE.CanvasTexture(c);
@@ -71,22 +106,41 @@ export function crearMinado(ctx) {
     };
 
     // ---- Selección y grietas ----
-    const marco = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(1.004, 1.004, 1.004)),
-        new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.75, fog: false })
-    );
+    // Siguen la forma del bloque apuntado (formas.js): una losa, una antorcha o una flor no muestran el cubo entero.
+    // Las geometrías van de 0 a 1 dentro de la celda y se rehacen solo cuando cambia la forma.
+    const marco = new THREE.LineSegments(geometriaContorno(CUBO),
+        new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.75, fog: false }));
     marco.visible = false;
     marco.renderOrder = 5;
     scene.add(marco);
     const grietas = crearGrietas();
-    const grieta = new THREE.Mesh(new THREE.BoxGeometry(1.006, 1.006, 1.006), new THREE.MeshBasicMaterial({ map: grietas[0], transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, fog: false }));
+    const grieta = new THREE.Mesh(geometriaGrieta(CUBO), new THREE.MeshBasicMaterial({ map: grietas[0], transparent: true, opacity: 0.75, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, fog: false }));
     grieta.visible = false;
     grieta.renderOrder = 6;
     scene.add(grieta);
+    let claveForma = 'cubo', verForma = -1;
+    function ajustarForma(o) {
+        const v = versionFormas();
+        if (v !== verForma) {
+            verForma = v;
+            const a = ajustesFormas();
+            marco.material.color.set(a.contorno.color); marco.material.opacity = a.contorno.opacidad;
+            grieta.material.opacity = a.grietas.opacidad;
+            claveForma = null;
+        }
+        const cajas = cajasDe(o.id, (dx, dy, dz) => mundo.bloque(o.x + dx, o.y + dy, o.z + dz)) || CUBO;
+        const clave = cajas.map(c => [c.x0, c.y0, c.z0, c.x1, c.y1, c.z1].map(n => n.toFixed(3)).join(',')).join(';');
+        if (clave === claveForma) return;
+        claveForma = clave;
+        marco.geometry.dispose(); marco.geometry = geometriaContorno(cajas);
+        grieta.geometry.dispose(); grieta.geometry = geometriaGrieta(cajas);
+    }
 
+    // Preciso: los bloques con forma solo se apuntan donde tienen cajas (por el hueco de una valla se ve lo de atrás)
     const apuntar = (conLiquidos = false) => lanzarRayo(camara, mundo, ALCANCE, conLiquidos
-        ? (id, t) => t === 1 || t === 2 || t === 4 || t === 6 || t === 7 || id === B.AGUA || id === B.LAVA
-        : (id, t) => t === 1 || t === 2 || t === 4 || t === 6 || t === 7);
+        ? (id, t) => t === 1 || t === 2 || t === 4 || t === 6 || t === 7 || t === 8 || id === B.AGUA || id === B.LAVA
+        : (id, t) => t === 1 || t === 2 || t === 4 || t === 6 || t === 7 || t === 8, null, null, true);
+    const mira = () => { camara.getWorldDirection(dirPoner); return [dirPoner.x, dirPoner.z]; };
 
     const dirPoner = new THREE.Vector3(); // hacia dónde miras al colocar la mesa de duelo
     function chocaConJugador(x, y, z) {
@@ -175,6 +229,12 @@ export function crearMinado(ctx) {
         // Mesa de duelo colocada (duelo 2J, PR 5): esperar rival en ella o sentarse frente a quien espera (main.js)
         if (id === B.MESA_DUELO || id === B.MESA_DUELO_Z) return estado.usarMesaDuelo ? estado.usarMesaDuelo(o) : false;
         if (id === B.CAMA) { const m = estado.dormir && estado.dormir(x, y, z); if (m) hud.mensaje(m); return true; }
+        if (esTrampilla(id)) { // 7f-2: abre contra el lado al que miras; al cerrar queda abajo
+            const nueva = alternarTrampilla(id, mira());
+            mundo.editar(x, y, z, nueva);
+            sonidos.puerta(nueva !== B.TRAMPILLA);
+            return true;
+        }
         if (id >= B.PUERTA_ABAJO && id <= B.PUERTA_ABIERTA_ARRIBA) {
             const abajo = id === B.PUERTA_ABAJO || id === B.PUERTA_ABIERTA_ABAJO ? y : y - 1;
             const abierta = mundo.bloque(x, abajo, z) === B.PUERTA_ABIERTA_ABAJO;
@@ -193,15 +253,19 @@ export function crearMinado(ctx) {
         return o.previo;
     }
 
-    function ponerBloque(o, id) {
-        const destino = ponerEn(o);
+    function ponerBloque(o, idMano) {
+        // 7f-2: losas (arriba, abajo o doble), escalones según hacia dónde miras y trampilla arriba o abajo (formas.js)
+        const sobre = o && o.id === B.PASTO_ALTO ? { ...o, id: 0, previo: [o.x, o.y, o.z], normal: [0, 1, 0] } : o; // el pasto alto se pisa
+        const fo = colocarForma(idMano, sobre, mira(), (a, b, c) => mundo.bloque(a, b, c));
+        const destino = fo ? fo.pos : ponerEn(o);
         if (!destino) return false;
+        const id = fo ? fo.id : idMano;
         const [x, y, z] = destino;
         if (y < 1 || y >= ALTO) return false;
         const actual = mundo.bloque(x, y, z);
-        if (actual === -1 || !REEMPLAZABLES.has(actual)) return false;
+        if (actual === -1 || (!REEMPLAZABLES.has(actual) && !(fo && fo.fusion))) return false;
         const t = TIPO[id];
-        if ((t === 1 || t === 6) && chocaConJugador(x, y, z)) return false;
+        if ((t === 1 || t === 6 || t === 8) && chocaConJugador(x, y, z)) return false;
         const abajo = mundo.bloque(x, y - 1, z);
         // Plantas: necesitan su suelo
         if (id === B.BROTE || id === B.BROTE_ABEDUL || id === B.BROTE_PINO) { if (!esSueloBrote(abajo)) return false; agricultura.registrar(x, y, z); }
@@ -423,7 +487,7 @@ export function crearMinado(ctx) {
         const o = apuntar();
         estado.objetivo = o;
         marco.visible = !!o;
-        if (o) marco.position.set(o.x + 0.5, o.y + 0.5, o.z + 0.5);
+        if (o) { ajustarForma(o); marco.position.set(o.x, o.y, o.z); }
         estado.pausa = Math.max(0, estado.pausa - dt);
 
         // Romper
@@ -442,7 +506,7 @@ export function crearMinado(ctx) {
         } else if (!estado.izquierdo || !o) { estado.rompiendo = null; estado.progreso = 0; }
         grieta.visible = !!(estado.rompiendo && o && estado.progreso > 0);
         if (grieta.visible) {
-            grieta.position.set(o.x + 0.5, o.y + 0.5, o.z + 0.5);
+            grieta.position.set(o.x, o.y, o.z);
             grieta.material.map = grietas[Math.min(9, Math.floor(estado.progreso * 10))];
         }
 

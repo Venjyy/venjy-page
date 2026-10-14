@@ -1,6 +1,6 @@
 ---
 name: objetos-supervivencia
-description: Agrega objetos, recetas, íconos pintados, usos (clic derecho, tenerlo en la mano), objetos que se colocan como bloque de cajas (farol, cartel) y objetos con modelo 3D en la mano y en el cuerpo (guitarra, teclado, tambor) en el modo supervivencia de venjy-page (mundo/supervivencia/objetos.js, recetas.js, iconos.js, minado.js, usos-objetos.js, modelos-mano.js, main.js, texturas.js, voxeles.js). Úsala siempre que haya que crear un objeto nuevo, darle una receta, una función, un ícono o un modelo a uno que ya existe, o venderlo en una tienda. No sirve para bloques con forma de losa, escalera o valla con colisión propia: esos tocan colisión y van con Opus o Sonnet.
+description: Agrega objetos, recetas, íconos pintados, usos (clic derecho, tenerlo en la mano), objetos que se colocan como bloque de cajas (farol, cartel) y objetos con modelo 3D en la mano y en el cuerpo (guitarra, teclado, tambor) en el modo supervivencia de venjy-page (mundo/supervivencia/objetos.js, recetas.js, iconos.js, minado.js, usos-objetos.js, modelos-mano.js, main.js, texturas.js, voxeles.js). Úsala siempre que haya que crear un objeto nuevo, darle una receta, una función, un ícono o un modelo a uno que ya existe, o venderlo en una tienda. Los bloques con forma (losa, escalones, trampilla, valla de jardín) ya tienen su base en mundo/formas.js (§3d).
 ---
 
 # Objetos y recetas de la supervivencia
@@ -101,6 +101,14 @@ Los objetos normales se ven como su ícono extruido. Para uno con volumen:
 5. **Cómo verlo sin pelear con el puntero del juego**: una página temporal en la raíz del repo que importe
    `crearModelo` (`skin.js`), `crearFabrica` (`mano.js`) y `ponerObjeto` (`pose-jugador.js`), arme tres personas con
    el objeto y rinda con una cámara fija; abrirla con el servidor y capturar. Borrarla antes del commit.
+
+## 3d. Bloque con forma (losa, escalones, trampilla, valla)
+
+Todo sale de `mundo/formas.js`: las cajas por forma (`FORMAS_BASE`) y qué id usa cada una (`ID_FORMA`). Para uno nuevo:
+id(s) al final de `B` con `def(nombre, 'f', tile)` (tipo 8), la forma en `FORMAS_BASE` (y en el `enum` de
+`formas.schema.json` y la lista de `estudio/formas.js`), el id en `ID_FORMA`, la regla de colocar en `colocarForma`
+si tiene variantes, `bloque(...)` en `objetos.js` (las variantes con `suelta`) y un caso en `mundo/tests/formas.mjs`.
+La malla, el choque, el contorno, las grietas, el ícono y la mano lo toman solos.
 
 ## 4. Tienda y `/dar`
 

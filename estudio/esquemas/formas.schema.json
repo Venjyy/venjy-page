@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "formas.schema.json",
+  "title": "Formas de los bloques (mundo/datos/formas.json)",
+  "description": "Cajas de los bloques que no son un cubo entero (7f-2): losas, escalones, trampilla, vallas de jardín, farol y cartel (malla y choque), y la cama, la antorcha, las flores, las plantas y los cultivos (solo el contorno de selección, las grietas y el rayo). Cada caja va en 1/16 de bloque: `a` la esquina mínima y `b` la máxima [x, y, z]. Los escalones se dibujan con la parte alta al norte (−Z), la trampilla abierta pegada al lado norte y el brazo de la valla hacia el norte: el juego los gira. Una forma del JSON reemplaza todas las cajas de la del código (mundo/formas.js, FORMAS_BASE). Lo que falte usa el código. Se edita en /estudio/ → pestaña Formas y se aplica en vivo.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "formas": {
+      "type": "object",
+      "propertyNames": { "enum": ["losa", "losa_arriba", "escalones", "trampilla", "trampilla_arriba", "trampilla_abierta", "valla_poste", "valla_brazo", "farol", "cartel", "cama", "antorcha", "flor", "planta", "cultivo"] },
+      "additionalProperties": { "$ref": "#/$defs/forma" }
+    },
+    "paso": { "description": "Cuánto sube solo el jugador al caminar contra una losa o un escalón, en bloques (0 = hay que saltar; Minecraft 0,6).", "type": "number", "minimum": 0, "maximum": 1 },
+    "suavizado": { "description": "Qué tan rápido la cámara alcanza al jugador al subir un escalón, por segundo (más alto = más rápido; 0 = de golpe, sin suavizar).", "type": "number", "minimum": 0, "maximum": 60 },
+    "contorno": {
+      "description": "Líneas del bloque apuntado.",
+      "type": "object",
+      "properties": {
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "opacidad": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "grietas": {
+      "description": "Grietas al romper.",
+      "type": "object",
+      "properties": { "opacidad": { "type": "number", "minimum": 0, "maximum": 1 } },
+      "additionalProperties": false
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "forma": {
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "cajas": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/caja" } },
+        "altoChoque": { "description": "Solo vallas: lo que mide al chocar, en 1/16 (24 = 1,5 bloques).", "type": "number", "minimum": 1, "maximum": 32 }
+      },
+      "additionalProperties": false
+    },
+    "caja": {
+      "type": "object",
+      "properties": {
+        "a": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 16 }, "minItems": 3, "maxItems": 3 },
+        "b": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 16 }, "minItems": 3, "maxItems": 3 },
+        "lado": { "type": "string", "pattern": "^[a-z_]+$" },
+        "arriba": { "type": "string", "pattern": "^[a-z_]+$" },
+        "fondo": { "type": "string", "pattern": "^[a-z_]+$" },
+        "frente": { "type": "string", "pattern": "^[a-z_]+$" }
+      },
+      "required": ["a", "b"],
+      "additionalProperties": false
+    }
+  }
+}

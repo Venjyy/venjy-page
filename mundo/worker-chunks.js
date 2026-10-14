@@ -6,6 +6,7 @@
 // =========================================================
 import { generarDatos } from './mundo-datos.js';
 import { prepararTerreno, llenarChunk, mallarChunkCrudo, guardarEdicion, fijarAlto } from './voxeles.js';
+import { fijarFormas } from './formas.js';
 
 let terreno = null;
 
@@ -22,9 +23,12 @@ self.onmessage = e => {
     try {
         if (m.t === 'init') {
             if (m.alto) fijarAlto(m.alto);
+            if (m.formas) fijarFormas(m.formas); // 7f-2: formas.json (losas, escalones, vallas…)
             terreno = prepararTerreno(generarDatos(m.orient), { supervivencia: !!m.supervivencia });
             for (const [x, y, z, id] of m.ediciones || []) guardarEdicion(terreno, x, y, z, id);
             self.postMessage({ t: 'listo' });
+        } else if (m.t === 'formas') {
+            fijarFormas(m.d);
         } else if (m.t === 'ediciones' && terreno) {
             for (const [x, y, z, id] of m.lista) guardarEdicion(terreno, x, y, z, id);
         } else if (m.t === 'chunk' && terreno) {

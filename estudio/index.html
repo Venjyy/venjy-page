@@ -19,6 +19,7 @@
             <button class="pestana" type="button" data-pestana="mesa" data-seccion="juego" data-es="Mesa" data-en="Table">Mesa</button>
             <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
+            <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
         </nav>
@@ -290,6 +291,24 @@
                         <button id="ob-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="ob-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-formas" hidden>
+                <section class="panel">
+                    <h2 data-es="Formas de los bloques" data-en="Block shapes">Formas de los bloques</h2>
+                    <p class="mensaje" data-es="Cajas de losas, escalones, trampilla, vallas, farol y cartel (y el contorno de cama, antorcha y plantas), en 1/16 de bloque. Ponte el bloque, colócalo y mueve los números: el mundo se vuelve a dibujar al instante. Guardar escribe mundo/datos/formas.json." data-en="Boxes of slabs, stairs, trapdoor, fences, lantern and sign (and the outline of bed, torch and plants), in 1/16 of a block. Take the block, place it and move the numbers: the world redraws at once. Save writes mundo/datos/formas.json.">Cajas de losas, escalones, trampilla, vallas, farol y cartel (y el contorno de cama, antorcha y plantas), en 1/16 de bloque. Ponte el bloque, colócalo y mueve los números: el mundo se vuelve a dibujar al instante. Guardar escribe mundo/datos/formas.json.</p>
+                    <div class="fila-botones">
+                        <select id="fo-elegir" aria-label="Forma"></select>
+                        <button id="fo-mano" class="boton chico" type="button" data-es="Darme el bloque" data-en="Give me the block">Darme el bloque</button>
+                    </div>
+                </section>
+                <div id="fo-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="fo-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="fo-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="fo-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>

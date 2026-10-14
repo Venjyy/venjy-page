@@ -587,6 +587,7 @@ async function arrancar(guardado, cx = null) {
 
     const cielo = crearCielo(scene, terreno.BW, terreno.BD, materiales);
     const mundo = new MundoVoxel(scene, terreno, materiales, ajustes.distancia);
+    mundo.aplicarFormas(await cargarDatos('formas')); // 7f-2: losas, escalones, vallas… (pestaña Formas del Estudio)
     const jugador = new Jugador(camara, mundo, lienzo, { x: terreno.BW, z: terreno.BD });
     jugador.sinVuelo = true;
     jugador.vCaminar = 4.6;       // 7a: más rápido que el creativo (4,3); Minecraft camina a 4,32

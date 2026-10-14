@@ -6,6 +6,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { TIPO, B } from './texturas.js';
 import { ALTO, CHUNK, NIVEL_AGUA, ALTURA_CAMA } from './voxeles.js';
+import { chocaFormas, topeFormas, pisoFormas, ajustesFormas } from './formas.js';
 
 const ANCHO = 0.6, ALTURA = 1.8, OJOS = 1.62;
 const GRAVEDAD = 32, SALTO = 9;
@@ -139,8 +140,14 @@ export class Jugador {
         return cama;
     }
 
-    // ¿Colisiona la caja del jugador en la posición dada?
+    // ¿Colisiona la caja del jugador en la posición dada? Cubos enteros y, aparte, las cajas de los bloques con forma
+    // (losas, escalones, vallas: formas.js). En el creativo no hay bloques con forma: todo sigue igual.
     choca(px, py, pz) {
+        const r = ANCHO / 2;
+        return this.chocaBloques(px, py, pz) || chocaFormas(this.mundo, px - r, py, pz - r, px + r, py + ALTURA, pz + r);
+    }
+
+    chocaBloques(px, py, pz) {
         const r = ANCHO / 2;
         for (let y = Math.floor(py); y <= Math.floor(py + ALTURA - 0.001); y++) {
             for (let z = Math.floor(pz - r); z <= Math.floor(pz + r); z++) {
@@ -160,21 +167,49 @@ export class Jugador {
         // Volando y atrapado dentro de bloques (un chunk se cargó encima): se sale libremente
         if (this.vuela && this.choca(p.x, p.y, p.z) && p.y >= 0) { p.x += dx; p.y += dy; p.z += dz; return; }
         const borde = this.agachado && this.enSuelo && this.choca(p.x, p.y - 0.5, p.z);
-        if (!this.choca(p.x + dx, p.y, p.z) && !(borde && !this.choca(p.x + dx, p.y - 0.5, p.z))) p.x += dx; else { this.vel.x = 0; if (dx) this.chocoLado = true; }
-        if (!this.choca(p.x, p.y, p.z + dz) && !(borde && !this.choca(p.x, p.y - 0.5, p.z + dz))) p.z += dz; else { this.vel.z = 0; if (dz) this.chocoLado = true; }
+        if (!this.choca(p.x + dx, p.y, p.z) && !(borde && !this.choca(p.x + dx, p.y - 0.5, p.z))) p.x += dx;
+        else if (!this.subirPaso(dx, 0)) { this.vel.x = 0; if (dx) this.chocoLado = true; }
+        if (!this.choca(p.x, p.y, p.z + dz) && !(borde && !this.choca(p.x, p.y - 0.5, p.z + dz))) p.z += dz;
+        else if (!this.subirPaso(0, dz)) { this.vel.z = 0; if (dz) this.chocoLado = true; }
         const antes = this.enSuelo;
         this.enSuelo = false;
         if (!this.choca(p.x, p.y + dy, p.z)) p.y += dy;
         else {
+            const r = ANCHO / 2;
+            const bloques = this.chocaBloques(p.x, p.y + dy, p.z);
             if (dy < 0) {
                 this.enSuelo = true;
-                p.y = Math.floor(p.y + dy) + 1; // apoyar sobre el bloque
-                if (this.soloCamasEn(p.x, p.y - 1, p.z)) p.y -= 1 - ALTURA_CAMA; // ...o sobre la tapa de la cama (9/16)
+                let y = -Infinity;
+                if (bloques) {
+                    y = Math.floor(p.y + dy) + 1; // apoyar sobre el bloque
+                    if (this.soloCamasEn(p.x, y - 1, p.z)) y -= 1 - ALTURA_CAMA; // ...o sobre la tapa de la cama (9/16)
+                }
+                // ...o sobre la cara de arriba de una losa, un escalón o una valla
+                y = Math.max(y, topeFormas(this.mundo, p.x - r, p.z - r, p.x + r, p.z + r, p.y + dy, p.y));
+                if (y > -Infinity) p.y = y;
                 if (!antes && this.yMaxAire !== null && this.alAterrizar) this.alAterrizar(this.yMaxAire - p.y);
                 this.yMaxAire = null;
-            } else p.y = Math.floor(p.y + ALTURA + dy) - ALTURA - 0.001;
+            } else {
+                let y = bloques ? Math.floor(p.y + ALTURA + dy) - ALTURA - 0.001 : Infinity;
+                const piso = pisoFormas(this.mundo, p.x - r, p.z - r, p.x + r, p.z + r, p.y + ALTURA, p.y + ALTURA + dy);
+                if (piso < Infinity) y = Math.min(y, piso - ALTURA - 0.001);
+                if (y < Infinity) p.y = y;
+            }
             this.vel.y = 0;
         }
+    }
+
+    // Caminando contra una losa o un escalón: sube solo hasta `paso` bloques (formas.json; Minecraft 0,6), si arriba cabe
+    subirPaso(dx, dz) {
+        const paso = ajustesFormas().paso;
+        if (!paso || !this.enSuelo || this.vuela || this.agachado || (!dx && !dz)) return false;
+        const p = this.pos, r = ANCHO / 2, x = p.x + dx, z = p.z + dz;
+        const tope = topeFormas(this.mundo, x - r, z - r, x + r, z + r, p.y, p.y + paso);
+        if (!(tope > p.y) || this.choca(x, tope, z)) return false;
+        // la cámara se queda atrás y sube suave (actualizar la acerca con `suavizado` de formas.json)
+        this.subida = Math.max(-1, (this.subida || 0) - (tope - p.y));
+        p.set(x, tope, z);
+        return true;
     }
 
     // ¿Está tocando una escalera de mano? (a la altura de los pies o del cuerpo)
@@ -297,7 +332,12 @@ export class Jugador {
         if (this.pos.y > TECHO) this.pos.y = TECHO;
 
         this.ojos += ((this.agachado ? OJOS - BAJA_OJOS_AGACHADO : OJOS) - this.ojos) * (1 - Math.exp(-18 * dt));
-        this.camara.position.set(this.pos.x, this.pos.y + this.ojos, this.pos.z);
+        // Subir un escalón: la cámara alcanza al cuerpo de a poco (formas.json → suavizado; 0 = de golpe)
+        if (this.subida) {
+            const k = ajustesFormas().suavizado;
+            this.subida = k > 0 && Math.abs(this.subida) > 0.002 ? this.subida * Math.exp(-k * dt) : 0;
+        }
+        this.camara.position.set(this.pos.x, this.pos.y + this.ojos + (this.subida || 0), this.pos.z);
         this.camara.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
     }
 }

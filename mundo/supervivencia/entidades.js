@@ -12,6 +12,7 @@ import { BLOQUES, TIPO, TAM, COLS, FILAS } from '../texturas.js';
 import { crearAtlasObjetos, uvObjeto, alCambiarIconos } from './iconos.js';
 import { sonidos } from './sonidos.js';
 import { marcar } from '../voxeles.js';
+import { cajasDe, esValla } from '../formas.js';
 
 const VIDA_OBJETO = 300;
 const MAX_OBJETOS = 400;
@@ -50,6 +51,45 @@ export function geometriaCubo(id) {
     return g;
 }
 
+// 7f-2: un bloque con forma (losa, escalones, trampilla, valla) en chico, con sus cajas y la textura proyectada como
+// en el mundo. La valla se muestra con brazos hacia los dos lados. Mismo tamaño que geometriaCubo (0,25).
+// Vecino para el ícono, la mano y lo tirado: solo la valla conecta (de este a oeste), el resto va suelto
+export const vecinoMuestra = id => (dx => (esValla(id) && dx !== 0 ? id : 0));
+const geomFormas = new Map();
+export function geometriaForma(id) {
+    if (geomFormas.has(id)) return geomFormas.get(id);
+    const d = BLOQUES[id];
+    const cajas = cajasDe(id, vecinoMuestra(id)) || [{ x0: 0, y0: 0, z0: 0, x1: 1, y1: 1, z1: 1 }];
+    const p = [], uv = [], col = [], idx = [];
+    const sombra = [0.6, 0.6, 1, 0.5, 0.8, 0.8].map(s => Math.pow(s, 2.2)); // +x -x +y -y +z -z
+    for (const c of cajas) {
+        const a = [c.x0, c.y0, c.z0], b = [c.x1, c.y1, c.z1];
+        for (let eje = 0; eje < 3; eje++) for (const lado of [1, 0]) {
+            const u = (eje + 1) % 3, v = (eje + 2) % 3, base = p.length / 3;
+            const cara = eje * 2 + (lado ? 0 : 1);
+            const tile = eje === 1 ? (lado ? d.top : d.fondo) : d.lado;
+            for (const [i, j] of [[0, 0], [1, 0], [1, 1], [0, 1]]) {
+                const q = [0, 0, 0];
+                q[eje] = lado ? b[eje] : a[eje]; q[u] = i ? b[u] : a[u]; q[v] = j ? b[v] : a[v];
+                p.push((q[0] - 0.5) * 0.25, (q[1] - 0.5) * 0.25, (q[2] - 0.5) * 0.25);
+                // como en el mundo: los lados muestran la altura (v = y) y la tapa el plano x-z
+                const [tu, tv] = eje === 1 ? uvTile(tile, q[0], 1 - q[2]) : eje === 0 ? uvTile(tile, q[2], q[1]) : uvTile(tile, q[0], q[1]);
+                uv.push(tu, tv);
+                col.push(sombra[cara], sombra[cara], sombra[cara]);
+            }
+            if (lado) idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+            else idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
+        }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx);
+    geomFormas.set(id, g);
+    return g;
+}
+
 // Plano de un objeto (o de una planta) con su celda del atlas
 const geomPlanos = new Map();
 function geometriaPlano(id) {
@@ -77,11 +117,11 @@ export function crearEntidades({ scene, mundo, jugador, inventario, atlas, tinte
     let relojJuntar = 0, contador = 0;
     const tinte = new THREE.Color();
 
-    const esCubo = id => id < 256 && BLOQUES[id] && (TIPO[id] === 1 || TIPO[id] === 2 || TIPO[id] === 5);
+    const esCubo = id => id < 256 && BLOQUES[id] && (TIPO[id] === 1 || TIPO[id] === 2 || TIPO[id] === 5 || TIPO[id] === 8);
 
     function crearMalla(id) {
         let m;
-        if (esCubo(id)) m = new THREE.Mesh(geometriaCubo(id), new THREE.MeshBasicMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 }));
+        if (esCubo(id)) m = new THREE.Mesh(TIPO[id] === 8 ? geometriaForma(id) : geometriaCubo(id), new THREE.MeshBasicMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 }));
         else m = new THREE.Mesh(geometriaPlano(id), new THREE.MeshBasicMaterial({ map: id >= 256 ? texObjetos : atlas, alphaTest: 0.5, side: THREE.DoubleSide }));
         scene.add(m);
         return m;
