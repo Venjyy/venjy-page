@@ -661,16 +661,57 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
     }
     function estrellas(x, y, z) { for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; emitir(x, y + 0.6, z, Math.cos(a) * 3, 3 + Math.random() * 2, Math.sin(a) * 3, i % 2 ? '#ffff66' : '#ffffff', 0.6, 0.2, 9); } }
     function confeti(x, y, z) { const c = ['#ff5a5a', '#ffd040', '#5ad0ff', '#7aff7a', '#ff7ae0']; for (let i = 0; i < 60; i++) emitir(x + (Math.random() - 0.5) * 6, y + 6 + Math.random() * 3, z + (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3, Math.random() * 2, (Math.random() - 0.5) * 3, c[i % c.length], 3, 0.25, 2); }
-    // Lona: brazo arriba en la cuenta y bandera al bajar; agita en la meta
+    // Lona en su caja. Pose de fondo según la fase (`animarLona` cada cuadro: 'quieta', 'arriba' en la cuenta, 'celebra'
+    // cuando llega tu gata y en el podio) y gestos sueltos encima (`gestoLona`: 'largada' baja la bandera de golpe al
+    // largar, 'aspiradora' apunta con los dos brazos a la pista). Valores en carrera.json → lona.
+    // Canales: brazos (bDx, bDz, bIx, bIz), cabeza (cy), torso inclinado (inc) y saltito de todo el cuerpo (y).
+    const suave = u => u * u * (3 - 2 * u);
+    const tramo = (u, a, b) => lim((u - a) / (b - a), 0, 1);
+    const envolvente = (t, a, b, rampa) => suave(Math.min(tramo(t, a, a + rampa), 1 - tramo(t, b - rampa, b)));
+    const lonaCur = { bDx: -0.25, bDz: 0, bIx: 0, bIz: 0, cy: 0.3, inc: 0, y: 0 };
+    let lonaGesto = null, lonaT = null, lonaY0 = lonaM ? lonaM.g.position.y : 0;
+    function poseLona(modo, t, LO) {
+        if (modo === 'arriba') return { bDx: -2.85, bDz: -0.1, bIx: -0.15, bIz: 0.3, cy: 0.15 + Math.sin(t * 0.9) * 0.08, inc: 0, y: 0 };
+        if (modo === 'celebra' || modo === 'agita') {
+            const f = t * LO.ritmo, s2 = Math.sin(f * 2);
+            return { bDx: -2.75 + s2 * 0.3, bDz: -0.25 + s2 * 0.2, bIx: -2.75 - s2 * 0.3, bIz: 0.25 + s2 * 0.2, cy: Math.sin(f * 0.5) * 0.4, inc: -0.08, y: Math.abs(Math.sin(f)) * LO.salto };
+        }
+        return { bDx: -0.25 + Math.sin(t * 1.3) * 0.04, bDz: 0, bIx: -0.05, bIz: 0, cy: 0.3 + Math.sin(t * 0.7) * 0.2, inc: Math.sin(t * 1.3) * 0.02, y: 0 };
+    }
+    function gestoLona(clave, t) { if (lonaM) lonaGesto = { clave, t0: t }; }
     function animarLona(modo, t) {
         if (!lonaM || !lonaM.brazoD) return;
-        const b = lonaM.brazoD;
-        if (modo === 'arriba') { b.rotation.x = -2.9; b.rotation.z = 0; }
-        else if (modo === 'baja') { b.rotation.x = -1.2; }
-        else if (modo === 'agita') { b.rotation.x = -2.7 + Math.sin(t * 10) * 0.35; b.rotation.z = Math.sin(t * 10) * 0.25; }
-        else { b.rotation.x = -0.2; b.rotation.z = 0; }
-        if (lonaM.bandera) lonaM.bandera.rotation.x = Math.sin(t * 8) * 0.2;
-        if (lonaM.cuello) lonaM.cuello.rotation.y = 0.3 + Math.sin(t * 0.7) * 0.2;
+        const LO = R.lona || {}, dt = lonaT === null ? 0 : lim(t - lonaT, 0, 0.1); lonaT = t;
+        if (modo === 'baja') { gestoLona('largada', t); modo = 'quieta'; } // (nombre antiguo)
+        const meta = poseLona(modo, t, LO);
+        let rapidez = LO.rapidez || 12;
+        if (lonaGesto) {
+            const u = t - lonaGesto.t0;
+            if (lonaGesto.clave === 'largada') {
+                // La bandera baja de golpe (con un pequeño rebote), el cuerpo se va adelante y vuelve a la pose de fondo
+                const D = LO.largada || 1.2, w = 1 - suave(tramo(u, D * 0.6, D));
+                const g2 = { bDx: -2.85 + 2.35 * suave(tramo(u, 0, 0.16)) - 0.25 * Math.sin(Math.PI * tramo(u, 0.12, 0.4)), bDz: 0.1, bIx: -0.4, bIz: 0.15, cy: 0.05, inc: 0.22 * envolvente(u, 0, D * 0.7, 0.12), y: 0.12 * Math.sin(Math.PI * tramo(u, 0, 0.3)) };
+                for (const k in meta) meta[k] += (g2[k] - meta[k]) * w;
+                rapidez *= 2.2;
+                if (u > D) lonaGesto = null;
+            } else if (lonaGesto.clave === 'aspiradora') {
+                // Apunta a la pista con los dos brazos juntos, como si empujara la aspiradora; tiembla con el motor
+                const D = LO.aspiradora || 1.4, w = envolvente(u, 0, D, Math.min(0.3, D / 3));
+                const g2 = { bDx: -1.45, bDz: 0.3, bIx: -1.45, bIz: -0.3, cy: 0, inc: 0.12 + Math.sin(t * 35) * 0.03, y: Math.abs(Math.sin(t * 30)) * 0.03 };
+                for (const k in meta) meta[k] += (g2[k] - meta[k]) * w;
+                if (u > D) lonaGesto = null;
+            } else lonaGesto = null;
+        }
+        const k = dt ? Math.min(1, dt * rapidez) : 1;
+        for (const c2 in lonaCur) lonaCur[c2] += (meta[c2] - lonaCur[c2]) * k;
+        const C = lonaCur;
+        lonaM.brazoD.rotation.set(C.bDx, 0, C.bDz);
+        if (lonaM.brazoI) lonaM.brazoI.rotation.set(C.bIx, 0, C.bIz);
+        if (lonaM.cuello) lonaM.cuello.rotation.y = C.cy;
+        if (lonaM.cuerpo) lonaM.cuerpo.rotation.x = C.inc;
+        lonaM.g.position.y = lonaY0 + C.y;
+        const fiesta = modo === 'celebra' || modo === 'agita';
+        if (lonaM.bandera) lonaM.bandera.rotation.x = Math.sin(t * (fiesta ? 14 : 8)) * (fiesta ? 0.35 : 0.2);
     }
     // Podio: las tres primeras en sus escalones mirando al frente
     function ponerPodio(orden) {
@@ -688,7 +729,7 @@ export function crearEscenaCarrera({ R, pista, gatasMundo, lona, idioma = 'es' }
 
     tinte.aplicar(new THREE.Color(1, 1, 1));
     return {
-        scene, gatas, podio, emitir, estrellas, confeti, dibujar, animarLona, ponerPodio, actualizarParticulas, lanzarAspiradora,
+        scene, gatas, podio, emitir, estrellas, confeti, dibujar, animarLona, gestoLona, ponerPodio, actualizarParticulas, lanzarAspiradora,
         get lona() { return lonaM; },
         destruir() {
             scene.traverse(o => { if (o.material) for (const m of [].concat(o.material)) { if (m.map && m.map.isCanvasTexture === false) m.map.dispose(); } });

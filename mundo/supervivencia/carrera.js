@@ -701,16 +701,36 @@ export function crearCarrera(ctx) {
         const alto = Math.min(c.vista ? 70 : 36, abierto ? 200 : S.alto - 3); // (bajo el techo de la sala)
         cam.position.set(S.x + Math.sin(a) * S.ancho * 0.42, alto, S.z + Math.cos(a) * S.fondo * 0.4); cam.lookAt(S.x, 2, S.z); cam.fov = 62; cam.updateProjectionMatrix();
     }
+    // Planos de cine de la llegada (valores en carrera.json → camara). El podio es el mueble 'podio' de cada pista.
+    const suave = u => u * u * (3 - 2 * u), tramo = (u, a, b) => Math.max(0, Math.min(1, (u - a) / (b - a || 1)));
     function camaraPodio() {
-        const p = esc.podio.position, a = esc.podio.rotation.y + Math.sin(c.tFinal * 0.35) * 0.45;
-        cam.position.set(p.x + Math.sin(a) * 10, 4.2, p.z + Math.cos(a) * 10); cam.lookAt(p.x, 2.4, p.z); cam.fov = 60; cam.updateProjectionMatrix();
+        const C = c.R.camara, p = esc.podio.position, u = c.tFinal;
+        const k = suave(tramo(u, 0, C.podioEntra)), d = C.podioDist * (C.podioDesde + (1 - C.podioDesde) * k);
+        const a = esc.podio.rotation.y + Math.sin(u * C.podioRitmo) * C.podioVaiven * k;
+        const S = c.R.sala, techo = ['patio', 'techo'].includes(c.R.escenario && c.R.escenario.tipo) ? 1e9 : S.alto - 2;
+        cam.position.set(p.x + Math.sin(a) * d, Math.min(techo, C.podioAlto + (d - C.podioDist) * 0.4), p.z + Math.cos(a) * d);
+        cam.lookAt(p.x, C.podioMira, p.z); cam.fov = C.podioFov; cam.updateProjectionMatrix();
     }
+    // Llegada: la cámara pasa de la de seguir a rodear a tu gata; a los `lonaEn` s, corte a Lona celebrando en su caja
     function camaraMeta(dt) {
-        const g = c.gs[c.yo]; c.orbita = (c.orbita || 0) + dt * 0.8;
+        const C = c.R.camara, g = c.gs[c.yo], u = c.tc - c.tcMeta, L2 = esc.lona;
+        if (L2 && C.lonaEn > 0 && u >= C.lonaEn && u < C.lonaEn + C.lonaSeg) {
+            const p = L2.g.position, ry = L2.g.rotation.y, v = tramo(u, C.lonaEn, C.lonaEn + C.lonaSeg);
+            const d = C.lonaDist * (1.15 - 0.15 * suave(v)), lado = C.lonaLado; // se acerca un poco, de 3/4
+            cam.position.set(p.x + Math.sin(ry + lado) * d, p.y + C.lonaAlto + 0.6, p.z + Math.cos(ry + lado) * d);
+            cam.lookAt(p.x, p.y + C.lonaAlto, p.z); cam.fov = C.metaFov; cam.updateProjectionMatrix();
+            return;
+        }
+        c.orbita = (c.orbita || 0) + dt * C.metaGiro;
+        const k = suave(tramo(u, 0, C.metaAcerca));
+        const d = C.distancia + (C.metaDist - C.distancia) * k, h = C.alto + (C.metaAlto - C.alto) * k;
         const a = g.yaw + Math.PI + c.orbita;
-        cam.position.set(g.x + Math.sin(a) * 5, g.y + 2.2, g.z + Math.cos(a) * 5);
+        cam.position.set(g.x + Math.sin(a) * d, g.y + h, g.z + Math.cos(a) * d);
         cam.lookAt(g.x, g.y + 0.6, g.z);
+        cam.fov += (C.metaFov - cam.fov) * Math.min(1, dt * 3); cam.updateProjectionMatrix();
     }
+    // Tu llegada (o la de todos los jugadores, si miras): empiezan los planos de cine
+    function llegar() { c.fase = 'fin'; c.tMeta = c.t; c.tcMeta = c.tc; c.orbita = 0; esc.animarLona('celebra', c.tc); }
 
     // ---------- HUD ----------
     let firmaTabla = '';
@@ -780,7 +800,7 @@ export function crearCarrera(ctx) {
                 c.fase = 'corre'; c.t = 0;
                 luces.forEach(b => { b.className = 'verde'; }); sfx.luz(true);
                 aviso(tx(TXT_CARRERA.ya), 0.8);
-                esc.animarLona('baja', c.tc);
+                esc.gestoLona('largada', c.tc);
                 const g = c.gs[c.yo];
                 if (!c.espectador && c.acelCuenta > 0.1 && c.acelCuenta < 0.8) { g.turbo = M.fisicaDe(R, g).turbos[1]; aviso(tx(TXT_CARRERA.turbo), 1); sfx.turbo(); }
                 const yo = c;
@@ -790,12 +810,12 @@ export function crearCarrera(ctx) {
         }
         if (c.fase !== 'corre' && c.fase !== 'fin') return;
         simular(dt);
-        if (c.fase === 'fin') esc.animarLona('agita', c.tc);
-        // Cierre: 5 s después de tu llegada (las que faltan quedan con el puesto que llevan) o al llegar todas.
+        esc.animarLona(c.fase === 'fin' ? 'celebra' : 'quieta', c.tc);
+        // Cierre: `camara.alPodio` s (reales) después de tu llegada (las que faltan quedan con el puesto que llevan) o al llegar todas.
         // Mirando: cuando llegaron todos los jugadores
         const humanasListas = c.on && c.gs.every((g, i) => c.on.dueno[i] === null || g.fin !== null);
-        if (c.fase === 'fin' && (c.t - c.tMeta > 5 || c.gs.every(g => g.fin !== null))) terminarCarrera();
-        else if (c.fase === 'corre' && (c.t > R.tope || (c.espectador && humanasListas))) { c.fase = 'fin'; c.tMeta = c.t; }
+        if (c.fase === 'fin' && (c.tc - c.tcMeta > R.camara.alPodio || c.gs.every(g => g.fin !== null))) terminarCarrera();
+        else if (c.fase === 'corre' && (c.t > R.tope || (c.espectador && humanasListas))) llegar();
     }
     // Un paso de la carrera: física de las gatas que simula este equipo (todas si corres solo), objetos y red
     function simular(dt) {
@@ -827,7 +847,7 @@ export function crearCarrera(ctx) {
                 else if (e === 'aterriza') { sfx.aterriza(); c.sacudir = Math.max(c.sacudir, 0.1); }
                 else if (e === 'cae') { sfx.cae(); aviso(tx(TXT_CARRERA.cae), 1.6); }
                 else if (e === 'vuelta') { sfx.vuelta(); if (M.vueltaDe(g, R, P) === R.vueltas) { c.ultima = true; aviso(tx(TXT_CARRERA.ultima), 2); } }
-                else if (e === 'meta') { sfx.meta(); aviso(tx(TXT_CARRERA.meta), 2.2); c.fase = 'fin'; c.tMeta = c.t; esc.confeti(g.x, g.y, g.z); if (on) red.meta(g.fin); }
+                else if (e === 'meta') { sfx.meta(); aviso(tx(TXT_CARRERA.meta), 2.2); llegar(); esc.confeti(g.x, g.y, g.z); if (on) red.meta(g.fin); }
             }
         }
         // Objetos: cajas, ruleta, lo que se usa y a quién le pega (con otros, lo decide el líder y lo reparte)
@@ -848,7 +868,7 @@ export function crearCarrera(ctx) {
         if (!g) return;
         if (e.e === 'usa' && e.o === 'aspiradora') {
             const delante = c.gs.filter(x => x.av > g.av && x.fin === null).reduce((a, x) => Math.max(a, x.av), g.av);
-            esc.lanzarAspiradora(g.av, delante + 8, R.objetos.aspiradora.segundos * 0.7);
+            esc.lanzarAspiradora(g.av, delante + 8, R.objetos.aspiradora.segundos * 0.7); esc.gestoLona('aspiradora', c.tc);
             sfx.aspiradora(); if (!mia) aviso(tx(TXT_CARRERA.aspiradora), 1.4);
         }
         if (e.e === 'usa' && e.o === 'hierba') for (let k = 0; k < 18; k++) esc.emitir(g.x, g.y + 0.8, g.z, (Math.random() - 0.5) * 8, 1 + Math.random() * 2, (Math.random() - 0.5) * 8, k % 2 ? '#5ac85a' : '#a8f07a', 0.8, 0.22, 2);
@@ -883,13 +903,15 @@ export function crearCarrera(ctx) {
         }
         if (c.fase === 'intro') { esc.dibujar(c.gs, dt, c.tc); esc.animarLona('quieta', c.tc); camaraIntro(); if (c.tc >= c.R.intro) empezarCuenta(); return; }
         if (c.espectador && c.fase !== 'final') mirarEntrada();
+        // Cámara lenta al cruzar la meta (solo sin otros jugadores: con otros la carrera sigue a su ritmo)
+        if (c.fase === 'fin' && !c.on && c.tc - c.tcMeta < c.R.camara.lentaSeg) dt *= Math.max(0.05, Math.min(1, c.R.camara.lenta));
         paso(dt);
         if (!c) return;
         if (c.fase === 'final') {
             // Con otros, la carrera sigue por detrás hasta que lleguen todos (el líder sigue con la IA)
             if (c.on && c.tFinal > 0) simular(dt); // (el cuadro en que llegaste ya simuló)
             if (c.avisoHasta && c.tc > c.avisoHasta) { avisoEl.classList.remove('visible'); c.avisoHasta = 0; }
-            c.tFinal += dt; esc.actualizarParticulas(dt); esc.animarLona('agita', c.tc); camaraPodio(); return;
+            c.tFinal += dt; esc.actualizarParticulas(dt); esc.animarLona('celebra', c.tc); camaraPodio(); return;
         }
         esc.dibujar(c.gs, dt, c.tc, c.W);
         if (c.fase === 'fin') camaraMeta(dt); else camaraSeguir(dt);

@@ -220,7 +220,19 @@ export const CARRERA = {
         hierba: { nombre: { es: 'Hierba gatera', en: 'Catnip' }, primera: 0.4, ultima: 2, alcance: 30, segundos: 3.5, color: '#5ac85a' },
         aspiradora: { nombre: { es: 'Aspiradora de Lona', en: 'Lona\'s vacuum' }, primera: 0, ultima: 1.4, segundos: 1.6, freno: 0.55, salto: 0.7, color: '#c8384a' }
     },
-    camara: { distancia: 6, alto: 2.5, mira: 6, fov: 72, fovTurbo: 90, suave: 8 },
+    // Cámara: detrás de tu gata; al cruzar la meta, planos de cine (carrera.js): cámara lenta (solo sin otros jugadores),
+    // la cámara se acerca y rodea a tu gata, corte a Lona celebrando en su caja, otra vez tu gata y, a los `alPodio` s, el podio
+    camara: {
+        distancia: 6, alto: 2.5, mira: 6, fov: 72, fovTurbo: 90, suave: 8,
+        alPodio: 5,                                   // segundos desde tu llegada hasta el podio (si no llegaron todas antes)
+        lenta: 0.35, lentaSeg: 1,                     // velocidad de la cámara lenta al cruzar (1 = sin) y cuántos segundos reales
+        metaDist: 4.2, metaAlto: 1.6, metaGiro: 0.8, metaAcerca: 1.2, metaFov: 60, // rodea a tu gata (giro en rad/s)
+        lonaEn: 1.8, lonaSeg: 1.6, lonaDist: 4.5, lonaAlto: 1.1, lonaLado: -0.4, // corte a Lona (lonaEn = 0: sin corte; lado en rad)
+        podioDist: 10, podioAlto: 4.2, podioMira: 2.4, podioFov: 60,               // el podio
+        podioEntra: 2, podioDesde: 2.2, podioVaiven: 0.45, podioRitmo: 0.35        // entra desde lejos (× distancia) y se mece
+    },
+    // Gestos de Lona en su caja (carrera-escena.js): bandera al largar, aspiradora y celebrar cuando llega tu gata
+    lona: { largada: 1.2, aspiradora: 1.4, salto: 0.35, ritmo: 7, rapidez: 12 },
     tactil: { autoAcelerar: 1 },
     // Varios jugadores (carrera-red.js): veces por segundo que cada corredor manda su gata y el líder la IA y los objetos
     red: { envios: 12, paquetes: 10, hurra: 0.5 }, // hurra: segundos entre dos hurras del público
