@@ -13,9 +13,20 @@
     <link rel="preload" href="font/pixelcraft.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="mundo/mundo.css">
     <link rel="stylesheet" href="mundo/supervivencia/supervivencia.css">
+    <!-- Sin la presentación «Venjy presenta» con ?estudio, ?plano (vista de un plano del fondo) o al volver de «seguir jugando» -->
+    <script>try { if (/[?&](estudio|plano)(=|&|$)/.test(location.search) || sessionStorage.getItem('venjy-seguir')) document.documentElement.setAttribute('data-sin-presentacion', ''); } catch (e) { /* sin almacenamiento */ }</script>
 </head>
 <body class="supervivencia">
     <canvas id="juego"></canvas>
+    <!-- Velo negro de los fundidos del fondo de cine detrás del menú (fondo-menu.js) -->
+    <div id="fondo-velo" class="fondo-velo" hidden></div>
+
+    <!-- Presentación al abrir la página: logo, nombre y lema (mundo/datos/inicio.json → presentacion; presentacion.js) -->
+    <div id="presentacion" class="presentacion" role="img" aria-label="VENJY presenta">
+        <canvas id="pres-logo" class="pres-logo" width="32" height="32"></canvas>
+        <p id="pres-nombre" class="pres-nombre" data-es="VENJY" data-en="VENJY">VENJY</p>
+        <p id="pres-lema" class="pres-lema" data-es="presenta" data-en="presents">presenta</p>
+    </div>
 
     <div id="hud" hidden>
         <div class="mira" aria-hidden="true"></div>
@@ -259,6 +270,7 @@
     <!-- Estudio (fase 4): TransformControls importa 'three' sin ruta; este mapa lo manda al mismo módulo que usa el juego (solo cambia algo con ?estudio) -->
     <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
     <script>if (/[?&]estudio=tactil(&|$)/.test(location.search)) window.ontouchstart = null;</script>
+    <script type="module" src="mundo/supervivencia/presentacion.js"></script>
     <script type="module" src="mundo/supervivencia/main.js"></script>
     <script type="module">if (new URLSearchParams(location.search).has('estudio')) import('./estudio/puente-juego.js').catch(e => console.warn('[estudio] sin puente:', e.message));</script>
 </body>

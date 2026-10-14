@@ -893,3 +893,26 @@ body.en-cine .consola-ayuda { display: none; }
 .carga-barra i { display: block; height: 100%; width: 0; background: var(--carga-barra, #5aa532); box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.25), inset 0 4px 0 rgb(255 255 255 / 0.25); transition: width 0.25s steps(8); }
 .carga-etapa { margin: 10px 0 26px; font-size: 1rem; min-height: 1.2em; }
 .carga-consejo { margin: 0; font-size: 1.05rem; line-height: 1.5; min-height: 3em; }
+
+/* Presentación «Venjy presenta» al abrir la página (presentacion.js; colores y tiempos: inicio.json → presentacion) */
+.presentacion {
+    position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 16px; background: var(--pres-fondo, #14100c); color: var(--pres-texto, #fff); text-align: center;
+    transition: opacity var(--pres-salida, 0.6s) linear; cursor: default; user-select: none;
+}
+html[data-sin-presentacion] .presentacion { display: none; }
+.presentacion.saliendo { opacity: 0; pointer-events: none; }
+.pres-logo { width: 192px; height: 192px; max-width: 60vw; max-height: 40vh; object-fit: contain; image-rendering: pixelated; animation: pres-cae var(--pres-entrada, 0.5s) steps(6) both; }
+.pres-nombre {
+    margin: 10px 0 0; font-weight: normal; line-height: 1; letter-spacing: 0.12em; font-size: clamp(2.6rem, 11vw, 5rem);
+    text-shadow: 0 4px 0 var(--pres-sombra, #3a2a1c), 0 8px 0 #000;
+    animation: pres-sube var(--pres-entrada, 0.5s) steps(5) calc(var(--pres-entrada, 0.5s) * 0.8) both;
+}
+.pres-lema { margin: 0; font-size: clamp(0.9rem, 3.4vw, 1.25rem); letter-spacing: 0.3em; color: var(--pres-lema, #c6c6c6); text-shadow: 2px 2px 0 #000; animation: pres-sube var(--pres-entrada, 0.5s) steps(5) calc(var(--pres-entrada, 0.5s) * 1.6) both; }
+@keyframes pres-cae { 0% { transform: translateY(-48px); opacity: 0; } 70% { transform: translateY(6px); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes pres-sube { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pres-logo, .pres-nombre, .pres-lema { animation: none; } }
+
+/* Fondo de cine detrás del menú (fondo-menu.js): velo de los fundidos y velo del menú (inicio.json → fondo.oscurecer) */
+.fondo-velo { position: fixed; inset: 0; background: #000; pointer-events: none; }
+#inicio.con-fondo { background: rgb(0 0 0 / var(--fondo-oscurecer, 0.3)); }

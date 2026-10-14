@@ -635,6 +635,25 @@
             <h2 class="in-titulo" data-es="Consejos de la carga (sale uno al azar)" data-en="Loading tips (one at random)">Consejos de la carga (sale uno al azar)</h2>
             <div id="in-consejos" class="lista-textos"></div>
             <button id="in-c-agregar" class="boton chico" type="button" data-es="Agregar consejo" data-en="Add tip">Agregar consejo</button>
+            <h2 class="in-titulo" data-es="Presentación al abrir (vista previa; pinta el logo con el mouse)" data-en="Opening screen (preview; paint the logo with the mouse)">Presentación al abrir (vista previa; pinta el logo con el mouse)</h2>
+            <div id="in-p-vista" class="in-pres-vista" aria-label="Vista previa de la presentación">
+                <canvas id="in-p-logo" class="in-p-logo" width="32" height="32"></canvas>
+                <p id="in-p-nombre" class="in-p-nombre"></p>
+                <p id="in-p-lema" class="in-p-lema"></p>
+            </div>
+            <div class="fila-botones in-p-herramientas">
+                <span id="in-p-paleta" class="in-p-paleta" role="listbox" aria-label="Paleta del logo"></span>
+                <label class="campo"><span data-es="Color elegido" data-en="Selected color">Color elegido</span><input id="in-p-color" type="color"></label>
+                <button id="in-p-mas" class="boton chico" type="button" data-es="Agregar color" data-en="Add color">Agregar color</button>
+                <button id="in-p-borrar" class="boton chico secundario" type="button" aria-pressed="false" data-es="Borrador" data-en="Eraser">Borrador</button>
+                <button id="in-p-repetir" class="boton chico" type="button" data-es="Repetir animación" data-en="Replay animation">Repetir animación</button>
+                <button id="in-p-restaurar" class="boton chico secundario" type="button" data-es="Logo del código" data-en="Code logo">Logo del código</button>
+            </div>
+            <h2 class="in-titulo" data-es="Fondo de cine detrás del menú: planos" data-en="Cinematic menu background: shots">Fondo de cine detrás del menú: planos</h2>
+            <p class="ayuda" data-es="Posiciones en bloques del mundo [x, y, z] (y ya subida 48). «Ver» abre el menú real con solo ese plano y lo que aún no guardas. Hasta y Mira hasta vacíos = no se mueve."
+               data-en="Positions in world blocks [x, y, z] (y already raised by 48). «View» opens the real menu with only that shot and your unsaved changes. Empty To / Look to = it does not move.">Posiciones en bloques del mundo [x, y, z] (y ya subida 48). «Ver» abre el menú real con solo ese plano y lo que aún no guardas. Hasta y Mira hasta vacíos = no se mueve.</p>
+            <div id="in-f-planos" class="lista-textos"></div>
+            <button id="in-f-agregar" class="boton chico" type="button" data-es="Agregar plano" data-en="Add shot">Agregar plano</button>
             <p class="ayuda" data-es="Lo que dejes vacío usa el valor del código (mundo/supervivencia/inicio-datos.js). Ctrl+S guarda."
                data-en="Anything left empty uses the code value (mundo/supervivencia/inicio-datos.js). Ctrl+S saves.">Lo que dejes vacío usa el valor del código (mundo/supervivencia/inicio-datos.js). Ctrl+S guarda.</p>
         </section>
@@ -654,6 +673,14 @@
             <section class="panel">
                 <h2 data-es="Pantalla de carga: colores y tiempos" data-en="Loading screen: colors and times">Pantalla de carga: colores y tiempos</h2>
                 <div id="in-c-aspecto" class="campos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Presentación al abrir" data-en="Opening screen">Presentación al abrir</h2>
+                <div id="in-p-campos" class="campos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Fondo de cine: ajustes" data-en="Cinematic background: settings">Fondo de cine: ajustes</h2>
+                <div id="in-f-campos" class="campos"></div>
             </section>
             <section class="panel acciones">
                 <div class="fila-botones">

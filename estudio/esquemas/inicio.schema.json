@@ -86,7 +86,81 @@
         }
       },
       "additionalProperties": false
+    },
+    "presentacion": {
+      "description": "Presentación al abrir supervivencia.html (antes del título): logo de píxeles, nombre de quien hace el juego y un lema. Mientras se ve, se carga el primer plano del fondo. No sale con ?estudio ni ?plano.",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "activa": { "type": "boolean" },
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "lema": { "$ref": "comun.schema.json#/$defs/texto" },
+        "logo": { "$ref": "comun.schema.json#/$defs/dibujo" },
+        "aspecto": {
+          "description": "Colores (fondo, texto del nombre, sombra del nombre, lema) y pixel: tamaño en px de cada píxel del logo.",
+          "type": "object",
+          "properties": {
+            "fondo": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "texto": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "sombra": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "lema": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "pixel": { "type": "number", "minimum": 1, "maximum": 24 }
+          },
+          "additionalProperties": false
+        },
+        "tiempos": {
+          "description": "Segundos desde que se abre la página: minimo = lo menos que se ve; maximo = se cierra aunque el fondo no esté listo; entrada = lo que tarda en aparecer cada parte; salida = desvanecido.",
+          "type": "object",
+          "properties": {
+            "minimo": { "type": "number", "minimum": 0, "maximum": 15 },
+            "maximo": { "type": "number", "minimum": 0.5, "maximum": 30 },
+            "entrada": { "type": "number", "minimum": 0, "maximum": 3 },
+            "salida": { "type": "number", "minimum": 0, "maximum": 3 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "fondo": {
+      "description": "Fondo de cine detrás del menú (título, mundos, amigos, skin): el mapa sin ediciones con planos de cámara que se funden a negro entre uno y otro. Posiciones en bloques del mundo [x, y, z] (y ya subida 48).",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "activo": { "type": "boolean" },
+        "enCelular": { "description": "Mostrarlo también en pantallas táctiles.", "type": "boolean" },
+        "distancia": { "description": "Radio en chunks que se carga alrededor de la cámara.", "type": "integer", "minimum": 2, "maximum": 12 },
+        "distanciaCelular": { "type": "integer", "minimum": 2, "maximum": 12 },
+        "fps": { "description": "Tope de cuadros por segundo del fondo.", "type": "number", "minimum": 10, "maximum": 60 },
+        "hora": { "description": "0-1: 0 medianoche, 0.25 amanecer, 0.5 mediodía, 0.75 atardecer.", "type": "number", "minimum": 0, "maximum": 1 },
+        "fov": { "type": "number", "minimum": 20, "maximum": 110 },
+        "oscurecer": { "description": "Velo negro sobre el fondo detrás de los menús (0 = nada, 1 = negro).", "type": "number", "minimum": 0, "maximum": 1 },
+        "fundido": { "description": "Segundos del fundido a negro al empezar y terminar cada plano.", "type": "number", "minimum": 0, "maximum": 5 },
+        "esperaMax": { "description": "Lo más que espera en negro (s) a que cargue el plano que sigue.", "type": "number", "minimum": 0, "maximum": 20 },
+        "orden": { "enum": ["seguido", "azar"] },
+        "planos": {
+          "type": "array",
+          "maxItems": 40,
+          "items": {
+            "type": "object",
+            "properties": {
+              "nombre": { "type": "string", "maxLength": 40 },
+              "desde": { "$ref": "#/$defs/punto" },
+              "hasta": { "$ref": "#/$defs/punto" },
+              "mira": { "$ref": "#/$defs/punto" },
+              "miraHasta": { "$ref": "#/$defs/punto" },
+              "duracion": { "type": "number", "minimum": 1, "maximum": 120 }
+            },
+            "required": ["desde", "mira", "duracion"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
+  },
+  "$defs": {
+    "punto": { "type": "array", "items": { "type": "number", "minimum": -100, "maximum": 2000 }, "minItems": 3, "maxItems": 3 }
   },
   "required": ["version"],
   "additionalProperties": false
