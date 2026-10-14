@@ -206,6 +206,8 @@ export class Jugador {
         const p = this.pos, r = ANCHO / 2, x = p.x + dx, z = p.z + dz;
         const tope = topeFormas(this.mundo, x - r, z - r, x + r, z + r, p.y, p.y + paso);
         if (!(tope > p.y) || this.choca(x, tope, z)) return false;
+        // la cámara se queda atrás y sube suave (actualizar la acerca con `suavizado` de formas.json)
+        this.subida = Math.max(-1, (this.subida || 0) - (tope - p.y));
         p.set(x, tope, z);
         return true;
     }
@@ -330,7 +332,12 @@ export class Jugador {
         if (this.pos.y > TECHO) this.pos.y = TECHO;
 
         this.ojos += ((this.agachado ? OJOS - BAJA_OJOS_AGACHADO : OJOS) - this.ojos) * (1 - Math.exp(-18 * dt));
-        this.camara.position.set(this.pos.x, this.pos.y + this.ojos, this.pos.z);
+        // Subir un escalón: la cámara alcanza al cuerpo de a poco (formas.json → suavizado; 0 = de golpe)
+        if (this.subida) {
+            const k = ajustesFormas().suavizado;
+            this.subida = k > 0 && Math.abs(this.subida) > 0.002 ? this.subida * Math.exp(-k * dt) : 0;
+        }
+        this.camara.position.set(this.pos.x, this.pos.y + this.ojos + (this.subida || 0), this.pos.z);
         this.camara.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
     }
 }

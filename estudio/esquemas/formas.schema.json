@@ -14,6 +14,7 @@
       "additionalProperties": { "$ref": "#/$defs/forma" }
     },
     "paso": { "description": "Cuánto sube solo el jugador al caminar contra una losa o un escalón, en bloques (0 = hay que saltar; Minecraft 0,6).", "type": "number", "minimum": 0, "maximum": 1 },
+    "suavizado": { "description": "Qué tan rápido la cámara alcanza al jugador al subir un escalón, por segundo (más alto = más rápido; 0 = de golpe, sin suavizar).", "type": "number", "minimum": 0, "maximum": 60 },
     "contorno": {
       "description": "Líneas del bloque apuntado.",
       "type": "object",

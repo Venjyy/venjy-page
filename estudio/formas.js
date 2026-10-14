@@ -85,6 +85,7 @@ export async function montarFormas(ctx) {
         const a = ajustesFormas();
         const s1 = seccion(t('Jugador', 'Player'));
         s1.appendChild(numero(t('paso: sube solo (bloques; 0 = saltar)', 'step: climbs by itself (blocks; 0 = jump)'), a.paso, 0, 1, 0.05, v => { datos.paso = v; cambio(); }));
+        s1.appendChild(numero(t('suavizado de la cámara al subir (más = más rápido; 0 = de golpe)', 'camera smoothing when stepping up (higher = faster; 0 = instant)'), a.suavizado, 0, 60, 1, v => { datos.suavizado = v; cambio(); }));
         const s2 = seccion(t('Contorno del bloque apuntado', 'Outline of the targeted block'));
         const fila = document.createElement('label'); fila.className = 'campo';
         const sp = document.createElement('span'); sp.textContent = 'color';
@@ -96,7 +97,7 @@ export async function montarFormas(ctx) {
         const s3 = seccion(t('Grietas al romper', 'Cracks while breaking'));
         s3.appendChild(numero(t('opacidad', 'opacity'), a.grietas.opacidad, 0, 1, 0.05, v => { datos.grietas = { ...(datos.grietas || {}), opacidad: v }; cambio(); }));
         const volver = boton('Volver a los valores del código', 'Back to the code values', () => {
-            datos.paso = AJUSTES_BASE.paso; datos.contorno = clonar(AJUSTES_BASE.contorno); datos.grietas = clonar(AJUSTES_BASE.grietas);
+            datos.paso = AJUSTES_BASE.paso; datos.suavizado = AJUSTES_BASE.suavizado; datos.contorno = clonar(AJUSTES_BASE.contorno); datos.grietas = clonar(AJUSTES_BASE.grietas);
             cambio(); pintar();
         });
         caja.appendChild(volver);

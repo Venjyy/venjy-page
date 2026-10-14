@@ -46,8 +46,9 @@ export const FORMAS_BASE = {
     planta: { cajas: [{ a: [2, 0, 2], b: [14, 13, 14] }] },
     cultivo: { cajas: [{ a: [0, 0, 0], b: [16, 16, 16] }] } // el alto se reparte entre las 4 etapas (la 1.ª mide 1/4)
 };
-// Contorno de selección, grietas y cuánto sube solo el jugador al caminar contra un escalón o una losa
-export const AJUSTES_BASE = { paso: 0.6, contorno: { color: '#000000', opacidad: 0.75 }, grietas: { opacidad: 0.75 } };
+// Contorno de selección, grietas, cuánto sube solo el jugador al caminar contra un escalón o una losa y qué tan rápido
+// lo alcanza la cámara al subir (suavizado, por segundo: más alto = más rápido; 0 = de golpe)
+export const AJUSTES_BASE = { paso: 0.6, suavizado: 14, contorno: { color: '#000000', opacidad: 0.75 }, grietas: { opacidad: 0.75 } };
 export const NOMBRES_FORMA = Object.keys(FORMAS_BASE);
 
 // ---- Qué forma usa cada id ----
@@ -84,6 +85,7 @@ export function fijarFormas(d) {
     datos = {
         formas: j.formas || {},
         paso: j.paso ?? AJUSTES_BASE.paso,
+        suavizado: j.suavizado ?? AJUSTES_BASE.suavizado,
         contorno: { ...AJUSTES_BASE.contorno, ...(j.contorno || {}) },
         grietas: { ...AJUSTES_BASE.grietas, ...(j.grietas || {}) }
     };
