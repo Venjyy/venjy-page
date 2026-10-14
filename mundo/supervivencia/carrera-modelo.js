@@ -233,6 +233,9 @@ export const CARRERA = {
     },
     // Gestos de Lona en su caja (carrera-escena.js): bandera al largar, aspiradora y celebrar cuando llega tu gata
     lona: { largada: 1.2, aspiradora: 1.4, salto: 0.35, ritmo: 7, rapidez: 12 },
+    // Música (carrera-musica.js): volumen (×), en el menú y la sala, desde tu llegada y en el podio; tempo (×), 
+    // tempo extra de la última vuelta (×) y el tema de cada pista (living, cocina, patio, techo o podio)
+    musica: { vol: 1, menu: 0.6, meta: 0.5, podio: 1, tempo: 1, ultima: 1.12, temas: { living: 'living', cocina: 'cocina', patio: 'patio', techo: 'techo' } },
     tactil: { autoAcelerar: 1 },
     // Varios jugadores (carrera-red.js): veces por segundo que cada corredor manda su gata y el líder la IA y los objetos
     red: { envios: 12, paquetes: 10, hurra: 0.5 }, // hurra: segundos entre dos hurras del público
@@ -242,6 +245,8 @@ export const CARRERA = {
     }
 };
 export const COLORES_NIVEL = ['#4aa8ff', '#ff9a2a', '#c35aff'];
+// Temas de música que puede elegir cada pista (están en carrera-musica.js; la prueba revisa que coincidan)
+export const TEMAS_MUSICA = ['living', 'cocina', 'patio', 'techo', 'podio'];
 
 const esObj = v => v && typeof v === 'object' && !Array.isArray(v);
 function fundir(base, extra) {

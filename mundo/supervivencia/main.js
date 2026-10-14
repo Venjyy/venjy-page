@@ -1296,7 +1296,7 @@ async function arrancar(guardado, cx = null) {
     function cargarCarrera() {
         if (!cargandoCarrera) cargandoCarrera = Promise.all([import('./carrera.js'), cargarDatos('carrera')]).then(([m, json]) => {
             carrera = m.crearCarrera({
-                jugador, gatas, npcs, inventario, entidades, hud, misiones, idioma,
+                jugador, gatas, npcs, inventario, entidades, hud, misiones, idioma, musica,
                 datos: () => window.__venjy?.datosCarrera || json,
                 tactil: () => !!tactil,
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera(),
@@ -2055,7 +2055,7 @@ async function arrancar(guardado, cx = null) {
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
             const cueva = jugador.pos.y < DY + 8 && l >= 0 && (l >> 4) < 6;
-            musica.actualizar({ jx: jugador.pos.x, jz: jugador.pos.z, personas: personasMusica(), enJefe: jefes.enCurso, modo: cueva ? 'cueva' : dia.esNoche ? 'noche' : 'dia', pausa: !corre });
+            musica.actualizar({ jx: jugador.pos.x, jz: jugador.pos.z, personas: personasMusica(), enJefe: jefes.enCurso, modo: cueva ? 'cueva' : dia.esNoche ? 'noche' : 'dia', pausa: !corre, silencio: uiCarrera() });
         }
         vista.sincronizar();
         cielo.actualizar(camara, corre ? dt : 0);

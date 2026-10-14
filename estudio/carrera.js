@@ -11,7 +11,7 @@
 // a la raíz). «Ver la pista» abre la sala en el juego (cámara que la recorre);
 // «Correr con…» empieza una carrera. Cada cambio va en vivo (mensaje `datos`). Guardar escribe con If-Match.
 // =========================================================
-import { reglasCarrera, OBJETOS, ESCENARIOS, ESCENARIO_BASE } from '../mundo/supervivencia/carrera-modelo.js';
+import { reglasCarrera, OBJETOS, ESCENARIOS, ESCENARIO_BASE, TEMAS_MUSICA } from '../mundo/supervivencia/carrera-modelo.js';
 import { montarEditorPista } from './carrera-pista.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
@@ -69,6 +69,11 @@ const GRUPOS = [
         largada: ['segundos de la bandera al largar', 'flag-drop seconds at the start', 0.4, 3, 0.05], aspiradora: ['segundos apuntando con la aspiradora', 'seconds aiming the vacuum', 0.4, 4, 0.05],
         salto: ['salto al celebrar', 'hop when cheering', 0, 1, 0.05], ritmo: ['ritmo al celebrar', 'cheering speed', 2, 14, 0.5], rapidez: ['rapidez con que cambia de pose', 'pose change speed', 3, 30, 0.5]
     }],
+    ['musica', 'Música', 'Music', {
+        vol: ['volumen (×)', 'volume (×)', 0, 3, 0.05], menu: ['volumen en el menú y la sala (×)', 'volume in the menu and lobby (×)', 0, 2, 0.05],
+        meta: ['volumen desde tu llegada (×)', 'volume after you finish (×)', 0, 2, 0.05], podio: ['volumen en el podio (×)', 'volume on the podium (×)', 0, 2, 0.05],
+        tempo: ['tempo (×)', 'tempo (×)', 0.5, 1.6, 0.01], ultima: ['tempo extra en la última vuelta (×)', 'extra tempo on the last lap (×)', 1, 1.5, 0.01]
+    }],
     ['tactil', 'Celular', 'Phone', { autoAcelerar: ['1 = acelera sola (sin botón ACELERAR)', '1 = auto gas (no GAS button)', 0, 1, 1] }],
     ['red', 'Varios jugadores (red)', 'Multiplayer (network)', {
         envios: ['veces por segundo que cada corredor manda su gata', 'times per second each racer sends its cat', 4, 30, 1],
@@ -80,6 +85,7 @@ const GRUPOS = [
     }]
 ];
 const PATRONES = ['liso', 'atigrado', 'manchas', 'siames'];
+const NOMBRE_TEMA = { living: ['Rock chiptune (living)', 'Chiptune rock (living)'], cocina: ['Funk con ollas (cocina)', 'Pots-and-pans funk (kitchen)'], patio: ['Surf rock (patio)', 'Surf rock (backyard)'], techo: ['Synthwave (techo)', 'Synthwave (rooftop)'], podio: ['Fanfarria del podio', 'Podium fanfare'] };
 // Grupos que van a la pista elegida (los demás son de toda la carrera)
 const DE_PISTA = ['pista', 'sala'];
 const NOMBRE_PISTA = { living: ['Living', 'Living room'], cocina: ['Cocina', 'Kitchen'], patio: ['Patio', 'Backyard'], techo: ['Techo', 'Rooftop'] };
@@ -195,6 +201,16 @@ export async function montarCarrera(ctx) {
                 for (const [k, [ces, cen, min, max, paso]] of Object.entries(campos)) f.appendChild(numero(t(ces, cen), D[k], min, max, paso, v => { propio()[k] = v; cambio(); }));
                 f.appendChild(color(t('color', 'color'), D.color, v => { propio().color = v; cambio(); }));
                 sec.appendChild(f);
+            }
+            if (g === 'musica') for (const pk of R.listaPistas) {
+                // El tema que suena en cada pista (los temas están en carrera-musica.js)
+                const lt = document.createElement('label'); lt.className = 'campo';
+                const st = document.createElement('span'); st.textContent = t('tema en la pista ', 'theme on track ') + (NOMBRE_PISTA[pk] ? t(...NOMBRE_PISTA[pk]) : pk);
+                const sl = document.createElement('select');
+                for (const k of TEMAS_MUSICA) sl.appendChild(new Option(t(...NOMBRE_TEMA[k]), k));
+                sl.value = (R.musica.temas && R.musica.temas[pk]) || 'living';
+                sl.addEventListener('change', () => { datos.musica = datos.musica || {}; datos.musica.temas = { ...clonar(real().musica.temas || {}), [pk]: sl.value }; cambio(); });
+                lt.append(st, sl); sec.appendChild(lt);
             }
             if (g === 'ia') for (const [k, es2, en2] of [['facil', 'fácil', 'easy'], ['normal', 'normal', 'normal'], ['dificil', 'difícil', 'hard']])
                 sec.appendChild(numero(t(`velocidad en ${es2} (fracción)`, `speed on ${en2} (fraction)`), R.ia.niveles[k], 0.4, 1.2, 0.01, v => { datos.ia = datos.ia || {}; datos.ia.niveles = { ...real().ia.niveles, [k]: v }; cambio(); }));

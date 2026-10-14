@@ -220,7 +220,7 @@ const TEMAS = {
 };
 
 // Qué tema suena cerca de cada persona (Salonas y Conejeros no: ya está el bajo en vivo)
-export { TEMAS }; // para probar cada tema por separado
+export { TEMAS, I }; // para probar cada tema por separado (I: los instrumentos, también los usa carrera-musica.js)
 
 const TEMA_DE = { pony: 'pony', lona: 'lona', hadad: 'campamento', andy: 'campamento', nacho: 'campamento', moises: 'iglu', lalo: 'iglu', boris: 'lenera', lucho: 'lenera', braulio: 'playa', venjy: 'venjy' };
 const CON_MUSICA_PROPIA = ['salonas', 'conejeros'];
@@ -268,7 +268,8 @@ export function crearMusica() {
             if (salida) salida.gain.setTargetAtTime(encendida ? 1 : 0, audio.ctx.currentTime, 0.3);
         },
         // personas: [{ clave, x, z }] · enJefe: hay una pelea · modo: 'dia' | 'noche' | 'cueva' · pausa: el juego está en pausa
-        actualizar({ jx, jz, personas, enJefe, modo, pausa }) {
+        // silencio: otra música manda (la carrera de gatas tiene la suya) y todo baja a cero
+        actualizar({ jx, jz, personas, enJefe, modo, pausa, silencio = false }) {
             if (!audio || audio.ctx.state !== 'running') return;
             const cerca = {};
             let propia = 0;
@@ -288,6 +289,7 @@ export function crearMusica() {
                 p.objetivo = obj;
             }
             pistas.ambiente.objetivo = enJefe ? 0 : Math.max(0, 1 - mayor * 1.4);
+            if (silencio) for (const p of Object.values(pistas)) p.objetivo = 0;
             for (const p of Object.values(pistas)) {
                 const vol = (pausa ? 0.35 : 1) * p.objetivo * p.def.vol;
                 p.g.gain.setTargetAtTime(vol, audio.ctx.currentTime, 0.6);

@@ -26,6 +26,7 @@ import { tono, ruido } from './sonidos.js';
 import * as M from './carrera-modelo.js';
 import { crearEscenaCarrera } from './carrera-escena.js';
 import { crearCarreraRed } from './carrera-red.js';
+import { crearMusicaCarrera } from './carrera-musica.js';
 
 const t = (es, en) => ({ es, en });
 export const TXT_CARRERA = {
@@ -268,24 +269,17 @@ export function crearCarrera(ctx) {
         reves: () => tono({ f0: 300, f1: 900, dur: 0.5, vol: 0.06, forma: 'sine' }),
         aspiradora: () => { ruido({ dur: 1.2, frec: 1800, q: 0.4, vol: 0.12 }); tono({ f0: 140, f1: 220, dur: 1.2, vol: 0.05, forma: 'sawtooth' }); }
     };
-    // Música de 8 bits: bajo y melodía en bucle (4 compases de 16 semicorcheas); se apura en la última vuelta
-    const BAJO = [45, 45, 52, 45, 43, 43, 50, 43, 41, 41, 48, 41, 43, 43, 50, 47];
-    const MEL = [69, 0, 72, 74, 76, 0, 74, 72, 74, 0, 71, 0, 72, 74, 72, 71, 69, 0, 72, 74, 76, 79, 76, 74, 77, 76, 74, 72, 71, 72, 74, 0,
-        69, 0, 72, 74, 76, 0, 74, 72, 74, 0, 71, 0, 72, 0, 76, 0, 77, 76, 74, 72, 74, 72, 71, 69, 71, 72, 71, 67, 69, 0, 0, 0];
-    const fr = n => 440 * Math.pow(2, (n - 69) / 12);
-    let musT = 0, musPaso = 0;
-    function musica(dt) {
-        if (!c || c.pausa || !['cuenta', 'corre'].includes(c.fase)) return;
-        const corchea = 60 / (c.ultima ? 168 : 150) / 2;
-        musT += dt;
-        while (musT >= corchea) {
-            musT -= corchea;
-            const i = musPaso++ % 64;
-            if (i % 2 === 0) { const b = fr(BAJO[(i >> 1) % 16] - 12); tono({ f0: b, f1: b, dur: corchea * 1.6, vol: 0.05, forma: 'triangle' }); }
-            const n = MEL[i];
-            if (n && c.fase === 'corre') tono({ f0: fr(n), f1: fr(n), dur: corchea * 0.85, vol: 0.025, forma: 'square' });
-            if (i % 4 === 0) ruido({ dur: 0.03, frec: 6000, q: 1, vol: 0.02, tipo: 'highpass' });
-        }
+    // Música: un tema por pista (carrera-musica.js); la del mundo se calla mientras la carrera está abierta (main.js).
+    // Menú y sala: capas suaves del tema de la pista elegida; cuenta: con bombo; corriendo: todo; última vuelta: más rápido
+    // y con arpegio; podio: la fanfarria. Valores en carrera.json → musica.
+    const mus = crearMusicaCarrera({ encendida: () => !ctx.musica || ctx.musica.encendida });
+    function musica() {
+        if (!c) { mus.callar(); return; }
+        const MU = c.R.musica, f = c.fase;
+        const tema = f === 'final' ? 'podio' : (MU.temas && MU.temas[c.R.pistaClave]) || 'living';
+        const nivel = ['menu', 'sala', 'intro'].includes(f) ? 'menu' : f === 'cuenta' ? 'cuenta' : c.ultima ? 'ultima' : 'corre';
+        const vol = MU.vol * (nivel === 'menu' ? MU.menu : f === 'fin' ? MU.meta : f === 'final' ? MU.podio : 1);
+        mus.actualizar({ tema, nivel, tempo: MU.tempo * (nivel === 'ultima' ? MU.ultima : 1), vol, pausa: !!(c.pausa || c.menuPausa) });
     }
 
     // ---------- Estado ----------
@@ -586,7 +580,6 @@ export function crearCarrera(ctx) {
         if (!on) { const sm = document.createElement('small'); sm.textContent = tx(TXT_CARRERA.saltarIntro); tituloEl.appendChild(sm); } // (con otros la presentación no se salta: la cuenta va a la par)
         mostrar(tituloEl, true);
         luces.forEach(b => { b.className = ''; });
-        musPaso = 0; musT = 0;
     }
     function empezarCuenta() {
         if (!c || c.fase !== 'intro') return;
@@ -605,7 +598,7 @@ export function crearCarrera(ctx) {
     function cerrar() {
         if (!c) return;
         if (red) red.salir();
-        c = null;
+        c = null; mus.callar();
         for (const e of [menuEl, pausaEl, finalEl, semEl, avisoEl, velEl, tact]) e.classList.remove('visible');
         capa.classList.remove('visible');
         document.body.classList.remove('en-carrera');
@@ -887,7 +880,7 @@ export function crearCarrera(ctx) {
     function actualizar(dt) {
         if (!c) return;
         dt = Math.min(dt, 0.05);
-        musica(dt);
+        musica();
         if (c.pausa) return;
         c.tc += dt;
         // Valores en vivo del Estudio: si cambió la pista o los muebles, se vuelve a armar la escena y la carrera
