@@ -158,6 +158,10 @@ obj('TOMATE_BIGOTE', 'Tomate con bigote', 'Mustache Tomato', { icono: 'tomate', 
 // ---- 7f-2: usos (ids al final) ----
 obj('BOTELLA_AGUA', 'Botella de agua', 'Water Bottle', { icono: 'botella', color: 'agua', apila: 16, devuelve: 'BOTELLA' }); // clic derecho sobre tierra labrada la humedece
 
+// ---- Duelo 2J, PR 3: la mesa de duelo (la vende Lucho en su tienda de cartas; encargo: no la venden las otras tiendas).
+// Si la llevas, el duelo se juega en ella; clic derecho la coloca en el mundo (minado.js) para armar una sala de juegos ----
+obj('MESA_DUELO', 'Mesa de duelo', 'Duel Table', { icono: 'mesa_duelo', apila: 1, combustible: 15, encargo: true });
+
 // ---------------------------------------------------------
 // Bloques como objeto: nombre, dureza, herramienta y drops
 // ---------------------------------------------------------
@@ -248,6 +252,8 @@ bloque(B.ESCALERA, 'Escalera de mano', 'Ladder', 0.4, 'hacha', 0, { combustible:
 bloque(B.ALTAR, 'Altar', 'Altar', -1);
 bloque(B.FAROL, 'Farol', 'Lantern', 0.3, 'pico', 0, { suelta: O.FAROL_MANO });
 bloque(B.CARTEL, 'Cartel', 'Sign', 1, 'hacha', 0, { suelta: O.CARTEL, combustible: 10 });
+bloque(B.MESA_DUELO, 'Mesa de duelo', 'Duel Table', 1, 'hacha', 0, { suelta: O.MESA_DUELO, combustible: 15 });
+bloque(B.MESA_DUELO_Z, 'Mesa de duelo', 'Duel Table', 1, 'hacha', 0, { suelta: O.MESA_DUELO, combustible: 15 });
 // Cultivos por etapas (la tierra de cultivo es B.TIERRA_LABRADA; B.LABRADA es la piedra labrada del mapa)
 for (let n = 0; n < 4; n++) {
     bloque(B.TRIGO_0 + n, 'Trigo', 'Wheat', 0, null, 0, { cultivo: 'trigo', etapa: n });

@@ -6,7 +6,7 @@
 // =========================================================
 import { CARTAS } from './cartas-datos.js';
 import { miniCarta } from './cartas-armar.js';
-import { reglasTienda, catalogo, comprarSobre, comprarSuelta } from './cartas-tienda.js';
+import { reglasTienda, catalogo, comprarSobre, comprarSuelta, comprarMesa } from './cartas-tienda.js';
 import { coleccionDe, totalColeccion } from './cartas-coleccion.js';
 export { escenaSobre } from './cartas-sobre.js'; // abrir el sobre comprado (tienda.js)
 
@@ -26,12 +26,14 @@ export const TXT_TIENDA_CARTAS = {
     tienes: t('Tienes {n}', 'You own {n}'),
     tope: t('Ya tienes las que caben en un mazo', 'You already own as many as a deck allows'),
     salio: t('Salió del sobre:', 'From the pack:'),
-    nueva: t('Nueva', 'New')
+    nueva: t('Nueva', 'New'),
+    mesa: t('Mesa de duelo', 'Duel table'),
+    mesaNota: t('Si la llevas, el duelo se juega en ella. Clic derecho: la colocas en tu casa.', 'If you carry it, the duel is played on it. Right click: place it at home.')
 };
 
-// ctx: idioma, inventario, datos (cartas-mesa.json o lo del Estudio), esm (id de la esmeralda),
+// ctx: idioma, inventario, datos (cartas-mesa.json o lo del Estudio), esm (id de la esmeralda), mesa (id de la mesa de duelo),
 // precio(n) -> { n, rebaja } (descuento de amistad), ultimo (ids del último sobre, para mostrarlo),
-// alComprar(res, tipo) (tipo = 'sobre' | 'suelta'; res = { ok, motivo, cartas } de cartas-tienda.js)
+// alComprar(res, tipo) (tipo = 'sobre' | 'suelta' | 'mesa'; res = { ok, motivo, cartas } de cartas-tienda.js)
 export function seccionCartas(ctx) {
     const { inventario, datos, esm } = ctx;
     const idioma = ctx.idioma || 'es';
@@ -72,6 +74,12 @@ export function seccionCartas(ctx) {
     const ps = precio(T.sobrePrecio);
     lista.appendChild(fila(F(TXT_TIENDA_CARTAS.sobre, { n: T.sobreCartas }), T.sobreNuevas ? F(TXT_TIENDA_CARTAS.sobreNota, { k: T.sobreNuevas }) : '', ps,
         L(TXT_TIENDA_CARTAS.abrir), () => ctx.alComprar(comprarSobre(inventario, datos, esm, ps.n), 'sobre')));
+    // Mesa de duelo (duelo 2J, PR 3)
+    if (T.mesaPrecio && ctx.mesa) {
+        const pm = precio(T.mesaPrecio);
+        lista.appendChild(fila(L(TXT_TIENDA_CARTAS.mesa), L(TXT_TIENDA_CARTAS.mesaNota), pm, L(TXT_TIENDA_CARTAS.comprar),
+            () => ctx.alComprar(comprarMesa(inventario, datos, ctx.mesa, esm, pm.n), 'mesa')));
+    }
     el.appendChild(lista);
 
     // Lo que salió en el último sobre

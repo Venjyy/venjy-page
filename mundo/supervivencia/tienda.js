@@ -13,10 +13,10 @@ import { cargarDatos } from '../datos/cargador.js';
 const TXT = {
     es: { hablar: 'Hablar', mision: 'Misión', tienda: 'Tienda', precioAmigo: 'Precio de amigo', comprar: 'Comprar', vender: 'Vender', por: 'por', cerrar: 'Cerrar', tienes: 'Esmeraldas:', compras: 'Comprar', ventas: 'Vender',
         bloqueada: t => `Se desbloquea al completar: ${t}`, comprado: 'Compraste', vendido: 'Vendiste', cartas: n => (n === 1 ? 'Nueva carta en tu colección' : `${n} cartas nuevas en tu colección`),
-        tope: 'Ya tienes las que caben en un mazo.', cargando: 'Cargando cartas…' },
+        tope: 'Ya tienes las que caben en un mazo.', cargando: 'Cargando cartas…', lleno: 'No te cabe en el inventario.', mesa: 'Compraste la mesa de duelo' },
     en: { hablar: 'Talk', mision: 'Quest', tienda: 'Shop', precioAmigo: 'Friend price', comprar: 'Buy', vender: 'Sell', por: 'for', cerrar: 'Close', tienes: 'Emeralds:', compras: 'Buy', ventas: 'Sell',
         bloqueada: t => `Unlocks after completing: ${t}`, comprado: 'You bought', vendido: 'You sold', cartas: n => (n === 1 ? 'New card in your collection' : `${n} new cards in your collection`),
-        tope: 'You already own as many as a deck allows.', cargando: 'Loading cards…' }
+        tope: 'You already own as many as a deck allows.', cargando: 'Loading cards…', lleno: 'Your inventory is full.', mesa: 'You bought the duel table' }
 };
 
 // ctx: inventario, hud, hechas() -> Set de ids, tituloDe(id) -> {es,en}, nombres (NOMBRES_AMIGO), dar(lista),
@@ -46,19 +46,19 @@ export function crearTienda(ctx) {
     const precioCartas = clave => n => { const pr = precio(clave, { da: [['carta-duelo', 1]], pide: [[O.ESMERALDA, n]] }); return { n: pr.pide[0][1], rebaja: pr.rebaja }; };
     function seccionCartas(clave, caja) {
         caja.appendChild(cartas.m.seccionCartas({
-            idioma, inventario, datos: datosMesa(), esm: O.ESMERALDA, precio: precioCartas(clave), ultimo: ultimoSobre,
+            idioma, inventario, datos: datosMesa(), esm: O.ESMERALDA, mesa: O.MESA_DUELO, precio: precioCartas(clave), ultimo: ultimoSobre,
             alComprar: (res, tipo) => compraCartas(clave, res, tipo)
         }));
     }
     function compraCartas(clave, res, tipo) {
         const def = TIENDAS[clave];
         if (!res.ok) {
-            const txt = res.motivo === 'tope' ? tx().tope : L(def.noAlcanza);
+            const txt = res.motivo === 'tope' ? tx().tope : res.motivo === 'lleno' ? tx().lleno : L(def.noAlcanza);
             sonidos.danio(); decir(clave, txt); abrir(clave, txt); return;
         }
         ultimoSobre = tipo === 'sobre' ? res.cartas : null;
         decir(clave, L(def.compraOk));
-        hud.mensaje(tx().cartas(res.cartas.length));
+        hud.mensaje(tipo === 'mesa' ? tx().mesa : tx().cartas(res.cartas.length));
         if (ctx.alComprar) ctx.alComprar(clave);
         // Sobre: lo rasgas tú y salen las cartas (cartas-sobre.js); al terminar vuelves a la tienda con lo que salió
         const D = datosMesa();

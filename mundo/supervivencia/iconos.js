@@ -379,6 +379,11 @@ const PINTORES = {
         p.contornear();
     },
     tambor(p) { desdeModelo(p, 'tambor'); },
+    // Mesa de duelo (duelo 2J, PR 3): tablero con paño verde y cuatro patas, como la mesa de Lucho
+    mesa_duelo(p) {
+        p.mascara(['', '', '', '', '.gggggggggggggg.', '.gvvvvvvvvvvvvg.', '.gvwvvvvvvvvwvg.', '.gvvvvvvvvvvvvg.', '.mmmmmmmmmmmmmm.', '.oooooooooooooo.', '..o..........o..', '..o..........o..', '..o..........o..', '..o..........o..', '..o..........o..'], { g: [122, 82, 48], v: [47, 106, 52], w: [244, 236, 214], m: [122, 82, 48], o: [78, 50, 24] });
+        p.contornear();
+    },
     cama(p) {
         p.mascara(['', '', '', '', '', '..wwwrrrrrrrrr..', '..wwwrrrrrrrrr..', '..rrrrrrrrrrrr..', '..mmmmmmmmmmmm..', '..m..........m..'], { w: [240, 240, 236], r: [176, 44, 48], m: [137, 103, 59] });
         p.contornear();

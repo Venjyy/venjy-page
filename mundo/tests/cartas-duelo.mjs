@@ -8,6 +8,8 @@
 //   2. espejo: la partida espejada aplicando las mismas acciones queda igual a la canónica (200 partidas)
 //   3. duelo: anfitrión contra invitado y entre dos invitados (pasa por el anfitrión) hasta el final,
 //      con las mismas huellas; rechazo; abandono; desincronización detectada
+//   4. duelo donde están (PR 2): lugar, superficie, dos duelos a la vez y motivos
+//   5. mesa de duelo colocada (PR 3): la más cercana, el lugar en ella y el lado del retador
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -235,6 +237,31 @@ function jugarHastaFin(s, a, b) {
     J.g1.d.rechazar(J.g1.invitaciones.at(-1), 'sinTuto'); s.correr();
     ok(J.h.rechazos.at(-1) === 'sinTuto' && Du.TXT_RETO.rechazo.sinTuto, 'rechazo con motivo: «sinTuto» y su texto');
     ok(s.n('g2').acts.actividad(Du.idDuelo('h')) === null, 'rechazo con motivo: el duelo se cierra');
+}
+
+// ---------- 5. La mesa de duelo colocada (PR 3): se juega en ella, del lado del retador ----------
+{
+    const mesa = { x: 10.5, y: 70, z: 20.5, g: 0 };
+    ok(Du.mesaCercana([mesa, { x: 30.5, y: 70, z: 20.5, g: 0 }], { x: 11, y: 70, z: 22 }, 3) === mesa, 'mesa cercana: la que está a menos de mesaCerca');
+    ok(Du.mesaCercana([mesa], { x: 20, y: 70, z: 20 }, 3) === null, 'mesa cercana: lejos, ninguna');
+    ok(Du.mesaCercana([mesa], { x: 11, y: 74, z: 21 }, 3) === null, 'mesa cercana: otro piso, ninguna');
+    // Retador al sur (+z) de una mesa con el largo en X: g = 0 (su asiento queda en +local z)
+    let L = Du.lugarDuelo({ x: 10, y: 70, z: 22, sup: 'piso', mesa }, { x: 10, y: 70, z: 19, sup: 'piso' });
+    ok(L && L.sup === 'mesa' && L.fija === 1 && L.x === 10.5 && L.z === 20.5 && L.y === 70, 'lugar: en la mesa colocada, fija');
+    ok(Math.abs(L.g) < 1e-3, 'lugar: el retador en su lado de la mesa (sur)');
+    // Retador al norte: la mesa se gira 180° para él
+    L = Du.lugarDuelo({ x: 10, y: 70, z: 18, sup: 'piso' }, { x: 10, y: 70, z: 23, sup: 'tronco', mesa });
+    ok(L && L.sup === 'mesa' && Math.abs(Math.abs(L.g) - Math.PI) < 1e-2, 'lugar: la mesa del invitado, con el retador del otro lado');
+    // Mesa con el largo en Z (g = π/2): el retador al este (+x) queda en su lado
+    L = Du.lugarDuelo({ x: 12, y: 70, z: 20.5, mesa: { ...mesa, g: Math.PI / 2 } }, { x: 9, y: 70, z: 20.5 });
+    ok(L && Math.abs(L.g - Math.PI / 2) < 1e-2, 'lugar: mesa a lo largo de Z, retador al este');
+    // La mesa viaja con el mensaje de la actividad: el lugar sale de ella para los dos
+    const s = crearSala(['h', 'g1']);
+    const J = jugadores(s, ['h', 'g1'], {
+        h: { mazo: D.MAZOS.jugador, extra: 0, x: 10, y: 70, z: 22, sup: 'piso', mesa }, g1: { mazo: D.MAZOS.jugador, extra: 0, x: 10, y: 70, z: 19, sup: 'piso', mesa }
+    });
+    J.h.d.retar('g1'); s.correr(); J.g1.d.aceptar(J.g1.invitaciones[0]); s.correr();
+    ok(J.h.lugar && J.g1.lugar && J.h.lugar.fija === 1 && J.h.lugar.x === J.g1.lugar.x && J.h.lugar.g === J.g1.lugar.g, 'los dos juegan en la misma mesa colocada');
 }
 
 console.log(fallos ? `${fallos} fallo(s)` : 'cartas-duelo: todo bien');

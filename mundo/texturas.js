@@ -524,7 +524,10 @@ export const B = {
     PUERTA_ABAJO: 84, PUERTA_ARRIBA: 85, PUERTA_ABIERTA_ABAJO: 86, PUERTA_ABIERTA_ARRIBA: 87,
     ESCALERA: 88, ALTAR: 89,
     // 7f-2: objetos que se colocan como bloque
-    FAROL: 90, CARTEL: 91
+    FAROL: 90, CARTEL: 91,
+    // Duelo 2J, PR 3: la mesa de duelo colocada (dos orientaciones: el largo a lo largo de X o de Z). No se malla:
+    // la dibuja supervivencia/mesas-colocadas.js con el modelo de la mesa de Lucho
+    MESA_DUELO: 92, MESA_DUELO_Z: 93
 };
 
 export const BLOQUES = [];
@@ -617,6 +620,8 @@ BLOQUES[B.ESCALERA] = def('escalera de mano', 'e', 'escalera');
 BLOQUES[B.ALTAR] = def('altar', 's', 'altar_top', 'altar_lado', 'altar_lado');
 BLOQUES[B.FAROL] = def('farol', 'p', 'farol');
 BLOQUES[B.CARTEL] = def('cartel', 'p', 'cartel');
+BLOQUES[B.MESA_DUELO] = def('mesa de duelo', 'p', 'tablones');
+BLOQUES[B.MESA_DUELO_Z] = def('mesa de duelo', 'p', 'tablones');
 
 // Tipo de cada id en un arreglo plano para el mallado: 0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta en cruz,
 // 5 lava (líquido opaco que se atraviesa), 6 panel que choca (puerta cerrada), 7 panel que se atraviesa
