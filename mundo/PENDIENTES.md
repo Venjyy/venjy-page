@@ -1172,19 +1172,138 @@ Cada uno en su propio chat (regla del proyecto: avisar y proponer chat dedicado 
 8. Orden: el de la sección D. El bloque 7 no edita ni reordena los apartados pendientes del bloque 6 (6c y 6d siguen su plan; 7 se intercala entre sus PR).
 9. Sin comidas chilenas nuevas en 7f-2.
 
-### Bloque 8 · Combate (encargo anotado 2026-10-15; diseño pendiente)
+### Bloque 8 · Combate (diseño hecho 2026-10-15; 8·N, 8·L, 8·M y 8·E en PRs)
 
 Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMBATE.md`** (§0-11 encargo completo, §1 pilar de **animaciones de calidad, fluidas y sin nada raro**, §12 decisiones del dueño, §13 ubicación). Mientras se prueba en la arena de Lalo vs Moisés, el mundo abierto sigue con el spam de clic de Minecraft. Reemplaza el combate de Minecraft por 4 estilos (Sekiro, Urban Reign, Goliath, Danzante) con base común (intenciones PC y táctil, datos de cada ataque, peso de los golpes, cámara con lock-on, rig con codos y rodillas, enemigos con aviso, red cooperativa) y jefes con arena. Sin PvP público por ahora.
 
 | Parte | Qué | Dónde |
 |---|---|---|
-| 8·0 | Diseño completo en `COMBATE.md` §10+ y este bloque dividido en PRs con prueba, táctil, cooperativo y «qué mirar» | Etapa A5, primero (al fusionar #129 y #130) |
+| 8·0 | Diseño completo en `COMBATE.md` §14-28 y este bloque dividido en PRs con prueba, táctil, cooperativo y «qué mirar» | Etapa A5, primero (al fusionar #129 y #130) |
 | 8·N | Núcleo: rig compatible, datos de ataques, estados, intenciones, hitstop, pestaña Combate | Etapa A5 |
 | 8·L | Lalo vs Moisés como laboratorio de estilos (Sekiro + Urban Reign) | Etapa A5 |
 | 8·M | Mundo abierto: modo combate, cámara 3.ª persona, lock-on, enemigos con aviso, primer jefe | Cuando la arena funcione bien (decide el dueño); por defecto, fase comercial C1 |
 | 8·E | Pareja con el acompañante, maestros por bastión, Goliath, Danzante, más jefes, PvP | Comercial, fases 4 y 4b y Acceso anticipado |
 
-- [ ] 8·0 Diseño (chat propio, Opus effort alto, solo docs).
+- [x] 8·0 Diseño (2026-10-15, rama `combate-diseno-8-0`, solo docs): `COMBATE.md` §14-28. Preguntas para el dueño en §27.
+
+**PRs del bloque 8.** Cada PR parte de su sección de `COMBATE.md`. Las animaciones las hace **Sonnet como mínimo** y Opus las revisa contra §1 con la hoja de cuadros (`capturar gesto --hoja`). Cada PR trae su táctil jugable (o «no aplica»), dice qué toca del cooperativo y pasa `validar --contra HEAD`, `estudio.mjs` y su prueba.
+
+**Tamaños:** chico, hasta ~400 líneas; mediano, ~400-1000; grande, más de 1000 o con varias animaciones pulidas.
+
+**8·N · Núcleo** (Etapa A5, antes de B2). Modelo: Opus; Sonnet para las animaciones.
+
+- [ ] **N1 · Rig con codos, rodillas y pecho** (§15.5)
+  - Qué: `crearPersona` con `pecho`, antebrazo, canilla y rótula; textura por UV; `aplicarAngulos` y `limpiar` con los canales nuevos y los límites; `ponerObjeto` en el antebrazo; `avatares.js:105-107`; `modeloPersona` de `enemigos.js`.
+  - Prueba: `rig-articulaciones.mjs`, con la referencia de matrices generada desde `main` antes del cambio.
+  - Táctil: no aplica. Cooperativo: `p` no cambia.
+  - Qué mirar: escenas, gestos, cartas y la ronda del iglú, idénticos.
+  - Tamaño: mediano.
+- [ ] **N2 · Poses con codo, rodilla y pecho + suelo automático** (§15.5, §25.3)
+  - Qué: canales nuevos en `gestos.js`, `poses-modelo.mjs` y el esquema; `limites` en `poses.json`; sliders y casilla de suelo en la pestaña Poses; medida del pie.
+  - Prueba: `estudio-poses.mjs` y `estudio-poses-editor.mjs` extendidas (paridad de los 11 gestos y canales nuevos).
+  - Táctil y cooperativo: no aplica.
+  - Qué mirar: doblar un codo y una rodilla en Poses; el cuerpo baja solo al doblar las rodillas.
+  - Tamaño: mediano.
+- [ ] **N3 · Datos de ataques, máquina de estados y motor de animación** (§15.2, §15.3, §15.6)
+  - Qué: `combate/estados.js`, `combate/animacion.js` (capas e inercialización) y el reloj `fases` en `evaluarGesto`; `combate.json` y `estilo.schema.json`; un ataque de prueba; paso fijo de 60 Hz; reglas de `validar`; `resumen` con la línea de tiempo ASCII.
+  - Prueba: `combate-nucleo.mjs` y `combate-animacion.mjs` (sin saltos, pies, límites, choques OBB, buffer, cancelaciones, i-frames).
+  - Táctil y cooperativo: no aplica.
+  - Qué mirar: nada en el juego todavía (es puro).
+  - Tamaño: grande.
+- [ ] **N4 · Intenciones PC y táctil** (§15.1)
+  - Qué: `combate/intenciones.js` (perfiles de teclas desde `combate.json`, deslizamientos sobre un botón, buffer, vibración) y botones de la arena en `ui-layout.json → arena`, arrastrables.
+  - Prueba: `combate-intenciones.mjs` (eventos simulados → intenciones, umbrales de deslizamiento, buffer de PC y de táctil).
+  - Táctil: es este PR. Cooperativo: no aplica.
+  - Qué mirar: en el celular, que deslizar en ATACAR cambie la altura sin falsos positivos.
+  - Tamaño: mediano.
+- [ ] **N5 · Peso y reacciones** (§15.4, §18)
+  - Qué: `combate/peso.js` (hitstop de los dos implicados con temblor, trauma, cámara lenta local, empuje); partículas pixel (chispas, polvo, nieve); sonidos por capas en `sonidos.js`; las 16 reacciones de §18 animadas; un muñeco de práctica para verlas.
+  - Prueba: `combate-peso.mjs` y las reacciones dentro de `combate-animacion.mjs`.
+  - Táctil: vibración. Cooperativo: no aplica (la cámara lenta es local).
+  - Qué mirar: hoja de cuadros de cada reacción; el hitstop y el sonido de un golpe al muñeco.
+  - Tamaño: grande.
+- [ ] **N6 · Pestaña Combate del Estudio** (§25.2)
+  - Qué: lista de estilos y ataques; línea de tiempo (reusa la de Escenas) con fases, ventanas, i-frames y claves ancladas a la fase; visor 3D con dos muñecos; paneles Peso, Reacciones, Controles y CPU; «Probar en el juego» (mensaje `combate`).
+  - Prueba: `estudio-combate.mjs` y `estudio-combate-navegador.mjs`.
+  - Táctil: no aplica (el Estudio es de PC). Cooperativo: no aplica.
+  - Qué mirar: estirar la anticipación y ver que la animación se estira con ella.
+  - Tamaño: grande.
+- [ ] **N7 · Red del duelo** (§15.8)
+  - Qué: `combate/red.js` (`ci`, `cv` y `cp`; compresión de la anticipación con tope del 40 %; el veredicto dentro del hitstop; corrección tardía).
+  - Prueba: `combate-red.mjs` (latencias de 0, 60, 150 y 300 ms), con los tamaños medidos anotados en el bloque 5.
+  - Táctil: no aplica. Cooperativo: es este PR (sin uso todavía en el mundo).
+  - Qué mirar: nada en el juego (es puro).
+  - Tamaño: mediano.
+
+**8·L · Arena de Lalo contra Moisés** (Etapa A5, reemplaza al punto «Lalo vs Moisés»). Modelo: Opus; Sonnet para las animaciones.
+
+- [ ] **L1 · Escenario, entrada y reglas de la arena** (§19.1, §19.3-19.5, §19.7)
+  - Qué: `arena/` con la escena propia del lago congelado; la entrada (guion `duelo-reto`, viaje con la ráfaga de nieve, VS con los retratos de las cartas, vuelo de cámara, «¡Peleen!»); menú; rondas y reloj; cámara de lado al eje; HUD; salir y revancha; peleadores con guardia y paso genéricos y un golpe de prueba; `arena.json` y su pestaña.
+  - Prueba: `arena.mjs` (rondas, eje, límites, encuadre de la cámara y salida que restaura todo).
+  - Táctil: los botones de la arena jugables. Cooperativo: no aplica (L7).
+  - Qué mirar: la entrada completa y que la cámara nunca pierda a nadie con pasos laterales.
+  - Tamaño: grande.
+- [ ] **L2 · Sekiro I: guardia, tajos, desvío y postura** (§16.1-16.3: S1-S10)
+  - Qué: `estilo-sekiro.json`; guardia, paso, combo de 4, golpe fuerte, desvío normal y perfecto con penalización, bloqueo, esquiva; postura con su regeneración; chispas y campana.
+  - Prueba: `estilo-sekiro.mjs` (ventanas, penalización, tabla de postura, regeneración según la vida).
+  - Táctil: sí. Cooperativo: no aplica.
+  - Qué mirar: el clang del perfecto, el combo y cancelar a desvío.
+  - Tamaño: grande.
+- [ ] **L3 · Sekiro II: peligrosos, mikiri y golpe final** (S11-S14, §16.4)
+  - Qué: aviso de peligro (ícono en código); barrido con salto y pisotón; estocada con mikiri; agarre; postura rota → golpe final con cámara de cine y envainar; arte de combate y espíritu; patada.
+  - Prueba: `estilo-sekiro.mjs` extendida (tabla de respuestas de §16.4).
+  - Táctil: deslizar hacia el rival = mikiri. Cooperativo: no aplica.
+  - Qué mirar: hoja del mikiri y del golpe final; que el aviso se lea de lejos.
+  - Tamaño: grande.
+- [ ] **L4 · CPU peleador** (§15.7, §19.6)
+  - Qué: `combate/ia.js` con semilla; dificultades; tabla de Sekiro (tajos retrasados, desvíos, peligrosos, respiro, provocaciones).
+  - Prueba: `arena-cpu.mjs` (determinista: anticipación mínima, nunca ataca en tu hitstop, no repite más de 3 veces, retraso humano por dificultad).
+  - Táctil y cooperativo: no aplica.
+  - Qué mirar: pelear con Lalo en normal y en «en serio».
+  - Tamaño: mediano.
+- [ ] **L5 · Urban Reign I: guardia, alturas, combo y defensa** (§17.3-17.5, U1-U12)
+  - Qué: `estilo-urbano.json`; guardia con rebote; combo básico que lanza; golpes alto, medio y bajo; cancelación por conexión; esquiva neutra con castigo bajo; paso lateral; desvío por altura con contraataques; reversión; golpe y agarre aéreos; la tabla de la CPU para Moisés.
+  - Prueba: `estilo-urbano.mjs` (alturas, ventanas, altura errada +30 %, cancelación solo al conectar).
+  - Táctil: altura deslizando en ATACAR y DEFENSA. Cooperativo: no aplica.
+  - Qué mirar: que el rebote y el recto con el pie que pivota se vean de boxeo, no de Minecraft.
+  - Tamaño: grande.
+- [ ] **L6 · Urban Reign II: zonas, agarres, pared, SPA y Furia** (§17.6-17.8, U13-U17)
+  - Qué: silueta de zonas con multiplicador y estados críticos (mareo, torso, cojera); agarres por altura con escape por adivinanza y amago de la CPU; pisotón; rebote en pared y barriles rompibles; barra SPA, arte especial que sale recibiendo y Furia (según la respuesta del dueño en §27).
+  - Prueba: `estilo-urbano.mjs` extendida y `arena-balance.mjs` (400 combates por combinación, ningún estilo sobre el 60 %).
+  - Táctil: sí. Cooperativo: no aplica.
+  - Qué mirar: la silueta, el mareo y el rebote en la pared.
+  - Tamaño: grande.
+- [ ] **L7 · Dos jugadores por sala** (§19.1, §15.8)
+  - Qué: sala como `carrera-red.js` (`SalaDirecta` o `SalaLocal`); cada uno con su peleador; `ci`, `cv` y `cp` en juego; cámara lenta compartida en desvíos perfectos y remates; interruptor «ventanas iguales».
+  - Prueba: `arena-red.mjs` (dos simulaciones con latencia, mismo resultado de la ronda) y medición de mensajes.
+  - Táctil: sí (celular contra PC). Cooperativo: es este PR.
+  - Qué mirar: una pelea por la red entre dos dispositivos.
+  - Tamaño: mediano.
+- [ ] **L8 · Pulido final de la arena** (§19.7, §1)
+  - Qué: música `duelo`; premios y amistad (`duelo`); público; animaciones de entrada y victoria; repaso de **todas** las animaciones con la lista de §1 y sus hojas; textos ES/EN en la pestaña Textos; medición en Android.
+  - Prueba: las de la arena, `rendimiento.mjs` y la medición de carga si cambia lo que carga sin `?estudio`.
+  - Táctil: repaso completo en el celular. Cooperativo: no aplica.
+  - Qué mirar: una partida entera de cada modo.
+  - Tamaño: mediano.
+
+**8·M · Mundo abierto** (cuando la arena funcione bien; por defecto, comercial C1). Diseño en `COMBATE.md` §20 y §23.
+
+- [ ] **M1 · Modo combate y convivencia con construir:** el arma de estilo define la intención; V; entrar y salir solos; desenvainar; medición de rendimiento en Android antes de gastar. Prueba `combate-mundo.mjs`. Táctil: botón GUARDIA. Tamaño: mediano.
+- [ ] **M2 · Cámara en tercera persona dinámica:** brazo con resorte, 5 rayos, entra rápido y sale lento, tramado pixel de lo que tapa. Prueba `camara-combate.mjs` (500 posiciones reales). Táctil: sí. Tamaño: grande.
+- [ ] **M3 · Foco (lock-on) y enemigos con aviso:** marca, cambiar y soltar el foco; rig nuevo en zombi, esqueleto y trauco; telegrafía propia de la araña y el creeper; fichas de ataque; `enemigos-combate.json`. Pruebas `combate-foco.mjs` y `enemigos-combate.mjs`. Táctil: FOCO. Tamaño: grande.
+- [ ] **M4 · Red de combate en grupo:** `ci` y `cv` de los monstruos hacia su objetivo, `g` con `at` y `rx`, y `ce` dentro de `p`. Prueba `combate-red.mjs` extendida y medición en una sala de 8 con 16 monstruos. Cooperativo: es este PR. Tamaño: mediano.
+- [ ] **M5 · Sekiro en el mundo** (contra grupos, flechas desviadas) y **M6 · Urban Reign en el mundo** (altura según la mira, paredes de bloques de verdad, golpe en el suelo mirando abajo). Prueba de cada estilo extendida. Tamaño: mediano cada uno.
+- [ ] **M7 · Técnicas y maestros del portafolio:** Lalo y Moisés enseñan sus estilos tras ganarles en la arena; armas y recetas (katana con vaina, vendas); `misiones.estado.tecnicas`. Pruebas `recetas.mjs`, `inventario.mjs` y `misiones.mjs`. Tamaño: mediano.
+- [ ] **M8 · Primer jefe con arena: el Imbunche rehecho:** niebla, entrada por el túnel, fases, golpes finales, fogata de reintento y anfitrión que simula; `jefes.json`. Prueba `jefes-combate.mjs`. Tamaño: grande.
+
+**8·E · Estilos y jefes** (comercial: fases 4 y 4b y Acceso anticipado). Diseño en §17.9 y §21-24.
+
+- [ ] **E1 · Pareja con el acompañante** (órdenes rápidas y golpes de a dos).
+- [ ] **E2 · Maestros por bastión** (con las facciones).
+- [ ] **E3-E4 · Goliath** (base y carga; onda con los bloques que revientan y vuelven).
+- [ ] **E5-E6 · Danzante** (dash y rango; combo aéreo).
+- [ ] **E7-E8 · Chonchon y Caleuche rehechos, más jefes nuevos.**
+- **Después:** 2 contra 2 en la arena, armas del escenario, PvP público (§26.2).
 
 ## Portafolio interactivo (el mundo como portafolio)
 
@@ -1278,7 +1397,7 @@ Dos etapas; un chat por punto; dentro de cada etapa, de arriba a abajo. **Regla 
 3. **Duelo: pulido** (~~animaciones~~, ~~sonido~~ y ~~tutorial con cámara~~: los 3 PR hechos el 2026-10-13; Opus; ver 7h-2, «Pedido del dueño 2026-10-13»; las animaciones salen de los eventos para que sirvan también al duelo de 2 jugadores) · ~~**Duelo: colección + armar mazo (con mazo aleatorio) + tienda de Lucho que vende cartas → duelo 2 jugadores con mazos propios**~~ (hecho 2026-10-14: PR #108 y #109, mirar, revancha y mesa con espera) · ~~Mundo de prueba~~ (descartado 2026-10-14: `/gamemode devenjy` ya cubre teletransportes, objetos, amistad, cartas y escenas; si llega contenido de amistad baja, sumar `/amistad nivel <persona> <0-100>`) · **pantalla de carga → menú de inicio** (3 PR: ~~1) menú de inicio~~ hecho 2026-10-14, rama `pantalla-inicio`; ~~2) pantalla de carga a pantalla completa, fondo de tierra, barra por etapas reales y consejos al azar, editable en `inicio.json`~~ hecho 2026-10-14, rama `pantalla-carga`; ~~3) paneles con cámaras de cine y fundidos detrás del menú mientras eliges mundo o editas tu skin, medir la carga~~ hecho 2026-10-14, rama `fondo-menu`, con la presentación «Venjy presenta» al abrir; falta: gizmo para poner los planos mirando el mundo en vez de escribir x/y/z) · ~~7f-2: bloques con forma~~ (hecho 2026-10-14, rama `bloques-forma-7f2`; también el contorno y las grietas con la forma de cada bloque) · 7h-1 carrera de gatas (demo del «Gran Premio del Living» hecha 2026-10-14, rama `carrera-gatas-7h1`, PR #114; si al dueño le gusta: objetos, varios jugadores y más pistas).
 3b. ~~**Estudio: editor de píxeles para los íconos de objetos y el arte de las cartas**~~ **HECHO el 2026-10-13 (rama `estudio-pixeles`; detalle en la bitácora y en `estudio/DISENO.md` §20; no editable aún: los íconos de `script.js`)** (pedido del dueño 2026-10-13; Opus, un chat propio; **decidido: va justo después del PR 1 del pulido del Duelo (animaciones) y antes del sonido**; luego sigue el plan: sonido → tutorial con cámara): una pestaña del Estudio con una cuadrícula de 16×16 (el tamaño de `iconos.js`) donde el dueño pinta cuadro por cuadro cada objeto para rediseñarlo. Paleta (colores del ícono actual + selector), lápiz, borrador, cuentagotas, relleno, deshacer, espejo, vista en grande y a tamaño real (barra rápida), y «partir del ícono actual» (lee el que hoy dibuja `PINTORES` en `iconos.js`). Se guarda en `mundo/datos/` (archivo nuevo, p. ej. `iconos.json`: por clave de objeto, la grilla como filas de índices + paleta, con esquema en `estudio/esquemas/`); el juego usa el dibujo del JSON si existe y, si no, el de código (`crearAtlasObjetos` ~392 / `icono` ~443 de `iconos.js`). En vivo con `?estudio` (mensaje `datos`). **En el mismo chat, el arte de las cartas** (50×76, `cartas-arte.js`): editar el retrato de cada carta (zona `retrato` de `ZONAS`) y, si cabe, el marco por familia y el reverso, partiendo del dibujo actual (`dibujarCarta` ~1140, `RETRATOS` ~389, `dibujarReverso` ~1170); el juego usa el del JSON si existe (mesa 3D y panel 2D). Reglas de arte: `supervivencia/CARTAS-ARTE.md`. Más adelante, los íconos de `script.js`. **Crear nuevos como borrador** (pedido del dueño): en los dos editores, «Nuevo objeto» y «Nueva carta». El dueño dibuja y llena una ficha (objeto: clave, nombre ES/EN, qué hace, receta o dónde se consigue, notas; carta: elige la plantilla que ya existe —Monstruo, Mito, Amigo, Animal o Hechizo, con su marco— y llena clave, nombre ES/EN, ATK/DEF, texto del efecto ES/EN y notas; la vista previa usa el marco de la familia y el retrato queda vacío o con un boceto opcional del dueño). Se guarda con `"estado": "borrador"`; **el juego ignora los borradores**. Después el dueño le dice a un agente «hice X e Y, termínalos e impleméntalos»: el agente los lista con `node estudio/cli.mjs resumen borradores` (comando nuevo), programa la lógica (`objetos.js`/recetas/usos con la skill `objetos-supervivencia`; `cartas-datos.js` + efecto en `cartas.js` con su prueba y la IA medida). **En las cartas, el agente hace el arte único del retrato** (en `RETRATOS` de `cartas-arte.js`, con las reglas de `CARTAS-ARTE.md`; si el dueño dejó un boceto, lo toma de guía); en los objetos usa el dibujo del dueño tal cual y marca el borrador como `"estado": "hecho"`. La skill `datos-json` explica este flujo.
 4. **6d etapa 2 (visitas) con navegación de verdad** (buscar camino sobre el terreno, no rutas fijas; incluye 7j-1) → 7i acompañantes.
-5. **Bloque 8 · Combate** (encargo del dueño 2026-10-15, `mundo/COMBATE.md` §12-13): 8·0 diseño (chat solo docs) → 8·N núcleo (rig con codos y rodillas, datos de ataques, intenciones PC y táctil, hitstop, pestaña Combate) → **8·L Minijuego Lalo vs Moisés con los estilos nuevos** (estilo Mortal Kombat, arena propia; sale con Sekiro y Urban Reign, los otros estilos se suman después) · 7g-1 → 7g-2 ∥ 7g-3 → 7h-3 concierto → minijuego Salonas.
+5. **Bloque 8 · Combate** (encargo del dueño 2026-10-15, `mundo/COMBATE.md` §12-13): 8·0 diseño (hecho, `COMBATE.md` §14-28) → 8·N núcleo (N1-N7) (rig con codos y rodillas, datos de ataques, intenciones PC y táctil, hitstop, pestaña Combate) → **8·L Minijuego Lalo vs Moisés con los estilos nuevos** (estilo Mortal Kombat, arena propia; sale con Sekiro y Urban Reign, los otros estilos se suman después) · 7g-1 → 7g-2 ∥ 7g-3 → 7h-3 concierto → minijuego Salonas.
 - Opcional: resto de 7f-3 (lugares del mapa actual) y los añadidos dudosos.
 - **Fin de la etapa A: el portafolio queda terminado como juego.**
 
@@ -1377,6 +1496,7 @@ Ideas que se probaron y se sacaron hasta que el dueño decida. Para revivir una,
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
+- 2026-10-15 · **Bloque 8 · 8·0 diseño del combate** (rama `combate-diseno-8-0`, solo docs): `mundo/COMBATE.md` §14-28. Núcleo (intenciones PC y táctil, estados a paso fijo de 60 Hz, ataques con fases y animaciones ancladas a la fase, inercialización, peso, rig con `pecho`, codos, rodillas y rótula compatible con prueba de matrices, IA con aviso, red «cada uno juzga lo que recibe» con el hitstop que esconde el veredicto), Sekiro y Urban Reign con todas sus animaciones fase por fase (Urban Reign investigado en la web: el desvío es acertar la altura, no esquivar al lado contrario; el «Spark» no existía y pasa a ser la Furia; la silueta de zonas se ve), reacciones, la arena de Lalo contra Moisés (lago congelado, entrada con reto, viaje y VS con los retratos de las cartas, cámara de lado al eje del duelo, CPU, 2 jugadores, prueba de balance) y, a nivel de diseño, el mundo abierto, Goliath, Danzante, jefes con entrada animada y maestros. Bloque 8 dividido en 31 PRs (N1-N7, L1-L8, M1-M8, E1-E8). Preguntas para el dueño en §27.
 - 2026-10-15 · **Bloque 8 · Combate: encargo anotado y ubicado** (rama `combate-plan-8`, solo docs): `mundo/COMBATE.md` con el encargo del dueño (4 estilos, base común, jefes) y dónde entra (decisiones del dueño: arena primero, 2 estilos, un maestro por bastión, énfasis en animaciones de calidad): núcleo y Lalo vs Moisés con los estilos Sekiro y Urban Reign en la Etapa A5 (pedido del dueño: el Mortal Kombat como laboratorio de estilos); mundo abierto, jefes y los otros estilos en la fase comercial C1 y siguientes. Falta el chat de diseño (8·0).
 - 2026-10-15 · **7i PR 3: te lleva cosas, puentes y se desatasca** (rama `acompanante-cosas-7i`): su mochila (9 casillas, se abre en «Hablar» como un cofre; sus torres y puentes usan de ahí el bloque que más tiene; se la queda al despedirlo y se guarda con el mundo); puentes sobre huecos y agua de hasta 10 (los quita cuando te alejas sin verlos); desatasco (rompe o pone hasta 6 bloques para salir de un hoyo o un encierro antes de esperar o aparecer). Todo en la pestaña Vida. `acompanante.mjs` 244, `rutinas.mjs` 181, `navegacion.mjs` 142, `estudio`, `amistad` y `validar --contra HEAD` OK. Detalle en «Estado 7i · PR 3».
 - 2026-10-15 · **7i PR 2: peleas, órdenes y su torre** (rama `acompanante-peleas-7i`): pelea con los monstruos a < 6 de ti (espada de piedra), invulnerable, sin aguante se sienta 10 s; órdenes en «Hablar» (Sígueme / Espérame aquí / No pelees); si te subes a un pilar arma su torre de tierra al lado (rompe lo que le pongan encima, bloques contados, baja rompiéndola); coop: sus golpes los valida el dueño del monstruo. Todo en la pestaña Vida. `acompanante.mjs` 195, `rutinas.mjs` 180, `navegacion.mjs` 142, `estudio`, `amistad` y `validar --contra HEAD` OK. Detalle en «Estado 7i · PR 2»; PR 3 (llevar cosas, puentes, desatascarse) anotado ahí.
