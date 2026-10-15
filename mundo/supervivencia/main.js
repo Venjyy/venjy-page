@@ -759,7 +759,9 @@ async function arrancar(guardado, cx = null) {
         persona: c => amigos.lista.find(n => n.clave === c),
         hora: () => minutosDe(dia.t) / 60,
         libre: n => !ronda.activa && !minijuegos.activo && !(jefes && jefes.enCurso) && !(amigos.iglu && amigos.iglu.enPase && (n === amigos.iglu.moises || n === amigos.iglu.lalo)),
-        cargarGestos: () => import('./moldes.js').then(m => m.molde)
+        cargarGestos: () => import('./moldes.js').then(m => m.molde),
+        // Te incluyen (PR 3): con amistad alta te saludan al pasar (misiones se crea más abajo)
+        nivel: c => (misiones ? misiones.amistad.nivel(c) : 0)
     });
     cargarDatos('rutinas').then(d => { if (d) rutinas.fijar(d); });
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
@@ -1192,9 +1194,12 @@ async function arrancar(guardado, cx = null) {
             alCambiarJugadores: () => pintarCoop(),
             alActividad: m => recibirActividad(m),
             alSalirJugador: id => salioDeActividades(id),
-            alEntrarJugador: id => entroAActividades(id),
+            alEntrarJugador: id => { entroAActividades(id); if (coop.esAnfitrion) coop.rutina({ l: rutinas.foto() }, id); },
+            alRutina: m => rutinas.recibir(m),
             alCerrar: motivo => terminarCoop(motivo)
         });
+        // Rutinas de los amigos: las decide el anfitrión con su hora y las manda; el invitado las sigue (6d etapa 2, PR 3)
+        rutinas.red(coop.esAnfitrion ? { enviar: m => coop.rutina(m) } : 'seguir');
         // Pestaña en segundo plano: el navegador detiene el bucle, pero la red sigue (bloques, latidos)
         setInterval(() => { if (document.hidden) coop.actualizar(0.25); }, 250);
         const hudSala = document.createElement('div');

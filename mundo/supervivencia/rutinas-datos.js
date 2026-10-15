@@ -20,13 +20,27 @@ export const RUTINA_BASE = {
     saludoLejos: 1,     // 1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo
     anticipar: 1,       // 1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale a la hora `de`
     rodeo: 1.3,         // el camino de verdad es esto más largo que la línea recta (para calcular cuándo salir)
-    segundosHora: 25    // segundos de juego que dura una hora del reloj (reloj.js: de media 25)
+    segundosHora: 25,   // segundos de juego que dura una hora del reloj (reloj.js: de media 25)
+    // Te incluyen (PR 3): con amistad alta, quien anda de visita (yendo, allá o de vuelta) te saluda al pasar
+    nivelIncluir: 3,    // nivel de amistad desde el que te saludan al pasar (0 Desconocido … 3 Buen amigo, 4 Íntimo; 5 = nunca)
+    radioIncluir: 7,    // a menos de esto (bloques) del jugador
+    esperaIncluir: 90   // segundos antes de volver a saludarte la misma persona
 };
 const HORAS = ['de', 'a'];
 // Lo que hace quien visita si no encuentra a la persona (se lo llevó el jugador, no la alcanzó): gesto y frase;
 // {quien} = a quien venía a ver. rutinas.json → `ausente` lo cambia para todas y `visitas.<clave>.ausente` para una
 export const AUSENTE_BASE = { gesto: 'rasca', texto: { es: '¿Y {quien}? Pensé que estaba aquí.', en: "Where's {quien}? I thought they'd be here." } };
-let ajustes = { ...RUTINA_BASE }, visitas = {}, textos = {}, ausente = { ...AUSENTE_BASE };
+// Lo que dice al pasar junto al jugador con amistad alta, según lo que está haciendo; {quien} = a quien va a ver o visita.
+// rutinas.json → `incluir` lo cambia (gesto y cada frase por separado)
+export const INCLUIR_BASE = {
+    gesto: 'saluda',
+    yendo: { es: '¡Hola! Voy a ver a {quien}. ¿Te vienes?', en: 'Hi! Off to see {quien}. Coming along?' },
+    visitando: { es: '¡Hola! Ven, estamos aquí con {quien}.', en: "Hey! Come over, I'm here with {quien}." },
+    volviendo: { es: '¡Hola! Ya voy de vuelta.', en: 'Hey! Heading back now.' },
+    paseo: { es: '¡Hola! Ando de paseo.', en: "Hey! Just out for a walk." }
+};
+const FRASES_INCLUIR = ['yendo', 'visitando', 'volviendo', 'paseo'];
+let ajustes = { ...RUTINA_BASE }, visitas = {}, textos = {}, ausente = { ...AUSENTE_BASE }, incluir = { ...INCLUIR_BASE };
 // Copias de fábrica de HORARIOS (para volver a ellas al aplicar otro rutinas.json)
 const HORARIOS_CODIGO = JSON.parse(JSON.stringify(HORARIOS));
 const LUGARES_CODIGO = JSON.parse(JSON.stringify(LUGARES));
@@ -43,6 +57,12 @@ export function fijarRutinas(datos) {
     if (a) for (const k of Object.keys(RUTINA_BASE)) if (Number.isFinite(a[k])) ajustes[k] = a[k];
     ausente = { ...AUSENTE_BASE };
     if (datos && datos.ausente) { const x = accion(datos.ausente); if (x.gesto) ausente.gesto = x.gesto; if (x.texto) ausente.texto = x.texto; }
+    incluir = { ...INCLUIR_BASE };
+    const inc = datos && datos.incluir;
+    if (inc) {
+        if (typeof inc.gesto === 'string' && inc.gesto) incluir.gesto = inc.gesto;
+        for (const k of FRASES_INCLUIR) { const x = texto(inc[k]); if (x) incluir[k] = x; }
+    }
     textos = {};
     for (const [k, t] of Object.entries((datos && datos.textos) || {})) { const x = texto(t); if (x) textos[k] = x; }
     visitas = {};
@@ -75,3 +95,4 @@ export const visitasRutinas = () => visitas;
 // Textos del panel que cambió el dueño (los demás, TEXTOS_RUTINA de rutinas.js)
 export const textosRutinas = () => textos;
 export const ausenteRutinas = () => ausente;
+export const incluirRutinas = () => incluir;

@@ -7,6 +7,8 @@
 //     en-sitio; escena, `libre` y la persona visitada fuera no lo dejan salir; si otro lo movió no lo pelea.
 //  4. 7j-1: acompanar corta la rutina y retomar sigue en el tramo que toca según la hora; «Probar» del Estudio.
 //  5. Texto del panel (Hablar, Misión y Tienda) y gesto encima de la pose.
+//  5b. PR 3: con amistad alta te saludan al pasar (una vez cada `esperaIncluir`); cooperativo: el anfitrión manda lo
+//     que decide y el invitado solo lo aplica (y la foto para quien entra con una visita empezada).
 //  6. Esquema, RUTINA_BASE, TEXTOS_RUTINA y la pestaña Vida nombran los mismos campos; el juego lo conecta.
 // =========================================================
 import { readFileSync } from 'node:fs';
@@ -90,7 +92,7 @@ const pos = json('mundo/datos/posiciones.json').personas;
 // 3-5. Máquina de estados con personas y paseos falsos
 // ---------------------------------------------------------
 const rig = () => Object.fromEntries(['cuerpo', 'cuello', 'brazoD', 'brazoI'].map(k => [k, { rotation: { x: 0, y: 0, z: 0 } }]));
-function armar({ visitas, hora = 7, jugador = { pos: { x: 0, z: 0 } } } = {}) {
+function armar({ visitas, hora = 7, jugador = { pos: { x: 0, z: 0 } }, nivel = null, ajustes = {} } = {}) {
     const P = {
         ana: { clave: 'ana', x: 0, z: 0, p: rig() }, beto: { clave: 'beto', x: 10, z: 0, p: rig() }, caro: { clave: 'caro', x: 40, z: 0, p: rig() }
     };
@@ -108,8 +110,9 @@ function armar({ visitas, hora = 7, jugador = { pos: { x: 0, z: 0 } } } = {}) {
         casa(c) { fuera.delete(c); P[c].paseo = null; }
     };
     const reloj = { h: hora }, permiso = { libre: true };
-    RD.fijarRutinas({ ajustes: { anticipar: 0, revisar: 0.5 }, visitas });
+    RD.fijarRutinas({ ajustes: { anticipar: 0, revisar: 0.5, ...ajustes }, visitas });
     const r = R.crearRutinas({ paseos, persona: c => P[c], hora: () => reloj.h, libre: () => permiso.libre, jugador, idioma: () => 'es', nombre: c => c.toUpperCase(),
+        nivel: nivel ? c => nivel[c] ?? 0 : undefined,
         cargarGestos: () => Promise.resolve(nombre => (nombre === 'saluda' ? () => ({ bDx: -2, cy: 0.5 }) : null)) });
     const paso = (s = 1) => { for (let i = 0; i < s * 10; i++) r.actualizar(0.1); };
     return { r, P, paseos, fuera, llamadas, reloj, permiso, paso };
@@ -289,6 +292,81 @@ const VIS = {
     paso(); paseos.llegar('ana'); paso(1);
     ok(r.estado('ana').estado === 'visitando' && P.ana.paseo.texto === '', 'lejos del jugador: llega sin globo');
 }
+{
+    // 5b. Te incluyen: Ana (Buen amigo) va a ver a Beto y pasa junto al jugador: lo mira, saluda y lo dice una vez
+    const jugador = { pos: { x: 2, z: 3 } }, nivel = { ana: 3 };
+    const { r, P, fuera, paso } = armar({ visitas: VIS, hora: 10, jugador, nivel });
+    paso(0.5);
+    await new Promise(res => setTimeout(res, 0));
+    paso(0.2);
+    ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === '¡Hola! Voy a ver a BETO. ¿Te vienes?', `amistad alta: te saluda al pasar («${P.ana.paseo.texto}»)`);
+    const p = rig();
+    fuera.get('ana').adorno(0.1, p);
+    ok(p.cuello.rotation.y > 0.1 && p.brazoD.rotation.x < 0, `al saludarte te mira y hace su gesto (cuello ${p.cuello.rotation.y.toFixed(2)})`);
+    const A = RD.ajustesRutinas();
+    paso(Math.max(A.frase, A.gesto) + 1);
+    ok(P.ana.paseo.texto === '' && !fuera.get('ana').adorno, 'el saludo al pasar termina solo (sin globo ni gesto)');
+    paso(5);
+    ok(P.ana.paseo.texto === '', 'no repite el saludo antes de `esperaIncluir`');
+    nivel.ana = 2; r.cortar('ana');
+    const b = armar({ visitas: VIS, hora: 10, jugador, nivel: { ana: 2 } });
+    b.paso(1);
+    ok(b.r.estado('ana').estado === 'yendo' && b.P.ana.paseo.texto === '', 'amistad más baja: pasa sin saludarte');
+    const c = armar({ visitas: VIS, hora: 10, jugador: { pos: { x: 30, z: 30 } }, nivel: { ana: 4 } });
+    c.paso(1);
+    ok(c.P.ana.paseo.texto === '', 'lejos (más allá de radioIncluir): no te saluda');
+    // De visita, después del saludo con quien recibe: «Ven, estamos aquí con …»
+    const jd = { pos: { x: 30, z: 30 } };
+    const d = armar({ visitas: VIS, hora: 10, jugador: jd, nivel: { ana: 3 } });
+    d.paso(0.5); d.paseos.llegar('ana'); d.paso(A.respuesta + A.frase + 1);
+    jd.pos.x = d.P.ana.x + 2; jd.pos.z = 2; d.paso(0.6);
+    ok(d.r.estado('ana').estado === 'visitando' && d.P.ana.paseo.texto === '¡Hola! Ven, estamos aquí con BETO.', `de visita te invita («${d.P.ana.paseo.texto}»)`);
+    RD.fijarRutinas({ ajustes: { anticipar: 0 }, visitas: VIS, incluir: { visitando: { es: 'Vente, {quien} invita.' } } });
+    ok(RD.incluirRutinas().visitando.en === 'Vente, {quien} invita.' && RD.incluirRutinas().gesto === 'saluda', 'rutinas.json → incluir cambia una frase (sin inglés copia el español) y deja lo demás');
+}
+{
+    // 5b. Cooperativo: el anfitrión decide y manda; el invitado no mira la hora y aplica lo que llega
+    const msgs = [];
+    const h = armar({ visitas: VIS, hora: 10 });
+    h.r.red({ enviar: m => msgs.push(JSON.parse(JSON.stringify(m))) });
+    const g = armar({ visitas: VIS, hora: 10 });
+    g.r.red('seguir');
+    h.paso(1); g.paso(1);
+    ok(msgs.length === 1 && msgs[0].c === 'ana' && msgs[0].a === 'sale' && msgs[0].v === 'ana-beto', `anfitrión: manda «sale» (${JSON.stringify(msgs)})`);
+    ok(g.r.estado('ana').estado === 'en-sitio', 'invitado: con la misma hora no sale por su cuenta');
+    ok(msgs.every(m => !('e' in m) && !('de' in m) && !('para' in m)), 'los mensajes no pisan e, de ni para (campos de la sala)');
+    msgs.forEach(m => g.r.recibir(m)); g.paso(0.5);
+    ok(g.r.estado('ana').estado === 'yendo' && g.llamadas.some(l => l[0] === 'ir' && l[1] === 'ana'), 'invitado: sale al llegarle «sale»');
+    g.paseos.llegar('ana'); g.paso(0.5);
+    await new Promise(res => setTimeout(res, 0)); g.paso(0.2);
+    ok(g.r.estado('ana').estado === 'visitando' && g.P.ana.paseo.texto === 'Hola Beto', 'invitado: su llegada y su saludo los dibuja él');
+    h.paseos.llegar('ana'); h.paso(1);
+    // Quien entra a la sala con la visita empezada: llega sin repetir el saludo
+    const foto = h.r.foto();
+    ok(foto.length === 1 && foto[0].ya === 1 && foto[0].v === 'ana-beto', `foto para quien entra (${JSON.stringify(foto)})`);
+    const g2 = armar({ visitas: VIS, hora: 10 });
+    g2.r.red('seguir'); g2.r.recibir({ l: foto }); g2.paso(0.5); g2.paseos.llegar('ana'); g2.paso(1);
+    ok(g2.r.estado('ana').estado === 'visitando' && g2.P.ana.paseo.texto === '', 'entra con la visita empezada: llega sin repetir el saludo');
+    msgs.length = 0; h.reloj.h = 12; h.paso(1);
+    ok(msgs.some(m => m.c === 'ana' && m.a === 'vuelve'), 'anfitrión: manda «vuelve» al terminar el tramo');
+    msgs.forEach(m => g.r.recibir(m)); g.paso(0.5);
+    ok(g.r.estado('ana').estado === 'volviendo', 'invitado: vuelve al llegarle «vuelve»');
+    g.paseos.casa('ana'); g.paso(1);
+    ok(g.r.estado('ana').estado === 'en-sitio', 'invitado: de vuelta en su sitio');
+    // «No está»: también lo decide el anfitrión
+    const h3 = armar({ visitas: VIS, hora: 10 }), m3 = [];
+    h3.r.red({ enviar: m => m3.push(m) }); h3.paso(1);
+    h3.paseos.llegar('ana'); h3.P.beto.x = 200; h3.paso(1);
+    ok(m3.some(m => m.a === 'noesta' && m.v === 'ana-beto'), 'anfitrión: manda «noesta» si no encontró a quien visitaba');
+    const g3 = armar({ visitas: VIS, hora: 10 });
+    g3.r.red('seguir'); m3.forEach(m => g3.r.recibir(m)); g3.paso(0.5);
+    ok(g3.r.estado('ana').estado === 'yendo' || g3.r.estado('ana').estado === 'volviendo', `invitado: aplica «noesta» (${g3.r.estado('ana').estado})`);
+    g3.r.recibir({ c: 'nadie', a: 'sale', v: 'x' }); g3.r.recibir(null); g3.r.recibir({ a: 'sale' });
+    ok(true, 'invitado: mensajes raros no rompen nada');
+    const solo = armar({ visitas: VIS, hora: 10 });
+    solo.r.recibir({ c: 'ana', a: 'sale', v: 'ana-faro' }); solo.paso(0.2);
+    ok(solo.r.estado('ana').visita !== 'ana-faro', 'sin sala (o anfitrión): recibir no hace nada');
+}
 
 // ---------------------------------------------------------
 // 6. Esquema, pestaña Vida y conexión con el juego
@@ -315,6 +393,12 @@ const VIS = {
     ok(leer('mundo/supervivencia/paseos.js').includes('adornar('), 'paseos.js deja adornar al que llega');
     ok(/p6\.tipo === 'grupo' && personas\(\)\.some\(p => GRUPOS\[p6\.grupo\]\.npcs\.includes\(p\.clave\) && p\.n\.paseo\)/.test(leer('mundo/supervivencia/escenas-skin.js')), 'escena de grupo: no sale si alguien del grupo anda de visita');
     ok(main.includes('grupoListo: clave =>') && main.includes("GRUPOS[nombre].npcs.every(k => !paseos.fuera(k))") && leer('mundo/supervivencia/hablar.js').includes('ctx.grupoListo(clave)'), 'saludo del grupo (botón y automático): solo con todos en su sitio');
+    ok(iguales(Object.keys(esquema.properties.incluir.properties), Object.keys(RD.INCLUIR_BASE)), 'esquema: incluir = INCLUIR_BASE');
+    ok(vida.includes('INCLUIR_BASE[k]') && ['yendo', 'visitando', 'volviendo', 'paseo'].every(k => vida.includes(`['${k}', `)), 'pestaña Vida: frases de «te saludan al pasar»');
+    for (const [k, tx] of Object.entries(RD.INCLUIR_BASE)) if (k !== 'gesto') ok(tx.es && tx.en, `INCLUIR_BASE.${k} con ES y EN`);
+    ok(main.includes('nivel: c =>') && main.includes('rutinas.red(') && main.includes('rutinas.recibir(') && main.includes('rutinas.foto()'), 'main.js: nivel de amistad y rutinas en el cooperativo');
+    const coop = leer('mundo/supervivencia/coop.js');
+    ok(/TIPOS = \[[^\]]*'ru'/.test(coop) && coop.includes('ru(m)') && coop.includes("rutina(m, para)"), "coop.js: mensaje 'ru' (escuchado, manejado y enviado)");
     const proto = leer('estudio/puente-protocolo.js');
     ok(proto.includes("case 'rutina'") && proto.includes("'rutinas'"), 'puente: mensaje rutina y rutinas en vivo');
 }

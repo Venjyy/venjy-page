@@ -85,6 +85,22 @@ function pisadas(camino) {
     ok(pis.every(p => p.x !== 20 || p.z === 30), 'pared: solo cruza x = 20 por el hueco');
     ok(pis.some(p => p.x === 20 && p.z === 30), 'pared: pasa por el hueco');
 }
+// 1b2. Seto de hojas (o valla) de 1 de alto con un hueco: no se pisa, pasa por el hueco; con pisarHojas = 1, por encima
+{
+    const C = juguete();
+    C.caja(20, 1, 0, 20, 1, 39, N.OBSTACULO);
+    C.caja(20, 1, 30, 20, 1, 30, LIBRE); // hueco en z = 30
+    const b = buscar(C, { x: 5.5, y: 1, z: 5.5 }, { x: 35.5, y: 1, z: 5.5 });
+    const pis = b.camino ? pisadas(b.camino) : [];
+    ok(b.estado === 'listo' && pis.every(p => p.x !== 20 || p.z === 30), 'hojas: no las pisa, rodea por el hueco');
+    ok(b.camino && b.camino.every(p => p.y === 1), 'hojas: nunca queda encima');
+    const b2 = buscar(C, { x: 5.5, y: 1, z: 5.5 }, { x: 35.5, y: 1, z: 5.5 }, op({ pisarHojas: 1 }));
+    ok(b2.estado === 'listo' && b2.camino.every(p => p.z < 10), 'pisarHojas = 1: pasa por encima, sin rodear (como antes)');
+    // consultaMundo: TIPO 2 (hoja, valla del corral) y los noPisables quedan como OBSTACULO
+    const tipos = new Uint8Array(256); tipos[1] = 1; tipos[2] = 2; tipos[3] = 8; tipos[4] = 8;
+    const Q = N.consultaMundo({ mundo: { bloque: (x, y, z) => x }, tipos, noPisables: [4] });
+    ok(Q.celda(1, 0, 0) === SOLIDO && Q.celda(2, 0, 0) === N.OBSTACULO && Q.celda(3, 0, 0) === SOLIDO && Q.celda(4, 0, 0) === N.OBSTACULO, 'consultaMundo: hojas y vallas son OBSTACULO');
+}
 // 1c. Escalones: sube 1, no 2; cae 3, no 4
 {
     const C = juguete();

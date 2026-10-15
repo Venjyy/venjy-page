@@ -19,7 +19,10 @@
 // g golpe a monstruo · gj golpe a jefe · d daño a jugador · x explosión · pr proyectil · mk muerte
 // para misiones · jv jefe vencido · ry rayo · h hora · z en cama · am amanecer · pf perfil ·
 // pf? pedir foto · fl foto lista · fin el anfitrión cierra · pc cofre de compañero editado ·
-// em gesto de la ruleta { k } (7c-2; k vacío = terminó antes; máx. 1/s, gestos-jugador.js).
+// em gesto de la ruleta { k } (7c-2; k vacío = terminó antes; máx. 1/s, gestos-jugador.js) ·
+// ru rutinas de los amigos (6d etapa 2, PR 3): el anfitrión manda lo que decide { c, a: sale|vuelve|noesta, v, ya } al
+// pasar (unos pocos por día de juego) y la lista { l } a quien entra; cada equipo los camina con sus chunks (rutinas.js).
+//  · Rutinas de los amigos (visitas por horario): las decide el anfitrión con su hora; el invitado solo las aplica.
 // Ping (7e, ver online/ping.js): sin mensajes nuevos. Directo: getStats() en SalaDirecta. Respaldo: `p` lleva `ec`
 // (invitado: [t del último p del anfitrión, ms retenido]; anfitrión: [[id corto, t, retenido], …] solo para los
 // invitados de respaldo) y `h` lleva `pg` (ms de cada invitado, para que todos vean la lista).
@@ -114,7 +117,7 @@ function conexionBase(sala, rol, extra) {
     const cx = { sala, rol, cola: [], manejar: null, presentes: new Map(), ...extra };
     // Cada tipo que maneja `manejadores` (más abajo) tiene que estar aquí: si no, la sala no lo escucha y el mensaje se
     // pierde (pasó con 'ac' y 'em'; lo revisa mundo/tests/cartas-duelo.mjs)
-    const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc', 'em', 'ac'];
+    const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc', 'em', 'ac', 'ru'];
     for (const t of TIPOS) sala.en(t, m => (cx.manejar ? cx.manejar(t, m) : cx.cola.push([t, m])));
     sala.en('entra', m => { cx.presentes.set(m.id, m); cx.alEntrar && cx.alEntrar(m); });
     sala.en('actualiza', m => { cx.presentes.set(m.id, m); cx.alActualizar && cx.alActualizar(m); });
@@ -723,6 +726,8 @@ export function crearCoop(cx, ctx) {
         em(m) { const r = remotoPorId(m.de); if (r) r.gesto = recibirEm(r.gesto, m.k); },
         // Actividades compartidas (actividades-red.js, 7g-1): las maneja main.js
         ac(m) { if (ctx.alActividad) ctx.alActividad(m); },
+        // Rutinas de los amigos (6d etapa 2, PR 3): solo las del anfitrión
+        ru(m) { if (!esAnfitrion && m.de === cx.anfitrion && ctx.alRutina) ctx.alRutina(m); },
         pc(m) {
             const p = perfiles.get(m.disp);
             if (p && m.inv) { p.inv = m.inv; ctx.alPerfil && ctx.alPerfil(m.disp, p); }
@@ -844,6 +849,8 @@ export function crearCoop(cx, ctx) {
         gesto(k) { sala.enviar('em', { k }); },
         // Actividades compartidas (7g-1): mensaje `ac` (para = un solo destinatario)
         actividad(m) { sala.enviar('ac', m); },
+        // Rutinas de los amigos (anfitrión): a todos, o solo a `para` (la lista para quien entra)
+        rutina(m, para) { sala.enviar('ru', para ? { ...m, para } : m); },
         yoId, idAnfitrion: () => (esAnfitrion ? yoId : cx.anfitrion),
         nombreDe: id => (id === yoId ? cx.nombre : remotos.get(id)?.nombre || '?'),
         get total() { return 1 + remotos.size; },

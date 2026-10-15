@@ -11,9 +11,13 @@
 // Choques: una escena (`n.escena`: «Hablar», misiones, tienda, amistad, skin) no lo deja salir y paseos.js lo deja
 // quieto donde va; `libre(n)` (main.js: ronda del iglú, minijuegos, jefes) tampoco; si la persona que iba a
 // visitar no está en su sitio, espera. Si otro lo movió (/caminar, el Estudio) no lo pelea: espera a que vuelva.
+// Te incluyen (PR 3): con amistad alta (`nivelIncluir`), quien anda de visita te saluda al pasar (gesto, mirada y frase
+// de `incluir`), una vez cada `esperaIncluir` s. Cooperativo (PR 3): el anfitrión decide (sale, vuelve, no lo encontró)
+// y lo manda con `red`; el invitado no mira la hora, solo aplica lo que llega (`recibir`) y su llegada y su saludo los
+// dibuja él, porque cada equipo camina a sus amigos con sus propios chunks.
 // crearRutinas() no usa three.js ni DOM (lo prueba mundo/tests/rutinas.mjs). Valores: rutinas-datos.js.
 // =========================================================
-import { ajustesRutinas, visitasRutinas, textosRutinas, ausenteRutinas, fijarRutinas } from './rutinas-datos.js';
+import { ajustesRutinas, visitasRutinas, textosRutinas, ausenteRutinas, incluirRutinas, fijarRutinas } from './rutinas-datos.js';
 import { enTramo } from './reloj.js';
 import { ajustesNavegacion } from '../navegacion.js';
 import { HORARIOS, LUGARES } from './horarios-datos.js';
@@ -67,11 +71,15 @@ export function horasDeViaje(d, A = ajustesRutinas(), N = ajustesNavegacion()) {
 }
 
 // ctx: { paseos (paseos.js), persona(clave) → n, hora() → 0-24, libre(n) → bool, jugador: { pos }, idioma() → 'es'|'en',
-//        nombre(clave) → texto, cargarGestos() → Promise<(nombre) → (u, t, info) → meta> (moldes.js; opcional) }
+//        nombre(clave) → texto, cargarGestos() → Promise<(nombre) → (u, t, info) → meta> (moldes.js; opcional),
+//        nivel(clave) → nivel de amistad con el jugador (0-4; opcional: sin él no te saludan al pasar) }
 export function crearRutinas(ctx) {
     const { paseos, persona, jugador } = ctx;
     const R = {}; // clave → { estado, v (clave de la visita), t (s desde que llegó), forzada }
-    let reloj = 0, gestoDe = null, cargando = null;
+    let reloj = 0, gestoDe = null, cargando = null, tiempo = 0;
+    // Cooperativo: null = solo; { enviar(m) } = anfitrión (manda lo que decide); 'seguir' = invitado (no decide solo)
+    let red = null;
+    const avisar = m => { if (red && red.enviar) red.enviar(m); };
     const idioma = () => (ctx.idioma ? ctx.idioma() : 'es');
     const L = o => (o ? o[idioma()] || o.es : '');
     const estadoDe = c => (R[c] ||= { estado: 'en-sitio', v: null, t: 0, ausente: NaN });
@@ -119,6 +127,7 @@ export function crearRutinas(ctx) {
         if (!paseos.ir(c, destino, { mirar: v.visita || null })) return false;
         const r = estadoDe(c);
         r.estado = 'yendo'; r.v = v.clave; r.t = 0; r.saludado = false; r.sinSaludo = false;
+        avisar({ c, a: 'sale', v: v.clave });
         return true;
     }
     function volver(c) {
@@ -127,12 +136,14 @@ export function crearRutinas(ctx) {
         terminarSaludo(c);
         r.v = null; r.forzada = null;
         if (paseos.fuera(c)) { paseos.volver(c); r.estado = 'volviendo'; } else r.estado = 'en-sitio';
+        avisar({ c, a: 'vuelve' });
     }
 
     // ---- Saludo al llegar: gesto y frase de quien llega; después contesta quien recibe ----
     function terminarSaludo(c) {
         const r = R[c], v = r && r.v && visitas()[r.v];
         const n = persona(c);
+        if (r) r.inc = NaN;
         if (n && n.paseo) n.paseo.texto = '';
         paseos.adornar && paseos.adornar(c, null);
         // Quien recibía deja de mirarlo de a poco (el gancho se saca solo al terminar la salida)
@@ -198,6 +209,7 @@ export function crearRutinas(ctx) {
         const r = estadoDe(c), n = persona(c), A = ajustesRutinas();
         terminarSaludo(c);
         r.ausente = 0;
+        avisar({ c, a: 'noesta', v: v.clave });
         const acc = ausenteDe(v);
         if (dJ(n) < A.radioSaludo) cargar();
         if (paseos.adornar) paseos.adornar(c, (dt, p) => {
@@ -216,7 +228,96 @@ export function crearRutinas(ctx) {
     // ¿Alguien viene a verlo o lo está visitando? Entonces no sale (que no lo encuentren vacío)
     const lovisitan = c => Object.values(R).some(r => (r.estado === 'yendo' || r.estado === 'visitando') && r.v && visitas()[r.v] && visitas()[r.v].visita === c);
 
+    // ---- Te incluyen: con amistad alta, al pasar junto al jugador te mira, saluda y dice algo según lo que hace ----
+    function fraseIncluir(c) {
+        const r = R[c], I = incluirRutinas(), v = r.v && visitas()[r.v];
+        const quien = v && v.visita ? (ctx.nombre ? ctx.nombre(v.visita) : v.visita) : '';
+        const k = r.estado === 'volviendo' ? 'volviendo' : !quien ? 'paseo' : r.estado === 'visitando' ? 'visitando' : 'yendo';
+        return L(I[k]).replace('{quien}', quien);
+    }
+    function quiereIncluir(c, n, r, A) {
+        if (!ctx.nivel || !jugador || n.escena || Number.isFinite(r.inc) || Number.isFinite(r.ausente)) return false;
+        if (r.estado !== 'yendo' && r.estado !== 'visitando' && r.estado !== 'volviendo') return false;
+        // De visita, después del saludo con quien recibe (que no se pisen los globos)
+        if (r.estado === 'visitando' && r.t < A.respuesta + A.frase) return false;
+        if (tiempo - (r.incluido ?? -Infinity) < A.esperaIncluir) return false;
+        if (dJ(n) > A.radioIncluir || Math.abs((jugador.pos.y ?? n.y) - n.y) > 4) return false;
+        return ctx.nivel(c) >= A.nivelIncluir;
+    }
+    function empezarIncluir(c, n, r, A) {
+        r.inc = 0; r.incluido = tiempo;
+        cargar();
+        const I = incluirRutinas();
+        if (paseos.adornar) paseos.adornar(c, (dt, p) => {
+            if (!Number.isFinite(r.inc)) return;
+            const T = Math.max(A.frase, A.gesto), w = peso(r.inc, T), cy = mirarA(n, jugador.pos, A.cuello);
+            if (p.cuello) p.cuello.rotation.y += (cy - p.cuello.rotation.y) * w;
+            const g = I.gesto && gestoDe && gestoDe(I.gesto);
+            if (g) ponerGesto(p, g(lim01(r.inc / A.gesto), r.inc, { s: false, j: false, esc: n.escala || 1 }), peso(r.inc, A.gesto), cy);
+        });
+    }
+    function avanzarIncluir(c, dt) {
+        const r = R[c], n = persona(c), A = ajustesRutinas();
+        r.inc += dt;
+        if (r.inc >= Math.max(A.frase, A.gesto)) {
+            r.inc = NaN;
+            if (n && n.paseo) n.paseo.texto = '';
+            if (paseos.adornar) paseos.adornar(c, null);
+            return;
+        }
+        if (n && n.paseo) n.paseo.texto = r.inc < A.frase ? fraseIncluir(c) : '';
+    }
+    function revisarIncluir() {
+        if (!ctx.nivel || !jugador) return;
+        const A = ajustesRutinas();
+        for (const c of Object.keys(R)) {
+            const n = persona(c), r = R[c];
+            if (n && quiereIncluir(c, n, r, A)) empezarIncluir(c, n, r, A);
+        }
+    }
+
+    // Llegó (paseos.js dice «allá»): si la persona está, saluda (o se queda sin repetir el saludo si ya la había
+    // saludado) y devuelve true; si no está, false
+    function llegar(c, n, r, v) {
+        const o = v.visita && persona(v.visita);
+        if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro) return false;
+        r.estado = 'visitando';
+        if (!r.saludado) r.t = 0;
+        empezarSaludo(c, v, !r.saludado);
+        r.saludado = true;
+        return true;
+    }
+    // Invitado del cooperativo: lo que decide el anfitrión llega por `recibir`; aquí solo lo que depende de cómo
+    // caminan sus amigos en este equipo (llegar, seguir a quien se alejó, terminar de volver)
+    function decidirInvitado() {
+        for (const c of Object.keys(R)) {
+            const n = persona(c), r = R[c];
+            if (!n || r.estado === 'acompanando' || Number.isFinite(r.ausente)) continue;
+            const v = r.v && visitas()[r.v], fuera = paseos.fuera(c);
+            if (r.estado === 'yendo' && v && fuera && paseos.estado(c).estado === 'alla') llegar(c, n, r, v);
+            else if (r.estado === 'visitando' && v) {
+                const o = v.visita && persona(v.visita);
+                if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro * 1.5) { terminarSaludo(c); r.estado = 'yendo'; }
+            } else if (r.estado === 'volviendo' && !fuera) r.estado = 'en-sitio';
+        }
+    }
+    // Invitado: aplica un mensaje del anfitrión ({ c, a: 'sale' | 'vuelve' | 'noesta', v, ya }; no «e»: es el tipo del mensaje en la sala)
+    function aplicar(m) {
+        if (!m || typeof m.c !== 'string') return;
+        const n = persona(m.c), r = estadoDe(m.c);
+        if (!n || r.estado === 'acompanando') return; // a quien te acompaña lo maneja tu equipo
+        const v = m.v && visitas()[m.v];
+        if (m.a === 'sale' && v) {
+            if (r.v === m.v && (r.estado === 'yendo' || r.estado === 'visitando')) return; // ya va (o ya está)
+            terminarSaludo(m.c); r.ausente = NaN;
+            if (salir(m.c, v) && m.ya) r.saludado = true; // entró a la sala con la visita empezada: llega sin saludar
+        } else if (m.a === 'vuelve') {
+            if (r.estado !== 'en-sitio' && r.estado !== 'volviendo') volver(m.c);
+        } else if (m.a === 'noesta' && v && r.v === m.v && !Number.isFinite(r.ausente)) noEsta(m.c, v);
+    }
+
     function decidir() {
+        if (red === 'seguir') { decidirInvitado(); return; }
         const quienes = new Set([...Object.values(visitas()).map(v => v.quien), ...Object.keys(R)]);
         for (const c of quienes) {
             const n = persona(c);
@@ -238,17 +339,8 @@ export function crearRutinas(ctx) {
                 if (!fuera) { r.estado = 'en-sitio'; r.v = null; } // lo mandaron a su sitio de golpe (volverTodos)
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
                 else if (paseos.estado(c).estado === 'atascado') noEsta(c, v); // no puede llegar hasta la persona
-                else if (paseos.estado(c).estado === 'alla') {
-                    // Llegó: ¿está la persona? (paseos.js la sigue si se mueve, pero puede no alcanzarla)
-                    const o = v.visita && persona(v.visita);
-                    if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro) noEsta(c, v);
-                    else {
-                        r.estado = 'visitando';
-                        if (!r.saludado) r.t = 0;
-                        empezarSaludo(c, v, !r.saludado);
-                        r.saludado = true;
-                    }
-                }
+                // Llegó: ¿está la persona? (paseos.js la sigue si se mueve, pero puede no alcanzarla)
+                else if (paseos.estado(c).estado === 'alla' && !llegar(c, n, r, v)) noEsta(c, v);
             } else if (r.estado === 'visitando') {
                 const o = v && v.clave === r.v && v.visita && persona(v.visita);
                 if (!fuera) { terminarSaludo(c); r.estado = 'en-sitio'; r.v = null; }
@@ -268,14 +360,23 @@ export function crearRutinas(ctx) {
     return {
         actualizar(dt) {
             if (dt <= 0) return;
+            tiempo += dt;
             for (const c of Object.keys(R)) {
                 if (Number.isFinite(R[c].ausente)) avanzarAusente(c, dt);
                 else if (R[c].estado === 'visitando') avanzarSaludo(c, dt);
+                if (Number.isFinite(R[c].inc)) avanzarIncluir(c, dt); // después del saludo: su globo manda mientras dura
             }
             if ((reloj += dt) < ajustesRutinas().revisar) return;
             reloj = 0;
             decidir();
+            revisarIncluir();
         },
+        // Cooperativo (main.js): anfitrión → red({ enviar }), invitado → red('seguir'), sin sala → red(null)
+        red(modo) { red = modo || null; },
+        recibir(m) { if (red !== 'seguir' || !m) return; if (Array.isArray(m.l)) m.l.forEach(aplicar); else aplicar(m); },
+        // Lo que va haciendo cada uno, para quien entra a la sala (el anfitrión se lo manda; el invitado lo pasa a `recibir`)
+        foto: () => Object.entries(R).filter(([, r]) => r.v && (r.estado === 'yendo' || r.estado === 'visitando'))
+            .map(([c, r]) => ({ c, a: 'sale', v: r.v, ...(r.estado === 'visitando' ? { ya: 1 } : {}) })),
         estado(c) {
             const r = R[c] || { estado: 'en-sitio', v: null };
             return { estado: r.estado, visita: r.v, forzada: !!r.forzada, paseo: paseos.estado(c) };

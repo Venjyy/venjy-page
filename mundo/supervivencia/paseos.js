@@ -13,7 +13,7 @@
 // =========================================================
 import { consultaMundo, crearNavegador, crearCaminante, ajustesNavegacion, cercaPisable } from '../navegacion.js';
 import { fijarPaseo, ajustesPaseo } from './paseos-datos.js';
-import { TIPO } from '../texturas.js';
+import { TIPO, B } from '../texturas.js';
 import { NIVEL_AGUA } from '../voxeles.js';
 import { caminar, RADIO_VISIBLE } from '../criaturas/cuerpo.js';
 import { cargarDatos } from '../datos/cargador.js';
@@ -36,7 +36,8 @@ const sinTildes = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowe
 
 // ctx: { amigos, terreno, mundo (en las coordenadas de los amigos), jugador (ídem) }
 export function crearPaseos({ amigos, terreno, mundo, jugador }) {
-    const consulta = consultaMundo({ mundo, terreno, tipos: TIPO, dy: 0, nivelAgua: NIVEL_AGUA });
+    // Hojas y la valla del corral (TIPO 2) y las vallas de jardín chocan pero no se pisan (NAV_BASE.pisarHojas)
+    const consulta = consultaMundo({ mundo, terreno, tipos: TIPO, dy: 0, nivelAgua: NIVEL_AGUA, noPisables: [B.VALLA_ABEDUL, B.VALLA_PINO] });
     const nav = crearNavegador(consulta);
     const activos = new Map(); // clave → estado del paseo
     cargarDatos('navegacion').then(d => { if (d) fijarPaseo(d); });
