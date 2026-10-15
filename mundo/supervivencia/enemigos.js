@@ -178,7 +178,7 @@ function modeloLepisma(tinte, semilla) {
     return { g, cuerpo, patas: [], segmentos };
 }
 
-function modeloPersona(tinte, tipo, semilla) {
+export function modeloPersona(tinte, tipo, semilla) {
     const p = crearPersona(tinte, PIELES[tipo](), semilla);
     if (tipo === 'esqueleto') {
         // Brazos y piernas flacos (huesos)
