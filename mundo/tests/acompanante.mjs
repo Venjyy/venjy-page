@@ -189,7 +189,7 @@ const R = await imp('mundo/supervivencia/rutinas.js');
 const RD = await imp('mundo/supervivencia/rutinas-datos.js');
 const AC = await imp('mundo/supervivencia/acompanante.js');
 const rig = () => { const h = () => ({ position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }); return { cuerpo: h(), torso: h(), cuello: h(), cabeza: h(), brazoD: h(), brazoI: h(), piernaD: h(), piernaI: h() }; };
-function armar({ visitas = {}, hora = 7, nivel = { ana: 3, beto: 3, caro: 1 }, red = null } = {}) {
+function armar({ visitas = {}, hora = 7, nivel = { ana: 3, beto: 3, caro: 1 }, red = null, ctx = {} } = {}) {
     const P = { ana: { clave: 'ana', x: 0, y: 1, z: 0, p: rig() }, beto: { clave: 'beto', x: 10, y: 1, z: 0, p: rig() }, caro: { clave: 'caro', x: 40, y: 1, z: 0, p: rig() } };
     const fuera = new Map(), llamadas = [];
     const sale = c => { if (!fuera.has(c)) fuera.set(c, { estado: 'caminando', casa: { x: P[c].x, z: P[c].z } }); P[c].paseo = { texto: '', animar() {} }; return fuera.get(c); };
@@ -201,7 +201,7 @@ function armar({ visitas = {}, hora = 7, nivel = { ana: 3, beto: 3, caro: 1 }, r
         adornar(c, f) { const x = fuera.get(c); if (x) x.adorno = f; },
         mirar(c, p) { const x = fuera.get(c); if (x) x.mira = p; },
         resolverDestino: () => null,
-        seguir(c, o) { llamadas.push(['seguir', c]); const f = sale(c); f.seg = { estado: 'siguiendo', evento: null }; f.red = false; f.pausa = o && o.pausa; return true; },
+        seguir(c, o) { llamadas.push(['seguir', c]); const f = sale(c); f.seg = { estado: 'siguiendo', evento: null }; f.red = false; f.pausa = o && o.pausa; f.op = o; return true; },
         siguiendo: c => !!(fuera.get(c) && fuera.get(c).seg),
         seguidor: c => (fuera.get(c) ? fuera.get(c).seg : null),
         remoto(c, si = true) { llamadas.push(['remoto', c, si]); if (!si) { const f = fuera.get(c); if (f) f.red = false; return true; } const f = sale(c); f.seg = null; f.red = true; return true; },
@@ -216,7 +216,7 @@ function armar({ visitas = {}, hora = 7, nivel = { ana: 3, beto: 3, caro: 1 }, r
     const rutinas = R.crearRutinas({ paseos, persona: c => P[c], hora: () => reloj.h, jugador: { pos: { x: 0, y: 1, z: 2 } }, idioma: () => 'es', nombre: c => c.toUpperCase(),
         cargarGestos: () => Promise.resolve(() => () => ({})) });
     if (red) rutinas.red(red.anfitrion ? { enviar() {} } : 'seguir');
-    const a = AC.crearAcompanante({ paseos, rutinas, persona: c => P[c], nivel: c => nivel[c] ?? 0, nombre: c => c.toUpperCase(), idioma: () => 'es', avisar: t => avisos.push(t) });
+    const a = AC.crearAcompanante({ paseos, rutinas, persona: c => P[c], nivel: c => nivel[c] ?? 0, nombre: c => c.toUpperCase(), idioma: () => 'es', avisar: t => avisos.push(t), ...ctx });
     const paso = (s = 1) => { for (let i = 0; i < s * 10; i++) { rutinas.actualizar(0.1); a.actualizar(0.1); } };
     return { a, rutinas, P, paseos, fuera, llamadas, reloj, paso, avisos };
 }
@@ -254,6 +254,41 @@ const T = RD.ACOMPANAR_BASE;
     // Lo soltaron desde otra parte (volverTodos): ya no te acompaña
     a.invitar('ana'); paseos.aCasa('ana'); paso(0.2);
     ok(a.mio === null && rutinas.estado('ana').estado === 'en-sitio', `volverTodos: ya no te acompaña (${rutinas.estado('ana').estado})`);
+}
+{
+    // 7i PR 3: su mochila. Parte con su tierra, se abre en «Hablar», el seguidor saca y guarda de ahí, se la queda al
+    // despedirlo y se guarda con el mundo
+    const abiertos = [], suelo = [];
+    const mo = { inicial: 2, esBloque: id => id < 256, apila: () => 64, abrir: (c, m, t) => abiertos.push([c, m, t]), soltar: (id, n) => suelo.push([id, n]) };
+    const { a, fuera, P, paso } = armar({ ctx: { mochila: mo } });
+    ok(a.hablar('ana').mochila === null, 'antes de acompañarte no hay mochila en «Hablar»');
+    a.invitar('ana');
+    const M = fuera.get('ana').op.torre.mochila;
+    ok(M && M.cuantos() === SG.SEGUIR_BASE.torreBloques, `parte con ${SG.SEGUIR_BASE.torreBloques} de tierra en su mochila (${M && M.cuantos()})`);
+    ok(a.hablar('ana').mochila && a.hablar('ana').mochila.texto === T.mochila.es, `«Hablar» trae «${T.mochila.es}»`);
+    const m = a.abrirMochila('ana');
+    paso(0.2);
+    ok(abiertos.length === 1 && abiertos[0][2] === T.tituloMochila.es.replace('{quien}', 'ANA') && m.length === RD.RUTINA_BASE.mochila, `se abre como un cofre: «${abiertos[0] && abiertos[0][2]}», ${m.length} casillas`);
+    ok(P.ana.paseo.texto === T.abreMochila.es, `y dice «${T.abreMochila.es}»`);
+    // Le das cosas (la ventana escribe en las casillas): piedra y un objeto que no es bloque
+    m[3] = { id: 4, n: 20, d: 0 }; m[4] = { id: 300, n: 1, d: 0 };
+    ok(M.cuantos() === 36, `cuenta solo los bloques (${M.cuantos()})`);
+    ok(M.sacar() === 4 && m[3].n === 19, 'saca del bloque que más tiene');
+    M.guardar(4, 1); M.guardar(9, 3);
+    ok(m[3].n === 20 && m.some(p => p && p.id === 9 && p.n === 3), 'guarda junto a lo mismo o en una casilla libre');
+    for (let k = 0; k < m.length; k++) if (!m[k]) m[k] = { id: 300, n: 1, d: 0 };
+    M.guardar(7, 2);
+    ok(suelo.length === 1 && suelo[0][0] === 7, 'lo que no le cabe lo deja en el suelo');
+    // Despedirlo: se la queda y la puedes abrir igual
+    a.soltar('ana', '');
+    ok(!a.hablar('ana').mio && a.hablar('ana').mochila, 'despedido: se queda con tus cosas y su mochila sigue en «Hablar»');
+    const guardado = JSON.parse(JSON.stringify(a.serializar()));
+    ok(guardado.ana && guardado.ana[3].id === 4 && !guardado.beto, 'se guarda con el mundo (solo las que tienen algo)');
+    const otro = armar({ ctx: { mochila: mo } });
+    otro.a.cargar(guardado);
+    otro.a.invitar('ana');
+    const M2 = otro.fuera.get('ana').op.torre.mochila;
+    ok(M2.cuantos() === M.cuantos() && otro.a.mochila('ana')[3].n === 20, 'al cargar el mundo la tiene igual (no se rellena de tierra)');
 }
 {
     // Iba a ver a alguien: lo dice al aceptar; al soltarlo, a esa hora va directo a la visita
@@ -387,6 +422,118 @@ const T = RD.ACOMPANAR_BASE;
     t.lider.y = 5;
     t.esperar(6);
     ok(!t.s.torre && t.cuerpo.y < 1.5, 'sin opciones.poner no arma torres');
+}
+
+// ---------------------------------------------------------
+// 3c. 7i PR 3: puentes, desatasco y mochila
+// ---------------------------------------------------------
+// Bloques del mundo de juguete para el seguidor: pone sobre aire o agua, quita lo suyo, rompe lo que haya
+function manos(C) {
+    const h = { puestos: [], rotos: [], quitados: [] };
+    h.op = {
+        poner(x, y, z, id) { const c = C.celda(x, y, z); if (c !== LIBRE && c !== AGUA) return false; C.poner(x, y, z, SOLIDO); h.puestos.push([x, y, z, id]); return true; },
+        quitar(x, y, z) { if (C.celda(x, y, z) !== SOLIDO) return false; C.poner(x, y, z, LIBRE); h.quitados.push([x, y, z]); return true; },
+        romper(x, y, z) { if (C.celda(x, y, z) !== SOLIDO) return false; h.rotos.push([x, y, z]); C.poner(x, y, z, LIBRE); return true; }
+    };
+    return h;
+}
+for (const [nombre, relleno] of [['un hueco', LIBRE], ['agua honda', AGUA]]) {
+    // Saltas una zanja de 4 (o cruzas nadando): arma un puente con 4 bloques, cruza por encima y lo quita cuando te alejas
+    const C = juguete();
+    C.caja(15, -10, 0, 18, 0, 119, relleno === AGUA ? LIBRE : LIBRE);
+    if (relleno === AGUA) C.caja(15, -4, 0, 18, 0, 119, AGUA);
+    const h = manos(C);
+    const t = escena({ C, desde: { x: 10.5, y: 1, z: 10.5 }, cuerpo: { x: 8.5, y: 1, z: 10.5, yaw: 0 }, extra: h.op });
+    t.caminar([{ x: 24.5, z: 10.5 }]);
+    t.esperar(4 * t.S.puenteCada + 3);
+    ok(t.s.migas.includes(null), `${nombre}: tu rastro queda cortado`);
+    ok(h.puestos.length === 4 && h.puestos.every(p => p[1] === 0), `${nombre}: puso 4 bloques de puente a nivel del piso (${JSON.stringify(h.puestos)})`);
+    ok(t.cuerpo.x > 19 && Math.abs(t.cuerpo.y - 1) < 0.05, `${nombre}: cruzó por el puente (x ${t.cuerpo.x.toFixed(2)}, y ${t.cuerpo.y.toFixed(2)})`);
+    ok(t.s.bloques === t.S.torreBloques - 4, `${nombre}: le quedan ${t.s.bloques}`);
+    ok(t.s.restos.length === 1, `${nombre}: el puente queda mientras estás cerca`);
+    t.caminar([{ x: 24.5 + t.S.puenteQuitar + 6, z: 10.5 }]);
+    t.esperar(1);
+    ok(h.quitados.length === 4 && t.s.bloques === t.S.torreBloques && !t.s.restos.length, `${nombre}: te alejaste sin verlo: quitó el puente y recuperó los bloques (${h.quitados.length}, ${t.s.bloques})`);
+}
+{
+    // Puente: a la vista no lo quita; sin bloques suficientes no lo empieza; más largo que puenteLargo, tampoco
+    const C = juguete();
+    C.caja(15, -10, 0, 18, 0, 119, LIBRE);
+    const h = manos(C);
+    const t = escena({ C, desde: { x: 10.5, y: 1, z: 10.5 }, cuerpo: { x: 8.5, y: 1, z: 10.5, yaw: 0 }, extra: h.op });
+    t.ver(() => true);
+    t.caminar([{ x: 24.5, z: 10.5 }]);
+    t.esperar(4 * t.S.puenteCada + 3);
+    t.caminar([{ x: 44.5, z: 10.5 }]);
+    t.esperar(1);
+    ok(h.puestos.length === 4 && !h.quitados.length, 'a la vista no quita el puente');
+    const C2 = juguete();
+    C2.caja(15, -10, 0, 18, 0, 119, LIBRE);
+    const h2 = manos(C2);
+    const t2 = escena({ C: C2, desde: { x: 10.5, y: 1, z: 10.5 }, cuerpo: { x: 8.5, y: 1, z: 10.5, yaw: 0 }, seguir: { torreBloques: 3, desatascoMax: 0 }, extra: h2.op });
+    t2.caminar([{ x: 24.5, z: 10.5 }]);
+    t2.esperar(3);
+    ok(!h2.puestos.length && t2.med.eventos.includes('sinBloques') && t2.cuerpo.x < 15, 'con 3 bloques no empieza un puente de 4 (lo dice y espera)');
+    const C3 = juguete();
+    C3.caja(15, -10, 0, 18, 0, 119, LIBRE);
+    const h3 = manos(C3);
+    const t3 = escena({ C: C3, desde: { x: 10.5, y: 1, z: 10.5 }, cuerpo: { x: 8.5, y: 1, z: 10.5, yaw: 0 }, seguir: { puenteLargo: 3, desatascoMax: 0 }, extra: h3.op });
+    t3.caminar([{ x: 24.5, z: 10.5 }]);
+    t3.esperar(3);
+    ok(!h3.puestos.length && t3.cuerpo.x < 15, 'más largo que puenteLargo: no arma puente');
+}
+{
+    // En un hoyo de 4: pone bloques bajo los pies hasta salir y te alcanza
+    const C = juguete();
+    C.caja(30, -3, 30, 30, 0, 30, LIBRE);
+    const h = manos(C);
+    const t = escena({ C, desde: { x: 34.5, y: 1, z: 30.5 }, cuerpo: { x: 30.5, y: -3, z: 30.5, yaw: 0 }, extra: h.op });
+    t.esperar(5 * (t.S.desatasco + 1) + 2);
+    ok(h.puestos.length >= 3 && h.puestos.every(p => p[0] === 30 && p[2] === 30), `en un hoyo: sube poniendo bloques bajo los pies (${h.puestos.length})`);
+    ok(dist(t.cuerpo, t.lider) <= t.S.distancia + t.S.holgura + 0.1 && Math.abs(t.cuerpo.y - 1) < 0.1, `salió y te alcanzó (a ${dist(t.cuerpo, t.lider).toFixed(2)}, y ${t.cuerpo.y.toFixed(2)})`);
+    ok(!t.med.eventos.includes('aparecio'), 'sin aparecer detrás de ti');
+    ok(t.med.enParedes <= 3, `no se mete en los bloques (solo al subir el último escalón: ${t.med.enParedes} cuadros)`);
+}
+{
+    // Encerrado entre paredes de 2: rompe hacia ti, sale, se guarda lo roto y te alcanza
+    const C = juguete();
+    C.caja(49, 1, 49, 51, 2, 51, SOLIDO); C.caja(50, 1, 50, 50, 2, 50, LIBRE);
+    const h = manos(C);
+    const t = escena({ C, desde: { x: 56.5, y: 1, z: 50.5 }, cuerpo: { x: 50.5, y: 1, z: 50.5, yaw: 0 }, extra: h.op });
+    t.esperar(2 * (t.S.desatasco + 1) + 4);
+    ok(h.rotos.length === 2 && h.rotos.every(r => r[0] === 51 && r[2] === 50), `encerrado: rompe la pared hacia ti (${JSON.stringify(h.rotos)})`);
+    ok(dist(t.cuerpo, t.lider) <= t.S.distancia + t.S.holgura + 0.1, `y te alcanza (a ${dist(t.cuerpo, t.lider).toFixed(2)})`);
+    ok(t.s.bloques === t.S.torreBloques + 2, `se guardó lo que rompió (${t.s.bloques})`);
+    // Con desatascoMax 0: espera como antes
+    const C2 = juguete();
+    C2.caja(49, 1, 49, 51, 2, 51, SOLIDO); C2.caja(50, 1, 50, 50, 2, 50, LIBRE);
+    const h2 = manos(C2);
+    const t2 = escena({ C: C2, desde: { x: 56.5, y: 1, z: 50.5 }, cuerpo: { x: 50.5, y: 1, z: 50.5, yaw: 0 }, seguir: { desatascoMax: 0 }, extra: h2.op });
+    t2.esperar(8);
+    ok(!h2.rotos.length && t2.s.estado === 'esperando', 'con desatascoMax 0 no rompe nada y espera');
+}
+{
+    // Mochila: saca de ahí los bloques (el que más tiene) y guarda lo que rompe
+    const C = juguete();
+    const h = manos(C);
+    const caja = { 2: 3, 4: 6, 300: 1 };
+    const esBloque = id => id < 256;
+    const mochila = {
+        cuantos: () => Object.entries(caja).reduce((n, [id, k]) => n + (esBloque(+id) ? k : 0), 0),
+        sacar() { let m = 0; for (const [id, k] of Object.entries(caja)) if (esBloque(+id) && k > 0 && (!m || k > caja[m])) m = +id; if (m) caja[m]--; return m; },
+        guardar(id, n) { caja[id] = (caja[id] || 0) + n; }
+    };
+    const t = escena({ C, desde: { x: 20.5, y: 1, z: 10.5 }, cuerpo: { x: 18.5, y: 1, z: 10.5, yaw: 0 }, extra: { ...h.op, mochila } });
+    ok(t.s.bloques === 9, `cuenta los bloques de su mochila (${t.s.bloques}, sin el objeto)`);
+    t.esperar(0.5);
+    for (let y = 1; y <= 3; y++) C.poner(20, y, 10, SOLIDO);
+    t.lider.y = 4;
+    t.esperar(t.S.torreEspera + 1.5 + 3 * t.S.torreCada + 1);
+    ok(h.puestos.length === 3 && h.puestos.every(p => p[3] === 4) && caja[4] === 3, `su torre usa el bloque que más tiene (${JSON.stringify(h.puestos.map(p => p[3]))})`);
+    for (let y = 1; y <= 3; y++) C.poner(20, y, 10, LIBRE);
+    t.lider.y = 1; t.lider.x = 22.5;
+    t.esperar(3 * t.S.torreBajar + 2);
+    ok(caja[4] === 6 && caja[300] === 1, `al bajar los devuelve a su mochila (${JSON.stringify(caja)})`);
 }
 
 const PL = await imp('mundo/supervivencia/acompanante-pelea.js');

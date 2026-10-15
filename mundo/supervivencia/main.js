@@ -6,7 +6,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { generarDatos } from '../mundo-datos.js';
-import { crearAtlas, animarAgua, B } from '../texturas.js';
+import { crearAtlas, animarAgua, B, TIPO } from '../texturas.js';
 import { prepararTerreno, MundoVoxel, ESCALA, CHUNK, ALTO, fijarAlto, ALTO_SUPERVIVENCIA, DESNIVEL_SUPERVIVENCIA, recalcularEmisores, llenarChunk, mallarChunkCrudo, medicion, chunkForzado } from '../voxeles.js';
 import { Jugador } from '../jugador.js';
 import { crearCielo, COLOR_HORIZONTE } from '../cielo.js';
@@ -21,7 +21,7 @@ import { silenciarMundo, mundoSilenciado } from '../criaturas/cuerpo.js';
 import { destinos as destinosZonas } from '../portafolio/zonas.js';
 import { listarMundos, cargarMundo, guardarMundo, borrarMundo, exportarMundo, descargarMundo, guardarCopiaConTope, importarMundo, nuevoId, serializarEdiciones, cargarEdiciones, MAX_MUNDOS } from './guardado.js';
 import { Inventario } from './inventario.js';
-import { O, nombreDe, infoBloque } from './objetos.js';
+import { O, nombreDe, infoBloque, dropsDe, esBloqueColocable, apilaDe } from './objetos.js';
 import { fijarAtlasBloques } from './iconos.js';
 import { crearHUD } from './hud.js';
 import { crearVentanas } from './ui-inventario.js';
@@ -785,24 +785,40 @@ async function arrancar(guardado, cx = null) {
         }),
         jugadorPos: () => vista.jugador.pos,
         torre: {
-            // No pone donde haya algo ni donde estés tú
-            poner(x, y, z) {
-                const p = jugador.pos;
-                if (mundo.bloque(x, y + DY, z) !== B.AIRE) return false;
+            // Pone el bloque `id` de su mochila (7i PR 3) sobre aire, agua o una planta; nunca donde estés tú
+            poner(x, y, z, id = B.TIERRA) {
+                const p = jugador.pos, hay = mundo.bloque(x, y + DY, z);
+                if (hay !== B.AIRE && TIPO[hay] !== 3 && TIPO[hay] !== 4) return false;
                 if (Math.abs(p.x - x - 0.5) < 0.8 && Math.abs(p.z - z - 0.5) < 0.8 && p.y < y + DY + 1 && p.y + 1.8 > y + DY) return false;
-                mundo.editar(x, y + DY, z, B.TIERRA);
+                mundo.editar(x, y + DY, z, id > 0 && id < 256 ? id : B.TIERRA);
                 return true;
             },
-            quitar(x, y, z) { if (mundo.bloque(x, y + DY, z) === B.TIERRA) mundo.editar(x, y + DY, z, B.AIRE); },
-            // Lo que le pusieron encima: no rompe cofres, hornos, mesas, camas ni lo irrompible
+            // Quita lo suyo (false si ya no está: alguien lo rompió y no lo recupera)
+            quitar(x, y, z, id = B.TIERRA) {
+                if (mundo.bloque(x, y + DY, z) !== (id > 0 && id < 256 ? id : B.TIERRA)) return false;
+                mundo.editar(x, y + DY, z, B.AIRE);
+                return true;
+            },
+            // Lo que le pusieron encima o lo que lo encierra: no rompe cofres, hornos, mesas, camas ni lo irrompible.
+            // Devuelve lo que suelta (va a su mochila)
             romper(x, y, z) {
                 const id = mundo.bloque(x, y + DY, z), info = id > 0 ? infoBloque(id) : null;
                 if (!info || !(info.dureza >= 0) || NO_ROMPE_ACOMPANANTE.has(id)) return false;
                 mundo.editar(x, y + DY, z, B.AIRE);
-                return true;
+                const d = dropsDe(id, O.PICO_DIAMANTE);
+                return d.length ? d : true;
             }
+        },
+        // 7i PR 3: su mochila (rutinas.json → ajustes.mochila casillas) se abre como un cofre
+        mochila: {
+            inicial: B.TIERRA,
+            esBloque: id => esBloqueColocable(id) && TIPO[id] === 1 && !NO_ROMPE_ACOMPANANTE.has(id),
+            apila: id => apilaDe(id),
+            abrir: (c, casillas, titulo) => ventanas.abrir('cofre', { estado: { casillas }, titulo }),
+            soltar: (id, n, p) => { if (p) entidades.soltar(id, n, 0, p.x, p.y + DY + 1, p.z, null, 0.5); }
         }
     });
+    acompanante.cargar(guardado.acompanantes);
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
@@ -1795,7 +1811,7 @@ async function arrancar(guardado, cx = null) {
             spawnCama, vida: vida.serializar(), inventario: inventario.serializar(),
             ediciones: serializarEdiciones(terreno.ediciones), contenedores: contenedores.serializar(),
             agricultura: agricultura.serializar(), entidades: entidades.serializar(), dia: dia.serializar(), ganado: ganado.serializar(),
-            misiones: misiones.serializar(),
+            misiones: misiones.serializar(), acompanantes: acompanante.serializar(),
             // Los demás jugadores que pasaron por este mundo (inventario, misiones, skin): sus cofres de compañero
             jugadores: coop ? coop.jugadoresParaGuardar() : (guardado.jugadores || {}), idDueno: miDisp
         };

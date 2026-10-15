@@ -10,6 +10,10 @@
 // Lo que depende de su lugar (su minijuego) sale con motivo (`motivoLugar`); el panel, misiones y tienda viajan con él.
 // 7i PR 2: pelea con los monstruos cerca de ti, recibe órdenes en «Hablar» (Sígueme / Espérame aquí / No pelees) y
 // si «perdería» se sienta a descansar (acompanante-pelea.js); arma su propia torre si te subes a un pilar (seguir.js).
+// 7i PR 3: su mochila (`ajustes.mochila` casillas). En «Hablar», «Su mochila» la abre como un cofre: le das y le pides
+// cosas. Sus torres, puentes y desatascos usan los bloques que lleva ahí (el que más tiene) y guardan lo que rompe. La
+// primera vez que te acompaña trae `torreBloques` de tierra. Al despedirlo **se la queda** (con lo que le diste): se
+// abre igual en «Hablar» y se guarda con el mundo (serializar / cargar; el invitado del cooperativo no guarda la suya).
 //
 // Cooperativo («decide uno y los demás dibujan»): el anfitrión lleva la lista de quién acompaña a quién y la manda a
 // todos (`co { a: 'lista', l: { clave: id } }`); el invitado pide (`co { a: 'pide', k }`) y espera la lista para
@@ -21,17 +25,21 @@
 import { ajustesRutinas, acompanarRutinas } from './rutinas-datos.js';
 import { HORARIOS, LUGARES } from './horarios-datos.js';
 import { crearPeleaAcompanante, ORDENES } from './acompanante-pelea.js';
+import { ajustesSeguir } from '../seguir.js';
 
 const r2 = v => Math.round(v * 100) / 100;
 
 // ctx: paseos, rutinas, persona(c), nivel(c) (amistad), nombre(c), idioma(), libre(n) (sin minijuego, ronda ni jefe),
 // pausa() (el jugador está en un minijuego o una escena: el acompañante espera donde está), avisar(texto) (HUD),
-// monstruos(x, z, r) y jugadorPos() (para pelear, en las coordenadas de los amigos), torre { poner, quitar, romper }
+// monstruos(x, z, r) y jugadorPos() (para pelear, en las coordenadas de los amigos), torre { poner, quitar, romper },
+// mochila: { esBloque(id) (se puede poner en torres y puentes), apila(id), inicial (id del bloque con que parte),
+// abrir(c, casillas, titulo), soltar(id, n, persona) (lo que no le cabe) }
 export function crearAcompanante(ctx) {
     const { paseos, rutinas, persona } = ctx;
     let mio = null;            // clave del amigo que te acompaña (lo simula este equipo)
     let pedido = null;         // invitado: { k, t } esperando la lista del anfitrión
     const ajenos = new Map();  // clave → id del jugador al que acompaña (cooperativo; lo mueve la red)
+    const mochilas = new Map(); // clave → casillas ({ id, n, d } o null): se la queda al despedirlo
     let lista = {};            // anfitrión: clave → id de quien acompaña (incluye los suyos)
     let red = null;            // null = solo; { yo, anfitrion, enviar(m), nombre(id) }
     const idioma = () => (ctx.idioma ? ctx.idioma() : 'es');
@@ -55,6 +63,46 @@ export function crearAcompanante(ctx) {
         if (ctx.libre && !ctx.libre(n)) return { texto: L(T().ahoraNo) };
         return null;
     }
+    // ---- Su mochila ----
+    const MO = ctx.mochila || {};
+    const esBloque = id => (MO.esBloque ? MO.esBloque(id) : id > 0 && id < 256);
+    const apila = id => (MO.apila ? MO.apila(id) : 64);
+    function mochila(c) {
+        const n = Math.max(1, ajustesRutinas().mochila | 0);
+        let m = mochilas.get(c);
+        if (!m) {
+            m = new Array(n).fill(null);
+            // La primera vez trae sus bloques de tierra para torres y puentes
+            let resto = (ajustesSeguir().torreBloques | 0), k = 0;
+            if (MO.inicial) while (resto > 0 && k < n) { const q = Math.min(resto, apila(MO.inicial)); m[k++] = { id: MO.inicial, n: q, d: 0 }; resto -= q; }
+            mochilas.set(c, m);
+        }
+        while (m.length < n) m.push(null); // (si la achican no pierde nada: las de más quedan hasta que se vacíen)
+        return m;
+    }
+    const vacia = m => !m || m.every(p => !p);
+    // Lo que usa el seguidor: cuántos bloques lleva, sacar uno (del que más tiene) y guardar lo que rompe o recupera
+    function mochilaSeguidor(c) {
+        return {
+            cuantos() { let n = 0; for (const p of mochila(c)) if (p && esBloque(p.id)) n += p.n; return n; },
+            sacar() {
+                const m = mochila(c), tot = new Map();
+                for (const p of m) if (p && esBloque(p.id)) tot.set(p.id, (tot.get(p.id) || 0) + p.n);
+                let id = 0;
+                for (const [k, v] of tot) if (!id || v > tot.get(id)) id = k;
+                if (!id) return 0;
+                for (let k = m.length - 1; k >= 0; k--) if (m[k] && m[k].id === id) { if (--m[k].n <= 0) m[k] = null; break; }
+                return id;
+            },
+            guardar(id, n = 1) {
+                const m = mochila(c), max = apila(id);
+                for (const p of m) if (n > 0 && p && p.id === id && !p.p && !p.d && p.n < max) { const q = Math.min(n, max - p.n); p.n += q; n -= q; }
+                for (let k = 0; k < m.length && n > 0; k++) if (!m[k]) { const q = Math.min(n, max); m[k] = { id, n: q, d: 0 }; n -= q; }
+                if (n > 0 && MO.soltar) MO.soltar(id, n, persona(c)); // no le cabe: lo deja en el suelo
+            }
+        };
+    }
+
     // Empieza a seguirte en este equipo (ya decidido: solo, anfitrión o con la lista del anfitrión)
     function empezar(c) {
         if (mio && mio !== c) soltarLocal(mio, 'cambia', c);
@@ -63,7 +111,7 @@ export function crearAcompanante(ctx) {
         rutinas.acompanar(c);
         pelea.reiniciar();
         const seguir = {
-            pausa: ctx.pausa, torre: ctx.torre,
+            pausa: ctx.pausa, torre: { ...(ctx.torre || {}), mochila: mochilaSeguidor(c) },
             mando: (dt, seg, cuerpo, detalle) => pelea.paso(dt, seg, cuerpo, detalle),
             marcas: () => (pelea.golpe ? 1 : 0) | (pelea.sentado ? 2 : 0)
         };
@@ -127,8 +175,10 @@ export function crearAcompanante(ctx) {
         // Para «Hablar»: { mio, texto del botón, motivo { texto } | { nivel } | null }
         hablar(c) {
             const t = T();
-            if (mio === c) return { mio: true, texto: L(t.soltar), motivo: null, ordenes: ORDENES.map(o => ({ orden: o, texto: L(t[ORDEN_TX[o][0]]), activa: pelea.orden === o })) };
-            return { mio: false, texto: L(t.boton), motivo: pedido && pedido.k === c ? { texto: '…' } : motivo(c) };
+            // Su mochila: mientras te acompaña o si se quedó con algo tuyo (no si acompaña a otro jugador)
+            const mo = (mio === c || (!ajenos.has(c) && !vacia(mochilas.get(c)))) ? { texto: L(t.mochila) } : null;
+            if (mio === c) return { mio: true, texto: L(t.soltar), motivo: null, mochila: mo, ordenes: ORDENES.map(o => ({ orden: o, texto: L(t[ORDEN_TX[o][0]]), activa: pelea.orden === o })) };
+            return { mio: false, texto: L(t.boton), motivo: pedido && pedido.k === c ? { texto: '…' } : motivo(c), mochila: mo };
         },
         // opciones.forzar: sin mirar la amistad ni si está libre (/rutina <persona> acompanar)
         invitar(c, opciones = {}) {
@@ -160,6 +210,25 @@ export function crearAcompanante(ctx) {
             const t = T();
             rutinas.decir(c, L(t[ORDEN_TX[orden][1]]), orden === 'quieto' ? null : t.gestoAcepta || null);
             return true;
+        },
+        // Su mochila (7i PR 3): las casillas, para darle y pedirle cosas (MO.abrir la muestra como un cofre)
+        mochila,
+        abrirMochila(c = mio) {
+            if (!c || !persona(c) || ajenos.has(c)) return null;
+            const m = mochila(c), t = T();
+            rutinas.decir(c, L(t.abreMochila));
+            if (MO.abrir) MO.abrir(c, m, con(t.tituloMochila, { quien: nombre(c) }));
+            return m;
+        },
+        // Para el guardado del mundo: { clave: casillas } (solo las que tienen algo)
+        serializar() {
+            const o = {};
+            for (const [k, m] of mochilas) if (!vacia(m)) o[k] = m.map(p => (p ? { ...p } : null));
+            return o;
+        },
+        cargar(o) {
+            mochilas.clear();
+            for (const [k, m] of Object.entries(o || {})) if (Array.isArray(m)) mochilas.set(k, m.map(p => (p && Number.isFinite(p.id) && p.n > 0 ? { ...p } : null)));
         },
         // Lo que depende de su lugar (su minijuego): el motivo para dejarlo apagado, o null
         motivoLugar(c) {
