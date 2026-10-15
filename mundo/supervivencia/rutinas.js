@@ -15,6 +15,8 @@
 // de `incluir`), una vez cada `esperaIncluir` s. Cooperativo (PR 3): el anfitrión decide (sale, vuelve, no lo encontró)
 // y lo manda con `red`; el invitado no mira la hora, solo aplica lo que llega (`recibir`) y su llegada y su saludo los
 // dibuja él, porque cada equipo camina a sus amigos con sus propios chunks.
+// Acompañantes (7i, acompanante.js): `acompanar(c, con)` corta su rutina (con = el nombre de otro jugador del cooperativo
+// si acompaña a otro) y `retomar(c)` la sigue; `decir(c, texto, gesto)` le pone un globo y un gesto mientras está fuera.
 // crearRutinas() no usa three.js ni DOM (lo prueba mundo/tests/rutinas.mjs). Valores: rutinas-datos.js.
 // =========================================================
 import { ajustesRutinas, visitasRutinas, textosRutinas, ausenteRutinas, incluirRutinas, fijarRutinas } from './rutinas-datos.js';
@@ -31,7 +33,8 @@ export const TEXTOS_RUTINA = {
     visitando: { es: 'Está de visita donde {quien}, {lugar}.', en: 'Visiting {quien}, {lugar}.' },
     visitandoLugar: { es: 'Está de visita {lugar}.', en: 'Visiting, {lugar}.' },
     volviendo: { es: 'Va de vuelta, {lugar}.', en: 'Heading back, {lugar}.' },
-    acompanando: { es: 'Te está acompañando.', en: 'Keeping you company.' }
+    acompanando: { es: 'Te está acompañando.', en: 'Keeping you company.' },
+    acompanandoOtro: { es: 'Está acompañando a {quien}.', en: 'Keeping {quien} company.' }
 };
 const PARTES = { cx: ['cuello', 'x'], cy: ['cuello', 'y'], cz: ['cuello', 'z'], bDx: ['brazoD', 'x'], bDz: ['brazoD', 'z'], bIx: ['brazoI', 'x'], bIz: ['brazoI', 'z'], inc: ['cuerpo', 'x'], rz: ['cuerpo', 'z'] };
 const suave = u => u * u * (3 - 2 * u);
@@ -226,6 +229,17 @@ export function crearRutinas(ctx) {
             ? L(acc.texto).replace('{quien}', ctx.nombre ? ctx.nombre(v.visita) : v.visita || '') : '';
         if (r.ausente >= A.esperaAusente) { r.ausente = NaN; const k = r.v; volver(c); r.descartada = k; }
     }
+    // Lo que dice un acompañante (decir): su globo dura `frase` y el gesto `gesto`; luego se saca el adorno
+    function avanzarDicho(c, dt) {
+        const r = R[c], n = persona(c), A = ajustesRutinas(), d = r.dicho;
+        d.t += dt;
+        if (!n || !n.paseo || d.t >= Math.max(A.frase, d.gesto ? A.gesto : 0)) {
+            r.dicho = null;
+            if (n && n.paseo) { n.paseo.texto = ''; if (paseos.adornar) paseos.adornar(c, null); }
+            return;
+        }
+        n.paseo.texto = d.t < A.frase ? d.texto : '';
+    }
     // ¿Alguien viene a verlo o lo está visitando? Entonces no sale (que no lo encuentren vacío)
     const lovisitan = c => Object.values(R).some(r => (r.estado === 'yendo' || r.estado === 'visitando') && r.v && visitas()[r.v] && visitas()[r.v].visita === c);
 
@@ -237,7 +251,7 @@ export function crearRutinas(ctx) {
         return L(I[k]).replace('{quien}', quien);
     }
     function quiereIncluir(c, n, r, A) {
-        if (!ctx.nivel || !jugador || n.escena || Number.isFinite(r.inc) || Number.isFinite(r.ausente)) return false;
+        if (!ctx.nivel || !jugador || n.escena || r.dicho || Number.isFinite(r.inc) || Number.isFinite(r.ausente)) return false;
         if (r.estado !== 'yendo' && r.estado !== 'visitando' && r.estado !== 'volviendo') return false;
         // De visita, después del saludo con quien recibe (que no se pisen los globos)
         if (r.estado === 'visitando' && r.t < A.respuesta + A.frase) return false;
@@ -371,6 +385,7 @@ export function crearRutinas(ctx) {
             if (dt <= 0) return;
             tiempo += dt;
             for (const c of Object.keys(R)) {
+                if (R[c].dicho) avanzarDicho(c, dt);
                 if (Number.isFinite(R[c].ausente)) avanzarAusente(c, dt);
                 else if (R[c].estado === 'visitando') avanzarSaludo(c, dt);
                 if (Number.isFinite(R[c].inc)) avanzarIncluir(c, dt); // después del saludo: su globo manda mientras dura
@@ -391,12 +406,13 @@ export function crearRutinas(ctx) {
             return { estado: r.estado, visita: r.v, forzada: !!r.forzada, paseo: paseos.estado(c) };
         },
         // 7j-1: el jugador se lo lleva (7i lo mueve con paseos.js). La rutina queda en pausa hasta retomar().
-        acompanar(c) {
+        // con: el nombre del jugador al que acompaña si es otro (cooperativo; el panel dice «Está acompañando a …»)
+        acompanar(c, con = null) {
             const n = persona(c);
             if (!n) return false;
             const r = estadoDe(c);
             terminarSaludo(c);
-            r.estado = 'acompanando'; r.v = null; r.forzada = null; r.ausente = NaN;
+            r.estado = 'acompanando'; r.v = null; r.forzada = null; r.ausente = NaN; r.con = con || null;
             // Quienes venían a verlo se devuelven (en el próximo `revisar`); quien lo visitaba deja de mirarlo
             if (n.visita) { n.visita.fin = true; n.visita.texto = ''; }
             return true;
@@ -405,7 +421,9 @@ export function crearRutinas(ctx) {
         retomar(c) {
             const n = persona(c), r = estadoDe(c);
             if (!n) return false;
-            r.estado = paseos.fuera(c) ? 'volviendo' : 'en-sitio';
+            r.estado = paseos.fuera(c) ? 'volviendo' : 'en-sitio'; r.con = null;
+            // Invitado del cooperativo: vuelve a su sitio; si a esta hora tiene visita, el anfitrión la manda (`sale`)
+            if (red === 'seguir') { if (r.estado === 'volviendo') paseos.volver(c); return true; }
             const v = deseada(c);
             if (v && puede(n, v)) salir(c, v);
             else if (r.estado === 'volviendo') paseos.volver(c);
@@ -423,13 +441,30 @@ export function crearRutinas(ctx) {
             return true;
         },
         cortar(c) { if (R[c]) volver(c); },
+        // Globo (y gesto encima) mientras está fuera de su sitio: lo que dice un acompañante (7i). false si está en su sitio
+        decir(c, texto, gesto = null) {
+            const n = persona(c), r = estadoDe(c);
+            if (!n || !n.paseo || !texto) return false;
+            if (Number.isFinite(r.inc)) { r.inc = NaN; if (paseos.mirar) paseos.mirar(c, null); }
+            r.dicho = { t: 0, texto, gesto };
+            n.paseo.texto = texto;
+            if (gesto) cargar();
+            if (paseos.adornar) paseos.adornar(c, (dt, p) => {
+                const d = r.dicho, A = ajustesRutinas();
+                const g = d && d.gesto && gestoDe && gestoDe(d.gesto);
+                if (g) ponerGesto(p, g(lim01(d.t / A.gesto), d.t, { s: false, j: false, esc: n.escala || 1 }), peso(d.t, A.gesto), p.cuello ? p.cuello.rotation.y : 0);
+            });
+            return true;
+        },
+        // A quién va a ver una visita (null si va a un lugar)
+        destinoDe: k => (visitas()[k] ? visitas()[k].visita : null),
         // Línea del panel de cada amigo («Está de visita donde Braulio, en el naufragio»); '' si está en su sitio
         texto(c, lengua) {
             const r = R[c];
             if (!r || r.estado === 'en-sitio') return '';
             const T = { ...TEXTOS_RUTINA, ...textosRutinas() };
             const Lx = o => (o ? o[lengua || idioma()] || o.es : '');
-            if (r.estado === 'acompanando') return Lx(T.acompanando);
+            if (r.estado === 'acompanando') return r.con ? Lx(T.acompanandoOtro).replace('{quien}', r.con) : Lx(T.acompanando);
             const v = r.v && visitas()[r.v];
             const casa = HORARIOS[c] && LUGARES[HORARIOS[c].ancla];
             if (r.estado === 'volviendo' || !v) return Lx(T.volviendo).replace('{lugar}', Lx(casa) || '');

@@ -391,8 +391,8 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
         };
     }
     // /rutina <persona> [acompanar|retomar|cortar|<visita>] (rutinas.js): sin más, su estado; con una visita, la hace ya.
-    // acompanar corta su rutina y lo trae a tu lado una vez (seguirte de verdad es 7i); retomar lo devuelve a su horario
-    const rutinas = amistad && amistad.rutinas;
+    // acompanar: te sigue (7i, acompanante.js, sin mirar la amistad); retomar: lo suelta (si te acompañaba) y vuelve a su horario
+    const rutinas = amistad && amistad.rutinas, acompanante = amistad && amistad.acompanante;
     if (paseos && rutinas) {
         cmds['/rutina'] = {
             ayuda: { es: '/rutina <persona> [acompanar|retomar|cortar|<visita>] (sin más: su estado)', en: '/rutina <person> [acompanar|retomar|cortar|<visit>] (nothing else: status)' },
@@ -401,7 +401,8 @@ export function crearComandosDev({ jugador, vida, inventario, enemigos, jefes, g
                 const [quien, accion] = sinTildes(arg).split(/\s+/).filter(Boolean);
                 const c = quien && paseos.personas().find(a => a === quien || a.startsWith(quien));
                 if (!c) { hud.mensaje(JSON.stringify(rutinas.resumen()), 6); return; }
-                const ok = !accion ? true : accion === 'acompanar' ? rutinas.acompanar(c) && paseos.ir(c, 'aqui') : accion === 'retomar' ? rutinas.retomar(c) : accion === 'cortar' ? (rutinas.cortar(c), true) : rutinas.probar(accion);
+                const ok = !accion ? true : accion === 'acompanar' ? (acompanante ? acompanante.invitar(c, { forzar: true }) : rutinas.acompanar(c) && paseos.ir(c, 'aqui'))
+                    : accion === 'retomar' ? (acompanante && acompanante.mio === c ? acompanante.soltar(c) : rutinas.retomar(c)) : accion === 'cortar' ? (rutinas.cortar(c), true) : rutinas.probar(accion);
                 const e = rutinas.estado(c);
                 hud.mensaje(ok ? `${c}: ${e.estado}${e.visita ? ' · ' + e.visita : ''}` : (idioma === 'en' ? `Could not: ${accion}` : `No se pudo: ${accion}`), 5);
             }

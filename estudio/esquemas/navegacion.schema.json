@@ -207,6 +207,115 @@
         }
       },
       "additionalProperties": false
+    },
+    "seguir": {
+      "description": "Cómo te sigue un amigo que te acompaña (7i, mundo/seguir.js: por tu rastro; espera y aparece detrás de ti). Lo que falte = SEGUIR_BASE.",
+      "type": "object",
+      "properties": {
+        "distancia": {
+          "description": "Se queda a esta distancia de ti (bloques).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "holgura": {
+          "description": "Quieto, no parte hasta que te alejes `distancia` + esto (no anda a saltitos detrás de ti).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "rapidezMax": {
+          "description": "Si se queda atrás camina hasta esto más rápido (× la velocidad de caminar).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "alcanzar": {
+          "description": "… y llega a esa rapidez cuando va esto (bloques) más atrás de `distancia`.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 24
+        },
+        "miga": {
+          "description": "Cada cuánto (bloques) guarda por dónde pisaste.",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 2
+        },
+        "migas": {
+          "description": "Cuántas pisadas guarda como mucho (240 × 0,5 = 120 bloques de rastro).",
+          "type": "number",
+          "minimum": 20,
+          "maximum": 1000
+        },
+        "corte": {
+          "description": "Entre dos pisadas más que esto (te teletransportaron, caíste lejos): el rastro se corta y busca camino.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "subidaRastro": {
+          "description": "Si entre dos pisadas subes más que esto (un pilar): el rastro se corta.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "caidaRastro": {
+          "description": "… y si bajas más que esto.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "atasco": {
+          "description": "Segundos sin poder andar por tu rastro antes de buscar camino.",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 10
+        },
+        "buscarCada": {
+          "description": "Buscando camino: si te moviste, corrige el destino cada esto (s).",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 10
+        },
+        "radioEspera": {
+          "description": "Más lejos que esto (bloques), o sin camino: «¡Espérame!» y espera donde quedó.",
+          "type": "number",
+          "minimum": 8,
+          "maximum": 80
+        },
+        "retomar": {
+          "description": "Esperando, vuelve a seguirte si te acercas a menos de esto (bloques).",
+          "type": "number",
+          "minimum": 4,
+          "maximum": 60
+        },
+        "reintento": {
+          "description": "Esperando porque no hay camino: lo intenta de nuevo cada esto (s).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "radioAparecer": {
+          "description": "Más lejos que esto (bloques) y sin que lo veas: aparece detrás de ti, como los lobos de Minecraft.",
+          "type": "number",
+          "minimum": 16,
+          "maximum": 160
+        },
+        "detras": {
+          "description": "… a esto detrás de ti (bloques, por tu rastro si se puede).",
+          "type": "number",
+          "minimum": 2,
+          "maximum": 16
+        },
+        "anguloVista": {
+          "description": "Grados a cada lado de hacia dónde miras: más allá no lo ves (para aparecer sin que se note).",
+          "type": "number",
+          "minimum": 30,
+          "maximum": 120
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

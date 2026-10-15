@@ -92,6 +92,7 @@ export function crearMisiones(ctx) {
                 grupo: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.grupo(c); },
                 grupoListo: c => !escenaAmistad || !escenaAmistad.grupoListo || escenaAmistad.grupoListo(c),
                 carta: { para: cartaPara, entregar: entregarCarta },
+                acompanar: ctx.acompanar || null, // 7i: «¿Me acompañas?» / «Puedes volver» (acompanante.js)
                 tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
             });
             return hablarUI;

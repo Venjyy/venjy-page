@@ -1,7 +1,8 @@
 // =========================================================
 // VENJY · Supervivencia · Ajustes y visitas de las rutinas (6d etapa 2, PR 2), sin three.js ni DOM
 // Valores del código + mundo/datos/rutinas.json: `ajustes` va a RUTINA_BASE, `visitas` son las visitas por horario
-// (quién visita a quién, de qué hora a qué hora y qué hacen al llegar), `textos` las líneas del panel y `horarios` / `lugares` ajustan los
+// (quién visita a quién, de qué hora a qué hora y qué hacen al llegar), `textos` las líneas del panel, `acompanar` lo que dicen
+// los acompañantes (7i, acompanante.js) y `horarios` / `lugares` ajustan los
 // HORARIOS de horarios-datos.js (el panel de cada amigo). Lo leen el juego (rutinas.js), el Estudio (pestaña Vida)
 // y las pruebas de Node. Una visita sin `quien` o sin destino se ignora.
 // =========================================================
@@ -26,7 +27,9 @@ export const RUTINA_BASE = {
     // Te incluyen (PR 3): con amistad alta, quien anda de visita (yendo, allá o de vuelta) te saluda al pasar
     nivelIncluir: 3,    // nivel de amistad desde el que te saludan al pasar (0 Desconocido … 3 Buen amigo, 4 Íntimo; 5 = nunca)
     radioIncluir: 7,    // a menos de esto (bloques) del jugador
-    esperaIncluir: 90   // segundos antes de volver a saludarte la misma persona
+    esperaIncluir: 90,  // segundos antes de volver a saludarte la misma persona
+    // Acompañantes (7i): «¿Me acompañas?» en «Hablar»
+    nivelAcompanar: 3   // nivel de amistad desde el que te acompaña (3 Buen amigo, 4 Íntimo; 5 = nunca)
 };
 const HORAS = ['de', 'a'];
 // Lo que hace quien visita si no encuentra a la persona (se lo llevó el jugador, no la alcanzó): gesto y frase;
@@ -42,7 +45,24 @@ export const INCLUIR_BASE = {
     paseo: { es: '¡Hola! Ando de paseo.', en: "Hey! Just out for a walk." }
 };
 const FRASES_INCLUIR = ['yendo', 'visitando', 'volviendo', 'paseo'];
-let ajustes = { ...RUTINA_BASE }, visitas = {}, textos = {}, ausente = { ...AUSENTE_BASE }, incluir = { ...INCLUIR_BASE };
+// Acompañantes (7i): botones de «Hablar» y lo que dice. {quien} = la persona (o el jugador) de la que se habla, {lugar} = su
+// sitio como lo nombra el panel («en el campamento», LUGARES). Los gestos son nombres de moldes.js. rutinas.json → `acompanar` cambia cada uno por separado
+export const ACOMPANAR_BASE = {
+    boton: { es: '¿Me acompañas?', en: 'Will you come with me?' },
+    soltar: { es: 'Puedes volver', en: 'You can head back' },
+    acepta: { es: '¡Vamos! Te sigo.', en: "Let's go! I'll follow you." },
+    corta: { es: 'Le aviso a {quien} que no llego. ¡Vamos!', en: "I'll tell {quien} I can't make it. Let's go!" },
+    despide: { es: '¡Nos vemos! Estaré {lugar}.', en: "See you! I'll be {lugar}." },
+    cambia: { es: 'Te dejo con {quien}. ¡Nos vemos!', en: "I'll leave you with {quien}. See you!" },
+    espera: { es: '¡Espérame!', en: 'Wait for me!' },
+    ocupado: { es: 'Ahora ando con {quien}.', en: "I'm with {quien} right now." },
+    ahoraNo: { es: 'Ahora no puedo.', en: "I can't right now." },
+    lugar: { es: 'Se juega {lugar}: vuelve allá con {quien}.', en: "It's played {lugar}: head back there with {quien}." },
+    gestoAcepta: 'asiente',
+    gestoDespide: 'saluda'
+};
+const GESTOS_ACOMPANAR = ['gestoAcepta', 'gestoDespide'];
+let ajustes = { ...RUTINA_BASE }, visitas = {}, textos = {}, ausente = { ...AUSENTE_BASE }, incluir = { ...INCLUIR_BASE }, acompanar = { ...ACOMPANAR_BASE };
 // Copias de fábrica de HORARIOS (para volver a ellas al aplicar otro rutinas.json)
 const HORARIOS_CODIGO = JSON.parse(JSON.stringify(HORARIOS));
 const LUGARES_CODIGO = JSON.parse(JSON.stringify(LUGARES));
@@ -64,6 +84,12 @@ export function fijarRutinas(datos) {
     if (inc) {
         if (typeof inc.gesto === 'string' && inc.gesto) incluir.gesto = inc.gesto;
         for (const k of FRASES_INCLUIR) { const x = texto(inc[k]); if (x) incluir[k] = x; }
+    }
+    acompanar = { ...ACOMPANAR_BASE };
+    const ac = datos && datos.acompanar;
+    if (ac) for (const k of Object.keys(ACOMPANAR_BASE)) {
+        if (GESTOS_ACOMPANAR.includes(k)) { if (typeof ac[k] === 'string') acompanar[k] = ac[k]; }
+        else { const x = texto(ac[k]); if (x) acompanar[k] = x; }
     }
     textos = {};
     for (const [k, t] of Object.entries((datos && datos.textos) || {})) { const x = texto(t); if (x) textos[k] = x; }
@@ -98,3 +124,4 @@ export const visitasRutinas = () => visitas;
 export const textosRutinas = () => textos;
 export const ausenteRutinas = () => ausente;
 export const incluirRutinas = () => incluir;
+export const acompanarRutinas = () => acompanar;

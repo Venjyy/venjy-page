@@ -62,6 +62,7 @@ import { crearRondaIglu } from './ronda-iglu.js';
 import { crearVidaAmigos } from './vida-amigos.js';
 import { crearPaseos } from './paseos.js';
 import { crearRutinas } from './rutinas.js';
+import { crearAcompanante } from './acompanante.js';
 import { crearMinijuegos } from './minijuego.js';
 import { NIVEL_ANIMACION, momentoListo, grupoDe, GRUPOS } from './amistad.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
@@ -764,6 +765,15 @@ async function arrancar(guardado, cx = null) {
         nivel: c => (misiones ? misiones.amistad.nivel(c) : 0)
     });
     cargarDatos('rutinas').then(d => { if (d) rutinas.fijar(d); });
+    // 7i: un amigo te acompaña («¿Me acompañas?» en «Hablar»); espera donde está durante un minijuego, la ronda o una escena
+    const acompanante = crearAcompanante({
+        paseos, rutinas, idioma: () => idioma, nombre: c => NOMBRES_AMIGO[c] || c,
+        persona: c => amigos.lista.find(n => n.clave === c),
+        nivel: c => (misiones ? misiones.amistad.nivel(c) : 0),
+        libre: n => !ronda.activa && !minijuegos.activo && !(jefes && jefes.enCurso) && !(amigos.iglu && amigos.iglu.enPase && (n === amigos.iglu.moises || n === amigos.iglu.lalo)),
+        pausa: () => ronda.activa || minijuegos.activo || !!(escenas && escenas.activa) || !!(escenaAmistad && escenaAmistad.activa),
+        avisar: t => hud.mensaje(t, 3.5)
+    });
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
@@ -778,7 +788,11 @@ async function arrancar(guardado, cx = null) {
     const objetivosTodos = (x, z, r) => [...(enemigos ? enemigos.objetivos(x, z, r) : []), ...ganado.objetivos(x, z, r), ...(jefes ? jefes.objetivos(x, z, r) : [])];
     const proyectiles = crearProyectiles({ scene, mundo, jugador, inventario, vida, objetivos: objetivosTodos });
     // Zonas seguras: alrededor de cada amigo y de Venjy no aparecen ni entran monstruos
-    const zonasSeguras = () => [...npcs.lista, ...amigos.lista, ...venjys.lista].map(n => ({ x: n.x, z: n.z, radio: 16 }));
+    // (quien te acompaña no la lleva consigo: la suya queda en su sitio, 7i)
+    const zonasSeguras = () => [...npcs.lista, ...amigos.lista, ...venjys.lista].map(n => {
+        const c = acompanante.de(n.clave) && paseos.casa(n.clave);
+        return { x: c ? c.x : n.x, z: c ? c.z : n.z, radio: 16 };
+    });
     enemigos = crearEnemigos({
         scene, mundo, jugador, vida, dia, entidades, proyectiles, terreno, datos, zonasSeguras, contenedores, particulas, objetivosTodos,
         dificultad: () => vida.dificultad, hud, tinteMundo: materiales.solido.color,
@@ -794,6 +808,7 @@ async function arrancar(guardado, cx = null) {
         grupo: vista.grupo, dy: DY, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, idioma, abrirPanel, cerrarPanel,
         jefeEnCurso: () => jefes && jefes.enCurso,
         deVisita: (clave, lengua) => rutinas.texto(clave, lengua), // «Está de visita donde Braulio, en el naufragio» (6d etapa 2)
+        acompanar: acompanante, // 7i: «¿Me acompañas?» / «Puedes volver» en «Hablar»
         skin: () => skinActual, // amistad inicial según tu skin (se lee ya en el bucle, cuando skinActual existe)
         antesDeHablar: clave => !!(escenas && escenas.antesDeHablar(clave)),
         alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
@@ -919,7 +934,8 @@ async function arrancar(guardado, cx = null) {
     const ronda = crearRondaIglu({
         grupo: vista.grupo, dy: DY, jugador, camara, camaras, misiones, amigos, escenas, terreno, idioma, lienzo, hud,
         skin: () => skinActual,
-        puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso,
+        // (7i: con Lalo o Moisés fuera de su cojín, acompañándote o de visita, no hay ronda)
+        puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso && !(amigos.iglu && (paseos.fuera(amigos.iglu.moises.clave) || paseos.fuera(amigos.iglu.lalo.clave))),
         bloquear: () => bloquearEscena(true),
         liberar: liberarEscena
     });
@@ -996,20 +1012,15 @@ async function arrancar(guardado, cx = null) {
     }
     // Duelo: la primera vez (sin la marca 'cartas-tuto') el botón abre el tutorial; después, «Repasar el tutorial» aparte
     const tutoCartasVisto = () => misiones.estado.minijuegos.has('cartas-tuto');
+    // 7i: mientras te acompaña (o acompaña a otro), su minijuego sale apagado con el motivo («Se juega en el campamento…»)
+    const conLugar = (clave, b) => { const m = b && acompanante.motivoLugar(clave); return m ? { ...b, motivo: m, extra: [] } : b; };
     misiones.minijuego = {
-        texto: clave => {
-            if (clave === 'lucho') {
-                const motivo = inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo);
-                return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo, extra: tutoCartasVisto() && !motivo ? [{ texto: textoCartas(TXT_CARTAS_BOTON.tuto), modo: 'tutorial' }] : [] };
-            }
-            if (clave === 'lona') return { texto: textoCartas(CARRERA_BOTON.boton), motivo: null };
-            return minijuegos.botonPara(clave);
-        },
+        texto: clave => conLugar(clave, botonJuego(clave)),
         // Cierra el panel sin pedir el puntero (el minijuego lo deja libre) y empieza
         jugar: (clave, modo) => {
-            const b = clave === 'lucho'
+            const b = conLugar(clave, clave === 'lucho'
                 ? { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) }
-                : clave === 'lona' ? { texto: textoCartas(CARRERA_BOTON.boton), motivo: null } : minijuegos.botonPara(clave);
+                : clave === 'lona' ? { texto: textoCartas(CARRERA_BOTON.boton), motivo: null } : minijuegos.botonPara(clave));
             if (!b || b.motivo) return;
             capaPanel.hidden = true; capaPanel.textContent = '';
             document.body.classList.remove('panel-lado');
@@ -1019,6 +1030,14 @@ async function arrancar(guardado, cx = null) {
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
+    function botonJuego(clave) {
+        if (clave === 'lucho') {
+            const motivo = inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo);
+            return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo, extra: tutoCartasVisto() && !motivo ? [{ texto: textoCartas(TXT_CARTAS_BOTON.tuto), modo: 'tutorial' }] : [] };
+        }
+        if (clave === 'lona') return { texto: textoCartas(CARRERA_BOTON.boton), motivo: null };
+        return minijuegos.botonPara(clave);
+    }
     // Animaciones de amistad (bloque 6b): escena-amistad.js se carga con import() la primera vez que se usa
     // (botón de la pestaña «Hablar»); igual que el minijuego, cierra el panel sin pedir el puntero y empieza
     let escenaAmistad = null, cargandoAmistad = null;
@@ -1116,7 +1135,8 @@ async function arrancar(guardado, cx = null) {
             callar: v => escenas.callar(v),
             vida: vidaAmigos, // 6d: /amistad vida-<id>
             paseos, // 6d etapa 2: /caminar <persona> <destino>
-            rutinas // /rutina <persona> [acompanar|retomar|<visita>]
+            rutinas, // /rutina <persona> [acompanar|retomar|<visita>]
+            acompanante // 7i: /rutina <persona> acompanar → te sigue; retomar → lo suelta
         },
         medir: { mundo, jugador, minado, entidades, terreno, irA, hud, B, DY, chunkForzado } // /medir romper (7b-1)
     });
@@ -1193,13 +1213,18 @@ async function arrancar(guardado, cx = null) {
             amanecerLocal, iluminar: iluminarCaja,
             alCambiarJugadores: () => pintarCoop(),
             alActividad: m => recibirActividad(m),
-            alSalirJugador: id => salioDeActividades(id),
-            alEntrarJugador: id => { entroAActividades(id); if (coop.esAnfitrion) coop.rutina({ l: rutinas.foto() }, id); },
+            alSalirJugador: id => { salioDeActividades(id); acompanante.salio(id); },
+            alEntrarJugador: id => { entroAActividades(id); if (coop.esAnfitrion) { coop.rutina({ l: rutinas.foto() }, id); acompanante.entro(); } },
             alRutina: m => rutinas.recibir(m),
+            // 7i: quién acompaña a quién (lo decide el anfitrión); tu acompañante va en tu `p` y el de los demás lo mueve la red
+            alAcompanante: m => acompanante.recibir(m),
+            acompanantePropio: () => acompanante.pose(),
+            alNpc: (id, k, o) => acompanante.dibujar(id, k, o),
             alCerrar: motivo => terminarCoop(motivo)
         });
         // Rutinas de los amigos: las decide el anfitrión con su hora y las manda; el invitado las sigue (6d etapa 2, PR 3)
         rutinas.red(coop.esAnfitrion ? { enviar: m => coop.rutina(m) } : 'seguir');
+        acompanante.red({ yo: coop.yoId, anfitrion: coop.esAnfitrion, enviar: m => coop.acompanante(m), nombre: id => coop.nombreDe(id) });
         // Pestaña en segundo plano: el navegador detiene el bucle, pero la red sigue (bloques, latidos)
         setInterval(() => { if (document.hidden) coop.actualizar(0.25); }, 250);
         const hudSala = document.createElement('div');
@@ -1652,6 +1677,7 @@ async function arrancar(guardado, cx = null) {
     function terminarCoop(motivo) {
         if (coopTerminado) return;
         coopTerminado = true;
+        acompanante.red(null); // al cerrar la sala todos vuelven a su sitio (7i)
         $('coop-fin-motivo').textContent = motivo === 'anfitrion' ? tx().finAnfitrion : coop && coop.local ? tx().finLocal : tx().finConexion;
         ventanasBase.cerrar();
         cerrarPanel();
@@ -1993,7 +2019,7 @@ async function arrancar(guardado, cx = null) {
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
-        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, rutinas, guardarYa, estadoActual,
+        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, rutinas, acompanante, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos, ruleta,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
@@ -2093,6 +2119,7 @@ async function arrancar(guardado, cx = null) {
         animales.actualizar(dtC, false);
         rutinas.actualizar(dtC);
         paseos.actualizar(dtC);
+        acompanante.actualizar(dtC);
         vidaAmigos.actualizar(dtC);
         amigos.actualizar(dtC, false);
         venjys.actualizar(dtC, false);

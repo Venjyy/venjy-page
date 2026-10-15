@@ -3,5 +3,6 @@
   "version": 1,
   "nota": "Vacío = todo como en el código (NAV_BASE de mundo/navegacion.js y PASEO_BASE de mundo/supervivencia/paseos.js). Se edita en /estudio/ → pestaña Vida.",
   "caminar": {},
-  "paseo": {}
+  "paseo": {},
+  "seguir": {}
 }

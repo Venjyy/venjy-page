@@ -299,7 +299,10 @@ anterior.
 ## 5. Pendiente en el portafolio
 
 - Que los que quedan en la fogata sigan conversando si uno sale de visita (hoy se callan).
-- 7i: el acompañante que te sigue (`rutinas.acompanar` / `retomar` ya existen).
+- ~~7i: el acompañante que te sigue~~ (hecho 2026-10-15: `mundo/seguir.js` + `supervivencia/acompanante.js`; falta pelear, PR 2 de 7i).
+  Lo aprendido: seguir **tu rastro** sale casi gratis y no se ve robótico; el buscador solo cuando el rastro se corta o se
+  tapa, y nunca volver a las migas tapadas (si no, choca, busca, vuelve al rastro y choca de nuevo). En red, el acompañante
+  lo simula su dueño y viaja en su posición; el anfitrión solo arbitra quién lo tiene.
 - No editable aún: la tolerancia de altura de «te saludan al pasar» (±4 bloques) y el radio para seguir a quien se
   alejó (`radioEncuentro × 1,5`).
 - Probar el cooperativo con dos equipos de verdad (`supervivencia.html?disp=2`).

@@ -297,6 +297,9 @@ const responder = crearManejador({
         }
         if (accion === 'probar' && !v.rutinas.probar(visita)) throw new Error(`«${visita}» no se pudo hacer ahora (¿están las dos personas en este mundo?)`);
         if (accion === 'cortar' && quien) v.rutinas.cortar(quien);
+        // 7i: que te siga (sin mirar la amistad) o que deje de seguirte
+        if (accion === 'acompanar' && quien && !(v.acompanante && v.acompanante.invitar(quien, { forzar: true }))) throw new Error(`${quien} no puede acompañarte ahora`);
+        if (accion === 'soltar' && quien && v.acompanante) v.acompanante.soltar(quien);
         return quien ? v.rutinas.estado(quien) : v.rutinas.resumen();
     },
     teletransportar,
