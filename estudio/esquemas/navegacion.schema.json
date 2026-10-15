@@ -132,6 +132,12 @@
           "minimum": 16,
           "maximum": 160
         },
+        "pisarHojas": {
+          "description": "0 = las hojas y las vallas (corral y jardín) chocan pero no se pisan: rodean árboles y corrales en vez de caminar por encima. 1 = se pisan como un bloque sólido.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
         "giro": {
           "description": "Qué tan rápido gira hacia donde camina (por segundo).",
           "type": "number",

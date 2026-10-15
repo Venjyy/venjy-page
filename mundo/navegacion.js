@@ -4,7 +4,7 @@
 // acompañantes de 7i, y mañana lo que haga falta en el juego comercial).
 //
 // Tres piezas, de abajo hacia arriba:
-//   1. Consulta: cómo se ve el mundo. `celda(x, y, z)` → LIBRE, SOLIDO, AGUA, LAVA o SIN_CARGAR, y
+//   1. Consulta: cómo se ve el mundo. `celda(x, y, z)` → LIBRE, SOLIDO, OBSTACULO (hojas, vallas: chocan y no se pisan), AGUA, LAVA o SIN_CARGAR, y
 //      `columna(x, z)` → { y, agua } del mapa de alturas para lo que no está cargado (o null fuera del mapa).
 //      `consultaMundo` arma una con `mundo.bloque` + `terreno.HT`; las pruebas arman la suya.
 //   2. Búsqueda (A*): `crearBusqueda` avanza por tramos con un tope de nodos (no traba el cuadro); da el
@@ -18,7 +18,9 @@
 // Valores ajustables: NAV_BASE + mundo/datos/navegacion.json (pestaña Vida del Estudio).
 // =========================================================
 
-export const LIBRE = 0, SOLIDO = 1, AGUA = 2, LAVA = 3, SIN_CARGAR = -1;
+// OBSTACULO: choca como un sólido pero no se pisa (hojas, vallas): lo rodean en vez de caminar por encima de árboles
+// y corrales (con `pisarHojas` = 1 se pisa como antes)
+export const LIBRE = 0, SOLIDO = 1, AGUA = 2, LAVA = 3, OBSTACULO = 4, SIN_CARGAR = -1;
 
 // Valores del código; navegacion.json los ajusta (fijarNavegacion). Unidades: bloques y segundos.
 export const NAV_BASE = {
@@ -41,6 +43,7 @@ export const NAV_BASE = {
     saltoLejos: 1,        // lejos del jugador, segundos entre saltos de posición
     rapidezLejos: 4,      // lejos del jugador (nadie lo ve) camina esto más rápido: las visitas entre lugares lejanos caben en el día
     radioDetalle: 160,    // a menos de esto (del jugador) camina mirando los bloques; más lejos avanza a saltos
+    pisarHojas: 0,        // 0 = hojas y vallas no se pisan (rodean árboles y corrales); 1 = se pisan como un bloque sólido
     giro: 8,              // qué tan rápido gira hacia donde camina (por segundo)
     suavizado: 64         // cuántos puntos hacia adelante intenta unir en línea recta al suavizar
 };
@@ -61,12 +64,15 @@ export const ajustesNavegacion = () => ajustes;
 // tipos: TIPO de texturas.js (0 aire, 1 sólido, 2 hoja, 3 agua, 4 planta, 5 lava, 6 puerta cerrada,
 // 7 panel que se atraviesa, 8 bloque con forma). `dy`: cuánto está subido el mundo real respecto a quien llama.
 // `terreno` (HT, ES, BW, BD) da el suelo de lo no cargado; sin terreno, lo no cargado no se pisa.
-export function consultaMundo({ mundo, terreno = null, tipos, dy = 0, nivelAgua = 14 }) {
+// tipos: TIPO de texturas.js (2 = hoja, que incluye la valla del corral); noPisables: otros ids que chocan pero no se
+// pisan (las vallas de jardín, que son bloques con forma)
+export function consultaMundo({ mundo, terreno = null, tipos, dy = 0, nivelAgua = 14, noPisables = [] }) {
     const CLASE = new Int8Array(256);
     for (let i = 0; i < 256; i++) {
         const t = tipos[i];
-        CLASE[i] = t === 1 || t === 2 || t === 6 || t === 8 ? SOLIDO : t === 3 ? AGUA : t === 5 ? LAVA : LIBRE;
+        CLASE[i] = t === 2 ? OBSTACULO : t === 1 || t === 6 || t === 8 ? SOLIDO : t === 3 ? AGUA : t === 5 ? LAVA : LIBRE;
     }
+    for (const id of noPisables) if (id >= 0 && id < 256) CLASE[id] = OBSTACULO;
     return {
         celda(x, y, z) {
             const id = mundo.bloque(x, y + dy, z);
@@ -95,18 +101,18 @@ function pie(C, A, x, z, y0, ox, oz) {
     for (let y = arriba; y >= abajo && y >= 1; y--) {
         const piso = C.celda(x, y - 1, z);
         if (piso === SIN_CARGAR) return pieMapa(C, A, x, z, y0);
-        if (piso !== SOLIDO) continue;
+        if (piso !== SOLIDO && !(piso === OBSTACULO && A.pisarHojas)) continue;
         // Encontró piso: o se puede parar aquí o no hay paso en esta columna (más abajo está tapado por este piso)
         for (let h = 0; h < A.alto; h++) {
             const c = C.celda(x, y + h, z);
             if (c === SIN_CARGAR) return pieMapa(C, A, x, z, y0);
-            if (c === SOLIDO || c === LAVA) return NaN;
+            if (c === SOLIDO || c === OBSTACULO || c === LAVA) return NaN;
             if (c === AGUA) { if (h > 0 || !(A.costoAgua > 0)) return NaN; salida.agua = true; }
         }
         // Para subir hace falta espacio sobre la cabeza en la columna de donde viene
         for (let h = y0 + A.alto; h < y + A.alto; h++) {
             const c = C.celda(ox, h, oz);
-            if (c === SOLIDO) return NaN;
+            if (c === SOLIDO || c === OBSTACULO) return NaN;
         }
         return y;
     }
@@ -132,10 +138,10 @@ export function apoyo(consulta, x, y, z, op = ajustes) {
 function deP(C, A, x, y, z) {
     const piso = C.celda(x, y - 1, z);
     if (piso === SIN_CARGAR) { const col = C.columna(x, z); return !!col && col.y === y; }
-    if (piso !== SOLIDO) return false;
+    if (piso !== SOLIDO && !(piso === OBSTACULO && A.pisarHojas)) return false;
     for (let h = 0; h < A.alto; h++) {
         const c = C.celda(x, y + h, z);
-        if (c === SOLIDO || c === LAVA || (c === AGUA && h > 0)) return false;
+        if (c === SOLIDO || c === OBSTACULO || c === LAVA || (c === AGUA && h > 0)) return false;
     }
     return true;
 }
@@ -456,6 +462,8 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
                 w.camino = b.camino; w.parcial = b.estado === 'parcial';
                 w.i = Math.hypot(b.camino[0].x - cuerpo.x, b.camino[0].z - cuerpo.z) > 0.25 ? 0 : 1;
                 w.estado = 'caminando'; w.lejos = 0; w.reloj = 0; w.mejor = Infinity;
+                // Camino de un solo punto (el destino cae en su misma celda: seguir a alguien que se movió un poco)
+                if (w.i >= w.camino.length) return finDeCamino();
             }
             if (w.estado !== 'caminando') return w.estado;
             return detalle ? pasoCerca(dt) : pasoLejos(dt);
@@ -532,6 +540,7 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
     function pasoCerca(dt) {
         const A = op();
         const p = w.camino[w.i];
+        if (!p) return finDeCamino();
         const dx = p.x - cuerpo.x, dz = p.z - cuerpo.z, d = Math.hypot(dx, dz);
         if (d < 0.08) { cuerpo.x = p.x; cuerpo.z = p.z; w.i++; return w.i >= w.camino.length ? finDeCamino() : w.estado; }
         const paso = Math.min(d, A.velocidad * dt);

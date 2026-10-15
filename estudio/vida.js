@@ -10,7 +10,7 @@
 // =========================================================
 import { NAV_BASE } from '../mundo/navegacion.js';
 import { PASEO_BASE } from '../mundo/supervivencia/paseos-datos.js';
-import { RUTINA_BASE, AUSENTE_BASE } from '../mundo/supervivencia/rutinas-datos.js';
+import { RUTINA_BASE, AUSENTE_BASE, INCLUIR_BASE } from '../mundo/supervivencia/rutinas-datos.js';
 import { TEXTOS_RUTINA, horasDeViaje } from '../mundo/supervivencia/rutinas.js';
 import { HORARIOS, LUGARES } from '../mundo/supervivencia/horarios-datos.js';
 
@@ -36,6 +36,7 @@ const CAMINAR = {
     saltoLejos: ['lejos: un salto cada (s)', 'far away: one jump every (s)', 0.2, 5, 0.1],
     rapidezLejos: ['lejos (nadie lo ve): camina más rápido (×)', 'far away (unseen): walks faster (×)', 1, 10, 0.5],
     radioDetalle: ['camina mirando bloques a menos de (bloques)', 'walks checking blocks within (blocks)', 16, 160, 4],
+    pisarHojas: ['pisa hojas y vallas (0 = las rodea, 1 = camina por encima)', 'steps on leaves and fences (0 = goes around, 1 = walks on top)', 0, 1, 1],
     giro: ['rapidez de giro', 'turn speed', 1, 20, 0.5],
     suavizado: ['suavizado del camino (puntos)', 'path smoothing (points)', 1, 64, 1]
 };
@@ -57,12 +58,16 @@ const RUTINA = {
     girar: ['quien recibe gira la cabeza en (s)', 'the host turns their head in (s)', 0.1, 3, 0.1],
     cuello: ['quien recibe gira el cuello hasta (rad)', 'the host turns their neck up to (rad)', 0.2, 1.6, 0.05],
     radioEncuentro: ['al llegar, lo encuentra a menos de (bloques)', 'on arrival, finds them within (blocks)', 2, 40, 0.5],
+    acercarse: ['… si no está, intenta acercarse de nuevo (veces)', '… if not there, tries to get closer again (times)', 0, 6, 1],
     esperaAusente: ['si no está, reacciona durante (s)', 'if not there, reacts for (s)', 0, 20, 0.5],
     radioSaludo: ['el saludo se ve a menos de (bloques)', 'greeting shows within (blocks)', 4, 80, 1],
     saludoLejos: ['lejos el saludo pasa igual (1 sí, 0 no)', 'far away the greeting still happens (1 yes, 0 no)', 0, 1, 1],
     anticipar: ['sale antes según la distancia (1 = llega a la hora; 0 = sale a la hora)', 'leaves early by distance (1 = arrives on time; 0 = leaves on time)', 0, 1.5, 0.05],
     rodeo: ['el camino es más largo que la recta (×)', 'the path is longer than a straight line (×)', 1, 3, 0.05],
-    segundosHora: ['segundos de juego por hora del reloj', 'game seconds per clock hour', 5, 120, 1]
+    segundosHora: ['segundos de juego por hora del reloj', 'game seconds per clock hour', 5, 120, 1],
+    nivelIncluir: ['te saluda al pasar desde el nivel de amistad (3 Buen amigo, 5 = nunca)', 'greets you in passing from friendship level (3 Good friend, 5 = never)', 0, 5, 1],
+    radioIncluir: ['… a menos de (bloques)', '… within (blocks)', 2, 24, 0.5],
+    esperaIncluir: ['… y no repite antes de (s)', '… and does not repeat before (s)', 5, 600, 5]
 };
 const TEXTOS_PANEL = { yendo: ['yendo a ver a alguien', 'going to see someone'], yendoLugar: ['yendo a un lugar', 'going to a place'], visitando: ['de visita donde alguien', 'visiting someone'], visitandoLugar: ['de visita en un lugar', 'visiting a place'], volviendo: ['volviendo', 'heading back'], acompanando: ['acompañándote', 'keeping you company'] };
 const hhmm = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
@@ -275,6 +280,12 @@ export async function montarVida(ctx) {
         const fijarGen = () => { if (Object.keys(gen.ausente || {}).length) rut().ausente = gen.ausente; else delete rut().ausente; cambio('rutinas'); };
         sa.appendChild(textoCampo(t('gesto', 'gesture'), (rut().ausente || {}).gesto || '', x => { gen.ausente = { ...(rut().ausente || {}) }; if (x) gen.ausente.gesto = x; else delete gen.ausente.gesto; fijarGen(); }, { lista: 'vi-gestos', placeholder: AUSENTE_BASE.gesto }));
         sa.appendChild(frase(t('frase', 'line'), (rut().ausente || {}).texto || AUSENTE_BASE.texto, x => { gen.ausente = { ...(rut().ausente || {}) }; if (x) gen.ausente.texto = x; else delete gen.ausente.texto; fijarGen(); }));
+        // Te incluyen: lo que dice al pasar junto al jugador con amistad alta (nivel, radio y espera en los ajustes)
+        const si = seccion(t('Rutinas: te saludan al pasar ({quien})', 'Routines: they greet you in passing ({quien})'), false);
+        const fijarInc = (k, x) => { const o = { ...(rut().incluir || {}) }; if (x) o[k] = x; else delete o[k]; if (Object.keys(o).length) rut().incluir = o; else delete rut().incluir; cambio('rutinas'); };
+        si.appendChild(textoCampo(t('gesto', 'gesture'), (rut().incluir || {}).gesto || '', x => fijarInc('gesto', x), { lista: 'vi-gestos', placeholder: INCLUIR_BASE.gesto }));
+        for (const [k, es, en] of [['yendo', 'yendo a ver a alguien', 'going to see someone'], ['visitando', 'de visita', 'visiting'], ['volviendo', 'de vuelta', 'heading back'], ['paseo', 'visita a un lugar', 'visiting a place']])
+            si.appendChild(frase(t(es, en), (rut().incluir || {})[k] || INCLUIR_BASE[k], x => fijarInc(k, x)));
         // Horarios y nombres de lugar del panel de cada amigo
         const sh = seccion(t('Rutinas: horario de cada amigo (su panel)', 'Routines: each friend’s schedule (their panel)'), false);
         for (const c of personas) {

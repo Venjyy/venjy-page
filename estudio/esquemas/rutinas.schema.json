@@ -19,12 +19,16 @@
         "girar": { "description": "Segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse).", "type": "number", "minimum": 0.1, "maximum": 3 },
         "cuello": { "description": "Cuánto puede girar el cuello quien recibe para mirar a quien llegó (radianes; 1,1 ≈ 63°).", "type": "number", "minimum": 0.2, "maximum": 1.6 },
         "radioEncuentro": { "description": "Al llegar, quien visita tiene que estar a menos de esto (bloques); si no, «no está»: lo dice y vuelve.", "type": "number", "minimum": 2, "maximum": 40 },
+        "acercarse": { "description": "Si al llegar la persona no está a menos de radioEncuentro, cuántas veces intenta acercarse de nuevo antes de decir «¿Y …?» (un camino parcial cuenta como llegada a unos bloques del destino).", "type": "integer", "minimum": 0, "maximum": 6 },
         "esperaAusente": { "description": "Segundos que se queda reaccionando a que no estaba antes de volver.", "type": "number", "minimum": 0, "maximum": 20 },
         "radioSaludo": { "description": "El saludo (gestos y globos) solo se dibuja con el jugador a menos de esto, en bloques.", "type": "number", "minimum": 4, "maximum": 80 },
         "saludoLejos": { "description": "1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo.", "type": "integer", "minimum": 0, "maximum": 1 },
         "anticipar": { "description": "1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale justo a la hora `de` (entre 0 y 1, parte del viaje).", "type": "number", "minimum": 0, "maximum": 1.5 },
         "rodeo": { "description": "Cuánto más largo que la línea recta es el camino de verdad (para calcular cuándo salir).", "type": "number", "minimum": 1, "maximum": 3 },
-        "segundosHora": { "description": "Segundos de juego que dura una hora del reloj (reloj.js: de media 25).", "type": "number", "minimum": 5, "maximum": 120 }
+        "segundosHora": { "description": "Segundos de juego que dura una hora del reloj (reloj.js: de media 25).", "type": "number", "minimum": 5, "maximum": 120 },
+        "nivelIncluir": { "description": "Te incluyen: nivel de amistad desde el que quien anda de visita te saluda al pasar (0 Desconocido … 3 Buen amigo, 4 Íntimo; 5 = nunca).", "type": "integer", "minimum": 0, "maximum": 5 },
+        "radioIncluir": { "description": "Te saluda al pasar a menos de esto (bloques).", "type": "number", "minimum": 2, "maximum": 24 },
+        "esperaIncluir": { "description": "Segundos antes de que la misma persona te vuelva a saludar al pasar.", "type": "number", "minimum": 5, "maximum": 600 }
       },
       "additionalProperties": false
     },
@@ -53,6 +57,18 @@
     "ausente": {
       "description": "Para todas las visitas: qué hace quien visita si no encuentra a la persona ({quien} = a quien venía a ver). Falta = AUSENTE_BASE de rutinas-datos.js (gesto rasca y «¿Y {quien}? Pensé que estaba aquí.»).",
       "$ref": "#/$defs/accion"
+    },
+    "incluir": {
+      "description": "Te incluyen: lo que hace quien anda de visita al pasar junto al jugador con amistad alta (ajustes nivelIncluir, radioIncluir, esperaIncluir). {quien} = a quien va a ver o visita. Lo que falte = INCLUIR_BASE de rutinas-datos.js.",
+      "type": "object",
+      "properties": {
+        "gesto": { "description": "Gesto al saludarte (nombre de moldes.js o poses.json).", "type": "string" },
+        "yendo": { "description": "Camino a ver a alguien.", "$ref": "comun.schema.json#/$defs/texto" },
+        "visitando": { "description": "Ya de visita.", "$ref": "comun.schema.json#/$defs/texto" },
+        "volviendo": { "description": "De vuelta a su sitio.", "$ref": "comun.schema.json#/$defs/texto" },
+        "paseo": { "description": "Visita a un lugar (sin persona).", "$ref": "comun.schema.json#/$defs/texto" }
+      },
+      "additionalProperties": false
     },
     "horarios": {
       "description": "Horario de cada amigo que muestra su panel (horarios-datos.js).",
