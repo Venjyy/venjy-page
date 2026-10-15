@@ -78,7 +78,12 @@ const SEGUIR = {
     torreCada: ['subiendo su torre: un bloque cada esto (s)', 'going up their tower: one block every (s)', 0.15, 3, 0.05],
     torreBajar: ['bajando: rompe un bloque cada esto (s)', 'going down: breaks one block every (s)', 0.15, 3, 0.05],
     torreRomper: ['si le pusieron un bloque encima, lo rompe en esto (s)', 'if someone put a block above them, breaks it in (s)', 0.15, 5, 0.05],
-    torreBloques: ['bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre; 0 = no arma torres)', 'blocks they carry when they start coming with you (0 = no towers)', 0, 64, 1]
+    torreBloques: ['bloques de tierra en su mochila la primera vez que te acompaña (0 = no arma torres hasta que le des)', 'dirt blocks in their backpack the first time they come with you (0 = none until you give some)', 0, 64, 1],
+    puenteLargo: ['si tu rastro cruza un hueco o agua de hasta esto, arma un puente (bloques; 0 = nunca)', 'if your trail crosses a gap or water up to this long, builds a bridge (blocks; 0 = never)', 0, 24, 1],
+    puenteCada: ['armando el puente: un bloque cada esto (s)', 'building the bridge: one block every (s)', 0.1, 3, 0.05],
+    puenteQuitar: ['quita el puente cuando estás a más de esto y no lo ves (bloques)', 'removes the bridge when you are further than this and cannot see it (blocks)', 0, 64, 1],
+    desatasco: ['esperando sin camino (encerrado, en un hoyo): tras esto rompe o pone un bloque para salir (s)', 'waiting with no path (boxed in, in a hole): after this breaks or places a block to get out (s)', 0.5, 20, 0.5],
+    desatascoMax: ['… como mucho esta cantidad de bloques (0 = nunca; luego espera o aparece detrás de ti)', '… at most this many blocks (0 = never; then waits or appears behind you)', 0, 20, 1]
 };
 // Peleas del acompañante (navegacion.json → pelea, 7i PR 2)
 const PELEA = {
@@ -113,7 +118,8 @@ const RUTINA = {
     nivelIncluir: ['te saluda al pasar desde el nivel de amistad (3 Buen amigo, 5 = nunca)', 'greets you in passing from friendship level (3 Good friend, 5 = never)', 0, 5, 1],
     radioIncluir: ['… a menos de (bloques)', '… within (blocks)', 2, 24, 0.5],
     esperaIncluir: ['… y no repite antes de (s)', '… and does not repeat before (s)', 5, 600, 5],
-    nivelAcompanar: ['te acompaña desde el nivel de amistad (3 Buen amigo, 5 = nunca)', 'comes with you from friendship level (3 Good friend, 5 = never)', 0, 5, 1]
+    nivelAcompanar: ['te acompaña desde el nivel de amistad (3 Buen amigo, 5 = nunca)', 'comes with you from friendship level (3 Good friend, 5 = never)', 0, 5, 1],
+    mochila: ['casillas de la mochila de quien te acompaña', 'backpack slots of whoever comes with you', 9, 27, 9]
 };
 // Frases de los acompañantes (rutinas.json → acompanar); los gestos van aparte
 const FRASES_ACOMPANAR = [['boton', 'botón para invitarlo', 'button to invite'], ['soltar', 'botón para despedirlo', 'button to let go'], ['acepta', 'acepta', 'accepts'],
@@ -125,7 +131,9 @@ const FRASES_ACOMPANAR = [['boton', 'botón para invitarlo', 'button to invite']
     ['ordenTranquilo', 'botón: no pelees', 'button: don\'t fight'], ['diceSigue', 'contesta a «Sígueme»', 'answers «Follow me»'],
     ['diceQuieto', 'contesta a «Espérame aquí»', 'answers «Wait here»'], ['diceTranquilo', 'contesta a «No pelees»', 'answers «Don\'t fight»'],
     ['cansado', 'sin aguante: se sienta', 'out of stamina: sits down'], ['listo', 'terminó de descansar', 'done resting'],
-    ['sinBloques', 'su torre: sin bloques', 'their tower: out of blocks']];
+    ['sinBloques', 'su torre o puente: sin bloques', 'their tower or bridge: out of blocks'],
+    ['mochila', 'botón: su mochila', 'button: their backpack'], ['tituloMochila', 'título de su mochila ({quien})', 'backpack title ({quien})'],
+    ['abreMochila', 'al abrir su mochila', 'when opening their backpack']];
 const TEXTOS_PANEL = { yendo: ['yendo a ver a alguien', 'going to see someone'], yendoLugar: ['yendo a un lugar', 'going to a place'], visitando: ['de visita donde alguien', 'visiting someone'], visitandoLugar: ['de visita en un lugar', 'visiting a place'], volviendo: ['volviendo', 'heading back'], acompanando: ['acompañándote', 'keeping you company'], acompanandoOtro: ['acompañando a otro jugador ({quien})', 'with another player ({quien})'] };
 const hhmm = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 // Destinos fijos de la prueba (además de las personas y los lugares de posiciones.json)

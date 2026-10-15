@@ -29,7 +29,8 @@
         "nivelIncluir": { "description": "Te incluyen: nivel de amistad desde el que quien anda de visita te saluda al pasar (0 Desconocido … 3 Buen amigo, 4 Íntimo; 5 = nunca).", "type": "integer", "minimum": 0, "maximum": 5 },
         "radioIncluir": { "description": "Te saluda al pasar a menos de esto (bloques).", "type": "number", "minimum": 2, "maximum": 24 },
         "esperaIncluir": { "description": "Segundos antes de que la misma persona te vuelva a saludar al pasar.", "type": "number", "minimum": 5, "maximum": 600 },
-        "nivelAcompanar": { "description": "Nivel de amistad desde el que te acompaña con «¿Me acompañas?» en «Hablar» (3 Buen amigo, 4 Íntimo; 5 = nunca).", "type": "number", "minimum": 0, "maximum": 5 }
+        "nivelAcompanar": { "description": "Nivel de amistad desde el que te acompaña con «¿Me acompañas?» en «Hablar» (3 Buen amigo, 4 Íntimo; 5 = nunca).", "type": "number", "minimum": 0, "maximum": 5 },
+        "mochila": { "description": "7i PR 3: casillas de la mochila de quien te acompaña (9, 18 o 27; se abre en «Hablar»).", "type": "number", "minimum": 9, "maximum": 27 }
       },
       "additionalProperties": false
     },
@@ -93,7 +94,10 @@
         "diceTranquilo": { "description": "Lo que contesta a «No pelees».", "$ref": "comun.schema.json#/$defs/texto" },
         "cansado": { "description": "Se le acabó el aguante peleando: se sienta a descansar.", "$ref": "comun.schema.json#/$defs/texto" },
         "listo": { "description": "Termina de descansar y sigue.", "$ref": "comun.schema.json#/$defs/texto" },
-        "sinBloques": { "description": "Armando su torre se quedó sin bloques.", "$ref": "comun.schema.json#/$defs/texto" },
+        "sinBloques": { "description": "Armando su torre o un puente se quedó sin bloques.", "$ref": "comun.schema.json#/$defs/texto" },
+        "mochila": { "description": "7i PR 3: botón de «Hablar» para abrir su mochila (le das y le pides cosas).", "$ref": "comun.schema.json#/$defs/texto" },
+        "tituloMochila": { "description": "Título de la ventana de su mochila ({quien} = su nombre).", "$ref": "comun.schema.json#/$defs/texto" },
+        "abreMochila": { "description": "Lo que dice al abrir su mochila.", "$ref": "comun.schema.json#/$defs/texto" },
         "gestoAcepta": { "description": "Gesto al aceptar (nombre de moldes.js o poses.json).", "type": "string", "pattern": "^[a-zA-Z0-9]*$" },
         "gestoDespide": { "description": "Gesto al despedirse.", "type": "string", "pattern": "^[a-zA-Z0-9]*$" }
       },
