@@ -262,6 +262,29 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
     ok(puesto && r.w.estado === 'llego', `muro nuevo: llega igual (${r.w.estado})`);
     ok(!cruzo, 'muro nuevo: no lo atraviesa');
 }
+// Zanja de 4 de ancho y 12 de hondo (x 15..18) entre él y el destino, hecha antes de buscar o a mitad de viaje.
+// Nunca pisa aire: si la zanja corta todo, se rinde en el borde; si es corta (z 12..28), la rodea por un extremo.
+// (En el 7i PR 3 pareció cruzarla por el aire: la zanja de la prueba era corta y el camino la rodeaba a su altura.)
+for (const cuando of ['antes', 'a mitad']) for (const [z0, z1] of [[0, 39], [12, 28]]) {
+    const C = juguete();
+    C.caja(0, 1, 0, 39, 20, 39, SOLIDO); // piso en y = 20 (se para en 21)
+    const cavar = () => C.caja(15, 9, z0, 18, 20, z1, LIBRE);
+    if (cuando === 'antes') cavar();
+    const cuerpo = { x: 3.5, y: 21, z: 20.5, yaw: 0 };
+    let cavada = cuando === 'antes', aire = 0, rodeo = false;
+    const r = caminarHasta(C, cuerpo, { x: 30.5, y: 21, z: 20.5 }, {
+        alCuadro() {
+            if (!cavada && cuerpo.x > 10) { cavar(); cavada = true; }
+            const x = Math.floor(cuerpo.x), z = Math.floor(cuerpo.z);
+            if (cavada && x >= 15 && x <= 18 && cuerpo.y > 10 && C.celda(x, Math.round(cuerpo.y) - 1, z) === LIBRE) aire++;
+            if (x >= 15 && x <= 18 && (z < z0 || z > z1)) rodeo = true;
+        }
+    });
+    const nombre = `zanja ${cuando}${z1 - z0 < 39 ? ' corta' : ''}`;
+    ok(aire === 0, `${nombre}: nunca camina sobre el aire (cuadros: ${aire})`);
+    if (z1 - z0 < 39) ok(r.w.estado === 'llego' && rodeo, `${nombre}: la rodea por un extremo y llega (${r.w.estado})`);
+    else ok(r.w.estado === 'sin-camino' && cuerpo.x < 15, `${nombre}: no hay paso: se queda en el borde (${r.w.estado}, x ${cuerpo.x.toFixed(2)})`);
+}
 {
     // Lejos: avanza a saltos (solo cada saltoLejos) y tarda lo que dice la velocidad (× rapidezLejos)
     const C = juguete(200, 20);
