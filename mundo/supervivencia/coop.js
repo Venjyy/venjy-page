@@ -22,6 +22,9 @@
 // em gesto de la ruleta { k } (7c-2; k vacío = terminó antes; máx. 1/s, gestos-jugador.js) ·
 // ru rutinas de los amigos (6d etapa 2, PR 3): el anfitrión manda lo que decide { c, a: sale|vuelve|noesta, v, ya } al
 // pasar (unos pocos por día de juego) y la lista { l } a quien entra; cada equipo los camina con sus chunks (rutinas.js).
+// co acompañantes (7i, acompanante.js): el invitado pide { a: 'pide', k } o suelta { a: 'suelta', k }; el anfitrión decide
+// (uno por amigo) y manda a todos { a: 'lista', l: { clave: id } }. Tu acompañante lo simula tu equipo y va en tu `p` como
+// `npc: [clave, x, y, z, yaw]` (coordenadas de los amigos); los demás lo interpolan como a ti y lo dibujan (`alNpc`).
 //  · Rutinas de los amigos (visitas por horario): las decide el anfitrión con su hora; el invitado solo las aplica.
 // Ping (7e, ver online/ping.js): sin mensajes nuevos. Directo: getStats() en SalaDirecta. Respaldo: `p` lleva `ec`
 // (invitado: [t del último p del anfitrión, ms retenido]; anfitrión: [[id corto, t, retenido], …] solo para los
@@ -117,7 +120,7 @@ function conexionBase(sala, rol, extra) {
     const cx = { sala, rol, cola: [], manejar: null, presentes: new Map(), ...extra };
     // Cada tipo que maneja `manejadores` (más abajo) tiene que estar aquí: si no, la sala no lo escucha y el mensaje se
     // pierde (pasó con 'ac' y 'em'; lo revisa mundo/tests/cartas-duelo.mjs)
-    const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc', 'em', 'ac', 'ru'];
+    const TIPOS = ['p', 'b', 'c', 'o', 'ot', 'ok', 'm', 'mf', 'g', 'gj', 'd', 'x', 'pr', 'mk', 'jv', 'ry', 'h', 'z', 'am', 'pf', 'pf?', 'fl', 'fin', 'pc', 'em', 'ac', 'ru', 'co'];
     for (const t of TIPOS) sala.en(t, m => (cx.manejar ? cx.manejar(t, m) : cx.cola.push([t, m])));
     sala.en('entra', m => { cx.presentes.set(m.id, m); cx.alEntrar && cx.alEntrar(m); });
     sala.en('actualiza', m => { cx.presentes.set(m.id, m); cx.alActualizar && cx.alActualizar(m); });
@@ -369,8 +372,12 @@ export function crearCoop(cx, ctx) {
         const m = { t: Math.round(t), x: r(jugador.pos.x), y: r(jugador.pos.y), z: r(jugador.pos.z), a: r(ent.yawFijo ?? jugador.yaw), b: r(ent.pitchFijo ?? jugador.pitch), f };
         const i = ent.objeto || 0, i2 = ent.objeto2 || 0;
         if (!manos || manos[0] !== i || manos[1] !== i2) { manos = [i, i2]; repetirManos = 3; }
+        // 7i: tu acompañante viaja contigo (si se movió, el mensaje sale aunque tú estés quieto)
+        const np = ctx.acompanantePropio ? ctx.acompanantePropio() : null;
+        if (np) m.npc = np;
         const u = ultimaPos;
-        const igual = u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02 && Math.abs(u.a - m.a) < 0.02 && Math.abs(u.b - m.b) < 0.02 && u.f === m.f;
+        const npIgual = !np ? !(u && u.npc) : !!(u && u.npc && u.npc[0] === np[0] && np.slice(1).every((v, k) => Math.abs(v - u.npc[k + 1]) < 0.02));
+        const igual = npIgual && u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02 && Math.abs(u.a - m.a) < 0.02 && Math.abs(u.b - m.b) < 0.02 && u.f === m.f;
         const mobs = mobsDelTick(t);
         if (igual && !mobs && !repetirManos && !(f & 8) && t - ultimoPos < 1000) return; // un golpe siempre sale (minar quieto)
         golpePend = false;
@@ -632,6 +639,11 @@ export function crearCoop(cx, ctx) {
             if (m.i2 !== undefined) r.objeto2 = m.i2;
             if (m.f & 8) { r.golpes.push(m.t); if (r.golpes.length > 8) r.golpes.shift(); }
             r.objetivo.pos.set(m.x, m.y, m.z);
+            // 7i: su acompañante (sin `npc`: ya no tiene)
+            if (Array.isArray(m.npc) && typeof m.npc[0] === 'string') {
+                if (!r.npc || r.npc.k !== m.npc[0]) r.npc = { k: m.npc[0], bufer: new Bufer() };
+                r.npc.bufer.agregar(m.t, { x: m.npc[1], y: m.npc[2], z: m.npc[3], yaw: m.npc[4] });
+            } else r.npc = null;
             if (m.l || m.j) manejadores.m(m);
         },
         b(m) { aplicarBloques(m.l || []); },
@@ -728,6 +740,11 @@ export function crearCoop(cx, ctx) {
         ac(m) { if (ctx.alActividad) ctx.alActividad(m); },
         // Rutinas de los amigos (6d etapa 2, PR 3): solo las del anfitrión
         ru(m) { if (!esAnfitrion && m.de === cx.anfitrion && ctx.alRutina) ctx.alRutina(m); },
+        // Acompañantes (7i): la lista solo vale del anfitrión; pedir y soltar solo los atiende él
+        co(m) {
+            if (!ctx.alAcompanante) return;
+            if (m.a === 'lista' ? !esAnfitrion && m.de === cx.anfitrion : esAnfitrion && remotoPorId(m.de)) ctx.alAcompanante(m);
+        },
         pc(m) {
             const p = perfiles.get(m.disp);
             if (p && m.inv) { p.inv = m.inv; ctx.alPerfil && ctx.alPerfil(m.disp, p); }
@@ -747,6 +764,11 @@ export function crearCoop(cx, ctx) {
     function dibujarRemotos(dt) {
         const t = ahora();
         for (const r of remotos.values()) {
+            // 7i: su acompañante se dibuja aunque él no se vea (muerto, recién entrado)
+            if (r.npc && ctx.alNpc) {
+                const q = r.npc.bufer.muestra(t);
+                if (q) { const { a, b, k } = q; ctx.alNpc(r.id, r.npc.k, { x: mezclar(a.x, b.x, k), y: mezclar(a.y, b.y, k), z: mezclar(a.z, b.z, k), yaw: mezclarAngulo(a.yaw, b.yaw, k) }); }
+            }
             const s = r.bufer.muestra(t);
             const visible = !!s && r.vivo;
             r.modelo.g.visible = visible; r.nombreSp.visible = visible;
@@ -851,6 +873,8 @@ export function crearCoop(cx, ctx) {
         actividad(m) { sala.enviar('ac', m); },
         // Rutinas de los amigos (anfitrión): a todos, o solo a `para` (la lista para quien entra)
         rutina(m, para) { sala.enviar('ru', para ? { ...m, para } : m); },
+        // Acompañantes (7i): pedir / soltar (invitado) o la lista (anfitrión), a todos
+        acompanante(m) { sala.enviar('co', m); },
         yoId, idAnfitrion: () => (esAnfitrion ? yoId : cx.anfitrion),
         nombreDe: id => (id === yoId ? cx.nombre : remotos.get(id)?.nombre || '?'),
         get total() { return 1 + remotos.size; },

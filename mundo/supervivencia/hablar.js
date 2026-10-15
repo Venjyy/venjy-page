@@ -7,6 +7,8 @@
 // · «Saludos de amigos» (bloque 6b): un botón por animación de nivel (puños, abrazo, saludo secreto o, entre
 //   Venjy y Lona, abrazo y beso); la escena la corre escena-amistad.js (cine corto, se carga al usarla).
 //   Con la amistad en 100 aparece «Momento especial» (6b-2): la escena única del personaje.
+// · «¿Me acompañas?» (7i, acompanante.js): con la amistad suficiente te sigue (cierra el panel); si ya te acompaña,
+//   «Puedes volver». Sin la amistad, con su requisito; si no puede (acompaña a otro jugador, minijuego), con el motivo.
 // · Hablar no corta el juego: sin cámara de cine ni pausa (el panel solo libera el puntero, como el inventario).
 // · El amigo te mira (cabeza y un poco el cuerpo) y mezcla gestos de escenas-skin.js (asiente, habla, risa,
 //   rasca...) sobre su animación normal con el gancho `n.escena`; si caminaba, se queda en su sitio.
@@ -38,7 +40,7 @@ const MAX_DIST = 7; // más lejos, el panel se cierra solo
 // pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en},
 // carta { para() -> clave | null, entregar(clave) -> Promise<frase|null> } (7f-1: carta del Venjy del correo),
 // saludar(clave, tipo), momento(clave) y grupo(clave) (bloques 6b y 6c-2: animación de amistad, momento especial y saludo del
-// grupo; misiones.js suelta antes la retención)
+// grupo; misiones.js suelta antes la retención), acompanar { hablar(clave) → { mio, texto, motivo }, invitar(clave), soltar(clave) } (7i)
 export function crearHablar(ctx) {
     const { amistad, jugador, dy, nombres, inventario, sonidos } = ctx;
     let idioma = ctx.idioma || 'es';
@@ -282,6 +284,20 @@ export function crearHablar(ctx) {
         // Carta del Venjy del correo (7f-1): solo frente a su destinatario
         if (ctx.carta && ctx.carta.para() === clave) el.appendChild(boton(tx().carta, () => entregarCarta(clave), 'boton-regalo'));
         el.appendChild(regalo);
+
+        // Te acompaña (7i): invitar o despedir; cierra el panel para que te siga (o se vaya) de inmediato
+        if (vista === 'temas' && ctx.acompanar) {
+            const a = ctx.acompanar.hablar(clave);
+            const caja = document.createElement('div'); caja.className = 'acompanar-hablar';
+            if (a.mio) caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.soltar(clave); }, 'boton-acompanar'));
+            else if (!a.motivo) caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.invitar(clave); }, 'boton-acompanar'));
+            else {
+                const req = a.motivo.nivel !== undefined ? tx().req.nivel(L(nombreNivel(a.motivo.nivel, base, clave))) : a.motivo.texto;
+                const b = boton(a.texto, null, 'boton-acompanar bloqueado'); b.title = req;
+                caja.append(b, Object.assign(document.createElement('small'), { textContent: req }));
+            }
+            el.appendChild(caja);
+        }
 
         const fila = document.createElement('div'); fila.className = 'botones-mision';
         fila.appendChild(boton(tx().cerrar, () => ctx.cerrarPanel(), 'secundario'));

@@ -7,10 +7,13 @@
 // Sección Rutinas: edita mundo/datos/rutinas.json (visitas por horario: quién, a quién o adónde, de qué hora a qué
 // hora, gesto y frase al llegar y al recibir; ajustes; horarios, lugares y textos del panel de cada amigo).
 // «Probar ahora» hace esa visita en el juego sin mirar la hora (mensaje `rutina`). Guardar escribe los dos archivos.
+// Acompañantes (7i): `seguir` de navegacion.json (cómo te sigue: distancia, rastro, esperar, aparecer; mundo/seguir.js),
+// `ajustes.nivelAcompanar` y `acompanar` de rutinas.json (botones y frases); «Que me acompañe» / «Soltarlo» lo prueban.
 // =========================================================
 import { NAV_BASE } from '../mundo/navegacion.js';
 import { PASEO_BASE } from '../mundo/supervivencia/paseos-datos.js';
-import { RUTINA_BASE, AUSENTE_BASE, INCLUIR_BASE } from '../mundo/supervivencia/rutinas-datos.js';
+import { SEGUIR_BASE } from '../mundo/seguir.js';
+import { RUTINA_BASE, AUSENTE_BASE, INCLUIR_BASE, ACOMPANAR_BASE } from '../mundo/supervivencia/rutinas-datos.js';
 import { TEXTOS_RUTINA, horasDeViaje } from '../mundo/supervivencia/rutinas.js';
 import { HORARIOS, LUGARES } from '../mundo/supervivencia/horarios-datos.js';
 
@@ -50,6 +53,25 @@ const PASEO = {
     seguirDistancia: ['… y si se movió más de (bloques), lo sigue', '… and if they moved more than (blocks), follows', 1, 32, 0.5],
     mirarJugador: ['de pie, te mira a menos de (bloques)', 'standing, looks at you within (blocks)', 0, 16, 0.5]
 };
+const SEGUIR = {
+    distancia: ['se queda a esta distancia de ti (bloques)', 'stays this far from you (blocks)', 1, 8, 0.25],
+    holgura: ['quieto: no parte hasta que te alejes esto más (bloques)', 'standing: waits until you move this much further (blocks)', 0, 6, 0.25],
+    rapidezMax: ['si se queda atrás, camina hasta (× velocidad)', 'if left behind, walks up to (× speed)', 1, 3, 0.05],
+    alcanzar: ['… a esa rapidez cuando va atrás (bloques)', '… at that speed when behind by (blocks)', 1, 24, 0.5],
+    miga: ['guarda por dónde pisaste cada (bloques)', 'records where you stepped every (blocks)', 0.25, 2, 0.05],
+    migas: ['cuántas pisadas guarda', 'how many steps it keeps', 20, 1000, 10],
+    corte: ['tu rastro se corta si saltas más de (bloques)', 'your trail breaks if you jump more than (blocks)', 1, 10, 0.5],
+    subidaRastro: ['… o subes de golpe más de (bloques)', '… or climb at once more than (blocks)', 1, 4, 0.5],
+    caidaRastro: ['… o bajas de golpe más de (bloques)', '… or drop at once more than (blocks)', 1, 12, 0.5],
+    atasco: ['sin poder andar por tu rastro, busca camino tras (s)', 'unable to walk your trail, finds a path after (s)', 0.5, 10, 0.5],
+    buscarCada: ['buscando camino: corrige hacia ti cada (s)', 'finding a path: re-aims at you every (s)', 0.5, 10, 0.5],
+    radioEspera: ['más lejos que esto (o sin camino): «¡Espérame!» y espera (bloques)', 'further than this (or no path): «Wait for me!» and waits (blocks)', 8, 80, 1],
+    retomar: ['esperando, te sigue de nuevo a menos de (bloques)', 'waiting, follows again within (blocks)', 4, 60, 1],
+    reintento: ['esperando sin camino, lo intenta de nuevo cada (s)', 'waiting with no path, retries every (s)', 1, 30, 0.5],
+    radioAparecer: ['más lejos que esto y sin que lo veas: aparece detrás de ti (bloques)', 'further than this and out of sight: appears behind you (blocks)', 16, 160, 1],
+    detras: ['… a esto detrás de ti (bloques)', '… this far behind you (blocks)', 2, 16, 0.5],
+    anguloVista: ['no lo ves más allá de (grados a cada lado)', 'you cannot see it beyond (degrees each side)', 30, 120, 1]
+};
 const RUTINA = {
     revisar: ['mira la hora cada (s)', 'checks the time every (s)', 0.1, 5, 0.1],
     gesto: ['el gesto al llegar dura (s)', 'arrival gesture lasts (s)', 0.5, 10, 0.1],
@@ -67,9 +89,16 @@ const RUTINA = {
     segundosHora: ['segundos de juego por hora del reloj', 'game seconds per clock hour', 5, 120, 1],
     nivelIncluir: ['te saluda al pasar desde el nivel de amistad (3 Buen amigo, 5 = nunca)', 'greets you in passing from friendship level (3 Good friend, 5 = never)', 0, 5, 1],
     radioIncluir: ['… a menos de (bloques)', '… within (blocks)', 2, 24, 0.5],
-    esperaIncluir: ['… y no repite antes de (s)', '… and does not repeat before (s)', 5, 600, 5]
+    esperaIncluir: ['… y no repite antes de (s)', '… and does not repeat before (s)', 5, 600, 5],
+    nivelAcompanar: ['te acompaña desde el nivel de amistad (3 Buen amigo, 5 = nunca)', 'comes with you from friendship level (3 Good friend, 5 = never)', 0, 5, 1]
 };
-const TEXTOS_PANEL = { yendo: ['yendo a ver a alguien', 'going to see someone'], yendoLugar: ['yendo a un lugar', 'going to a place'], visitando: ['de visita donde alguien', 'visiting someone'], visitandoLugar: ['de visita en un lugar', 'visiting a place'], volviendo: ['volviendo', 'heading back'], acompanando: ['acompañándote', 'keeping you company'] };
+// Frases de los acompañantes (rutinas.json → acompanar); los gestos van aparte
+const FRASES_ACOMPANAR = [['boton', 'botón para invitarlo', 'button to invite'], ['soltar', 'botón para despedirlo', 'button to let go'], ['acepta', 'acepta', 'accepts'],
+    ['corta', 'acepta e iba a ver a {quien}', 'accepts while going to see {quien}'], ['despide', 'se despide ({lugar} = su sitio)', 'says goodbye ({lugar} = their spot)'],
+    ['cambia', 'otro toma su lugar ({quien})', 'someone else takes over ({quien})'], ['espera', 'te alejaste: espera', 'you went too far: waits'],
+    ['ocupado', 'acompaña a otro jugador ({quien})', 'with another player ({quien})'], ['ahoraNo', 'no puede ahora', 'cannot right now'],
+    ['lugar', 'su minijuego, mientras te acompaña ({lugar}, {quien})', 'their minigame while with you ({lugar}, {quien})']];
+const TEXTOS_PANEL = { yendo: ['yendo a ver a alguien', 'going to see someone'], yendoLugar: ['yendo a un lugar', 'going to a place'], visitando: ['de visita donde alguien', 'visiting someone'], visitandoLugar: ['de visita en un lugar', 'visiting a place'], volviendo: ['volviendo', 'heading back'], acompanando: ['acompañándote', 'keeping you company'], acompanandoOtro: ['acompañando a otro jugador ({quien})', 'with another player ({quien})'] };
 const hhmm = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 // Destinos fijos de la prueba (además de las personas y los lugares de posiciones.json)
 const DESTINOS = [['aqui', 'junto a mí', 'next to me'], ['sitio', 'su sitio (vuelve)', 'their spot (go back)']];
@@ -90,7 +119,7 @@ export async function montarVida(ctx) {
     }
     // Partes vacías que la pantalla espera (también en la copia original, para no marcar cambios que no hay)
     function normalizar(nombre, o) {
-        const partes = nombre === 'navegacion' ? ['caminar', 'paseo'] : ['ajustes', 'visitas', 'horarios', 'lugares', 'textos'];
+        const partes = nombre === 'navegacion' ? ['caminar', 'paseo', 'seguir'] : ['ajustes', 'visitas', 'horarios', 'lugares', 'textos'];
         for (const k of partes) o[k] = o[k] || {};
         return o;
     }
@@ -286,6 +315,12 @@ export async function montarVida(ctx) {
         si.appendChild(textoCampo(t('gesto', 'gesture'), (rut().incluir || {}).gesto || '', x => fijarInc('gesto', x), { lista: 'vi-gestos', placeholder: INCLUIR_BASE.gesto }));
         for (const [k, es, en] of [['yendo', 'yendo a ver a alguien', 'going to see someone'], ['visitando', 'de visita', 'visiting'], ['volviendo', 'de vuelta', 'heading back'], ['paseo', 'visita a un lugar', 'visiting a place']])
             si.appendChild(frase(t(es, en), (rut().incluir || {})[k] || INCLUIR_BASE[k], x => fijarInc(k, x)));
+        // Acompañantes (7i): botones de «Hablar» y lo que dice (nivel en los ajustes; cómo te sigue, abajo en «Te acompaña»)
+        const sc = seccion(t('Rutinas: te acompaña (botones y frases)', 'Routines: comes with you (buttons and lines)'), false);
+        const fijarAc = (k, x) => { const o = { ...(rut().acompanar || {}) }; if (x) o[k] = x; else delete o[k]; if (Object.keys(o).length) rut().acompanar = o; else delete rut().acompanar; cambio('rutinas'); };
+        for (const [k, es, en] of FRASES_ACOMPANAR) sc.appendChild(frase(t(es, en), (rut().acompanar || {})[k] || ACOMPANAR_BASE[k], x => fijarAc(k, x)));
+        for (const [k, es, en] of [['gestoAcepta', 'gesto al aceptar', 'gesture on accepting'], ['gestoDespide', 'gesto al despedirse', 'gesture on goodbye']])
+            sc.appendChild(textoCampo(t(es, en), (rut().acompanar || {})[k] || '', x => fijarAc(k, x), { lista: 'vi-gestos', placeholder: ACOMPANAR_BASE[k] }));
         // Horarios y nombres de lugar del panel de cada amigo
         const sh = seccion(t('Rutinas: horario de cada amigo (su panel)', 'Routines: each friend’s schedule (their panel)'), false);
         for (const c of personas) {
@@ -313,6 +348,7 @@ export async function montarVida(ctx) {
         pintarRutinas();
         grupo(t('Buscar camino y caminar', 'Pathfinding and walking'), 'navegacion', 'caminar', CAMINAR, NAV_BASE);
         grupo(t('Paseos de los amigos', 'Friends’ walks'), 'navegacion', 'paseo', PASEO, PASEO_BASE);
+        grupo(t('Te acompaña: cómo te sigue', 'Comes with you: how they follow'), 'navegacion', 'seguir', SEGUIR, SEGUIR_BASE, false);
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
     }
     const ESTADOS = {
@@ -353,6 +389,18 @@ export async function montarVida(ctx) {
     $('vi-ir').addEventListener('click', () => caminar(selDestino.value));
     $('vi-volver').addEventListener('click', () => caminar('sitio'));
     $('vi-estado').addEventListener('click', () => caminar(''));
+    // 7i: que la persona elegida te siga (sin mirar la amistad) o que te deje
+    const acompanar = async accionA => {
+        const persona = selPersona.value;
+        if (!persona) return;
+        try {
+            const r = await ctx.puente.enviar('rutina', { accion: accionA, persona });
+            const e = (r && r.rutina) || {};
+            rotular(`${persona}: ${e.estado || '?'}`, `${persona}: ${e.estado || '?'}`, 'ok');
+        } catch (err) { rotular(err.message, err.message, 'error'); }
+    };
+    $('vi-acompanar').addEventListener('click', () => acompanar('acompanar'));
+    $('vi-soltar').addEventListener('click', () => acompanar('soltar'));
     $('vi-descartar').addEventListener('click', () => {
         for (const n of Object.keys(A)) { if (sucioDe(n)) { A[n].datos = clonar(A[n].original); cambio(n); } }
         pintar();

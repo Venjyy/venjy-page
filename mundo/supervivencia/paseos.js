@@ -3,6 +3,9 @@
 // Mueve a las personas de amigos.js con la navegación de mundo/navegacion.js (buscar camino sobre el terreno,
 // no rutas fijas). No decide adónde ir: eso lo piden las rutinas y visitas (rutinas.js), los comandos de depuración
 // (/caminar) y el Estudio (pestaña Vida → «Probar»). Aquí solo: ir, quedarse de pie allá mirando a alguien y volver.
+// Acompañantes (7i): `seguir(clave)` lo pone a seguir al jugador por su rastro (mundo/seguir.js) en vez de ir a un
+// destino; `remoto(clave)` lo deja quieto para que lo mueva la red (el acompañante de otro jugador del cooperativo,
+// `posar` cada cuadro). Cualquier `ir` / `volver` después suelta esos dos modos.
 //
 // Mientras una persona está fuera de su sitio lleva el gancho `n.paseo` (amigos.js): su animación de siempre
 // (sentado, el bong, el hacha…) no corre; camina o queda de pie. Al volver, se acomoda en su sitio exacto, recupera
@@ -12,6 +15,7 @@
 // Valores: paseos-datos.js (PASEO_BASE) + mundo/datos/navegacion.json (`paseo`; `caminar` va a navegacion.js).
 // =========================================================
 import { consultaMundo, crearNavegador, crearCaminante, ajustesNavegacion, cercaPisable } from '../navegacion.js';
+import { crearSeguidor, seVe, ajustesSeguir } from '../seguir.js';
 import { fijarPaseo, ajustesPaseo } from './paseos-datos.js';
 import { TIPO, B } from '../texturas.js';
 import { NIVEL_AGUA } from '../voxeles.js';
@@ -66,10 +70,22 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
 
     function soltar(a) {
         a.w.parar();
+        a.seg = null; a.red = null;
         ponerPose(a.n.p, a.pose);
         a.n.paseo = null;
         activos.delete(a.n.clave);
     }
+
+    // Sale de su sitio: guarda dónde estaba (para volver exacto) y toma el gancho n.paseo
+    function activar(n) {
+        const a = { n, casa: { x: n.x, y: n.y, z: n.z, yaw: n.yaw }, pose: fotoPose(n.p), cuerpo: { x: n.x, y: n.y, z: n.z, yaw: n.yaw }, amp: 0, espera: 0, acomoda: 0, seg: null, red: null };
+        a.w = crearCaminante(nav, a.cuerpo);
+        n.paseo = { animar: dt => animar(a, dt), texto: '' };
+        activos.set(n.clave, a);
+        return a;
+    }
+    // ¿Lo ve el jugador? (para aparecer detrás sin que se note): por delante de su cámara y a menos de RADIO_VISIBLE
+    const visible = p => seVe(jugador.camara ? jugador.camara.position : jugador.pos, jugador.yaw || 0, p, ajustesSeguir().anguloVista, RADIO_VISIBLE);
 
     // Lleva a `clave` a `destino` (texto como resolverDestino, o { x, y?, z } o { persona }). opciones.mirar: clave de
     // persona, 'jugador' o null. Devuelve false si no existe la persona o el destino.
@@ -79,18 +95,14 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         if (typeof destino === 'string') destino = resolverDestino(destino, n);
         if (!destino) return false;
         let a = activos.get(clave);
+        if (a) { a.seg = null; a.red = null; } // un destino nuevo manda sobre seguir al jugador o la red
         if (destino.sitio) {
             if (!a) return true; // ya está en su sitio
             a.vuelta = true; a.mirar = null; a.fallos = 0; a.espera = 0; a.corto = false;
             a.w.ir({ x: a.casa.x, y: a.casa.y, z: a.casa.z });
             return true;
         }
-        if (!a) {
-            a = { n, casa: { x: n.x, y: n.y, z: n.z, yaw: n.yaw }, pose: fotoPose(n.p), cuerpo: { x: n.x, y: n.y, z: n.z, yaw: n.yaw }, amp: 0, espera: 0, acomoda: 0 };
-            a.w = crearCaminante(nav, a.cuerpo);
-            n.paseo = { animar: dt => animar(a, dt), texto: '' };
-            activos.set(clave, a);
-        }
+        if (!a) a = activar(n);
         a.vuelta = false;
         a.mirar = opciones.mirar !== undefined ? opciones.mirar : destino.mirar || destino.persona || null;
         let p = destino;
@@ -108,7 +120,10 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
     // Animación mientras está fuera: de pie (sin la pose de sentado), caminando o quieto mirando a alguien
     function animar(a, dt) {
         const { n } = a, p = n.p;
-        a.amp += ((a.w.moviendo ? paseo.amplitud : 0) - a.amp) * k(dt, 8);
+        // Quién lo mueve: el seguidor (te acompaña), la red (acompaña a otro jugador) o el caminante
+        const m = a.seg || a.red || a.w;
+        // Apurado detrás de ti (seguidor a más de 1,25 × su velocidad): pasos más largos
+        a.amp += ((m.moviendo ? paseo.amplitud * (a.seg && a.seg.rapidez > 1.25 ? 1.3 : 1) : 0) - a.amp) * k(dt, 8);
         const f = k(dt, 10);
         ir(p.cuerpo.position, 'y', 0, f);
         ir(p.cuerpo.rotation, 'x', 0, f); ir(p.cuerpo.rotation, 'z', 0, f);
@@ -116,7 +131,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         ir(p.brazoD.rotation, 'y', 0, f); ir(p.brazoI.rotation, 'y', 0, f);
         ir(p.piernaD.rotation, 'z', 0, f); ir(p.piernaI.rotation, 'z', 0, f);
         ir(p.cuello.rotation, 'x', 0, f); ir(p.cuello.rotation, 'z', 0, f);
-        if (a.amp > 0.01) caminar(p, a.w.fase, a.amp);
+        if (a.amp > 0.01) caminar(p, m.fase, a.amp);
         else {
             ir(p.piernaD.rotation, 'x', 0, f); ir(p.piernaI.rotation, 'x', 0, f);
             ir(p.brazoD.rotation, 'x', Math.sin(n.t * 1.7) * 0.04, f); ir(p.brazoI.rotation, 'x', -Math.sin(n.t * 1.7) * 0.04, f);
@@ -125,7 +140,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         // si no hacia quien mira (de pie), o al frente caminando. Un solo dueño del cuello: no pelean dos miradas
         let cy = 0, yawMira = a.mirarYaw;
         if (a.mirarPunto) yawMira = Math.atan2(a.mirarPunto.x - n.x, a.mirarPunto.z - n.z);
-        if (yawMira !== undefined && (a.mirarPunto || !a.w.moviendo)) {
+        if (yawMira !== undefined && (a.mirarPunto || !m.moviendo)) {
             cy = Math.atan2(Math.sin(yawMira - n.yaw), Math.cos(yawMira - n.yaw));
             cy = Math.max(-0.9, Math.min(0.9, cy));
         }
@@ -142,7 +157,9 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         const A = ajustesNavegacion();
         for (const a of [...activos.values()]) {
             const { n, w, cuerpo } = a;
-            if (n.escena) { a.w.moviendo = false; continue; } // una escena lo tiene: espera donde está
+            if (n.escena) { a.w.moviendo = false; if (a.seg) a.seg.moviendo = false; if (a.red) a.red.moviendo = false; continue; } // una escena lo tiene: espera donde está
+            if (a.red) { pasoRed(a, dt); continue; }
+            if (a.seg) { pasoSeguir(a, dt, A); continue; }
             // Va a ver a alguien que se movió (lo mandaron a otra parte, pasea por la orilla): corrige el destino
             if (a.sigue && !a.vuelta && (a.relojSigue += dt) >= paseo.seguirCada) {
                 a.relojSigue = 0;
@@ -194,8 +211,62 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         }
     }
 
+    // Te acompaña: anota tu rastro y lo sigue. Mientras `pausa()` (un minijuego, la ronda del iglú) espera donde está
+    function pasoSeguir(a, dt, A) {
+        const { n, cuerpo, seg } = a;
+        seg.anotar(jugador.pos);
+        if (a.pausa && a.pausa()) { seg.moviendo = false; seg.evento = null; return; }
+        const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
+        seg.actualizar(dt, { lider: { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z, yaw: jugador.yaw || 0 }, visible, detalle: dJ < Math.min(A.radioDetalle, RADIO_VISIBLE) });
+        a.mirarYaw = seg.mirarYaw;
+        n.x = cuerpo.x; n.y = cuerpo.y; n.z = cuerpo.z; n.yaw = cuerpo.yaw;
+    }
+    // Lo mueve la red (ya interpolado por coop.js): camina si se movió, aparece si saltó lejos
+    function pasoRed(a, dt) {
+        const { n, cuerpo, red } = a, o = red.obj;
+        red.moviendo = false;
+        if (o) {
+            const d = Math.hypot(o.x - cuerpo.x, o.z - cuerpo.z);
+            red.moviendo = d / Math.max(dt, 1e-3) > 0.6 && d < 8;
+            if (d < 8) red.fase += d * 2.6;
+            cuerpo.x = o.x; cuerpo.y = o.y; cuerpo.z = o.z;
+            if (Number.isFinite(o.yaw)) cuerpo.yaw = o.yaw;
+            red.obj = null;
+        }
+        n.x = cuerpo.x; n.y = cuerpo.y; n.z = cuerpo.z; n.yaw = cuerpo.yaw;
+    }
+
     return {
         nav, activos, resolverDestino,
+        // 7i: que te siga (opciones.pausa() → espera donde está). Si ya estaba fuera (de visita) sigue desde ahí
+        seguir(clave, opciones = {}) {
+            const n = persona(clave);
+            if (!n) return false;
+            const a = activos.get(clave) || activar(n);
+            a.w.parar(); a.vuelta = false; a.sigue = null; a.mirar = null; a.corto = false; a.red = null; a.mirarPunto = null;
+            a.seg = crearSeguidor(nav, a.cuerpo);
+            a.pausa = opciones.pausa || null;
+            return true;
+        },
+        siguiendo: clave => !!(activos.get(clave) && activos.get(clave).seg),
+        // El seguidor (para leer su estado y sus eventos: 'espera', 'aparecio')
+        seguidor: clave => (activos.get(clave) ? activos.get(clave).seg : null),
+        // 7i cooperativo: lo mueve la red (true) o deja de moverlo (false: queda donde está, fuera de su sitio)
+        remoto(clave, si = true) {
+            const n = persona(clave);
+            if (!n) return false;
+            let a = activos.get(clave);
+            if (!si) { if (a) a.red = null; return true; }
+            if (!a) a = activar(n);
+            a.w.parar(); a.seg = null; a.vuelta = false; a.sigue = null; a.mirar = null; a.corto = false;
+            a.red = { obj: null, moviendo: false, fase: 0 };
+            return true;
+        },
+        enRed: clave => !!(activos.get(clave) && activos.get(clave).red),
+        // Posición que llegó por la red ({ x, y, z, yaw }, en las coordenadas de los amigos)
+        posar(clave, o) { const a = activos.get(clave); if (a && a.red) a.red.obj = o; },
+        // Su sitio de siempre (si está fuera) o null
+        casa: clave => (activos.get(clave) ? { ...activos.get(clave).casa } : null),
         personas: () => amigos.lista.map(n => n.clave),
         // Lugares a los que se puede mandar a alguien (las anclas de posiciones.json que tiene este mundo)
         lugares: () => [...(terreno.lugares || []).map(l => l.clave), ...(terreno.escenario ? ['escenario'] : []), ...(terreno.faro ? ['faro'] : [])],
@@ -211,6 +282,8 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         estado(clave) {
             const a = activos.get(clave);
             if (!a) return { estado: 'en-sitio' };
+            if (a.seg) return { estado: 'siguiendo', seguidor: a.seg.estado, modo: a.seg.modo, migas: a.seg.migas.length, x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z) };
+            if (a.red) return { estado: 'red', x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z) };
             return { sigue: a.sigue || null, estado: a.vuelta ? (a.w.estado === 'llego' ? 'acomodando' : 'volviendo') : a.w.estado === 'llego' ? (a.corto ? 'atascado' : 'alla') : a.w.estado, restante: Math.round(a.w.restante), x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z), nodos: a.w.busqueda ? a.w.busqueda.nodos : 0 };
         },
         actualizar

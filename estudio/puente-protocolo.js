@@ -40,7 +40,8 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //   caminar({ persona, destino })  (6d etapa 2) lleva a esa persona caminando a `destino` ('aqui', 'sitio', otra persona o
 //                                  un lugar) buscando camino; destino '' solo pregunta. Devuelve su estado (paseos.js) o lanza
 //   rutina({ accion, visita?, persona? }) (6d etapa 2) 'probar' hace ya esa visita (sin mirar la hora), 'cortar' la corta
-//                                  y vuelve a su sitio, 'estado' solo pregunta. Devuelve el estado de esa persona (rutinas.js) o lanza
+//                                  y vuelve a su sitio, 'estado' solo pregunta; 'acompanar' / 'soltar' (7i): esa persona te
+//                                  sigue (sin mirar la amistad) o deja de seguirte. Devuelve el estado de esa persona (rutinas.js) o lanza
 //   pose({ clave, canales })       (fase 6b) deja quieta a esa persona con esos canales (los que falten, neutral); canales
 //                                  null la suelta (vuelve a su animación); devuelve lo que viaja en `pose` de la respuesta o lanza
 // Del juego, sin `id`, mientras corre una escena: { tipo: 'escenaT', clave (la escena), persona, t, T, pausada } (y un último con clave null).
@@ -155,7 +156,7 @@ export function crearManejador(juego) {
                 }
                 case 'rutina': {
                     // Pestaña Vida → Rutinas: probar una visita ahora, cortarla o preguntar cómo va
-                    if (!['probar', 'cortar', 'estado'].includes(m.accion)) return error('acción de rutina no válida');
+                    if (!['probar', 'cortar', 'estado', 'acompanar', 'soltar'].includes(m.accion)) return error('acción de rutina no válida');
                     if (m.visita !== undefined && (typeof m.visita !== 'string' || !NOMBRE_DESTINO.test(m.visita))) return error('visita no válida');
                     if (m.persona !== undefined && (typeof m.persona !== 'string' || !NOMBRE_DESTINO.test(m.persona))) return error('persona no válida');
                     if (!juego.rutina) return error('este juego no tiene rutinas');
