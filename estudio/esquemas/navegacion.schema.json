@@ -181,6 +181,18 @@
           "minimum": 1,
           "maximum": 5
         },
+        "seguirCada": {
+          "description": "Yendo a ver a alguien: cada cuántos segundos mira si esa persona se movió (va a la persona, no al lugar donde estaba).",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 10
+        },
+        "seguirDistancia": {
+          "description": "Si la persona que va a ver se movió más que esto (bloques), corrige el camino hacia donde está ahora.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 32
+        },
         "mirarJugador": {
           "description": "De pie y sin a quién mirar: mira al jugador si está a menos de esto (bloques).",
           "type": "number",

@@ -10,7 +10,7 @@
 // =========================================================
 import { NAV_BASE } from '../mundo/navegacion.js';
 import { PASEO_BASE } from '../mundo/supervivencia/paseos-datos.js';
-import { RUTINA_BASE } from '../mundo/supervivencia/rutinas-datos.js';
+import { RUTINA_BASE, AUSENTE_BASE } from '../mundo/supervivencia/rutinas-datos.js';
 import { TEXTOS_RUTINA, horasDeViaje } from '../mundo/supervivencia/rutinas.js';
 import { HORARIOS, LUGARES } from '../mundo/supervivencia/horarios-datos.js';
 
@@ -45,6 +45,8 @@ const PASEO = {
     reintento: ['sin camino y a la vista: reintenta cada (s, luego el doble)', 'no path and in view: retry every (s, then double)', 1, 20, 0.5],
     reintentosVista: ['reintentos a la vista antes de quedarse', 'retries in view before staying', 0, 6, 1],
     distanciaVisita: ['distancia a quien visita (bloques)', 'distance to the friend visited (blocks)', 1, 5, 0.1],
+    seguirCada: ['yendo a ver a alguien: mira si se movió cada (s)', 'going to see someone: checks if they moved every (s)', 0.2, 10, 0.1],
+    seguirDistancia: ['… y si se movió más de (bloques), lo sigue', '… and if they moved more than (blocks), follows', 1, 32, 0.5],
     mirarJugador: ['de pie, te mira a menos de (bloques)', 'standing, looks at you within (blocks)', 0, 16, 0.5]
 };
 const RUTINA = {
@@ -54,6 +56,8 @@ const RUTINA = {
     respuesta: ['quien recibe contesta tras (s)', 'the host answers after (s)', 0, 8, 0.1],
     girar: ['quien recibe gira la cabeza en (s)', 'the host turns their head in (s)', 0.1, 3, 0.1],
     cuello: ['quien recibe gira el cuello hasta (rad)', 'the host turns their neck up to (rad)', 0.2, 1.6, 0.05],
+    radioEncuentro: ['al llegar, lo encuentra a menos de (bloques)', 'on arrival, finds them within (blocks)', 2, 40, 0.5],
+    esperaAusente: ['si no está, reacciona durante (s)', 'if not there, reacts for (s)', 0, 20, 0.5],
     radioSaludo: ['el saludo se ve a menos de (bloques)', 'greeting shows within (blocks)', 4, 80, 1],
     saludoLejos: ['lejos el saludo pasa igual (1 sí, 0 no)', 'far away the greeting still happens (1 yes, 0 no)', 0, 1, 1],
     anticipar: ['sale antes según la distancia (1 = llega a la hora; 0 = sale a la hora)', 'leaves early by distance (1 = arrives on time; 0 = leaves on time)', 0, 1.5, 0.05],
@@ -236,6 +240,7 @@ export async function montarVida(ctx) {
         act.append(cb, sp); sec.appendChild(act);
         accion(sec, t('Al llegar', 'On arrival'), v, 'llegada');
         if (v.visita) accion(sec, t('Quien recibe', 'The host'), v, 'respuesta');
+        if (v.visita) accion(sec, t('Si no está (vacío = lo general)', 'If not there (empty = general)'), v, 'ausente');
         sec.appendChild(textoCampo(t('nota', 'note'), v.nota, x => poner('nota', x || null)));
         const f = document.createElement('div'); f.className = 'fila-botones';
         f.append(
@@ -264,6 +269,12 @@ export async function montarVida(ctx) {
         for (const clave of Object.keys(rut().visitas)) tarjetaVisita(sec, clave);
         sec.appendChild(boton('Nueva visita (de la persona elegida arriba)', 'New visit (for the person chosen above)', nuevaVisita));
         grupo(t('Rutinas: ajustes', 'Routines: settings'), 'rutinas', 'ajustes', RUTINA, RUTINA_BASE, false);
+        // Lo que hacen si no encuentran a quien venían a ver (todas las visitas; cada una puede tener lo suyo)
+        const sa = seccion(t('Rutinas: si no encuentra a quien visita ({quien})', 'Routines: if the host is not there ({quien})'), false);
+        const gen = { ausente: rut().ausente || {} };
+        const fijarGen = () => { if (Object.keys(gen.ausente || {}).length) rut().ausente = gen.ausente; else delete rut().ausente; cambio('rutinas'); };
+        sa.appendChild(textoCampo(t('gesto', 'gesture'), (rut().ausente || {}).gesto || '', x => { gen.ausente = { ...(rut().ausente || {}) }; if (x) gen.ausente.gesto = x; else delete gen.ausente.gesto; fijarGen(); }, { lista: 'vi-gestos', placeholder: AUSENTE_BASE.gesto }));
+        sa.appendChild(frase(t('frase', 'line'), (rut().ausente || {}).texto || AUSENTE_BASE.texto, x => { gen.ausente = { ...(rut().ausente || {}) }; if (x) gen.ausente.texto = x; else delete gen.ausente.texto; fijarGen(); }));
         // Horarios y nombres de lugar del panel de cada amigo
         const sh = seccion(t('Rutinas: horario de cada amigo (su panel)', 'Routines: each friend’s schedule (their panel)'), false);
         for (const c of personas) {

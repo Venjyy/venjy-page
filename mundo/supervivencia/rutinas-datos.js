@@ -14,6 +14,8 @@ export const RUTINA_BASE = {
     respuesta: 1.4,     // segundos después de llegar en que contesta quien recibe la visita
     girar: 0.6,         // segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse)
     cuello: 1.1,        // cuánto puede girar el cuello quien recibe para mirarlo (radianes; si hace falta más, queda en el tope)
+    radioEncuentro: 6,  // al llegar, quien visita tiene que estar a menos de esto (bloques); si no, «no está»
+    esperaAusente: 4,   // segundos que se queda reaccionando a que no estaba antes de volver
     radioSaludo: 24,    // el saludo (gestos y globos) solo se dibuja con el jugador a menos de esto (bloques)
     saludoLejos: 1,     // 1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo
     anticipar: 1,       // 1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale a la hora `de`
@@ -21,7 +23,10 @@ export const RUTINA_BASE = {
     segundosHora: 25    // segundos de juego que dura una hora del reloj (reloj.js: de media 25)
 };
 const HORAS = ['de', 'a'];
-let ajustes = { ...RUTINA_BASE }, visitas = {}, textos = {};
+// Lo que hace quien visita si no encuentra a la persona (se lo llevó el jugador, no la alcanzó): gesto y frase;
+// {quien} = a quien venía a ver. rutinas.json → `ausente` lo cambia para todas y `visitas.<clave>.ausente` para una
+export const AUSENTE_BASE = { gesto: 'rasca', texto: { es: '¿Y {quien}? Pensé que estaba aquí.', en: "Where's {quien}? I thought they'd be here." } };
+let ajustes = { ...RUTINA_BASE }, visitas = {}, textos = {}, ausente = { ...AUSENTE_BASE };
 // Copias de fábrica de HORARIOS (para volver a ellas al aplicar otro rutinas.json)
 const HORARIOS_CODIGO = JSON.parse(JSON.stringify(HORARIOS));
 const LUGARES_CODIGO = JSON.parse(JSON.stringify(LUGARES));
@@ -36,6 +41,8 @@ export function fijarRutinas(datos) {
     ajustes = { ...RUTINA_BASE };
     const a = datos && datos.ajustes;
     if (a) for (const k of Object.keys(RUTINA_BASE)) if (Number.isFinite(a[k])) ajustes[k] = a[k];
+    ausente = { ...AUSENTE_BASE };
+    if (datos && datos.ausente) { const x = accion(datos.ausente); if (x.gesto) ausente.gesto = x.gesto; if (x.texto) ausente.texto = x.texto; }
     textos = {};
     for (const [k, t] of Object.entries((datos && datos.textos) || {})) { const x = texto(t); if (x) textos[k] = x; }
     visitas = {};
@@ -44,7 +51,8 @@ export function fijarRutinas(datos) {
         if (!HORAS.every(k => hora(v[k])) || v.de === v.a) continue;
         visitas[clave] = {
             clave, quien: v.quien, visita: typeof v.visita === 'string' ? v.visita : null, lugar: typeof v.lugar === 'string' ? v.lugar : null,
-            de: v.de, a: v.a, activa: v.activa !== false, llegada: accion(v.llegada), respuesta: accion(v.respuesta)
+            de: v.de, a: v.a, activa: v.activa !== false, llegada: accion(v.llegada), respuesta: accion(v.respuesta),
+            ausente: v.ausente ? accion(v.ausente) : null
         };
     }
     // Horarios del panel: se cambian en el mismo objeto (hablar.js ya lo tiene importado)
@@ -66,3 +74,4 @@ export const ajustesRutinas = () => ajustes;
 export const visitasRutinas = () => visitas;
 // Textos del panel que cambió el dueño (los demás, TEXTOS_RUTINA de rutinas.js)
 export const textosRutinas = () => textos;
+export const ausenteRutinas = () => ausente;

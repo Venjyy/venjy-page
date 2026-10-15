@@ -18,6 +18,8 @@
         "respuesta": { "description": "Segundos después de llegar en que contesta quien recibe la visita.", "type": "number", "minimum": 0, "maximum": 8 },
         "girar": { "description": "Segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse).", "type": "number", "minimum": 0.1, "maximum": 3 },
         "cuello": { "description": "Cuánto puede girar el cuello quien recibe para mirar a quien llegó (radianes; 1,1 ≈ 63°).", "type": "number", "minimum": 0.2, "maximum": 1.6 },
+        "radioEncuentro": { "description": "Al llegar, quien visita tiene que estar a menos de esto (bloques); si no, «no está»: lo dice y vuelve.", "type": "number", "minimum": 2, "maximum": 40 },
+        "esperaAusente": { "description": "Segundos que se queda reaccionando a que no estaba antes de volver.", "type": "number", "minimum": 0, "maximum": 20 },
         "radioSaludo": { "description": "El saludo (gestos y globos) solo se dibuja con el jugador a menos de esto, en bloques.", "type": "number", "minimum": 4, "maximum": 80 },
         "saludoLejos": { "description": "1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo.", "type": "integer", "minimum": 0, "maximum": 1 },
         "anticipar": { "description": "1 = sale antes según la distancia para llegar a la hora `de`; 0 = sale justo a la hora `de` (entre 0 y 1, parte del viaje).", "type": "number", "minimum": 0, "maximum": 1.5 },
@@ -41,11 +43,16 @@
           "activa": { "description": "false = no la hace (sin borrarla).", "type": "boolean" },
           "nota": { "$ref": "comun.schema.json#/$defs/nota" },
           "llegada": { "description": "Lo que hace al llegar.", "$ref": "#/$defs/accion" },
-          "respuesta": { "description": "Lo que contesta quien lo recibe (solo con `visita`).", "$ref": "#/$defs/accion" }
+          "respuesta": { "description": "Lo que contesta quien lo recibe (solo con `visita`).", "$ref": "#/$defs/accion" },
+          "ausente": { "description": "Lo que hace si llega y no encuentra a quien venía a ver (o se lo llevó el jugador). Falta = `ausente` general.", "$ref": "#/$defs/accion" }
         },
         "required": ["quien", "de", "a"],
         "additionalProperties": false
       }
+    },
+    "ausente": {
+      "description": "Para todas las visitas: qué hace quien visita si no encuentra a la persona ({quien} = a quien venía a ver). Falta = AUSENTE_BASE de rutinas-datos.js (gesto rasca y «¿Y {quien}? Pensé que estaba aquí.»).",
+      "$ref": "#/$defs/accion"
     },
     "horarios": {
       "description": "Horario de cada amigo que muestra su panel (horarios-datos.js).",

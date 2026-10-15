@@ -93,7 +93,9 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         a.vuelta = false;
         a.mirar = opciones.mirar !== undefined ? opciones.mirar : destino.mirar || destino.persona || null;
         let p = destino;
-        if (destino.persona) { const otra = persona(destino.persona); if (!otra) return false; p = junto(a.cuerpo, otra); }
+        // A una persona: va a ella, no al lugar donde estaba (si se mueve, actualizar corrige el destino)
+        a.sigue = destino.persona || null; a.relojSigue = 0;
+        if (destino.persona) { const otra = persona(destino.persona); if (!otra) return false; p = junto(a.cuerpo, otra); a.objetivo = { x: otra.x, z: otra.z }; }
         // El destino tiene que poder pisarse: el centro de un lugar suele estar dentro de la construcción
         const pis = cercaPisable(consulta, p.x, p.y, p.z, ajustesNavegacion());
         if (pis) p = pis;
@@ -138,6 +140,18 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         for (const a of [...activos.values()]) {
             const { n, w, cuerpo } = a;
             if (n.escena) { a.w.moviendo = false; continue; } // una escena lo tiene: espera donde está
+            // Va a ver a alguien que se movió (lo mandaron a otra parte, pasea por la orilla): corrige el destino
+            if (a.sigue && !a.vuelta && (a.relojSigue += dt) >= paseo.seguirCada) {
+                a.relojSigue = 0;
+                const o = persona(a.sigue);
+                if (o && Math.hypot(o.x - a.objetivo.x, o.z - a.objetivo.z) > paseo.seguirDistancia) {
+                    let p = junto(cuerpo, o);
+                    const pis = cercaPisable(consulta, p.x, p.y, p.z, ajustesNavegacion());
+                    if (pis) p = pis;
+                    a.objetivo = { x: o.x, z: o.z }; a.destino = p; a.fallos = 0; a.espera = 0; a.corto = false;
+                    w.ir(p);
+                }
+            }
             const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
             const antes = w.estado;
             const estado = w.actualizar(dt, { detalle: dJ < Math.min(A.radioDetalle, RADIO_VISIBLE) });
@@ -192,7 +206,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         estado(clave) {
             const a = activos.get(clave);
             if (!a) return { estado: 'en-sitio' };
-            return { estado: a.vuelta ? (a.w.estado === 'llego' ? 'acomodando' : 'volviendo') : a.w.estado === 'llego' ? (a.corto ? 'atascado' : 'alla') : a.w.estado, restante: Math.round(a.w.restante), x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z), nodos: a.w.busqueda ? a.w.busqueda.nodos : 0 };
+            return { sigue: a.sigue || null, estado: a.vuelta ? (a.w.estado === 'llego' ? 'acomodando' : 'volviendo') : a.w.estado === 'llego' ? (a.corto ? 'atascado' : 'alla') : a.w.estado, restante: Math.round(a.w.restante), x: Math.round(a.cuerpo.x), z: Math.round(a.cuerpo.z), nodos: a.w.busqueda ? a.w.busqueda.nodos : 0 };
         },
         actualizar
     };

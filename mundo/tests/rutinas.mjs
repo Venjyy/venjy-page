@@ -103,7 +103,7 @@ function armar({ visitas, hora = 7, jugador = { pos: { x: 0, z: 0 } } } = {}) {
         adornar(c, f) { const x = fuera.get(c); if (x) x.adorno = f; },
         resolverDestino: l => (l === 'faro' ? { x: 100, z: 0 } : null),
         // de la prueba
-        llegar(c) { fuera.get(c).estado = 'alla'; },
+        llegar(c) { const f = fuera.get(c); f.estado = 'alla'; if (f.d && f.d.persona) { P[c].x = P[f.d.persona].x - 1.5; P[c].z = P[f.d.persona].z; } },
         poner(c, e) { fuera.get(c).estado = e; },
         casa(c) { fuera.delete(c); P[c].paseo = null; }
     };
@@ -210,8 +210,27 @@ const VIS = {
     r.retomar('beto'); paso();
     ok(r.estado('ana').estado === 'yendo', 'al soltarlo, la visita sigue');
     r.acompanar('beto'); paso();
-    ok(r.estado('ana').estado === 'volviendo', 'se lo llevan mientras iba: se devuelve');
+    ok(P.ana.paseo.texto === '¿Y BETO? Pensé que estaba aquí.', `se lo llevan mientras iba: se da cuenta y lo dice («${P.ana.paseo.texto}»)`);
+    paso(RD.ajustesRutinas().esperaAusente + 1);
+    ok(r.estado('ana').estado === 'volviendo' && P.ana.paseo.texto === '', 'y después se devuelve');
     reloj.h = 10; P.beto.escena = null;
+}
+{
+    // Va a la persona: si al llegar no está cerca (no la alcanzó), «no está» con su frase y gesto, y vuelve
+    const { r, P, paseos, paso } = armar({ visitas: { ...VIS, 'ana-beto': { ...VIS['ana-beto'], ausente: { gesto: 'saluda', texto: { es: 'Beto no está', en: 'Beto is not here' } } } }, hora: 10 });
+    paso();
+    P.beto.x = 200; // Beto se fue lejos y Ana no lo alcanzó
+    paseos.poner('ana', 'alla'); paso(0.6);
+    ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === 'Beto no está' && !P.beto.visita, `llega y no está: no saluda a la nada, dice lo suyo («${P.ana.paseo.texto}»)`);
+    paso(RD.ajustesRutinas().esperaAusente + 1);
+    ok(r.estado('ana').estado === 'volviendo', 'llega y no está: vuelve a su sitio');
+}
+{
+    // Quien tiene visita (o alguien viene a verlo) no sale de su casa
+    const V2 = { ...VIS, 'beto-caro': { quien: 'beto', visita: 'caro', de: 10, a: 12 } };
+    const { r, paso } = armar({ visitas: V2, hora: 10 });
+    paso();
+    ok(r.estado('ana').estado === 'yendo' && r.estado('beto').estado === 'en-sitio', 'Beto no sale: Ana viene a verlo');
 }
 {
     // «Probar ahora» (Estudio): sin mirar la hora, llega, saluda y vuelve solo

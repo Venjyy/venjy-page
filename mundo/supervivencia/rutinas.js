@@ -13,7 +13,7 @@
 // visitar no está en su sitio, espera. Si otro lo movió (/caminar, el Estudio) no lo pelea: espera a que vuelva.
 // crearRutinas() no usa three.js ni DOM (lo prueba mundo/tests/rutinas.mjs). Valores: rutinas-datos.js.
 // =========================================================
-import { ajustesRutinas, visitasRutinas, textosRutinas, fijarRutinas } from './rutinas-datos.js';
+import { ajustesRutinas, visitasRutinas, textosRutinas, ausenteRutinas, fijarRutinas } from './rutinas-datos.js';
 import { enTramo } from './reloj.js';
 import { ajustesNavegacion } from '../navegacion.js';
 import { HORARIOS, LUGARES } from './horarios-datos.js';
@@ -74,7 +74,9 @@ export function crearRutinas(ctx) {
     let reloj = 0, gestoDe = null, cargando = null;
     const idioma = () => (ctx.idioma ? ctx.idioma() : 'es');
     const L = o => (o ? o[idioma()] || o.es : '');
-    const estadoDe = c => (R[c] ||= { estado: 'en-sitio', v: null, t: 0 });
+    const estadoDe = c => (R[c] ||= { estado: 'en-sitio', v: null, t: 0, ausente: NaN });
+    // Qué hace si no encuentra a quien visita: lo de la visita (`ausente`) o lo general de rutinas.json / el código
+    const ausenteDe = v => { const g = ausenteRutinas(), a = v.ausente || {}; return { gesto: a.gesto || g.gesto, texto: a.texto || g.texto }; };
     const dJ = n => (jugador ? Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z) : 0);
     const visitas = () => visitasRutinas();
     const distancias = {}; // clave de visita → bloques en línea recta desde su sitio (se mide con la persona en su sitio)
@@ -97,11 +99,14 @@ export function crearRutinas(ctx) {
     function deseada(c) {
         const r = estadoDe(c), V = visitas();
         if (r.forzada) return V[r.forzada] || null;
-        return visitaDeHora(V, c, ctx.hora(), viaje);
+        const v = visitaDeHora(V, c, ctx.hora(), viaje);
+        // No encontró a quien iba a ver: esa visita no se repite hasta que termine su tramo
+        if (r.descartada) { if (v && v.clave === r.descartada) return null; r.descartada = null; }
+        return v;
     }
     // ¿Puede salir ahora? Sin escena, sin minijuego ni ronda y con quien visita en su sitio (si no, espera)
     function puede(n, v) {
-        if (n.escena || (ctx.libre && !ctx.libre(n))) return false;
+        if (n.escena || (ctx.libre && !ctx.libre(n)) || lovisitan(n.clave)) return false;
         if (v.visita) {
             const o = persona(v.visita);
             if (!o || paseos.fuera(v.visita) || (R[v.visita] && R[v.visita].estado === 'acompanando')) return false;
@@ -117,6 +122,7 @@ export function crearRutinas(ctx) {
     }
     function volver(c) {
         const r = estadoDe(c);
+        r.ausente = NaN;
         terminarSaludo(c);
         r.v = null; r.forzada = null;
         if (paseos.fuera(c)) { paseos.volver(c); r.estado = 'volviendo'; } else r.estado = 'en-sitio';
@@ -183,6 +189,29 @@ export function crearRutinas(ctx) {
         if (r.forzada && r.t > A.respuesta + Math.max(A.frase, A.gesto) + 4) volver(c); // la prueba del Estudio termina sola
     }
 
+    // ---- No encontró a quien venía a ver: se da cuenta, lo dice (si el jugador está cerca) con un gesto y vuelve ----
+    function noEsta(c, v) {
+        const r = estadoDe(c), n = persona(c), A = ajustesRutinas();
+        terminarSaludo(c);
+        r.ausente = 0;
+        const acc = ausenteDe(v);
+        if (dJ(n) < A.radioSaludo) cargar();
+        if (paseos.adornar) paseos.adornar(c, (dt, p) => {
+            const g = acc.gesto && gestoDe && gestoDe(acc.gesto);
+            if (g) ponerGesto(p, g(lim01(r.ausente / A.gesto), r.ausente, { s: false, j: false, esc: n.escala || 1 }), peso(r.ausente, A.gesto));
+        });
+    }
+    function avanzarAusente(c, dt) {
+        const r = R[c], n = persona(c), A = ajustesRutinas();
+        r.ausente += dt;
+        const v = r.v && visitas()[r.v], acc = v ? ausenteDe(v) : null;
+        if (n && n.paseo) n.paseo.texto = acc && acc.texto && dJ(n) < A.radioSaludo && r.ausente < A.frase
+            ? L(acc.texto).replace('{quien}', ctx.nombre ? ctx.nombre(v.visita) : v.visita || '') : '';
+        if (r.ausente >= A.esperaAusente) { r.ausente = NaN; const k = r.v, f = r.forzada; volver(c); if (!f) r.descartada = k; }
+    }
+    // ¿Alguien viene a verlo o lo está visitando? Entonces no sale (que no lo encuentren vacío)
+    const lovisitan = c => Object.values(R).some(r => (r.estado === 'yendo' || r.estado === 'visitando') && r.v && visitas()[r.v] && visitas()[r.v].visita === c);
+
     function decidir() {
         const quienes = new Set([...Object.values(visitas()).map(v => v.quien), ...Object.keys(R)]);
         for (const c of quienes) {
@@ -195,12 +224,21 @@ export function crearRutinas(ctx) {
             if (r.estado === 'en-sitio') {
                 if (fuera) continue; // otro lo movió (/caminar, el Estudio): no lo pelea
                 if (v && puede(n, v)) salir(c, v);
-            } else if ((r.estado === 'yendo' || r.estado === 'visitando') && v && v.visita && R[v.visita] && R[v.visita].estado === 'acompanando') {
-                volver(c); // a quien iba a ver se lo llevó el jugador: se devuelve
+            } else if (Number.isFinite(r.ausente)) {
+                continue; // está reaccionando a que no encontró a quien venía a ver (avanzarAusente lo devuelve)
+            } else if ((r.estado === 'yendo' || r.estado === 'visitando') && v && v.visita && (!persona(v.visita) || (R[v.visita] && R[v.visita].estado === 'acompanando'))) {
+                // A quien iba a ver se lo llevó el jugador (o ya no está en el mundo): de visita, se despide y vuelve; yendo,
+                // se da cuenta («¿Y Braulio?») y vuelve
+                if (r.estado === 'visitando') volver(c); else noEsta(c, v);
             } else if (r.estado === 'yendo') {
                 if (!fuera) { r.estado = 'en-sitio'; r.v = null; } // lo mandaron a su sitio de golpe (volverTodos)
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
-                else if (paseos.estado(c).estado === 'alla') { r.estado = 'visitando'; r.t = 0; empezarSaludo(c, v); }
+                else if (paseos.estado(c).estado === 'alla') {
+                    // Llegó: ¿está la persona? (paseos.js la sigue si se mueve, pero puede no alcanzarla)
+                    const o = v.visita && persona(v.visita);
+                    if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro) noEsta(c, v);
+                    else { r.estado = 'visitando'; r.t = 0; empezarSaludo(c, v); }
+                }
             } else if (r.estado === 'visitando') {
                 if (!fuera) { terminarSaludo(c); r.estado = 'en-sitio'; r.v = null; }
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
@@ -214,7 +252,10 @@ export function crearRutinas(ctx) {
     return {
         actualizar(dt) {
             if (dt <= 0) return;
-            for (const c of Object.keys(R)) if (R[c].estado === 'visitando') avanzarSaludo(c, dt);
+            for (const c of Object.keys(R)) {
+                if (Number.isFinite(R[c].ausente)) avanzarAusente(c, dt);
+                else if (R[c].estado === 'visitando') avanzarSaludo(c, dt);
+            }
             if ((reloj += dt) < ajustesRutinas().revisar) return;
             reloj = 0;
             decidir();
@@ -229,7 +270,7 @@ export function crearRutinas(ctx) {
             if (!n) return false;
             const r = estadoDe(c);
             terminarSaludo(c);
-            r.estado = 'acompanando'; r.v = null; r.forzada = null;
+            r.estado = 'acompanando'; r.v = null; r.forzada = null; r.ausente = NaN;
             // Quienes venían a verlo se devuelven (en el próximo `revisar`); quien lo visitaba deja de mirarlo
             if (n.visita) { n.visita.fin = true; n.visita.texto = ''; }
             return true;

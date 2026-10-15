@@ -426,6 +426,11 @@ const L = k => T.lugares.find(l => l.clave === k);
     correr(2);
     const haciaBeto = Math.atan2(beto.x - ana.x, beto.z - ana.z);
     ok(Math.abs(Math.atan2(Math.sin(haciaBeto - ana.yaw), Math.cos(haciaBeto - ana.yaw))) < 0.3, 'paseos: mira a quien visita');
+    // Va a la persona, no al lugar: Beto se mueve y Ana lo sigue hasta donde está ahora
+    beto.x = 60.5; beto.z = 40.5;
+    correr(60, () => paseos.estado('ana').estado === 'alla' && Math.hypot(ana.x - beto.x, ana.z - beto.z) < 4);
+    ok(paseos.estado('ana').sigue === 'beto' && Math.hypot(ana.x - beto.x, ana.z - beto.z) < 1.8 + NAV_BASE.llegada + 0.5, `paseos: Beto se movió y Ana lo siguió (a ${Math.hypot(ana.x - beto.x, ana.z - beto.z).toFixed(1)})`);
+    beto.x = 50.5; beto.z = 10.5;
     // Una escena la deja quieta
     paseos.volver('ana');
     ana.escena = () => true;
