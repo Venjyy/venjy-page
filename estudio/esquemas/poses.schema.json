@@ -8,6 +8,17 @@
     "$schema": { "type": "string" },
     "version": { "$ref": "comun.schema.json#/$defs/version" },
     "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "limites": {
+      "description": "Límites duros de cada canal en radianes ([mín, máx]): aplicarAngulos (supervivencia/pose-jugador.js) recorta a este rango, así ninguna animación ni la CPU deja un codo al revés o una rodilla hacia adelante (bloque 8 · N1, mundo/COMBATE.md §15.5). Canales nuevos: codoD codoI (− adelante y arriba), rodD rodI (+ la canilla atrás), pX pY pZ (el pecho sobre las caderas), pDz pIz (abrir la pierna hacia afuera), bDy bIy (giro del brazo), ry (giro del cuerpo), armaX armaZ (muñeca virtual del arma). Lo que falte o esté mal usa el valor del código.",
+      "type": "object",
+      "propertyNames": { "enum": ["cx", "cy", "cz", "bDx", "bIx", "bDz", "bIz", "bDy", "bIy", "pDx", "pIx", "inc", "ry", "rz", "codoD", "codoI", "rodD", "rodI", "pX", "pY", "pZ", "pDz", "pIz", "armaX", "armaZ"] },
+      "additionalProperties": {
+        "type": "array",
+        "prefixItems": [{ "$ref": "comun.schema.json#/$defs/radianes" }, { "$ref": "comun.schema.json#/$defs/radianes" }],
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
     "poses": {
       "description": "Poses fijas (atlas de rig.md): nombre -> canales numéricos.",
       "type": "object",

@@ -85,13 +85,14 @@ import { datosInicio, fraseAlAzar, consejoAlAzar, avanceCarga, fondoActivo } fro
 import { presentacion } from './presentacion.js';
 import { crearFondoMenu } from './fondo-menu.js';
 import { aplicarPoses } from '../datos/gestos.js';
+import { fijarLimites } from './pose-jugador.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
 // Lo que el acompañante no rompe aunque se lo pongan encima (7i PR 2): lo que guarda cosas o se usa
 const NO_ROMPE_ACOMPANANTE = new Set([B.COFRE, B.BARRIL, B.HORNO, B.HORNO_ENCENDIDO, B.MESA, B.CAMA, B.MESA_DUELO, B.MESA_DUELO_Z]);
 // Estudio, fase 6: gestos y poses de mundo/datos/poses.json (reemplazan por nombre a los del código; sin archivo, el código)
-cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
+cargarDatos('poses').then(d => { if (d) { aplicarPoses(d); fijarLimites(d.limites); } });
 
 // ---------------------------------------------------------
 // Idioma

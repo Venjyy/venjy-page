@@ -14,6 +14,8 @@ Mide ~2 bloques. Mira hacia **+Z**; su derecha es **−X**. Pies en el origen de
 | `brazoD` / `brazoI` | brazos (cuelgan del hombro) | (−0.375 / +0.375, 1.5, 0) | 0.25 × 0.75 × 0.25 |
 | `piernaD` / `piernaI` | piernas (cuelgan de la cadera) | (−0.125 / +0.125, 0.75, 0) | 0.25 × 0.75 × 0.25 |
 
+**Desde el bloque 8 · N1** (`mundo/COMBATE.md` §15.5) el rig tiene además: `pecho` (pivote en la cintura, y 0.75, dentro de `cuerpo`; de él cuelgan `torso`, `cuello` y los brazos, con su y local restada en 0.75, así que en el mundo están donde siempre), `antebrazoD/I` y `canillaD/I` (codo y rodilla a 0.375 del hombro o la cadera; cada brazo y pierna son dos mitades de 0.375) y `munecaD/I` (punta del antebrazo, sin caja: de ahí cuelga el objeto de la mano). Con todo en 0 se ve **idéntico** a antes (`mundo/tests/rig-articulaciones.mjs`). Las escenas pueden seguir escribiendo `brazoD.rotation` como siempre. Canales nuevos en `aplicarAngulos` (`pose-jugador.js`), con límites duros en `poses.json → limites`: `codoD/I` (−2.6 … 0, − = antebrazo adelante y arriba), `rodD/I` (0 … 2.4, + = canilla atrás), `pX/pY/pZ` (pecho: inclinar, girar a su izquierda, ladear), `pDz/pIz` (abrir la pierna), `armaX/armaZ` (muñeca virtual). Para doblar a mano usa `doblar(antebrazo, ángulo)` de `pose-jugador.js` (mueve la rótula). Para cambiar escala o material de un brazo entero: `cajasDe(brazo)` de `cuerpo.js` (no `children[0]`, que es solo la mitad de arriba).
+
 ### Nombres cortos (los usan `GESTOS`, `leer`/`escribir` de `escenas-skin.js` y `posar.mjs`)
 
 | Campo | Propiedad real | Signo: valor **positivo** hace… | Rango útil |

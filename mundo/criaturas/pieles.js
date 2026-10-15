@@ -199,7 +199,7 @@ export function agregarExtras(p, extras, tinte, semilla) {
             const copa = caja(0.58, 0.2, 0.58, matPaja); copa.position.set(0, 0.62, 0); p.cuello.add(copa);
             const cinta = caja(0.6, 0.07, 0.6, tinte.caras(texturaPixeles(8, 8, semilla + 53, liso([190, 36, 34], 0.12))));
             cinta.position.set(0, 0.56, 0); p.cuello.add(cinta);
-        } else if (e.tipo === 'capucha') { const b = caja(0.42, 0.2, 0.1, m); b.position.set(0, 1.42, -0.17); p.cuerpo.add(b); }
+        } else if (e.tipo === 'capucha') { const b = caja(0.42, 0.2, 0.1, m); b.position.set(0, 1.42, -0.17); if (p.pecho) { b.position.y -= p.pecho.position.y; p.pecho.add(b); } else p.cuerpo.add(b); }
         else if (e.tipo === 'mechones') { // pelo desordenado con volumen
             for (const [mx, my, mz, rz, rx] of [[-0.17, 0.52, 0.12, 0.4, 0.3], [0.06, 0.55, 0.2, -0.2, 0.5], [0.2, 0.51, -0.02, -0.5, 0], [-0.06, 0.54, -0.18, 0.2, -0.4], [0.16, 0.53, 0.16, -0.6, 0.4]]) {
                 const b = caja(0.16, 0.1, 0.16, m); b.position.set(mx, my, mz); b.rotation.set(rx, 0, rz); p.cuello.add(b);
