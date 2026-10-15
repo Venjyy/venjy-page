@@ -890,6 +890,9 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                     visible = (n.escena ? n.escena(dt, base) : n.paseo ? n.paseo.animar(dt) : base()) !== false;
                     // Vida entre amigos (supervivencia/vida-amigos.js): sus gestos van encima de la animación normal
                     if (visible && !n.escena && !n.paseo && n.vida) n.vida.animar(dt);
+                    // Recibe una visita (supervivencia/rutinas.js): contesta con un gesto encima de su animación
+                    // (también de paseo: lo pueden visitar donde esté)
+                    if (visible && !n.escena && n.visita) n.visita.animar(dt);
                     if (visible && !n.escena && !n.paseo && (n === moises || n === lalo)) bongAlSuelo(n, dt);
                 }
                 n.p.g.visible = visible;
@@ -900,7 +903,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 // Globo: la conversación del grupo o sus frases sueltas al acercarse
                 let texto = '';
                 if (n.escena) texto = '';
-                else if (n.paseo) texto = n.paseo.texto || '';
+                else if (n.paseo) texto = n.paseo.texto || (n.visita && n.visita.texto) || '';
+                else if (n.visita && n.visita.texto) texto = n.visita.texto;
                 else if (n.vida) texto = n.vida.texto;
                 else if (calladas.has(n.charla)) texto = '';
                 else if (n.charla) texto = n.charla.texto(n.clave);

@@ -1,0 +1,78 @@
+{
+  "$schema": "../../estudio/esquemas/rutinas.schema.json",
+  "version": 1,
+  "nota": "Rutinas y visitas de los amigos (6d etapa 2). Una visita: quien sale, a ver a quién (visita) o a qué lugar, de qué hora a qué hora se queda (sale antes según la distancia) y qué hacen al llegar. Ajustes vacíos = el código (RUTINA_BASE de mundo/supervivencia/rutinas-datos.js). Se edita en /estudio/ → pestaña Vida.",
+  "ajustes": {},
+  "visitas": {
+    "braulio-conejeros": {
+      "quien": "braulio",
+      "visita": "conejeros",
+      "de": 9,
+      "a": 11,
+      "nota": "amigos (2), humor parecido; del naufragio al escenario hay ~180 bloques",
+      "llegada": {
+        "gesto": "saluda",
+        "texto": { "es": "¿Qué onda, Conejeros? ¿Ensayando?", "en": "What's up, Conejeros? Rehearsing?" }
+      },
+      "respuesta": {
+        "gesto": "risa",
+        "texto": { "es": "¡Braulio! Justo me faltaba público.", "en": "Braulio! I was just missing an audience." }
+      }
+    },
+    "conejeros-braulio": {
+      "quien": "conejeros",
+      "visita": "braulio",
+      "de": 13,
+      "a": 14.5,
+      "nota": "la vuelta de mano: Conejeros va a la orilla",
+      "llegada": {
+        "gesto": "saluda",
+        "texto": {
+          "es": "Vine a ver si pica algo en la orilla.",
+          "en": "Came to see if anything's biting at the shore."
+        }
+      },
+      "respuesta": {
+        "gesto": "asiente",
+        "texto": { "es": "Siéntate, pero no me espantes los peces.", "en": "Sit down, but don't scare my fish." }
+      }
+    },
+    "andy-braulio": {
+      "quien": "andy",
+      "visita": "braulio",
+      "de": 15.5,
+      "a": 17.5,
+      "nota": "amigos (2), cordiales; del campamento al naufragio hay ~560 bloques (sale como a las 12)",
+      "llegada": {
+        "gesto": "saluda",
+        "texto": {
+          "es": "¡Braulio! Me di la vuelta larga pa' venir a verte.",
+          "en": "Braulio! I took the long way to come see you."
+        }
+      },
+      "respuesta": {
+        "gesto": "brazosArriba",
+        "texto": { "es": "¡Andy! ¿Caminaste todo eso? Eres leyenda.", "en": "Andy! You walked all that? Legend." }
+      }
+    }
+  },
+  "horarios": {
+    "hadad": { "ancla": "campamento", "de": 8, "a": 18 },
+    "nacho": { "ancla": "campamento", "de": 8, "a": 18 },
+    "andy": { "ancla": "campamento", "de": 8, "a": 18 },
+    "moises": { "ancla": "iglu", "de": 8, "a": 18 },
+    "lalo": { "ancla": "iglu", "de": 8, "a": 18 },
+    "boris": { "ancla": "atalaya", "de": 8, "a": 18 },
+    "lucho": { "ancla": "atalaya", "de": 8, "a": 18 },
+    "braulio": { "ancla": "naufragio", "de": 8, "a": 18 },
+    "conejeros": { "ancla": "escenario", "de": 8, "a": 18 }
+  },
+  "lugares": {
+    "campamento": { "es": "en el campamento", "en": "at the camp" },
+    "iglu": { "es": "en el iglú", "en": "at the igloo" },
+    "atalaya": { "es": "en la atalaya", "en": "at the watchtower" },
+    "naufragio": { "es": "en el naufragio", "en": "at the shipwreck" },
+    "escenario": { "es": "en el escenario", "en": "at the stage" }
+  },
+  "textos": {}
+}

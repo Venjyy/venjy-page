@@ -19,7 +19,7 @@ const TXT = {
         tope: 'You already own as many as a deck allows.', cargando: 'Loading cards…', lleno: 'Your inventory is full.', mesa: 'You bought the duel table' }
 };
 
-// ctx: inventario, hud, hechas() -> Set de ids, tituloDe(id) -> {es,en}, nombres (NOMBRES_AMIGO), dar(lista),
+// ctx: deVisita(clave) -> texto (opcional, rutinas.js), inventario, hud, hechas() -> Set de ids, tituloDe(id) -> {es,en}, nombres (NOMBRES_AMIGO), dar(lista),
 // decir(clave, texto), abrirPanel, volver(clave) (vuelve al panel de misión), conversar(clave) (pestaña «Hablar»),
 // precio(clave, oferta) -> { da, pide, rebaja } (descuento por amistad), alComprar(clave), alAbrir(clave, el), cerrarPanel
 export function crearTienda(ctx) {
@@ -114,7 +114,13 @@ export function crearTienda(ctx) {
             if (!esta) b.addEventListener('click', f);
             d.appendChild(b);
         }
-        return d;
+        // De visita, yendo o volviendo (rutinas.js): el panel sigue funcionando donde esté y lo dice bajo las pestañas
+        const visita = ctx.deVisita ? ctx.deVisita(clave) : '';
+        if (!visita) return d;
+        const f = document.createDocumentFragment(), p = document.createElement('p');
+        p.className = 'horario-amigo'; p.textContent = visita;
+        f.append(d, p);
+        return f;
     }
 
     function abrir(clave, frase) {

@@ -12,6 +12,8 @@ export const PASEO_BASE = {
     reintento: 4,           // sin camino y a la vista: segundos antes de volver a intentarlo (cada vez el doble)
     reintentosVista: 2,     // cuántas veces lo reintenta a la vista antes de quedarse donde llegó
     distanciaVisita: 1.8,   // a qué distancia de la persona que visita se queda
+    seguirCada: 1.5,        // yendo a ver a alguien: cada cuántos segundos mira si esa persona se movió
+    seguirDistancia: 4,     // … y si se movió más que esto (bloques), corrige el camino hacia donde está ahora
     mirarJugador: 5         // de pie y sin a quién mirar: mira al jugador si está a menos de esto
 };
 let paseo = { ...PASEO_BASE };

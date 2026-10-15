@@ -31,7 +31,7 @@ import { crearAgricultura } from './agricultura.js';
 import { crearMinado } from './minado.js';
 import { crearVida, CAUSAS } from './vida.js';
 import { crearDia } from './dia.js';
-import { textoHora, textoDiaHora } from './reloj.js';
+import { textoHora, textoDiaHora, minutosDe } from './reloj.js';
 import { vistaDesplazada } from './desplazado.js';
 import { iniciarTactilSupervivencia } from './tactil-supervivencia.js';
 import { crearMano } from './mano.js';
@@ -61,8 +61,9 @@ import { crearEscenaCuello } from './escena-cuello.js';
 import { crearRondaIglu } from './ronda-iglu.js';
 import { crearVidaAmigos } from './vida-amigos.js';
 import { crearPaseos } from './paseos.js';
+import { crearRutinas } from './rutinas.js';
 import { crearMinijuegos } from './minijuego.js';
-import { NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
+import { NIVEL_ANIMACION, momentoListo, grupoDe, GRUPOS } from './amistad.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
@@ -751,6 +752,16 @@ async function arrancar(guardado, cx = null) {
     const vidaAmigos = crearVidaAmigos({ amigos, jugador: vista.jugador, idioma: () => idioma, libre: () => !vida.muerto });
     // 6d etapa 2: los amigos dejan su sitio y caminan buscando camino sobre el terreno (mundo/navegacion.js)
     const paseos = crearPaseos({ amigos, terreno, mundo: vista.mundo, jugador: vista.jugador });
+    // 6d etapa 2: rutinas y visitas por horario (mundo/datos/rutinas.json). No salen con una escena, la ronda del iglú,
+    // un minijuego o un jefe; el gesto al llegar sale de moldes.js (se carga la primera vez que alguien llega cerca)
+    const rutinas = crearRutinas({
+        paseos, jugador: vista.jugador, idioma: () => idioma, nombre: c => NOMBRES_AMIGO[c] || c,
+        persona: c => amigos.lista.find(n => n.clave === c),
+        hora: () => minutosDe(dia.t) / 60,
+        libre: n => !ronda.activa && !minijuegos.activo && !(jefes && jefes.enCurso) && !(amigos.iglu && amigos.iglu.enPase && (n === amigos.iglu.moises || n === amigos.iglu.lalo)),
+        cargarGestos: () => import('./moldes.js').then(m => m.molde)
+    });
+    cargarDatos('rutinas').then(d => { if (d) rutinas.fijar(d); });
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
     minimapa.fijarPersonas(() => [...npcs.lista, ...amigos.lista, ...venjys.lista]);
@@ -780,6 +791,7 @@ async function arrancar(guardado, cx = null) {
     misiones = crearMisiones({
         grupo: vista.grupo, dy: DY, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, idioma, abrirPanel, cerrarPanel,
         jefeEnCurso: () => jefes && jefes.enCurso,
+        deVisita: (clave, lengua) => rutinas.texto(clave, lengua), // «Está de visita donde Braulio, en el naufragio» (6d etapa 2)
         skin: () => skinActual, // amistad inicial según tu skin (se lee ya en el bucle, cuando skinActual existe)
         antesDeHablar: clave => !!(escenas && escenas.antesDeHablar(clave)),
         alCompletar: m => !!(escenaCuello && escenaCuello.alCompletar(m)) // cuello de Gala (lona3)
@@ -881,7 +893,7 @@ async function arrancar(guardado, cx = null) {
         amistad6c: {
             bienvenida: base => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.bienvenida(base) : false)) : false),
             reencuentro: (base, clave) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.reencuentro(base, clave) : false)) : false),
-            grupo: (nombre, base) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.grupo(nombre, base) : false)) : false)
+            grupo: (nombre, base) => (puede6c() && GRUPOS[nombre] && GRUPOS[nombre].npcs.every(k => !paseos.fuera(k)) ? cargarEscenaAmistad().then(ea => (ea ? ea.grupo(nombre, base) : false)) : false)
         }
     });
     const puede6c = () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !(escenaAmistad && escenaAmistad.activa);
@@ -1038,10 +1050,16 @@ async function arrancar(guardado, cx = null) {
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => (ea ? ea.momento(clave) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
         },
+        // ¿Están todos los del grupo en su sitio? La escena de grupo se juega en su lugar (fogata, atalaya, iglú): con
+        // alguien de visita (paseos.js) no sale y el botón no aparece
+        grupoListo: clave => {
+            const g = grupoDe(escenas.tipoSkin(skinActual).base, clave);
+            return !!g && GRUPOS[g].npcs.every(k => !paseos.fuera(k));
+        },
         // Saludo del grupo (6c-2): repite la escena de grupo de este amigo con tu skin
         grupo: clave => {
             const base = escenas.tipoSkin(skinActual).base, g = grupoDe(base, clave);
-            if (!puedeAmistad() || !g) return;
+            if (!puedeAmistad() || !g || !misiones.escenaAmistad.grupoListo(clave)) return;
             capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => (ea ? ea.grupo(g, base) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
@@ -1095,7 +1113,8 @@ async function arrancar(guardado, cx = null) {
             ponerSkin: d => ponerSkin(d),
             callar: v => escenas.callar(v),
             vida: vidaAmigos, // 6d: /amistad vida-<id>
-            paseos // 6d etapa 2: /caminar <persona> <destino>
+            paseos, // 6d etapa 2: /caminar <persona> <destino>
+            rutinas // /rutina <persona> [acompanar|retomar|<visita>]
         },
         medir: { mundo, jugador, minado, entidades, terreno, irA, hud, B, DY, chunkForzado } // /medir romper (7b-1)
     });
@@ -1969,7 +1988,7 @@ async function arrancar(guardado, cx = null) {
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
-        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, guardarYa, estadoActual,
+        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, rutinas, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos, ruleta,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar
@@ -2067,6 +2086,7 @@ async function arrancar(guardado, cx = null) {
         gatas.actualizar(dtC);
         npcs.actualizar(dtC, false);
         animales.actualizar(dtC, false);
+        rutinas.actualizar(dtC);
         paseos.actualizar(dtC);
         vidaAmigos.actualizar(dtC);
         amigos.actualizar(dtC, false);

@@ -19,7 +19,7 @@
       "type": "object",
       "properties": {
         "velocidad": {
-          "description": "Caminando, bloques por segundo (el jugador camina a ~4,3).",
+          "description": "Caminando, bloques por segundo (el jugador camina a 4,3 y corre a 5,6).",
           "type": "number",
           "minimum": 0.5,
           "maximum": 6
@@ -108,11 +108,23 @@
           "minimum": 0,
           "maximum": 10
         },
+        "avanceReintentos": {
+          "description": "Si avanzó estos bloques hacia el destino desde la última búsqueda, los reintentos vuelven a 0 (en viajes largos aparecen árboles que el mapa de alturas no tenía y cada choque busca de nuevo).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 64
+        },
         "saltoLejos": {
           "description": "Lejos del jugador: segundos entre saltos de posición (no se anima ni se miran bloques).",
           "type": "number",
           "minimum": 0.2,
           "maximum": 5
+        },
+        "rapidezLejos": {
+          "description": "Lejos del jugador (más allá de radioDetalle, nadie lo ve) camina esto más rápido (1 = igual que cerca). Así las visitas entre lugares lejanos caben en el día.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
         },
         "radioDetalle": {
           "description": "A menos de esto del jugador camina mirando cada bloque; más lejos avanza a saltos.",
@@ -168,6 +180,18 @@
           "type": "number",
           "minimum": 1,
           "maximum": 5
+        },
+        "seguirCada": {
+          "description": "Yendo a ver a alguien: cada cuántos segundos mira si esa persona se movió (va a la persona, no al lugar donde estaba).",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 10
+        },
+        "seguirDistancia": {
+          "description": "Si la persona que va a ver se movió más que esto (bloques), corrige el camino hacia donde está ahora.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 32
         },
         "mirarJugador": {
           "description": "De pie y sin a quién mirar: mira al jugador si está a menos de esto (bloques).",

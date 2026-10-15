@@ -63,7 +63,8 @@ export function crearMisiones(ctx) {
         tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo, dar: lista => dar(lista),
         decir: (clave, texto) => decirEspecial(clave, texto), volver: clave => hablar(clave), conversar: clave => conversar(clave),
         precio: (clave, o) => precioAmigo(o, amistad.nivel(clave)), alComprar: clave => amistad.sumar(clave, 'tienda'),
-        alAbrir: (clave, el) => retenerAmigo(clave, el)
+        alAbrir: (clave, el) => retenerAmigo(clave, el),
+        deVisita: clave => (ctx.deVisita ? ctx.deVisita(clave, idioma) : '')
     });
 
     // ---- Pestaña «Hablar»: hablar.js y dialogos-datos.js se cargan la primera vez que se abre ----
@@ -89,6 +90,7 @@ export function crearMisiones(ctx) {
                 saludar: (c, tipo) => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.jugar(c, tipo); },
                 momento: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.momento(c); },
                 grupo: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.grupo(c); },
+                grupoListo: c => !escenaAmistad || !escenaAmistad.grupoListo || escenaAmistad.grupoListo(c),
                 carta: { para: cartaPara, entregar: entregarCarta },
                 tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
             });
