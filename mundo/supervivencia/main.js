@@ -21,7 +21,7 @@ import { silenciarMundo, mundoSilenciado } from '../criaturas/cuerpo.js';
 import { destinos as destinosZonas } from '../portafolio/zonas.js';
 import { listarMundos, cargarMundo, guardarMundo, borrarMundo, exportarMundo, descargarMundo, guardarCopiaConTope, importarMundo, nuevoId, serializarEdiciones, cargarEdiciones, MAX_MUNDOS } from './guardado.js';
 import { Inventario } from './inventario.js';
-import { O, nombreDe } from './objetos.js';
+import { O, nombreDe, infoBloque } from './objetos.js';
 import { fijarAtlasBloques } from './iconos.js';
 import { crearHUD } from './hud.js';
 import { crearVentanas } from './ui-inventario.js';
@@ -88,6 +88,8 @@ import { aplicarPoses } from '../datos/gestos.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
 const DY = DESNIVEL_SUPERVIVENCIA;
+// Lo que el acompañante no rompe aunque se lo pongan encima (7i PR 2): lo que guarda cosas o se usa
+const NO_ROMPE_ACOMPANANTE = new Set([B.COFRE, B.BARRIL, B.HORNO, B.HORNO_ENCENDIDO, B.MESA, B.CAMA, B.MESA_DUELO, B.MESA_DUELO_Z]);
 // Estudio, fase 6: gestos y poses de mundo/datos/poses.json (reemplazan por nombre a los del código; sin archivo, el código)
 cargarDatos('poses').then(d => { if (d) aplicarPoses(d); });
 
@@ -772,7 +774,34 @@ async function arrancar(guardado, cx = null) {
         nivel: c => (misiones ? misiones.amistad.nivel(c) : 0),
         libre: n => !ronda.activa && !minijuegos.activo && !(jefes && jefes.enCurso) && !(amigos.iglu && amigos.iglu.enPase && (n === amigos.iglu.moises || n === amigos.iglu.lalo)),
         pausa: () => ronda.activa || minijuegos.activo || !!(escenas && escenas.activa) || !!(escenaAmistad && escenaAmistad.activa),
-        avisar: t => hud.mensaje(t, 3.5)
+        avisar: t => hud.mensaje(t, 3.5),
+        // 7i PR 2: pelea con los monstruos (en las coordenadas de los amigos: y − DY) y arma su torre (bloques del mundo)
+        monstruos: (x, z, r) => (enemigos ? enemigos.objetivos(x, z, r) : []).map(o => {
+            const e = o.mob || o.fantasma;
+            return {
+                tipo: o.tipo, mob: o.mob, fantasma: o.fantasma, x: o.x, y: o.y - DY, z: o.z, dano: (e && e.d && e.d.dano) || 0,
+                golpear: (n, og) => o.golpear(n, { ...og, atacante: og.atacante && { ...og.atacante, y: og.atacante.y + DY } })
+            };
+        }),
+        jugadorPos: () => vista.jugador.pos,
+        torre: {
+            // No pone donde haya algo ni donde estés tú
+            poner(x, y, z) {
+                const p = jugador.pos;
+                if (mundo.bloque(x, y + DY, z) !== B.AIRE) return false;
+                if (Math.abs(p.x - x - 0.5) < 0.8 && Math.abs(p.z - z - 0.5) < 0.8 && p.y < y + DY + 1 && p.y + 1.8 > y + DY) return false;
+                mundo.editar(x, y + DY, z, B.TIERRA);
+                return true;
+            },
+            quitar(x, y, z) { if (mundo.bloque(x, y + DY, z) === B.TIERRA) mundo.editar(x, y + DY, z, B.AIRE); },
+            // Lo que le pusieron encima: no rompe cofres, hornos, mesas, camas ni lo irrompible
+            romper(x, y, z) {
+                const id = mundo.bloque(x, y + DY, z), info = id > 0 ? infoBloque(id) : null;
+                if (!info || !(info.dureza >= 0) || NO_ROMPE_ACOMPANANTE.has(id)) return false;
+                mundo.editar(x, y + DY, z, B.AIRE);
+                return true;
+            }
+        }
     });
     const venjys = crearVenjys(vista.grupo, { ...ctxCriaturas, destinos: destinosZonas({ terreno, datos }), orientacion: 'h', idioma });
     const minimapa = crearMinimapa(datos, $('hud'), ESCALA);
@@ -1220,6 +1249,7 @@ async function arrancar(guardado, cx = null) {
             alAcompanante: m => acompanante.recibir(m),
             acompanantePropio: () => acompanante.pose(),
             alNpc: (id, k, o) => acompanante.dibujar(id, k, o),
+            dyAmigos: DY, // 7i PR 2: el historial del acompañante va en las coordenadas de los amigos
             alCerrar: motivo => terminarCoop(motivo)
         });
         // Rutinas de los amigos: las decide el anfitrión con su hora y las manda; el invitado las sigue (6d etapa 2, PR 3)
@@ -2019,7 +2049,7 @@ async function arrancar(guardado, cx = null) {
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
-        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, rutinas, acompanante, guardarYa, estadoActual,
+        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, rutinas, acompanante, vista, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos, ruleta,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar

@@ -1,11 +1,12 @@
 // =========================================================
 // VENJY · Supervivencia · Ajustes de los paseos (6d etapa 2), sin three.js ni DOM
 // Valores del código + mundo/datos/navegacion.json: `caminar` va a mundo/navegacion.js (buscar camino y
-// caminante), `seguir` a mundo/seguir.js (los acompañantes de 7i) y `paseo` a PASEO_BASE (cómo caminan y vuelven los amigos, paseos.js). Lo leen el juego, el
+// caminante), `seguir` a mundo/seguir.js (los acompañantes de 7i), `pelea` a acompanante-pelea.js (7i PR 2) y `paseo` a PASEO_BASE (cómo caminan y vuelven los amigos, paseos.js). Lo leen el juego, el
 // Estudio (pestaña Vida) y las pruebas de Node.
 // =========================================================
 import { fijarNavegacion } from '../navegacion.js';
 import { fijarSeguir } from '../seguir.js';
+import { fijarPelea } from './acompanante-pelea.js';
 
 export const PASEO_BASE = {
     amplitud: 0.6,          // cuánto balancea piernas y brazos al caminar
@@ -22,6 +23,7 @@ let paseo = { ...PASEO_BASE };
 export function fijarPaseo(datos) {
     fijarNavegacion(datos);
     fijarSeguir(datos && datos.seguir);
+    fijarPelea(datos && datos.pelea);
     paseo = { ...PASEO_BASE };
     const p = datos && datos.paseo;
     if (p) for (const k of Object.keys(PASEO_BASE)) if (Number.isFinite(p[k])) paseo[k] = p[k];

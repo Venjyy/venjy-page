@@ -712,6 +712,9 @@ body.panel-lado .mision-activa { display: none; } /* el globo del amigo queda ar
 .acompanar-hablar small { display: block; color: var(--gris); font-size: 0.85em; }
 .boton-acompanar { width: 100%; margin: 0; background: #2f4f7a; border-color: #6f9bd8; color: #e4efff; }
 .boton-acompanar:hover:not(:disabled), .boton-acompanar:focus-visible { background: #3d659a; }
+.acompanar-ordenes { display: flex; gap: 4px; margin-bottom: 4px; }
+.acompanar-ordenes .boton-acompanar { flex: 1; font-size: 0.85em; }
+.boton-acompanar.activa:disabled { background: #1f3552; border-color: #e4efff; color: #e4efff; opacity: 1; }
 .tienda-pila { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; }
 .tienda-pila span { display: inline-flex; align-items: center; gap: 4px; }
 .tienda-pila canvas { width: 24px; height: 24px; image-rendering: pixelated; }

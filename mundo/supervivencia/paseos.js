@@ -6,6 +6,9 @@
 // Acompañantes (7i): `seguir(clave)` lo pone a seguir al jugador por su rastro (mundo/seguir.js) en vez de ir a un
 // destino; `remoto(clave)` lo deja quieto para que lo mueva la red (el acompañante de otro jugador del cooperativo,
 // `posar` cada cuadro). Cualquier `ir` / `volver` después suelta esos dos modos.
+// 7i PR 2: `seguir(clave, { mando, marcas, torre })`: `mando(dt, seg, cuerpo, detalle)` lo mueve antes de seguirte (la
+// pelea, «Espérame aquí», el descanso: true = este cuadro no te sigue); `marcas()` da 1 = golpea, 2 = sentado (también
+// llegan por la red en `posar`); `torre` { poner, quitar, romper } deja que arme su torre (mundo/seguir.js).
 //
 // Mientras una persona está fuera de su sitio lleva el gancho `n.paseo` (amigos.js): su animación de siempre
 // (sentado, el bong, el hacha…) no corre; camina o queda de pie. Al volver, se acomoda en su sitio exacto, recupera
@@ -68,9 +71,14 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         return { x: otra.x + dx / d * r, y: otra.cargado === false ? undefined : otra.y, z: otra.z + dz / d * r };
     }
 
+    // Deja de seguir al jugador: quita las torres que puso (7i PR 2)
+    function dejarSeguir(a) {
+        if (a.seg) a.seg.limpiar();
+        a.seg = null; a.mando = null; a.marcas = null;
+    }
     function soltar(a) {
         a.w.parar();
-        a.seg = null; a.red = null;
+        dejarSeguir(a); a.red = null;
         ponerPose(a.n.p, a.pose);
         a.n.paseo = null;
         activos.delete(a.n.clave);
@@ -95,7 +103,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         if (typeof destino === 'string') destino = resolverDestino(destino, n);
         if (!destino) return false;
         let a = activos.get(clave);
-        if (a) { a.seg = null; a.red = null; } // un destino nuevo manda sobre seguir al jugador o la red
+        if (a) { dejarSeguir(a); a.red = null; } // un destino nuevo manda sobre seguir al jugador o la red
         if (destino.sitio) {
             if (!a) return true; // ya está en su sitio
             a.vuelta = true; a.mirar = null; a.fallos = 0; a.espera = 0; a.corto = false;
@@ -145,6 +153,14 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             cy = Math.max(-0.9, Math.min(0.9, cy));
         }
         ir(p.cuello.rotation, 'y', cy, k(dt, 5));
+        // 7i PR 2: sentado a descansar y el golpe del acompañante (lo suyo o lo que llegó por la red)
+        const fm = a.red ? a.red.f | 0 : a.marcas ? a.marcas() : 0;
+        if (fm & 2) {
+            ir(p.cuerpo.position, 'y', -0.6, f);
+            ir(p.piernaD.rotation, 'x', -Math.PI / 2, f); ir(p.piernaI.rotation, 'x', -Math.PI / 2 + 0.1, f);
+        }
+        if (fm & 1 && !(a.golpeT > 0)) a.golpeT = 0.35;
+        if (a.golpeT > 0) { a.golpeT -= dt; p.brazoD.rotation.x = -1.6 - Math.sin(a.golpeT * 9) * 0.8; }
         // Encima: el saludo al llegar de una visita o al pasar junto al jugador (rutinas.js → adornar)
         if (a.adorno) a.adorno(dt, p);
         return true;
@@ -217,6 +233,12 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         seg.anotar(jugador.pos);
         if (a.pausa && a.pausa()) { seg.moviendo = false; seg.evento = null; return; }
         const dJ = Math.hypot(n.x - jugador.pos.x, n.z - jugador.pos.z);
+        // Pelea, orden o descanso (acompanante-pelea.js): ese cuadro no te sigue
+        if (a.mando && a.mando(dt, seg, cuerpo, dJ < Math.min(A.radioDetalle, RADIO_VISIBLE))) {
+            a.mirarYaw = seg.mirarYaw;
+            n.x = cuerpo.x; n.y = cuerpo.y; n.z = cuerpo.z; n.yaw = cuerpo.yaw;
+            return;
+        }
         seg.actualizar(dt, { lider: { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z, yaw: jugador.yaw || 0 }, visible, detalle: dJ < Math.min(A.radioDetalle, RADIO_VISIBLE) });
         a.mirarYaw = seg.mirarYaw;
         n.x = cuerpo.x; n.y = cuerpo.y; n.z = cuerpo.z; n.yaw = cuerpo.yaw;
@@ -231,6 +253,7 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             if (d < 8) red.fase += d * 2.6;
             cuerpo.x = o.x; cuerpo.y = o.y; cuerpo.z = o.z;
             if (Number.isFinite(o.yaw)) cuerpo.yaw = o.yaw;
+            red.f = o.f | 0;
             red.obj = null;
         }
         n.x = cuerpo.x; n.y = cuerpo.y; n.z = cuerpo.z; n.yaw = cuerpo.yaw;
@@ -244,8 +267,11 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             if (!n) return false;
             const a = activos.get(clave) || activar(n);
             a.w.parar(); a.vuelta = false; a.sigue = null; a.mirar = null; a.corto = false; a.red = null; a.mirarPunto = null;
-            a.seg = crearSeguidor(nav, a.cuerpo);
+            dejarSeguir(a);
+            a.seg = crearSeguidor(nav, a.cuerpo, opciones.torre || {});
             a.pausa = opciones.pausa || null;
+            a.mando = opciones.mando || null;
+            a.marcas = opciones.marcas || null;
             return true;
         },
         siguiendo: clave => !!(activos.get(clave) && activos.get(clave).seg),
@@ -258,12 +284,12 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             let a = activos.get(clave);
             if (!si) { if (a) a.red = null; return true; }
             if (!a) a = activar(n);
-            a.w.parar(); a.seg = null; a.vuelta = false; a.sigue = null; a.mirar = null; a.corto = false;
-            a.red = { obj: null, moviendo: false, fase: 0 };
+            a.w.parar(); dejarSeguir(a); a.vuelta = false; a.sigue = null; a.mirar = null; a.corto = false;
+            a.red = { obj: null, moviendo: false, fase: 0, f: 0 };
             return true;
         },
         enRed: clave => !!(activos.get(clave) && activos.get(clave).red),
-        // Posición que llegó por la red ({ x, y, z, yaw }, en las coordenadas de los amigos)
+        // Posición que llegó por la red ({ x, y, z, yaw, f? }, en las coordenadas de los amigos; f: 1 golpea, 2 sentado)
         posar(clave, o) { const a = activos.get(clave); if (a && a.red) a.red.obj = o; },
         // Su sitio de siempre (si está fuera) o null
         casa: clave => (activos.get(clave) ? { ...activos.get(clave).casa } : null),

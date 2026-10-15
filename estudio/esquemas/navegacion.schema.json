@@ -313,6 +313,127 @@
           "type": "number",
           "minimum": 30,
           "maximum": 120
+        },
+        "torreAltura": {
+          "description": "Si estás esto o más por encima de él (te subiste a un pilar)… (bloques)",
+          "type": "number",
+          "minimum": 1.5,
+          "maximum": 8
+        },
+        "torreCerca": {
+          "description": "… a menos de esto en horizontal (bloques)…",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "torreEspera": {
+          "description": "… durante esto (s): arma su propia torre al lado de la tuya.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "torreCada": {
+          "description": "Subiendo su torre: un bloque cada esto (s).",
+          "type": "number",
+          "minimum": 0.15,
+          "maximum": 3
+        },
+        "torreBajar": {
+          "description": "Bajando: rompe un bloque cada esto (s).",
+          "type": "number",
+          "minimum": 0.15,
+          "maximum": 3
+        },
+        "torreRomper": {
+          "description": "Si le pusieron un bloque encima, lo rompe en esto (s).",
+          "type": "number",
+          "minimum": 0.15,
+          "maximum": 5
+        },
+        "torreBloques": {
+          "description": "Bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre; 0 = no arma torres).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        }
+      },
+      "additionalProperties": false
+    },
+    "pelea": {
+      "description": "Peleas del amigo que te acompaña (7i PR 2, supervivencia/acompanante-pelea.js): invulnerable, pelea con lo que se te acerque y se sienta a descansar si «perdería». Lo que falte = PELEA_BASE.",
+      "type": "object",
+      "properties": {
+        "radio": {
+          "description": "Pelea con monstruos a menos de esto de ti (con «Espérame aquí», de él) (bloques).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 24
+        },
+        "alcance": {
+          "description": "Les pega desde esto (bloques, de centro a centro).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "dano": {
+          "description": "Daño por golpe (espada de piedra: 5).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "cadencia": {
+          "description": "Un golpe cada esto (s) (espada: 0,625).",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3
+        },
+        "empuje": {
+          "description": "Cuánto empuja el golpe (el del jugador sin correr: 0,45).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "repensar": {
+          "description": "Persiguiendo: corrige hacia el monstruo cada esto (s).",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 3
+        },
+        "rendirse": {
+          "description": "Sin poder llegar a un monstruo durante esto (s), lo deja.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "creepers": {
+          "description": "1 = también pelea con creepers (0: como los lobos, no se les acerca).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "aguante": {
+          "description": "Aguante (como la vida del jugador): los monstruos pegados a él se lo gastan.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "apretado": {
+          "description": "Un monstruo a menos de esto le gasta el aguante (su daño por segundo) (bloques).",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 4
+        },
+        "recupera": {
+          "description": "Sin monstruos cerca recupera esto de aguante por segundo.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "descanso": {
+          "description": "Sin aguante («perdería») se sienta esto (s) y vuelve con todo.",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 60
         }
       },
       "additionalProperties": false

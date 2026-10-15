@@ -482,7 +482,9 @@ export function crearCoop(cx, ctx) {
             const g = enemigos.fantasmas.get(uid);
             sala.enviar('g', {
                 u: uid, para: g ? g.dueno : null, n, ox: r2(origen.x ?? jugador.pos.x), oz: r2(origen.z ?? jugador.pos.z), fz: origen.fuerza ?? 0.45,
-                pr: origen.proyectil ? 1 : 0, fu: origen.fuego ? 1 : 0, ax: r2(jugador.pos.x), ay: r2(jugador.pos.y), az: r2(jugador.pos.z),
+                // 7i PR 2: el golpe de tu acompañante sale desde él (`ac`: el dueño lo valida con su historial)
+                pr: origen.proyectil ? 1 : 0, fu: origen.fuego ? 1 : 0, ...(origen.atacante ? { ac: 1 } : {}),
+                ax: r2((origen.atacante || jugador.pos).x), ay: r2((origen.atacante || jugador.pos).y), az: r2((origen.atacante || jugador.pos).z),
                 ix: g ? r2(g.pos.x) : null, iy: g ? r2(g.pos.y) : null, iz: g ? r2(g.pos.z) : null
             });
         },
@@ -546,7 +548,9 @@ export function crearCoop(cx, ctx) {
         if (m.pr) return m.ix != null && enRango(hist, m.ix, m.iy, m.iz, 2.5, ancho, VENTANA_GOLPE + 600);
         const r = remotoPorId(m.de);
         const puntos = [[m.ax, m.ay, m.az]];
-        if (r) for (const s of r.bufer.recientes(VENTANA_GOLPE)) puntos.push([s.x, s.y, s.z]);
+        // Golpe de su acompañante (7i PR 2): su historial va en las coordenadas de los amigos (y + dy = la del mundo)
+        if (m.ac) { if (r && r.npc) for (const s of r.npc.bufer.recientes(VENTANA_GOLPE)) puntos.push([s.x, s.y + (ctx.dyAmigos || 0), s.z]); }
+        else if (r) for (const s of r.bufer.recientes(VENTANA_GOLPE)) puntos.push([s.x, s.y, s.z]);
         return puntos.some(([x, y, z]) => x != null && enRango(hist, x, y, z, ALCANCE_GOLPE, ancho));
     }
 
@@ -642,7 +646,7 @@ export function crearCoop(cx, ctx) {
             // 7i: su acompañante (sin `npc`: ya no tiene)
             if (Array.isArray(m.npc) && typeof m.npc[0] === 'string') {
                 if (!r.npc || r.npc.k !== m.npc[0]) r.npc = { k: m.npc[0], bufer: new Bufer() };
-                r.npc.bufer.agregar(m.t, { x: m.npc[1], y: m.npc[2], z: m.npc[3], yaw: m.npc[4] });
+                r.npc.bufer.agregar(m.t, { x: m.npc[1], y: m.npc[2], z: m.npc[3], yaw: m.npc[4], f: m.npc[5] | 0 });
             } else r.npc = null;
             if (m.l || m.j) manejadores.m(m);
         },
@@ -767,7 +771,7 @@ export function crearCoop(cx, ctx) {
             // 7i: su acompañante se dibuja aunque él no se vea (muerto, recién entrado)
             if (r.npc && ctx.alNpc) {
                 const q = r.npc.bufer.muestra(t);
-                if (q) { const { a, b, k } = q; ctx.alNpc(r.id, r.npc.k, { x: mezclar(a.x, b.x, k), y: mezclar(a.y, b.y, k), z: mezclar(a.z, b.z, k), yaw: mezclarAngulo(a.yaw, b.yaw, k) }); }
+                if (q) { const { a, b, k } = q; ctx.alNpc(r.id, r.npc.k, { x: mezclar(a.x, b.x, k), y: mezclar(a.y, b.y, k), z: mezclar(a.z, b.z, k), yaw: mezclarAngulo(a.yaw, b.yaw, k), f: b.f | 0 }); }
             }
             const s = r.bufer.muestra(t);
             const visible = !!s && r.vivo;

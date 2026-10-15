@@ -47,10 +47,10 @@ function juguete(W = 120, D = 120) {
 }
 const DT = 1 / 30;
 // Un líder que camina por una lista de puntos a `vel` b/s; el seguidor lo sigue. Devuelve lo medido
-function escena({ C = juguete(), desde = { x: 10.5, y: 1, z: 10.5 }, cuerpo = { x: 8.5, y: 1, z: 10.5, yaw: 0 }, seguir = {}, nav = {} } = {}) {
+function escena({ C = juguete(), desde = { x: 10.5, y: 1, z: 10.5 }, cuerpo = { x: 8.5, y: 1, z: 10.5, yaw: 0 }, seguir = {}, nav = {}, extra = {} } = {}) {
     const S = { ...SG.SEGUIR_BASE, ...seguir }, A = { ...NAV_BASE, ...nav };
     const navg = N.crearNavegador(C, { ajustes: () => A });
-    const s = SG.crearSeguidor(navg, cuerpo, { seguir: () => S, ajustes: () => A });
+    const s = SG.crearSeguidor(navg, cuerpo, { seguir: () => S, ajustes: () => A, ...extra });
     const lider = { ...desde, yaw: 0 };
     let vista = () => false;
     const med = { maxD: 0, minD: Infinity, eventos: [], aparecioVisto: false, buscando: 0, enParedes: 0 };
@@ -327,6 +327,149 @@ const T = RD.ACOMPANAR_BASE;
 }
 
 // ---------------------------------------------------------
+// 3b. 7i PR 2: su torre, peleas y órdenes
+// ---------------------------------------------------------
+{
+    // Torre: te subes a un pilar de 4 → arma la suya al lado, salta y pone bloques hasta tu altura; bajas → baja rompiéndola
+    const C = juguete();
+    const puestos = [], rotos = [];
+    const torre = {
+        poner(x, y, z) { if (C.celda(x, y, z) !== LIBRE) return false; C.poner(x, y, z, SOLIDO); puestos.push([x, y, z]); return true; },
+        quitar(x, y, z) { C.poner(x, y, z, LIBRE); },
+        romper(x, y, z) { rotos.push([x, y, z]); C.poner(x, y, z, LIBRE); return true; }
+    };
+    const t = escena({ C, desde: { x: 20.5, y: 1, z: 10.5 }, cuerpo: { x: 17.5, y: 1, z: 10.5, yaw: 0 }, extra: torre });
+    t.esperar(1);
+    for (let y = 1; y <= 4; y++) C.poner(20, y, 10, SOLIDO);
+    t.lider.y = 5;
+    t.esperar(t.S.torreEspera + 1.5 + 4 * t.S.torreCada + 1);
+    const tr = t.s.torre;
+    ok(tr && tr.fase === 'arriba', `te subiste a un pilar: arma su torre y queda arriba (${tr && tr.fase})`);
+    ok(Math.abs(t.cuerpo.y - 5) < 0.05, `a tu altura (y ${t.cuerpo.y.toFixed(2)})`);
+    ok(tr && Math.max(Math.abs(tr.bx - 20), Math.abs(tr.bz - 10)) === 1, 'al lado de tu pilar');
+    ok(puestos.length === 4 && t.s.bloques === t.S.torreBloques - 4, `puso 4 bloques (${puestos.length}) y le quedan ${t.s.bloques}`);
+    // Alguien le pone un bloque encima y tú subes 2 más: lo rompe y sigue
+    for (let y = 5; y <= 6; y++) C.poner(20, y, 10, SOLIDO);
+    t.lider.y = 7;
+    C.poner(tr.bx, 7, tr.bz, SOLIDO);
+    t.esperar(1 + t.S.torreRomper + 2 * t.S.torreCada + 1);
+    ok(rotos.length === 1 && rotos[0][1] === 7, `le pusieron un bloque encima: lo rompió (${JSON.stringify(rotos)})`);
+    ok(Math.abs(t.cuerpo.y - 7) < 0.05 && t.s.bloques === t.S.torreBloques - 6 + 1, `siguió hasta y 7 y se guardó el bloque roto (le quedan ${t.s.bloques})`);
+    // Bajas: baja rompiendo su torre y recupera los bloques
+    for (let y = 1; y <= 6; y++) C.poner(20, y, 10, LIBRE);
+    t.lider.y = 1; t.lider.x = 22.5;
+    t.esperar(6 * t.S.torreBajar + 2);
+    ok(!t.s.torre && Math.abs(t.cuerpo.y - 1) < 0.1, `bajaste: bajó rompiendo su torre (y ${t.cuerpo.y.toFixed(2)})`);
+    ok(t.s.bloques === t.S.torreBloques + 1, `recuperó sus bloques (${t.s.bloques})`);
+    let quedan = 0; for (const [x, y, z] of puestos) if (C.celda(x, y, z) === SOLIDO) quedan++;
+    ok(quedan === 0, `no quedó nada de su torre (${quedan})`);
+}
+{
+    // Sin bloques: se queda donde llegó y lo dice
+    const C = juguete();
+    const torre = { poner(x, y, z) { C.poner(x, y, z, SOLIDO); return true; }, quitar(x, y, z) { C.poner(x, y, z, LIBRE); } };
+    const t = escena({ C, desde: { x: 20.5, y: 1, z: 10.5 }, cuerpo: { x: 18.5, y: 1, z: 10.5, yaw: 0 }, seguir: { torreBloques: 2 }, extra: torre });
+    t.esperar(0.5);
+    for (let y = 1; y <= 5; y++) C.poner(20, y, 10, SOLIDO);
+    t.lider.y = 6;
+    t.esperar(t.S.torreEspera + 1.5 + 4 * t.S.torreCada + 1);
+    ok(Math.abs(t.cuerpo.y - 3) < 0.05 && t.s.bloques === 0, `con 2 bloques llega a y 3 (y ${t.cuerpo.y.toFixed(2)})`);
+    ok(t.med.eventos.includes('sinBloques'), '«¡No tengo más bloques!»');
+    t.s.limpiar();
+    ok(t.s.bloques === 2 && C.celda(t.s.restos.length ? 0 : 19, 1, 10) !== SOLIDO, 'limpiar: quita su torre y recupera los bloques');
+    ok(Math.abs(t.cuerpo.y - 1) < 0.05, 'limpiar: queda en el suelo');
+}
+{
+    // Sin torre (no puede poner bloques): espera como siempre
+    const C = juguete();
+    const t = escena({ C, desde: { x: 20.5, y: 1, z: 10.5 }, cuerpo: { x: 18.5, y: 1, z: 10.5, yaw: 0 } });
+    for (let y = 1; y <= 4; y++) C.poner(20, y, 10, SOLIDO);
+    t.lider.y = 5;
+    t.esperar(6);
+    ok(!t.s.torre && t.cuerpo.y < 1.5, 'sin opciones.poner no arma torres');
+}
+
+const PL = await imp('mundo/supervivencia/acompanante-pelea.js');
+// Pelea con un seguidor falso (camina derecho 4 b/s) y monstruos de juguete
+function ring({ ajustes = {}, monstruos = [], jugador = { x: 0, y: 1, z: 0 } } = {}) {
+    const A = { ...PL.PELEA_BASE, ...ajustes };
+    const cuerpo = { x: 1, y: 1, z: 0, yaw: 0 };
+    const golpes = [];
+    const lista = monstruos.map(m => ({ tipo: 'zombi', y: 1, dano: 3, vida: 20, ...m }));
+    const vivos = () => lista.filter(m => m.vida > 0);
+    const ver = m => ({ ...m, mob: m, golpear(n, o) { golpes.push({ n, o, m }); m.vida -= n; return true; } });
+    const p = PL.crearPeleaAcompanante({ ajustes: () => A, jugador: () => jugador, monstruos: (x, z, r) => vivos().filter(m => Math.abs(m.x - x) <= r && Math.abs(m.z - z) <= r).map(ver) });
+    const seg = {
+        estado: 'siguiendo', dejados: 0,
+        perseguir(dt, o, { alcance }) { const d = Math.hypot(o.x - cuerpo.x, o.z - cuerpo.z); if (d <= alcance) return 'alcance'; const k = Math.min(d, 4 * dt) / d; cuerpo.x += (o.x - cuerpo.x) * k; cuerpo.z += (o.z - cuerpo.z) * k; return 'yendo'; },
+        quedarse() { seg.estado = 'quieto'; },
+        irA(dt, q) { const d = Math.hypot(q.x - cuerpo.x, q.z - cuerpo.z); if (d < 0.6) return true; const k = Math.min(d, 4 * dt) / d; cuerpo.x += (q.x - cuerpo.x) * k; cuerpo.z += (q.z - cuerpo.z) * k; return false; },
+        dejar() { seg.dejados++; }
+    };
+    const eventos = [];
+    const correr = (s, f) => { let m = 0; for (let t = 0; t < s; t += DT) { const r = p.paso(DT, seg, cuerpo); if (r) m++; if (p.evento) eventos.push(p.evento); if (f) f(); } return m; };
+    return { p, A, cuerpo, golpes, lista, seg, correr, eventos, jugador };
+}
+{
+    const r = ring({ monstruos: [{ x: 4, z: 3 }, { x: 9, z: 0 }] });
+    r.correr(4);
+    ok(r.lista[0].vida <= 0, `pelea con el zombi a 5 de ti y lo mata (vida ${r.lista[0].vida})`);
+    ok(r.lista[1].vida === 20, 'no va por el que está a 9 de ti');
+    ok(r.golpes.every(g => g.n === 5), 'daño de espada de piedra (5)');
+    const t = r.golpes.length > 1 ? r.golpes.length : 0;
+    ok(t === 4, `4 golpes de 5 para 20 de vida (${t})`);
+    ok(r.golpes[0].o.atacante && Math.abs(r.golpes[0].o.atacante.x - r.cuerpo.x) < 3, 'el golpe sale desde él (atacante, para el cooperativo)');
+    ok(r.eventos[0] === 'pelea' && r.seg.dejados >= 1, 'empieza la pelea y al terminar vuelve a tu rastro');
+}
+{
+    const r = ring({ monstruos: [{ tipo: 'creeper', x: 3, z: 0, dano: 0 }] });
+    r.correr(2);
+    ok(r.golpes.length === 0, 'no se acerca a los creepers (creepers 0)');
+    const r2 = ring({ monstruos: [{ tipo: 'creeper', x: 3, z: 0, dano: 0 }], ajustes: { creepers: 1 } });
+    r2.correr(2);
+    ok(r2.golpes.length > 0, 'con creepers 1, sí');
+    const r3 = ring({ monstruos: [{ x: 3, z: 0 }] });
+    r3.p.ordenar('tranquilo', r3.cuerpo);
+    ok(r3.correr(2) === 0 && r3.golpes.length === 0, '«No pelees»: no pelea y te sigue');
+}
+{
+    // Tres zombis pegados a él que no mueren: «perdería» → se sienta `descanso` s y vuelve con todo
+    const r = ring({ monstruos: [{ x: 1.5, z: 0.5, vida: 1e9 }, { x: 0.5, z: -0.5, vida: 1e9 }, { x: 1.6, z: -0.6, vida: 1e9 }] });
+    r.correr(20 / 9 + 0.3);
+    ok(r.p.sentado && r.eventos.includes('cansado'), `se le acaba el aguante: se sienta (aguante ${r.p.aguante.toFixed(1)})`);
+    const g = r.golpes.length;
+    r.correr(r.A.descanso - 0.5);
+    ok(r.p.sentado && r.golpes.length === g, 'sentado no pelea');
+    r.correr(1);
+    ok(!r.p.sentado && r.eventos.includes('listo') && r.p.aguante > r.A.aguante * 0.5, `tras el descanso vuelve con el aguante lleno (${r.p.aguante.toFixed(1)}, ya gastando: siguen pegados)`);
+}
+{
+    // «Espérame aquí»: defiende su lugar, no lo que está cerca de ti
+    const r = ring({ monstruos: [{ x: 3, z: 3 }, { x: 40, z: 0 }] });
+    r.p.ordenar('quieto', r.cuerpo);
+    r.jugador.x = 38;
+    r.correr(4);
+    ok(r.lista[0].vida <= 0 && r.lista[1].vida === 20, 'defiende el lugar donde lo dejaste, no a ti');
+    ok(Math.hypot(r.cuerpo.x - 1, r.cuerpo.z) < 0.7, 'y vuelve a su lugar');
+    ok(r.p.ordenar('sigue', r.cuerpo) && r.p.orden === 'sigue' && !r.p.ordenar('sigue'), 'ordenar: cambia y no repite');
+}
+{
+    // El acompañante: botones de órdenes, respuesta y pose con marcas
+    const { a, P, paso } = armar();
+    a.invitar('ana');
+    const h = a.hablar('ana');
+    ok(h.ordenes && h.ordenes.length === 3 && h.ordenes.find(o => o.activa).orden === 'sigue', 'Hablar: tres órdenes, «Sígueme» marcada');
+    ok(a.ordenar('quieto') && a.pelea.orden === 'quieto', '«Espérame aquí»');
+    paso(0.2);
+    ok(P.ana.paseo.texto === T.diceQuieto.es, `contesta «${T.diceQuieto.es}»`);
+    ok(a.pose().length === 6 && a.pose()[5] === 0, 'pose: con marcas (golpe, sentado)');
+    a.soltar('ana', '');
+    ok(!a.ordenar('sigue', 'ana'), 'sin acompañarte no recibe órdenes');
+    a.invitar('ana');
+    ok(a.pelea.orden === 'sigue', 'al volver a invitarlo parte en lo básico');
+}
+
+// ---------------------------------------------------------
 // 4. Datos: esquemas, código, JSON y pestaña Vida nombran lo mismo
 // ---------------------------------------------------------
 {
@@ -337,6 +480,9 @@ const T = RD.ACOMPANAR_BASE;
     ok(iguales(Object.keys(nav.properties.seguir.properties), Object.keys(SG.SEGUIR_BASE)), 'esquema: seguir = SEGUIR_BASE');
     ok(iguales(bloque('SEGUIR'), Object.keys(SG.SEGUIR_BASE)), 'pestaña Vida: todos los campos de seguir');
     for (const [k, v] of Object.entries(SG.SEGUIR_BASE)) { const e = nav.properties.seguir.properties[k]; ok(e && v >= e.minimum && v <= e.maximum, `SEGUIR_BASE.${k} dentro del esquema`); }
+    ok(iguales(Object.keys(nav.properties.pelea.properties), Object.keys(PL.PELEA_BASE)), 'esquema: pelea = PELEA_BASE');
+    ok(iguales(bloque('PELEA'), Object.keys(PL.PELEA_BASE)), 'pestaña Vida: todos los campos de pelea');
+    for (const [k, v] of Object.entries(PL.PELEA_BASE)) { const e = nav.properties.pelea.properties[k]; ok(e && v >= e.minimum && v <= e.maximum, `PELEA_BASE.${k} dentro del esquema`); }
     ok(iguales(Object.keys(rut.properties.acompanar.properties), Object.keys(RD.ACOMPANAR_BASE)), 'esquema: acompanar = ACOMPANAR_BASE');
     for (const [k, v] of Object.entries(RD.ACOMPANAR_BASE)) {
         if (typeof v === 'string') { ok(vida.includes(`['${k}', `), `pestaña Vida: ${k}`); continue; }
@@ -345,10 +491,14 @@ const T = RD.ACOMPANAR_BASE;
     }
     const d = json('mundo/datos/navegacion.json');
     for (const k of Object.keys(d.seguir || {})) ok(k in SG.SEGUIR_BASE, `navegacion.json: seguir.${k} existe en el código`);
+    ok(d.pelea && typeof d.pelea === 'object', 'navegacion.json: tiene `pelea` (la pestaña Vida la llena)');
+    for (const k of Object.keys(d.pelea || {})) ok(k in PL.PELEA_BASE, `navegacion.json: pelea.${k} existe en el código`);
     // Lo aplica fijarPaseo (todo navegacion.json) y rutinas.json → acompanar cambia cada frase por separado
     const PD = await imp('mundo/supervivencia/paseos-datos.js');
     PD.fijarPaseo({ seguir: { distancia: 4, raro: 1 } });
     ok(SG.ajustesSeguir().distancia === 4 && SG.ajustesSeguir().miga === SG.SEGUIR_BASE.miga && !('raro' in SG.ajustesSeguir()), 'fijarPaseo: mezcla seguir');
+    PD.fijarPaseo({ pelea: { dano: 7, raro: 1 } });
+    ok(PL.ajustesPelea().dano === 7 && PL.ajustesPelea().radio === PL.PELEA_BASE.radio && !('raro' in PL.ajustesPelea()), 'fijarPaseo: mezcla pelea');
     PD.fijarPaseo({});
     RD.fijarRutinas({ acompanar: { acepta: { es: 'Ya, vamos.' }, gestoAcepta: 'saluda' } });
     ok(RD.acompanarRutinas().acepta.en === 'Ya, vamos.' && RD.acompanarRutinas().gestoAcepta === 'saluda' && RD.acompanarRutinas().boton === RD.ACOMPANAR_BASE.boton, 'rutinas.json → acompanar cambia una frase y deja lo demás');
