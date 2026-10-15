@@ -13,6 +13,7 @@
 import { NAV_BASE } from '../mundo/navegacion.js';
 import { PASEO_BASE } from '../mundo/supervivencia/paseos-datos.js';
 import { SEGUIR_BASE } from '../mundo/seguir.js';
+import { PELEA_BASE } from '../mundo/supervivencia/acompanante-pelea.js';
 import { RUTINA_BASE, AUSENTE_BASE, INCLUIR_BASE, ACOMPANAR_BASE } from '../mundo/supervivencia/rutinas-datos.js';
 import { TEXTOS_RUTINA, horasDeViaje } from '../mundo/supervivencia/rutinas.js';
 import { HORARIOS, LUGARES } from '../mundo/supervivencia/horarios-datos.js';
@@ -70,7 +71,29 @@ const SEGUIR = {
     reintento: ['esperando sin camino, lo intenta de nuevo cada (s)', 'waiting with no path, retries every (s)', 1, 30, 0.5],
     radioAparecer: ['más lejos que esto y sin que lo veas: aparece detrás de ti (bloques)', 'further than this and out of sight: appears behind you (blocks)', 16, 160, 1],
     detras: ['… a esto detrás de ti (bloques)', '… this far behind you (blocks)', 2, 16, 0.5],
-    anguloVista: ['no lo ves más allá de (grados a cada lado)', 'you cannot see it beyond (degrees each side)', 30, 120, 1]
+    anguloVista: ['no lo ves más allá de (grados a cada lado)', 'you cannot see it beyond (degrees each side)', 30, 120, 1],
+    torreAltura: ['si estás esto o más por encima de él (te subiste a un pilar)… (bloques)', 'if you are this much or more above them (you pillared up)… (blocks)', 1.5, 8, 0.5],
+    torreCerca: ['… a menos de esto en horizontal (bloques)…', '… within this horizontally (blocks)…', 1, 8, 0.5],
+    torreEspera: ['… durante esto (s): arma su propia torre al lado de la tuya', '… for this long (s): builds their own tower next to yours', 0, 10, 0.5],
+    torreCada: ['subiendo su torre: un bloque cada esto (s)', 'going up their tower: one block every (s)', 0.15, 3, 0.05],
+    torreBajar: ['bajando: rompe un bloque cada esto (s)', 'going down: breaks one block every (s)', 0.15, 3, 0.05],
+    torreRomper: ['si le pusieron un bloque encima, lo rompe en esto (s)', 'if someone put a block above them, breaks it in (s)', 0.15, 5, 0.05],
+    torreBloques: ['bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre; 0 = no arma torres)', 'blocks they carry when they start coming with you (0 = no towers)', 0, 64, 1]
+};
+// Peleas del acompañante (navegacion.json → pelea, 7i PR 2)
+const PELEA = {
+    radio: ['pelea con monstruos a menos de esto de ti (con «Espérame aquí», de él) (bloques)', 'fights monsters within this of you (with «Wait here», of them) (blocks)', 1, 24, 0.5],
+    alcance: ['les pega desde esto (bloques, de centro a centro)', 'hits them from (blocks, center to center)', 1, 4, 0.1],
+    dano: ['daño por golpe (espada de piedra: 5)', 'damage per hit (stone sword: 5)', 0, 20, 0.5],
+    cadencia: ['un golpe cada esto (s) (espada: 0,625)', 'one hit every (s) (sword: 0.625)', 0.2, 3, 0.025],
+    empuje: ['cuánto empuja el golpe (el del jugador sin correr: 0,45)', 'knockback of the hit (the player walking: 0.45)', 0, 1, 0.05],
+    repensar: ['persiguiendo: corrige hacia el monstruo cada esto (s)', 'chasing: re-aims at the monster every (s)', 0.1, 3, 0.1],
+    rendirse: ['sin poder llegar a un monstruo durante esto (s), lo deja', 'unable to reach a monster for this long (s), gives up', 1, 20, 0.5],
+    creepers: ['1 = también pelea con creepers (0: como los lobos, no se les acerca)', '1 = also fights creepers (0: like wolves, keeps away)', 0, 1, 1],
+    aguante: ['aguante (como la vida del jugador): los monstruos pegados a él se lo gastan', 'stamina (like the player’s health)', 1, 100, 1],
+    apretado: ['un monstruo a menos de esto le gasta el aguante (su daño por segundo) (bloques)', 'a monster within this drains their stamina (its damage per second) (blocks)', 0.5, 4, 0.1],
+    recupera: ['sin monstruos cerca recupera esto de aguante por segundo', 'with no monsters near, recovers this much stamina per second', 0, 10, 0.1],
+    descanso: ['sin aguante («perdería») se sienta esto (s) y vuelve con todo', 'out of stamina, sits down for (s) and comes back full', 1, 60, 0.5]
 };
 const RUTINA = {
     revisar: ['mira la hora cada (s)', 'checks the time every (s)', 0.1, 5, 0.1],
@@ -97,7 +120,12 @@ const FRASES_ACOMPANAR = [['boton', 'botón para invitarlo', 'button to invite']
     ['corta', 'acepta e iba a ver a {quien}', 'accepts while going to see {quien}'], ['despide', 'se despide ({lugar} = su sitio)', 'says goodbye ({lugar} = their spot)'],
     ['cambia', 'otro toma su lugar ({quien})', 'someone else takes over ({quien})'], ['espera', 'te alejaste: espera', 'you went too far: waits'],
     ['ocupado', 'acompaña a otro jugador ({quien})', 'with another player ({quien})'], ['ahoraNo', 'no puede ahora', 'cannot right now'],
-    ['lugar', 'su minijuego, mientras te acompaña ({lugar}, {quien})', 'their minigame while with you ({lugar}, {quien})']];
+    ['lugar', 'su minijuego, mientras te acompaña ({lugar}, {quien})', 'their minigame while with you ({lugar}, {quien})'],
+    ['ordenSigue', 'botón: orden básica (te sigue y decide solo)', 'button: basic order (follows, decides alone)'], ['ordenQuieto', 'botón: espérame aquí', 'button: wait here'],
+    ['ordenTranquilo', 'botón: no pelees', 'button: don\'t fight'], ['diceSigue', 'contesta a «Sígueme»', 'answers «Follow me»'],
+    ['diceQuieto', 'contesta a «Espérame aquí»', 'answers «Wait here»'], ['diceTranquilo', 'contesta a «No pelees»', 'answers «Don\'t fight»'],
+    ['cansado', 'sin aguante: se sienta', 'out of stamina: sits down'], ['listo', 'terminó de descansar', 'done resting'],
+    ['sinBloques', 'su torre: sin bloques', 'their tower: out of blocks']];
 const TEXTOS_PANEL = { yendo: ['yendo a ver a alguien', 'going to see someone'], yendoLugar: ['yendo a un lugar', 'going to a place'], visitando: ['de visita donde alguien', 'visiting someone'], visitandoLugar: ['de visita en un lugar', 'visiting a place'], volviendo: ['volviendo', 'heading back'], acompanando: ['acompañándote', 'keeping you company'], acompanandoOtro: ['acompañando a otro jugador ({quien})', 'with another player ({quien})'] };
 const hhmm = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 // Destinos fijos de la prueba (además de las personas y los lugares de posiciones.json)
@@ -349,6 +377,7 @@ export async function montarVida(ctx) {
         grupo(t('Buscar camino y caminar', 'Pathfinding and walking'), 'navegacion', 'caminar', CAMINAR, NAV_BASE);
         grupo(t('Paseos de los amigos', 'Friends’ walks'), 'navegacion', 'paseo', PASEO, PASEO_BASE);
         grupo(t('Te acompaña: cómo te sigue', 'Comes with you: how they follow'), 'navegacion', 'seguir', SEGUIR, SEGUIR_BASE, false);
+        grupo(t('Te acompaña: cómo pelea', 'Comes with you: how they fight'), 'navegacion', 'pelea', PELEA, PELEA_BASE, false);
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
     }
     const ESTADOS = {

@@ -40,7 +40,7 @@ const MAX_DIST = 7; // más lejos, el panel se cierra solo
 // pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en},
 // carta { para() -> clave | null, entregar(clave) -> Promise<frase|null> } (7f-1: carta del Venjy del correo),
 // saludar(clave, tipo), momento(clave) y grupo(clave) (bloques 6b y 6c-2: animación de amistad, momento especial y saludo del
-// grupo; misiones.js suelta antes la retención), acompanar { hablar(clave) → { mio, texto, motivo }, invitar(clave), soltar(clave) } (7i)
+// grupo; misiones.js suelta antes la retención), acompanar { hablar(clave) → { mio, texto, motivo, ordenes? }, invitar(clave), soltar(clave), ordenar(orden, clave) } (7i)
 export function crearHablar(ctx) {
     const { amistad, jugador, dy, nombres, inventario, sonidos } = ctx;
     let idioma = ctx.idioma || 'es';
@@ -289,7 +289,19 @@ export function crearHablar(ctx) {
         if (vista === 'temas' && ctx.acompanar) {
             const a = ctx.acompanar.hablar(clave);
             const caja = document.createElement('div'); caja.className = 'acompanar-hablar';
-            if (a.mio) caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.soltar(clave); }, 'boton-acompanar'));
+            if (a.mio) {
+                // Órdenes (7i PR 2): la que tiene ahora queda marcada
+                if (a.ordenes) {
+                    const fo = document.createElement('div'); fo.className = 'acompanar-ordenes';
+                    for (const o of a.ordenes) {
+                        const b = boton(o.texto, () => { ctx.cerrarPanel(); ctx.acompanar.ordenar(o.orden, clave); }, 'boton-acompanar' + (o.activa ? ' activa' : ''));
+                        b.disabled = o.activa;
+                        fo.appendChild(b);
+                    }
+                    caja.appendChild(fo);
+                }
+                caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.soltar(clave); }, 'boton-acompanar'));
+            }
             else if (!a.motivo) caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.invitar(clave); }, 'boton-acompanar'));
             else {
                 const req = a.motivo.nivel !== undefined ? tx().req.nivel(L(nombreNivel(a.motivo.nivel, base, clave))) : a.motivo.texto;

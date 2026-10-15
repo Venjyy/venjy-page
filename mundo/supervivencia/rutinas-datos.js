@@ -58,6 +58,16 @@ export const ACOMPANAR_BASE = {
     ocupado: { es: 'Ahora ando con {quien}.', en: "I'm with {quien} right now." },
     ahoraNo: { es: 'Ahora no puedo.', en: "I can't right now." },
     lugar: { es: 'Se juega {lugar}: vuelve allá con {quien}.', en: "It's played {lugar}: head back there with {quien}." },
+    // 7i PR 2: órdenes, peleas y su torre
+    ordenSigue: { es: 'Sígueme', en: 'Follow me' },
+    ordenQuieto: { es: 'Espérame aquí', en: 'Wait here' },
+    ordenTranquilo: { es: 'No pelees', en: "Don't fight" },
+    diceSigue: { es: '¡Voy contigo!', en: "I'm right behind you!" },
+    diceQuieto: { es: 'Aquí te espero.', en: "I'll wait here." },
+    diceTranquilo: { es: 'Tranqui, no me meto.', en: "Okay, I'll stay out of it." },
+    cansado: { es: '¡Son muchos! Me siento un rato.', en: "Too many of them! I'll sit for a bit." },
+    listo: { es: 'Listo, ¡sigamos!', en: "Okay, let's keep going!" },
+    sinBloques: { es: '¡No tengo más bloques!', en: "I'm out of blocks!" },
     gestoAcepta: 'asiente',
     gestoDespide: 'saluda'
 };

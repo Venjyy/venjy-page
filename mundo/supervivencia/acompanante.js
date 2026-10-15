@@ -8,6 +8,8 @@
 //
 // Capas (mundo/NPC-VIDA.md §3): esto decide; paseos.js lo lleva y lo anima; seguir.js y navegacion.js lo mueven.
 // Lo que depende de su lugar (su minijuego) sale con motivo (`motivoLugar`); el panel, misiones y tienda viajan con él.
+// 7i PR 2: pelea con los monstruos cerca de ti, recibe órdenes en «Hablar» (Sígueme / Espérame aquí / No pelees) y
+// si «perdería» se sienta a descansar (acompanante-pelea.js); arma su propia torre si te subes a un pilar (seguir.js).
 //
 // Cooperativo («decide uno y los demás dibujan»): el anfitrión lleva la lista de quién acompaña a quién y la manda a
 // todos (`co { a: 'lista', l: { clave: id } }`); el invitado pide (`co { a: 'pide', k }`) y espera la lista para
@@ -18,11 +20,13 @@
 // =========================================================
 import { ajustesRutinas, acompanarRutinas } from './rutinas-datos.js';
 import { HORARIOS, LUGARES } from './horarios-datos.js';
+import { crearPeleaAcompanante, ORDENES } from './acompanante-pelea.js';
 
 const r2 = v => Math.round(v * 100) / 100;
 
 // ctx: paseos, rutinas, persona(c), nivel(c) (amistad), nombre(c), idioma(), libre(n) (sin minijuego, ronda ni jefe),
-// pausa() (el jugador está en un minijuego o una escena: el acompañante espera donde está), avisar(texto) (HUD)
+// pausa() (el jugador está en un minijuego o una escena: el acompañante espera donde está), avisar(texto) (HUD),
+// monstruos(x, z, r) y jugadorPos() (para pelear, en las coordenadas de los amigos), torre { poner, quitar, romper }
 export function crearAcompanante(ctx) {
     const { paseos, rutinas, persona } = ctx;
     let mio = null;            // clave del amigo que te acompaña (lo simula este equipo)
@@ -36,6 +40,9 @@ export function crearAcompanante(ctx) {
     const nombre = c => (ctx.nombre ? ctx.nombre(c) : c);
     const lugarDe = c => L(HORARIOS[c] && LUGARES[HORARIOS[c].ancla]);
     const con = (o, vars) => L(o).replace('{quien}', vars.quien || '').replace('{lugar}', vars.lugar || '');
+    const pelea = crearPeleaAcompanante({ monstruos: ctx.monstruos || (() => []), jugador: ctx.jugadorPos || (() => ({ x: 0, y: 0, z: 0 })) });
+    // Botón y respuesta de cada orden (rutinas.json → acompanar)
+    const ORDEN_TX = { sigue: ['ordenSigue', 'diceSigue'], quieto: ['ordenQuieto', 'diceQuieto'], tranquilo: ['ordenTranquilo', 'diceTranquilo'] };
 
     // ¿Por qué no puede acompañarte ahora? null = puede. { nivel } = le falta amistad (Hablar lo muestra con su nombre)
     function motivo(c) {
@@ -54,7 +61,13 @@ export function crearAcompanante(ctx) {
         const e = rutinas.estado(c);
         const iba = (e.estado === 'yendo' || e.estado === 'visitando') && e.visita && rutinas.destinoDe ? rutinas.destinoDe(e.visita) : null;
         rutinas.acompanar(c);
-        if (!paseos.seguir(c, { pausa: ctx.pausa })) return false;
+        pelea.reiniciar();
+        const seguir = {
+            pausa: ctx.pausa, torre: ctx.torre,
+            mando: (dt, seg, cuerpo, detalle) => pelea.paso(dt, seg, cuerpo, detalle),
+            marcas: () => (pelea.golpe ? 1 : 0) | (pelea.sentado ? 2 : 0)
+        };
+        if (!paseos.seguir(c, seguir)) return false;
         mio = c;
         const t = T();
         rutinas.decir(c, iba ? con(t.corta, { quien: nombre(iba) }) : L(t.acepta), t.gestoAcepta || null);
@@ -107,13 +120,14 @@ export function crearAcompanante(ctx) {
 
     const api = {
         get mio() { return mio; },
+        pelea,
         // 'yo' si te acompaña a ti, el id del jugador si acompaña a otro, o null
         de: c => (mio === c ? 'yo' : ajenos.get(c) || null),
         motivo,
         // Para «Hablar»: { mio, texto del botón, motivo { texto } | { nivel } | null }
         hablar(c) {
             const t = T();
-            if (mio === c) return { mio: true, texto: L(t.soltar), motivo: null };
+            if (mio === c) return { mio: true, texto: L(t.soltar), motivo: null, ordenes: ORDENES.map(o => ({ orden: o, texto: L(t[ORDEN_TX[o][0]]), activa: pelea.orden === o })) };
             return { mio: false, texto: L(t.boton), motivo: pedido && pedido.k === c ? { texto: '…' } : motivo(c) };
         },
         // opciones.forzar: sin mirar la amistad ni si está libre (/rutina <persona> acompanar)
@@ -136,6 +150,17 @@ export function crearAcompanante(ctx) {
             }
             return soltarLocal(c, porque);
         },
+        // Órdenes (7i PR 2): 'sigue' (lo básico) · 'quieto' («Espérame aquí») · 'tranquilo' («No pelees»)
+        ordenar(orden, c = mio) {
+            if (!c || mio !== c) return false;
+            const antes = pelea.orden;
+            if (!pelea.ordenar(orden, persona(c))) return false;
+            const s = paseos.seguidor(c);
+            if (antes === 'quieto' && s) s.dejar();
+            const t = T();
+            rutinas.decir(c, L(t[ORDEN_TX[orden][1]]), orden === 'quieto' ? null : t.gestoAcepta || null);
+            return true;
+        },
         // Lo que depende de su lugar (su minijuego): el motivo para dejarlo apagado, o null
         motivoLugar(c) {
             if (mio === c) return con(T().lugar, { quien: nombre(c), lugar: lugarDe(c) });
@@ -153,8 +178,11 @@ export function crearAcompanante(ctx) {
                 if (rutinas.estado(c).estado === 'acompanando') rutinas.retomar(c);
                 return;
             }
-            const s = paseos.seguidor(mio);
-            if (s && s.evento === 'espera') rutinas.decir(mio, L(T().espera));
+            const s = paseos.seguidor(mio), t = T();
+            if (s && s.evento === 'espera') rutinas.decir(mio, L(t.espera));
+            if (s && s.evento === 'sinBloques') rutinas.decir(mio, L(t.sinBloques));
+            if (pelea.evento === 'cansado') rutinas.decir(mio, L(t.cansado));
+            else if (pelea.evento === 'listo') rutinas.decir(mio, L(t.listo));
         },
         // Cooperativo (main.js): red({ yo, anfitrion, enviar, nombre }) al entrar a una sala; red(null) al salir (todos vuelven)
         red(modo) {
@@ -188,10 +216,11 @@ export function crearAcompanante(ctx) {
             for (const [k, v] of Object.entries(lista)) if (v === id) { delete lista[k]; cambio = true; }
             if (cambio) { difundir(); aplicarLista(lista); }
         },
-        // Lo que viaja dentro de tu `p`: [clave, x, y, z, yaw] en las coordenadas de los amigos (o null)
+        // Lo que viaja dentro de tu `p`: [clave, x, y, z, yaw, marcas (1 golpea, 2 sentado)] en las coordenadas de los
+        // amigos (o null)
         pose() {
             const n = mio && persona(mio);
-            return n ? [mio, r2(n.x), r2(n.y), r2(n.z), r2(n.yaw)] : null;
+            return n ? [mio, r2(n.x), r2(n.y), r2(n.z), r2(n.yaw), (pelea.golpe ? 1 : 0) | (pelea.sentado ? 2 : 0)] : null;
         },
         // El acompañante de otro jugador, ya interpolado (coop.js, cada cuadro)
         dibujar(id, k, o) { if (ajenos.get(k) === id) paseos.posar(k, o); }

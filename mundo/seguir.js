@@ -10,10 +10,18 @@
 // quedó (evento 'espera': quien lo usa dice «¡Espérame!»); si el líder sigue alejándose más de `radioAparecer` y nadie
 // lo ve, aparece detrás de él fuera de la vista (evento 'aparecio'), como los lobos de Minecraft. Nunca a la vista.
 //
-// Estados: 'quieto' (cerca, te mira) · 'siguiendo' (modo 'rastro' o 'camino') · 'esperando'.
+// Torre (7i PR 2): si te subes a un pilar (estás `torreAltura` o más por encima, a menos de `torreCerca`, durante
+// `torreEspera` s), arma su propia torre al lado de la tuya: salta y pone un bloque bajo los pies (opciones.poner) hasta
+// tu altura; si le pusieron un bloque encima, lo rompe (opciones.romper) y se lo guarda. Lleva `torreBloques` bloques:
+// sin bloques se queda donde llegó (evento 'sinBloques'). Si bajas, baja rompiéndola (opciones.quitar) y los recupera;
+// si te vas por arriba, la deja y la quita (y los recupera) cuando no la ves.
+// Peleas: `perseguir(dt, p)` lo lleva hasta un monstruo (quien decide la pelea es supervivencia/acompanante-pelea.js) y
+// `dejar()` lo devuelve a tu rastro.
+//
+// Estados: 'quieto' (cerca, te mira) · 'siguiendo' (modo 'rastro', 'camino' o 'torre') · 'esperando' · 'peleando'.
 // Valores: SEGUIR_BASE + mundo/datos/navegacion.json → `seguir` (pestaña Vida del Estudio).
 // =========================================================
-import { apoyo, cercaPisable, crearCaminante, ajustesNavegacion } from './navegacion.js';
+import { apoyo, cercaPisable, crearCaminante, ajustesNavegacion, LIBRE } from './navegacion.js';
 
 export const SEGUIR_BASE = {
     distancia: 2.5,     // se queda a esto de ti (bloques)
@@ -32,7 +40,14 @@ export const SEGUIR_BASE = {
     reintento: 3,       // esperando porque no hay camino: lo intenta de nuevo cada esto (s)
     radioAparecer: 40,  // más lejos que esto y sin que lo veas: aparece detrás de ti
     detras: 5,          // … a esto detrás de ti (bloques, por tu rastro si se puede)
-    anguloVista: 70     // grados a cada lado de hacia dónde miras: más allá no lo ves (para aparecer sin que se note)
+    anguloVista: 70,    // grados a cada lado de hacia dónde miras: más allá no lo ves (para aparecer sin que se note)
+    torreAltura: 2.5,   // estás esto o más por encima de él (te subiste a un pilar)…
+    torreCerca: 5,      // … a menos de esto en horizontal (bloques)…
+    torreEspera: 2,     // … durante esto (s): arma su propia torre al lado de la tuya
+    torreCada: 0.5,     // subiendo: un bloque cada esto (s)
+    torreBajar: 0.4,    // bajando: rompe un bloque cada esto (s)
+    torreRomper: 0.8,   // si le pusieron un bloque encima, lo rompe en esto (s)
+    torreBloques: 16    // bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre)
 };
 let ajustesS = { ...SEGUIR_BASE };
 // navegacion.json → `seguir` (ignora lo que no sea número finito)
@@ -67,11 +82,16 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
     let i = -1;       // la miga hacia la que camina (-1: fuera del rastro)
     let veda = -1; // migas hasta aquí no le sirven (más adelante estaba tapado): no vuelve a ellas
     let yObj = NaN, andado = 0, reloj = 0, relojBuscar = 0, faseW = 0;
+    let torre = null, relojTorre = 0; // torre: { fase: 'ir' | 'subir' | 'arriba' | 'bajar', bx, bz, y (pies), bloques, reloj }
+    const restos = []; // bloques de torres que dejó atrás: los quita (y los recupera) cuando no los ves
     const s = {
         estado: 'quieto', modo: 'rastro', porque: null, evento: null,
         moviendo: false, fase: 0, rapidez: 1, espera: 0, mirarYaw: undefined,
+        bloques: S().torreBloques | 0, // los que lleva para su torre
         get migas() { return migas; },
         get i() { return i; },
+        get torre() { return torre; },
+        get restos() { return restos; },
         caminante: w,
         // Por dónde pisó el líder (cada cuadro; solo guarda cada `miga` bloques). Sin suelo bajo los pies (nadando
         // en lo hondo, cayendo de muy alto, volando): corta el rastro
@@ -91,15 +111,64 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
             if (veda < -1) veda = -1;
         },
         // Olvida el rastro y queda quieto (al empezar a acompañar o al soltarlo)
-        reiniciar() { migas.length = 0; i = -1; veda = -1; w.parar(); s.modo = 'rastro'; s.estado = 'quieto'; s.porque = null; s.evento = null; s.espera = 0; yObj = NaN; },
+        reiniciar() { dejarTorre(); migas.length = 0; i = -1; veda = -1; w.parar(); s.modo = 'rastro'; s.estado = 'quieto'; s.porque = null; s.evento = null; s.espera = 0; yObj = NaN; },
         parar() { w.parar(); s.moviendo = false; },
+        // Quita al tiro las torres que puso (al dejar de acompañarte). Si estaba arriba de una, queda en el suelo
+        limpiar() {
+            if (torre) { const b = torre.bloques[0]; if (b) { cuerpo.y = b[1]; cuerpo.yObj = b[1]; } }
+            dejarTorre();
+            quitarRestos();
+        },
+        // Pelea: camina hasta `p` ({ x, y, z }) y lo mira al llegar a `alcance`. Devuelve 'alcance' | 'yendo' |
+        // 'sin-camino' | 'torre' (está arriba de su torre: no baja a pelear)
+        perseguir(dt, p, { alcance = 2, repensar = 0.5, detalle = true } = {}) {
+            s.evento = null; s.moviendo = false; s.mirarYaw = undefined;
+            if (torre) return 'torre';
+            s.estado = 'peleando';
+            const d = Math.hypot(p.x - cuerpo.x, p.z - cuerpo.z);
+            if (d <= alcance && Math.abs(p.y - cuerpo.y) < 2) {
+                if (w.destino) w.parar();
+                mirar(p, dt * 2); w.asentar(dt);
+                return 'alcance';
+            }
+            relojBuscar += dt;
+            if (!w.destino || w.estado === 'llego' || (relojBuscar >= repensar && Math.hypot(w.destino.x - p.x, w.destino.z - p.z) > alcance * 0.5)) {
+                relojBuscar = 0;
+                const q = cercaPisable(C, p.x, p.y, p.z, { ...N(), radioPisable: 2 }) || p;
+                faseW = w.fase; w.ir(q);
+            }
+            const e = w.actualizar(dt, { detalle });
+            s.moviendo = w.moviendo; s.fase += w.fase - faseW; faseW = w.fase;
+            return e === 'sin-camino' ? 'sin-camino' : 'yendo';
+        },
+        // Quieto donde está, mirando a `p` (orden «Espérame aquí»; anota igual tu rastro)
+        quedarse(dt, p) { s.evento = null; s.moviendo = false; if (torre) return; if (w.destino) w.parar(); s.estado = 'quieto'; if (p) mirar(p, dt); w.asentar(dt); },
+        // Ir a un punto (volver a donde le dijiste que esperara). true al llegar
+        irA(dt, p, detalle = true) {
+            s.evento = null; s.moviendo = false;
+            if (Math.hypot(p.x - cuerpo.x, p.z - cuerpo.z) < 0.6) { if (w.destino) w.parar(); return true; }
+            if (!w.destino || Math.hypot(w.destino.x - p.x, w.destino.z - p.z) > 0.5) { faseW = w.fase; w.ir(p); }
+            const e = w.actualizar(dt, { detalle });
+            s.moviendo = w.moviendo; s.fase += w.fase - faseW; faseW = w.fase;
+            if (e === 'sin-camino' || e === 'llego') { w.parar(); return true; }
+            return false;
+        },
+        // Termina la pelea (o la espera de una orden): vuelve a tu rastro desde donde quedó
+        dejar() { w.parar(); s.estado = 'siguiendo'; s.modo = 'rastro'; s.porque = null; i = -1; reloj = 0; andado = 0; yObj = NaN; },
         // lider: { x, y, z, yaw? }; visible(p) → ¿lo ve el líder?; detalle: cerca del jugador (mira los bloques)
         actualizar(dt, { lider, visible = () => false, detalle = true }) {
             const A = S(), NV = N();
             s.moviendo = false; s.evento = null;
             const dL = Math.hypot(cuerpo.x - lider.x, cuerpo.z - lider.z), dy = Math.abs(cuerpo.y - lider.y);
-            // Muy lejos y nadie lo ve: aparece detrás del líder
+            if (restos.length) limpiarRestos(visible);
+            // Muy lejos y nadie lo ve: aparece detrás del líder (si estaba en su torre, la deja)
             if (dL > A.radioAparecer && !visible(cuerpo) && aparecer(lider, visible)) { s.evento = 'aparecio'; return s.estado; }
+            // Su torre (sube, espera arriba o baja rompiéndola)
+            if (torre && pasoTorre(dt, lider, A, NV, detalle)) return s.estado;
+            // Te subiste a un pilar: arma la suya al lado (si puede poner bloques)
+            if (!torre && opciones.poner && lider.y - cuerpo.y >= A.torreAltura && dL <= A.torreCerca) {
+                if ((relojTorre += dt) >= A.torreEspera && armarTorre(lider, NV)) return s.estado;
+            } else relojTorre = 0;
             if (s.estado === 'esperando') {
                 s.espera += dt;
                 const sigue = dL < A.retomar && (s.porque === 'lejos' || s.espera >= A.reintento);
@@ -131,6 +200,106 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
             return s.estado;
         }
     };
+    // ---- Torre ----
+    // Columna junto a la tuya donde pueda pararse a su altura (lo que haya encima lo rompe al subir)
+    function armarTorre(lider, NV) {
+        const y0 = Math.round(cuerpo.y), lx = Math.floor(lider.x), lz = Math.floor(lider.z);
+        relojTorre = 0;
+        if (s.bloques <= 0) { s.evento = 'sinBloques'; return false; }
+        let mejor = null, dm = Infinity;
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+            if (!dx && !dz) continue;
+            const bx = lx + dx, bz = lz + dz, y = apoyo(C, bx + 0.5, y0, bz + 0.5, NV);
+            if (!Number.isFinite(y) || y >= Math.round(lider.y)) continue;
+            // Preferible libre hacia arriba (romper cuesta tiempo)
+            let tapados = 0;
+            for (let h = y + NV.alto; h < Math.round(lider.y) + NV.alto; h++) if (C.celda(bx, h, bz) !== LIBRE) tapados++;
+            const d = Math.hypot(bx + 0.5 - cuerpo.x, bz + 0.5 - cuerpo.z) + Math.abs(y - y0) * 2 + tapados * 3 + (dx && dz ? 0.3 : 0);
+            if (d < dm) { dm = d; mejor = { bx, bz, y }; }
+        }
+        if (!mejor) return false;
+        torre = { fase: 'ir', ...mejor, bloques: [], reloj: 0 };
+        s.estado = 'siguiendo'; s.modo = 'torre'; s.porque = null;
+        faseW = w.fase; w.ir({ x: mejor.bx + 0.5, y: mejor.y, z: mejor.bz + 0.5 });
+        return true;
+    }
+    // Deja la torre donde está (la quita después, cuando no la ves)
+    function dejarTorre() {
+        if (!torre) return;
+        restos.push(...torre.bloques);
+        torre = null; relojTorre = 0;
+        if (s.modo === 'torre') { s.modo = 'rastro'; i = -1; }
+    }
+    function quitarRestos() {
+        if (opciones.quitar) for (const b of restos.reverse()) opciones.quitar(b[0], b[1], b[2]);
+        s.bloques += restos.length;
+        restos.length = 0;
+    }
+    function limpiarRestos(visible) {
+        // Mientras esté parado cerca de una, o la veas, se queda
+        if (restos.some(b => Math.hypot(b[0] + 0.5 - cuerpo.x, b[2] + 0.5 - cuerpo.z) < 3 || visible({ x: b[0] + 0.5, y: b[1], z: b[2] + 0.5 }))) return;
+        quitarRestos();
+    }
+    // Un cuadro de la torre. false: ya no está en la torre (sigue lo de siempre)
+    function pasoTorre(dt, lider, A, NV, detalle) {
+        const t = torre, cx = t.bx + 0.5, cz = t.bz + 0.5;
+        s.moviendo = false; s.estado = 'siguiendo'; s.modo = 'torre';
+        const dL = Math.hypot(cuerpo.x - lider.x, cuerpo.z - lider.z);
+        if (dL > A.radioEspera) { dejarTorre(); return false; } // te teletransportaron: espera o aparece como siempre
+        if (t.fase === 'ir') {
+            const d = Math.hypot(cx - cuerpo.x, cz - cuerpo.z);
+            if (d < 0.35 || (w.estado === 'llego' && d < 1.2)) {
+                w.parar(); cuerpo.x = cx; cuerpo.z = cz; cuerpo.y = t.y; yObj = t.y;
+                t.fase = 'subir'; t.reloj = 0;
+                return true;
+            }
+            const e = w.actualizar(dt, { detalle });
+            s.moviendo = w.moviendo; s.fase += w.fase - faseW; faseW = w.fase;
+            if (e === 'sin-camino' || (e === 'llego' && d >= 1.2)) { torre = null; esperar('camino'); }
+            return true;
+        }
+        mirar(lider, dt);
+        const sobre = lider.y - t.y;
+        if (t.fase === 'arriba') {
+            if (sobre >= 1.5 && dL <= A.torreCerca && s.bloques > 0) { t.fase = 'subir'; t.reloj = 0; }
+            else if (sobre <= -1.5 && t.bloques.length) { t.fase = 'bajar'; t.reloj = 0; }
+            else if (dL > A.distancia + A.holgura + 1) { dejarTorre(); return false; } // te fuiste por arriba: te sigue
+        } else if (t.fase === 'subir') {
+            if (sobre < 0.5) t.fase = 'arriba';
+            else {
+                // ¿Le pusieron algo encima? Lo rompe primero (más lento que poner) y se lo guarda
+                let tapa = -1;
+                for (let h = NV.alto; h >= 1 && tapa < 0; h--) if (C.celda(t.bx, t.y + h, t.bz) !== LIBRE) tapa = t.y + h;
+                t.reloj += dt;
+                if (tapa >= 0) {
+                    if (t.reloj >= A.torreRomper) {
+                        t.reloj = 0;
+                        if (opciones.romper && opciones.romper(t.bx, tapa, t.bz)) { s.bloques++; s.evento = 'rompe'; }
+                        else t.fase = 'arriba'; // no se puede romper (roca madre, una mesa…): se queda donde llegó
+                    }
+                } else if (t.reloj >= A.torreCada) {
+                    t.reloj = 0;
+                    if (s.bloques <= 0) { t.fase = 'arriba'; s.evento = 'sinBloques'; }
+                    else if (opciones.poner(t.bx, t.y, t.bz)) { t.bloques.push([t.bx, t.y, t.bz]); t.y++; s.bloques--; s.evento = 'salta'; }
+                    else t.fase = 'arriba';
+                }
+            }
+        } else if (t.fase === 'bajar') {
+            if (sobre >= 1.5 && dL <= A.torreCerca && s.bloques > 0) { t.fase = 'subir'; t.reloj = 0; }
+            else if ((t.reloj += dt) >= A.torreBajar) {
+                t.reloj = 0;
+                const b = t.bloques[t.bloques.length - 1];
+                if (b && b[1] === t.y - 1) { if (opciones.quitar) opciones.quitar(b[0], b[1], b[2]); t.bloques.pop(); t.y--; s.bloques++; s.evento = 'rompe'; }
+                if (!t.bloques.length) { torre = null; s.modo = 'rastro'; i = -1; cuerpo.y = t.y; yObj = NaN; return false; }
+            }
+        }
+        // La altura sigue a los pies: sube de un salto, baja un poco más lento
+        cuerpo.x = cx; cuerpo.z = cz;
+        cuerpo.y += (t.y - cuerpo.y) * Math.min(1, dt * (t.y > cuerpo.y ? 18 : 10));
+        if (Math.abs(t.y - cuerpo.y) < 0.02) cuerpo.y = t.y;
+        cuerpo.yObj = t.y;
+        return true;
+    }
     function cortar() { if (migas.length && migas[migas.length - 1] !== null) migas.push(null); }
     function mirar(lider, dt) {
         const meta = Math.atan2(lider.x - cuerpo.x, lider.z - cuerpo.z);
@@ -234,6 +403,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         return true;
     }
     function poner(x, y, z) {
+        dejarTorre();
         w.parar();
         cuerpo.x = x; cuerpo.y = y; cuerpo.z = z; cuerpo.yObj = y; yObj = y;
         s.estado = 'quieto'; s.modo = 'rastro'; s.porque = null; reloj = 0; andado = 0;
