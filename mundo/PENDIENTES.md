@@ -1183,9 +1183,11 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
 | 8·M | Mundo abierto: modo combate, cámara 3.ª persona, lock-on, enemigos con aviso, primer jefe | Cuando la arena funcione bien (decide el dueño); por defecto, fase comercial C1 |
 | 8·E | Pareja con el acompañante, maestros por bastión, Goliath, Danzante, más jefes, PvP | Comercial, fases 4 y 4b y Acceso anticipado |
 
-- [x] 8·0 Diseño (2026-10-15, rama `combate-diseno-8-0`, solo docs): `COMBATE.md` §14-28. Preguntas para el dueño en §27.
+- [x] 8·0 Diseño (2026-10-15, rama `combate-diseno-8-0`, solo docs): `COMBATE.md` §14-28. Respuestas del dueño en §27.
 
 **PRs del bloque 8.** Cada PR parte de su sección de `COMBATE.md`. Las animaciones las hace **Sonnet como mínimo** y Opus las revisa contra §1 con la hoja de cuadros (`capturar gesto --hoja`). Cada PR trae su táctil jugable (o «no aplica»), dice qué toca del cooperativo y pasa `validar --contra HEAD`, `estudio.mjs` y su prueba.
+
+**Orden (prioridad del dueño, 2026-10-15: ver algo jugable pronto):** N1 → N3 → N4 → L1 → **L2 = primera pelea jugable** (Sekiro contra un Lalo de práctica con un patrón fijo) → N5 → L3 → L4 → N2 → N6 → L5 → L6 → N7 → L7 → L8. Hasta N6, los valores se editan en los JSON (ya existen desde N3). Respuestas del dueño en `COMBATE.md` §27.
 
 **Tamaños:** chico, hasta ~400 líneas; mediano, ~400-1000; grande, más de 1000 o con varias animaciones pulidas.
 
@@ -1210,7 +1212,7 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
   - Qué mirar: nada en el juego todavía (es puro).
   - Tamaño: grande.
 - [ ] **N4 · Intenciones PC y táctil** (§15.1)
-  - Qué: `combate/intenciones.js` (perfiles de teclas desde `combate.json`, deslizamientos sobre un botón, buffer, vibración) y botones de la arena en `ui-layout.json → arena`, arrastrables.
+  - Qué: `combate/intenciones.js` (perfiles de teclas y de **mando** (Gamepad API) desde `combate.json`, deslizamientos sobre un botón, buffer, vibración) y botones de la arena en `ui-layout.json → arena`, arrastrables.
   - Prueba: `combate-intenciones.mjs` (eventos simulados → intenciones, umbrales de deslizamiento, buffer de PC y de táctil).
   - Táctil: es este PR. Cooperativo: no aplica.
   - Qué mirar: en el celular, que deslizar en ATACAR cambie la altura sin falsos positivos.
@@ -1237,13 +1239,13 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
 **8·L · Arena de Lalo contra Moisés** (Etapa A5, reemplaza al punto «Lalo vs Moisés»). Modelo: Opus; Sonnet para las animaciones.
 
 - [ ] **L1 · Escenario, entrada y reglas de la arena** (§19.1, §19.3-19.5, §19.7)
-  - Qué: `arena/` con la escena propia del lago congelado; la entrada (guion `duelo-reto`, viaje con la ráfaga de nieve, VS con los retratos de las cartas, vuelo de cámara, «¡Peleen!»); menú; rondas y reloj; cámara de lado al eje; HUD; salir y revancha; peleadores con guardia y paso genéricos y un golpe de prueba; `arena.json` y su pestaña.
+  - Qué: `arena/` con la escena propia del lago congelado; la entrada (guion `duelo-reto`, viaje con la ráfaga de nieve, VS con los retratos de las cartas, vuelo de cámara, «¡Peleen!»); menú; rondas y reloj; cámara de lado al eje; HUD; premios (objetos y amistad); salir y revancha; peleadores con guardia y paso genéricos y un golpe de prueba; `arena.json` y su pestaña.
   - Prueba: `arena.mjs` (rondas, eje, límites, encuadre de la cámara y salida que restaura todo).
   - Táctil: los botones de la arena jugables. Cooperativo: no aplica (L7).
   - Qué mirar: la entrada completa y que la cámara nunca pierda a nadie con pasos laterales.
   - Tamaño: grande.
 - [ ] **L2 · Sekiro I: guardia, tajos, desvío y postura** (§16.1-16.3: S1-S10)
-  - Qué: `estilo-sekiro.json`; guardia, paso, combo de 4, golpe fuerte, desvío normal y perfecto con penalización, bloqueo, esquiva; postura con su regeneración; chispas y campana.
+  - Qué: **primera pelea jugable**. Contra un Lalo de práctica que ataca con un patrón fijo (la CPU de verdad llega en L4). `estilo-sekiro.json`; guardia, paso, combo de 4, golpe fuerte, desvío normal y perfecto con penalización, bloqueo, esquiva; postura con su regeneración; chispas y campana.
   - Prueba: `estilo-sekiro.mjs` (ventanas, penalización, tabla de postura, regeneración según la vida).
   - Táctil: sí. Cooperativo: no aplica.
   - Qué mirar: el clang del perfecto, el combo y cancelar a desvío.
@@ -1299,9 +1301,10 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
 
 - [ ] **E1 · Pareja con el acompañante** (órdenes rápidas y golpes de a dos).
 - [ ] **E2 · Maestros por bastión** (con las facciones).
-- [ ] **E3-E4 · Goliath** (base y carga; onda con los bloques que revientan y vuelven).
+- [ ] **E3-E4 · Goliath** (base y carga; onda que **cambia el suelo de verdad y lo repara**, con bloques que vuelan y vuelven, sin tocar lo construido; `COMBATE.md` §21).
 - [ ] **E5-E6 · Danzante** (dash y rango; combo aéreo).
 - [ ] **E7-E8 · Chonchon y Caleuche rehechos, más jefes nuevos.**
+- [ ] **E9 · Sekiro completo:** herramientas de prótesis (el dueño lo pidió «con todo lo de Sekiro»).
 - **Después:** 2 contra 2 en la arena, armas del escenario, PvP público (§26.2).
 
 ## Portafolio interactivo (el mundo como portafolio)
@@ -1495,7 +1498,7 @@ Ideas que se probaron y se sacaron hasta que el dueño decida. Para revivir una,
 - Léanse `AGENTS.md`, `PRODUCT.md` y `DESIGN.md` antes de tocar contenido o diseño del portafolio.
 
 ## Bitácora de cambios
-- 2026-10-15 · **Bloque 8 · 8·0 diseño del combate** (rama `combate-diseno-8-0`, solo docs): `mundo/COMBATE.md` §14-28. Núcleo (intenciones PC y táctil, estados a paso fijo de 60 Hz, ataques con fases y animaciones ancladas a la fase, inercialización, peso, rig con `pecho`, codos, rodillas y rótula compatible con prueba de matrices, IA con aviso, red «cada uno juzga lo que recibe» con el hitstop que esconde el veredicto), Sekiro y Urban Reign con todas sus animaciones fase por fase (Urban Reign investigado en la web: el desvío es acertar la altura, no esquivar al lado contrario; el «Spark» no existía y pasa a ser la Furia; la silueta de zonas se ve), reacciones, la arena de Lalo contra Moisés (lago congelado, entrada con reto, viaje y VS con los retratos de las cartas, cámara de lado al eje del duelo, CPU, 2 jugadores, prueba de balance) y, a nivel de diseño, el mundo abierto, Goliath, Danzante, jefes con entrada animada y maestros. Bloque 8 dividido en 31 PRs (N1-N7, L1-L8, M1-M8, E1-E8). Preguntas para el dueño en §27.
+- 2026-10-15 · **Bloque 8 · 8·0 diseño del combate** (rama `combate-diseno-8-0`, solo docs): `mundo/COMBATE.md` §14-28. Núcleo (intenciones PC y táctil, estados a paso fijo de 60 Hz, ataques con fases y animaciones ancladas a la fase, inercialización, peso, rig con `pecho`, codos, rodillas y rótula compatible con prueba de matrices, IA con aviso, red «cada uno juzga lo que recibe» con el hitstop que esconde el veredicto), Sekiro y Urban Reign con todas sus animaciones fase por fase (Urban Reign investigado en la web: el desvío es acertar la altura, no esquivar al lado contrario; el «Spark» no existía y pasa a ser la Furia; la silueta de zonas se ve), reacciones, la arena de Lalo contra Moisés (lago congelado, entrada con reto, viaje y VS con los retratos de las cartas, cámara de lado al eje del duelo, CPU, 2 jugadores, prueba de balance) y, a nivel de diseño, el mundo abierto, Goliath, Danzante, jefes con entrada animada y maestros. Bloque 8 dividido en 32 PRs (N1-N7, L1-L8, M1-M8, E1-E9). Respuestas del dueño en §27 (Lalo con Sekiro y Moisés con Urban Reign, la Furia aprobada, el celular conserva sus ventanas, premios con objetos y amistad, Goliath cambia el suelo de verdad, Sekiro completo, mando desde N4). Orden ajustado para que la primera pelea jugable sea L2, el 5.º PR.
 - 2026-10-15 · **Navegación: la «zanja cruzada por el aire» del 7i PR 3 no era un bug** (rama `fix-zanja-camino`, sin cambios de código): repetida la prueba del juego real con `puenteLargo = 0` (fuerza el modo `camino`), el camino rodea el extremo de la zanja (la de la prueba medía 17 de largo, z −8..+8) y pasa por pasto a la misma altura; nunca pisa aire. `recto` (suavizado) y `pasoCerca` sí miran cada columna. Prueba nueva en `mundo/tests/navegacion.mjs`: zanja de 4×12 hecha antes de buscar o a mitad de viaje, larga (se queda en el borde) o corta (la rodea), nunca sobre el aire.
 - 2026-10-15 · **Bloque 8 · Combate: encargo anotado y ubicado** (rama `combate-plan-8`, solo docs): `mundo/COMBATE.md` con el encargo del dueño (4 estilos, base común, jefes) y dónde entra (decisiones del dueño: arena primero, 2 estilos, un maestro por bastión, énfasis en animaciones de calidad): núcleo y Lalo vs Moisés con los estilos Sekiro y Urban Reign en la Etapa A5 (pedido del dueño: el Mortal Kombat como laboratorio de estilos); mundo abierto, jefes y los otros estilos en la fase comercial C1 y siguientes. Falta el chat de diseño (8·0).
 - 2026-10-15 · **7i PR 3: te lleva cosas, puentes y se desatasca** (rama `acompanante-cosas-7i`): su mochila (9 casillas, se abre en «Hablar» como un cofre; sus torres y puentes usan de ahí el bloque que más tiene; se la queda al despedirlo y se guarda con el mundo); puentes sobre huecos y agua de hasta 10 (los quita cuando te alejas sin verlos); desatasco (rompe o pone hasta 6 bloques para salir de un hoyo o un encierro antes de esperar o aparecer). Todo en la pestaña Vida. `acompanante.mjs` 244, `rutinas.mjs` 181, `navegacion.mjs` 142, `estudio`, `amistad` y `validar --contra HEAD` OK. Detalle en «Estado 7i · PR 3».

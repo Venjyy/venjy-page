@@ -5,7 +5,7 @@ Estado (2026-10-15): **encargo anotado completo, decisiones del dueño tomadas, 
 - §0 a §11: **el encargo del dueño, completo**. Es la fuente: el chat de diseño no puede perder ni contradecir nada de aquí.
 - §12: **decisiones del dueño del 2026-10-15** (respuestas al PR #130).
 - §13: **dónde entra** cada parte (portafolio, Estudio, comercial).
-- §14 a §28: **el diseño** (chat 8·0). Núcleo, Sekiro, Urban Reign (investigado y corregido), reacciones y arena de Lalo contra Moisés al detalle; mundo abierto, Goliath, Danzante y jefes a nivel de diseño. Preguntas abiertas en §27. El bloque 8 de `mundo/PENDIENTES.md` tiene los PRs.
+- §14 a §28: **el diseño** (chat 8·0). Núcleo, Sekiro, Urban Reign (investigado y corregido), reacciones y arena de Lalo contra Moisés al detalle; mundo abierto, Goliath, Danzante y jefes a nivel de diseño. Respuestas del dueño en §27. El bloque 8 de `mundo/PENDIENTES.md` tiene los PRs.
 
 ---
 
@@ -289,7 +289,7 @@ El combate completo son **meses** (estimación gruesa: 25 a 35 PRs). El portafol
 
 ## 14. Diseño · cómo leerlo
 
-Escrito por el chat 8·0 (2026-10-15). Cada sección cita el punto del encargo que resuelve (§0-12). Lo que lleva **«decidido»** no se vuelve a discutir en los PRs. Lo que lleva **«punto de partida»** son valores iniciales que el PR ajusta con capturas y que después edita el dueño en el Estudio. Las preguntas que quedan para el dueño están en §27.
+Escrito por el chat 8·0 (2026-10-15). Cada sección cita el punto del encargo que resuelve (§0-12). Lo que lleva **«decidido»** no se vuelve a discutir en los PRs. Lo que lleva **«punto de partida»** son valores iniciales que el PR ajusta con capturas y que después edita el dueño en el Estudio. Las respuestas del dueño a las preguntas del diseño están en §27.
 
 | § | Qué | Nivel |
 |---|---|---|
@@ -306,7 +306,7 @@ Escrito por el chat 8·0 (2026-10-15). Cada sección cita el punto del encargo q
 | 24 | Estilos, armas, maestros y progresión | diseño |
 | 25 | Datos, esquemas y pestañas del Estudio | detalle de construcción |
 | 26 | Riesgos y cómo se resuelven · lo que no se hace ahora (PvP) | decidido |
-| 27 | Preguntas abiertas para el dueño | pendiente |
+| 27 | Respuestas del dueño | decidido |
 | 28 | Partición en PRs (copia de `PENDIENTES.md`) | decidido |
 
 **Unidades en todo el documento:** los tiempos de combate se escriben en **cuadros a 60 por segundo** («c»): 6 c = 0,1 s. Es la unidad de los juegos de pelea y la que usa `combate.json`. Los ángulos van en **radianes** y los nombres de canal son los de las poses (`rig.md`), más los nuevos de §15.5. Las distancias van en bloques.
@@ -353,7 +353,7 @@ El combate no lee teclas: lee un objeto `intencion` por cuadro lógico, que arma
 | `fuerte` | mantener (cuadros) | Carga. La lleva el estilo: Sekiro, golpe fuerte; Goliath, carga de 3 niveles |
 | `defensa` | apretar · mantener · soltar | Sekiro: tocar para desviar, mantener para guardia. Urban Reign: tocar para esquivar, y con la altura justa, desviar. Goliath: guardia. Danzante: dash |
 | `esquivar` | apretar + dirección | Paso, rodada o dash según el estilo |
-| `agarre` | apretar | Agarre (Urban Reign) o golpe de arte (Sekiro, si el dueño lo prefiere: §27) |
+| `agarre` | apretar | Agarre (Urban Reign) o patada frontal (Sekiro, §16.1) |
 | `especial` | apretar | Arte especial: SPA (Urban Reign), arte de combate (Sekiro) |
 | `modoEspecial` | apretar | Furia (Urban Reign) o Rango (Danzante). Se reserva |
 | `foco` | apretar · cambiar(±1) | Fijar o soltar el objetivo, o pasar al siguiente. En la arena el foco es fijo |
@@ -376,6 +376,8 @@ El combate no lee teclas: lee un objeto `intencion` por cuadro lógico, que arma
 - W y S no sirven para caminar en la arena: el movimiento es A y D sobre el eje, y el paso lateral sale de la esquiva. Así se libera W y S para la altura, que es el corazón de Urban Reign. Es justo el choque de controles que pedía resolver §6.
 - **En el mundo abierto** (8·M) W y S vuelven a caminar. Allí la altura se toma de la **inclinación de la mira**: mirar arriba del centro del pecho del objetivo es alto, mirar abajo de la cintura es bajo. Además, mientras se mantiene `defensa`, W y S fijan la altura. Lo resume §20.2.
 
+**Mando (decidido, §27.7):** el stick izquierdo es `mover` y la altura (arriba o abajo al apretar). Los botones de abajo son `atacar` y `defensa`; los de arriba, `agarre` y `especial`. Un gatillo es `esquivar` y el otro `foco`; el salto va en un botón propio. Vibra en los impactos. Va en `combate.json → teclas.mando` y entra en N4 (Gamepad API).
+
 **Controles táctiles: arena** (botones en `ui-layout.json → arena`, arrastrables en el Estudio):
 
 | Zona | Gesto | Intención |
@@ -390,7 +392,7 @@ El combate no lee teclas: lee un objeto `intencion` por cuadro lógico, que arma
 
 - **Asistencias del táctil** (todas en `combate.json → tactil`): buffer de 12 c en vez de 8; ventanas de desvío y esquiva con +2 c; el umbral para que un deslizamiento cuente es de 18 px o 120 ms; la vibración en impactos fuertes y desvíos perfectos (`navigator.vibrate`, intensidad editable, apagable) y el foco siempre automático.
 - **Regla del táctil (decidida):** nada del combate pide dos dedos a la vez en la derecha. Todo lo que en PC es «tecla + clic» en el táctil es **un gesto sobre un solo botón** (deslizar).
-- En el cooperativo y en el 2 jugadores **cada uno juzga lo que recibe con sus propias ventanas**, así que el de celular tiene sus 2 c extra al defenderse. Entre amigos vale. Para la arena de 2 jugadores hay un interruptor «ventanas iguales» (§27).
+- En el cooperativo y en el 2 jugadores **cada uno juzga lo que recibe con sus propias ventanas**, así que el de celular tiene sus 2 c extra al defenderse. Entre amigos vale. En la arena de 2 jugadores también (decidido, §27.3: lo más cómodo para el de celular). El interruptor «ventanas iguales» existe, pero viene apagado.
 
 ### 15.2 Máquina de estados (§4.3)
 
@@ -817,7 +819,7 @@ Fuentes: [Wikipedia](https://en.wikipedia.org/wiki/Urban_Reign), [Hardcore Gamin
 | 6.4 Agarre que no se puede esquivar | Se escapa adivinando la zona | Se corrige: **el agarre se escapa adivinando la altura**, y la CPU amaga |
 | 6.4 Golpe al rival en el suelo (*ground pound*) | Típico del género (no confirmado como mecánica con nombre) | Se mantiene |
 | 6.5 Barra SPA que se llena pegando y recibiendo; arte especial con el 25 % | Igual. Además, los SPA tienen i-frames y salen incluso mientras te pegan | Se mantiene y se suma que **sale aunque te estén pegando** (*breaker*) |
-| 6.5 «Modo Spark» con el 100 % | **No aparece en ninguna fuente** | Invención de Gemini. Se adapta con otro nombre (**Furia**) y con efectos que tengan sentido en un estilo sin bloqueo (§17.6). Queda como pregunta (§27) |
+| 6.5 «Modo Spark» con el 100 % | **No aparece en ninguna fuente** | Invención de Gemini. Se adapta con otro nombre (**Furia**) y con efectos que tengan sentido en un estilo sin bloqueo (§17.6). El dueño la aprobó (§27.2) |
 | 6.6 Cancelar los cuadros finales si el golpe conecta | Combos de cadena; el 3.º lanza | Se mantiene |
 | 6.6 Esquiva neutra (agacharse) que evita los golpes altos | La defensa sin dirección esquiva | Se integra: **defensa sin dirección = esquiva neutra** (*weave*). Evita los golpes altos y medios normales y deja un castigo bajo rápido |
 | 6.6 Rebote en paredes | Patadas contra la pared y muebles que se rompen | Se mantiene. En la arena hay paredes y barriles de hielo |
@@ -1038,7 +1040,7 @@ Minijuego completo (regla de los minijuegos: escenario propio, dificultad y sens
 
 ### 19.1 Qué es
 
-- **Peleadores (punto de partida, pregunta en §27):** **Lalo = Sekiro** (su sombrero de paja calza con un ronin) y **Moisés = Urban Reign** (el de la calle). Cada peleador tiene su ficha en `arena.json → peleadores` (estilo, vida, postura, colores del aura y frase de victoria y de derrota ES/EN), así que cambiar quién usa qué es editar un dato.
+- **Peleadores (decidido, §27.1):** **Lalo = Sekiro** (su sombrero de paja calza con un ronin) y **Moisés = Urban Reign** (el de la calle). Cada peleador tiene su ficha en `arena.json → peleadores` (estilo, vida, postura, colores del aura y frase de victoria y de derrota ES/EN), así que cambiar quién usa qué es editar un dato.
 - **Modos:**
   - **1 jugador:** eliges peleador y la CPU lleva al otro.
   - **2 jugadores por sala** (como la carrera: `SalaDirecta` o `SalaLocal`): cada uno controla su peleador.
@@ -1124,7 +1126,7 @@ Cada estilo tiene su tabla en `estilo-*.json → cpu`, y la dificultad escala ti
   - **sobre los peleadores:** la marca de peligro y la marca roja del golpe final.
   - Todo editable en `arena.json → hud` (posiciones y colores).
 - **Música:** un tema `duelo` en `musica.json` (capas: tambores graves, una flauta sintetizada para el lado de Sekiro y un bajo callejero para el de Urban Reign). Se intensifica en la ronda final y se corta 0,5 s en el golpe final.
-- **Premio:** amistad con Lalo y Moisés (minijuego `duelo`, como la carrera con Lona) y un objeto por la primera victoria de cada dificultad (en `arena.json → premios`). Pregunta abierta en §27.
+- **Premio:** amistad con Lalo y Moisés (minijuego `duelo`, como la carrera con Lona) y un objeto por la primera victoria de cada dificultad (en `arena.json → premios`). Decidido: objetos y amistad (§27.4).
 
 ### 19.8 Balance (lo que se mide antes de cualquier PvP)
 
@@ -1222,13 +1224,16 @@ Reemplaza a la tercera persona del F5 **solo en modo combate**: el F5 de hoy no 
   - **Hyper armor** durante la carga y el golpe: recibe el daño sin reacción.
   - Al soltar: un golpe vertical lento (anticipación de 14 c, golpe de 6 c, recuperación de 40 c). En el nivel 3 tiene un hitstop de 14 c y una sacudida de 0,8.
   - Si el golpe cae al suelo, **onda de choque**: daño en área (radio 2,5 en el nivel 3) y bloques que «revientan».
-- **Bloques que revientan y vuelven (decidido: sin tocar el mundo):**
-  - Los bloques sólidos de la superficie en el radio **no cambian en el mundo**. Sobre ellos se crean cubos temporales con la textura del bloque, que saltan en abanico (física simple y rebote), y una **calcomanía de cráter** pixel sobre el suelo. A los 2 o 3 s, los cubos vuelven volando a su lugar y la calcomanía se apaga.
-  - **Ventajas:**
-    - las construcciones nunca se rompen;
-    - en el cooperativo no hay nada que sincronizar más que el evento (`ci` del golpe con su nivel: cada equipo dibuja sus cubos);
-    - el costo está acotado: tope de 48 cubos por golpe y reuso de mallas.
-  - La alternativa (cambiar los vóxeles y reconstruir el chunk) es más cara en Android y riesgosa en el cooperativo. Queda descartada salvo que el dueño la pida (§27).
+- **El suelo cambia de verdad y se repara (decidido por el dueño, §27.5):**
+  - **Al golpear:** los bloques naturales de la superficie en el radio (tope de 12 por golpe en el nivel 3; menos en el 1 y el 2) se cambian a aire o a una versión agrietada, con `mundo.ponerBloque` y una marca **temporal**. Al mismo tiempo, cubos con la textura de cada bloque **salen volando** en abanico (física simple y rebote), con polvo y una calcomanía de cráter.
+  - **Al reparar** (a los 4 s, editable): los cubos vuelven volando a su hueco, uno tras otro, y cada bloque reaparece al llegar su cubo, con un destello chico.
+  - **Lo que nunca se rompe:**
+    - lo construido: solo se tocan los bloques que **no** están en las ediciones guardadas del mundo, es decir, terreno natural nunca tocado por un jugador;
+    - cofres, hornos, camas, bloques con forma y todo lo que tenga contenido;
+    - lo que esté bajo un jugador, un amigo o un animal (no se cae nadie a un hoyo).
+  - **Guardado:** los bloques temporales no se escriben en el guardado. Si se guarda o se sale a media reparación, al cargar se restauran.
+  - **Cooperativo:** lo decide el que golpea (`ci` del golpe con su nivel). El anfitrión aplica el cambio y la reparación con el mensaje de bloques de hoy (`b`) más una marca temporal, así todos ven el mismo hoyo y la misma reparación. Si el anfitrión sale, la foto del mundo ya lleva los bloques restaurados.
+  - **Costo:** dos reconstrucciones del chunk por golpe (al romper y al reparar, agrupadas aunque haya varios bloques). Se mide en Android en el PR E4; si baja de 50 fps, se baja el tope de bloques (dato editable).
 - **Guardia:** el arma levantada en diagonal bloquea el 80 % del daño (y sube la postura propia, si hay postura). **Bloqueo justo** de un ataque pesado (ventana de 6 c): el atacante queda en `desviado_largo` (recoil) y se abre una ventana para un **golpe crítico lento** (un remate de 50 c con cámara de cine).
 - **Datos:** `estilo-goliath.json`.
 
@@ -1370,28 +1375,28 @@ Reemplaza a la tercera persona del F5 **solo en modo combate**: el F5 de hoy no 
   - **ventanas iguales** en todas las plataformas (o salas separadas para táctil y PC);
   - **balance de los 4 estilos** medido con jugadores, no solo con la CPU.
 - **Correr por la pared y armas del escenario** (Urban Reign): 8·E o después.
-- **Prótesis y herramientas de Sekiro** (shuriken, gancho): no están en el encargo. Si el dueño las quiere, son una ampliación del estilo.
+- **Prótesis y herramientas de Sekiro** (shuriken, gancho, etc.): el dueño pidió el estilo «con todo lo de Sekiro» (§27.6). Entran como ampliación del estilo en 8·E (E9), después de la arena.
 - **2 contra 2 en la arena:** 8·E, con la pareja.
-- **Mando (gamepad):** las intenciones lo permiten. No está pedido (§27).
+- **Mando (gamepad):** **sí, desde el núcleo** (§27.7). Va en N4 (Gamepad API: `combate.json → teclas.mando`, con vibración del mando).
 
 ---
 
-## 27. Preguntas abiertas para el dueño
+## 27. Respuestas del dueño (2026-10-15, PR #132)
 
-1. **¿Quién usa qué estilo?** Propuesta: Lalo con Sekiro (el sombrero de ronin) y Moisés con Urban Reign. Se cambia en `arena.json`.
-2. **«Furia» en vez de «Spark»:** el modo de Gemini no existía en el original. ¿Se queda la Furia (8 s, hyper armor contra golpes normales, más velocidad y zona) o se saca y la barra SPA solo da artes especiales?
-3. **Ventanas en la arena de 2 jugadores:** ¿el de celular conserva sus +2 c o se activa «ventanas iguales» por defecto?
-4. **Premio de la arena:** ¿un objeto por dificultad (por ejemplo, la katana de Lalo y las vendas de Moisés al vencerlos en difícil) o solo amistad?
-5. **Goliath:** ¿basta con los bloques que revientan y vuelven como efecto (sin tocar el mundo), o quieres que el suelo cambie de verdad y se repare?
-6. **Patada de Sekiro en `agarre`:** ¿te gusta, o prefieres que el botón no exista en Sekiro (menos botones en el táctil)?
-7. **Mando:** ¿se suma soporte de gamepad en el núcleo (es barato con las intenciones) o después?
-8. **Tamaño:** el núcleo más la arena son **15 PRs** (§28), no los 8 a 10 que estimaba §13. La diferencia está en las animaciones pulidas (cada estilo necesita 2 PRs) y en la red del duelo. ¿Sigue así o se recorta algo de la arena (por ejemplo, los 2 jugadores por sala para después)?
+1. **Lalo usa Sekiro y Moisés, Urban Reign.**
+2. **Se queda la Furia** como está en §17.6.
+3. **Ventanas:** lo más cómodo para el de celular. Sus +2 c valen también en la arena de 2 jugadores; «ventanas iguales» viene apagado.
+4. **Premio de la arena:** objetos y amistad.
+5. **Goliath:** el suelo **cambia de verdad y se repara**, con bloques que vuelan y vuelven (§21).
+6. **Sekiro, con todo lo del original:** la patada se queda y el estilo suma después sus herramientas de prótesis (E9).
+7. **Mando:** sí, con soporte desde el núcleo (N4).
+8. **Tamaño:** se sigue así, con los PRs que hagan falta para que quede bien, ordenado y de calidad. **Prioridad del dueño: ver algo jugable pronto.** Por eso el orden de 8·N y 8·L se ajustó para llegar a una pelea jugable con Sekiro en el 5.º PR (§28).
 
 ---
 
 ## 28. Partición en PRs
 
-La lista completa, con su prueba, táctil, cooperativo, «qué mirar» y tamaño, está en `mundo/PENDIENTES.md`, bloque 8, que es el que manda. Resumen: **8·N** N1 a N7 → **8·L** L1 a L8 → **8·M** M1 a M8 → **8·E** E1 a E8. En total son unos 31 PRs, dentro de los 25 a 35 de §13.
+La lista completa, con su prueba, táctil, cooperativo, «qué mirar» y tamaño, está en `mundo/PENDIENTES.md`, bloque 8, que es el que manda. **Orden (prioridad del dueño: algo jugable pronto):** N1 → N3 → N4 → L1 → **L2 (primera pelea jugable: Sekiro contra un Lalo de práctica)** → N5 → L3 → L4 → N2 → N6 → L5 → L6 → N7 → L7 → L8 → **8·M** M1 a M8 → **8·E** E1 a E9. En total son unos 32 PRs, dentro de los 25 a 35 de §13. N2 (Poses) y N6 (pestaña Combate) van después de la primera pelea, pero los valores igual viven en JSON desde N3, así que el dueño los puede editar en el archivo mientras tanto.
 
 **Regla de cada PR del bloque 8:**
 - las animaciones las hace **Sonnet como mínimo** y Opus las revisa contra la lista de §1 con la hoja de cuadros;
