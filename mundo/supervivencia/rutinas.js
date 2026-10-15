@@ -126,7 +126,7 @@ export function crearRutinas(ctx) {
         const destino = v.visita ? { persona: v.visita } : v.lugar;
         if (!paseos.ir(c, destino, { mirar: v.visita || null })) return false;
         const r = estadoDe(c);
-        r.estado = 'yendo'; r.v = v.clave; r.t = 0; r.saludado = false; r.sinSaludo = false;
+        r.estado = 'yendo'; r.v = v.clave; r.t = 0; r.saludado = false; r.sinSaludo = false; r.acercar = 0;
         avisar({ c, a: 'sale', v: v.clave });
         return true;
     }
@@ -289,6 +289,13 @@ export function crearRutinas(ctx) {
         r.saludado = true;
         return true;
     }
+    // Llegó pero la persona no está tan cerca (camino parcial, lo dejó junto a un borde): antes de rendirse vuelve a ir a
+    // ella, hasta `acercarse` veces. true si lo intentó de nuevo
+    function acercarse(c, r, v) {
+        if (!v.visita || (r.acercar || 0) >= ajustesRutinas().acercarse) return false;
+        r.acercar = (r.acercar || 0) + 1;
+        return !!paseos.ir(c, { persona: v.visita }, { mirar: v.visita });
+    }
     // Invitado del cooperativo: lo que decide el anfitrión llega por `recibir`; aquí solo lo que depende de cómo
     // caminan sus amigos en este equipo (llegar, seguir a quien se alejó, terminar de volver)
     function decidirInvitado() {
@@ -296,7 +303,7 @@ export function crearRutinas(ctx) {
             const n = persona(c), r = R[c];
             if (!n || r.estado === 'acompanando' || Number.isFinite(r.ausente)) continue;
             const v = r.v && visitas()[r.v], fuera = paseos.fuera(c);
-            if (r.estado === 'yendo' && v && fuera && paseos.estado(c).estado === 'alla') llegar(c, n, r, v);
+            if (r.estado === 'yendo' && v && fuera && paseos.estado(c).estado === 'alla' && !llegar(c, n, r, v)) acercarse(c, r, v);
             else if (r.estado === 'visitando' && v) {
                 const o = v.visita && persona(v.visita);
                 if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro * 1.5) { terminarSaludo(c); r.estado = 'yendo'; }
@@ -342,7 +349,7 @@ export function crearRutinas(ctx) {
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
                 else if (paseos.estado(c).estado === 'atascado') noEsta(c, v); // no puede llegar hasta la persona
                 // Llegó: ¿está la persona? (paseos.js la sigue si se mueve, pero puede no alcanzarla)
-                else if (paseos.estado(c).estado === 'alla' && !llegar(c, n, r, v)) noEsta(c, v);
+                else if (paseos.estado(c).estado === 'alla' && !llegar(c, n, r, v) && !acercarse(c, r, v)) noEsta(c, v);
             } else if (r.estado === 'visitando') {
                 const o = v && v.clave === r.v && v.visita && persona(v.visita);
                 if (!fuera) { terminarSaludo(c); r.estado = 'en-sitio'; r.v = null; }

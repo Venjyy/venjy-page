@@ -15,6 +15,8 @@ export const RUTINA_BASE = {
     girar: 0.6,         // segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse)
     cuello: 1.1,        // cuánto puede girar el cuello quien recibe para mirarlo (radianes; si hace falta más, queda en el tope)
     radioEncuentro: 6,  // al llegar, quien visita tiene que estar a menos de esto (bloques); si no, «no está»
+    acercarse: 2,       // … si no está tan cerca, lo intenta de nuevo esta cantidad de veces antes del «¿Y …?» (un camino
+                        // parcial cuenta como llegada a unos bloques del destino: a veces quedaba a 6 y pico y no lo veía)
     esperaAusente: 4,   // segundos que se queda reaccionando a que no estaba antes de volver
     radioSaludo: 24,    // el saludo (gestos y globos) solo se dibuja con el jugador a menos de esto (bloques)
     saludoLejos: 1,     // 1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo

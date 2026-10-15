@@ -215,7 +215,7 @@ const VIS = {
 }
 {
     // Va a la persona: si al llegar no está cerca (no la alcanzó), «no está» con su frase y gesto, y vuelve
-    const { r, P, paseos, paso } = armar({ visitas: { ...VIS, 'ana-beto': { ...VIS['ana-beto'], ausente: { gesto: 'saluda', texto: { es: 'Beto no está', en: 'Beto is not here' } } } }, hora: 10 });
+    const { r, P, paseos, paso } = armar({ visitas: { ...VIS, 'ana-beto': { ...VIS['ana-beto'], ausente: { gesto: 'saluda', texto: { es: 'Beto no está', en: 'Beto is not here' } } } }, hora: 10, ajustes: { acercarse: 0 } });
     paso();
     P.beto.x = 200; // Beto se fue lejos y Ana no lo alcanzó
     paseos.poner('ana', 'alla'); paso(0.6);
@@ -355,7 +355,7 @@ const VIS = {
     g.paseos.casa('ana'); g.paso(1);
     ok(g.r.estado('ana').estado === 'en-sitio', 'invitado: de vuelta en su sitio');
     // «No está»: también lo decide el anfitrión
-    const h3 = armar({ visitas: VIS, hora: 10 }), m3 = [];
+    const h3 = armar({ visitas: VIS, hora: 10, ajustes: { acercarse: 0 } }), m3 = [];
     h3.r.red({ enviar: m => m3.push(m) }); h3.paso(1);
     h3.paseos.llegar('ana'); h3.P.beto.x = 200; h3.paso(1);
     ok(m3.some(m => m.a === 'noesta' && m.v === 'ana-beto'), 'anfitrión: manda «noesta» si no encontró a quien visitaba');
@@ -367,6 +367,20 @@ const VIS = {
     const solo = armar({ visitas: VIS, hora: 10 });
     solo.r.recibir({ c: 'ana', a: 'sale', v: 'ana-faro' }); solo.paso(0.2);
     ok(solo.r.estado('ana').visita !== 'ana-faro', 'sin sala (o anfitrión): recibir no hace nada');
+}
+{
+    // Llega «cerca» pero no tanto (un camino parcial cuenta como llegada a unos bloques): se acerca de nuevo antes del «¿Y …?»
+    const { r, P, paseos, llamadas, paso } = armar({ visitas: VIS, hora: 10 });
+    paso(0.5);
+    const idas = () => llamadas.filter(l => l[0] === 'ir' && l[1] === 'ana').length;
+    paseos.llegar('ana'); P.ana.x = P.beto.x - 6.5; paso(0.6);
+    ok(r.estado('ana').estado === 'yendo' && idas() === 2 && P.ana.paseo.texto === '', `llegó a 6,5 de Beto: no dice «¿Y …?», se acerca de nuevo (${r.estado('ana').estado}, ${idas()} idas)`);
+    paseos.llegar('ana'); paso(0.6);
+    ok(r.estado('ana').estado === 'visitando', 'al segundo intento lo encuentra y queda de visita');
+    const b = armar({ visitas: VIS, hora: 10 });
+    b.paso(0.5);
+    for (let i = 0; i < 4; i++) { b.paseos.llegar('ana'); b.P.ana.x = b.P.beto.x - 30; b.paso(0.6); }
+    ok(b.r.estado('ana').estado !== 'visitando' && b.llamadas.filter(l => l[0] === 'ir' && l[1] === 'ana').length === 1 + RD.ajustesRutinas().acercarse, 'si de verdad no está, tras `acercarse` intentos dice «¿Y …?»');
 }
 
 // ---------------------------------------------------------

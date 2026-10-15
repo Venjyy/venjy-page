@@ -58,6 +58,7 @@ const RUTINA = {
     girar: ['quien recibe gira la cabeza en (s)', 'the host turns their head in (s)', 0.1, 3, 0.1],
     cuello: ['quien recibe gira el cuello hasta (rad)', 'the host turns their neck up to (rad)', 0.2, 1.6, 0.05],
     radioEncuentro: ['al llegar, lo encuentra a menos de (bloques)', 'on arrival, finds them within (blocks)', 2, 40, 0.5],
+    acercarse: ['… si no está, intenta acercarse de nuevo (veces)', '… if not there, tries to get closer again (times)', 0, 6, 1],
     esperaAusente: ['si no está, reacciona durante (s)', 'if not there, reacts for (s)', 0, 20, 0.5],
     radioSaludo: ['el saludo se ve a menos de (bloques)', 'greeting shows within (blocks)', 4, 80, 1],
     saludoLejos: ['lejos el saludo pasa igual (1 sí, 0 no)', 'far away the greeting still happens (1 yes, 0 no)', 0, 1, 1],

@@ -19,6 +19,7 @@
         "girar": { "description": "Segundos en que quien recibe gira la cabeza hacia quien llegó (y de vuelta al irse).", "type": "number", "minimum": 0.1, "maximum": 3 },
         "cuello": { "description": "Cuánto puede girar el cuello quien recibe para mirar a quien llegó (radianes; 1,1 ≈ 63°).", "type": "number", "minimum": 0.2, "maximum": 1.6 },
         "radioEncuentro": { "description": "Al llegar, quien visita tiene que estar a menos de esto (bloques); si no, «no está»: lo dice y vuelve.", "type": "number", "minimum": 2, "maximum": 40 },
+        "acercarse": { "description": "Si al llegar la persona no está a menos de radioEncuentro, cuántas veces intenta acercarse de nuevo antes de decir «¿Y …?» (un camino parcial cuenta como llegada a unos bloques del destino).", "type": "integer", "minimum": 0, "maximum": 6 },
         "esperaAusente": { "description": "Segundos que se queda reaccionando a que no estaba antes de volver.", "type": "number", "minimum": 0, "maximum": 20 },
         "radioSaludo": { "description": "El saludo (gestos y globos) solo se dibuja con el jugador a menos de esto, en bloques.", "type": "number", "minimum": 4, "maximum": 80 },
         "saludoLejos": { "description": "1 = lejos del jugador el saludo pasa igual (solo el reloj); 0 = lejos no hay saludo.", "type": "integer", "minimum": 0, "maximum": 1 },
