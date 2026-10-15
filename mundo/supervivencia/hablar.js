@@ -266,7 +266,8 @@ export function crearHablar(ctx) {
             if (ctx.momento && momentoListo(pts)) caja.appendChild(boton(ta.momento, () => ctx.momento(clave), 'boton-momento'));
             else if (ctx.momento && nivelDeActual >= NIVELES.length - 1) caja.appendChild(Object.assign(document.createElement('small'), { className: 'momento-falta', textContent: ta.momentoFalta(pts) }));
             // Saludo del grupo (6c-2): con la skin de un integrante, frente a uno del grupo (la fogata, la atalaya, el iglú)
-            if (ctx.grupo && grupoDe(base, clave)) caja.appendChild(boton(ta.grupo, () => ctx.grupo(clave), 'boton-grupo'));
+            // (solo con todos los del grupo en su sitio: si alguien anda de visita, la escena no se puede jugar en su lugar)
+            if (ctx.grupo && grupoDe(base, clave) && (!ctx.grupoListo || ctx.grupoListo(clave))) caja.appendChild(boton(ta.grupo, () => ctx.grupo(clave), 'boton-grupo'));
             el.appendChild(caja);
         }
 

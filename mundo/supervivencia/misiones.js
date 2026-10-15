@@ -90,6 +90,7 @@ export function crearMisiones(ctx) {
                 saludar: (c, tipo) => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.jugar(c, tipo); },
                 momento: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.momento(c); },
                 grupo: c => { if (!escenaAmistad) return; hablarUI.soltar(); escenaAmistad.grupo(c); },
+                grupoListo: c => !escenaAmistad || !escenaAmistad.grupoListo || escenaAmistad.grupoListo(c),
                 carta: { para: cartaPara, entregar: entregarCarta },
                 tituloDe: id => (misionDe(id) || REQ_MINIJUEGOS[id] || {}).titulo
             });

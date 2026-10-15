@@ -63,7 +63,7 @@ import { crearVidaAmigos } from './vida-amigos.js';
 import { crearPaseos } from './paseos.js';
 import { crearRutinas } from './rutinas.js';
 import { crearMinijuegos } from './minijuego.js';
-import { NIVEL_ANIMACION, momentoListo, grupoDe } from './amistad.js';
+import { NIVEL_ANIMACION, momentoListo, grupoDe, GRUPOS } from './amistad.js';
 import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
@@ -893,7 +893,7 @@ async function arrancar(guardado, cx = null) {
         amistad6c: {
             bienvenida: base => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.bienvenida(base) : false)) : false),
             reencuentro: (base, clave) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.reencuentro(base, clave) : false)) : false),
-            grupo: (nombre, base) => (puede6c() ? cargarEscenaAmistad().then(ea => (ea ? ea.grupo(nombre, base) : false)) : false)
+            grupo: (nombre, base) => (puede6c() && GRUPOS[nombre] && GRUPOS[nombre].npcs.every(k => !paseos.fuera(k)) ? cargarEscenaAmistad().then(ea => (ea ? ea.grupo(nombre, base) : false)) : false)
         }
     });
     const puede6c = () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !(escenaAmistad && escenaAmistad.activa);
@@ -1050,10 +1050,16 @@ async function arrancar(guardado, cx = null) {
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => (ea ? ea.momento(clave) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
         },
+        // ¿Están todos los del grupo en su sitio? La escena de grupo se juega en su lugar (fogata, atalaya, iglú): con
+        // alguien de visita (paseos.js) no sale y el botón no aparece
+        grupoListo: clave => {
+            const g = grupoDe(escenas.tipoSkin(skinActual).base, clave);
+            return !!g && GRUPOS[g].npcs.every(k => !paseos.fuera(k));
+        },
         // Saludo del grupo (6c-2): repite la escena de grupo de este amigo con tu skin
         grupo: clave => {
             const base = escenas.tipoSkin(skinActual).base, g = grupoDe(base, clave);
-            if (!puedeAmistad() || !g) return;
+            if (!puedeAmistad() || !g || !misiones.escenaAmistad.grupoListo(clave)) return;
             capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => (ea ? ea.grupo(g, base) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });

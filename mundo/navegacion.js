@@ -22,7 +22,7 @@ export const LIBRE = 0, SOLIDO = 1, AGUA = 2, LAVA = 3, SIN_CARGAR = -1;
 
 // Valores del código; navegacion.json los ajusta (fijarNavegacion). Unidades: bloques y segundos.
 export const NAV_BASE = {
-    velocidad: 3.3,       // caminando, bloques por segundo (el jugador camina a 4,3 y corre a 5,6)
+    velocidad: 4.1,       // caminando, bloques por segundo (el jugador camina a 4,3 y corre a 5,6)
     subida: 1,            // cuánto sube de un paso (bloques enteros; 1 = como en Minecraft)
     caida: 3,             // cuánto se deja caer de un paso
     alto: 2,              // bloques libres que necesita sobre los pies

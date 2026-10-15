@@ -314,6 +314,7 @@ const VIS = {
     ok(amigos.includes('n.visita.animar(dt)') && amigos.includes('n.visita.texto'), 'amigos.js dibuja el gancho n.visita');
     ok(leer('mundo/supervivencia/paseos.js').includes('adornar('), 'paseos.js deja adornar al que llega');
     ok(/p6\.tipo === 'grupo' && personas\(\)\.some\(p => GRUPOS\[p6\.grupo\]\.npcs\.includes\(p\.clave\) && p\.n\.paseo\)/.test(leer('mundo/supervivencia/escenas-skin.js')), 'escena de grupo: no sale si alguien del grupo anda de visita');
+    ok(main.includes('grupoListo: clave =>') && main.includes("GRUPOS[nombre].npcs.every(k => !paseos.fuera(k))") && leer('mundo/supervivencia/hablar.js').includes('ctx.grupoListo(clave)'), 'saludo del grupo (botón y automático): solo con todos en su sitio');
     const proto = leer('estudio/puente-protocolo.js');
     ok(proto.includes("case 'rutina'") && proto.includes("'rutinas'"), 'puente: mensaje rutina y rutinas en vivo');
 }
