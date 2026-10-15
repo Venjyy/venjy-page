@@ -40,7 +40,7 @@ const MAX_DIST = 7; // más lejos, el panel se cierra solo
 // pestanas(clave), abrirPanel, cerrarPanel, decir(clave, texto), inventario, hud, sonidos, nombreDe(id, idioma), tituloDe(id) -> {es,en},
 // carta { para() -> clave | null, entregar(clave) -> Promise<frase|null> } (7f-1: carta del Venjy del correo),
 // saludar(clave, tipo), momento(clave) y grupo(clave) (bloques 6b y 6c-2: animación de amistad, momento especial y saludo del
-// grupo; misiones.js suelta antes la retención), acompanar { hablar(clave) → { mio, texto, motivo, ordenes? }, invitar(clave), soltar(clave), ordenar(orden, clave) } (7i)
+// grupo; misiones.js suelta antes la retención), acompanar { hablar(clave) → { mio, texto, motivo, ordenes?, mochila? }, invitar(clave), soltar(clave), ordenar(orden, clave), abrirMochila(clave) } (7i)
 export function crearHablar(ctx) {
     const { amistad, jugador, dy, nombres, inventario, sonidos } = ctx;
     let idioma = ctx.idioma || 'es';
@@ -301,6 +301,7 @@ export function crearHablar(ctx) {
                     caja.appendChild(fo);
                 }
                 caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.soltar(clave); }, 'boton-acompanar'));
+                if (a.mochila) caja.appendChild(boton(a.mochila.texto, () => { ctx.cerrarPanel(); ctx.acompanar.abrirMochila(clave); }, 'boton-acompanar'));
             }
             else if (!a.motivo) caja.appendChild(boton(a.texto, () => { ctx.cerrarPanel(); ctx.acompanar.invitar(clave); }, 'boton-acompanar'));
             else {
@@ -308,6 +309,8 @@ export function crearHablar(ctx) {
                 const b = boton(a.texto, null, 'boton-acompanar bloqueado'); b.title = req;
                 caja.append(b, Object.assign(document.createElement('small'), { textContent: req }));
             }
+            // Ya no te acompaña pero se quedó con cosas tuyas: su mochila se abre igual (7i PR 3)
+            if (!a.mio && a.mochila) caja.appendChild(boton(a.mochila.texto, () => { ctx.cerrarPanel(); ctx.acompanar.abrirMochila(clave); }, 'boton-acompanar'));
             el.appendChild(caja);
         }
 

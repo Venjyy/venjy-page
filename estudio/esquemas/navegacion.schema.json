@@ -351,10 +351,40 @@
           "maximum": 5
         },
         "torreBloques": {
-          "description": "Bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre; 0 = no arma torres).",
+          "description": "Bloques que lleva en su mochila la primera vez que te acompaña (tierra; los recupera al bajar o al quitar la torre; 0 = no arma torres hasta que le des).",
           "type": "number",
           "minimum": 0,
           "maximum": 64
+        },
+        "puenteLargo": {
+          "description": "Si tu rastro cruza un hueco o agua de hasta esto (bloques), arma un puente con sus bloques (0 = nunca).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        },
+        "puenteCada": {
+          "description": "Armando el puente: un bloque cada esto (s).",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 3
+        },
+        "puenteQuitar": {
+          "description": "Quita el puente (y recupera los bloques) cuando estás a más de esto y no lo ves (bloques).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "desatasco": {
+          "description": "Esperando sin camino (encerrado, en un hoyo): tras esto (s) rompe o pone un bloque para salir.",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 20
+        },
+        "desatascoMax": {
+          "description": "Bloques que rompe o pone como mucho para salir (0 = nunca; luego espera o aparece detrás de ti).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20
         }
       },
       "additionalProperties": false

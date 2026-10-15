@@ -15,13 +15,19 @@
 // tu altura; si le pusieron un bloque encima, lo rompe (opciones.romper) y se lo guarda. Lleva `torreBloques` bloques:
 // sin bloques se queda donde llegó (evento 'sinBloques'). Si bajas, baja rompiéndola (opciones.quitar) y los recupera;
 // si te vas por arriba, la deja y la quita (y los recupera) cuando no la ves.
+// 7i PR 3: los bloques salen de su mochila (opciones.mochila { cuantos(), sacar() → id, guardar(id, n) }; sin mochila
+// lleva `torreBloques` contados). Puentes: si tu rastro se corta sobre un hueco o agua de hasta `puenteLargo` (los dos
+// lados a la misma altura ±1), camina por la recta poniendo un bloque donde falta piso y lo quita (y los recupera)
+// cuando estás a más de `puenteQuitar` y no lo ves. Desatasco: esperando sin camino, cada `desatasco` s rompe un bloque
+// hacia ti (o pone uno bajo los pies si estás arriba: sale del hoyo) y busca camino de nuevo, hasta `desatascoMax`
+// bloques; recién después espera o aparece detrás de ti como siempre.
 // Peleas: `perseguir(dt, p)` lo lleva hasta un monstruo (quien decide la pelea es supervivencia/acompanante-pelea.js) y
 // `dejar()` lo devuelve a tu rastro.
 //
-// Estados: 'quieto' (cerca, te mira) · 'siguiendo' (modo 'rastro', 'camino' o 'torre') · 'esperando' · 'peleando'.
+// Estados: 'quieto' (cerca, te mira) · 'siguiendo' (modo 'rastro', 'camino', 'torre' o 'puente') · 'esperando' · 'peleando'.
 // Valores: SEGUIR_BASE + mundo/datos/navegacion.json → `seguir` (pestaña Vida del Estudio).
 // =========================================================
-import { apoyo, cercaPisable, crearCaminante, ajustesNavegacion, LIBRE } from './navegacion.js';
+import { apoyo, cercaPisable, crearCaminante, ajustesNavegacion, LIBRE, SOLIDO, AGUA, OBSTACULO } from './navegacion.js';
 
 export const SEGUIR_BASE = {
     distancia: 2.5,     // se queda a esto de ti (bloques)
@@ -47,7 +53,12 @@ export const SEGUIR_BASE = {
     torreCada: 0.5,     // subiendo: un bloque cada esto (s)
     torreBajar: 0.4,    // bajando: rompe un bloque cada esto (s)
     torreRomper: 0.8,   // si le pusieron un bloque encima, lo rompe en esto (s)
-    torreBloques: 16    // bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre)
+    torreBloques: 16,   // bloques que lleva al empezar a acompañarte (los recupera al bajar o al quitar la torre)
+    puenteLargo: 10,    // tu rastro cruza un hueco o agua de hasta esto (bloques): arma un puente (0 = nunca)
+    puenteCada: 0.4,    // armando el puente: un bloque cada esto (s)
+    puenteQuitar: 10,   // lo quita (y recupera los bloques) cuando estás a más de esto y no lo ves (bloques)
+    desatasco: 2,       // esperando sin camino: tras esto (s) rompe o pone un bloque para salir
+    desatascoMax: 6     // bloques que rompe o pone como mucho para salir (0 = nunca; luego espera o aparece detrás de ti)
 };
 let ajustesS = { ...SEGUIR_BASE };
 // navegacion.json → `seguir` (ignora lo que no sea número finito)
@@ -83,11 +94,41 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
     let veda = -1; // migas hasta aquí no le sirven (más adelante estaba tapado): no vuelve a ellas
     let yObj = NaN, andado = 0, reloj = 0, relojBuscar = 0, faseW = 0;
     let torre = null, relojTorre = 0; // torre: { fase: 'ir' | 'subir' | 'arriba' | 'bajar', bx, bz, y (pies), bloques, reloj }
-    const restos = []; // bloques de torres que dejó atrás: los quita (y los recupera) cuando no los ves
+    let puente = null; // { cols: [{ x, z, y, pon, puesto }], k, reloj, bloques, fin (la miga del otro lado) }
+    let intentos = 0;  // bloques que rompió o puso para desatascarse (vuelve a 0 al llegar contigo)
+    // Grupos de bloques que dejó atrás ({ b: [[x, y, z, id]], lejos }): los quita (y los recupera) cuando no los ves y
+    // estás a más de `lejos`
+    const restos = [];
+    // Sus bloques: de su mochila o, sin ella, contados
+    const M = opciones.mochila || null;
+    let contador = S().torreBloques | 0;
+    const hay = () => (M ? M.cuantos() : contador);
+    const sacar = () => (M ? M.sacar() : contador > 0 ? (contador--, 1) : 0);
+    function guardar(id, n = 1) { if (M) { if (id) M.guardar(id, n); } else contador += n; }
+    // Lo que da un bloque roto: la lista de [id, n] de opciones.romper, o uno
+    function guardarRoto(r) {
+        if (Array.isArray(r)) { if (M) for (const [id, n] of r) guardar(id, n); else contador++; }
+        else guardar(typeof r === 'number' ? r : 1);
+    }
+    // Pone uno de sus bloques: el id puesto, 0 si no tiene, -1 si no se pudo (lo devuelve a la mochila)
+    function ponerBloque(x, y, z) {
+        const id = sacar();
+        if (!id) return 0;
+        if (opciones.poner(x, y, z, id)) return id;
+        guardar(id);
+        return -1;
+    }
+    function quitarBloque(b) {
+        const r = opciones.quitar ? opciones.quitar(b[0], b[1], b[2], b[3]) : true;
+        if (r !== false) guardar(b[3] || 1); // (si ya no estaba, no lo recupera)
+    }
     const s = {
         estado: 'quieto', modo: 'rastro', porque: null, evento: null,
         moviendo: false, fase: 0, rapidez: 1, espera: 0, mirarYaw: undefined,
-        bloques: S().torreBloques | 0, // los que lleva para su torre
+        get bloques() { return hay(); }, // los que lleva para su torre y sus puentes
+        set bloques(v) { contador = v | 0; },
+        get puente() { return puente; },
+        get intentos() { return intentos; },
         get migas() { return migas; },
         get i() { return i; },
         get torre() { return torre; },
@@ -106,17 +147,17 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
                 if (d > A.corte || y - u.y > A.subidaRastro || u.y - y > A.caidaRastro) cortar();
             }
             migas.push({ x: p.x, y, z: p.z });
-            while (migas.length > Math.max(8, A.migas | 0)) { migas.shift(); i--; veda--; }
+            while (migas.length > Math.max(8, A.migas | 0)) { migas.shift(); i--; veda--; if (puente) puente.fin--; }
             if (i < -1) i = -1;
             if (veda < -1) veda = -1;
         },
         // Olvida el rastro y queda quieto (al empezar a acompañar o al soltarlo)
-        reiniciar() { dejarTorre(); migas.length = 0; i = -1; veda = -1; w.parar(); s.modo = 'rastro'; s.estado = 'quieto'; s.porque = null; s.evento = null; s.espera = 0; yObj = NaN; },
+        reiniciar() { dejarTorre(); dejarPuente(); intentos = 0; migas.length = 0; i = -1; veda = -1; w.parar(); s.modo = 'rastro'; s.estado = 'quieto'; s.porque = null; s.evento = null; s.espera = 0; yObj = NaN; },
         parar() { w.parar(); s.moviendo = false; },
         // Quita al tiro las torres que puso (al dejar de acompañarte). Si estaba arriba de una, queda en el suelo
         limpiar() {
             if (torre) { const b = torre.bloques[0]; if (b) { cuerpo.y = b[1]; cuerpo.yObj = b[1]; } }
-            dejarTorre();
+            dejarTorre(); dejarPuente();
             quitarRestos();
         },
         // Pelea: camina hasta `p` ({ x, y, z }) y lo mira al llegar a `alcance`. Devuelve 'alcance' | 'yendo' |
@@ -124,6 +165,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         perseguir(dt, p, { alcance = 2, repensar = 0.5, detalle = true } = {}) {
             s.evento = null; s.moviendo = false; s.mirarYaw = undefined;
             if (torre) return 'torre';
+            if (puente) dejarPuente();
             s.estado = 'peleando';
             const d = Math.hypot(p.x - cuerpo.x, p.z - cuerpo.z);
             if (d <= alcance && Math.abs(p.y - cuerpo.y) < 2) {
@@ -160,17 +202,20 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
             const A = S(), NV = N();
             s.moviendo = false; s.evento = null;
             const dL = Math.hypot(cuerpo.x - lider.x, cuerpo.z - lider.z), dy = Math.abs(cuerpo.y - lider.y);
-            if (restos.length) limpiarRestos(visible);
+            if (restos.length) limpiarRestos(visible, lider);
             // Muy lejos y nadie lo ve: aparece detrás del líder (si estaba en su torre, la deja)
             if (dL > A.radioAparecer && !visible(cuerpo) && aparecer(lider, visible)) { s.evento = 'aparecio'; return s.estado; }
-            // Su torre (sube, espera arriba o baja rompiéndola)
+            // Su torre (sube, espera arriba o baja rompiéndola) y su puente
             if (torre && pasoTorre(dt, lider, A, NV, detalle)) return s.estado;
+            if (puente && pasoPuente(dt, lider, A, NV)) return s.estado;
             // Te subiste a un pilar: arma la suya al lado (si puede poner bloques)
             if (!torre && opciones.poner && lider.y - cuerpo.y >= A.torreAltura && dL <= A.torreCerca) {
                 if ((relojTorre += dt) >= A.torreEspera && armarTorre(lider, NV)) return s.estado;
             } else relojTorre = 0;
             if (s.estado === 'esperando') {
                 s.espera += dt;
+                // Sin camino: rompe o pone un bloque para salir y lo intenta de nuevo
+                if (s.porque === 'camino' && s.espera >= A.desatasco && intentos < A.desatascoMax && desatascar(lider, NV)) return s.estado;
                 const sigue = dL < A.retomar && (s.porque === 'lejos' || s.espera >= A.reintento);
                 if (!sigue) { mirar(lider, dt); w.asentar(dt); return s.estado; }
                 s.estado = 'siguiendo'; s.porque = null; s.modo = 'rastro'; i = -1;
@@ -180,7 +225,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
             const umbral = A.distancia + (s.estado === 'quieto' ? A.holgura : A.miga + 0.1);
             if (dL <= umbral && dy < 3) {
                 if (s.estado !== 'quieto') { w.parar(); s.modo = 'rastro'; }
-                s.estado = 'quieto'; i = -1; reloj = 0; andado = 0;
+                s.estado = 'quieto'; i = -1; reloj = 0; andado = 0; intentos = 0;
                 mirar(lider, dt); w.asentar(dt);
                 return s.estado;
             }
@@ -205,7 +250,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
     function armarTorre(lider, NV) {
         const y0 = Math.round(cuerpo.y), lx = Math.floor(lider.x), lz = Math.floor(lider.z);
         relojTorre = 0;
-        if (s.bloques <= 0) { s.evento = 'sinBloques'; return false; }
+        if (hay() <= 0) { s.evento = 'sinBloques'; return false; }
         let mejor = null, dm = Infinity;
         for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
             if (!dx && !dz) continue;
@@ -226,19 +271,24 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
     // Deja la torre donde está (la quita después, cuando no la ves)
     function dejarTorre() {
         if (!torre) return;
-        restos.push(...torre.bloques);
+        if (torre.bloques.length) restos.push({ b: torre.bloques, lejos: 0 });
         torre = null; relojTorre = 0;
         if (s.modo === 'torre') { s.modo = 'rastro'; i = -1; }
     }
+    function quitarGrupo(g) { for (let k = g.b.length - 1; k >= 0; k--) quitarBloque(g.b[k]); }
     function quitarRestos() {
-        if (opciones.quitar) for (const b of restos.reverse()) opciones.quitar(b[0], b[1], b[2]);
-        s.bloques += restos.length;
+        for (let k = restos.length - 1; k >= 0; k--) quitarGrupo(restos[k]);
         restos.length = 0;
     }
-    function limpiarRestos(visible) {
-        // Mientras esté parado cerca de una, o la veas, se queda
-        if (restos.some(b => Math.hypot(b[0] + 0.5 - cuerpo.x, b[2] + 0.5 - cuerpo.z) < 3 || visible({ x: b[0] + 0.5, y: b[1], z: b[2] + 0.5 }))) return;
-        quitarRestos();
+    function limpiarRestos(visible, lider) {
+        // Cada torre o puente: mientras esté parado cerca, la veas o estés cerca de ella (`lejos`), se queda
+        for (let k = restos.length - 1; k >= 0; k--) {
+            const g = restos[k];
+            if (g.b.some(b => Math.hypot(b[0] + 0.5 - cuerpo.x, b[2] + 0.5 - cuerpo.z) < 3 || visible({ x: b[0] + 0.5, y: b[1], z: b[2] + 0.5 }) ||
+                (g.lejos > 0 && Math.hypot(b[0] + 0.5 - lider.x, b[2] + 0.5 - lider.z) < g.lejos))) continue;
+            quitarGrupo(g);
+            restos.splice(k, 1);
+        }
     }
     // Un cuadro de la torre. false: ya no está en la torre (sigue lo de siempre)
     function pasoTorre(dt, lider, A, NV, detalle) {
@@ -261,7 +311,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         mirar(lider, dt);
         const sobre = lider.y - t.y;
         if (t.fase === 'arriba') {
-            if (sobre >= 1.5 && dL <= A.torreCerca && s.bloques > 0) { t.fase = 'subir'; t.reloj = 0; }
+            if (sobre >= 1.5 && dL <= A.torreCerca && hay() > 0) { t.fase = 'subir'; t.reloj = 0; }
             else if (sobre <= -1.5 && t.bloques.length) { t.fase = 'bajar'; t.reloj = 0; }
             else if (dL > A.distancia + A.holgura + 1) { dejarTorre(); return false; } // te fuiste por arriba: te sigue
         } else if (t.fase === 'subir') {
@@ -274,22 +324,24 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
                 if (tapa >= 0) {
                     if (t.reloj >= A.torreRomper) {
                         t.reloj = 0;
-                        if (opciones.romper && opciones.romper(t.bx, tapa, t.bz)) { s.bloques++; s.evento = 'rompe'; }
+                        const r = opciones.romper && opciones.romper(t.bx, tapa, t.bz);
+                        if (r) { guardarRoto(r); s.evento = 'rompe'; }
                         else t.fase = 'arriba'; // no se puede romper (roca madre, una mesa…): se queda donde llegó
                     }
                 } else if (t.reloj >= A.torreCada) {
                     t.reloj = 0;
-                    if (s.bloques <= 0) { t.fase = 'arriba'; s.evento = 'sinBloques'; }
-                    else if (opciones.poner(t.bx, t.y, t.bz)) { t.bloques.push([t.bx, t.y, t.bz]); t.y++; s.bloques--; s.evento = 'salta'; }
+                    const id = ponerBloque(t.bx, t.y, t.bz);
+                    if (!id) { t.fase = 'arriba'; s.evento = 'sinBloques'; }
+                    else if (id > 0) { t.bloques.push([t.bx, t.y, t.bz, id]); t.y++; s.evento = 'salta'; }
                     else t.fase = 'arriba';
                 }
             }
         } else if (t.fase === 'bajar') {
-            if (sobre >= 1.5 && dL <= A.torreCerca && s.bloques > 0) { t.fase = 'subir'; t.reloj = 0; }
+            if (sobre >= 1.5 && dL <= A.torreCerca && hay() > 0) { t.fase = 'subir'; t.reloj = 0; }
             else if ((t.reloj += dt) >= A.torreBajar) {
                 t.reloj = 0;
                 const b = t.bloques[t.bloques.length - 1];
-                if (b && b[1] === t.y - 1) { if (opciones.quitar) opciones.quitar(b[0], b[1], b[2]); t.bloques.pop(); t.y--; s.bloques++; s.evento = 'rompe'; }
+                if (b && b[1] === t.y - 1) { quitarBloque(b); t.bloques.pop(); t.y--; s.evento = 'rompe'; }
                 if (!t.bloques.length) { torre = null; s.modo = 'rastro'; i = -1; cuerpo.y = t.y; yObj = NaN; return false; }
             }
         }
@@ -298,6 +350,138 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         cuerpo.y += (t.y - cuerpo.y) * Math.min(1, dt * (t.y > cuerpo.y ? 18 : 10));
         if (Math.abs(t.y - cuerpo.y) < 0.02) cuerpo.y = t.y;
         cuerpo.yObj = t.y;
+        return true;
+    }
+    // ---- Puente (7i PR 3) ----
+    // Tu rastro se corta en migas[i] (o unas pocas más adelante). Si al otro lado se llega por una recta de hasta `puenteLargo`, a
+    // la misma altura (±1), poniendo bloques donde falta piso (un hueco o agua), arma el puente. false: busca camino;
+    // 'espera': todavía no llegas al otro lado
+    function armarPuente(lider, A, NV) {
+        if (!(A.puenteLargo > 0) || !opciones.poner) return false;
+        // El corte: en la miga a la que iba o unas pocas más adelante (el borde del hueco)
+        let fin = -1;
+        for (let k = Math.max(0, i); k < Math.min(migas.length, i + 5); k++) if (!migas[k]) { fin = k + 1; break; }
+        if (fin === migas.length) return 'espera'; // sigues saltando o nadando: espera al borde (el atasco lo manda a buscar camino)
+        const b = fin > 0 ? migas[fin] : null;
+        if (!b) return false;
+        const x0 = cuerpo.x, z0 = cuerpo.z, d = Math.hypot(b.x - x0, b.z - z0);
+        let y = Number.isFinite(yObj) ? yObj : Math.round(cuerpo.y);
+        if (d < 0.5 || d > A.puenteLargo + 0.5 || Math.abs(b.y - y) > 1) return false;
+        // Las columnas de la recta, sin cortar esquinas
+        const pasos = [];
+        let cx = Math.floor(x0), cz = Math.floor(z0);
+        for (let k = 1, n = Math.ceil(d / 0.2); k <= n; k++) {
+            const x = Math.floor(x0 + (b.x - x0) * k / n), z = Math.floor(z0 + (b.z - z0) * k / n);
+            if (x === cx && z === cz) continue;
+            if (x !== cx && z !== cz) pasos.push([x, cz]);
+            pasos.push([x, z]); cx = x; cz = z;
+        }
+        const cols = [];
+        let falta = 0;
+        for (const [x, z] of pasos) {
+            const c0 = C.celda(x, y, z), c1 = C.celda(x, y + 1, z);
+            // Sube un escalón (el otro lado está más arriba) o baja uno (más abajo)
+            if (c0 === SOLIDO && b.y > y + 0.5 && c1 === LIBRE && C.celda(x, y + 2, z) === LIBRE) { y++; cols.push({ x, z, y, pon: false }); continue; }
+            if (!(c0 === LIBRE || c0 === AGUA) || c1 !== LIBRE) return false;
+            const piso = C.celda(x, y - 1, z);
+            if (piso === SOLIDO) cols.push({ x, z, y, pon: false });
+            else if (piso === LIBRE && b.y < y - 0.5 && C.celda(x, y - 2, z) === SOLIDO) { y--; cols.push({ x, z, y, pon: false }); }
+            else if (piso === LIBRE || piso === AGUA) { cols.push({ x, z, y, pon: true }); falta++; }
+            else return false;
+        }
+        if (!falta) return false; // no falta piso: no es un hueco
+        if (hay() < falta) { s.evento = 'sinBloques'; return false; }
+        puente = { cols, k: 0, reloj: 0, bloques: [], fin };
+        w.parar(); s.modo = 'puente';
+        return true;
+    }
+    // Un cuadro del puente: al borde pone el bloque que falta (cada `puenteCada` s) y recién ahí avanza. false: terminó
+    function pasoPuente(dt, lider, A, NV) {
+        const P = puente;
+        s.estado = 'siguiendo'; s.modo = 'puente';
+        if (Math.hypot(cuerpo.x - lider.x, cuerpo.z - lider.z) > A.radioEspera) { dejarPuente(); return false; }
+        const c = P.cols[P.k];
+        if (!c) { dejarPuente(); i = P.fin >= 0 && P.fin < migas.length ? P.fin : -1; reloj = 0; andado = 0; return false; }
+        if (c.pon && !c.puesto) {
+            const meta = Math.atan2(c.x + 0.5 - cuerpo.x, c.z + 0.5 - cuerpo.z);
+            cuerpo.yaw += angulo(meta - cuerpo.yaw) * Math.min(1, dt * NV.giro);
+            if ((P.reloj += dt) < A.puenteCada) return true;
+            P.reloj = 0;
+            if (C.celda(c.x, c.y - 1, c.z) === SOLIDO) { c.puesto = true; return true; } // (ya hay piso)
+            const id = ponerBloque(c.x, c.y - 1, c.z);
+            if (id > 0) { P.bloques.push([c.x, c.y - 1, c.z, id]); c.puesto = true; s.evento = 'pone'; return true; }
+            if (!id) s.evento = 'sinBloques';
+            dejarPuente(); porCamino(lider);
+            return true;
+        }
+        // Camina al centro de la columna
+        const dx = c.x + 0.5 - cuerpo.x, dz = c.z + 0.5 - cuerpo.z, d = Math.hypot(dx, dz);
+        const paso = Math.min(d, NV.velocidad * dt);
+        if (d > 1e-6) {
+            cuerpo.x += dx / d * paso; cuerpo.z += dz / d * paso;
+            s.moviendo = true; s.fase += paso * 2.6;
+            cuerpo.yaw += angulo(Math.atan2(dx, dz) - cuerpo.yaw) * Math.min(1, dt * NV.giro);
+        }
+        if (Math.floor(cuerpo.x) === c.x && Math.floor(cuerpo.z) === c.z) yObj = c.y;
+        if (Number.isFinite(yObj)) {
+            cuerpo.y += (yObj - cuerpo.y) * Math.min(1, dt * (yObj > cuerpo.y ? 14 : 10));
+            if (Math.abs(yObj - cuerpo.y) < 0.02) cuerpo.y = yObj;
+            cuerpo.yObj = yObj;
+        }
+        if (d - paso < 0.05) P.k++;
+        return true;
+    }
+    // Deja el puente donde está (lo quita después, cuando estés lejos y no lo veas)
+    function dejarPuente() {
+        if (!puente) return;
+        if (puente.bloques.length) restos.push({ b: puente.bloques, lejos: S().puenteQuitar });
+        puente = null;
+        if (s.modo === 'puente') { s.modo = 'rastro'; i = -1; }
+    }
+    // ---- Desatasco (7i PR 3) ----
+    // Esperando sin camino: un bloque para salir y busca camino de nuevo. Si estás más arriba sube uno (pone un bloque
+    // bajo los pies, como su torre; si algo lo tapa por arriba lo rompe); si no, rompe lo que lo tapa hacia ti, pone
+    // piso si hacia ti hay un hueco, o rompe lo que tiene sobre la cabeza (para subir un escalón). false: nada que hacer
+    function desatascar(lider, NV) {
+        const A = S();
+        const x = Math.floor(cuerpo.x), z = Math.floor(cuerpo.z), y = Math.round(cuerpo.y);
+        const dx = lider.x - cuerpo.x, dz = lider.z - cuerpo.z, ejeX = Math.abs(dx) >= Math.abs(dz);
+        const nx = x + (ejeX ? Math.sign(dx) : 0), nz = z + (ejeX ? 0 : Math.sign(dz));
+        const duro = c => c === SOLIDO || c === OBSTACULO;
+        const tapa = C.celda(x, y + NV.alto, z);
+        let hecho = false, sigue = false;
+        if (lider.y - y >= 1.5 && opciones.poner) {
+            if (duro(tapa)) { hecho = romperEn(x, y + NV.alto, z); sigue = hecho; }
+            else if (tapa === LIBRE) {
+                const id = ponerBloque(x, y, z);
+                if (id > 0) { restos.push({ b: [[x, y, z, id]], lejos: 0 }); cuerpo.y = y + 1; cuerpo.yObj = y + 1; yObj = y + 1; hecho = true; s.evento = 'salta'; }
+                else if (!id) s.evento = 'sinBloques';
+            }
+        }
+        if (!hecho && (nx !== x || nz !== z)) {
+            for (let h = NV.alto - 1; h >= 0 && !hecho; h--) if (duro(C.celda(nx, y + h, nz))) { hecho = romperEn(nx, y + h, nz); sigue = hecho && h > 0 && duro(C.celda(nx, y, nz)); }
+            if (!hecho && opciones.poner && C.celda(nx, y, nz) === LIBRE) {
+                const piso = C.celda(nx, y - 1, nz), bajo = C.celda(nx, y - 2, nz);
+                if ((piso === LIBRE || piso === AGUA) && !(bajo === SOLIDO && NV.caida >= 1)) {
+                    const id = ponerBloque(nx, y - 1, nz);
+                    if (id > 0) { restos.push({ b: [[nx, y - 1, nz, id]], lejos: A.puenteQuitar }); hecho = true; s.evento = 'pone'; }
+                    else if (!id) s.evento = 'sinBloques';
+                }
+            }
+        }
+        if (!hecho && duro(tapa)) hecho = romperEn(x, y + NV.alto, z);
+        if (!hecho) { intentos = A.desatascoMax; return false; } // nada que romper ni poner: espera como siempre
+        intentos++;
+        // Le falta romper otro de la misma pared: lo rompe al rato, sin buscar camino todavía
+        if (sigue && intentos < A.desatascoMax) { s.espera = Math.max(0, A.desatasco - A.torreRomper); return true; }
+        s.estado = 'siguiendo'; s.porque = null; s.espera = 0;
+        porCamino(lider);
+        return true;
+    }
+    function romperEn(x, y, z) {
+        const r = opciones.romper && opciones.romper(x, y, z);
+        if (!r) return false;
+        guardarRoto(r); s.evento = 'rompe';
         return true;
     }
     function cortar() { if (migas.length && migas[migas.length - 1] !== null) migas.push(null); }
@@ -329,6 +513,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         w.ir(q);
     }
     function pasoRastro(dt, lider, A, NV) {
+        if (i >= 0 && i < migas.length && !migas[i] && armarPuente(lider, A, NV)) return; // llegó al corte: ¿un hueco?
         if (i < 0 || i >= migas.length || !migas[i]) {
             // La miga más cercana: estaba quieto a unos pasos de ti y partiste, así que tu rastro empieza cerca (va
             // derecho hasta ella; si algo lo tapa, el atasco lo manda a buscar camino)
@@ -339,7 +524,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         const x0 = cuerpo.x, z0 = cuerpo.z;
         while (resto > 0 && i < migas.length) {
             const p = migas[i];
-            if (!p) { porCamino(lider); return; } // el rastro se corta aquí
+            if (!p) { if (!armarPuente(lider, A, NV)) porCamino(lider); return; } // el rastro se corta aquí: ¿un hueco?
             // No se adelanta: la miga que queda a menos de `distancia` del líder ya es «estar con él»
             if (Math.hypot(p.x - lider.x, p.z - lider.z) < A.distancia) break;
             const dx = p.x - cuerpo.x, dz = p.z - cuerpo.z, d = Math.hypot(dx, dz);
@@ -349,7 +534,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
             if (Math.floor(nx) !== Math.floor(cuerpo.x) || Math.floor(nz) !== Math.floor(cuerpo.z)) {
                 const y0 = Number.isFinite(yObj) ? yObj : Math.round(cuerpo.y);
                 const y = apoyo(C, nx, y0, nz, NV);
-                if (!Number.isFinite(y) || y - y0 > NV.subida + 0.01 || y0 - y > NV.caida) { veda = i; porCamino(lider); return; }
+                if (!Number.isFinite(y) || y - y0 > NV.subida + 0.01 || y0 - y > NV.caida) { if (!armarPuente(lider, A, NV)) { veda = i; porCamino(lider); } return; }
                 yObj = y;
             }
             cuerpo.x = nx; cuerpo.z = nz; resto -= paso;
@@ -403,7 +588,7 @@ export function crearSeguidor(navegador, cuerpo, opciones = {}) {
         return true;
     }
     function poner(x, y, z) {
-        dejarTorre();
+        dejarTorre(); dejarPuente();
         w.parar();
         cuerpo.x = x; cuerpo.y = y; cuerpo.z = z; cuerpo.yObj = y; yObj = y;
         s.estado = 'quieto'; s.modo = 'rastro'; s.porque = null; reloj = 0; andado = 0;

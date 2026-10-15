@@ -29,7 +29,8 @@ export const RUTINA_BASE = {
     radioIncluir: 7,    // a menos de esto (bloques) del jugador
     esperaIncluir: 90,  // segundos antes de volver a saludarte la misma persona
     // Acompañantes (7i): «¿Me acompañas?» en «Hablar»
-    nivelAcompanar: 3   // nivel de amistad desde el que te acompaña (3 Buen amigo, 4 Íntimo; 5 = nunca)
+    nivelAcompanar: 3,  // nivel de amistad desde el que te acompaña (3 Buen amigo, 4 Íntimo; 5 = nunca)
+    mochila: 9          // 7i PR 3: casillas de la mochila de quien te acompaña (9, 18 o 27)
 };
 const HORAS = ['de', 'a'];
 // Lo que hace quien visita si no encuentra a la persona (se lo llevó el jugador, no la alcanzó): gesto y frase;
@@ -68,6 +69,10 @@ export const ACOMPANAR_BASE = {
     cansado: { es: '¡Son muchos! Me siento un rato.', en: "Too many of them! I'll sit for a bit." },
     listo: { es: 'Listo, ¡sigamos!', en: "Okay, let's keep going!" },
     sinBloques: { es: '¡No tengo más bloques!', en: "I'm out of blocks!" },
+    // 7i PR 3: su mochila (le das y le pides cosas; sus torres y puentes usan los bloques que lleva)
+    mochila: { es: 'Su mochila', en: 'Their backpack' },
+    tituloMochila: { es: 'Mochila de {quien}', en: "{quien}'s backpack" },
+    abreMochila: { es: 'Toma, mira lo que llevo.', en: "Here, see what I've got." },
     gestoAcepta: 'asiente',
     gestoDespide: 'saluda'
 };
