@@ -1102,7 +1102,7 @@ async function arrancar(guardado, cx = null) {
         return cargandoAmistad;
     }
     const puedeAmistad = () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !escenas.activa;
-    misiones.escenaAmistad = {
+    const accionesAmistad = {
         jugar: (clave, tipo) => {
             if (!puedeAmistad() || misiones.amistad.nivel(clave) < NIVEL_ANIMACION[tipo]) return;
             capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
@@ -1125,12 +1125,13 @@ async function arrancar(guardado, cx = null) {
         // Saludo del grupo (6c-2): repite la escena de grupo de este amigo con tu skin
         grupo: clave => {
             const base = escenas.tipoSkin(skinActual).base, g = grupoDe(base, clave);
-            if (!puedeAmistad() || !g || !misiones.escenaAmistad.grupoListo(clave)) return;
+            if (!puedeAmistad() || !g || !accionesAmistad.grupoListo(clave)) return; // (misiones.escenaAmistad solo tiene set: leerlo da undefined)
             capaPanel.hidden = true; capaPanel.textContent = ''; document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             cargarEscenaAmistad().then(ea => (ea ? ea.grupo(g, base) : false)).then(ok => { if (!ok) { uiAbierta = false; if (!vida.muerto) entrar(); } });
         }
     };
+    misiones.escenaAmistad = accionesAmistad;
     // Música de fondo y temas de los amigos
     const musica = crearMusica();
     const personasMusica = () => {
