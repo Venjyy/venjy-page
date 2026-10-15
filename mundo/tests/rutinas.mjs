@@ -103,6 +103,7 @@ function armar({ visitas, hora = 7, jugador = { pos: { x: 0, z: 0 } }, nivel = n
         fuera: c => fuera.has(c),
         estado: c => (fuera.has(c) ? { estado: fuera.get(c).estado } : { estado: 'en-sitio' }),
         adornar(c, f) { const x = fuera.get(c); if (x) x.adorno = f; },
+        mirar(c, p) { const x = fuera.get(c); if (x) x.mira = p; },
         resolverDestino: l => (l === 'faro' ? { x: 100, z: 0 } : null),
         // de la prueba
         llegar(c) { const f = fuera.get(c); f.estado = 'alla'; if (f.d && f.d.persona) { P[c].x = P[f.d.persona].x - 1.5; P[c].z = P[f.d.persona].z; } },
@@ -302,10 +303,10 @@ const VIS = {
     ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === '¡Hola! Voy a ver a BETO. ¿Te vienes?', `amistad alta: te saluda al pasar («${P.ana.paseo.texto}»)`);
     const p = rig();
     fuera.get('ana').adorno(0.1, p);
-    ok(p.cuello.rotation.y > 0.1 && p.brazoD.rotation.x < 0, `al saludarte te mira y hace su gesto (cuello ${p.cuello.rotation.y.toFixed(2)})`);
+    ok(fuera.get('ana').mira === jugador.pos && p.brazoD.rotation.x < 0, 'al saludarte te mira (paseos.mirar, un solo dueño del cuello) y hace su gesto');
     const A = RD.ajustesRutinas();
     paso(Math.max(A.frase, A.gesto) + 1);
-    ok(P.ana.paseo.texto === '' && !fuera.get('ana').adorno, 'el saludo al pasar termina solo (sin globo ni gesto)');
+    ok(P.ana.paseo.texto === '' && !fuera.get('ana').adorno && !fuera.get('ana').mira, 'el saludo al pasar termina solo (sin globo, gesto ni mirada)');
     paso(5);
     ok(P.ana.paseo.texto === '', 'no repite el saludo antes de `esperaIncluir`');
     nivel.ana = 2; r.cortar('ana');

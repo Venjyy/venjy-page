@@ -229,6 +229,16 @@ function caminarHasta(C, cuerpo, destino, { dt = 1 / 60, detalle = true, max = 6
     return { w, t, malos };
 }
 {
+    // Destino en su misma celda (seguir a alguien que se movió un poco): camino de un solo punto. Antes, cerca del
+    // jugador, pasoCerca leía camino[1] = undefined y botaba el juego («Cannot read properties of undefined (reading 'x')»)
+    const C = juguete();
+    const b = buscar(C, { x: 5.5, y: 1, z: 5.5 }, { x: 5.8, y: 1, z: 5.6 });
+    ok(b.camino && b.camino.length === 1, `misma celda: camino de un punto (${b.camino && b.camino.length})`);
+    let error = null, r = null;
+    try { r = caminarHasta(C, { x: 5.5, y: 1, z: 5.5, yaw: 0 }, { x: 5.8, y: 1, z: 5.6 }, { max: 120 }); } catch (e) { error = e; }
+    ok(!error && r.w.estado === 'llego', `misma celda: llega sin error (${error ? error.message : r.w.estado})`);
+}
+{
     const C = juguete();
     C.caja(20, 1, 0, 20, 3, 34, SOLIDO); C.caja(10, 1, 25, 14, 1, 30, SOLIDO); // pared y una lomita de 1
     const cuerpo = { x: 3.5, y: 1, z: 28.5, yaw: 0 };

@@ -143,6 +143,7 @@ export function crearRutinas(ctx) {
     function terminarSaludo(c) {
         const r = R[c], v = r && r.v && visitas()[r.v];
         const n = persona(c);
+        if (r && Number.isFinite(r.inc) && paseos.mirar) paseos.mirar(c, null);
         if (r) r.inc = NaN;
         if (n && n.paseo) n.paseo.texto = '';
         paseos.adornar && paseos.adornar(c, null);
@@ -248,12 +249,12 @@ export function crearRutinas(ctx) {
         r.inc = 0; r.incluido = tiempo;
         cargar();
         const I = incluirRutinas();
+        // La mirada la lleva paseos.js (un solo dueño del cuello, caminando o de pie); aquí solo el gesto encima
+        if (paseos.mirar) paseos.mirar(c, jugador.pos);
         if (paseos.adornar) paseos.adornar(c, (dt, p) => {
             if (!Number.isFinite(r.inc)) return;
-            const T = Math.max(A.frase, A.gesto), w = peso(r.inc, T), cy = mirarA(n, jugador.pos, A.cuello);
-            if (p.cuello) p.cuello.rotation.y += (cy - p.cuello.rotation.y) * w;
             const g = I.gesto && gestoDe && gestoDe(I.gesto);
-            if (g) ponerGesto(p, g(lim01(r.inc / A.gesto), r.inc, { s: false, j: false, esc: n.escala || 1 }), peso(r.inc, A.gesto), cy);
+            if (g) ponerGesto(p, g(lim01(r.inc / A.gesto), r.inc, { s: false, j: false, esc: n.escala || 1 }), peso(r.inc, A.gesto), p.cuello ? p.cuello.rotation.y : 0);
         });
     }
     function avanzarIncluir(c, dt) {
@@ -263,6 +264,7 @@ export function crearRutinas(ctx) {
             r.inc = NaN;
             if (n && n.paseo) n.paseo.texto = '';
             if (paseos.adornar) paseos.adornar(c, null);
+            if (paseos.mirar) paseos.mirar(c, null);
             return;
         }
         if (n && n.paseo) n.paseo.texto = r.inc < A.frase ? fraseIncluir(c) : '';

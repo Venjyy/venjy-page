@@ -462,6 +462,8 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
                 w.camino = b.camino; w.parcial = b.estado === 'parcial';
                 w.i = Math.hypot(b.camino[0].x - cuerpo.x, b.camino[0].z - cuerpo.z) > 0.25 ? 0 : 1;
                 w.estado = 'caminando'; w.lejos = 0; w.reloj = 0; w.mejor = Infinity;
+                // Camino de un solo punto (el destino cae en su misma celda: seguir a alguien que se movió un poco)
+                if (w.i >= w.camino.length) return finDeCamino();
             }
             if (w.estado !== 'caminando') return w.estado;
             return detalle ? pasoCerca(dt) : pasoLejos(dt);
@@ -538,6 +540,7 @@ export function crearCaminante(navegador, cuerpo, opciones = {}) {
     function pasoCerca(dt) {
         const A = op();
         const p = w.camino[w.i];
+        if (!p) return finDeCamino();
         const dx = p.x - cuerpo.x, dz = p.z - cuerpo.z, d = Math.hypot(dx, dz);
         if (d < 0.08) { cuerpo.x = p.x; cuerpo.z = p.z; w.i++; return w.i >= w.camino.length ? finDeCamino() : w.estado; }
         const paso = Math.min(d, A.velocidad * dt);

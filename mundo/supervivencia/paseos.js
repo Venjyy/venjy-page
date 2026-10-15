@@ -121,15 +121,17 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
             ir(p.piernaD.rotation, 'x', 0, f); ir(p.piernaI.rotation, 'x', 0, f);
             ir(p.brazoD.rotation, 'x', Math.sin(n.t * 1.7) * 0.04, f); ir(p.brazoI.rotation, 'x', -Math.sin(n.t * 1.7) * 0.04, f);
         }
-        // Cuello: hacia quien mira (de pie), o al frente caminando
-        let cy = 0;
-        if (!a.w.moviendo && a.mirarYaw !== undefined) {
-            cy = Math.atan2(Math.sin(a.mirarYaw - n.yaw), Math.cos(a.mirarYaw - n.yaw));
+        // Cuello: hacia un punto que le pidieron mirar (rutinas.js: el jugador al saludarlo al pasar, caminando o de pie),
+        // si no hacia quien mira (de pie), o al frente caminando. Un solo dueño del cuello: no pelean dos miradas
+        let cy = 0, yawMira = a.mirarYaw;
+        if (a.mirarPunto) yawMira = Math.atan2(a.mirarPunto.x - n.x, a.mirarPunto.z - n.z);
+        if (yawMira !== undefined && (a.mirarPunto || !a.w.moviendo)) {
+            cy = Math.atan2(Math.sin(yawMira - n.yaw), Math.cos(yawMira - n.yaw));
             cy = Math.max(-0.9, Math.min(0.9, cy));
         }
         ir(p.cuello.rotation, 'y', cy, k(dt, 5));
-        // Encima, de pie: el saludo al llegar de una visita (rutinas.js → adornar)
-        if (a.adorno && !a.w.moviendo) a.adorno(dt, p);
+        // Encima: el saludo al llegar de una visita o al pasar junto al jugador (rutinas.js → adornar)
+        if (a.adorno) a.adorno(dt, p);
         return true;
     }
 
@@ -204,6 +206,8 @@ export function crearPaseos({ amigos, terreno, mundo, jugador }) {
         fuera: clave => activos.has(clave),
         // Algo que se dibuja encima mientras está de pie allá (rutinas.js: el gesto al llegar); null lo saca
         adornar(clave, f) { const a = activos.get(clave); if (a) a.adorno = f || null; },
+        // Que mire a un punto ({ x, z }, se lee en cada cuadro: puede ser jugador.pos); null vuelve a lo de siempre
+        mirar(clave, punto) { const a = activos.get(clave); if (a) a.mirarPunto = punto || null; },
         estado(clave) {
             const a = activos.get(clave);
             if (!a) return { estado: 'en-sitio' };
