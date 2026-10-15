@@ -212,7 +212,7 @@ if (p.antebrazoD) {
     const v = new THREE.Vector3();
     let malasUV = 0, revisadas = 0;
     for (const [hueso, art] of [[p.brazoD, p.antebrazoD], [p.piernaI, p.canillaI]]) {
-        const sup = hueso.children[0], inf = art.children.find(o => o.isMesh && !o.userData.rigNuevo);
+        const sup = hueso.children[0], inf = art.children.find(o => o.isMesh);
         ok(sup.isMesh && inf && sup.material === inf.material, 'las dos mitades comparten el material (el mismo lienzo)');
         for (const m of [sup, inf]) {
             const pos = m.geometry.attributes.position, uv = m.geometry.attributes.uv, grupos = m.geometry.groups;
@@ -222,7 +222,7 @@ if (p.antebrazoD) {
                     const ix = m.geometry.index.getX(k);
                     v.fromBufferAttribute(pos, ix);
                     m.updateMatrix(); v.applyMatrix4(m.matrix);
-                    if (m === inf) v.applyMatrix4(art.matrix);
+                    if (m === inf) { art.updateMatrix(); v.applyMatrix4(art.matrix); }
                     const esperada = (v.y + 0.75) / 0.75;
                     revisadas++;
                     if (Math.abs(uv.getY(ix) - esperada) > 1e-9) malasUV++;

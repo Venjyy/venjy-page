@@ -138,24 +138,70 @@ export function angulos(e, ent, escudo = 0) {
     return a;
 }
 
-// Escribe los ángulos en el rig (huesos de crearPersona)
-export function aplicarAngulos(m, a) {
-    m.cuello.rotation.set(a.cx, a.cy, a.cz || 0);
-    m.brazoD.rotation.set(a.bDx, a.bDy, a.bDz);
-    m.brazoI.rotation.set(a.bIx, a.bIy, a.bIz);
-    m.piernaD.rotation.set(a.pDx, 0, 0);
-    m.piernaI.rotation.set(a.pIx, 0, 0);
-    m.cuerpo.rotation.set(a.inc, a.ry, a.rz || 0);
-    m.cuerpo.position.y = a.y;
-    m.cuerpo.position.z = a.pz || 0;
+// Límites duros de cada canal (radianes; bloque 8 · N1, mundo/COMBATE.md §15.5). aplicarAngulos recorta cada canal
+// a su rango: ni una animación ni la CPU pueden dejar un codo al revés o una rodilla hacia adelante. Los de los
+// canales de siempre son más anchos que los rangos útiles de rig.md, para no cambiar ninguna pose de hoy.
+// Se editan en mundo/datos/poses.json → limites ({ canal: [mín, máx] }); lo que falte o esté mal usa estos.
+export const LIMITES_BASE = {
+    cx: [-1, 1], cy: [-1.6, 1.6], cz: [-0.6, 0.6],
+    bDx: [-3, 1], bIx: [-3, 1], bDz: [-0.8, 1.6], bIz: [-1.6, 0.8], bDy: [-1.2, 1.2], bIy: [-1.2, 1.2],
+    pDx: [-1.8, 1.2], pIx: [-1.8, 1.2], inc: [-0.6, 1.6], ry: [-1.2, 1.2], rz: [-0.6, 0.6],
+    // Nuevos (N1): codo (− adelante y arriba), rodilla (+ la canilla atrás), pecho sobre las caderas,
+    // pierna abierta hacia afuera y la muñeca virtual del arma
+    codoD: [-2.6, 0], codoI: [-2.6, 0], rodD: [0, 2.4], rodI: [0, 2.4],
+    pX: [-0.35, 0.9], pY: [-0.9, 0.9], pZ: [-0.3, 0.3], pDz: [-0.15, 0.5], pIz: [-0.15, 0.5],
+    armaX: [-1.6, 1.6], armaZ: [-1.6, 1.6]
+};
+export const LIMITES = {};
+export function fijarLimites(datos) {
+    for (const [k, base] of Object.entries(LIMITES_BASE)) {
+        const l = datos && datos[k];
+        LIMITES[k] = Array.isArray(l) && l.length === 2 && l.every(Number.isFinite) && l[0] <= l[1] ? [l[0], l[1]] : base;
+    }
+}
+fijarLimites(null);
+const rec = (a, k) => { const v = a[k] || 0, l = LIMITES[k]; return v < l[0] ? l[0] : v > l[1] ? l[1] : v; };
+
+// Dobla un codo o una rodilla (antebrazo o canilla de crearPersona) y acomoda su rótula: gira la mitad del ángulo
+// (queda en la bisectriz) y se esconde con la articulación derecha. ROTULA_MIN en radianes.
+const ROTULA_MIN = 0.02;
+export function doblar(art, ang) {
+    art.rotation.x = ang;
+    const r = art.userData.rotula;
+    if (r) { r.rotation.x = ang / 2; r.visible = Math.abs(ang) > ROTULA_MIN; }
 }
 
-// Deja el rig como lo dejaba la caminata de antes (para escenas: cine.pose, ronda, minijuegos)
+// Escribe los ángulos en el rig (huesos de crearPersona). Los canales que falten valen 0.
+export function aplicarAngulos(m, a) {
+    m.cuello.rotation.set(rec(a, 'cx'), rec(a, 'cy'), rec(a, 'cz'));
+    m.brazoD.rotation.set(rec(a, 'bDx'), rec(a, 'bDy'), rec(a, 'bDz'));
+    m.brazoI.rotation.set(rec(a, 'bIx'), rec(a, 'bIy'), rec(a, 'bIz'));
+    // pDz abre la pierna hacia afuera: la derecha está en −X
+    m.piernaD.rotation.set(rec(a, 'pDx'), 0, -rec(a, 'pDz'));
+    m.piernaI.rotation.set(rec(a, 'pIx'), 0, rec(a, 'pIz'));
+    m.cuerpo.rotation.set(rec(a, 'inc'), rec(a, 'ry'), rec(a, 'rz'));
+    m.cuerpo.position.y = a.y || 0;
+    m.cuerpo.position.z = a.pz || 0;
+    if (m.pecho) m.pecho.rotation.set(rec(a, 'pX'), rec(a, 'pY'), rec(a, 'pZ'));
+    if (m.antebrazoD) {
+        doblar(m.antebrazoD, rec(a, 'codoD')); doblar(m.antebrazoI, rec(a, 'codoI'));
+        doblar(m.canillaD, rec(a, 'rodD')); doblar(m.canillaI, rec(a, 'rodI'));
+        m.munecaD.rotation.set(rec(a, 'armaX'), 0, rec(a, 'armaZ'));
+    }
+}
+
+// Deja el rig como lo dejaba la caminata de antes (para escenas: cine.pose, ronda, minijuegos).
+// Pecho, codos, rodillas y muñecas quedan derechos: las escenas no los conocen.
 export function limpiar(m) {
     for (const h of [m.brazoD, m.brazoI, m.piernaD, m.piernaI]) { h.rotation.y = 0; h.rotation.z = 0; }
     m.cuerpo.rotation.set(0, 0, 0);
     m.cuerpo.position.y = 0; m.cuerpo.position.z = 0;
     m.cuello.rotation.z = 0;
+    if (m.pecho) m.pecho.rotation.set(0, 0, 0);
+    if (m.antebrazoD) {
+        for (const art of [m.antebrazoD, m.antebrazoI, m.canillaD, m.canillaI]) doblar(art, 0);
+        m.munecaD.rotation.set(0, 0, 0); m.munecaI.rotation.set(0, 0, 0);
+    }
     ocultarObjetos(m);
 }
 
@@ -177,7 +223,6 @@ export function ponerObjeto(m, id, fabrica, lado = 0) {
     const s = soporte(m, lado);
     // Si el Estudio cambió cómo se agarra (versión nueva), se vuelve a armar
     if (s.id === id && s.ver === versionObjetosMano()) { if (s.malla) s.malla.visible = true; return; }
-    const brazo = lado ? m.brazoI : m.brazoD;
     if (s.malla) { s.malla.parent && s.malla.parent.remove(s.malla); s.malla = null; s.colgar = null; }
     s.id = id; s.ver = versionObjetosMano();
     if (!id || !fabrica) return;
@@ -191,7 +236,9 @@ export function ponerObjeto(m, id, fabrica, lado = 0) {
         malla.position.set(...ag.pos);
         malla.rotation.set(...ag.rot);
         malla.scale.setScalar(ag.escala);
-        m.cuerpo.add(malla);
+        // Con pecho (N1) va en él, para que gire con el torso; la posición sigue medida desde los pies
+        if (m.pecho) { malla.position.y -= m.pecho.position.y; m.pecho.add(malla); }
+        else m.cuerpo.add(malla);
         s.malla = malla; s.colgar = colgar;
         return;
     }
@@ -204,7 +251,11 @@ export function ponerObjeto(m, id, fabrica, lado = 0) {
     // El mango (abajo a la izquierda del dibujo) queda en la mano
     if (ag.mango) malla.position.set(-ag.mango[0] * ag.escala, -ag.mango[1] * ag.escala, 0);
     g.add(malla);
-    brazo.add(g);
+    // Con codo (N1) cuelga de la muñeca, al final del antebrazo; la posición de objetos-mano.json sigue medida
+    // desde el hombro, así que se le suma lo que hay del hombro a la muñeca
+    const muneca = lado ? m.munecaI : m.munecaD;
+    if (muneca) { g.position.y -= muneca.position.y + muneca.parent.position.y; muneca.add(g); }
+    else (lado ? m.brazoI : m.brazoD).add(g);
     s.malla = g;
 }
 export function ocultarObjetos(m) {

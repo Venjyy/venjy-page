@@ -114,13 +114,86 @@ export function crearPersona(tinte, piel, semilla) {
     const brazo = seis(piel.brazo, 8, 24, 8);
     const pierna = seis(piel.pierna, 8, 24, 8);
     // Brazo derecho del personaje: a su derecha, que mirando hacia +Z es -X
-    const brazoD = colgante(0.25, 0.75, 0.25, brazo, -0.375, 1.5, 0);
-    const brazoI = colgante(0.25, 0.75, 0.25, brazo, 0.375, 1.5, 0);
-    const piernaD = colgante(0.25, 0.75, 0.25, pierna, -0.125, 0.75, 0);
-    const piernaI = colgante(0.25, 0.75, 0.25, pierna, 0.125, 0.75, 0);
-    cuerpo.add(brazoD, brazoI, piernaD, piernaI);
-    return { g, cuerpo, torso, cuello, cabeza: cab, brazoD, brazoI, piernaD, piernaI };
+    const [brazoD, antebrazoD] = extremidad(brazo, -0.375, 1.5);
+    const [brazoI, antebrazoI] = extremidad(brazo, 0.375, 1.5);
+    const [piernaD, canillaD] = extremidad(pierna, -0.125, 0.75);
+    const [piernaI, canillaI] = extremidad(pierna, 0.125, 0.75);
+    // Pecho (bloque 8 · N1, mundo/COMBATE.md §15.5): torso, cabeza y brazos giran e inclinan sobre las caderas
+    // con las piernas plantadas. Pivote en la cintura; en 0 todo queda donde estaba (se resta su altura).
+    const pecho = new THREE.Group();
+    pecho.position.y = CINTURA;
+    for (const o of [torso, cuello, brazoD, brazoI]) { o.position.y -= CINTURA; pecho.add(o); }
+    cuerpo.add(pecho, piernaD, piernaI);
+    // Muñeca virtual: de aquí cuelga el arma o el objeto de la mano (canales armaX, armaZ); sin geometría
+    const munecaD = new THREE.Group(), munecaI = new THREE.Group();
+    munecaD.position.y = munecaI.position.y = -MITAD;
+    antebrazoD.add(munecaD); antebrazoI.add(munecaI);
+    return { g, cuerpo, pecho, torso, cuello, cabeza: cab, brazoD, brazoI, piernaD, piernaI, antebrazoD, antebrazoI, canillaD, canillaI, munecaD, munecaI };
 }
+
+// ---------------------------------------------------------
+// Codos y rodillas (bloque 8 · N1). Cada brazo y pierna (0,25 × 0,75 × 0,25) son dos mitades: la de arriba cuelga
+// del hombro o la cadera y la de abajo de la articulación (antebrazo o canilla), a 0,375 del pivote.
+//  · Textura: las dos mitades usan el mismo material (el mismo lienzo de 8×24 de siempre); en las caras de los lados
+//    cada mitad toma su mitad del lienzo por UV, y arriba y abajo la cara entera. No cambia ni un píxel.
+//  · Rótula: un cubo en la articulación que tapa la muesca de afuera al doblar. Gira la mitad del ángulo (queda en la
+//    bisectriz) y no se ve con la articulación derecha (ahí sus caras coincidirían con las del brazo). La mueve
+//    doblar() de supervivencia/pose-jugador.js.
+//  · userData.rigEquivale: lo que se corre cada mitad respecto del centro de la caja entera (la prueba de paridad,
+//    mundo/tests/rig-articulaciones.mjs, compara contra el rig de antes); rigNuevo: cajas que antes no existían.
+// ---------------------------------------------------------
+const CINTURA = 0.75;
+const MITAD = 0.375;
+const ROTULA = 0.24;       // un poco más chica que el brazo: sus caras no pelean con las del brazo
+
+// Caja de 0,25 × 0,375 × 0,25 con la mitad del lienzo en los lados (caras 0, 1, 4 y 5: +x −x +z −z)
+function geoMitad(arriba) {
+    const geo = new THREE.BoxGeometry(0.25, MITAD, 0.25);
+    const uv = geo.attributes.uv;
+    for (const cara of [0, 1, 4, 5]) for (let k = cara * 4; k < cara * 4 + 4; k++) uv.setY(k, (arriba ? 0.5 : 0) + uv.getY(k) / 2);
+    return geo;
+}
+// La rótula toma los píxeles que caen en la articulación (alrededor de la fila 12 del lienzo)
+function geoRotula() {
+    const geo = new THREE.BoxGeometry(ROTULA, ROTULA, ROTULA);
+    const uv = geo.attributes.uv;
+    const fu = ROTULA / 0.25, fv = ROTULA / 0.75;
+    for (let k = 0; k < uv.count; k++) {
+        const lado = k < 8 || k >= 16;
+        uv.setXY(k, 0.5 + (uv.getX(k) - 0.5) * fu, 0.5 + (uv.getY(k) - 0.5) * (lado ? fv : fu));
+    }
+    return geo;
+}
+let GEO = null; // las tres geometrías se comparten entre todas las personas
+function extremidad(mats, x, y) {
+    if (!GEO) GEO = { arriba: geoMitad(true), abajo: geoMitad(false), rotula: geoRotula() };
+    const piv = new THREE.Group();
+    piv.position.set(x, y, 0);
+    const sup = new THREE.Mesh(GEO.arriba, mats);
+    sup.position.y = -MITAD / 2;
+    sup.userData.rigEquivale = -MITAD / 2;
+    const art = new THREE.Group();
+    art.position.y = -MITAD;
+    const inf = new THREE.Mesh(GEO.abajo, mats);
+    inf.position.y = -MITAD / 2;
+    inf.userData.rigEquivale = MITAD / 2;
+    inf.userData.rigNuevo = true;
+    art.add(inf);
+    const rotula = new THREE.Mesh(GEO.rotula, mats);
+    rotula.position.y = -MITAD;
+    rotula.visible = false;
+    rotula.userData.rigNuevo = true;
+    art.userData.rotula = rotula;
+    // children[0] sigue siendo la caja del brazo (los esqueletos la adelgazan, ver enemigos.js)
+    piv.add(sup, rotula, art);
+    return [piv, art];
+}
+
+// Las cajas de un brazo o una pierna (las dos mitades y la rótula), para cambiarles la escala o el material
+export const cajasDe = hueso => {
+    const art = hueso.children.find(o => o.userData.rotula);
+    return art ? [hueso.children[0], art.userData.rotula, art.children[0]] : [hueso.children[0]];
+};
 
 // Ciclo de caminata (amp 0 = quieto)
 export function caminar(p, fase, amp) {

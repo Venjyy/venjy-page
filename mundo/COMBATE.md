@@ -550,6 +550,7 @@ g
   - **UV:** los píxeles de cada mitad son los del lienzo original.
   - **Límites:** ningún canal fuera de rango después de `aplicarAngulos`.
   - **Rótula invisible en 0.**
+- **Hecho en N1 (2026-10-15), con dos ajustes:** la textura de cada mitad se corta con los UV de la geometría (no con `offset`/`repeat` de la textura, que se comparte entre caras y personas); y `online/avatares.js` no se adaptó porque no usa `crearPersona` (es el avatar del modo online del creativo, con cajas propias). `doblar(art, ángulo)` vive en `pose-jugador.js`. El suelo automático (`suelo: true`) queda para el motor de combate (N3).
 - **Cartas:** el arte de las cartas es 2D en canvas (`cartas-arte.js`) y no usa el rig. No se toca. Las escenas de las cartas que usan personas quedan cubiertas por la paridad.
 
 ### 15.6 Motor de animación de combate (§1)

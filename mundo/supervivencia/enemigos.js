@@ -11,7 +11,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { B, TIPO } from '../texturas.js';
-import { crearTinte, crearPersona, caminar, texturaPixeles, caja, colgante, angulo } from '../criaturas/cuerpo.js';
+import { crearTinte, crearPersona, caminar, texturaPixeles, caja, colgante, angulo, cajasDe } from '../criaturas/cuerpo.js';
 import { moverCuerpo, solidoEn } from '../fisica.js';
 import { O, dropsDe, infoBloque } from './objetos.js';
 import { sonidos } from './sonidos.js';
@@ -182,7 +182,7 @@ export function modeloPersona(tinte, tipo, semilla) {
     const p = crearPersona(tinte, PIELES[tipo](), semilla);
     if (tipo === 'esqueleto') {
         // Brazos y piernas flacos (huesos)
-        for (const l of [p.brazoD, p.brazoI, p.piernaD, p.piernaI]) l.children[0].scale.set(0.45, 1, 0.45);
+        for (const l of [p.brazoD, p.brazoI, p.piernaD, p.piernaI]) for (const c of cajasDe(l)) c.scale.set(0.45, 1, 0.45);
         // Arco en la mano
         const arco = new THREE.Group();
         const m = new THREE.MeshBasicMaterial({ color: 0x6e5130 });
