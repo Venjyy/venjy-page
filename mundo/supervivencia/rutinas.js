@@ -104,12 +104,13 @@ export function crearRutinas(ctx) {
         if (r.descartada) { if (v && v.clave === r.descartada) return null; r.descartada = null; }
         return v;
     }
-    // ¿Puede salir ahora? Sin escena, sin minijuego ni ronda y con quien visita en su sitio (si no, espera)
+    // ¿Puede salir ahora? Sin escena, sin minijuego ni ronda, sin que nadie venga a verlo, y con quien visita en el mundo
     function puede(n, v) {
         if (n.escena || (ctx.libre && !ctx.libre(n)) || lovisitan(n.clave)) return false;
         if (v.visita) {
             const o = persona(v.visita);
-            if (!o || paseos.fuera(v.visita) || (R[v.visita] && R[v.visita].estado === 'acompanando')) return false;
+            // Va a la persona donde esté (paseos.js la sigue); no si no existe o si se la llevó el jugador
+            if (!o || (R[v.visita] && R[v.visita].estado === 'acompanando')) return false;
         }
         return true;
     }
@@ -117,7 +118,7 @@ export function crearRutinas(ctx) {
         const destino = v.visita ? { persona: v.visita } : v.lugar;
         if (!paseos.ir(c, destino, { mirar: v.visita || null })) return false;
         const r = estadoDe(c);
-        r.estado = 'yendo'; r.v = v.clave; r.t = 0;
+        r.estado = 'yendo'; r.v = v.clave; r.t = 0; r.saludado = false; r.sinSaludo = false;
         return true;
     }
     function volver(c) {
@@ -137,15 +138,17 @@ export function crearRutinas(ctx) {
         // Quien recibía deja de mirarlo de a poco (el gancho se saca solo al terminar la salida)
         if (v && v.visita) { const o = persona(v.visita); if (o && o.visita && o.visita.de === c) { o.visita.fin = true; o.visita.texto = ''; } }
     }
-    function empezarSaludo(c, v) {
+    // saludar = false: lo alcanzó de nuevo después de que se alejara; se queda con él sin repetir el saludo
+    function empezarSaludo(c, v, saludar = true) {
         const A = ajustesRutinas(), n = persona(c);
         if (!n) return;
+        estadoDe(c).sinSaludo = !saludar;
         const cerca = dJ(n) < A.radioSaludo;
         if (!cerca && !A.saludoLejos) return;
         if (cerca) cargar();
         const r = estadoDe(c);
         // Quien llega: su gesto va encima de la animación de paseo (paseos.js → adornar)
-        if (paseos.adornar) paseos.adornar(c, (dt, p) => {
+        if (saludar && paseos.adornar) paseos.adornar(c, (dt, p) => {
             const g = v.llegada.gesto && gestoDe && gestoDe(v.llegada.gesto);
             if (g) ponerGesto(p, g(lim01(r.t / A.gesto), r.t, { s: false, j: false, esc: n.escala || 1 }), peso(r.t, A.gesto));
         });
@@ -165,7 +168,7 @@ export function crearRutinas(ctx) {
                     const cy = mirarA(o, n, A.cuello);
                     cu.y = h.base + (cy - h.base) * suave(h.w);
                     const t = r.t - A.respuesta;
-                    const g = !h.fin && v.respuesta.gesto && gestoDe && gestoDe(v.respuesta.gesto);
+                    const g = !h.fin && !r.sinSaludo && v.respuesta.gesto && gestoDe && gestoDe(v.respuesta.gesto);
                     if (g && t >= 0) ponerGesto(o.p, g(lim01(t / A.gesto), t, { s: false, j: false, esc: o.escala || 1 }), peso(t, A.gesto), cy);
                     h.escrito = cu.y;
                 }
@@ -180,9 +183,9 @@ export function crearRutinas(ctx) {
         const A = ajustesRutinas();
         r.t += dt;
         const cerca = dJ(n) < A.radioSaludo;
-        if (n.paseo) n.paseo.texto = cerca && v.llegada.texto && r.t < A.frase ? L(v.llegada.texto) : '';
+        if (n.paseo) n.paseo.texto = !r.sinSaludo && cerca && v.llegada.texto && r.t < A.frase ? L(v.llegada.texto) : '';
         const o = v.visita && persona(v.visita);
-        if (o && o.visita && o.visita.de === c) {
+        if (o && o.visita && o.visita.de === c && !r.sinSaludo) {
             const t = r.t - A.respuesta;
             o.visita.texto = cerca && v.respuesta.texto && t >= 0 && t < A.frase ? L(v.respuesta.texto) : '';
         }
@@ -233,14 +236,26 @@ export function crearRutinas(ctx) {
             } else if (r.estado === 'yendo') {
                 if (!fuera) { r.estado = 'en-sitio'; r.v = null; } // lo mandaron a su sitio de golpe (volverTodos)
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
+                else if (paseos.estado(c).estado === 'atascado') noEsta(c, v); // no puede llegar hasta la persona
                 else if (paseos.estado(c).estado === 'alla') {
                     // Llegó: ¿está la persona? (paseos.js la sigue si se mueve, pero puede no alcanzarla)
                     const o = v.visita && persona(v.visita);
                     if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro) noEsta(c, v);
-                    else { r.estado = 'visitando'; r.t = 0; empezarSaludo(c, v); }
+                    else {
+                        r.estado = 'visitando';
+                        if (!r.saludado) r.t = 0;
+                        empezarSaludo(c, v, !r.saludado);
+                        r.saludado = true;
+                    }
                 }
             } else if (r.estado === 'visitando') {
+                const o = v && v.clave === r.v && v.visita && persona(v.visita);
                 if (!fuera) { terminarSaludo(c); r.estado = 'en-sitio'; r.v = null; }
+                else if (o && Math.hypot(o.x - n.x, o.z - n.z) > ajustesRutinas().radioEncuentro * 1.5) {
+                    // Se le fue (lo mandaron a otra parte, salió caminando): deja de saludar y lo sigue (paseos.js);
+                    // al alcanzarlo se queda con él sin repetir el saludo; si no puede, «¿Y Braulio?»
+                    terminarSaludo(c); r.estado = 'yendo';
+                }
                 else if (!v || v.clave !== r.v) { if (v && puede(n, v)) { terminarSaludo(c); salir(c, v); } else volver(c); }
             } else if (r.estado === 'volviendo') {
                 if (!fuera) r.estado = 'en-sitio';

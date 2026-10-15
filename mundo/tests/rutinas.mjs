@@ -126,10 +126,6 @@ const VIS = {
     ok(r.estado('ana').estado === 'yendo' && r.estado('ana').visita === 'ana-beto', `a las 10 va a ver a Beto (${r.estado('ana').estado})`);
     ok(llamadas[0][0] === 'ir' && llamadas[0][2].persona === 'beto' && llamadas[0][3].mirar === 'beto', 'sale con paseos.ir hacia Beto y mirándolo');
     ok(r.texto('ana') === 'Va a ver a BETO.', `panel: «${r.texto('ana')}»`);
-    // Se quedó corto (a la vista y sin camino): no saluda a la nada, sigue yendo
-    llamadas.length = 0;
-    paseos.poner('ana', 'atascado'); paso(1);
-    ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === '' && !P.beto.visita, 'atascado a medio camino: sigue «yendo», sin saludo');
     paseos.llegar('ana'); paso(0.5);
     ok(r.estado('ana').estado === 'visitando', 'al llegar queda de visita');
     await new Promise(res => setTimeout(res, 0)); // los gestos se cargan con import()
@@ -170,10 +166,8 @@ const VIS = {
     ok(r.estado('ana').estado === 'en-sitio', 'con una escena (Hablar, misión, tienda) no sale');
     delete P.ana.escena; permiso.libre = false; paso();
     ok(r.estado('ana').estado === 'en-sitio', 'con la ronda del iglú, un minijuego o un jefe no sale');
-    permiso.libre = true; paseos.ir('beto', 'faro'); llamadas.length = 0; paso();
-    ok(r.estado('ana').estado === 'en-sitio' && !llamadas.length, 'si Beto no está en su sitio, espera');
-    paseos.casa('beto'); paso();
-    ok(r.estado('ana').estado === 'yendo', 'Beto volvió: sale');
+    permiso.libre = true; paso();
+    ok(r.estado('ana').estado === 'yendo', 'libre otra vez: sale');
     // /caminar de por medio: si lo mueven a su sitio de golpe, lo nota
     paseos.casa('ana'); paso();
     ok(r.estado('ana').estado === 'en-sitio' || r.estado('ana').estado === 'yendo', 'lo mandaron a su sitio de golpe: no queda pegado en «yendo» sin paseo');
@@ -224,6 +218,32 @@ const VIS = {
     ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === 'Beto no está' && !P.beto.visita, `llega y no está: no saluda a la nada, dice lo suyo («${P.ana.paseo.texto}»)`);
     paso(RD.ajustesRutinas().esperaAusente + 1);
     ok(r.estado('ana').estado === 'volviendo', 'llega y no está: vuelve a su sitio');
+}
+{
+    // No puede llegar hasta la persona (atascado a la vista): no saluda a la nada; «¿Y Beto?» y vuelve
+    const { r, P, paseos, paso } = armar({ visitas: VIS, hora: 10 });
+    paso();
+    paseos.poner('ana', 'atascado'); paso(0.6);
+    ok(P.ana.paseo.texto === '¿Y BETO? Pensé que estaba aquí.' && !P.beto.visita, `atascado: se da cuenta («${P.ana.paseo.texto}»), sin saludo`);
+    paso(RD.ajustesRutinas().esperaAusente + 1);
+    ok(r.estado('ana').estado === 'volviendo', 'atascado: vuelve');
+}
+{
+    // De visita, Beto se aleja: Ana deja de saludar y lo sigue; al alcanzarlo se queda sin repetir el saludo
+    const { r, P, paseos, paso } = armar({ visitas: VIS, hora: 10 });
+    paso(); paseos.llegar('ana'); paso(0.6);
+    ok(r.estado('ana').estado === 'visitando' && P.ana.paseo.texto === 'Hola Beto', 'de visita y saludando');
+    P.beto.x = 60; paso(0.6);
+    ok(r.estado('ana').estado === 'yendo' && P.ana.paseo.texto === '', 'Beto se fue: deja de saludar y lo sigue');
+    ok(!P.beto.visita || P.beto.visita.fin, 'Beto ya no contesta a la nada');
+    paseos.llegar('ana'); paso(0.6);
+    ok(r.estado('ana').estado === 'visitando' && P.ana.paseo.texto === '' && P.beto.visita && !P.beto.visita.fin, 'lo alcanza: de visita otra vez, sin repetir el saludo, y Beto lo mira');
+}
+{
+    // Va a verlo aunque no esté en su sitio (paseos.js lo sigue donde esté)
+    const { r, paseos, paso } = armar({ visitas: VIS, hora: 10 });
+    paseos.ir('beto', 'faro'); paso();
+    ok(r.estado('ana').estado === 'yendo', 'Beto no está en su sitio: Ana igual va a verlo');
 }
 {
     // Quien tiene visita (o alguien viene a verlo) no sale de su casa
