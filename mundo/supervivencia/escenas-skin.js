@@ -482,6 +482,9 @@ export function crearEscenasSkin(ctx) {
     let cargando6c = false, sinAuto = false;
     function iniciar6c(clave, info, p6, lugar) {
         if (!ctx.amistad6c) return false;
+        // La de grupo se juega en su lugar (la fogata, la atalaya, el iglú): si alguien del grupo anda fuera de su sitio
+        // (de visita, paseos.js), no sale; queda pendiente para cuando estén todos
+        if (p6.tipo === 'grupo' && personas().some(p => GRUPOS[p6.grupo].npcs.includes(p.clave) && p.n.paseo)) return false;
         cargando6c = true;
         vistas().add(p6.vista);
         if (lugar) vistas().add(lugar);

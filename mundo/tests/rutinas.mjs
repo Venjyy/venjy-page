@@ -261,8 +261,11 @@ const VIS = {
     paseos.llegar('ana'); paso(0.5);
     ok(r.estado('ana').estado === 'visitando', 'probar: llega');
     const A = RD.ajustesRutinas();
+    reloj.h = 10.5; // mientras tanto llega la hora de esa misma visita
     paso(A.respuesta + Math.max(A.frase, A.gesto) + 5);
     ok(r.estado('ana').estado === 'volviendo', 'probar: termina sola y vuelve');
+    paso(2);
+    ok(r.estado('ana').estado === 'volviendo', 'probar dentro del horario de esa misma visita: no la repite (no saluda dos veces)');
     ok(!r.probar('no-existe'), 'probar una visita que no existe: false');
     ok(r.quienDe('ana-beto') === 'ana' && r.visitas().includes('ana-faro'), 'quienDe y visitas');
     reloj.h = 20;
@@ -310,6 +313,7 @@ const VIS = {
     const amigos = leer('mundo/criaturas/amigos.js');
     ok(amigos.includes('n.visita.animar(dt)') && amigos.includes('n.visita.texto'), 'amigos.js dibuja el gancho n.visita');
     ok(leer('mundo/supervivencia/paseos.js').includes('adornar('), 'paseos.js deja adornar al que llega');
+    ok(/p6\.tipo === 'grupo' && personas\(\)\.some\(p => GRUPOS\[p6\.grupo\]\.npcs\.includes\(p\.clave\) && p\.n\.paseo\)/.test(leer('mundo/supervivencia/escenas-skin.js')), 'escena de grupo: no sale si alguien del grupo anda de visita');
     const proto = leer('estudio/puente-protocolo.js');
     ok(proto.includes("case 'rutina'") && proto.includes("'rutinas'"), 'puente: mensaje rutina y rutinas en vivo');
 }

@@ -189,7 +189,8 @@ export function crearRutinas(ctx) {
             const t = r.t - A.respuesta;
             o.visita.texto = cerca && v.respuesta.texto && t >= 0 && t < A.frase ? L(v.respuesta.texto) : '';
         }
-        if (r.forzada && r.t > A.respuesta + Math.max(A.frase, A.gesto) + 4) volver(c); // la prueba del Estudio termina sola
+        // La prueba del Estudio termina sola; si a esa hora le tocaba la misma visita, no la repite (no saluda dos veces)
+        if (r.forzada && r.t > A.respuesta + Math.max(A.frase, A.gesto) + 4) { const k = r.v; volver(c); r.descartada = k; }
     }
 
     // ---- No encontró a quien venía a ver: se da cuenta, lo dice (si el jugador está cerca) con un gesto y vuelve ----
@@ -210,7 +211,7 @@ export function crearRutinas(ctx) {
         const v = r.v && visitas()[r.v], acc = v ? ausenteDe(v) : null;
         if (n && n.paseo) n.paseo.texto = acc && acc.texto && dJ(n) < A.radioSaludo && r.ausente < A.frase
             ? L(acc.texto).replace('{quien}', ctx.nombre ? ctx.nombre(v.visita) : v.visita || '') : '';
-        if (r.ausente >= A.esperaAusente) { r.ausente = NaN; const k = r.v, f = r.forzada; volver(c); if (!f) r.descartada = k; }
+        if (r.ausente >= A.esperaAusente) { r.ausente = NaN; const k = r.v; volver(c); r.descartada = k; }
     }
     // ¿Alguien viene a verlo o lo está visitando? Entonces no sale (que no lo encuentren vacío)
     const lovisitan = c => Object.values(R).some(r => (r.estado === 'yendo' || r.estado === 'visitando') && r.v && visitas()[r.v] && visitas()[r.v].visita === c);
