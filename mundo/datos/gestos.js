@@ -11,7 +11,12 @@
 //   gestosDeDatos(datos)                   [[nombre, def]]: los gestos del JSON y las poses fijas como gestos quietos
 // Misma matemática que estudio/evaluar.mjs (la referencia legible) y que las funciones del juego: la paridad de los
 // gestos de poses.json es exacta (mundo/tests/estudio-poses.mjs). Si un gesto no está en el JSON, se usa el del código.
+// Reloj «fases» (bloque 8 · N3, mundo/COMBATE.md §15.3): las animaciones de combate anclan cada clave a una fase del
+// ataque, ["a", 0.6, -1.4, "salida"] = en la anticipación, al 60 %, vale −1,4 y llega con la curva «salida» (curvas.js).
+// Las fases son a (anticipación), g (golpe o activo) y r (recuperación); info.fases trae sus cuadros y info.c el cuadro
+// actual (puede tener decimales). Si el dueño estira una fase, la clave se queda en su porcentaje.
 // =========================================================
+import { curva } from './curvas.js';
 const sin = Math.sin;
 const suave = u => u * u * (3 - 2 * u);
 const tramo = (u, a, b) => Math.max(0, Math.min(1, (u - a) / (b - a)));
@@ -29,10 +34,30 @@ function clave(k, x, interp) {
     return k[k.length - 1][1];
 }
 
+// Claves de fase [fase, fracción, valor, curva?] en el cuadro x. ini y largo: cuadro de inicio y largo de cada fase.
+export const FASES = { a: 0, g: 1, r: 2 };
+const enCuadro = (q, ini, largo) => ini[FASES[q[0]]] + q[1] * largo[FASES[q[0]]];
+function claveFases(k, x, ini, largo, interp) {
+    let t1 = enCuadro(k[0], ini, largo);
+    if (x <= t1) return k[0][2];
+    for (let i = 1; i < k.length; i++) {
+        const t0 = t1;
+        t1 = enCuadro(k[i], ini, largo);
+        if (x <= t1) {
+            const v0 = k[i - 1][2];
+            if (!(t1 > t0)) return k[i][2];
+            const f = (x - t0) / (t1 - t0);
+            return interp === 'paso' ? v0 : v0 + (k[i][2] - v0) * (interp === 'lineal' && !k[i][3] ? f : curva(k[i][3] || 'suave', f));
+        }
+    }
+    return k[k.length - 1][2];
+}
+
 // Un canal: número fijo, o { base | k, interp, osc }. x = reloj de las claves; t = reloj de la escena (osciladores); u = 0..1
-function canal(c, x, t, u) {
+// fa: { ini, largo } con el reloj «fases» (claves ancladas a una fase), o null
+function canal(c, x, t, u, fa) {
     if (typeof c === 'number') return c;
-    let v = c.k ? clave(c.k, x, c.interp) : (c.base || 0);
+    let v = c.k ? (fa ? claveFases(c.k, x, fa.ini, fa.largo, c.interp) : clave(c.k, x, c.interp)) : (c.base || 0);
     const osc = c.osc;
     if (osc) for (let i = 0; i < osc.length; i++) {
         const o = osc[i], a = t * o.frec + (o.fase || 0);
@@ -66,17 +91,31 @@ const caso = info => (info && info.s ? 1 : 0) + (info && info.j ? 2 : 0);
 
 // Reloj de las claves k: t (escena, como GESTOS_AMISTAD hoy), u (0..1 en el tramo) o local (segundos desde que empieza el
 // tramo: hace falta info.d, la duración; sin ella se usa t). Con ciclo, se repite cada `ciclo` segundos.
+// fases: el cuadro info.c del ataque (sin ciclo).
 function relojDe(c, u, t, info) {
+    if (c.reloj === 'fases') return info && Number.isFinite(info.c) ? info.c : 0;
     let x = c.reloj === 'u' ? u : c.reloj === 'local' ? (info && info.d > 0 ? u * info.d : t) : t;
     if (c.ciclo) x = ((x % c.ciclo) + c.ciclo) % c.ciclo;
     return x;
 }
 
+// Inicio y largo de cada fase (a, g, r) desde info.fases: { a, g, r } o { anticipacion, activo, recuperacion } en cuadros
+const tramoFases = { ini: [0, 0, 0], largo: [0, 0, 0] };
+function fasesDe(info) {
+    const f = (info && info.fases) || {};
+    const a = f.a ?? f.anticipacion ?? 0, g = f.g ?? f.activo ?? 0, r = f.r ?? f.recuperacion ?? 0;
+    tramoFases.largo[0] = a; tramoFases.largo[1] = g; tramoFases.largo[2] = r;
+    tramoFases.ini[1] = a; tramoFases.ini[2] = a + g;
+    return tramoFases;
+}
+
 // Escribe en `salida` los canales del gesto (y nada más) y la devuelve. info: { s: sentado, j: es el jugador, d?: duración }.
+// Con reloj «fases»: info.fases (cuadros de cada fase) e info.c (cuadro actual).
 export function evaluarGesto(def, u, t, info, salida = {}) {
     const c = compilar(def);
     const l = c.casos[caso(info)], x = relojDe(c, u, t, info);
-    for (let i = 0; i < l.length; i++) salida[l[i][0]] = canal(l[i][1], x, t, u);
+    const fa = c.reloj === 'fases' ? fasesDe(info) : null;
+    for (let i = 0; i < l.length; i++) salida[l[i][0]] = canal(l[i][1], x, t, u, fa);
     return salida;
 }
 

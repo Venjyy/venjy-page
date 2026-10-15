@@ -582,6 +582,14 @@ g
   - **límites** de §15.5;
   - **choques:** con cajas orientadas (OBB), el antebrazo no entra más de 0,04 en el torso ni en la cabeza, y el arma no entra en la cabeza propia, en todos los cuadros de todas las animaciones de los estilos;
   - **paridad del formato:** una animación sin claves de fase da lo mismo que `evaluarGesto`.
+- **Hecho en N3 (2026-10-15), con estos ajustes** (código en `mundo/supervivencia/combate/`: `datos.js`, `estados.js`, `animacion.js`, `cinematica.js`, `reglas.js`; datos en `combate.json` y `estilo-prueba.json`):
+  - **Caminata en guardia procedural** (no por ciclo): una caminata de claves por distancia nunca calza con la velocidad constante del cuerpo (los pies patinan al arrancar, frenar o retroceder). En los estados libres cada pie queda plantado y da un paso en arco cuando se aleja `umbral` de donde lo pone la guardia (`estilo → paso`: `umbral`, `cuadros`, `altura`, `adelanto`); sirve igual para girar y frenar. La animación `paso` pone solo el resto del cuerpo.
+  - **Pies anclados en las acciones:** el pie que la pose apoya queda fijo en el mundo (IK de dos huesos con la apertura `pDz`); se suelta al despegar (sube primero y avanza después, llevado por el cuerpo si este salta), si la pierna no alcanza o casi se estira. Nunca gira una articulación más rápido que `saltoMax`: si la IK lo pide, el pie cede su camino.
+  - **Inercialización con duración adaptativa** (`mezclaPorRad`: con una diferencia grande dura más) y `inercia` (cuánto de la velocidad que traía conserva; 1 hacía que el brazo siguiera de largo y atravesara el torso).
+  - **Capa de choques** (`motor.choques`): al mezclar dos poses un antebrazo puede cruzar el torso aunque ninguna animación lo haga; si entra más de `tope`, el hombro se abre lo justo.
+  - **Caderas:** con los pies plantados el rig no tiene giro de pierna, así que un ataque gira poco `ry` y lo pone el pecho (`pY`).
+  - **Suelo automático** en el motor (`suelo: true`): `cinematica.js → ajusteSuelo`.
+  - Reacciones de N3: `alto_leve`, `desviado` y `bloqueado` (las 16 de §18 en N5). Las reacciones bruscas (`alto_leve`, `desviado`) declaran `velocidadMax` en su activo.
 
 ### 15.7 IA con aviso (base para la CPU y los monstruos, §4.5)
 

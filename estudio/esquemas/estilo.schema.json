@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "estilo.schema.json",
+  "title": "Estilo de combate (mundo/datos/estilo-*.json)",
+  "description": "Un estilo de pelea del bloque 8 (mundo/COMBATE.md §15.3, §16, §17): qué hace cada intención, la guardia, el caminar en guardia, sus ataques (fases en cuadros, ventanas de cancelación, i-frames, avance, daño, postura y zonas), sus acciones (esquiva, desvío), reacciones propias y las animaciones con claves ancladas a las fases. Uno para los cuatro estilos y los monstruos con rig de persona. Lo leen mundo/supervivencia/combate/estados.js y animacion.js; validar revisa que las fases, ventanas, cancelaciones, claves y límites tengan sentido, y `resumen estilo-<x> <ataque>` dibuja su línea de tiempo.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+    "controles": {
+      "description": "Qué empieza cada intención desde la guardia: la clave de un ataque o una acción, o una por altura ({ alto, medio, bajo, neutro }). defensaMantenida: el estado al que pasa el desvío si la defensa sigue apretada (bloqueo).",
+      "type": "object",
+      "properties": {
+        "atacar": { "$ref": "#/$defs/control" },
+        "fuerte": { "$ref": "#/$defs/control" },
+        "defensa": { "$ref": "#/$defs/control" },
+        "defensaMantenida": { "$ref": "combate.schema.json#/$defs/clave" },
+        "esquivar": { "$ref": "#/$defs/control" },
+        "agarre": { "$ref": "#/$defs/control" },
+        "especial": { "$ref": "#/$defs/control" },
+        "saltar": { "$ref": "#/$defs/control" }
+      },
+      "additionalProperties": false
+    },
+    "guardia": {
+      "description": "La guardia del estilo (capa base) y su respiración (capa secundaria, se suma en los estados libres).",
+      "type": "object",
+      "properties": {
+        "anim": { "$ref": "combate.schema.json#/$defs/clave" },
+        "respiracion": { "$ref": "combate.schema.json#/$defs/clave" }
+      },
+      "required": ["anim"],
+      "additionalProperties": false
+    },
+    "paso": {
+      "description": "Caminar en guardia: velocidad en bloques por segundo. Las piernas las mueve el motor: cada pie queda plantado y da un paso de `cuadros` (en arco de `altura` bloques) cuando se aleja más de `umbral` bloques de donde lo pone la guardia, y cae `adelanto` pasos más allá según la velocidad. anim pone el resto del cuerpo (reloj t = bloques recorridos).",
+      "type": "object",
+      "properties": {
+        "anim": { "$ref": "combate.schema.json#/$defs/clave" },
+        "velocidad": { "type": "number", "minimum": 0, "maximum": 10 },
+        "umbral": { "type": "number", "minimum": 0.02, "maximum": 1 },
+        "cuadros": { "type": "integer", "minimum": 2, "maximum": 60 },
+        "altura": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "adelanto": { "type": "number", "minimum": 0, "maximum": 2 }
+      },
+      "additionalProperties": false
+    },
+    "bloqueo": {
+      "type": "object",
+      "properties": { "anim": { "$ref": "combate.schema.json#/$defs/clave" } },
+      "additionalProperties": false
+    },
+    "arma": {
+      "description": "El arma para las pruebas de choques (que no atraviese la cabeza propia): mano (D o I) y una caja en coordenadas de la muñeca (la hoja sale hacia +Z).",
+      "type": "object",
+      "properties": {
+        "mano": { "enum": ["D", "I"] },
+        "caja": {
+          "type": "object",
+          "properties": {
+            "centro": { "$ref": "#/$defs/vector3" },
+            "medidas": { "$ref": "#/$defs/vector3" }
+          },
+          "required": ["centro", "medidas"],
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "reglas": { "description": "Reglas propias del estilo (postura, zonas, penalizaciones): llegan con L2 y L5.", "type": "object" },
+    "ataques": {
+      "type": "object",
+      "propertyNames": { "$ref": "combate.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/ataque" }
+    },
+    "acciones": {
+      "type": "object",
+      "propertyNames": { "$ref": "combate.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "combate.schema.json#/$defs/accion" }
+    },
+    "reacciones": {
+      "description": "Reacciones propias que reemplazan por clave a las de combate.json (la cojera de Urban Reign).",
+      "type": "object",
+      "propertyNames": { "$ref": "combate.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "combate.schema.json#/$defs/accion" }
+    },
+    "anim": {
+      "type": "object",
+      "propertyNames": { "$ref": "combate.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "combate.schema.json#/$defs/anim" }
+    }
+  },
+  "required": ["version", "nombre", "controles", "guardia"],
+  "additionalProperties": false,
+  "$defs": {
+    "vector3": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }], "minItems": 3, "maxItems": 3 },
+    "control": {
+      "anyOf": [
+        { "$ref": "combate.schema.json#/$defs/clave" },
+        {
+          "type": "object",
+          "properties": {
+            "alto": { "$ref": "combate.schema.json#/$defs/clave" },
+            "medio": { "$ref": "combate.schema.json#/$defs/clave" },
+            "bajo": { "$ref": "combate.schema.json#/$defs/clave" },
+            "neutro": { "$ref": "combate.schema.json#/$defs/clave" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ataque": {
+      "description": "Un ataque (§15.3). fases en cuadros; cancelar, iframes y armadura con marcas respecto de una fase; altura (alto, medio, bajo) en todos los estilos; peligro para las reglas de defensa; dano (vida), postura (Sekiro) y zona (Urban Reign) en cada ataque; alcance en bloques y arco en grados; hitstop: un nivel de combate.json → peso; reaccion: la que provoca en quien recibe; intencion: con qué intención sale en un combo (por defecto atacar).",
+      "type": "object",
+      "properties": {
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "fases": { "$ref": "combate.schema.json#/$defs/fases" },
+        "altura": { "enum": ["alto", "medio", "bajo"] },
+        "peligro": { "anyOf": [{ "type": "null" }, { "enum": ["barrido", "estocada", "agarre", "imparable"] }] },
+        "dano": { "type": "number", "minimum": 0 },
+        "postura": { "type": "number", "minimum": 0 },
+        "zona": {
+          "type": "object",
+          "propertyNames": { "enum": ["cabeza", "cuerpo", "piernas"] },
+          "additionalProperties": { "type": "number", "minimum": 0 }
+        },
+        "alcance": { "type": "number", "minimum": 0, "maximum": 20 },
+        "arco": { "type": "array", "prefixItems": [{ "type": "number", "minimum": -180, "maximum": 180 }, { "type": "number", "minimum": -180, "maximum": 180 }], "minItems": 2, "maxItems": 2 },
+        "empuje": { "type": "number", "minimum": 0, "maximum": 5 },
+        "avance": { "anyOf": [{ "$ref": "combate.schema.json#/$defs/avance" }, { "type": "array", "items": { "$ref": "combate.schema.json#/$defs/avance" } }] },
+        "hitstop": { "$ref": "combate.schema.json#/$defs/clave" },
+        "reaccion": { "$ref": "combate.schema.json#/$defs/clave" },
+        "intencion": { "enum": ["atacar", "fuerte", "agarre", "especial", "saltar"] },
+        "cancelar": { "$ref": "combate.schema.json#/$defs/cancelar" },
+        "iframes": { "$ref": "combate.schema.json#/$defs/tramos" },
+        "armadura": { "$ref": "combate.schema.json#/$defs/tramos" },
+        "sonido": {
+          "type": "object",
+          "properties": {
+            "aire": { "type": "string" },
+            "impacto": { "type": "string" },
+            "desvio": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "anim": { "$ref": "combate.schema.json#/$defs/clave" },
+        "mezcla": { "type": "integer", "minimum": 0, "maximum": 60 },
+        "velocidadMax": { "type": "number", "minimum": 0.05, "maximum": 2 },
+        "sinMirada": { "type": "boolean" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["nombre", "fases", "altura", "anim"],
+      "additionalProperties": false
+    }
+  }
+}

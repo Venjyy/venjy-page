@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "combate.schema.json",
+  "title": "Núcleo del combate (mundo/datos/combate.json)",
+  "description": "Valores del motor de combate del bloque 8 (mundo/COMBATE.md §15): paso fijo, mezclas, suelo y pies, mirada, buffer de entrada, asistencias del táctil, curvas con nombre, peso de los golpes, reacciones comunes a todos los estilos y sus animaciones. Lo leen mundo/supervivencia/combate/datos.js (fijarCombate), estados.js y animacion.js; lo que falte usa el valor del código (COMBATE_BASE). Los ataques de cada estilo van en estilo-*.json (estilo.schema.json). La pestaña Combate del Estudio llega en N6; mientras tanto se edita este archivo.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "motor": {
+      "type": "object",
+      "properties": {
+        "hz": { "description": "Cuadros lógicos por segundo (los cuadros de los datos). 60.", "type": "integer", "minimum": 30, "maximum": 240 },
+        "maxPasos": { "description": "Tope de cuadros lógicos por dibujo (si la pestaña estuvo en pausa no se recupera el tiempo).", "type": "integer", "minimum": 1, "maximum": 30 },
+        "saltoMax": { "description": "Radianes que puede cambiar un canal en un cuadro (la prueba sin saltos lo mide).", "type": "number", "minimum": 0.05, "maximum": 1.5 },
+        "velocidadMax": { "description": "Tope de velocidadMax de los ataques: lo más rápido que puede ir un canal en los cuadros activos.", "type": "number", "minimum": 0.05, "maximum": 2 },
+        "mezcla": {
+          "description": "Cuadros de la inercialización al cambiar de estado: normal, al salir de un buffer (más corta: responde al tiro) y al volver a la guardia (más larga).",
+          "type": "object",
+          "properties": {
+            "normal": { "type": "integer", "minimum": 0, "maximum": 60 },
+            "buffer": { "type": "integer", "minimum": 0, "maximum": 60 },
+            "guardia": { "type": "integer", "minimum": 0, "maximum": 60 }
+          },
+          "additionalProperties": false
+        },
+        "inercia": { "description": "Cuánto de la velocidad que traía cada canal conserva la mezcla al cambiar de estado (1 = toda: el brazo sigue su camino; menos = frena antes y no atraviesa el cuerpo).", "type": "number", "minimum": 0, "maximum": 1 },
+        "mezclaPorRad": { "description": "Con una diferencia grande al cambiar de estado, la mezcla dura al menos mezclaPorRad × diferencia / saltoMax cuadros (así nunca salta).", "type": "number", "minimum": 0, "maximum": 20 },
+        "choques": {
+          "description": "Si un antebrazo entra más de `tope` bloques en el torso o la cabeza, el hombro se abre hacia afuera de a `paso` radianes hasta que sale; al dejar de hacer falta la corrección se apaga con `rapidez` (0..1 por cuadro). tope negativo la apaga.",
+          "type": "object",
+          "properties": {
+            "tope": { "type": "number", "minimum": -1, "maximum": 0.3 },
+            "paso": { "type": "number", "minimum": 0.01, "maximum": 0.5 },
+            "rapidez": { "type": "number", "minimum": 0.01, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "suelo": { "description": "Suelo automático: el pie más bajo toca el suelo (doblar las rodillas baja el cuerpo solo).", "type": "boolean" },
+        "pies": {
+          "description": "Pies anclados: un pie apoyado (su esquina más baja a menos de `apoyo` del suelo y moviéndose menos de `velocidad` bloques por cuadro en la pose, o recién aterrizado) no se mueve en el mundo (IK de la pierna). Se suelta al levantarse, si la pierna no llega (queda a más de `alcance` o la rodilla casi derecha) o si la pose se aleja más de `distanciaMax`: al despegar, el pie sube primero (`alzar`) y va al de la pose llevado por el cuerpo; si la pierna no llega, vuelve a la pose en ángulos; en `soltar` cuadros o más si hace falta para no saltar ni pasar de `velocidad` por cuadro.",
+          "type": "object",
+          "properties": {
+            "anclar": { "type": "boolean" },
+            "apoyo": { "type": "number", "minimum": 0, "maximum": 0.2 },
+            "velocidad": { "type": "number", "minimum": 0, "maximum": 0.5 },
+            "alcance": { "type": "number", "minimum": 0, "maximum": 0.5 },
+            "rodillaMin": { "description": "Con la rodilla más derecha que esto (rad) el pie se suelta: la pierna ya no alcanza.", "type": "number", "minimum": 0, "maximum": 1 },
+            "soltar": { "type": "integer", "minimum": 0, "maximum": 20 },
+            "alzar": { "description": "Cuánto sube (bloques) el pie que despega mientras va hacia el de la pose.", "type": "number", "minimum": 0, "maximum": 0.5 },
+            "distanciaMax": { "type": "number", "minimum": 0.05, "maximum": 2 }
+          },
+          "additionalProperties": false
+        },
+        "mirada": {
+          "description": "Cuello y pecho hacia el objetivo (se suman a la pose): tope en radianes y rapidez (0..1 por cuadro). La cabeza llega primero.",
+          "type": "object",
+          "properties": {
+            "cabeza": { "$ref": "#/$defs/seguir" },
+            "pecho": { "$ref": "#/$defs/seguir" }
+          },
+          "additionalProperties": false
+        },
+        "paso": {
+          "description": "Caminar en guardia: umbral de |mover| para empezar a caminar y rapidez (0..1 por cuadro) con que entra la caminata.",
+          "type": "object",
+          "properties": {
+            "umbral": { "type": "number", "minimum": 0, "maximum": 1 },
+            "rapidez": { "type": "number", "minimum": 0.01, "maximum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "entrada": {
+      "type": "object",
+      "properties": {
+        "buffer": { "description": "Cuadros que se guarda una intención apretada (PC).", "type": "integer", "minimum": 0, "maximum": 30 }
+      },
+      "additionalProperties": false
+    },
+    "tactil": {
+      "description": "Asistencias del celular (§15.1). N4 suma umbrales de deslizamiento y vibración.",
+      "type": "object",
+      "properties": {
+        "buffer": { "type": "integer", "minimum": 0, "maximum": 30 },
+        "ventanasExtra": { "description": "Cuadros extra en las ventanas de desvío y de esquiva.", "type": "integer", "minimum": 0, "maximum": 8 }
+      },
+      "additionalProperties": true
+    },
+    "curvas": {
+      "description": "Curvas con nombre (mundo/datos/curvas.js): puntos de control [x, y], con x de 0 a 1 en orden creciente; y empieza en 0 y termina en 1 (en el medio puede pasarse o bajar). Reemplazan por nombre a las del código y se pueden sumar nuevas.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/clave" },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 2,
+        "items": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 1 }, { "type": "number", "minimum": -1, "maximum": 2 }], "minItems": 2, "maxItems": 2 }
+      }
+    },
+    "peso": {
+      "description": "Peso de los golpes por nivel (§15.4; los usa combate/peso.js desde N5): hitstop en cuadros, trauma de la sacudida (0..1), empuje en bloques, partículas y cámara lenta local.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "hitstop": { "type": "integer", "minimum": 0, "maximum": 60 },
+          "trauma": { "type": "number", "minimum": 0, "maximum": 1 },
+          "empuje": { "type": "number", "minimum": 0, "maximum": 5 },
+          "particulas": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "camaraLenta": {
+            "type": "object",
+            "properties": {
+              "segundos": { "type": "number", "minimum": 0, "maximum": 5 },
+              "escala": { "type": "number", "minimum": 0.05, "maximum": 1 }
+            },
+            "required": ["segundos", "escala"],
+            "additionalProperties": false
+          },
+          "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "reacciones": {
+      "description": "Reacciones comunes a todos los estilos (§18): una acción con fases cuya animación está en `anim`. Un estilo puede reemplazar una con la suya (estilo-*.json → reacciones).",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/accion" }
+    },
+    "anim": {
+      "description": "Animaciones de las reacciones comunes (formato de gesto con claves ancladas a fases).",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/anim" }
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "clave": {
+      "description": "Nombre interno: empieza con minúscula; luego letras, números, guion o guion bajo (alto_leve).",
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]*$"
+    },
+    "seguir": {
+      "type": "object",
+      "properties": {
+        "tope": { "type": "number", "minimum": 0, "maximum": 1.6 },
+        "rapidez": { "type": "number", "minimum": 0.01, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "fases": {
+      "description": "Cuadros (a 60 Hz) de cada fase: anticipación (el cuerpo se prepara), activo (el golpe: pega en estos cuadros) y recuperación (vuelve con inercia).",
+      "type": "object",
+      "properties": {
+        "anticipacion": { "type": "integer", "minimum": 0, "maximum": 600 },
+        "activo": { "type": "integer", "minimum": 0, "maximum": 600 },
+        "recuperacion": { "type": "integer", "minimum": 0, "maximum": 600 }
+      },
+      "required": ["anticipacion", "activo", "recuperacion"],
+      "additionalProperties": false
+    },
+    "marca": {
+      "description": "Cuadro respecto de una fase: «activo+2» = el tercer cuadro del activo; «recuperacion-1» = el último del activo; «fin» = después del último. Si el dueño estira una fase, la marca la sigue.",
+      "type": "string",
+      "pattern": "^(anticipacion|activo|recuperacion|fin)([+-][0-9]+)?$"
+    },
+    "tramo": {
+      "description": "[desde, hasta] con marcas (los dos incluidos).",
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/marca" }, { "$ref": "#/$defs/marca" }],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "tramos": { "type": "array", "items": { "$ref": "#/$defs/tramo" } },
+    "cancelar": {
+      "description": "Ventanas de cancelación: desde el cuadro `desde` hasta `hasta` (falta = hasta el final) se puede pasar a cualquiera de `a` (ataques, acciones o reacciones del estilo). siConecto: solo si el golpe pegó (Urban Reign).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "a": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/clave" } },
+          "desde": { "$ref": "#/$defs/marca" },
+          "hasta": { "$ref": "#/$defs/marca" },
+          "siConecto": { "type": "boolean" },
+          "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+        },
+        "required": ["a", "desde"],
+        "additionalProperties": false
+      }
+    },
+    "avance": {
+      "description": "Desplazamiento del cuerpo (root motion): `hasta` bloques al terminar la fase `fase`, con la curva `curva` (por defecto salida). Negativo = hacia atrás. Debe calzar con los pies: avanza solo con el pie de adelante en el aire (el pie apoyado queda anclado).",
+      "type": "object",
+      "properties": {
+        "fase": { "enum": ["anticipacion", "activo", "recuperacion"] },
+        "hasta": { "type": "number", "minimum": -10, "maximum": 10 },
+        "curva": { "$ref": "#/$defs/clave" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["fase", "hasta"],
+      "additionalProperties": false
+    },
+    "accion": {
+      "description": "Estado con tiempo que no es un ataque: esquiva, desvío, reacción, levantarse. estado: el nombre del estado de la máquina (§15.2; por defecto el de la clave, o reaccion). siguiente: a qué pasa al terminar (por defecto la guardia; el desvío con la defensa mantenida pasa a controles.defensaMantenida). ventana: el tramo en que desvía (por defecto todo el activo). usaDireccion: el avance va hacia donde apunta mover al apretar (si no, `direccion`, [adelante, lado]).",
+      "type": "object",
+      "properties": {
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "estado": { "enum": ["esquiva", "desvio", "contra", "carga", "agarre", "agarrado", "reaccion", "aturdido", "derribado", "levantarse", "remate", "rematado"] },
+        "fases": { "$ref": "#/$defs/fases" },
+        "anim": { "$ref": "#/$defs/clave" },
+        "siguiente": { "$ref": "#/$defs/clave" },
+        "ventana": { "$ref": "#/$defs/tramo" },
+        "cancelar": { "$ref": "#/$defs/cancelar" },
+        "iframes": { "$ref": "#/$defs/tramos" },
+        "armadura": { "$ref": "#/$defs/tramos" },
+        "avance": { "anyOf": [{ "$ref": "#/$defs/avance" }, { "type": "array", "items": { "$ref": "#/$defs/avance" } }] },
+        "direccion": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2 },
+        "usaDireccion": { "type": "boolean" },
+        "mezcla": { "description": "Cuadros de la inercialización al entrar (falta = la de motor.mezcla).", "type": "integer", "minimum": 0, "maximum": 60 },
+        "velocidadMax": { "description": "Rad por cuadro que se permiten en sus cuadros activos (hasta motor.velocidadMax).", "type": "number", "minimum": 0.05, "maximum": 2 },
+        "sinMirada": { "type": "boolean" },
+        "ininterrumpible": { "type": "boolean" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["fases"],
+      "additionalProperties": false
+    },
+    "nombreCanal": {
+      "description": "Canales del rig con codos, rodillas y pecho (§15.5; los de rig.md más codoD codoI rodD rodI pX pY pZ pDz pIz bDy bIy ry armaX armaZ). y: altura del cuerpo (se suma al suelo automático) · salto: se suma a y · pz: avanza el cuerpo.",
+      "enum": ["cx", "cy", "cz", "bDx", "bDy", "bDz", "bIx", "bIy", "bIz", "pDx", "pIx", "pDz", "pIz", "inc", "ry", "rz", "codoD", "codoI", "rodD", "rodI", "pX", "pY", "pZ", "armaX", "armaZ", "y", "salto", "pz"]
+    },
+    "claveFase": {
+      "description": "[fase, fracción, valor, curva?]: en la fase a (anticipación), g (golpe o activo) o r (recuperación), al `fracción` (0..1) de la fase, el canal vale `valor` y llega con la curva (por defecto suave).",
+      "type": "array",
+      "prefixItems": [{ "enum": ["a", "g", "r"] }, { "type": "number", "minimum": 0, "maximum": 1 }, { "type": "number" }, { "$ref": "#/$defs/clave" }],
+      "minItems": 3,
+      "maxItems": 4
+    },
+    "canal": {
+      "anyOf": [
+        { "$ref": "comun.schema.json#/$defs/radianes" },
+        {
+          "type": "object",
+          "properties": {
+            "base": { "type": "number" },
+            "k": {
+              "description": "Con reloj «fases»: claves [fase, fracción, valor, curva?]. Con los otros relojes: [tiempo, valor] como en poses.json.",
+              "type": "array",
+              "minItems": 1,
+              "items": { "anyOf": [{ "$ref": "#/$defs/claveFase" }, { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2 }] }
+            },
+            "interp": { "enum": ["suave", "lineal", "paso"] },
+            "osc": { "type": "array", "items": { "$ref": "poses.schema.json#/$defs/oscilador" } },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "anim": {
+      "description": "Animación de combate: el formato de un gesto de poses.json con dos relojes más. fases: las claves se anclan a las fases de la acción que la usa. t: segundos (guardia, respiración; los osciladores también usan t). Para la caminata en guardia, t es la distancia recorrida en bloques (el paso sigue a la velocidad real: frec en rad por bloque).",
+      "type": "object",
+      "properties": {
+        "reloj": { "enum": ["fases", "t", "u"] },
+        "canales": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/nombreCanal" },
+          "additionalProperties": { "$ref": "#/$defs/canal" }
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["reloj", "canales"],
+      "additionalProperties": false
+    }
+  }
+}
