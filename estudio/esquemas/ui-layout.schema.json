@@ -8,11 +8,40 @@
     "$schema": { "type": "string" },
     "version": { "$ref": "comun.schema.json#/$defs/version" },
     "nota": { "$ref": "comun.schema.json#/$defs/nota" },
-    "supervivencia": { "$ref": "#/$defs/pantalla" }
+    "supervivencia": { "$ref": "#/$defs/pantalla" },
+    "arena": { "$ref": "#/$defs/pantallaArena" }
   },
   "required": ["version"],
   "additionalProperties": false,
   "$defs": {
+    "pantallaArena": {
+      "description": "Botones de la arena del combate (bloque 8 · N4, mundo/supervivencia/combate/tactil-arena.js). Lo que falta usa tactil-arena.css. Sin franja inferior: se mide desde el borde. El joystick es flotante (nace donde se apoya el dedo; su tamaño está en combate.json → tactil.joystick).",
+      "type": "object",
+      "properties": {
+        "normal": { "$ref": "#/$defs/perfilArena" },
+        "baja": { "$ref": "#/$defs/perfilArena" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "perfilArena": {
+      "type": "object",
+      "properties": {
+        "botones": {
+          "type": "object",
+          "properties": {
+            "ar-atacar": { "$ref": "#/$defs/boton", "description": "ATACAR (toque = medio, deslizar arriba = alto, abajo = bajo, mantener = fuerte)." },
+            "ar-defensa": { "$ref": "#/$defs/boton", "description": "DEFENSA (toque, mantener, deslizar arriba o abajo)." },
+            "ar-saltar": { "$ref": "#/$defs/boton" },
+            "ar-agarre": { "$ref": "#/$defs/boton", "description": "AGARRE o ARTE, según el estilo." },
+            "ar-especial": { "$ref": "#/$defs/boton", "description": "ESPECIAL: solo aparece si hay barra (mantener = modoEspecial)." }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
     "pantalla": {
       "description": "Perfiles de una página. normal: siempre. baja: se suma dentro de @media (max-height: 460px) (celular acostado) y solo lleva lo que cambia.",
       "type": "object",

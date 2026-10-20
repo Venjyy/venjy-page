@@ -393,6 +393,13 @@ El combate no lee teclas: lee un objeto `intencion` por cuadro lógico, que arma
 - **Asistencias del táctil** (todas en `combate.json → tactil`): buffer de 12 c en vez de 8; ventanas de desvío y esquiva con +2 c; el umbral para que un deslizamiento cuente es de 18 px o 120 ms; la vibración en impactos fuertes y desvíos perfectos (`navigator.vibrate`, intensidad editable, apagable) y el foco siempre automático.
 - **Regla del táctil (decidida):** nada del combate pide dos dedos a la vez en la derecha. Todo lo que en PC es «tecla + clic» en el táctil es **un gesto sobre un solo botón** (deslizar).
 - En el cooperativo y en el 2 jugadores **cada uno juzga lo que recibe con sus propias ventanas**, así que el de celular tiene sus 2 c extra al defenderse. Entre amigos vale. En la arena de 2 jugadores también (decidido, §27.3: lo más cómodo para el de celular). El interruptor «ventanas iguales» existe, pero viene apagado.
+- **Hecho en N4 (2026-10-20), con estos ajustes** (`combate/intenciones.js`, `combate/tactil-arena.js`; datos en `combate.json → teclas` y `→ tactil`, botones en `ui-layout.json → arena`):
+  - **ATACAR y DEFENSA esperan el gesto** en el táctil: el deslizamiento sale apenas se cruzan los 18 px en vertical (antes de 120 ms); un toque sale al soltar; pasados los 120 ms sin cruzarlos, es mantener (con altura neutra). Así un dedo que tiembla nunca da alto ni bajo, a cambio de que el toque salga al soltar.
+  - **Carga:** si el estilo tiene `controles.fuerte`, mantener atacar 14 c da `fuerte` y el ataque normal sale al soltar antes; si no lo tiene, atacar sale al apretar.
+  - **Altura neutra** = `entrada.alturaNeutra` («medio»): la misma para PC sin W ni S y para el toque.
+  - **Esquiva en PC:** la dirección es la del cuadro en que se aprieta Shift (W o S = paso lateral, A o D = atrás o adelante). `mover[1]` solo trae algo en ese cuadro.
+  - **Mando (mapeo estándar):** X = atacar, A = defensa, Y = agarre, B = especial, RT = esquivar, LT = foco, RB = saltar, LB = modoEspecial. Vibra con `vibrationActuator` ([ms, motor grande, chico]).
+  - **Botones de la arena** en la página `arena` de `ui-layout.json` (Estudio → Layout → Página «Arena»); el joystick es flotante y su tamaño está en `tactil.joystick`.
 
 ### 15.2 Máquina de estados (§4.3)
 

@@ -86,7 +86,9 @@ const RESUMEN_JSON = {
         const s = d.supervivencia || {};
         const n = Object.keys((s.normal && s.normal.botones) || {}).length;
         const b = Object.keys((s.baja && s.baja.botones) || {}).length;
-        return `${n} elementos (normal) · ${b} (baja)`;
+        const ar = d.arena || {};
+        const na = Object.keys((ar.normal && ar.normal.botones) || {}).length + Object.keys((ar.baja && ar.baja.botones) || {}).length;
+        return `${n} elementos (normal) · ${b} (baja)` + (na ? ` · arena ${na}` : '');
     },
     textos: cuentaTextos,
     dialogos: d => {

@@ -28,8 +28,76 @@
     },
     "paso": { "umbral": 0.15, "rapidez": 0.12 }
   },
-  "entrada": { "buffer": 8 },
-  "tactil": { "buffer": 12, "ventanasExtra": 2 },
+  "entrada": { "buffer": 8, "alturaNeutra": "medio" },
+  "tactil": {
+    "buffer": 12,
+    "ventanasExtra": 2,
+    "deslizar": { "px": 18, "ms": 120 },
+    "esquiva": { "px": 40, "ms": 220 },
+    "joystick": { "radio": 48, "zonaMuerta": 0.2, "mitad": 0.5 },
+    "especialModo": 20,
+    "vibracion": {
+      "activa": true,
+      "intensidad": 1,
+      "golpe": [12],
+      "fuerte": [28],
+      "desvio": [16],
+      "perfecto": [18, 30, 26]
+    }
+  },
+  "teclas": {
+    "fuerte": 14,
+    "perfil": "raton",
+    "arena": {
+      "raton": {
+        "izquierda": ["KeyA"],
+        "derecha": ["KeyD"],
+        "alto": ["KeyW"],
+        "bajo": ["KeyS"],
+        "atacar": ["Mouse0"],
+        "defensa": ["Mouse2"],
+        "esquivar": ["ShiftLeft", "ShiftRight"],
+        "agarre": ["KeyE"],
+        "especial": ["KeyQ"],
+        "saltar": ["Space"]
+      },
+      "teclado": {
+        "izquierda": ["ArrowLeft"],
+        "derecha": ["ArrowRight"],
+        "alto": ["ArrowUp"],
+        "bajo": ["ArrowDown"],
+        "atacar": ["KeyJ"],
+        "defensa": ["KeyK"],
+        "esquivar": ["KeyL"],
+        "agarre": ["KeyU"],
+        "especial": ["KeyI"],
+        "saltar": ["Space"]
+      }
+    },
+    "juntos": {
+      "modoEspecial": ["agarre", "especial"]
+    },
+    "mando": {
+      "atacar": [2],
+      "defensa": [0],
+      "agarre": [3],
+      "especial": [1],
+      "esquivar": [7],
+      "foco": [6],
+      "saltar": [5],
+      "modoEspecial": [4],
+      "ejeX": 0,
+      "ejeY": 1,
+      "zonaMuerta": 0.2,
+      "altura": 0.5,
+      "vibracion": {
+        "golpe": [60, 0.2, 0.3],
+        "fuerte": [120, 0.7, 0.5],
+        "desvio": [70, 0.3, 0.6],
+        "perfecto": [140, 0.8, 0.8]
+      }
+    }
+  },
   "curvas": {
     "lineal": [[0, 0], [1, 1]],
     "suave": [[0, 0], [0.2, 0.104], [0.5, 0.5], [0.8, 0.896], [1, 1]],

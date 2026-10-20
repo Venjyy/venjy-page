@@ -1,0 +1,50 @@
+/* =========================================================
+   VENJY · Combate · controles táctiles de la arena (combate/tactil-arena.js)
+   El aspecto de los botones es el de .tactil-boton (mundo/tactil.css). Las posiciones de aquí son las de partida:
+   ui-layout.json → arena las reemplaza (layout-datos.js, body.layout-datos-arena).
+   ========================================================= */
+
+.tactil-arena {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'PixelCraft', monospace;
+    color: #fff;
+}
+.tactil-arena[hidden], .tactil-arena .arena-boton[hidden], .tactil-arena .ar-joy-base[hidden] { display: none !important; }
+
+.tactil-arena .arena-boton { font-size: 0.85rem; }
+.tactil-arena .ar-atacar { right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); width: 112px; height: 112px; font-size: 1rem; }
+.tactil-arena .ar-defensa { right: calc(150px + env(safe-area-inset-right, 0px)); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); width: 92px; height: 92px; }
+.tactil-arena .ar-saltar { right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; }
+.tactil-arena .ar-agarre { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: 80px; height: 56px; font-size: 0.75rem; }
+.tactil-arena .ar-especial { right: calc(204px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: 88px; height: 56px; font-size: 0.75rem; }
+
+/* Joystick flotante: nace donde se apoya el dedo (left/top los pone tactil-arena.js); solo se mueve en el eje */
+.tactil-arena .ar-joy-base {
+    position: absolute;
+    width: calc(var(--radio, 48px) * 2 + 40px);
+    height: 56px;
+    transform: translate(-50%, -50%);
+    background: rgb(16 10 6 / 0.45);
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 rgb(139 139 139 / 0.55), inset -3px -3px 0 rgb(55 55 55 / 0.8);
+    pointer-events: none;
+}
+.tactil-arena .ar-joy-palanca {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    background: #6f6f6f;
+    border: 3px solid #000;
+    box-shadow: inset 3px 3px 0 #8b8b8b, inset -3px -3px 0 #373737;
+}

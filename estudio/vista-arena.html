@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vista arena · Estudio</title>
+    <!-- Controles táctiles de la arena del combate (mundo/supervivencia/combate/tactil-arena.js), sin el mundo.
+         La carga el editor de layout (pestaña Layout, página Arena) en un iframe. Los botones responden de verdad:
+         la franja de abajo muestra la intención de cada cuadro, para probar los deslizamientos con el mouse. -->
+    <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; }
+        body { background: linear-gradient(#78a7e8 0 58%, #5f9a3c 58% 100%); font-family: 'PixelCraft', monospace; }
+        /* Zona segura simulada (el editor manda { tipo: 'seguro' }) */
+        .tactil-arena { inset: var(--sim-t, 0px) var(--sim-r, 0px) var(--sim-b, 0px) var(--sim-l, 0px); }
+        .tactil-arena::before { content: ''; position: absolute; top: 0; bottom: 0; left: var(--mitad, 50%); border-left: 2px dashed rgb(255 255 255 / 0.35); pointer-events: none; }
+        #ultima { position: fixed; left: 8px; top: 8px; z-index: 40; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; font-size: 12px; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="ultima"></div>
+    <script type="module">
+        import { montarTactilArena } from '../mundo/supervivencia/combate/tactil-arena.js';
+        import { crearIntenciones } from '../mundo/supervivencia/combate/intenciones.js';
+        import { fijarCombate, COMBATE } from '../mundo/supervivencia/combate/datos.js';
+        import { aplicarLayout } from '../mundo/supervivencia/layout-datos.js';
+        import { cargarDatos } from '../mundo/datos/cargador.js';
+
+        const idioma = new URLSearchParams(location.search).get('idioma') === 'en' ? 'en' : 'es';
+        document.documentElement.lang = idioma;
+        const [, , comb] = await Promise.all([cargarDatos('ui-layout'), cargarDatos('textos'), cargarDatos('combate')]);
+        fijarCombate(comb);
+        const intenciones = crearIntenciones();
+        const arena = montarTactilArena({ intenciones, idioma });
+        arena.raiz.style.setProperty('--mitad', `${COMBATE.tactil.joystick.mitad * 100}%`);
+        // Muestra la última intención con algo apretado (sirve para probar los umbrales con el mouse)
+        const ultima = document.getElementById('ultima');
+        setInterval(() => {
+            const it = intenciones.leer(performance.now());
+            const apretados = Object.entries(it).filter(([k, v]) => v === 'apretar').map(([k]) => k);
+            if (apretados.length) ultima.textContent = `${apretados.join(' + ')} · ${it.altura} · mover ${it.mover.map(v => v.toFixed(2)).join(', ')}`;
+        }, 1000 / 60);
+
+        window.addEventListener('message', e => {
+            if (e.origin !== location.origin) return;
+            const m = e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.tipo === 'layout') {
+                aplicarLayout(m.datos || {}, 'arena');
+            } else if (m.tipo === 'seguro') {
+                const r = arena.raiz.style;
+                r.setProperty('--sim-t', (m.t || 0) + 'px');
+                r.setProperty('--sim-r', (m.r || 0) + 'px');
+                r.setProperty('--sim-b', (m.b || 0) + 'px');
+                r.setProperty('--sim-l', (m.l || 0) + 'px');
+            }
+            parent.postMessage({ tipo: 'aplicado' }, location.origin);
+        });
+        parent.postMessage({ tipo: 'listo' }, location.origin);
+    </script>
+</body>
+</html>
