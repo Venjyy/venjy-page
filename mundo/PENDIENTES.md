@@ -1218,6 +1218,14 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
   - Qué mirar: en el celular, que deslizar en ATACAR cambie la altura sin falsos positivos.
   - Tamaño: mediano.
 - [ ] **N5 · Peso y reacciones** (§15.4, §18)
+  - **Pedido del dueño (2026-10-20): los efectos venden el golpe.** Una animación correcta se ve mucho mejor con buenos efectos, así que cada golpe lleva su capa de efectos (todo pixel, estilo Minecraft, sin texturas de fuera), en `combate.json → efectos` y por ataque en el estilo, editable en el Estudio (panel Peso de N6):
+    - estelas del arma (las de L2) y estelas de puño y patada para Urban Reign (L5);
+    - impacto: destello blanco de 2 a 3 c en el punto de contacto, chispas de cubitos, anillo de onda pixel y polvo según la superficie (nieve, hielo, tierra);
+    - desvío y perfecto: chispas naranjas, destello en el filo, aro de luz que se abre y la pantalla que blanquea un instante en el perfecto;
+    - golpe fuerte y remate: líneas de velocidad en los bordes, flash de pantalla breve, viñeta y los números de daño que saltan, opcionales;
+    - movimiento: polvo y nieve al pisar fuerte, al esquivar y al caer; humo corto del paso lateral;
+    - peligro (L3): el aviso con brillo rojo en el arma durante la anticipación.
+  - Rendimiento: grupo de partículas reciclado (sin crear objetos por golpe) y un tope por cuadro para Android.
   - Qué: `combate/peso.js` (hitstop de los dos implicados con temblor, trauma, cámara lenta local, empuje); partículas pixel (chispas, polvo, nieve); sonidos por capas en `sonidos.js`; las 16 reacciones de §18 animadas; un muñeco de práctica para verlas.
   - Prueba: `combate-peso.mjs` y las reacciones dentro de `combate-animacion.mjs`.
   - Táctil: vibración. Cooperativo: no aplica (la cámara lenta es local).
@@ -1248,6 +1256,7 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
   - **Pedido del dueño tras probar L1 (2026-10-20):**
     - **Combo continuo, no un golpe repetido:** al clicar varias veces sale la cadena S3 → S4 → S5 → S6 y **cada tajo empieza donde terminó el anterior** (S3 baja de arriba a abajo y deja la hoja abajo a la izquierda → S4 la toma desde ahí, etc.). Si el clic llega dentro de la ventana de cancelación, el tajo siguiente sale desde la pose final del anterior sin pasar por la guardia; solo al soltar la cadena se vuelve a la guardia (`asentar`). Prueba: en `estilo-sekiro.mjs`, la pose del último cuadro activo o de recuperación de cada tajo y la del primer cuadro del siguiente difieren menos que `motor.saltoMax` en todos los canales.
     - **Katana como modelo 3D de calidad**, como el teclado, la guitarra y el tambor (`modelos-mano.js`, skill `objetos-supervivencia` §modelos en la mano): hoja con filo y lomo, guarda (tsuba), mango con cordaje y vaina en la cadera, con su ajuste en `objetos-mano.json` (posición, giro, escala en la mano, editables en el Estudio). Reemplaza la caja de `arena/escena.js → armar`. La misma pieza servirá en el mundo abierto (8·M).
+    - **Estela del tajo (efecto de slash):** cada tajo de la katana deja un arco pixel que sigue la punta y el filo durante el activo (cinta de 4 a 8 cuadros que se desvanece, blanca con borde del color del aura del peleador, más ancha en el centro del arco). Va con la katana 3D. Valores en el estilo (`efectos` por ataque: largo, ancho, color, desvanecer), editables.
   - Qué: **primera pelea jugable**. Contra un Lalo de práctica que ataca con un patrón fijo (la CPU de verdad llega en L4). `estilo-sekiro.json`; guardia, paso, combo de 4, golpe fuerte, desvío normal y perfecto con penalización, bloqueo, esquiva; postura con su regeneración; chispas y campana.
   - Prueba: `estilo-sekiro.mjs` (ventanas, penalización, tabla de postura, regeneración según la vida).
   - Táctil: sí. Cooperativo: no aplica.
