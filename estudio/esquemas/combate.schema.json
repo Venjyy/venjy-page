@@ -77,18 +77,107 @@
     "entrada": {
       "type": "object",
       "properties": {
-        "buffer": { "description": "Cuadros que se guarda una intención apretada (PC).", "type": "integer", "minimum": 0, "maximum": 30 }
+        "buffer": { "description": "Cuadros que se guarda una intención apretada (PC).", "type": "integer", "minimum": 0, "maximum": 30 },
+        "alturaNeutra": { "description": "Altura de un golpe sin W ni S (ni deslizar): la de un toque en el táctil.", "enum": ["alto", "medio", "bajo", "neutro"] }
       },
       "additionalProperties": false
     },
     "tactil": {
-      "description": "Asistencias del celular (§15.1). N4 suma umbrales de deslizamiento y vibración.",
+      "description": "Asistencias del celular (§15.1): buffer, ventanas, umbrales de los gestos y vibración (combate/intenciones.js).",
       "type": "object",
       "properties": {
         "buffer": { "type": "integer", "minimum": 0, "maximum": 30 },
-        "ventanasExtra": { "description": "Cuadros extra en las ventanas de desvío y de esquiva.", "type": "integer", "minimum": 0, "maximum": 8 }
+        "ventanasExtra": { "description": "Cuadros extra en las ventanas de desvío y de esquiva.", "type": "integer", "minimum": 0, "maximum": 8 },
+        "deslizar": {
+          "description": "ATACAR y DEFENSA: si el dedo recorre px en vertical antes de ms es un deslizamiento (arriba = alto, abajo = bajo); si pasan los ms, es mantener; si se suelta antes, es un toque.",
+          "type": "object",
+          "properties": {
+            "px": { "type": "number", "minimum": 4, "maximum": 120 },
+            "ms": { "type": "number", "minimum": 30, "maximum": 600 }
+          },
+          "additionalProperties": false
+        },
+        "esquiva": {
+          "description": "Zona libre de la derecha: deslizar px en cualquier dirección en menos de ms es una esquiva hacia allá.",
+          "type": "object",
+          "properties": {
+            "px": { "type": "number", "minimum": 8, "maximum": 300 },
+            "ms": { "type": "number", "minimum": 30, "maximum": 1000 }
+          },
+          "additionalProperties": false
+        },
+        "joystick": {
+          "description": "Joystick flotante de la mitad izquierda: radio en px (recorrido para mover a tope), zona muerta (0..1 del radio) y mitad (fracción del ancho que ocupa).",
+          "type": "object",
+          "properties": {
+            "radio": { "type": "number", "minimum": 16, "maximum": 200 },
+            "zonaMuerta": { "type": "number", "minimum": 0, "maximum": 0.9 },
+            "mitad": { "type": "number", "minimum": 0.2, "maximum": 0.8 }
+          },
+          "additionalProperties": false
+        },
+        "especialModo": { "description": "Cuadros manteniendo ESPECIAL que dan modoEspecial (Furia o Rango).", "type": "integer", "minimum": 1, "maximum": 120 },
+        "vibracion": {
+          "description": "navigator.vibrate en el celular y la intensidad del mando. Cada patrón son ms alternando vibrar y pausa; la intensidad escala lo que vibra.",
+          "type": "object",
+          "properties": {
+            "activa": { "type": "boolean" },
+            "intensidad": { "type": "number", "minimum": 0, "maximum": 2 },
+            "golpe": { "$ref": "#/$defs/patronVibracion" },
+            "fuerte": { "$ref": "#/$defs/patronVibracion" },
+            "desvio": { "$ref": "#/$defs/patronVibracion" },
+            "perfecto": { "$ref": "#/$defs/patronVibracion" }
+          },
+          "additionalProperties": { "$ref": "#/$defs/patronVibracion" }
+        }
       },
       "additionalProperties": true
+    },
+    "teclas": {
+      "description": "Controles del combate (§15.1). Teclas por KeyboardEvent.code (KeyA, ArrowUp, Space, ShiftLeft); el mouse es Mouse0 (izquierdo) y Mouse2 (derecho).",
+      "type": "object",
+      "properties": {
+        "fuerte": { "description": "Cuadros manteniendo atacar para el golpe fuerte (si el estilo lo tiene).", "type": "integer", "minimum": 2, "maximum": 120 },
+        "perfil": { "description": "Perfil de PC por defecto (una clave de arena).", "type": "string" },
+        "arena": {
+          "description": "Perfiles de PC en la arena: raton (mouse y teclado) y teclado (solo teclado). Se pueden sumar otros.",
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/clave" },
+          "additionalProperties": { "$ref": "#/$defs/perfilTeclas" }
+        },
+        "juntos": {
+          "description": "Un control que sale al apretar otros dos a la vez (Q + E = modoEspecial). No se usa en el táctil.",
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/control" }, "minItems": 2, "maxItems": 2 }
+        },
+        "mando": {
+          "description": "Mando (Gamepad API, mapeo estándar: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT). El stick izquierdo mueve y, arriba o abajo, da la altura.",
+          "type": "object",
+          "properties": {
+            "atacar": { "$ref": "#/$defs/botonesMando" },
+            "defensa": { "$ref": "#/$defs/botonesMando" },
+            "esquivar": { "$ref": "#/$defs/botonesMando" },
+            "agarre": { "$ref": "#/$defs/botonesMando" },
+            "especial": { "$ref": "#/$defs/botonesMando" },
+            "saltar": { "$ref": "#/$defs/botonesMando" },
+            "modoEspecial": { "$ref": "#/$defs/botonesMando" },
+            "foco": { "$ref": "#/$defs/botonesMando" },
+            "ejeX": { "type": "integer", "minimum": 0, "maximum": 7 },
+            "ejeY": { "type": "integer", "minimum": 0, "maximum": 7 },
+            "zonaMuerta": { "type": "number", "minimum": 0, "maximum": 0.9 },
+            "altura": { "description": "Cuánto inclinar el stick arriba o abajo para alto o bajo.", "type": "number", "minimum": 0.1, "maximum": 1 },
+            "vibracion": {
+              "description": "Por tipo: [ms, fuerza del motor grande, fuerza del chico] (0..1).",
+              "type": "object",
+              "additionalProperties": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 2000 }, "minItems": 3, "maxItems": 3 }
+            },
+            "nota": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "type": "string" }
+      },
+      "additionalProperties": false
     },
     "curvas": {
       "description": "Curvas con nombre (mundo/datos/curvas.js): puntos de control [x, y], con x de 0 a 1 en orden creciente; y empieza en 0 y termina en 1 (en el medio puede pasarse o bajar). Reemplazan por nombre a las del código y se pueden sumar nuevas.",
@@ -141,6 +230,33 @@
   "required": ["version"],
   "additionalProperties": false,
   "$defs": {
+    "control": { "enum": ["atacar", "defensa", "esquivar", "agarre", "especial", "saltar", "modoEspecial", "foco"] },
+    "teclasDe": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^(Key[A-Z]|Digit[0-9]|Arrow(Up|Down|Left|Right)|Mouse[0-4]|Numpad[0-9A-Za-z]+|F[0-9]{1,2}|[A-Z][A-Za-z]+)$" },
+      "uniqueItems": true
+    },
+    "perfilTeclas": {
+      "type": "object",
+      "properties": {
+        "izquierda": { "$ref": "#/$defs/teclasDe" },
+        "derecha": { "$ref": "#/$defs/teclasDe" },
+        "alto": { "$ref": "#/$defs/teclasDe" },
+        "bajo": { "$ref": "#/$defs/teclasDe" },
+        "atacar": { "$ref": "#/$defs/teclasDe" },
+        "defensa": { "$ref": "#/$defs/teclasDe" },
+        "esquivar": { "$ref": "#/$defs/teclasDe" },
+        "agarre": { "$ref": "#/$defs/teclasDe" },
+        "especial": { "$ref": "#/$defs/teclasDe" },
+        "saltar": { "$ref": "#/$defs/teclasDe" },
+        "modoEspecial": { "$ref": "#/$defs/teclasDe" },
+        "foco": { "$ref": "#/$defs/teclasDe" },
+        "nota": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "botonesMando": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 31 }, "uniqueItems": true },
+    "patronVibracion": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1000 }, "maxItems": 12 },
     "clave": {
       "description": "Nombre interno: empieza con minúscula; luego letras, números, guion o guion bajo (alto_leve).",
       "type": "string",

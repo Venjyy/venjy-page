@@ -27,8 +27,41 @@ export const COMBATE_BASE = {
         mirada: { cabeza: { tope: 0.5, rapidez: 0.35 }, pecho: { tope: 0.3, rapidez: 0.08 } },
         paso: { umbral: 0.15, rapidez: 0.12 }        // |mover| para caminar en guardia; qué tan rápido entra la caminata
     },
-    entrada: { buffer: 8 },
-    tactil: { buffer: 12, ventanasExtra: 2 },
+    entrada: { buffer: 8, alturaNeutra: 'medio' },
+    // Asistencias del celular (§15.1). deslizar: un toque en ATACAR o DEFENSA se vuelve deslizamiento (alto o bajo) si
+    // el dedo recorre px en vertical antes de ms; pasados los ms sin recorrerlos, es mantener. esquiva: deslizar rápido
+    // en la zona libre de la derecha. especialModo: cuadros manteniendo ESPECIAL que dan modoEspecial.
+    tactil: {
+        buffer: 12, ventanasExtra: 2,
+        deslizar: { px: 18, ms: 120 },
+        esquiva: { px: 40, ms: 220 },
+        joystick: { radio: 48, zonaMuerta: 0.2, mitad: 0.5 },
+        especialModo: 20,
+        vibracion: { activa: true, intensidad: 1, golpe: [12], fuerte: [28], desvio: [16], perfecto: [18, 30, 26] }
+    },
+    // Perfiles de PC (KeyboardEvent.code; Mouse0 = clic izquierdo, Mouse2 = derecho) y del mando (Gamepad API, botones
+    // del mapeo estándar). juntos: dos controles apretados a la vez dan otro (Q + E = modoEspecial).
+    teclas: {
+        fuerte: 14, perfil: 'raton',
+        arena: {
+            raton: {
+                izquierda: ['KeyA'], derecha: ['KeyD'], alto: ['KeyW'], bajo: ['KeyS'],
+                atacar: ['Mouse0'], defensa: ['Mouse2'], esquivar: ['ShiftLeft', 'ShiftRight'],
+                agarre: ['KeyE'], especial: ['KeyQ'], saltar: ['Space']
+            },
+            teclado: {
+                izquierda: ['ArrowLeft'], derecha: ['ArrowRight'], alto: ['ArrowUp'], bajo: ['ArrowDown'],
+                atacar: ['KeyJ'], defensa: ['KeyK'], esquivar: ['KeyL'],
+                agarre: ['KeyU'], especial: ['KeyI'], saltar: ['Space']
+            }
+        },
+        juntos: { modoEspecial: ['agarre', 'especial'] },
+        mando: {
+            atacar: [2], defensa: [0], agarre: [3], especial: [1], esquivar: [7], foco: [6], saltar: [5], modoEspecial: [4],
+            ejeX: 0, ejeY: 1, zonaMuerta: 0.2, altura: 0.5,
+            vibracion: { golpe: [60, 0.2, 0.3], fuerte: [120, 0.7, 0.5], desvio: [70, 0.3, 0.6], perfecto: [140, 0.8, 0.8] }
+        }
+    },
     peso: {},
     reacciones: {},
     anim: {}
@@ -50,7 +83,7 @@ function fundir(base, extra) {
 export function fijarCombate(datos) {
     const d = objeto(datos) ? datos : {};
     for (const k of Object.keys(COMBATE)) delete COMBATE[k];
-    Object.assign(COMBATE, fundir(COMBATE_BASE, { motor: d.motor, entrada: d.entrada, tactil: d.tactil, peso: d.peso, reacciones: d.reacciones, anim: d.anim }));
+    Object.assign(COMBATE, fundir(COMBATE_BASE, { motor: d.motor, entrada: d.entrada, tactil: d.tactil, teclas: d.teclas, peso: d.peso, reacciones: d.reacciones, anim: d.anim }));
     fijarCurvas(d.curvas || null);
     return COMBATE;
 }

@@ -1075,3 +1075,11 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **CLI:** `validar` corre `reglasCombate` / `reglasEstilo` (`combate/reglas.js`); `resumen estilo-<x> <ataque>` dibuja la línea de tiempo ASCII; `resumen combate` lista motor, curvas, peso y reacciones.
 - **Pestaña:** ninguna todavía. La pestaña Combate (línea de tiempo, visor y paneles) llega en N6; los canales nuevos en Poses, en N2.
 - **No editable aún:** nada fuera de los JSON (todo valor del motor está en `combate.json`).
+
+## 27. Combate: intenciones y botones de la arena (bloque 8 · N4, 2026-10-20)
+
+- **Datos:** `combate.json → teclas` (perfiles de PC `raton` y `teclado` por `KeyboardEvent.code`, `Mouse0`/`Mouse2`; `juntos`; `mando` con botones del mapeo estándar, ejes, zona muerta, altura y vibración) y `→ tactil` (`deslizar`, `esquiva`, `joystick`, `especialModo`, `vibracion`), más `entrada.alturaNeutra`. Lo lee `combate/intenciones.js`.
+- **Layout:** `ui-layout.json` tiene una página nueva, `arena` (`ar-atacar`, `ar-defensa`, `ar-saltar`, `ar-agarre`, `ar-especial`; sin franja `pie`). En la pestaña Layout, el selector «Página» cambia entre Supervivencia y Arena; la vista de la arena es `estudio/vista-arena.html` (botones reales: arriba a la izquierda muestra la intención de cada gesto). `layout-datos.js` escribe un `<style>` y una clase en el body por página (`PAGINAS_LAYOUT`).
+- **Textos:** rótulos de los botones en `textos.json → arena` (pestaña Textos).
+- **Pestaña:** las teclas, los umbrales y la vibración se editan en el JSON hasta el panel Controles de la pestaña Combate (N6).
+- **No editable aún:** el tamaño visual de la base y la palanca del joystick flotante (`tactil-arena.css`; el recorrido sí: `tactil.joystick.radio`).

@@ -50,6 +50,10 @@ const malo = (nombre, esquema, cambia, quiere) => {
 malo('ui-layout', 'ui-layout', d => { d.supervivencia.normal.botones.joy.ancla = 'centro'; }, 'ancla');
 malo('ui-layout', 'ui-layout', d => { d.supervivencia.normal.botones.fantasma = { x: 1 }; }, 'fantasma');
 malo('ui-layout', 'ui-layout', d => { d.supervivencia.normal.botones.joy.w = 10; }, '10 < 24');
+malo('ui-layout', 'ui-layout', d => { d.arena.normal.botones['sv-romper'] = { x: 1 }; }, 'sv-romper');
+malo('combate', 'combate', d => { d.tactil.deslizar.px = 1; }, 'px');
+malo('combate', 'combate', d => { d.teclas.arena.raton.atacar = ['clic izquierdo']; }, 'atacar');
+malo('combate', 'combate', d => { d.teclas.mando.atacar = [-1]; }, 'atacar');
 malo('textos', 'textos', d => { delete d.textos.tactil.romper.en; }, 'en');
 malo('textos', 'textos', d => { d.textos.tactil.usar.es = ''; }, 'usar.es');
 malo('posiciones', 'posiciones', d => { d.personas.hadad.dy = 'arriba'; }, 'dy');

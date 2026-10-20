@@ -4,7 +4,7 @@
 // agrandar y numerar cada botón. Guarda mundo/datos/ui-layout.json con PUT /api/datos/ui-layout.
 // Contrato y reglas: estudio/DISENO.md §5.
 // =========================================================
-import { SELECTORES } from '../mundo/supervivencia/layout-datos.js';
+import { SELECTORES, SELECTORES_ARENA } from '../mundo/supervivencia/layout-datos.js';
 import { formatear } from './formato.mjs';
 import { calcularAvisos, MIN_TOQUE } from './avisos-layout.js';
 
@@ -32,7 +32,15 @@ const BOTONES = [
 // Del HUD (se miden desde #hud) y sin ancho ni alto propios: su tamaño es el del texto
 const DEL_HUD = new Set(['mision', 'minimapa', 'coords', 'fps', 'hora']);
 const SIN_TAMANO = new Set(['mision', 'coords', 'fps', 'hora']);
-const NOMBRE = Object.fromEntries(BOTONES.map(([c, es, en]) => [c, { es, en }]));
+// Página arena: botones del combate (mundo/supervivencia/combate/tactil-arena.js, bloque 8 · N4)
+const BOTONES_ARENA = [
+    ['ar-atacar', 'Atacar', 'Attack'],
+    ['ar-defensa', 'Defensa', 'Guard'],
+    ['ar-saltar', 'Saltar', 'Jump'],
+    ['ar-agarre', 'Agarre / arte', 'Grab / art'],
+    ['ar-especial', 'Especial', 'Special']
+];
+const NOMBRE = Object.fromEntries([...BOTONES, ...BOTONES_ARENA].map(([c, es, en]) => [c, { es, en }]));
 
 // Ancla de cada botón en el CSS de hoy (para los que todavía no están en el JSON)
 const DEF = {
@@ -54,6 +62,12 @@ const DEF = {
     coords: { ancla: 'si', seguro: false },
     fps: { ancla: 'si', seguro: false },
     hora: { ancla: 'si', seguro: false }
+};
+const DEF_ARENA = Object.fromEntries(BOTONES_ARENA.map(([c]) => [c, { ancla: 'id' }]));
+// Cada página del archivo: qué botones tiene, cómo encontrarlos en su vista y si usa la franja inferior (pie)
+const PAGINAS = {
+    supervivencia: { botones: BOTONES, def: DEF, selectores: SELECTORES, delHud: DEL_HUD, sinTamano: SIN_TAMANO, contenedor: '.tactil', vista: 'vista-tactil.html', pie: true },
+    arena: { botones: BOTONES_ARENA, def: DEF_ARENA, selectores: SELECTORES_ARENA, delHud: new Set(), sinTamano: new Set(), contenedor: '.tactil-arena', vista: 'vista-arena.html', pie: false }
 };
 const LADOS = { si: ['left', 'top'], sd: ['right', 'top'], ii: ['left', 'bottom'], id: ['right', 'bottom'] };
 const ANCLAS = [['si', 'Arriba izquierda', 'Top left'], ['sd', 'Arriba derecha', 'Top right'], ['ii', 'Abajo izquierda', 'Bottom left'], ['id', 'Abajo derecha', 'Bottom right']];
@@ -80,6 +94,8 @@ export async function montarLayout(ctx) {
     const btnGuardar = $('guardar');
 
     let original = null, datos = null, etag = null;
+    let pagina = 'supervivencia';
+    const pag = () => PAGINAS[pagina];
     let aparato = APARATOS[1];
     let persW = 800, persH = 400;
     let escala = 1, elegido = null, listo = false;
@@ -92,8 +108,8 @@ export async function montarLayout(ctx) {
 
     // ---------- Datos ----------
     function pantalla(crear) {
-        if (!datos.supervivencia) { if (!crear) return null; datos.supervivencia = {}; }
-        return datos.supervivencia;
+        if (!datos[pagina]) { if (!crear) return null; datos[pagina] = {}; }
+        return datos[pagina];
     }
     function perfilDatos(p, crear) {
         const s = pantalla(crear);
@@ -112,7 +128,7 @@ export async function montarLayout(ctx) {
     function efectivo(clave) {
         const n = botonDatos('normal', clave, false) || {};
         const b = perfil() === 'baja' ? botonDatos('baja', clave, false) || {} : {};
-        return { ...DEF[clave], ...n, ...b };
+        return { ...pag().def[clave], ...n, ...b };
     }
 
     function empujar() {
@@ -140,11 +156,11 @@ export async function montarLayout(ctx) {
     // Mide un botón en px de la vista, con la ancla `c` (puede ser distinta de la guardada)
     function medir(clave, c) {
         const d = doc();
-        const e = d && d.querySelector(SELECTORES[clave]);
+        const e = d && d.querySelector(pag().selectores[clave]);
         if (!e) return null;
         const r = e.getBoundingClientRect();
         if (!r.width && !r.height) return null;
-        const cont = (DEL_HUD.has(clave) ? d.getElementById('hud') : d.querySelector('.tactil')).getBoundingClientRect();
+        const cont = (pag().delHud.has(clave) ? d.getElementById('hud') : d.querySelector(pag().contenedor)).getBoundingClientRect();
         const [h, v] = LADOS[c.ancla];
         const x = h === 'left' ? r.left - cont.left : cont.right - r.right;
         let y;
@@ -171,10 +187,10 @@ export async function montarLayout(ctx) {
             if (eff.seguro === false) destino.seguro = false;
             if (m) {
                 destino.x = m.x; destino.y = m.y;
-                if (!SIN_TAMANO.has(clave)) { destino.w = m.w; destino.h = m.h; }
+                if (!pag().sinTamano.has(clave)) { destino.w = m.w; destino.h = m.h; }
             }
         }
-        const base = { ...DEF[clave], ...(normal || {}) };
+        const base = { ...pag().def[clave], ...(normal || {}) };
         for (const [k, v] of Object.entries(campos)) {
             if (v === undefined || v === null || Number.isNaN(v)) { delete destino[k]; continue; }
             if (p === 'baja' && hay(base[k]) && base[k] === v && k !== 'ancla') delete destino[k];
@@ -231,7 +247,7 @@ export async function montarLayout(ctx) {
         const sAncla = document.createElement('select');
         for (const [v, es, en] of ANCLAS) sAncla.appendChild(opcion(v, es, en, eff.ancla === v));
         sAncla.addEventListener('change', () => {
-            const nueva = { ancla: sAncla.value, desde: LADOS[sAncla.value][1] === 'bottom' ? eff.desde || 'borde' : undefined };
+            const nueva = { ancla: sAncla.value, desde: pag().pie && LADOS[sAncla.value][1] === 'bottom' ? eff.desde || 'borde' : undefined };
             const mm = medir(elegido, nueva);
             empujar();
             escribir(elegido, { ancla: nueva.ancla, desde: nueva.desde, x: mm ? mm.x : eff.x, y: mm ? mm.y : eff.y });
@@ -239,7 +255,7 @@ export async function montarLayout(ctx) {
         });
         caja.appendChild(campo('Ancla', 'Anchor', sAncla, true));
 
-        if (LADOS[eff.ancla][1] === 'bottom') {
+        if (pag().pie && LADOS[eff.ancla][1] === 'bottom') {
             const sDesde = document.createElement('select');
             sDesde.appendChild(opcion('borde', 'Borde de la pantalla', 'Screen edge', eff.desde !== 'pie'));
             sDesde.appendChild(opcion('pie', 'Sobre la barra rápida (pie)', 'Above the hotbar (pie)', eff.desde === 'pie'));
@@ -255,7 +271,7 @@ export async function montarLayout(ctx) {
 
         caja.appendChild(campo('x (px)', 'x (px)', numero(val('x'), LIMITES.x, 1, v => conf('x', v))));
         caja.appendChild(campo('y (px)', 'y (px)', numero(val('y'), LIMITES.y, 1, v => conf('y', v))));
-        if (!SIN_TAMANO.has(elegido)) {
+        if (!pag().sinTamano.has(elegido)) {
             caja.appendChild(campo('Ancho', 'Width', numero(val('w'), LIMITES.w, 1, v => conf('w', v))));
             caja.appendChild(campo('Alto', 'Height', numero(val('h'), LIMITES.h, 1, v => conf('h', v))));
         }
@@ -278,7 +294,7 @@ export async function montarLayout(ctx) {
         };
         caja.appendChild(marca('Suma la zona segura', 'Adds the safe area', eff.seguro !== false, v => {
             empujar();
-            const porDefecto = DEF[elegido].seguro !== false;
+            const porDefecto = pag().def[elegido].seguro !== false;
             escribir(elegido, { seguro: v === porDefecto && perfil() === 'normal' ? undefined : v });
             enviar();
         }));
@@ -292,7 +308,7 @@ export async function montarLayout(ctx) {
     }
 
     const enOriginal = (p, clave) => {
-        const s = original.supervivencia;
+        const s = original[pagina];
         return (s && s[p] && s[p].botones && s[p].botones[clave]) || null;
     };
     const editado = clave => ['normal', 'baja'].some(p => JSON.stringify(botonDatos(p, clave, false)) !== JSON.stringify(enOriginal(p, clave)));
@@ -300,7 +316,7 @@ export async function montarLayout(ctx) {
     function pintarLista() {
         const ul = $('lista');
         ul.textContent = '';
-        for (const [clave] of BOTONES) {
+        for (const [clave] of pag().botones) {
             const li = document.createElement('li');
             const b = document.createElement('button');
             b.type = 'button';
@@ -352,8 +368,8 @@ export async function montarLayout(ctx) {
         capa.textContent = '';
         const { w, h } = tam();
         const visibles = [];
-        for (const [clave] of BOTONES) {
-            const e = d.querySelector(SELECTORES[clave]);
+        for (const [clave] of pag().botones) {
+            const e = d.querySelector(pag().selectores[clave]);
             if (!e) continue;
             const r = e.getBoundingClientRect();
             if (!r.width || !r.height) continue;
@@ -384,7 +400,7 @@ export async function montarLayout(ctx) {
             rot.className = 'rotulo';
             rot.textContent = nombre(clave);
             asa.appendChild(rot);
-            if (!SIN_TAMANO.has(clave)) {
+            if (!pag().sinTamano.has(clave)) {
                 // la esquina que se arrastra es la contraria a la ancla: así x e y no cambian
                 const [hl, vl] = LADOS[efectivo(clave).ancla];
                 const esq = document.createElement('span');
@@ -584,6 +600,13 @@ export async function montarLayout(ctx) {
         pintarCampos();
     });
 
-    vista.src = 'vista-tactil.html?idioma=' + ctx.idioma;
+    const cargarVista = () => { listo = false; vista.src = pag().vista + '?idioma=' + ctx.idioma; };
+    $('pagina-layout').addEventListener('change', e => {
+        pagina = PAGINAS[e.target.value] ? e.target.value : 'supervivencia';
+        campoPie.closest('label').hidden = !pag().pie;
+        elegir(null);
+        cargarVista();
+    });
+    cargarVista();
     elegir(null);
 }

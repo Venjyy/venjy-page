@@ -11,6 +11,13 @@
       "camara": { "es": "CAM", "en": "CAM" },
       "comando": { "es": "/", "en": "/" }
     },
+    "arena": {
+      "atacar": { "es": "ATACAR", "en": "ATTACK" },
+      "defensa": { "es": "DEFENSA", "en": "GUARD" },
+      "saltar": { "es": "SALTAR", "en": "JUMP" },
+      "agarre": { "es": "AGARRE", "en": "GRAB" },
+      "especial": { "es": "ESPECIAL", "en": "SPECIAL" }
+    },
     "lugar": {
       "descubierto": { "es": "Lugar descubierto", "en": "Place discovered" }
     }
