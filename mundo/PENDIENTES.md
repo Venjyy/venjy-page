@@ -1245,6 +1245,9 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
   - Qué mirar: la entrada completa y que la cámara nunca pierda a nadie con pasos laterales.
   - Tamaño: grande.
 - [ ] **L2 · Sekiro I: guardia, tajos, desvío y postura** (§16.1-16.3: S1-S10)
+  - **Pedido del dueño tras probar L1 (2026-10-20):**
+    - **Combo continuo, no un golpe repetido:** al clicar varias veces sale la cadena S3 → S4 → S5 → S6 y **cada tajo empieza donde terminó el anterior** (S3 baja de arriba a abajo y deja la hoja abajo a la izquierda → S4 la toma desde ahí, etc.). Si el clic llega dentro de la ventana de cancelación, el tajo siguiente sale desde la pose final del anterior sin pasar por la guardia; solo al soltar la cadena se vuelve a la guardia (`asentar`). Prueba: en `estilo-sekiro.mjs`, la pose del último cuadro activo o de recuperación de cada tajo y la del primer cuadro del siguiente difieren menos que `motor.saltoMax` en todos los canales.
+    - **Katana como modelo 3D de calidad**, como el teclado, la guitarra y el tambor (`modelos-mano.js`, skill `objetos-supervivencia` §modelos en la mano): hoja con filo y lomo, guarda (tsuba), mango con cordaje y vaina en la cadera, con su ajuste en `objetos-mano.json` (posición, giro, escala en la mano, editables en el Estudio). Reemplaza la caja de `arena/escena.js → armar`. La misma pieza servirá en el mundo abierto (8·M).
   - Qué: **primera pelea jugable**. Contra un Lalo de práctica que ataca con un patrón fijo (la CPU de verdad llega en L4). `estilo-sekiro.json`; guardia, paso, combo de 4, golpe fuerte, desvío normal y perfecto con penalización, bloqueo, esquiva; postura con su regeneración; chispas y campana.
   - Prueba: `estilo-sekiro.mjs` (ventanas, penalización, tabla de postura, regeneración según la vida).
   - Táctil: sí. Cooperativo: no aplica.
@@ -1281,6 +1284,7 @@ Encargo completo, decisiones del dueño y dónde entra cada parte: **`mundo/COMB
   - Qué mirar: una pelea por la red entre dos dispositivos.
   - Tamaño: mediano.
 - [ ] **L8 · Pulido final de la arena** (§19.7, §1)
+  - **Pedido del dueño tras probar L1:** el escenario con modelos 3D de calidad (como los de la mano): barriles, fogatas y troncos, paredes de nieve con detalle, el público en una grada de verdad. Hoy son cajas simples de `arena/escena.js`.
   - Qué: música `duelo`; premios y amistad (`duelo`); público; animaciones de entrada y victoria; repaso de **todas** las animaciones con la lista de §1 y sus hojas; textos ES/EN en la pestaña Textos; medición en Android.
   - Prueba: las de la arena, `rendimiento.mjs` y la medición de carga si cambia lo que carga sin `?estudio`.
   - Táctil: repaso completo en el celular. Cooperativo: no aplica.

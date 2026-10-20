@@ -1151,6 +1151,8 @@ Cada estilo tiene su tabla en `estilo-*.json → cpu`, y la dificultad escala ti
   - **VS con primeros planos 3D** (`vs.retrato: "3d"`), porque Lalo no tiene carta del Duelo. Con `"carta"` se usará el retrato de la carta cuando exista.
   - Quedan para L8 el **viaje** por el túnel del iglú (hoy la ventisca tapa el cambio de escena sin seguir a nadie) y las animaciones de entrada (desenvainar, chaqueta) y de victoria. El rival es de práctica (`practica`: se acerca y tira el tajo cada 1,4 a 2,6 s, nunca en tu hitstop); la CPU llega en L4.
   - La escena del reto son dos espejos (`duelo-reto`, `duelo-reto-moises`), porque el esquema de `guion` no admite `reparto`.
+  - **La arena es el laboratorio, no el destino:** la cámara de lado y la escena cerrada sirven para afinar el combate. El movimiento ya es 3D (el paso lateral orbita y el eje gira), y estados, animación e intenciones no dependen de la cámara, así que el mismo combate pasa al modo supervivencia con la cámara en tercera persona de §20.3 (8·M).
+  - Pedidos del dueño tras probarla (2026-10-20), anotados en `PENDIENTES.md`: el combo continuo (cada tajo empieza donde terminó el anterior) y la katana como modelo 3D de calidad, en L2; el escenario con modelos de calidad, en L8.
 
 ### 19.8 Balance (lo que se mide antes de cualquier PvP)
 
