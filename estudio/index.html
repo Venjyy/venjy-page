@@ -21,6 +21,7 @@
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
+            <button class="pestana" type="button" data-pestana="arena" data-seccion="juego" data-es="Arena" data-en="Arena">Arena</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
@@ -388,6 +389,26 @@
                         <button id="ca-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="ca-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-arena" hidden>
+                <section class="panel">
+                    <h2 data-es="Arena del duelo" data-en="Duel arena">Arena del duelo</h2>
+                    <p class="mensaje" data-es="El duelo de Lalo contra Moisés en el lago congelado: peleadores, rondas, cámara, entrada, escenario, público, premios y textos. Todo va en vivo en el juego. Guardar escribe mundo/datos/arena.json." data-en="Lalo versus Moisés on the frozen lake: fighters, rounds, camera, entrance, scenery, crowd, prizes and texts. Everything is live in the game. Save writes mundo/datos/arena.json.">El duelo de Lalo contra Moisés en el lago congelado: peleadores, rondas, cámara, entrada, escenario, público, premios y textos. Todo va en vivo en el juego. Guardar escribe mundo/datos/arena.json.</p>
+                    <div class="fila-botones">
+                        <button id="ar-abrir" class="boton chico" type="button" data-es="Abrir la arena" data-en="Open the arena">Abrir la arena</button>
+                        <button id="ar-lalo" class="boton chico" type="button" data-es="Pelear con Lalo" data-en="Fight as Lalo">Pelear con Lalo</button>
+                        <button id="ar-moises" class="boton chico" type="button" data-es="Pelear con Moisés" data-en="Fight as Moisés">Pelear con Moisés</button>
+                        <button id="ar-terminar" class="boton chico secundario" type="button" data-es="Terminar" data-en="End">Terminar</button>
+                    </div>
+                </section>
+                <div id="ar-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="ar-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="ar-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="ar-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>

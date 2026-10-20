@@ -102,12 +102,12 @@ for (const [clave, def] of pilotos) {
 ok(difMax === 0, 'diferencia máxima 0 (fue ' + difMax + ')');
 
 // ---------- 3. Reglas que el esquema no expresa (mundo/datos/escenas.js, las de `cli.mjs validar`) ----------
-// Nombres que el juego resuelve hoy (guion.gestos con MOLDES → GESTOS_AMISTAD → GESTOS). Los de poses.json se suman
-// cuando la fase 6 le ponga `lee`; hoy todos están también en el código.
-const nombres = { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES)]), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
-ok(Object.keys(poses.gestos || {}).every(g => nombres.gestos.has(g)), 'los gestos de poses.json también existen en el código');
+// Nombres que el juego resuelve (guion.gestos con MOLDES → GESTOS_AMISTAD → GESTOS, más los gestos y poses de
+// poses.json, que aplicarPoses suma a GESTOS; como nombresDeEscenasImport de cli.mjs)
+const nombres = { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES), ...Object.keys(poses.gestos || {}), ...Object.keys(poses.poses || {})]), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
 {
-    const r = reglasEscenas(datos, nombres);
+    // Los textos nuevos quedan «sin revisar» hasta que el dueño los marca: es un aviso esperado, no un error
+    const r = reglasEscenas(datos, nombres).filter(x => !/sin revisar/.test(x.texto));
     ok(r.length === 0, 'escenas.json sin errores ni avisos: ' + r.map(x => x.texto).join(' | '));
     // Cada regla da error (o aviso) cuando toca
     const con = (cambio, tipo, parte) => {
@@ -204,7 +204,7 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     const conGuion = structuredClone(datos);
     conGuion.escenas.prueba = { tipo: 'guion', T: 6, r: 1.3, lineas: [{ q: 'n', a: 0.6, texto: { es: 'Hola, ¿cómo estás hoy?', en: 'Hi, how are you today?' } }], pista: { n: [['saluda', 0.4, 2], ['habla', 2.2, 4.5]], j: [['saluda', 0.4, 2]] } };
     aplicarDatosVivos(conGuion);
-    ok(motor.guiones().join() === 'prueba', 'guiones() lista la escena de guion');
+    ok(motor.guiones().includes('prueba'), 'guiones() lista la escena de guion');
     r = await jugar(async () => motor.jugarGuion('prueba'));
     ok(r.r === true && r.T === 6 && r.tipo === 'guion', 'jugarGuion sin persona (la más cercana): empieza');
     ok(personas[0].escena === undefined && personas[1].escena === undefined, 'jugarGuion: al terminar nadie queda en escena');

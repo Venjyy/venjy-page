@@ -18,6 +18,7 @@ import { montarPixeles } from './pixeles.js';
 import { montarInicio } from './inicio.js';
 import { montarFormas } from './formas.js';
 import { montarCarrera } from './carrera.js';
+import { montarArena } from './arena.js';
 import { montarMusica } from './musica.js';
 import { montarVida } from './vida.js';
 import { crearCliente } from './puente-cliente.js';
@@ -85,6 +86,7 @@ await montarPixeles(ctx);
 await montarInicio(ctx);
 await montarFormas(ctx);
 await montarCarrera(ctx);
+await montarArena(ctx);
 await montarMusica(ctx);
 await montarVida(ctx);
 
@@ -103,6 +105,7 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-formas').hidden = ctx.pestana !== 'formas';
         document.getElementById('panel-vida').hidden = ctx.pestana !== 'vida';
         document.getElementById('panel-carrera').hidden = ctx.pestana !== 'carrera';
+        document.getElementById('panel-arena').hidden = ctx.pestana !== 'arena';
         document.getElementById('ca-zona').hidden = ctx.pestana !== 'carrera';
         document.getElementById('seccion-juego').classList.toggle('modo-carrera', ctx.pestana === 'carrera');
         document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';

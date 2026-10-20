@@ -1083,3 +1083,12 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **Textos:** rótulos de los botones en `textos.json → arena` (pestaña Textos).
 - **Pestaña:** las teclas, los umbrales y la vibración se editan en el JSON hasta el panel Controles de la pestaña Combate (N6).
 - **No editable aún:** el tamaño visual de la base y la palanca del joystick flotante (`tactil-arena.css`; el recorrido sí: `tactil.joystick.radio`).
+
+## 28. Pestaña Arena: el duelo del lago (bloque 8 · L1, 2026-10-20)
+
+- **Archivo:** `mundo/datos/arena.json` (esquema `arena.schema.json`; valores base `ARENA` en `supervivencia/arena/modelo.js`). Lo lee `arena/arena.js` al abrir y en vivo (`aplicarDatos`, datos vivos `arena`).
+- **Secciones:** peleadores (nombre, título, estilo, vida, postura, aura, carta, frases), rondas, movimiento (incluido `giroEje`), cámara, entrada (escena del reto, tiempos, vuelos), VS, práctica, golpe, HUD, escenario (medidas, fogatas, barriles, nieve, luz, hielo), público, premios y textos. Guardar usa If-Match y conserva lo que no muestra.
+- **Probar:** botones «Abrir la arena», «Pelear con Lalo», «Pelear con Moisés» y «Terminar» (mensaje `arena { accion }`).
+- **Escena del reto:** `entrada.guion` es la base; el juego busca primero `<guion>-<clave>` (la de quien te retó) y si no, `<guion>`.
+- **No editable aún:** `marcas`, `planos` (L3), `dificultades` y `escenario.tipo` (solo en el JSON); las constantes de `arena/escena.js` (luz, tamaño de bloques y copos, grada y balanceo del público, iglú, pinos, encuadre del retrato), el CSS de las capas y los sonidos de `arena/arena.js`.
+

@@ -26,6 +26,13 @@ export const CARRERA_BOTON = {
     boton: t('Gran Premio de las gatas (carrera: living, cocina, patio y techo)', 'Cat Grand Prix (race: living room, kitchen, backyard and rooftop)')
 };
 
+// Botón del duelo en el lago en el panel de Lalo y Moisés (bloque 8 · L1; arena/arena.js se carga al usarlo). Son los
+// valores de antes de leer arena.json (que trae `textos.boton` y `nivelDuelo`, editables en Estudio → Arena)
+export const DUELO_BOTON = {
+    boton: t('¡Un duelo en el lago!', 'A duel on the lake!'),
+    nivel: 2
+};
+
 // Requisitos de la tienda que se cumplen con un minijuego (tienda-datos.js usa la clave como `req`)
 export const REQ_MINIJUEGOS = {
     'mj-boris': { titulo: t('Ganarle a Boris cortando leña', 'Beat Boris at chopping wood') },

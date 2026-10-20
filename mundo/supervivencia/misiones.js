@@ -19,7 +19,7 @@ import { crearAmistad, precioAmigo, NIVELES, RADIO_PELEA, PERSONAJES } from './a
 import { tipoSkin } from './escenas-skin.js';
 
 // Quiénes ganan amistad con cada minijuego y qué finales cuentan como ganar
-const AMIGOS_MINIJUEGO = { lena: ['boris'], pesca: ['pony'], asado: ['hadad', 'andy', 'nacho'], carrera: ['lona'] };
+const AMIGOS_MINIJUEGO = { lena: ['boris'], pesca: ['pony'], asado: ['hadad', 'andy', 'nacho'], carrera: ['lona'], duelo: ['lalo', 'moises'] };
 const FINALES_GANA = new Set(['gana', 'muchos', 'bien']);
 
 const TXT = {

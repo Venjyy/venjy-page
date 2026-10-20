@@ -1,0 +1,168 @@
+{
+  "$schema": "../../estudio/esquemas/arena.schema.json",
+  "version": 1,
+  "nota": "Arena del duelo de Lalo contra Moisés (bloque 8 · L1, mundo/COMBATE.md §19). Cada clave ajusta la del código (ARENA en mundo/supervivencia/arena/modelo.js); lo que falte usa el código. Se edita en /estudio/ → pestaña Arena.",
+  "nivelDuelo": 2,
+  "peleadores": {
+    "lalo": {
+      "nombre": { "es": "Lalo", "en": "Lalo" },
+      "titulo": { "es": "El Ronin", "en": "The Ronin" },
+      "estilo": "prueba",
+      "vida": 100,
+      "postura": 100,
+      "aura": "#e8c050",
+      "carta": null,
+      "frases": {
+        "victoria": { "es": "Tranqui, tranqui. Respira.", "en": "Easy, easy. Breathe." },
+        "derrota": { "es": "Ya, ya… la próxima es mía, ahya.", "en": "Okay, okay… next one's mine." }
+      }
+    },
+    "moises": {
+      "nombre": { "es": "Moisés", "en": "Moisés" },
+      "titulo": { "es": "El de la Calle", "en": "The Street" },
+      "estilo": "prueba",
+      "vida": 100,
+      "postura": 100,
+      "aura": "#5aa0ff",
+      "carta": "moises",
+      "frases": {
+        "victoria": { "es": "¡Eso es calle, hermano!", "en": "That's the street, bro!" },
+        "derrota": { "es": "Jaja, me pillaste. Revancha.", "en": "Haha, you got me. Rematch." }
+      }
+    }
+  },
+  "rondas": {
+    "mejorDe": 3,
+    "segundos": 60,
+    "maxRondas": 5,
+    "anuncio": 1.3,
+    "peleen": 0.9,
+    "finRonda": 2.2,
+    "lentaKo": 0.6,
+    "escalaLenta": 0.35
+  },
+  "escenario": {
+    "tipo": "lago",
+    "nombre": { "es": "Lago congelado", "en": "Frozen Lake" },
+    "largo": 14,
+    "ancho": 8,
+    "pared": { "alto": 1.5, "grosor": 1 },
+    "fogatas": [[-6.2, -3.2], [6.2, -3.2], [-6.2, 3.2], [6.2, 3.2]],
+    "barriles": [[-6.4, -3.4], [6.4, -3.4], [-6.4, 3.4], [6.4, 3.4]],
+    "nieve": {
+      "cantidad": 500,
+      "viento": [0.6, 0.15],
+      "caida": 1.1,
+      "radio": 14
+    },
+    "luz": {
+      "cielo": "#9ab4d8",
+      "suelo": "#3a4a66",
+      "ambiente": 0.55,
+      "fogata": "#ff9a40",
+      "fogataFuerza": 1.6,
+      "parpadeo": 0.25,
+      "niebla": "#b8c8e0",
+      "nieblaCerca": 16,
+      "nieblaLejos": 46
+    },
+    "hielo": { "color": "#a8d4f0", "grietas": 18, "brillo": 0.35 }
+  },
+  "publico": {
+    "personas": ["boris", "pony", "lucho", "nacho", "hadad"],
+    "distancia": 1.6,
+    "gestos": ["saluda", "risa"]
+  },
+  "marcas": { "separacion": 3.2, "x": 0, "z": 0 },
+  "movimiento": { "radio": 0.35, "distanciaMin": 0.7, "duro": 0.45, "empuje": 0.35, "reorientar": 6, "giroEje": 75 },
+  "camara": {
+    "fov": 50,
+    "altura": 1.45,
+    "mira": 1,
+    "inclinacion": 8,
+    "distanciaMin": 3.5,
+    "distanciaMax": 8,
+    "margen": 1.1,
+    "resorte": 0.25,
+    "giroMax": 90,
+    "adelanto": 0.25,
+    "separacionMin": 3
+  },
+  "planos": {},
+  "entrada": {
+    "guion": "duelo-reto",
+    "viaje": 2.4,
+    "vs": 3,
+    "vuelo": 4,
+    "ventisca": 1.1,
+    "vuelos": [
+      {
+        "desde": [-9, 4.5, 7],
+        "hasta": [-2, 2.2, 6.5],
+        "mira": [0, 1, 0]
+      },
+      {
+        "desde": [7, 3, -7],
+        "hasta": [3, 1.6, 4.5],
+        "mira": [0, 1, 0]
+      }
+    ],
+    "caminarMarca": 1.1
+  },
+  "vs": { "retrato": "3d", "tambor": true, "diagonal": 12 },
+  "practica": {
+    "ataqueCada": [1.4, 2.6],
+    "alcance": 2.1,
+    "acercarse": 0.8
+  },
+  "golpe": { "hitstop": "ligero", "bloqueoDano": 0.15 },
+  "hud": {
+    "vida": "#d83a2a",
+    "vidaFondo": "#3a0c0c",
+    "vidaPerdida": "#ffd040",
+    "reloj": "#ffff55",
+    "ronda": "#ffff55",
+    "anchoVida": 38,
+    "retrato": 44
+  },
+  "premios": {
+    "amistad": true,
+    "primeraVictoria": {
+      "facil": { "objeto": "ESMERALDA", "cantidad": 3 },
+      "normal": { "objeto": "ESMERALDA", "cantidad": 6 },
+      "dificil": { "objeto": "DIAMANTE", "cantidad": 2 },
+      "maestro": { "objeto": "DIAMANTE", "cantidad": 5 }
+    }
+  },
+  "dificultades": ["facil", "normal", "dificil", "maestro"],
+  "textos": {
+    "boton": { "es": "¡Un duelo en el lago!", "en": "A duel on the lake!" },
+    "falta": { "es": "Necesitas más amistad para retarlo.", "en": "You need more friendship to challenge him." },
+    "elegir": { "es": "Elige tu peleador", "en": "Choose your fighter" },
+    "dificultad": { "es": "Dificultad", "en": "Difficulty" },
+    "facil": { "es": "Fácil", "en": "Easy" },
+    "normal": { "es": "Normal", "en": "Normal" },
+    "dificil": { "es": "Difícil", "en": "Hard" },
+    "maestro": { "es": "En serio", "en": "For real" },
+    "pelear": { "es": "Pelear", "en": "Fight" },
+    "ronda": { "es": "Ronda", "en": "Round" },
+    "rondaFinal": { "es": "Ronda final", "en": "Final round" },
+    "peleen": { "es": "¡Peleen!", "en": "Fight!" },
+    "ko": { "es": "¡K.O.!", "en": "K.O.!" },
+    "tiempo": { "es": "¡Tiempo!", "en": "Time!" },
+    "empate": { "es": "Empate", "en": "Draw" },
+    "gana": { "es": "¡Gana {n}!", "en": "{n} wins!" },
+    "saltar": { "es": "Espacio para saltar", "en": "Space to skip" },
+    "pausa": { "es": "Pausa", "en": "Paused" },
+    "seguir": { "es": "Seguir", "en": "Resume" },
+    "revancha": { "es": "Revancha", "en": "Rematch" },
+    "otraVez": { "es": "Elegir otra vez", "en": "Choose again" },
+    "salir": { "es": "Salir", "en": "Leave" },
+    "premio": { "es": "Primera victoria en {d}: {o}", "en": "First win on {d}: {o}" },
+    "amistad": { "es": "Amistad con Lalo y Moisés", "en": "Friendship with Lalo and Moisés" },
+    "ayuda": {
+      "es": "A/D caminar · clic atacar · clic derecho desviar (mantener: bloquear) · Shift esquivar (con W/S: paso lateral) · Esc pausa",
+      "en": "A/D walk · click attack · right click deflect (hold: block) · Shift dodge (with W/S: sidestep) · Esc pause"
+    }
+  }
+}

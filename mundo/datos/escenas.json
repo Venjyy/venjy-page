@@ -26,6 +26,68 @@
         "n": [["pareja", 0.4, 6.4], ["habla", 6.5, 8.2]],
         "j": [["pareja", 0.4, 6.4]]
       }
+    },
+    "duelo-reto": {
+      "tipo": "guion",
+      "T": 6.8,
+      "r": 2,
+      "actores": { "m": "moises" },
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.8,
+          "d": 2.9,
+          "texto": {
+            "es": "Ya po, Moi, veamos quién manda en el lago, ahya.",
+            "en": "Come on, Moi, let's see who rules the lake, ahya."
+          }
+        },
+        {
+          "q": "m",
+          "a": 3.7,
+          "d": 2.8,
+          "texto": {
+            "es": "Dale no más, hermano, pero después no llorís.",
+            "en": "Bring it, bro, but don't cry after."
+          }
+        }
+      ],
+      "pista": {
+        "n": [["acomodarSombrero", 0.3, 1.9], ["habla", 1.9, 3.5], ["dedo", 3.9, 6.2]],
+        "m": [["tronarDedos", 1.9, 3.7], ["habla", 3.8, 6.4]]
+      },
+      "nota": "Bloque 8 · L1: reto antes del duelo cuando hablas con Lalo (n = Lalo, Moisés de actor extra). El esquema no admite reparto: la misma escena con Moisés de n es duelo-reto-moises."
+    },
+    "duelo-reto-moises": {
+      "tipo": "guion",
+      "T": 6.8,
+      "r": 2,
+      "actores": { "l": "lalo" },
+      "lineas": [
+        {
+          "q": "l",
+          "a": 0.8,
+          "d": 2.9,
+          "texto": {
+            "es": "Ya po, Moi, veamos quién manda en el lago, ahya.",
+            "en": "Come on, Moi, let's see who rules the lake, ahya."
+          }
+        },
+        {
+          "q": "n",
+          "a": 3.7,
+          "d": 2.8,
+          "texto": {
+            "es": "Dale no más, hermano, pero después no llorís.",
+            "en": "Bring it, bro, but don't cry after."
+          }
+        }
+      ],
+      "pista": {
+        "l": [["acomodarSombrero", 0.3, 1.9], ["habla", 1.9, 3.5], ["dedo", 3.9, 6.2]],
+        "n": [["tronarDedos", 1.9, 3.7], ["habla", 3.8, 6.4]]
+      },
+      "nota": "Bloque 8 · L1: el mismo reto cuando hablas con Moisés (n = Moisés, Lalo de actor extra)."
     }
   }
 }

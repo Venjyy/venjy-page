@@ -56,6 +56,12 @@ async function aplicar(nombre, datos) {
         const v = window.__venjy;
         if (!v) throw new Error('el juego todavía no está listo');
         v.datosCarrera = datos;
+    } else if (nombre === 'arena') {
+        // 8 · L1: la arena lee estos datos al abrirse y al recibirlos (aplicarDatos rehace lo que cambió)
+        const v = window.__venjy;
+        if (!v) throw new Error('el juego todavía no está listo');
+        v.datosArena = datos;
+        if (v.arena && v.arena.aplicarDatos) v.arena.aplicarDatos(datos);
     } else if (nombre === 'cartas-arte') {
         const m = await import('../mundo/supervivencia/cartas-arte.js');
         m.aplicarArte(datos);
@@ -252,6 +258,15 @@ const responder = crearManejador({
         if (accion === 'terminar') { k.terminar(); return; }
         if (accion === 'ver') { if (!k.ver()) throw new Error('ahora no se puede: cierra lo que tengas abierto'); return; }
         k.elegir(accion, 'normal');
+    },
+    async arena({ accion }) {
+        const v = window.__venjy;
+        if (!v || !v.cargarArena) throw new Error('el juego todavía no está listo');
+        const a = await v.cargarArena();
+        if (!a) throw new Error('no se pudo cargar la arena');
+        if (accion === 'terminar') { a.terminar(); return; }
+        if (accion === 'abrir') { a.abrir(); return; }
+        a.elegir(accion, 'normal');
     },
     // Pestaña Objetos: deja en tu mano (barra rápida) el objeto o bloque pedido, dándotelo si no lo tienes
     objeto({ clave }) {

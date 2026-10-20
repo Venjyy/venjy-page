@@ -1144,6 +1144,16 @@ Cada estilo tiene su tabla en `estilo-*.json → cpu`, y la dificultad escala ti
 - **Música:** un tema `duelo` en `musica.json` (capas: tambores graves, una flauta sintetizada para el lado de Sekiro y un bajo callejero para el de Urban Reign). Se intensifica en la ronda final y se corta 0,5 s en el golpe final.
 - **Premio:** amistad con Lalo y Moisés (minijuego `duelo`, como la carrera con Lona) y un objeto por la primera victoria de cada dificultad (en `arena.json → premios`). Decidido: objetos y amistad (§27.4).
 
+- **Hecho en L1 (2026-10-20), con estos ajustes** (`supervivencia/arena/`, datos en `arena.json`):
+  - El **paso lateral orbita al rival**: el eje gira a lo más `movimiento.giroEje` (75 °/s), menos que `camara.giroMax` (90 °/s). Así la cámara siempre lo alcanza y P1 nunca cambia de lado en la imagen, ni cuerpo a cuerpo (con un paso lateral libre, a 0,7 bloques el eje giraba más de 300 °/s).
+  - La cámara tiene un **piso de distancia** que nunca pierde a nadie (medido desde su centro real, con el radio del cuerpo); puede pasar un poco `distanciaMax` mientras el centro alcanza a uno que se aleja. Los peleadores **no se separan más** de lo que la cámara encuadra a su distancia máxima con el ancho de la pantalla (`separacionMax`, con piso `separacionMin` para pantallas angostas). Al empezar una ronda la cámara corta (lo tapa el anuncio).
+  - La altura de la cámara sube con la distancia (`mira` + distancia × tan(`inclinacion`), nunca menos de `altura`): el cuerpo queda al centro de cerca y de lejos.
+  - **VS con primeros planos 3D** (`vs.retrato: "3d"`), porque Lalo no tiene carta del Duelo. Con `"carta"` se usará el retrato de la carta cuando exista.
+  - Quedan para L8 el **viaje** por el túnel del iglú (hoy la ventisca tapa el cambio de escena sin seguir a nadie) y las animaciones de entrada (desenvainar, chaqueta) y de victoria. El rival es de práctica (`practica`: se acerca y tira el tajo cada 1,4 a 2,6 s, nunca en tu hitstop); la CPU llega en L4.
+  - La escena del reto son dos espejos (`duelo-reto`, `duelo-reto-moises`), porque el esquema de `guion` no admite `reparto`.
+  - **La arena es el laboratorio, no el destino:** la cámara de lado y la escena cerrada sirven para afinar el combate. El movimiento ya es 3D (el paso lateral orbita y el eje gira), y estados, animación e intenciones no dependen de la cámara, así que el mismo combate pasa al modo supervivencia con la cámara en tercera persona de §20.3 (8·M).
+  - Pedidos del dueño tras probarla (2026-10-20), anotados en `PENDIENTES.md`: el combo continuo (cada tajo empieza donde terminó el anterior), la katana como modelo 3D de calidad y la estela del tajo, en L2; la capa completa de efectos de cada golpe (impacto, chispas, aros, líneas de velocidad, flashes, polvo), en N5; el escenario con modelos de calidad, en L8. Principio: **los efectos venden el golpe**; toda animación de ataque se revisa con sus efectos puestos.
+
 ### 19.8 Balance (lo que se mide antes de cualquier PvP)
 
 - **Prueba de balance** `mundo/tests/arena-balance.mjs`: CPU contra CPU en Node (sin dibujar, con paso fijo y semilla), 400 combates por dificultad y combinación (Sekiro contra Urban Reign y los espejos).
