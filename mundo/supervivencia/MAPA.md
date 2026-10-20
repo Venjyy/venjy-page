@@ -64,6 +64,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | Archivo (líneas) | Qué hace · funciones |
 |---|---|
 | `combate.js` (135) | Golpe con carga, crítico, arco. `crearCombate:16` |
+| `combate/` (bloque 8, puro) | Núcleo del combate nuevo (`COMBATE.md` §15): `estados.js` (máquina de estados, buffer, `recibir`, `crearRelojFijo`) · `animacion.js` (`crearAnimador`, `animar`: capas, inercialización, mirada, suelo, pasos, pies, choques) · `cinematica.js` (`fk`, `resolverPierna`, `cajas`, `penetracion`) · `datos.js` (`fijarCombate`, `marca`, `accionDe`) · `reglas.js` (validar y línea de tiempo). Datos: `combate.json`, `estilo-*.json` |
 | `proyectiles.js` (128) | Flechas y bolas de fuego. `crearProyectiles:17` |
 | `enemigos.js` (~660) | Zombi, esqueleto, araña, creeper, Trauco. `RETROCESO` `empujar` `suavizarVelocidad` (knockback, 7a) · `crearEnemigos:213` · `garantizar` (monstruo de la noche, 7d-2) |
 | `jefes.js` (579) | Imbunche y demás jefes en altares. `crearJefes:34` |

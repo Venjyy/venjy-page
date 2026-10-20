@@ -1,0 +1,266 @@
+{
+  "$schema": "../../estudio/esquemas/estilo.schema.json",
+  "version": 1,
+  "nota": "Estilo de prueba del núcleo (bloque 8 · N3): una katana con guardia, caminata en guardia, un tajo, esquiva, desvío y bloqueo. Lo usan las pruebas (combate-nucleo.mjs, combate-animacion.mjs) y es el punto de partida de estilo-sekiro.json (L2). Las animaciones de verdad las pule L2.",
+  "nombre": { "es": "Prueba", "en": "Test" },
+  "controles": { "atacar": "tajo", "defensa": "desvio", "defensaMantenida": "bloqueo", "esquivar": "esquiva" },
+  "guardia": { "anim": "guardia", "respiracion": "respira" },
+  "paso": { "anim": "paso", "velocidad": 1.2, "umbral": 0.12, "cuadros": 9, "altura": 0.06, "adelanto": 0.5 },
+  "bloqueo": { "anim": "bloqueo" },
+  "arma": {
+    "mano": "D",
+    "caja": {
+      "centro": [0, -0.05, 0.55],
+      "medidas": [0.06, 0.12, 1]
+    },
+    "nota": "Katana: la hoja sale de la mano hacia +Z de la muñeca."
+  },
+  "ataques": {
+    "tajo": {
+      "nombre": { "es": "Tajo", "en": "Slash" },
+      "nota": "Punto de partida del primer tajo de Sekiro (§15.3): el pie de adelante da un paso mientras el cuerpo avanza; caderas, pecho, hombro, codo y arma llegan en ese orden.",
+      "fases": { "anticipacion": 9, "activo": 4, "recuperacion": 16 },
+      "altura": "alto",
+      "peligro": null,
+      "dano": 6,
+      "postura": 10,
+      "zona": { "cabeza": 1 },
+      "alcance": 2.4,
+      "arco": [-60, 60],
+      "empuje": 0.25,
+      "avance": { "fase": "anticipacion", "hasta": 0.15, "curva": "salida" },
+      "hitstop": "ligero",
+      "reaccion": "alto_leve",
+      "cancelar": [
+        {
+          "a": ["tajo"],
+          "desde": "recuperacion+10",
+          "hasta": "recuperacion+15",
+          "nota": "El combo sale cuando el pie de atrás ya volvió a la guardia (antes, dos estocadas seguidas dejan la pierna sin alcance)."
+        },
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+0"
+        }
+      ],
+      "iframes": [],
+      "armadura": [],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "tajo",
+      "velocidadMax": 0.6
+    }
+  },
+  "acciones": {
+    "esquiva": {
+      "estado": "esquiva",
+      "nombre": { "es": "Esquiva", "en": "Dodge" },
+      "fases": { "anticipacion": 2, "activo": 10, "recuperacion": 8 },
+      "iframes": [["activo+0", "activo+7"]],
+      "avance": { "fase": "activo", "hasta": 1.2, "curva": "suave" },
+      "direccion": [-1, 0],
+      "usaDireccion": true,
+      "cancelar": [
+        {
+          "a": ["tajo"],
+          "desde": "recuperacion+3"
+        }
+      ],
+      "anim": "esquiva"
+    },
+    "desvio": {
+      "estado": "desvio",
+      "nombre": { "es": "Desvío", "en": "Deflect" },
+      "fases": { "anticipacion": 0, "activo": 8, "recuperacion": 10 },
+      "cancelar": [
+        {
+          "a": ["tajo", "esquiva"],
+          "desde": "recuperacion+4"
+        }
+      ],
+      "anim": "desvio"
+    }
+  },
+  "anim": {
+    "guardia": {
+      "reloj": "t",
+      "nota": "Pie derecho adelante y rodillas flexionadas (el suelo automático baja las caderas a 0,72), la katana con las dos manos frente al vientre y la punta hacia el rival.",
+      "canales": {
+        "pDx": -0.53,
+        "rodD": 0.72,
+        "pIx": -0.11,
+        "rodI": 0.96,
+        "pDz": 0.06,
+        "pIz": 0.06,
+        "ry": 0.15,
+        "pX": 0.12,
+        "pY": -0.1,
+        "cx": -0.1,
+        "bDx": -0.8,
+        "bDz": 0.35,
+        "codoD": -0.9,
+        "armaX": 0.75,
+        "bIx": -0.95,
+        "bIz": -0.5,
+        "codoI": -0.8
+      }
+    },
+    "respira": {
+      "reloj": "t",
+      "canales": {
+        "pX": {
+          "osc": [
+            { "forma": "sin", "amp": 0.02, "frec": 2.4 }
+          ]
+        },
+        "bDx": {
+          "osc": [
+            { "forma": "sin", "amp": 0.015, "frec": 2.4, "fase": 0.4 }
+          ]
+        },
+        "bIx": {
+          "osc": [
+            { "forma": "sin", "amp": 0.015, "frec": 2.4, "fase": 0.4 }
+          ]
+        }
+      }
+    },
+    "paso": {
+      "reloj": "t",
+      "nota": "Las piernas las mueve el motor (pasos solos: umbral, cuadros, altura y adelanto en paso); aquí va el resto del cuerpo: las caderas bajan un poco y se balancean. t = bloques recorridos (frec en rad por bloque).",
+      "canales": {
+        "ry": {
+          "base": 0.15,
+          "osc": [
+            { "forma": "sin", "amp": 0.06, "frec": 12.57 }
+          ]
+        },
+        "pX": {
+          "base": 0.12,
+          "osc": [
+            { "forma": "abs", "amp": 0.02, "frec": 12.57 }
+          ]
+        },
+        "y": -0.05
+      }
+    },
+    "bloqueo": {
+      "reloj": "t",
+      "nota": "La katana atravesada frente al pecho.",
+      "canales": {
+        "bDx": -1.15,
+        "bDz": 0.45,
+        "codoD": -0.55,
+        "armaX": 0.25,
+        "armaZ": 0.6,
+        "bIx": -1.2,
+        "bIz": -0.5,
+        "codoI": -0.5,
+        "pX": 0.05
+      }
+    },
+    "desvio": {
+      "reloj": "fases",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 0.5, -1.15, "salida"], ["r", 0.2, -1.12], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 0.5, 0.45, "salida"], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 0.5, -0.55, "salida"], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["g", 0, 0], ["g", 0.5, 0.6, "salida"], ["r", 0.2, 0.6], ["r", 1, 0, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.75], ["g", 0.5, 0.25, "salida"], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 0.5, -1.2, "salida"], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 0.5, -0.5, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 0.5, 0.05, "salida"], ["r", 1, 0.12, "asentar"]]
+        }
+      }
+    },
+    "esquiva": {
+      "reloj": "fases",
+      "nota": "Salto corto hacia donde apunta mover (atrás si nada): los dos pies en el aire mientras el cuerpo se desplaza.",
+      "canales": {
+        "salto": {
+          "k": [["g", 0, 0], ["g", 0.4, 0.22, "salida"], ["g", 1, 0, "entrada"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 1, 0.95], ["g", 0.4, 1.3, "salida"], ["g", 1, 0.9, "entrada"], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.1], ["g", 0.4, 1.35, "salida"], ["g", 1, 1.05, "entrada"], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["g", 0.4, -0.75, "salida"], ["g", 1, -0.6], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["g", 0.4, -0.3, "salida"], ["g", 1, -0.15], ["r", 1, -0.11, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.25], ["g", 0.4, -0.05, "salida"], ["g", 1, 0.2], ["r", 1, 0.12, "asentar"]]
+        }
+      }
+    },
+    "tajo": {
+      "reloj": "fases",
+      "nota": "Pies, caderas, pecho, hombro, codo y arma llegan en ese orden (1-2 c de desfase). Las caderas giran poco (con los pies plantados el giro lo pone el pecho). Anticipación: el pie de adelante da un paso en el aire y la katana sube sobre el hombro derecho. Activo: tajo en diagonal con el codo que se estira. Recuperación: el pie de atrás vuelve en el aire y todo se asienta.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.45, -0.9, "salida"], ["a", 0.9, -0.75, "entrada"], ["r", 1, -0.6, "suave"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.45, 1.3, "salida"], ["a", 0.9, 0.7, "entrada"], ["r", 1, 0.75, "suave"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.15, "salida"], ["r", 0.15, 0.15], ["r", 0.38, -0.3, "salida"], ["r", 0.6, -0.11, "entrada"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 0.95], ["r", 0.15, 0.95], ["r", 0.38, 1.4, "salida"], ["r", 0.6, 0.96, "entrada"]]
+        },
+        "ry": {
+          "k": [["a", 0.1, 0.15], ["a", 1, 0.05], ["g", 1, 0.3], ["r", 0.25, 0.28, "salida"], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0.2, -0.1], ["a", 1, -0.5], ["g", 1, 0.5], ["r", 0.3, 0.45, "salida"], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0.2, 0.12], ["a", 1, 0, "retroceso"], ["g", 1, 0.35], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0.2, -0.1], ["a", 1, 0], ["g", 1, -0.25], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0.05, -0.8], ["a", 0.8, -2.2], ["a", 1, -2, "entrada"], ["g", 1, -0.75], ["r", 0.25, -0.68, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0.1, 0.35], ["a", 0.8, -0.15], ["g", 1, 0.4], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0.35, -0.9], ["a", 1, -1.3], ["g", 1, -0.15], ["r", 0.5, -0.6, "salida"], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0.45, 0.75], ["a", 1, 1.3], ["g", 1, 0.1], ["r", 0.3, 0.2, "salida"], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0.05, -0.95], ["a", 0.8, -1.1], ["g", 1, 0.25], ["r", 0.4, 0.1, "salida"], ["r", 0.75, -0.85], ["r", 1, -0.95, "suave"]]
+        },
+        "bIz": {
+          "k": [["a", 0.05, -0.5], ["a", 0.8, -0.2], ["g", 1, 0.15], ["r", 0.65, 0.2], ["r", 1, -0.5]]
+        },
+        "codoI": {
+          "k": [["a", 0.05, -0.8], ["a", 0.8, -1.3], ["g", 1, -0.5], ["r", 0.5, -1.1], ["r", 1, -0.8]]
+        }
+      }
+    }
+  }
+}

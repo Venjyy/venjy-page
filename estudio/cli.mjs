@@ -21,6 +21,8 @@ import { reglasEscenas } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
 import { USOS } from '../mundo/supervivencia/musica-motor.js';
+import { reglasCombate, reglasEstilo, lineaDeTiempo } from '../mundo/supervivencia/combate/reglas.js';
+import { largoFases } from '../mundo/supervivencia/combate/datos.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATOS = path.join(RAIZ, 'mundo', 'datos');
@@ -55,6 +57,7 @@ const sinCR = s => s.replace(/\r\n/g, '\n');
 function leerIndice() {
     return JSON.parse(fs.readFileSync(path.join(DATOS, 'indice.json'), 'utf8'));
 }
+const indiceDe = nombre => { try { return leerIndice().archivos[nombre]; } catch (e) { return null; } };
 function leerDatos(nombre) {
     return JSON.parse(fs.readFileSync(path.join(DATOS, nombre + '.json'), 'utf8'));
 }
@@ -350,6 +353,38 @@ function filasMusica(d, filtro) {
     for (const [k, I] of Object.entries(d.instrumentos || {})) if (!filtro || k.includes(filtro)) filas.push({ clave: 'inst:' + k, texto: `${I.onda || 'square'}${I.filtro ? ' · filtro ' + I.filtro.tipo : ''}${I.voces > 1 ? ' · ' + I.voces + ' voces' : ''}` });
     return filas;
 }
+// Combate: una fila por ataque, acción y reacción; con una clave, su línea de tiempo (fases, ventanas, i-frames, avance)
+function filasEstilo(d, filtro) {
+    const filas = [];
+    const fases = f => `a ${f.anticipacion} · g ${f.activo} · r ${f.recuperacion} = ${largoFases(f)} c (${num(largoFases(f) / 60)} s)`;
+    for (const [grupo, lista] of [['ataque', d.ataques], ['accion', d.acciones], ['reaccion', d.reacciones]]) {
+        for (const [k, a] of Object.entries(lista || {})) {
+            if (filtro && k !== filtro && !k.startsWith(filtro)) continue;
+            const partes = [grupo + (a.altura ? ' ' + a.altura : '') + (a.peligro ? ' PELIGRO ' + a.peligro : ''), fases(a.fases)];
+            if (a.dano !== undefined) partes.push(`daño ${a.dano}`);
+            if (a.postura !== undefined) partes.push(`postura ${a.postura}`);
+            if (a.alcance !== undefined) partes.push(`alcance ${num(a.alcance)}`);
+            if (a.hitstop) partes.push(`hitstop ${a.hitstop}`);
+            if (a.reaccion) partes.push(`-> ${a.reaccion}`);
+            filas.push({ clave: k, texto: partes.join(' · ') });
+            if (filtro) for (const l of lineaDeTiempo(a)) filas.push({ clave: '', texto: l });
+        }
+    }
+    if (!filtro) filas.push({ clave: 'anim', texto: Object.keys(d.anim || {}).join(', ') });
+    return filas;
+}
+function filasCombate(d, filtro) {
+    if (filtro) return filasEstilo({ reacciones: d.reacciones }, filtro);
+    const m = d.motor || {};
+    return [
+        { clave: 'motor', texto: `${m.hz} Hz · saltoMax ${m.saltoMax} · mezcla ${JSON.stringify(m.mezcla)} · suelo ${m.suelo} · pies ${JSON.stringify(m.pies)}` },
+        { clave: 'entrada', texto: `buffer ${(d.entrada || {}).buffer} c · táctil ${(d.tactil || {}).buffer} c, ventanas +${(d.tactil || {}).ventanasExtra}` },
+        { clave: 'curvas', texto: Object.keys(d.curvas || {}).join(', ') },
+        { clave: 'peso', texto: Object.entries(d.peso || {}).map(([k, p]) => `${k} ${p.hitstop} c`).join(' · ') },
+        ...filasEstilo({ reacciones: d.reacciones }, null).filter(f => f.clave !== 'anim')
+    ];
+}
+
 const FILAS_JSON = { musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
@@ -380,7 +415,8 @@ async function resumen(pos, op) {
         const lineas = [];
         for (const [nombre, meta] of Object.entries(indice.archivos)) {
             let cuenta = '?';
-            try { cuenta = RESUMEN_JSON[nombre] ? RESUMEN_JSON[nombre](leerDatos(nombre)) : '(sin resumen)'; } catch (e) { cuenta = 'ERROR: ' + e.message; }
+            const cuenta1 = RESUMEN_JSON[nombre] || (meta.esquema === 'estilo' ? d => `${Object.keys(d.ataques || {}).length} ataques, ${Object.keys(d.acciones || {}).length} acciones, ${Object.keys(d.anim || {}).length} animaciones` : meta.esquema === 'combate' ? d => `${Object.keys(d.reacciones || {}).length} reacciones, ${Object.keys(d.curvas || {}).length} curvas, ${Object.keys(d.peso || {}).length} niveles de peso` : null);
+            try { cuenta = cuenta1 ? cuenta1(leerDatos(nombre)) : '(sin resumen)'; } catch (e) { cuenta = 'ERROR: ' + e.message; }
             lineas.push({ clave: nombre, texto: `${rellenar(nombre, 12)}${cuenta} · ${meta.lee ? 'lee ' : ''}${lee(meta)}` });
         }
         for (const [nombre, f] of Object.entries(FUENTES)) {
@@ -401,7 +437,7 @@ async function resumen(pos, op) {
         if (!f) salir([`Fuente desconocida: ${nombre}. Hay: ${Object.keys(FUENTES).join(', ')}`], op, 1);
         filas = (await f.cargar()).filas(filtro, { idioma, completo: !!op.completo });
     } else if (indice.archivos[objetivo]) {
-        const fn = FILAS_JSON[objetivo];
+        const fn = FILAS_JSON[objetivo] || (objetivo === 'combate' ? filasCombate : indice.archivos[objetivo].esquema === 'estilo' ? filasEstilo : null);
         filas = fn ? fn(leerDatos(objetivo), filtro, op) : [];
     } else {
         salir([`Desconocido: ${objetivo}. Archivos: ${Object.keys(indice.archivos).join(', ')} · fuentes: ${Object.keys(FUENTES).map(k => 'js:' + k).join(', ')}`], op, 1);
@@ -509,6 +545,13 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     }
     if (nombre === 'escenas' && escenas) {
         for (const r of reglasEscenas(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
+    }
+    // Combate (bloque 8 · N3): fases, ventanas, cancelaciones, claves de fase, curvas y límites
+    if (nombre === 'combate' || (indiceDe(nombre) || {}).esquema === 'estilo') {
+        const opcional = n => { try { return leerDatos(n); } catch (e) { return null; } };
+        const limites = (opcional('poses') || {}).limites;
+        const reglas = nombre === 'combate' ? reglasCombate(datos, { limites }) : reglasEstilo(datos, { combate: opcional('combate'), limites });
+        for (const r of reglas) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
     if (nombre === 'poses' && escenas) {
         for (const r of reglasPoses(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });

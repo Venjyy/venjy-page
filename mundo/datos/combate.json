@@ -1,0 +1,134 @@
+{
+  "$schema": "../../estudio/esquemas/combate.schema.json",
+  "version": 1,
+  "nota": "Núcleo del combate (bloque 8 · N3, mundo/COMBATE.md §15). Cuadros a 60 Hz. La pestaña Combate llega en N6; hasta entonces se edita aquí.",
+  "motor": {
+    "hz": 60,
+    "maxPasos": 6,
+    "saltoMax": 0.35,
+    "velocidadMax": 0.6,
+    "mezcla": { "normal": 6, "buffer": 3, "guardia": 10 },
+    "inercia": 0.5,
+    "mezclaPorRad": 4.5,
+    "choques": { "tope": 0.04, "paso": 0.06, "rapidez": 0.25 },
+    "suelo": true,
+    "pies": {
+      "anclar": true,
+      "apoyo": 0.03,
+      "velocidad": 0.03,
+      "alcance": 0.02,
+      "rodillaMin": 0.4,
+      "soltar": 4,
+      "alzar": 0.04,
+      "distanciaMax": 0.5
+    },
+    "mirada": {
+      "cabeza": { "tope": 0.5, "rapidez": 0.35 },
+      "pecho": { "tope": 0.3, "rapidez": 0.08 }
+    },
+    "paso": { "umbral": 0.15, "rapidez": 0.12 }
+  },
+  "entrada": { "buffer": 8 },
+  "tactil": { "buffer": 12, "ventanasExtra": 2 },
+  "curvas": {
+    "lineal": [[0, 0], [1, 1]],
+    "suave": [[0, 0], [0.2, 0.104], [0.5, 0.5], [0.8, 0.896], [1, 1]],
+    "entrada": [[0, 0], [0.25, 0.0625], [0.5, 0.25], [0.75, 0.5625], [1, 1]],
+    "salida": [[0, 0], [0.25, 0.4375], [0.5, 0.75], [0.75, 0.9375], [1, 1]],
+    "latigo": [[0, 0], [0.3, 0.62], [0.55, 0.97], [0.8, 1.08], [1, 1]],
+    "asentar": [[0, 0], [0.18, 0.75], [0.35, 1.1], [0.55, 0.96], [0.75, 1.02], [1, 1]],
+    "retroceso": [[0, 0], [0.2, -0.06], [0.45, 0.2], [0.75, 0.75], [1, 1]]
+  },
+  "peso": {
+    "ligero": { "hitstop": 4, "trauma": 0.15, "empuje": 0.25, "particulas": 6 },
+    "medio": { "hitstop": 6, "trauma": 0.25, "empuje": 0.5, "particulas": 10 },
+    "fuerte": { "hitstop": 9, "trauma": 0.45, "empuje": 1, "particulas": 16 },
+    "desvio": {
+      "hitstop": 5,
+      "trauma": 0.15,
+      "empuje": 0.15,
+      "particulas": 10,
+      "nota": "Los dos peleadores; chispas."
+    },
+    "perfecto": {
+      "hitstop": 8,
+      "trauma": 0.3,
+      "empuje": 0.3,
+      "particulas": 18,
+      "camaraLenta": { "segundos": 0.25, "escala": 0.4 },
+      "nota": "Los dos; empuje al atacante; chispas y destello."
+    },
+    "remate": {
+      "hitstop": 14,
+      "trauma": 0.7,
+      "particulas": 24,
+      "camaraLenta": { "segundos": 0.8, "escala": 0.3 },
+      "nota": "Empuje según la animación; acercamiento de cámara."
+    }
+  },
+  "reacciones": {
+    "alto_leve": {
+      "fases": { "anticipacion": 0, "activo": 4, "recuperacion": 10 },
+      "anim": "alto_leve",
+      "nota": "Golpe alto ligero (§18). Las 16 reacciones completas llegan en N5.",
+      "velocidadMax": 0.6
+    },
+    "desviado": {
+      "fases": { "anticipacion": 0, "activo": 6, "recuperacion": 14 },
+      "anim": "desviado",
+      "nota": "Tu ataque fue desviado: el arma rebota atrás y arriba.",
+      "velocidadMax": 0.6
+    },
+    "bloqueado": {
+      "fases": { "anticipacion": 0, "activo": 3, "recuperacion": 10 },
+      "anim": "bloqueado",
+      "nota": "Tu ataque chocó con una guardia: rebote corto."
+    }
+  },
+  "anim": {
+    "alto_leve": {
+      "reloj": "fases",
+      "nota": "La cabeza se va atrás primero (2 c) y el pecho la sigue; vuelve con asentar.",
+      "canales": {
+        "cx": {
+          "k": [["g", 0, 0], ["g", 0.5, -0.4, "salida"], ["r", 1, 0, "suave"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.1], ["g", 1, -0.3, "salida"], ["r", 1, 0.1, "suave"]]
+        }
+      }
+    },
+    "desviado": {
+      "reloj": "fases",
+      "nota": "El arma rebota atrás y arriba y el pecho se abre.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -0.9], ["g", 1, -2.2, "salida"], ["r", 1, -0.8, "suave"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.6, "salida"], ["r", 1, -0.9, "suave"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.7], ["g", 1, 1.2, "salida"], ["r", 1, 0.75, "suave"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, -0.25, "salida"], ["r", 1, 0.12, "suave"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, -0.25, "salida"], ["r", 1, 0.35]]
+        }
+      }
+    },
+    "bloqueado": {
+      "reloj": "fases",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -1.1], ["g", 1, -1.5, "salida"], ["r", 1, -0.8, "suave"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.6], ["g", 1, 0.9, "salida"], ["r", 1, 0.75, "suave"]]
+        }
+      }
+    }
+  }
+}

@@ -1067,3 +1067,11 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **No editable aún (7i)**: la tolerancia de altura para «estar contigo» (3 bloques) y para volver al rastro (1,5), y el margen de 4 bloques en que siempre lo ves.
 - **No editable aún (rutinas)**: qué cuenta como «no puede salir» (escena, ronda del iglú, minijuego, jefe: `libre` en `main.js`) y que no se visita a quien no está en su sitio.
 - **No editable aún**: qué bloques cuentan como sólidos o líquidos (salen de `TIPO` de `texturas.js`) y la animación de caminar (`caminar()` de `cuerpo.js`, salvo el balanceo).
+
+## 26. Combate: núcleo en datos (bloque 8 · N3, 2026-10-15)
+
+- **Archivos:** `mundo/datos/combate.json` (esquema `combate`: motor, entrada, táctil, curvas, peso, reacciones y sus animaciones) y `mundo/datos/estilo-*.json` (esquema `estilo`, uno por estilo; hoy `estilo-prueba`). Los lee `mundo/supervivencia/combate/datos.js`; lo que falte usa `COMBATE_BASE`.
+- **Animaciones de combate:** el formato de gesto de `poses.json` con el reloj `fases` (claves `["a" | "g" | "r", fracción, valor, curva]`); las curvas con nombre están en `mundo/datos/curvas.js` y `combate.json → curvas` (puntos de control).
+- **CLI:** `validar` corre `reglasCombate` / `reglasEstilo` (`combate/reglas.js`); `resumen estilo-<x> <ataque>` dibuja la línea de tiempo ASCII; `resumen combate` lista motor, curvas, peso y reacciones.
+- **Pestaña:** ninguna todavía. La pestaña Combate (línea de tiempo, visor y paneles) llega en N6; los canales nuevos en Poses, en N2.
+- **No editable aún:** nada fuera de los JSON (todo valor del motor está en `combate.json`).
