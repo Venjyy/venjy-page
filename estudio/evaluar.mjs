@@ -28,8 +28,9 @@ export function evaluarCanal(c, t, u) {
 }
 
 // Canales de un gesto en el instante t (segundos). u = progreso 0..1 (por defecto t / duracion).
+// Con reloj «u» las claves van en 0..1 del tramo (como relojDe de mundo/datos/gestos.js); los osciladores, en t.
 export function evaluarGesto(def, t, u = Math.min(1, t / 8)) {
     const salida = {};
-    for (const [c, v] of Object.entries(def.canales)) salida[c] = evaluarCanal(v, t, u);
+    for (const [c, v] of Object.entries(def.canales)) salida[c] = def.reloj === 'u' && v && v.k ? evaluarCanal({ ...v, k: null, base: clave(v.k, u, v.interp) }, t, u) : evaluarCanal(v, t, u);
     return salida;
 }

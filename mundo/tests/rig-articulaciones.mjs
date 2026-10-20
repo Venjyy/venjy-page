@@ -98,10 +98,14 @@ function escribirDirecto(p, a) {
     p.cuerpo.position.set(0, (a.y || 0) + (a.salto || 0), a.pz || 0);
 }
 const SENTADO = { y: -0.62, pDx: -1.45, pIx: -1.45, inc: 0.15 };
+// Los gestos que había cuando se grabó la referencia, en su orden: los nuevos de poses.json no corren la lista
+const GESTOS_REFERENCIA = ['asiente', 'habla', 'rasca', 'yo', 'tu', 'mano', 'saluda', 'risa', 'pasa', 'dedo', 'puno'];
 function listaPoses() {
     const r = azar(4242), lista = [];
     for (const [k, v] of Object.entries(POSES_JSON.poses || {})) lista.push({ k: `pose:${k}`, a: { ...v.canales } });
-    for (const [k, def] of Object.entries(POSES_JSON.gestos || {})) {
+    for (const k of GESTOS_REFERENCIA) {
+        const def = (POSES_JSON.gestos || {})[k];
+        if (!def) continue;
         for (const t of [0.35, 1.7]) {
             const s = lista.length % 2 === 1, j = lista.length % 3 === 0;
             lista.push({ k: `gesto:${k}@${t}`, a: { ...G.evaluarGesto(def, (t % 2) / 2, t, { s, j, d: 2 }, {}) } });

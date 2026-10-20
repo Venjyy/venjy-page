@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arena.schema.json",
+  "title": "Arena del duelo (mundo/datos/arena.json)",
+  "description": "Arena de Lalo contra Moisés (bloque 8 · L1, mundo/COMBATE.md §19): peleadores, rondas, escenario del lago congelado, público, cámara de lado al eje, entrada, HUD, premios y textos. Cada clave ajusta la del código (ARENA en mundo/supervivencia/arena/modelo.js); lo que falte usa el código. Se edita en /estudio/ → pestaña Arena y se aplica en vivo.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "nivelDuelo": { "description": "Nivel de amistad con Lalo o Moisés desde el que aparece «¡Un duelo en el lago!» en Hablar.", "type": "integer", "minimum": 0, "maximum": 5 },
+    "peleadores": {
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+          "titulo": { "$ref": "comun.schema.json#/$defs/texto" },
+          "estilo": { "description": "Estilo de combate: mundo/datos/estilo-<estilo>.json.", "$ref": "comun.schema.json#/$defs/clave" },
+          "vida": { "type": "number", "minimum": 1, "maximum": 1000 },
+          "postura": { "type": "number", "minimum": 1, "maximum": 1000 },
+          "aura": { "$ref": "#/$defs/color" },
+          "carta": { "description": "Carta del Duelo con el retrato (null = sin carta: primer plano 3D).", "anyOf": [{ "$ref": "comun.schema.json#/$defs/clave" }, { "type": "null" }] },
+          "frases": {
+            "type": "object",
+            "properties": { "victoria": { "$ref": "comun.schema.json#/$defs/texto" }, "derrota": { "$ref": "comun.schema.json#/$defs/texto" } },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rondas": {
+      "type": "object",
+      "properties": {
+        "mejorDe": { "type": "integer", "minimum": 1, "maximum": 9 },
+        "segundos": { "type": "number", "minimum": 10, "maximum": 600 },
+        "maxRondas": { "description": "Tope de rondas contando los empates.", "type": "integer", "minimum": 1, "maximum": 15 },
+        "anuncio": { "description": "Segundos de «Ronda N».", "type": "number", "minimum": 0.2, "maximum": 5 },
+        "peleen": { "description": "Segundos de «¡Peleen!».", "type": "number", "minimum": 0.2, "maximum": 5 },
+        "finRonda": { "description": "Segundos tras el K.O. o el tiempo antes de la ronda siguiente.", "type": "number", "minimum": 0.5, "maximum": 8 },
+        "lentaKo": { "description": "Segundos de cámara lenta con el K.O.", "type": "number", "minimum": 0, "maximum": 3 },
+        "escalaLenta": { "type": "number", "minimum": 0.05, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "escenario": {
+      "type": "object",
+      "properties": {
+        "tipo": { "enum": ["lago"] },
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "largo": { "description": "Bloques de pared a pared en el eje largo (X).", "type": "number", "minimum": 6, "maximum": 40 },
+        "ancho": { "description": "Bloques de pared a pared en Z.", "type": "number", "minimum": 4, "maximum": 30 },
+        "pared": { "type": "object", "properties": { "alto": { "type": "number", "minimum": 0.5, "maximum": 4 }, "grosor": { "type": "number", "minimum": 0.5, "maximum": 3 } }, "additionalProperties": false },
+        "fogatas": { "type": "array", "items": { "$ref": "#/$defs/xz" }, "maxItems": 12 },
+        "barriles": { "type": "array", "items": { "$ref": "#/$defs/xz" }, "maxItems": 12 },
+        "nieve": {
+          "type": "object",
+          "properties": {
+            "cantidad": { "type": "integer", "minimum": 0, "maximum": 3000 },
+            "viento": { "$ref": "#/$defs/xz" },
+            "caida": { "type": "number", "minimum": 0, "maximum": 6 },
+            "radio": { "type": "number", "minimum": 4, "maximum": 40 }
+          },
+          "additionalProperties": false
+        },
+        "luz": {
+          "type": "object",
+          "properties": {
+            "cielo": { "$ref": "#/$defs/color" }, "suelo": { "$ref": "#/$defs/color" },
+            "ambiente": { "type": "number", "minimum": 0, "maximum": 3 },
+            "fogata": { "$ref": "#/$defs/color" },
+            "fogataFuerza": { "type": "number", "minimum": 0, "maximum": 6 },
+            "parpadeo": { "type": "number", "minimum": 0, "maximum": 1 },
+            "niebla": { "$ref": "#/$defs/color" },
+            "nieblaCerca": { "type": "number", "minimum": 0, "maximum": 200 },
+            "nieblaLejos": { "type": "number", "minimum": 1, "maximum": 400 }
+          },
+          "additionalProperties": false
+        },
+        "hielo": {
+          "type": "object",
+          "properties": { "color": { "$ref": "#/$defs/color" }, "grietas": { "type": "integer", "minimum": 0, "maximum": 80 }, "brillo": { "type": "number", "minimum": 0, "maximum": 1 } },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "publico": {
+      "type": "object",
+      "properties": {
+        "personas": { "description": "Amigos que miran detrás de la pared lejana (claves de PERSONAS en criaturas/amigos.js; genérico, no amarrado a nadie).", "type": "array", "items": { "$ref": "comun.schema.json#/$defs/clave" }, "maxItems": 12 },
+        "distancia": { "description": "Bloques detrás de la pared.", "type": "number", "minimum": 0.5, "maximum": 6 },
+        "gestos": { "description": "Gestos que ya existen (poses.json o el código) con que celebran los golpes.", "type": "array", "items": { "$ref": "comun.schema.json#/$defs/clave" }, "maxItems": 8 }
+      },
+      "additionalProperties": false
+    },
+    "marcas": {
+      "type": "object",
+      "properties": { "separacion": { "type": "number", "minimum": 1, "maximum": 10 }, "x": { "type": "number", "minimum": -10, "maximum": 10 }, "z": { "type": "number", "minimum": -10, "maximum": 10 } },
+      "additionalProperties": false
+    },
+    "movimiento": {
+      "type": "object",
+      "properties": {
+        "radio": { "description": "Medio ancho del cuerpo contra las paredes.", "type": "number", "minimum": 0.1, "maximum": 1 },
+        "distanciaMin": { "description": "A menos de esto los dos se separan suave.", "type": "number", "minimum": 0.2, "maximum": 2 },
+        "duro": { "description": "Nunca más cerca que esto.", "type": "number", "minimum": 0.1, "maximum": 1.5 },
+        "empuje": { "description": "Fracción de la superposición que se corrige por cuadro.", "type": "number", "minimum": 0.01, "maximum": 1 },
+        "reorientar": { "description": "Cuadros en que el cuerpo vuelve a mirar al rival.", "type": "number", "minimum": 1, "maximum": 60 },
+        "giroEje": { "description": "Grados por segundo que puede girar el eje del duelo con los pasos laterales (menos que camara.giroMax: la cámara siempre lo alcanza).", "type": "number", "minimum": 10, "maximum": 360 }
+      },
+      "additionalProperties": false
+    },
+    "camara": {
+      "type": "object",
+      "properties": {
+        "fov": { "type": "number", "minimum": 20, "maximum": 100 },
+        "altura": { "description": "Altura de la cámara (hombros).", "type": "number", "minimum": 0.3, "maximum": 6 },
+        "mira": { "description": "Altura del punto al que mira.", "type": "number", "minimum": 0, "maximum": 3 },
+        "inclinacion": { "description": "Grados hacia abajo.", "type": "number", "minimum": -10, "maximum": 45 },
+        "distanciaMin": { "type": "number", "minimum": 1, "maximum": 20 },
+        "distanciaMax": { "type": "number", "minimum": 2, "maximum": 30 },
+        "margen": { "description": "Bloques libres a cada lado de los peleadores.", "type": "number", "minimum": 0, "maximum": 4 },
+        "resorte": { "description": "Segundos del resorte de la distancia y del centro.", "type": "number", "minimum": 0.02, "maximum": 2 },
+        "giroMax": { "description": "Grados por segundo que puede girar al seguir el eje.", "type": "number", "minimum": 10, "maximum": 720 },
+        "adelanto": { "description": "Cuánto se adelanta hacia donde va el que se mueve (s de su velocidad).", "type": "number", "minimum": 0, "maximum": 1.5 },
+        "separacionMin": { "description": "Lo más chico que puede ser el tope de separación (pantallas angostas).", "type": "number", "minimum": 1, "maximum": 12 }
+      },
+      "additionalProperties": false
+    },
+    "planos": { "description": "Planos de remate por animación (L3 en adelante).", "type": "object" },
+    "entrada": {
+      "type": "object",
+      "properties": {
+        "guion": { "description": "Escena de tipo guion de escenas.json que hace el reto.", "anyOf": [{ "$ref": "comun.schema.json#/$defs/clave" }, { "type": "null" }] },
+        "viaje": { "type": "number", "minimum": 0, "maximum": 10 },
+        "vs": { "type": "number", "minimum": 0.5, "maximum": 10 },
+        "vuelo": { "type": "number", "minimum": 0.5, "maximum": 15 },
+        "ventisca": { "description": "Segundos que la nieve tapa la pantalla en el cambio de escena.", "type": "number", "minimum": 0.2, "maximum": 4 },
+        "vuelos": {
+          "type": "array", "maxItems": 6,
+          "items": { "type": "object", "properties": { "desde": { "$ref": "#/$defs/xyz" }, "hasta": { "$ref": "#/$defs/xyz" }, "mira": { "$ref": "#/$defs/xyz" } }, "required": ["desde", "hasta"], "additionalProperties": false }
+        },
+        "caminarMarca": { "description": "Segundos que caminan a su marca.", "type": "number", "minimum": 0, "maximum": 5 }
+      },
+      "additionalProperties": false
+    },
+    "vs": {
+      "type": "object",
+      "properties": {
+        "retrato": { "description": "«3d» = primer plano del peleador; «carta» = el retrato de su carta (si tiene).", "enum": ["3d", "carta"] },
+        "tambor": { "type": "boolean" },
+        "diagonal": { "description": "Grados de la línea que parte la pantalla.", "type": "number", "minimum": 0, "maximum": 40 }
+      },
+      "additionalProperties": false
+    },
+    "practica": {
+      "type": "object",
+      "properties": {
+        "ataqueCada": { "$ref": "#/$defs/rango" },
+        "alcance": { "type": "number", "minimum": 0.5, "maximum": 5 },
+        "acercarse": { "description": "Fracción de la velocidad con que camina hacia ti.", "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "golpe": {
+      "type": "object",
+      "properties": {
+        "hitstop": { "description": "Peso de combate.json → peso que usa el golpe de prueba.", "$ref": "comun.schema.json#/$defs/clave" },
+        "bloqueoDano": { "description": "Fracción del daño que pasa al bloquear.", "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "hud": {
+      "type": "object",
+      "properties": {
+        "vida": { "$ref": "#/$defs/color" }, "vidaFondo": { "$ref": "#/$defs/color" }, "vidaPerdida": { "$ref": "#/$defs/color" },
+        "reloj": { "$ref": "#/$defs/color" }, "ronda": { "$ref": "#/$defs/color" },
+        "anchoVida": { "description": "Ancho de cada barra de vida en % de la pantalla.", "type": "number", "minimum": 10, "maximum": 48 },
+        "retrato": { "description": "Lado del retrato chico en px.", "type": "number", "minimum": 16, "maximum": 128 }
+      },
+      "additionalProperties": false
+    },
+    "premios": {
+      "type": "object",
+      "properties": {
+        "amistad": { "type": "boolean" },
+        "primeraVictoria": {
+          "type": "object",
+          "propertyNames": { "enum": ["facil", "normal", "dificil", "maestro"] },
+          "additionalProperties": {
+            "type": "object",
+            "properties": { "objeto": { "description": "Clave de O (objetos.js).", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }, "cantidad": { "type": "integer", "minimum": 1, "maximum": 64 } },
+            "required": ["objeto"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "dificultades": { "type": "array", "items": { "enum": ["facil", "normal", "dificil", "maestro"] }, "minItems": 1, "maxItems": 4 },
+    "textos": { "type": "object", "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" }, "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "xz": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2 },
+    "xyz": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }], "minItems": 3, "maxItems": 3 },
+    "rango": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 }
+  }
+}

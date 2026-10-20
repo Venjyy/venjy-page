@@ -215,6 +215,70 @@
         "cx": 0.1
       },
       "nota": "escena-amistad-datos.js GESTOS_AMISTAD.puno (keyframes en tiempo de escena, golpe en t = 1.45)"
+    },
+    "acomodarSombrero": {
+      "reloj": "u",
+      "canales": {
+        "bDx": {
+          "k": [[0, 0], [0.12, 0.08], [0.38, -2.55], [0.5, -2.62], [0.6, -2.48], [0.7, -2.58], [0.88, -1.2], [1, 0]],
+          "interp": "suave"
+        },
+        "bDz": {
+          "k": [[0, 0], [0.38, 0.45], [0.7, 0.45], [1, 0]],
+          "interp": "suave"
+        },
+        "cx": {
+          "k": [[0, 0], [0.4, 0], [0.52, 0.28], [0.7, 0.2], [1, 0]],
+          "interp": "suave"
+        },
+        "cy": {
+          "k": [[0, 0], [0.42, 0], [0.55, 0.18], [0.8, 0.1], [1, 0]],
+          "interp": "suave"
+        },
+        "inc": {
+          "k": [[0, 0], [0.5, 0.05], [1, 0]],
+          "interp": "suave"
+        }
+      },
+      "nota": "Bloque 8 · L1 (reto del duelo): Lalo lleva la mano derecha al ala del sombrero (bDx -2.6 / bDz 0.45, como el gesto «sombrero» de momentos/moises.js), lo baja con un tirón corto y gira la cabeza un poco. Reloj u (0 a 1 dentro del tramo); pensado para ~1.6 s."
+    },
+    "tronarDedos": {
+      "reloj": "u",
+      "canales": {
+        "bDx": {
+          "k": [[0, 0], [0.14, -0.9], [0.3, -1.2], [0.4, -1.1], [0.47, -1.6], [0.6, -1.6], [0.72, -0.5], [0.82, 0]],
+          "interp": "suave"
+        },
+        "bIx": {
+          "k": [[0, 0], [0.14, -0.9], [0.3, -1.2], [0.4, -1.1], [0.47, -1.6], [0.6, -1.6], [0.72, -0.5], [0.82, 0]],
+          "interp": "suave"
+        },
+        "bDz": {
+          "k": [[0, 0], [0.3, 0.5], [0.4, 0.5], [0.47, 0.42], [0.6, 0.42], [0.72, 0.1], [0.82, 0]],
+          "interp": "suave"
+        },
+        "bIz": {
+          "k": [[0, 0], [0.3, -0.5], [0.4, -0.5], [0.47, -0.42], [0.6, -0.42], [0.72, -0.1], [0.82, 0]],
+          "interp": "suave"
+        },
+        "inc": {
+          "k": [[0, 0], [0.4, -0.05], [0.47, 0.14], [0.62, 0.1], [0.8, 0]],
+          "interp": "suave"
+        },
+        "cx": {
+          "k": [[0, 0], [0.47, 0.12], [0.65, 0.05], [0.78, 0.22], [0.9, 0.08], [1, 0]],
+          "interp": "suave"
+        },
+        "cy": {
+          "k": [[0, 0], [0.62, 0], [0.76, 0.7], [0.92, 0.6], [1, 0]],
+          "interp": "suave"
+        },
+        "cz": {
+          "k": [[0, 0], [0.62, 0], [0.72, -0.28], [0.86, 0.22], [1, 0]],
+          "interp": "suave"
+        }
+      },
+      "nota": "Bloque 8 · L1 (reto del duelo): Moisés junta las manos al pecho (bDz 0.5 / bIz -0.5), las estira al frente con un tirón (los hombros acompañan con inc) y rueda el cuello a un lado. Reloj u; pensado para ~1.8 s."
     }
   }
 }

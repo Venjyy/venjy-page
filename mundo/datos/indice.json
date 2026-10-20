@@ -121,6 +121,12 @@
       "lee": "mundo/supervivencia/combate/estados.js",
       "fase": 8,
       "que": "Estilo de prueba del núcleo del combate (N3): controles, guardia, caminata, un tajo, esquiva, desvío y bloqueo con animaciones ancladas a las fases; lo usan las pruebas y es la base de estilo-sekiro (L2)"
+    },
+    "arena": {
+      "esquema": "arena",
+      "lee": "mundo/supervivencia/arena/arena.js",
+      "fase": 8,
+      "que": "Arena del duelo de Lalo contra Moisés (bloque 8 · L1, COMBATE.md §19): peleadores, rondas y reloj, escenario del lago congelado, público, cámara de lado al eje, entrada (reto, viaje, VS, vuelo), HUD, premios y textos; main.js lo pide al abrir la arena; se edita en la pestaña Arena y se aplica en vivo con supervivencia.html?estudio"
     }
   }
 }
