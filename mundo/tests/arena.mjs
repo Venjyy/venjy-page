@@ -9,7 +9,7 @@
 //   5. Cámara: encuadra siempre a los dos (también con pasos laterales y en pantallas angostas), gira a lo más
 //      giroMax °/s, distancia entre distanciaMin y distanciaMax mientras alcance
 //   6. Golpe de prueba y rival de práctica: el tajo pega una vez por ataque, el bloqueo deja pasar bloqueoDano,
-//      el rival nunca ataca durante tu hitstop
+//      el rival nunca empieza un paso de su patrón durante tu hitstop
 //   7. Salida: cerrar la arena restaura todo (clases, capas, teclado, música, bloqueo del jugador) (arena.js)
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -29,9 +29,9 @@ const E = await imp('mundo/supervivencia/combate/estados.js');
 const M = await imp('mundo/supervivencia/arena/modelo.js');
 D.fijarCombate(leer('combate'));
 L.fijarLimites(leer('poses').limites);
-const JSON_ARENA = leer('arena'), ESTILO = leer('estilo-prueba');
+const JSON_ARENA = leer('arena'), ESTILO = leer('estilo-prueba'), SEKIRO = leer('estilo-sekiro');
 const R = M.reglasArena(JSON_ARENA);
-const estilos = { prueba: ESTILO };
+const estilos = { prueba: ESTILO, sekiro: SEKIRO };
 const HZ = D.COMBATE.motor.hz, DT = 1 / HZ;
 const nueva = (o = {}) => M.nuevaPelea(o.R || R, { estilos, semilla: 7, ...o });
 function entrar(P, C = null) {
@@ -218,8 +218,10 @@ for (const aspecto of [16 / 9, 4 / 3, 2.2]) {
         let ataques = 0, enHitstop = 0, traza = '';
         for (let i = 0; i < HZ * 20 && P.fase === 'pelea'; i++) {
             P.f[0].vida = P.f[0].vidaMax;
+            const libre = P.practica.golpes <= 0 && P.practica.fuerte < 0;
             const it = M.intencionPractica(P, 1);
-            if (it.atacar === 'apretar') { ataques++; if (P.f[0].p.congelado > 0) enHitstop++; traza += i + ','; }
+            // Un paso nuevo del patrón (los clics que siguen el combo no cuentan)
+            if (libre && (it.atacar === 'apretar' || it.fuerte === 'apretar')) { ataques++; if (P.f[0].p.congelado > 0) enHitstop++; traza += i + ','; }
             M.pasoPelea(P, [{}, it]);
         }
         return { ataques, enHitstop, traza };

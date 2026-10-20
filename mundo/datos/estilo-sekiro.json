@@ -1,0 +1,863 @@
+{
+  "$schema": "../../estudio/esquemas/estilo.schema.json",
+  "version": 1,
+  "nota": "Estilo Sekiro (bloque 8 · L2, mundo/COMBATE.md §16.1-16.3, S1-S10): katana a dos manos, combo continuo de 4 tajos (cada uno sale de la pose donde terminó el anterior), golpe fuerte con carga, desvío normal y perfecto con penalización por repetir, bloqueo, esquiva y postura. Lo lee la arena (Lalo); la tabla de postura y las ventanas del desvío están en reglas.",
+  "nombre": { "es": "Sekiro", "en": "Sekiro" },
+  "controles": {
+    "atacar": "tajo1",
+    "fuerte": "fuerte",
+    "defensa": "desvio",
+    "defensaMantenida": "bloqueo",
+    "esquivar": "esquiva"
+  },
+  "guardia": { "anim": "guardia", "respiracion": "respira" },
+  "paso": { "anim": "paso", "velocidad": 1.2, "umbral": 0.12, "cuadros": 9, "altura": 0.06, "adelanto": 0.5 },
+  "bloqueo": { "anim": "bloqueo" },
+  "arma": {
+    "mano": "D",
+    "modelo": "katana",
+    "vaina": "vaina_katana",
+    "caja": {
+      "centro": [0, -0.02, 0.6],
+      "medidas": [0.05, 0.1, 0.95]
+    },
+    "nota": "Katana (modelos-mano.js → katana): la hoja sale de la mano hacia +Z de la muñeca con el filo hacia −Y. Su agarre y el de la vaina (en la cadera) se ajustan en objetos-mano.json → objetos.katana / vaina_katana (Estudio → Objetos → Armas del combate)."
+  },
+  "reglas": {
+    "nota": "§16.1. postura: lo que baja sola por segundo tras `espera` s sin atacar ni recibir, × (vidaMin + (1 − vidaMin) × vida%) y × guardia con el bloqueo; al tope, desequilibrado y queda en trasRomper × tope; sobre `cansancio` × tope se le nota. tabla: cuánto de la postura del ataque recibe cada uno según el resultado (perfecto suma además `extra` al atacante). desvio: cuadros desde que se toca defensa (perfecto y ventana, +tactil en el celular); repetir quita `quita` c a los dos por cada toque dentro de `dentro` c del anterior (la ventana nunca baja de `minimo`) y se recupera tras `recupera` c sin tocar.",
+    "postura": {
+      "baja": 12,
+      "espera": 1,
+      "vidaMin": 0.4,
+      "guardia": 1.5,
+      "cansancio": 0.7,
+      "trasRomper": 0.5,
+      "desequilibrado": "desequilibrado"
+    },
+    "tabla": {
+      "golpeado": { "recibe": 0.5, "atacante": 0 },
+      "bloqueado": { "recibe": 1, "atacante": 0 },
+      "desviado": { "recibe": 0.3, "atacante": 0.5 },
+      "perfecto": { "recibe": 0, "atacante": 1, "extra": 8 }
+    },
+    "desvio": {
+      "perfecto": 5,
+      "ventana": 11,
+      "tactil": 2,
+      "repetir": { "dentro": 30, "quita": 3, "minimo": 3, "recupera": 45 },
+      "choque": "desvio_choque",
+      "choquePerfecto": "desvio_perfecto"
+    },
+    "bloqueoDano": 0
+  },
+  "ataques": {
+    "tajo1": {
+      "nombre": { "es": "Tajo diagonal", "en": "Diagonal slash" },
+      "nota": "S3: diagonal descendente de arriba a la derecha hacia abajo a la izquierda; deja la hoja abajo a la izquierda, donde la toma el tajo 2.",
+      "fases": { "anticipacion": 9, "activo": 4, "recuperacion": 16 },
+      "altura": "alto",
+      "peligro": null,
+      "dano": 6,
+      "postura": 10,
+      "alcance": 2.3,
+      "arco": [-60, 60],
+      "empuje": 0.2,
+      "avance": { "fase": "anticipacion", "hasta": 0.4, "curva": "salida" },
+      "hitstop": "ligero",
+      "reaccion": "alto_leve",
+      "cancelar": [
+        {
+          "a": ["tajo2"],
+          "desde": "activo+2",
+          "hasta": "recuperacion+10",
+          "nota": "Combo continuo: el tajo 2 sale de la pose donde quedó este."
+        },
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+0"
+        }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "tajo1",
+      "velocidadMax": 0.6,
+      "efectos": {
+        "estela": {
+          "cuadros": 6,
+          "ancho": 1,
+          "desde": 0.3,
+          "hasta": 1,
+          "color": "#ffffff",
+          "borde": "aura",
+          "opacidad": 0.9,
+          "desvanecer": 8
+        }
+      }
+    },
+    "tajo2": {
+      "nombre": { "es": "Tajo de vuelta", "en": "Return slash" },
+      "nota": "S4: horizontal de izquierda a derecha a la altura del pecho, desde donde terminó el tajo 1; termina con la hoja a la derecha.",
+      "fases": { "anticipacion": 7, "activo": 4, "recuperacion": 15 },
+      "altura": "medio",
+      "peligro": null,
+      "dano": 6,
+      "postura": 10,
+      "alcance": 2.3,
+      "arco": [-70, 70],
+      "empuje": 0.2,
+      "avance": { "fase": "anticipacion", "hasta": 0.2, "curva": "salida" },
+      "hitstop": "ligero",
+      "reaccion": "alto_leve",
+      "cancelar": [
+        {
+          "a": ["tajo3"],
+          "desde": "activo+2",
+          "hasta": "recuperacion+9"
+        },
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+0"
+        }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "tajo2",
+      "velocidadMax": 0.6,
+      "efectos": {
+        "estela": {
+          "cuadros": 6,
+          "ancho": 1,
+          "desde": 0.3,
+          "hasta": 1,
+          "color": "#ffffff",
+          "borde": "aura",
+          "opacidad": 0.9,
+          "desvanecer": 8
+        }
+      }
+    },
+    "tajo3": {
+      "nombre": { "es": "Tajo ascendente", "en": "Rising slash" },
+      "nota": "S5: diagonal ascendente desde abajo a la derecha hacia arriba a la izquierda, con las piernas que se estiran.",
+      "fases": { "anticipacion": 8, "activo": 4, "recuperacion": 17 },
+      "altura": "medio",
+      "peligro": null,
+      "dano": 7,
+      "postura": 12,
+      "alcance": 2.3,
+      "arco": [-60, 60],
+      "empuje": 0.25,
+      "avance": { "fase": "anticipacion", "hasta": 0.25, "curva": "salida" },
+      "hitstop": "ligero",
+      "reaccion": "alto_leve",
+      "cancelar": [
+        {
+          "a": ["tajo4"],
+          "desde": "activo+2",
+          "hasta": "recuperacion+10"
+        },
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+0"
+        }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "tajo3",
+      "velocidadMax": 0.6,
+      "efectos": {
+        "estela": {
+          "cuadros": 6,
+          "ancho": 1,
+          "desde": 0.3,
+          "hasta": 1,
+          "color": "#ffffff",
+          "borde": "aura",
+          "opacidad": 0.9,
+          "desvanecer": 8
+        }
+      }
+    },
+    "tajo4": {
+      "nombre": { "es": "Corte de cierre", "en": "Closing cut" },
+      "nota": "S6: paso largo y corte vertical al centro; el que más pesa. Recuperación larga a propósito: solo se cancela a desvío desde r+8.",
+      "fases": { "anticipacion": 12, "activo": 5, "recuperacion": 26 },
+      "altura": "alto",
+      "peligro": null,
+      "dano": 10,
+      "postura": 18,
+      "alcance": 2.5,
+      "arco": [-45, 45],
+      "empuje": 0.5,
+      "avance": { "fase": "anticipacion", "hasta": 0.7, "curva": "salida" },
+      "hitstop": "medio",
+      "reaccion": "alto_leve",
+      "cancelar": [
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+8"
+        }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "tajo4",
+      "velocidadMax": 0.6,
+      "efectos": {
+        "estela": {
+          "cuadros": 8,
+          "ancho": 1,
+          "desde": 0.3,
+          "hasta": 1,
+          "color": "#ffffff",
+          "borde": "aura",
+          "opacidad": 0.9,
+          "desvanecer": 8
+        }
+      }
+    },
+    "fuerte": {
+      "nombre": { "es": "Golpe cargado", "en": "Charged strike" },
+      "nota": "S7: mantener atacar; la hoja sube sobre la cabeza y carga hasta carga.max cuadros (más daño y postura según la carga); al soltar, corte vertical largo. No se cancela a desvío hasta r+12.",
+      "fases": { "anticipacion": 12, "activo": 5, "recuperacion": 28 },
+      "altura": "alto",
+      "peligro": null,
+      "dano": 12,
+      "postura": 26,
+      "alcance": 2.6,
+      "arco": [-40, 40],
+      "empuje": 1,
+      "avance": { "fase": "anticipacion", "hasta": 0.9, "curva": "retroceso" },
+      "hitstop": "fuerte",
+      "reaccion": "alto_leve",
+      "intencion": "fuerte",
+      "carga": {
+        "en": "anticipacion+6",
+        "max": 40,
+        "extra": 0.6,
+        "temblor": { "canal": "armaX", "amp": 0.02, "frec": 8 },
+        "niveles": 3
+      },
+      "cancelar": [
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+12"
+        }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "fuerte",
+      "velocidadMax": 0.6,
+      "efectos": {
+        "estela": {
+          "cuadros": 8,
+          "ancho": 1,
+          "desde": 0.3,
+          "hasta": 1,
+          "color": "#ffffff",
+          "borde": "aura",
+          "opacidad": 0.9,
+          "desvanecer": 8
+        }
+      }
+    }
+  },
+  "acciones": {
+    "esquiva": {
+      "estado": "esquiva",
+      "nombre": { "es": "Esquiva", "en": "Dodge" },
+      "nota": "S10: paso largo bajo con la katana recogida; i-frames de c2 a c10.",
+      "fases": { "anticipacion": 2, "activo": 8, "recuperacion": 8 },
+      "iframes": [["activo+0", "activo+8"]],
+      "avance": { "fase": "activo", "hasta": 1, "curva": "suave" },
+      "direccion": [-1, 0],
+      "usaDireccion": true,
+      "cancelar": [
+        {
+          "a": ["tajo1"],
+          "desde": "recuperacion+3"
+        }
+      ],
+      "anim": "esquiva"
+    },
+    "desvio": {
+      "estado": "desvio",
+      "nombre": { "es": "Desvío", "en": "Deflect" },
+      "nota": "S8: la hoja sube horizontal a la altura del golpe. La ventana real (perfecto y normal, con la penalización) está en reglas.desvio; si no llega nada vuelve a la guardia.",
+      "fases": { "anticipacion": 0, "activo": 11, "recuperacion": 8 },
+      "cancelar": [
+        {
+          "a": ["tajo1", "esquiva"],
+          "desde": "recuperacion+4"
+        }
+      ],
+      "anim": "desvio"
+    },
+    "desvio_choque": {
+      "estado": "desvio",
+      "nombre": { "es": "Desvío (choque)", "en": "Deflect (clash)" },
+      "nota": "S8 contacto: la hoja empuja hacia afuera, el cuerpo se comprime y el pie de atrás retrocede; vuelve a la guardia (o al bloqueo si se mantiene la defensa).",
+      "fases": { "anticipacion": 0, "activo": 5, "recuperacion": 10 },
+      "cancelar": [
+        {
+          "a": ["desvio"],
+          "desde": "activo+3"
+        },
+        {
+          "a": ["tajo1", "esquiva"],
+          "desde": "recuperacion+2"
+        }
+      ],
+      "anim": "desvio_choque"
+    },
+    "desvio_perfecto": {
+      "estado": "desvio",
+      "nombre": { "es": "Desvío perfecto", "en": "Perfect deflect" },
+      "nota": "S8 perfecto: como el choque, pero la hoja termina más abierta y el pecho no retrocede (queda adelante para contraatacar).",
+      "fases": { "anticipacion": 0, "activo": 5, "recuperacion": 8 },
+      "cancelar": [
+        {
+          "a": ["desvio"],
+          "desde": "activo+2"
+        },
+        {
+          "a": ["tajo1", "esquiva"],
+          "desde": "recuperacion+0"
+        }
+      ],
+      "anim": "desvio_perfecto"
+    }
+  },
+  "anim": {
+    "guardia": {
+      "reloj": "t",
+      "nota": "Pie derecho adelante y rodillas flexionadas (el suelo automático baja las caderas a 0,72), la katana con las dos manos frente al vientre y la punta hacia el rival.",
+      "canales": {
+        "pDx": -0.53,
+        "rodD": 0.72,
+        "pIx": -0.11,
+        "rodI": 0.96,
+        "pDz": 0.06,
+        "pIz": 0.06,
+        "ry": 0.15,
+        "pX": 0.12,
+        "pY": -0.1,
+        "cx": -0.1,
+        "bDx": -0.8,
+        "bDz": 0.35,
+        "codoD": -0.9,
+        "armaX": 0.75,
+        "bIx": -0.95,
+        "bIz": -0.5,
+        "codoI": -0.8
+      }
+    },
+    "respira": {
+      "reloj": "t",
+      "canales": {
+        "pX": {
+          "osc": [
+            { "forma": "sin", "amp": 0.02, "frec": 2.4 }
+          ]
+        },
+        "bDx": {
+          "osc": [
+            { "forma": "sin", "amp": 0.015, "frec": 2.4, "fase": 0.4 }
+          ]
+        },
+        "bIx": {
+          "osc": [
+            { "forma": "sin", "amp": 0.015, "frec": 2.4, "fase": 0.4 }
+          ]
+        }
+      }
+    },
+    "paso": {
+      "reloj": "t",
+      "nota": "Las piernas las mueve el motor (pasos solos: umbral, cuadros, altura y adelanto en paso); aquí va el resto del cuerpo: las caderas bajan un poco y se balancean. t = bloques recorridos (frec en rad por bloque).",
+      "canales": {
+        "ry": {
+          "base": 0.15,
+          "osc": [
+            { "forma": "sin", "amp": 0.06, "frec": 12.57 }
+          ]
+        },
+        "pX": {
+          "base": 0.12,
+          "osc": [
+            { "forma": "abs", "amp": 0.02, "frec": 12.57 }
+          ]
+        },
+        "y": -0.05
+      }
+    },
+    "bloqueo": {
+      "reloj": "t",
+      "nota": "S9: la katana en diagonal frente a la cara y el pecho, codos cerrados y rodillas más flexionadas. Quieto.",
+      "canales": {
+        "bDx": -1.15,
+        "bDz": 0.5,
+        "codoD": -0.75,
+        "armaX": 0.75,
+        "armaZ": 0.9,
+        "bIx": -1.2,
+        "bIz": -0.5,
+        "codoI": -0.7,
+        "pX": 0.05,
+        "pY": 0.1,
+        "rodD": 0.85,
+        "rodI": 1.1
+      }
+    },
+    "desvio": {
+      "reloj": "fases",
+      "nota": "S8: la hoja sube horizontal delante del cuerpo a la altura media (variante única: la altura del golpe todavía no elige variante) y se queda lista mientras dura la ventana; si no llega nada vuelve a la guardia en la recuperación.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 0.35, -1.2, "salida"], ["g", 1, -1.2], ["r", 1, -0.8, "suave"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 0.35, 0.5, "salida"], ["g", 1, 0.5], ["r", 1, 0.35, "suave"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 0.35, -0.3, "salida"], ["g", 1, -0.3], ["r", 1, -0.9, "suave"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.75], ["g", 0.4, 1.35, "salida"], ["g", 1, 1.35], ["r", 1, 0.75, "suave"]]
+        },
+        "armaZ": {
+          "k": [["g", 0, 0], ["g", 0.4, 0.5, "salida"], ["g", 1, 0.5], ["r", 1, 0, "suave"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 0.35, -1.25, "salida"], ["g", 1, -1.25], ["r", 1, -0.95, "suave"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 0.35, -0.45, "salida"], ["g", 1, -0.45], ["r", 1, -0.5, "suave"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 0.35, -0.35, "salida"], ["g", 1, -0.35], ["r", 1, -0.8, "suave"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 0.35, 0.05, "salida"], ["g", 1, 0.05], ["r", 1, 0.12, "suave"]]
+        },
+        "pY": {
+          "k": [["g", 0, -0.1], ["g", 0.35, 0.15, "salida"], ["g", 1, 0.15], ["r", 1, -0.1, "suave"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 0.35, 0.8, "salida"], ["g", 1, 0.8], ["r", 1, 0.72, "suave"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 0.35, 1.05, "salida"], ["g", 1, 1.05], ["r", 1, 0.96, "suave"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.35, -0.1, "salida"], ["g", 1, -0.1], ["r", 1, -0.1, "suave"]]
+        }
+      }
+    },
+    "esquiva": {
+      "reloj": "fases",
+      "nota": "S10: paso largo y bajo; los dos pies en el aire mientras el cuerpo se desplaza, la katana recogida pegada al cuerpo y el pecho inclinado; aterriza y se asienta.",
+      "canales": {
+        "salto": {
+          "k": [["g", 0, 0], ["g", 0.4, 0.22, "salida"], ["g", 1, 0, "entrada"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 1, 0.95], ["g", 0.4, 1.3, "salida"], ["g", 1, 0.9, "entrada"], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.1], ["g", 0.4, 1.35, "salida"], ["g", 1, 1.05, "entrada"], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["g", 0.4, -0.75, "salida"], ["g", 1, -0.6], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["g", 0.4, -0.3, "salida"], ["g", 1, -0.15], ["r", 1, -0.11, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.25, "suave"], ["g", 0.4, 0.3, "salida"], ["g", 1, 0.2], ["r", 1, 0.12, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.7, "suave"], ["g", 0.4, -0.6, "salida"], ["g", 1, -0.65], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -1.2, "suave"], ["g", 0.4, -1.4, "salida"], ["g", 1, -1.3], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 0.7, "suave"], ["g", 0.4, 0.6, "salida"], ["g", 1, 0.65], ["r", 1, 0.75, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.3, "suave"], ["g", 0.4, 0.25, "salida"], ["g", 1, 0.3], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -0.8, "suave"], ["g", 0.4, -0.7, "salida"], ["g", 1, -0.8], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -1.1, "suave"], ["g", 0.4, -1.3, "salida"], ["g", 1, -1.2], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, -0.4, "suave"], ["g", 0.4, -0.35, "salida"], ["g", 1, -0.4], ["r", 1, -0.5, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["a", 1, 0, "suave"], ["g", 0.4, 0.1, "salida"], ["g", 1, 0], ["r", 1, -0.1, "asentar"]]
+        }
+      }
+    },
+    "tajo1": {
+      "reloj": "fases",
+      "nota": "S3: diagonal descendente de arriba a la derecha a abajo a la izquierda. Pose de partida = pose donde terminó el tajo anterior; el final se sostiene dentro de la ventana de cancelación y después vuelve a la guardia (asentar). Orden de llegada: pies, caderas, pecho, hombro, codo y arma.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.45, -0.8500000000000001, "salida"], ["a", 0.9, -0.72, "entrada"], ["g", 1, -0.56], ["r", 0.6, -0.56], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.45, 1.22, "salida"], ["a", 0.9, 0.75, "entrada"], ["g", 1, 0.78], ["r", 0.6, 0.78], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.1, "salida"], ["r", 0.15, 0.1], ["r", 0.4, -0.2, "salida"], ["r", 0.65, -0.11, "entrada"], ["r", 1, -0.11]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 0.95], ["r", 0.15, 0.95], ["r", 0.4, 1.25, "salida"], ["r", 0.65, 0.96, "entrada"], ["r", 1, 0.96]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 0.65, 0.05, "suave"], ["g", 0.4, 0.3, "entrada"], ["r", 0.6, 0.3], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 0.7, -0.5, "suave"], ["g", 0.35, 0.54, "entrada"], ["g", 1, 0.5, "suave"], ["r", 0.6, 0.5], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 0.7, 0, "suave"], ["g", 0.5, 0.35, "entrada"], ["r", 0.6, 0.35], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["a", 0.05, -0.1], ["a", 0.75, 0, "suave"], ["g", 0.55, -0.25, "entrada"], ["r", 0.6, -0.25], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.7, -2.2, "suave"], ["g", 0.4, -0.79, "entrada"], ["g", 1, -0.75, "suave"], ["r", 0.6, -0.75], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 0.7, -0.15, "suave"], ["g", 0.55, 0.4, "entrada"], ["r", 0.6, 0.4], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.03, -0.9], ["a", 0.73, -1.3, "suave"], ["g", 0.58, -0.15, "entrada"], ["r", 0.6, -0.15], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.05, 0.75], ["a", 0.75, 1.3, "suave"], ["g", 0.6, 0.1, "entrada"], ["r", 0.6, 0.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["r", 0.6, 0], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.7, -1.1, "suave"], ["g", 0.55, 0.25, "entrada"], ["r", 0.6, 0.25], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 0.7, -0.2, "suave"], ["g", 0.55, 0.15, "entrada"], ["r", 0.6, 0.15], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.03, -0.8], ["a", 0.73, -1.3, "suave"], ["g", 0.58, -0.5, "entrada"], ["r", 0.6, -0.5], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "tajo2": {
+      "reloj": "fases",
+      "nota": "S4: horizontal de izquierda a derecha a la altura del pecho; sale de la hoja abajo a la izquierda (fin del tajo 1). Pose de partida = pose donde terminó el tajo anterior; el final se sostiene dentro de la ventana de cancelación y después vuelve a la guardia (asentar). Orden de llegada: pies, caderas, pecho, hombro, codo y arma.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.45, -0.722, "salida"], ["a", 0.9, -0.644, "entrada"], ["g", 1, -0.56], ["r", 0.6, -0.56], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.45, 1.02, "salida"], ["a", 0.9, 0.75, "entrada"], ["g", 1, 0.78], ["r", 0.6, 0.78], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.1, "salida"], ["r", 0.15, 0.1], ["r", 0.4, -0.2, "salida"], ["r", 0.65, -0.11, "entrada"], ["r", 1, -0.11]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 0.95], ["r", 0.15, 0.95], ["r", 0.4, 1.25, "salida"], ["r", 0.65, 0.96, "entrada"], ["r", 1, 0.96]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.3], ["a", 0.65, 0.4, "suave"], ["g", 0.4, -0.05, "entrada"], ["r", 0.6, -0.05], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, 0.5], ["a", 0.7, 0.6, "suave"], ["g", 0.35, -0.6, "entrada"], ["g", 1, -0.55, "suave"], ["r", 0.6, -0.55], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.35], ["a", 0.7, 0.1, "suave"], ["r", 0.6, 0.1], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.25], ["a", 0.05, -0.25], ["a", 0.75, 0, "suave"], ["r", 0.6, 0], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.75], ["a", 0.7, -1, "suave"], ["g", 0.55, -1.35, "entrada"], ["r", 0.6, -1.35], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.4], ["a", 0.7, 0.9, "suave"], ["g", 0.55, 0.1, "entrada"], ["r", 0.6, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.15], ["a", 0.03, -0.15], ["a", 0.73, -0.4, "suave"], ["g", 0.58, -0.1, "entrada"], ["r", 0.6, -0.1], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.1], ["a", 0.05, 0.1], ["a", 0.75, 1.3, "suave"], ["g", 0.6, 1.35, "entrada"], ["r", 0.6, 1.35], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["r", 0.6, 0], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, 0.25], ["a", 0.7, -0.6, "suave"], ["g", 0.55, -1.3, "entrada"], ["r", 0.6, -1.3], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, 0.15], ["a", 0.7, 0, "suave"], ["g", 0.55, -0.35, "entrada"], ["r", 0.6, -0.35], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.5], ["a", 0.03, -0.5], ["a", 0.73, -0.8, "suave"], ["g", 0.58, -0.3, "entrada"], ["r", 0.6, -0.3], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "tajo3": {
+      "reloj": "fases",
+      "nota": "S5: ascendente desde abajo a la derecha (fin del tajo 2) hacia arriba a la izquierda, con el cuerpo que sube. Pose de partida = pose donde terminó el tajo anterior; el final se sostiene dentro de la ventana de cancelación y después vuelve a la guardia (asentar). Orden de llegada: pies, caderas, pecho, hombro, codo y arma.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.5, -0.8, "salida"], ["a", 1, -0.62, "entrada"], ["g", 1, -0.5], ["r", 0.6, -0.5], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.5, 1.2, "salida"], ["a", 1, 1, "entrada"], ["g", 1, 0.6], ["r", 0.6, 0.6], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, -0.05, "suave"], ["g", 1, -0.15], ["r", 0.6, -0.15], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.2, "suave"], ["g", 1, 0.75], ["r", 0.6, 0.75], ["r", 1, 0.96, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, -0.05], ["a", 0.65, -0.1, "suave"], ["g", 0.4, 0.25, "entrada"], ["r", 0.6, 0.25], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.55], ["a", 0.7, -0.5, "suave"], ["g", 0.5, 0.5, "entrada"], ["r", 0.6, 0.5], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.1], ["a", 0.7, 0.3, "suave"], ["g", 0.5, 0, "entrada"], ["r", 0.6, 0], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0], ["a", 0.05, 0], ["a", 0.75, 0.1, "suave"], ["g", 0.55, -0.15, "entrada"], ["r", 0.6, -0.15], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.35], ["a", 0.7, -0.35, "suave"], ["g", 0.55, -1.9, "entrada"], ["r", 0.6, -1.9], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.1], ["a", 0.7, -0.3, "suave"], ["g", 0.55, 1, "entrada"], ["r", 0.6, 1], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.1], ["a", 0.03, -0.1], ["a", 0.73, -0.5, "suave"], ["g", 0.58, -0.4, "entrada"], ["r", 0.6, -0.4], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 1.35], ["a", 0.05, 1.35], ["a", 0.75, 0.9, "suave"], ["g", 0.6, 1.1, "entrada"], ["r", 0.6, 1.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["r", 0.6, 0], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.3], ["a", 0.7, -0.6, "suave"], ["g", 0.55, -1.8, "entrada"], ["r", 0.6, -1.8], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 0.7, -0.9, "suave"], ["g", 0.55, -0.2, "entrada"], ["r", 0.6, -0.2], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.3], ["a", 0.03, -0.3], ["a", 0.73, -0.7, "suave"], ["g", 0.58, -0.5, "entrada"], ["r", 0.6, -0.5], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "tajo4": {
+      "reloj": "fases",
+      "nota": "S6: paso largo y corte vertical al centro; sale de la hoja arriba a la izquierda (fin del tajo 3). La hoja queda abajo unos cuadros y después sube a la guardia. Pose de partida = pose donde terminó el tajo anterior; el final se sostiene dentro de la ventana de cancelación y después vuelve a la guardia (asentar). Orden de llegada: pies, caderas, pecho, hombro, codo y arma.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.55, -0.95, "salida"], ["a", 1, -0.7, "entrada"], ["g", 1, -0.7], ["r", 0.3, -0.7], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.55, 1.3, "salida"], ["a", 1, 1, "entrada"], ["g", 1, 1.05], ["r", 0.3, 1.05], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.15, "salida"], ["g", 1, 0.15], ["r", 0.3, 0.15], ["r", 0.55, -0.25, "salida"], ["r", 0.8, -0.11, "entrada"], ["r", 1, -0.11]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.15, "suave"], ["g", 1, 1.25], ["r", 0.3, 1.25], ["r", 0.55, 1.4, "salida"], ["r", 0.8, 0.96, "entrada"], ["r", 1, 0.96]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.25], ["a", 0.55, 0.1, "suave"], ["g", 0.45, 0.05, "entrada"], ["r", 0.25, 0.05], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, 0.5], ["a", 0.6, 0, "suave"], ["r", 0.25, 0], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0], ["a", 0.6, -0.2, "suave"], ["g", 0.55, 0.45, "entrada"], ["r", 0.25, 0.45], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.15], ["a", 0.05, -0.15], ["a", 0.65, -0.1, "suave"], ["g", 0.6, 0.1, "entrada"], ["r", 0.25, 0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.9], ["a", 0.55, -2.6, "suave"], ["g", 0.47, -1.05, "entrada"], ["g", 1, -1, "suave"], ["r", 0.25, -1], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 1], ["a", 0.55, 0.05, "suave"], ["g", 0.62, 0.1, "entrada"], ["r", 0.25, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.4], ["a", 0.03, -0.4], ["a", 0.58, -0.2, "suave"], ["r", 0.25, -0.2], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 1.1], ["a", 0.05, 1.1], ["a", 0.6, 1.3, "suave"], ["g", 0.67, 1.25, "entrada"], ["r", 0.25, 1.25], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["r", 0.25, 0], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.8], ["a", 0.55, -2.6, "suave"], ["g", 0.62, -1, "entrada"], ["r", 0.25, -1], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.2], ["a", 0.55, -0.4, "suave"], ["g", 0.62, -0.45, "entrada"], ["r", 0.25, -0.45], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.5], ["a", 0.03, -0.5], ["a", 0.58, -0.3, "suave"], ["g", 0.65, -0.4, "entrada"], ["r", 0.25, -0.4], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "fuerte": {
+      "reloj": "fases",
+      "nota": "S7: la hoja sube sobre la cabeza (llega justo al cuadro de la carga, anticipacion+6, y ahí se queda mientras se mantiene), una pequeña recogida atrás, y el corte vertical largo con todo el peso (pecho a 0,7). Pose de partida = pose donde terminó el tajo anterior; el final se sostiene dentro de la ventana de cancelación y después vuelve a la guardia (asentar). Orden de llegada: pies, caderas, pecho, hombro, codo y arma.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.5, -0.55], ["a", 0.8, -1, "salida"], ["a", 1, -0.75, "entrada"], ["g", 1, -0.75], ["r", 0.3, -0.75], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.5, 0.8], ["a", 0.8, 1.3, "salida"], ["a", 1, 1, "entrada"], ["g", 1, 1.1], ["r", 0.3, 1.1], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 0.5, 0, "suave"], ["a", 1, 0.15, "suave"], ["g", 1, 0.15], ["r", 0.3, 0.15], ["r", 0.55, -0.25, "salida"], ["r", 0.8, -0.11, "entrada"], ["r", 1, -0.11]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 0.45, 1.3, "lineal"], ["a", 1, 1.3], ["g", 1, 1.4], ["r", 0.3, 1.4], ["r", 0.55, 1.45, "salida"], ["r", 0.8, 0.96, "entrada"], ["r", 1, 0.96]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.45, -2.6, "lineal"], ["a", 0.5, -2.6], ["a", 0.62, -2.8, "suave"], ["g", 0.2, -0.84, "entrada"], ["g", 1, -0.8, "suave"], ["r", 0.3, -0.8], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.45, -2.6, "lineal"], ["a", 0.5, -2.6], ["a", 0.62, -2.8, "suave"], ["g", 0.2, -1, "entrada"], ["g", 1, -1, "suave"], ["r", 0.3, -1], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 0.45, 0.05, "lineal"], ["a", 0.5, 0.05], ["a", 0.62, 0.05, "suave"], ["g", 0.2, 0.1, "entrada"], ["g", 1, 0.1, "suave"], ["r", 0.3, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 0.45, -0.4, "lineal"], ["a", 0.5, -0.4], ["a", 0.62, -0.4, "suave"], ["g", 0.2, -0.45, "entrada"], ["g", 1, -0.45, "suave"], ["r", 0.3, -0.45], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.45, -0.2, "lineal"], ["a", 0.5, -0.2], ["a", 0.62, -0.3, "suave"], ["g", 0.2, -0.2, "entrada"], ["g", 1, -0.2, "suave"], ["r", 0.3, -0.2], ["r", 1, -0.9, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.45, -0.3, "lineal"], ["a", 0.5, -0.3], ["a", 0.62, -0.4, "suave"], ["g", 0.2, -0.4, "entrada"], ["g", 1, -0.4, "suave"], ["r", 0.3, -0.4], ["r", 1, -0.8, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.45, 1.3, "lineal"], ["a", 0.5, 1.3], ["a", 0.62, 1.45, "suave"], ["g", 0.2, 1.4, "entrada"], ["g", 1, 1.35, "suave"], ["r", 0.3, 1.35], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["a", 0.45, 0, "lineal"], ["a", 0.5, 0], ["a", 0.62, 0, "suave"], ["g", 0.2, 0, "entrada"], ["g", 1, 0, "suave"], ["r", 0.3, 0], ["r", 1, 0, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 0.45, -0.2, "lineal"], ["a", 0.5, -0.2], ["a", 0.62, -0.33, "suave"], ["g", 0.2, 0.75, "entrada"], ["g", 1, 0.7, "suave"], ["r", 0.3, 0.7], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 0.45, 0, "lineal"], ["a", 0.5, 0], ["a", 0.62, -0.1, "suave"], ["g", 0.2, 0.05, "entrada"], ["g", 1, 0.05, "suave"], ["r", 0.3, 0.05], ["r", 1, -0.1, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 0.45, 0.1, "lineal"], ["a", 0.5, 0.1], ["a", 0.62, 0.1, "suave"], ["g", 0.2, 0.05, "entrada"], ["g", 1, 0.05, "suave"], ["r", 0.3, 0.05], ["r", 1, 0.15, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["a", 0.45, -0.1, "lineal"], ["a", 0.5, -0.1], ["a", 0.62, -0.2, "suave"], ["g", 0.2, 0.15, "entrada"], ["g", 1, 0.15, "suave"], ["r", 0.3, 0.15], ["r", 1, -0.1, "asentar"]]
+        }
+      }
+    },
+    "desvio_choque": {
+      "reloj": "fases",
+      "nota": "S8 contacto: parte de la pose del desvío; la hoja empuja hacia afuera (bDz baja en 3 c), el cuerpo se comprime (rodillas y pecho atrás) y el pie de atrás cede; vuelve a la guardia.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -1.2], ["g", 0.6, -1.35, "salida"], ["g", 1, -1.35], ["r", 0.2, -1.35], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.5], ["g", 0.6, -0.1, "salida"], ["g", 1, -0.1], ["r", 0.2, -0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.3], ["g", 0.6, -0.7, "salida"], ["g", 1, -0.7], ["r", 0.2, -0.7], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 1.35], ["g", 0.6, 1.35, "salida"], ["g", 1, 1.35], ["r", 0.2, 1.35], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["g", 0, 0.5], ["g", 0.6, 0.9, "salida"], ["g", 1, 0.9], ["r", 0.2, 0.9], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -1.25], ["g", 0.6, -1.3, "salida"], ["g", 1, -1.3], ["r", 0.2, -1.3], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.45], ["g", 0.6, -0.5, "salida"], ["g", 1, -0.5], ["r", 0.2, -0.5], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.35], ["g", 0.6, -0.6, "salida"], ["g", 1, -0.6], ["r", 0.2, -0.6], ["r", 1, -0.8, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.05], ["g", 0.6, -0.12, "salida"], ["g", 1, -0.12], ["r", 0.2, -0.12], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["g", 0, 0.15], ["g", 0.6, 0.15, "salida"], ["g", 1, 0.15], ["r", 0.2, 0.15], ["r", 1, -0.1, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.8], ["g", 0.6, 1, "salida"], ["g", 1, 1], ["r", 0.2, 1], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 1.05], ["g", 0.6, 1.2, "salida"], ["g", 1, 1.2], ["r", 0.2, 1.2], ["r", 1, 0.96, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.6, -0.1, "salida"], ["g", 1, -0.1], ["r", 0.2, -0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.6, 0, "salida"], ["g", 1, 0], ["r", 0.2, 0], ["r", 1, -0.11, "asentar"]]
+        }
+      }
+    },
+    "desvio_perfecto": {
+      "reloj": "fases",
+      "nota": "S8 perfecto: parte de la pose del desvío; la hoja termina más abierta y el pecho no retrocede (pX adelante, sin comprimir las rodillas): el defensor queda adelante para contraatacar.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -1.2], ["g", 0.6, -1.25, "salida"], ["g", 1, -1.25], ["r", 0.3, -1.25], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.5], ["g", 0.6, -0.3, "salida"], ["g", 1, -0.3], ["r", 0.3, -0.3], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.3], ["g", 0.6, -0.15, "salida"], ["g", 1, -0.15], ["r", 0.3, -0.15], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 1.35], ["g", 0.6, 1.2, "salida"], ["g", 1, 1.2], ["r", 0.3, 1.2], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["g", 0, 0.5], ["g", 0.6, 1, "salida"], ["g", 1, 1], ["r", 0.3, 1], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -1.25], ["g", 0.6, -1.3, "salida"], ["g", 1, -1.3], ["r", 0.3, -1.3], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.45], ["g", 0.6, -0.7, "salida"], ["g", 1, -0.7], ["r", 0.3, -0.7], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.35], ["g", 0.6, -0.3, "salida"], ["g", 1, -0.3], ["r", 0.3, -0.3], ["r", 1, -0.8, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.05], ["g", 0.6, 0.2, "salida"], ["g", 1, 0.2], ["r", 0.3, 0.2], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["g", 0, 0.15], ["g", 0.6, 0, "salida"], ["g", 1, 0], ["r", 0.3, 0], ["r", 1, -0.1, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.8], ["g", 0.6, 0.78, "salida"], ["g", 1, 0.78], ["r", 0.3, 0.78], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 1.05], ["g", 0.6, 1, "salida"], ["g", 1, 1], ["r", 0.3, 1], ["r", 1, 0.96, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.6, -0.1, "salida"], ["g", 1, -0.1], ["r", 0.3, -0.1], ["r", 1, -0.1, "asentar"]]
+        }
+      }
+    }
+  }
+}

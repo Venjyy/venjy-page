@@ -122,6 +122,12 @@
       "fase": 8,
       "que": "Estilo de prueba del núcleo del combate (N3): controles, guardia, caminata, un tajo, esquiva, desvío y bloqueo con animaciones ancladas a las fases; lo usan las pruebas y es la base de estilo-sekiro (L2)"
     },
+    "estilo-sekiro": {
+      "esquema": "estilo",
+      "lee": "mundo/supervivencia/arena/modelo.js",
+      "fase": 8,
+      "que": "Estilo Sekiro (bloque 8 · L2, COMBATE.md §16): katana con combo continuo de 4 tajos, golpe cargado, desvío normal y perfecto con penalización, bloqueo, esquiva, postura (reglas) y la estela de cada tajo (efectos); lo usa Lalo en la arena (arena.json → peleadores.lalo.estilo)"
+    },
     "arena": {
       "esquema": "arena",
       "lee": "mundo/supervivencia/arena/arena.js",

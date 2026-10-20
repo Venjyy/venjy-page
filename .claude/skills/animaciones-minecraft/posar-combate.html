@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Posar combate</title>
+<style>html,body{margin:0;background:#5d8a4e}canvas{display:block}</style></head>
+<body><canvas id="c" width="900" height="420"></canvas>
+<script type="module">
+// Vista previa de una pose de combate (la usa `cli.mjs capturar combate`): el rig completo de N1 (pecho, codos,
+// rodillas, muñeca) con aplicarAngulos y el arma del estilo (katana y vaina de modelos-mano.js, con el agarre de
+// objetos-mano.json). Hash: { skin, pose: {canal: valor}, arma: estilo-*.json → arma, etiqueta }
+import * as THREE from '/vendor/three.module.js';
+import { crearModelo, BASES } from '/mundo/supervivencia/skin.js';
+import { aplicarAngulos } from '/mundo/supervivencia/pose-jugador.js';
+import { colocarArma } from '/mundo/supervivencia/modelos-mano.js';
+import { agarre, fijarDatosObjetosMano } from '/mundo/supervivencia/objetos-mano-datos.js';
+const op = JSON.parse(decodeURIComponent(location.hash.slice(1) || '{}'));
+try { fijarDatosObjetosMano(await (await fetch('/mundo/datos/objetos-mano.json')).json()); } catch (e) { /* valores del código */ }
+const base = BASES.find(b => b.clave === (op.skin || 'venjy')) || BASES[0];
+const lienzo = document.getElementById('c');
+const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: false });
+r.setClearColor(0x87b4e8);
+const vistas = [['frente', 0], ['tres cuartos', Math.PI / 4], ['lado', Math.PI / 2]];
+const ancho = lienzo.width / 3;
+const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const escenas = vistas.map(([nombre, giro]) => {
+    const e = new THREE.Scene();
+    e.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.1));
+    const luz = new THREE.DirectionalLight(0xffffff, 1.2); luz.position.set(2, 4, 3); e.add(luz);
+    const m = crearModelo(base);
+    m.tinte.aplicar(new THREE.Color(1, 1, 1));
+    aplicarAngulos(m, op.pose || {});
+    if (op.arma) colocarArma(THREE, m, op.arma, mat, agarre);
+    e.add(m.g);
+    const suelo = new THREE.GridHelper(4, 8, 0x2c4a22, 0x2c4a22); e.add(suelo);
+    // El rival imaginario: una marca a 1,4 bloques adelante (+Z) a la altura de la cabeza, el pecho y las rodillas
+    for (const [y, c] of [[1.75, '#d83a2a'], [1.15, '#e8a020'], [0.45, '#4060c0']]) {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: c }));
+        b.position.set(0, y, 1.4); e.add(b);
+    }
+    const cam = new THREE.PerspectiveCamera(32, ancho / lienzo.height, 0.1, 50);
+    const d = 6.2;
+    cam.position.set(Math.sin(giro) * d, 1.4, Math.cos(giro) * d);
+    cam.lookAt(0, 1.0, 0.35);
+    return { e, cam };
+});
+r.setScissorTest(true);
+escenas.forEach(({ e, cam }, i) => { r.setViewport(i * ancho, 0, ancho, lienzo.height); r.setScissor(i * ancho, 0, ancho, lienzo.height); r.render(e, cam); });
+// La etiqueta (cuadro y fase) arriba a la izquierda
+const et = document.createElement('div');
+et.style.cssText = 'position:fixed;left:6px;top:4px;font:bold 15px monospace;color:#fff;text-shadow:1px 1px 0 #000';
+et.textContent = op.etiqueta || '';
+document.body.appendChild(et);
+window.listo = true;
+</script></body></html>

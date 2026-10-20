@@ -51,17 +51,34 @@ const GRUPOS = [
     }],
     ['practica', 'Práctica (rival de prueba)', 'Practice (test rival)', {
         alcance: ['alcance del ataque', 'attack reach', 0.5, 5, 0.1],
-        acercarse: ['fracción de la velocidad con que camina hacia ti', 'fraction of speed walking toward you', 0, 1, 0.05]
+        acercarse: ['fracción de la velocidad con que camina hacia ti', 'fraction of speed walking toward you', 0, 1, 0.05],
+        desviaCada: ['desvía uno de cada N ataques tuyos (0 = nunca)', 'deflects one of every N of your attacks (0 = never)', 0, 20, 1]
     }],
     ['golpe', 'Golpe', 'Hit', {
         bloqueoDano: ['fracción del daño que pasa al bloquear', 'damage fraction through a block', 0, 1, 0.05]
     }],
     ['hud', 'HUD', 'HUD', {
         anchoVida: ['ancho de cada barra de vida (% de pantalla)', 'life bar width (% of screen)', 10, 48, 1],
-        retrato: ['lado del retrato chico (px)', 'small portrait side (px)', 16, 128, 1]
+        retrato: ['lado del retrato chico (px)', 'small portrait side (px)', 16, 128, 1],
+        anchoPostura: ['ancho de la barra de postura (% de pantalla)', 'posture bar width (% of screen)', 5, 48, 1]
     }]
 ];
-const COLORES_HUD = [['vida', 'vida', 'life'], ['vidaFondo', 'fondo de la vida', 'life background'], ['vidaPerdida', 'vida perdida', 'lost life'], ['reloj', 'reloj', 'clock'], ['ronda', 'texto de ronda', 'round text']];
+// Efectos de los golpes (L2, arena/efectos.js): [grupo, campo, es, en, min, max, paso]
+const EFECTOS_NUM = [
+    ['chispas', 'vida', 'chispas: segundos que duran', 'sparks: seconds they last', 0.05, 3, 0.05],
+    ['chispas', 'velocidad', 'chispas: velocidad', 'sparks: speed', 0, 20, 0.1],
+    ['chispas', 'gravedad', 'chispas: gravedad', 'sparks: gravity', 0, 40, 0.5],
+    ['chispas', 'tamano', 'chispas: tamaño (bloques)', 'sparks: size (blocks)', 0.01, 0.5, 0.01],
+    ['perfecto', 'destello', 'desvío perfecto: segundos del destello', 'perfect deflect: flash seconds', 0, 2, 0.01],
+    ['perfecto', 'tamano', 'desvío perfecto: tamaño del destello', 'perfect deflect: flash size', 0, 5, 0.05],
+    ['perfecto', 'chispasExtra', 'desvío perfecto: × chispas', 'perfect deflect: × sparks', 0, 5, 0.1],
+    ['bloqueo', 'escala', 'bloqueo: × chispas', 'block: × sparks', 0, 3, 0.1],
+    ['carga', 'opacidad', 'carga: opacidad del brillo', 'charge: glow opacity', 0, 1, 0.05],
+    ['carga', 'niveles', 'carga: escalones del brillo', 'charge: glow steps', 1, 10, 1],
+    ['estela', 'escalones', 'estela: escalones de transparencia', 'trail: transparency steps', 2, 16, 1]
+];
+const COLORES_HUD = [['vida', 'vida', 'life'], ['vidaFondo', 'fondo de la vida', 'life background'], ['vidaPerdida', 'vida perdida', 'lost life'], ['reloj', 'reloj', 'clock'], ['ronda', 'texto de ronda', 'round text'],
+    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background']];
 const DIFICULTADES = [['facil', 'Fácil', 'Easy'], ['normal', 'Normal', 'Normal'], ['dificil', 'Difícil', 'Hard'], ['maestro', 'En serio', 'For real']];
 const LUZ_NUM = {
     ambiente: ['luz ambiente', 'ambient light', 0, 3, 0.05], fogataFuerza: ['fuerza de las fogatas', 'campfire strength', 0, 6, 0.1],
@@ -241,7 +258,23 @@ export async function montarArena(ctx) {
                 sel.addEventListener('change', () => poner(['vs', 'retrato'], sel.value));
                 sec.appendChild(campo(t('retrato', 'portrait'), sel));
             }
-            if (g === 'practica') lugarDelRango(sec);
+            if (g === 'practica') {
+                lugarDelRango(sec);
+                // Patrón fijo: cada paso, tajos seguidos del combo o cuadros que mantiene la carga del golpe fuerte
+                const h = document.createElement('strong'); h.textContent = t('Patrón (se repite)', 'Pattern (repeats)'); sec.appendChild(h);
+                const Pt = leer(['practica', 'patron'], []);
+                Pt.forEach((paso, i) => {
+                    const f = document.createElement('div'); f.className = 'panel';
+                    const esFuerte = paso.fuerte != null;
+                    f.appendChild(num(['practica', 'patron', i, esFuerte ? 'fuerte' : 'golpes'], esFuerte ? ['golpe cargado: cuadros que carga', 'charged strike: frames charging', 0, 240, 1] : ['tajos seguidos del combo', 'chained combo slashes', 1, 8, 1]));
+                    f.appendChild(boton('Quitar paso', 'Remove step', () => { const a = lista(['practica', 'patron']); a.splice(i, 1); poner(['practica', 'patron'], a); pintar(); }));
+                    sec.appendChild(f);
+                });
+                if (Pt.length < 12) {
+                    sec.appendChild(boton('Agregar combo', 'Add combo', () => { const a = lista(['practica', 'patron']); a.push({ golpes: 2 }); poner(['practica', 'patron'], a); pintar(); }));
+                    sec.appendChild(boton('Agregar golpe cargado', 'Add charged strike', () => { const a = lista(['practica', 'patron']); a.push({ fuerte: 30 }); poner(['practica', 'patron'], a); pintar(); }));
+                }
+            }
             if (g === 'golpe') sec.appendChild(texto(t('peso del golpe de prueba (combate.json → peso)', 'test-hit weight (combate.json → peso)'), ['golpe', 'hitstop'], '10em', 24));
             if (g === 'entrada') {
                 sec.appendChild(texto(t('escena guion del reto (escenas.json)', 'challenge script scene (escenas.json)'), ['entrada', 'guion'], '12em', 40));
@@ -259,6 +292,14 @@ export async function montarArena(ctx) {
             }
             if (g === 'hud') for (const [k, es2, en2] of COLORES_HUD) sec.appendChild(color(t(es2, en2), ['hud', k]));
         }
+        // Efectos de los golpes (L2)
+        const sf = seccion(t('Efectos de los golpes', 'Hit effects'));
+        for (const [g, k, es2, en2, a, b, p] of EFECTOS_NUM) sf.appendChild(num(['efectos', g, k], [es2, en2, a, b, p]));
+        sf.appendChild(color(t('destello del perfecto', 'perfect flash'), ['efectos', 'perfecto', 'color']));
+        sf.appendChild(color(t('brillo de la carga', 'charge glow'), ['efectos', 'carga', 'color']));
+        const nota = document.createElement('p'); nota.className = 'nota';
+        nota.textContent = t('Cuántas chispas salen: combate.json → peso (particulas). La estela de cada tajo (largo, ancho, color, desvanecer) va en estilo-sekiro.json → ataques.<tajo>.efectos.estela.', 'How many sparks: combate.json → peso (particulas). Each slash trail (length, width, color, fade) is in estilo-sekiro.json → ataques.<slash>.efectos.estela.');
+        sf.appendChild(nota);
         // Escenario
         const se = seccion(t('Escenario', 'Scenery'));
         se.appendChild(parTexto(t('nombre del escenario', 'scenery name'), ['escenario', 'nombre']));

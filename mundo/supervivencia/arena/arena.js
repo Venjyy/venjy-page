@@ -20,7 +20,9 @@ import { O, nombreDe } from '../objetos.js';
 import { tono, ruido } from '../sonidos.js';
 import { aplicarAngulos } from '../pose-jugador.js';
 import { interpolar } from '../combate/animacion.js';
-import { crearRelojFijo } from '../combate/estados.js';
+import { crearRelojFijo, cargaDe } from '../combate/estados.js';
+import { COMBATE, faseEn } from '../combate/datos.js';
+import { fraccion, cansado } from '../combate/postura.js';
 import { crearIntenciones } from '../combate/intenciones.js';
 import { crearEscenaArena } from './escena.js';
 import * as M from './modelo.js';
@@ -39,6 +41,10 @@ body.en-arena #hud, body.en-arena .mira, body.en-arena .tactil { display: none !
 .ar-barra { position: relative; height: 22px; border: 3px solid #000; box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.5); }
 .ar-barra i { position: absolute; top: 0; bottom: 0; left: 0; }
 .ar-lado.der .ar-barra i { left: auto; right: 0; }
+.ar-postura { position: relative; height: 10px; margin-top: 4px; border: 2px solid #000; align-self: center; }
+.ar-postura i { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); }
+.ar-postura.rota i { animation: ar-parpadeo 0.18s steps(2) infinite; }
+@keyframes ar-parpadeo { 50% { opacity: 0.35; } }
 .ar-nombre { font-size: 1.05rem; margin-top: 3px; display: flex; gap: 6px; align-items: center; }
 .ar-lado.der .ar-nombre { justify-content: flex-end; }
 .ar-nombre b { width: 12px; height: 12px; border: 2px solid #000; background: #2a2a2a; display: inline-block; }
@@ -87,6 +93,10 @@ const SFX = {
     golpe: () => { ruido({ dur: 0.12, frec: 380, q: 0.8, vol: 0.3, tipo: 'lowpass' }); tono({ f0: 220, f1: 90, dur: 0.12, vol: 0.12, forma: 'square' }); },
     bloqueo: () => { ruido({ dur: 0.08, frec: 1600, q: 3, vol: 0.2 }); tono({ f0: 900, f1: 700, dur: 0.12, vol: 0.06, forma: 'triangle' }); },
     desvio: () => { tono({ f0: 1760, f1: 1500, dur: 0.35, vol: 0.12, forma: 'triangle' }); ruido({ dur: 0.06, frec: 4000, q: 4, vol: 0.18 }); },
+    // Desvío perfecto: campana aguda con su armónico y un chasquido metálico
+    campana: () => { [2093, 3136, 4186].forEach((f, i) => tono({ f0: f, f1: f * 0.995, dur: 0.9 - i * 0.2, vol: 0.11 / (i + 1), forma: 'sine' })); ruido({ dur: 0.05, frec: 5200, q: 5, vol: 0.2 }); },
+    postura: () => { tono({ f0: 140, f1: 70, dur: 0.6, vol: 0.2, forma: 'triangle' }); ruido({ dur: 0.3, frec: 600, q: 1.5, vol: 0.15 }); },
+    carga: () => tono({ f0: 300, f1: 900, dur: 0.25, vol: 0.05, forma: 'square' }),
     ko: () => { ruido({ dur: 0.6, frec: 200, q: 0.5, vol: 0.35, tipo: 'lowpass' }); tono({ f0: 300, f1: 60, dur: 0.8, vol: 0.15, forma: 'sawtooth' }); },
     final: gana => (gana ? [523, 659, 784, 1046] : [392, 349, 330, 262]).forEach((f, i) => tono({ f0: f, f1: f, dur: 0.18, vol: 0.09, forma: 'square', retardo: i * 0.14 }))
 };
@@ -115,8 +125,10 @@ export function crearArena(ctx) {
         const lado = el('ar-lado' + (i ? ' der' : ''), hud);
         const ret = el('', lado, 'canvas'); ret.width = ret.height = 64;
         const col = el('', lado), barra = el('ar-barra', col), perdida = el('', barra, 'i'), vida = el('', barra, 'i');
+        // Postura (L2): crece desde el centro, como en Sekiro; se pone roja sobre el cansancio y parpadea rota
+        const post = el('ar-postura', col), postI = el('', post, 'i');
         const nom = el('ar-nombre', col), txt = el('', nom, 'span'), pips = el('', nom, 'span');
-        return { lado, ret, barra, perdida, vida, txt, pips, vista: 1 };
+        return { lado, ret, barra, perdida, vida, txt, pips, post, postI, vista: 1 };
     });
     const avisoEl = el('ar-aviso', capa), tituloEl = el('ar-caja ar-titulo', capa), ayudaEl = el('ar-caja ar-ayuda', capa);
     const menuEl = el('ar-caja ar-menu', capa), pausaEl = el('ar-caja ar-pausa', capa), finalEl = el('ar-caja ar-final', capa);
@@ -376,7 +388,7 @@ export function crearArena(ctx) {
         pasoVentisca(dt);
         if (!c || c.enMundo || !esc) return; // (la ventisca de salida pudo cerrar la arena)
         c.tc += dt;
-        const lento = c.lentaHasta && c.tc < c.lentaHasta ? R.rondas.escalaLenta : 1;
+        const lento = c.lentaHasta && c.tc < c.lentaHasta ? c.escalaLenta || R.rondas.escalaLenta : 1;
         const dtE = c.pausa ? 0 : dt * lento;
         esc.dibujar(dtE, c.tc);
         if (c.pausa) return;
@@ -404,6 +416,7 @@ export function crearArena(ctx) {
                 for (const e of P.eventos) evento(e);
             });
             dibujarPeleadores(alfa);
+            efectosPeleadores(dtE);
             const vista = M.pasoCamara(c.C, P, dtE, aspecto());
             ponerCamara(vista.pos, vista.mira, vista.fov);
             pintarHud(false);
@@ -432,6 +445,32 @@ export function crearArena(ctx) {
             pe.g.rotation.set(0, yaw, 0);
         }
     }
+    // Estela del tajo durante el activo (estilo → ataques.<x>.efectos.estela) y brillo del filo mientras carga
+    function efectosPeleadores(dt) {
+        const ef = esc.efectos;
+        if (!ef) return;
+        for (const F of c.P.f) {
+            const p = F.p, def = p.def, aura = R.peleadores[F.clave]?.aura;
+            const op = def && def.efectos && def.efectos.estela;
+            const activo = op && p.estado === 'ataque' && faseEn(def.fases, p.c).fase === 'activo';
+            const h = activo ? esc.hoja(F.clave, op.desde ?? 0.3, op.hasta ?? 1) : null;
+            ef.estela(F.clave, h && h.base, h && h.punta, op, aura, dt);
+            const k = def && def.carga ? cargaDe(p) : 0;
+            const hc = k > 0 ? esc.hoja(F.clave, 0, 1) : null;
+            ef.carga(F.clave, hc && hc.base, hc && hc.punta, k);
+            const nivel = k > 0 ? Math.ceil(k * (def.carga.niveles || 3)) : 0;
+            if (nivel > (F.nivelCarga || 0)) sonar('carga');
+            F.nivelCarga = nivel;
+        }
+    }
+    // Donde chocan: la mitad de la hoja del que defiende (o entre los dos, a la altura del golpe)
+    function puntoChoque(e) {
+        const O = c.P.f[e.a], F = c.P.f[e.de];
+        const h = esc.hoja && esc.hoja(O.clave, 0.35, 0.65);
+        if (h) return h.base.clone().lerp(h.punta, 0.5);
+        const y = e.altura === 'bajo' ? 0.5 : e.altura === 'medio' ? 1.1 : 1.5;
+        return new THREE.Vector3((O.x + F.x) / 2, y, (O.z + F.z) / 2);
+    }
     function camaraMenu() {
         // Órbita lenta alrededor de los dos
         const a = c.tc * 0.15, d = 7;
@@ -457,11 +496,24 @@ export function crearArena(ctx) {
         else if (e.tipo === 'golpe') {
             const fuerte = e.fuerza >= 0.1;
             if (e.resultado === 'golpeado') { sonar('golpe'); if (e.a === 0 || e.de === 0) intenciones.vibrar(fuerte ? 'fuerte' : 'golpe'); if (fuerte) esc.celebrar(Math.min(1, e.fuerza * 4)); }
-            else if (e.resultado === 'bloqueado') sonar('bloqueo');
-            else if (e.resultado === 'desviado') { sonar('desvio'); if (e.a === 0) intenciones.vibrar('desvio'); }
-        } else if (e.tipo === 'ko') { aviso(tx('ko'), R.rondas.finRonda, true); sonar('ko'); c.lentaHasta = c.tc + R.rondas.lentaKo; esc.celebrar(1); }
+            else if (e.resultado === 'bloqueado') { sonar('bloqueo'); chispas(e, 'bloqueo'); }
+            else if (e.resultado === 'desviado') { sonar('desvio'); chispas(e, 'desvio'); if (e.a === 0) intenciones.vibrar('desvio'); }
+            else if (e.resultado === 'perfecto') {
+                // Clang: campana, chispas grandes con destello, vibración y cámara lenta (combate.json → peso.perfecto)
+                sonar('desvio'); sonar('campana'); chispas(e, 'perfecto');
+                if (e.a === 0) intenciones.vibrar('perfecto');
+                const cl = (COMBATE.peso.perfecto || {}).camaraLenta;
+                if (cl) { c.lentaHasta = c.tc + cl.segundos; c.escalaLenta = cl.escala; }
+            }
+        } else if (e.tipo === 'postura') { aviso(tx('postura'), 1, true); sonar('postura'); esc.celebrar(0.6); }
+        else if (e.tipo === 'ko') { aviso(tx('ko'), R.rondas.finRonda, true); sonar('ko'); c.lentaHasta = c.tc + R.rondas.lentaKo; c.escalaLenta = R.rondas.escalaLenta; esc.celebrar(1); }
         else if (e.tipo === 'tiempo') aviso(tx('tiempo'), R.rondas.finRonda, true);
         else if (e.tipo === 'final') terminar(P);
+    }
+    function chispas(e, tipo) {
+        if (!esc.efectos) return;
+        const pg = COMBATE.peso[tipo === 'perfecto' ? 'perfecto' : 'desvio'] || {};
+        esc.efectos.chispas(puntoChoque(e), pg.particulas || 10, tipo, cam);
     }
     function terminar(P) {
         c.fase = 'final';
@@ -533,6 +585,11 @@ export function crearArena(ctx) {
                 l.txt.textContent = tt(F.d.nombre);
             }
             l.vida.style.width = (v * 100).toFixed(1) + '%';
+            if (todo) { l.post.style.width = `${H.anchoPostura}vw`; l.post.style.background = H.posturaFondo; }
+            const fp = fraccion(F.post);
+            l.postI.style.width = (fp * 100).toFixed(1) + '%';
+            l.postI.style.background = cansado(F.post) ? H.posturaAlta : H.postura;
+            l.post.classList.toggle('rota', !!F.post.roto);
             l.perdida.style.width = (l.vista * 100).toFixed(1) + '%';
             const pips = Math.ceil(R.rondas.mejorDe / 2);
             if (todo || l.pipsN !== P.victorias[i]) {

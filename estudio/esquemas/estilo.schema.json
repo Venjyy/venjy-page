@@ -53,10 +53,12 @@
       "additionalProperties": false
     },
     "arma": {
-      "description": "El arma para las pruebas de choques (que no atraviese la cabeza propia): mano (D o I) y una caja en coordenadas de la muñeca (la hoja sale hacia +Z).",
+      "description": "El arma: mano (D o I), su modelo 3D (modelos-mano.js → ARMAS; el agarre, en objetos-mano.json → objetos.<modelo>.mano3), la vaina colgada de la cadera (otro modelo, con su agarre en el mismo archivo) y una caja en coordenadas de la muñeca (la hoja sale hacia +Z) para las pruebas de choques y la estela.",
       "type": "object",
       "properties": {
         "mano": { "enum": ["D", "I"] },
+        "modelo": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "vaina": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
         "caja": {
           "type": "object",
           "properties": {
@@ -70,7 +72,64 @@
       },
       "additionalProperties": false
     },
-    "reglas": { "description": "Reglas propias del estilo (postura, zonas, penalizaciones): llegan con L2 y L5.", "type": "object" },
+    "reglas": {
+      "description": "Reglas propias del estilo. Sekiro (§16.1, L2): postura, tabla de postura por resultado, ventanas del desvío con su penalización y el daño que deja pasar el bloqueo; lo lee mundo/supervivencia/combate/postura.js y lo que falte usa el código (POSTURA_BASE). Las zonas de Urban Reign llegan con L5.",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "postura": {
+          "description": "baja: postura que baja sola por segundo después de `espera` s sin atacar ni recibir; × (vidaMin + (1 − vidaMin) × vida%) y × guardia con el bloqueo. cansancio: fracción del tope desde la que se le nota. trasRomper: fracción del tope en que queda después de desequilibrarse. desequilibrado: la reacción al llegar al tope.",
+          "type": "object",
+          "properties": {
+            "baja": { "type": "number", "minimum": 0, "maximum": 200 },
+            "espera": { "type": "number", "minimum": 0, "maximum": 10 },
+            "vidaMin": { "type": "number", "minimum": 0, "maximum": 1 },
+            "guardia": { "type": "number", "minimum": 0, "maximum": 5 },
+            "cansancio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "trasRomper": { "type": "number", "minimum": 0, "maximum": 1 },
+            "desequilibrado": { "$ref": "combate.schema.json#/$defs/clave" },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
+        "tabla": {
+          "description": "Cuánto de la postura del ataque recibe cada uno según el resultado: recibe (el que defiende), atacante y extra (fija, para el atacante).",
+          "type": "object",
+          "properties": {
+            "golpeado": { "$ref": "#/$defs/posturaResultado" },
+            "bloqueado": { "$ref": "#/$defs/posturaResultado" },
+            "desviado": { "$ref": "#/$defs/posturaResultado" },
+            "perfecto": { "$ref": "#/$defs/posturaResultado" }
+          },
+          "additionalProperties": false
+        },
+        "desvio": {
+          "description": "Cuadros desde que se toca defensa: perfecto (el desvío es perfecto antes de este cuadro) y ventana (desvío normal hasta este cuadro); tactil: cuadros extra en el celular. repetir: cada toque dentro de `dentro` c del anterior quita `quita` c a los dos (la ventana nunca baja de `minimo`); se recupera tras `recupera` c sin tocar. choque y choquePerfecto: las acciones del que desvía al chocar.",
+          "type": "object",
+          "properties": {
+            "perfecto": { "type": "integer", "minimum": 0, "maximum": 30 },
+            "ventana": { "type": "integer", "minimum": 1, "maximum": 40 },
+            "tactil": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "repetir": {
+              "type": "object",
+              "properties": {
+                "dentro": { "type": "integer", "minimum": 0, "maximum": 120 },
+                "quita": { "type": "integer", "minimum": 0, "maximum": 20 },
+                "minimo": { "type": "integer", "minimum": 1, "maximum": 40 },
+                "recupera": { "type": "integer", "minimum": 0, "maximum": 240 }
+              },
+              "additionalProperties": false
+            },
+            "choque": { "$ref": "combate.schema.json#/$defs/clave" },
+            "choquePerfecto": { "$ref": "combate.schema.json#/$defs/clave" },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
+        "bloqueoDano": { "description": "Fracción del daño que deja pasar el bloqueo (si falta, arena.json → golpe.bloqueoDano).", "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
     "ataques": {
       "type": "object",
       "propertyNames": { "$ref": "combate.schema.json#/$defs/clave" },
@@ -97,6 +156,16 @@
   "additionalProperties": false,
   "$defs": {
     "vector3": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }], "minItems": 3, "maxItems": 3 },
+    "posturaResultado": {
+      "type": "object",
+      "properties": {
+        "recibe": { "type": "number", "minimum": 0, "maximum": 5 },
+        "atacante": { "type": "number", "minimum": 0, "maximum": 5 },
+        "extra": { "type": "number", "minimum": 0, "maximum": 100 },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
     "control": {
       "anyOf": [
         { "$ref": "combate.schema.json#/$defs/clave" },
@@ -150,6 +219,48 @@
         "mezcla": { "type": "integer", "minimum": 0, "maximum": 60 },
         "velocidadMax": { "type": "number", "minimum": 0.05, "maximum": 2 },
         "sinMirada": { "type": "boolean" },
+        "carga": {
+          "description": "Golpe con carga (S7): mientras se mantiene la intención, la acción se queda en el cuadro `en` (una marca) hasta `max` cuadros; daño y postura × (1 + extra × carga). temblor: oscilador que se suma a un canal mientras carga; niveles: escalones visibles del brillo del filo.",
+          "type": "object",
+          "properties": {
+            "en": { "type": ["string", "integer"] },
+            "max": { "type": "integer", "minimum": 1, "maximum": 240 },
+            "extra": { "type": "number", "minimum": 0, "maximum": 5 },
+            "temblor": {
+              "type": "object",
+              "properties": {
+                "canal": { "type": "string" },
+                "amp": { "type": "number", "minimum": 0, "maximum": 0.5 },
+                "frec": { "type": "number", "minimum": 0, "maximum": 30 }
+              },
+              "additionalProperties": false
+            },
+            "niveles": { "type": "integer", "minimum": 1, "maximum": 10 }
+          },
+          "required": ["en", "max"],
+          "additionalProperties": false
+        },
+        "efectos": {
+          "description": "Efectos del golpe, editables. estela: cinta pixel que sigue la hoja durante el activo; cuadros = su largo; desde y hasta = el tramo de la hoja (0 la guarda, 1 la punta); ancho = escala de ese tramo; color del centro y borde (un color o «aura», el del peleador); opacidad; desvanecer = cuadros que tarda en apagarse.",
+          "type": "object",
+          "properties": {
+            "estela": {
+              "type": "object",
+              "properties": {
+                "cuadros": { "type": "integer", "minimum": 2, "maximum": 16 },
+                "ancho": { "type": "number", "minimum": 0.1, "maximum": 3 },
+                "desde": { "type": "number", "minimum": 0, "maximum": 1 },
+                "hasta": { "type": "number", "minimum": 0, "maximum": 1.5 },
+                "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                "borde": { "type": "string" },
+                "opacidad": { "type": "number", "minimum": 0, "maximum": 1 },
+                "desvanecer": { "type": "integer", "minimum": 0, "maximum": 60 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "nota": { "$ref": "comun.schema.json#/$defs/nota" }
       },
       "required": ["nombre", "fases", "altura", "anim"],

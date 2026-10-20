@@ -6,6 +6,7 @@
 //   node estudio/cli.mjs validar [archivo...] [--contra HEAD] [--arreglar] [--permitir-cambios] [--json]
 //   node estudio/cli.mjs glifos     (lee font/pixelcraft.ttf y guarda estudio/glifos.json)
 //   node estudio/cli.mjs capturar layout|pose|gesto|escena <nombre> [--tiempos a,b] [--hoja] [--medir js] [--salida dir]   (estudio/capturar.mjs)
+//   node estudio/cli.mjs capturar combate <estilo>:<acción> [--cuadros a,b] [--cadena tajo1,tajo2] [--carga n] [--hoja]   (motor de combate real)
 // Códigos de salida: 0 bien, 1 errores, 2 avisos que piden confirmación.
 // =========================================================
 import fs from 'node:fs';
@@ -37,7 +38,7 @@ function leerRangos() {
 // ---------- argumentos ----------
 function leerArgs(argv) {
     const pos = [], op = {};
-    const conValor = new Set(['idioma', 'contra', 'salida', 'skin', 'tiempos', 'medir', 'plano', 'url', 'datos', 'pose']);
+    const conValor = new Set(['idioma', 'contra', 'salida', 'skin', 'tiempos', 'medir', 'plano', 'url', 'datos', 'pose', 'cuadros', 'cadena', 'carga']);
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a.startsWith('--')) {
@@ -687,4 +688,4 @@ else if (orden === 'capturar') {
         salir(['capturar: ' + String((e && e.message) || e)], op, 1);
     }
 }
-else salir(['Uso: node estudio/cli.mjs resumen [archivo|js:fuente] [clave] [--md] | validar [archivo...] [--contra HEAD] | glifos | capturar layout|pose|gesto|escena <nombre> [--tiempos …] [--hoja] [--medir js]'], op, orden ? 1 : 0);
+else salir(['Uso: node estudio/cli.mjs resumen [archivo|js:fuente] [clave] [--md] | validar [archivo...] [--contra HEAD] | glifos | capturar layout|pose|gesto|escena|combate <nombre> [--tiempos …] [--hoja] [--medir js]'], op, orden ? 1 : 0);

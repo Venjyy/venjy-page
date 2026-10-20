@@ -9,6 +9,9 @@
 import * as THREE from '../../../vendor/three.module.js';
 import { texturaPixeles, ajustar, crearTinte, caja, crearPersona } from '../../criaturas/cuerpo.js';
 import { aplicarAngulos } from '../pose-jugador.js';
+import { colocarArma, KATANA } from '../modelos-mano.js';
+import { agarre, versionObjetosMano } from '../objetos-mano-datos.js';
+import { crearEfectos } from './efectos.js';
 
 // ---- Constantes no editables aún (anotadas en el informe) ----
 const ESCALA_LUZ = Math.PI;        // las luces de esta versión de Three no traen el factor π de antes
@@ -87,7 +90,7 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     const peleadores = new Map();   // clave -> persona (clon)
     const publico = new Map();      // clave -> { p, x, fase, celeb, propio }
     const propios = [];             // monigotes de reserva (se liberan en destruir)
-    const armas = new Map();        // clave -> grupo del arma
+    const armas = new Map();        // clave -> { g (en la muñeca), vaina, def (estilo → arma), tramo: [z0, z1, y1] de la hoja }
     let reloj = 0;
     let sem = 9100;
 
@@ -295,11 +298,26 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
         for (const k of ['cuerpo', 'munecaD', 'munecaI']) for (const h of (p[k] && p[k].children) || []) if (!huesos.has(h)) h.visible = false;
     }
 
+    // El arma del estilo: el modelo 3D (katana y vaina, modelos-mano.js; agarre editable en objetos-mano.json) o, si el
+    // estilo no trae modelo, una caja con su mango (arma.caja)
+    const matArma = new THREE.MeshLambertMaterial({ vertexColors: true });
+    function soltarArma(clave) {
+        const previo = armas.get(clave);
+        if (!previo) return;
+        for (const o of [previo.g, previo.vaina]) if (o) { o.parent?.remove(o); o.traverse(q => { if (q.geometry) q.geometry.dispose(); }); }
+        armas.delete(clave);
+    }
     function armar(clave, arma) {
         const p = peleador(clave);
-        const previo = armas.get(clave);
-        if (previo) { previo.parent?.remove(previo); previo.traverse(o => { if (o.geometry) o.geometry.dispose(); }); armas.delete(clave); }
-        if (!arma || !arma.caja) return;
+        soltarArma(clave);
+        if (!arma) return;
+        const puesta = arma.modelo ? colocarArma(THREE, p, arma, matArma, agarre) : null;
+        if (puesta) {
+            const esc = puesta.arma.children[0];
+            armas.set(clave, { g: puesta.arma, vaina: puesta.vaina, def: arma, ver: versionObjetosMano(), local: esc, tramo: [KATANA.hoja[0], KATANA.hoja[1], KATANA.sori] });
+            return;
+        }
+        if (!arma.caja) return;
         const muneca = arma.mano === 'I' ? p.munecaI : p.munecaD;
         if (!muneca) return;
         const [cx, cy, cz] = arma.caja.centro, [w, h, d] = arma.caja.medidas;
@@ -307,7 +325,25 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
         const hoja = caja(w, h, d, tinte.caras(texMetal())); hoja.position.set(cx, cy, cz); g.add(hoja);
         const largoMango = d * 0.22, mango = caja(w + 0.02, h + 0.02, largoMango, tinte.caras(texMango()));
         mango.position.set(cx, cy, cz - d / 2 + largoMango / 2); g.add(mango);
-        muneca.add(g); armas.set(clave, g);
+        muneca.add(g);
+        armas.set(clave, { g, def: arma, ver: versionObjetosMano(), local: g, tramo: [cz - d / 2, cz + d / 2, 0] });
+    }
+    // Base y punta del tramo de la hoja [desde, hasta] (0 = la guarda, 1 = la punta) en el mundo, para la estela, las
+    // chispas y el brillo de la carga. null si no tiene arma.
+    const _hb = new THREE.Vector3(), _hp = new THREE.Vector3();
+    function hoja(clave, desde = 0, hasta = 1) {
+        const a = armas.get(clave);
+        if (!a) return null;
+        const [z0, z1, sori] = a.tramo, L = z1 - z0;
+        a.local.updateWorldMatrix(true, false);
+        _hb.set(0, sori * desde * desde, z0 + L * desde); a.local.localToWorld(_hb);
+        _hp.set(0, sori * Math.min(1, hasta) ** 2, z0 + L * hasta); a.local.localToWorld(_hp);
+        return { base: _hb, punta: _hp };
+    }
+    // El Estudio cambió el agarre (pestaña Objetos): se vuelve a armar
+    function revisarArmas() {
+        const v = versionObjetosMano();
+        for (const [clave, a] of [...armas]) if (a.ver !== v) armar(clave, a.def);
     }
 
     // ---------- Público ----------
@@ -379,6 +415,8 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
             a.needsUpdate = true;
         }
         dibujarPublico(dt, reloj);
+        revisarArmas();
+        efectos.dibujar(dt);
     }
 
     // ---------- Cámaras de cara ----------
@@ -430,10 +468,12 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
         liberarEstatico();
         construirEstatico();
         armarPublico();
+        efectos.aplicar(R);
     }
     function destruir() {
         liberarEstatico();
-        for (const g of armas.values()) g.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+        efectos.destruir(); matArma.dispose();
+        for (const c of [...armas.keys()]) soltarArma(c);
         for (const p of propios) p.g.traverse(o => {
             if (o.geometry) o.geometry.dispose();
             const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
@@ -446,6 +486,7 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     construirEstatico();
     armarPublico();
     for (const c of Object.keys(R.peleadores || {})) peleador(c);
+    const efectos = crearEfectos(THREE, scene, R);
 
-    return { scene, peleador, armar, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
+    return { scene, peleador, armar, hoja, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
 }

@@ -1092,3 +1092,11 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **Escena del reto:** `entrada.guion` es la base; el juego busca primero `<guion>-<clave>` (la de quien te retó) y si no, `<guion>`.
 - **No editable aún:** `marcas`, `planos` (L3), `dificultades` y `escenario.tipo` (solo en el JSON); las constantes de `arena/escena.js` (luz, tamaño de bloques y copos, grada y balanceo del público, iglú, pinos, encuadre del retrato), el CSS de las capas y los sonidos de `arena/arena.js`.
 
+## 29. Estilo Sekiro: postura, desvío, katana y efectos (bloque 8 · L2, 2026-10-20)
+
+- **Archivo nuevo:** `mundo/datos/estilo-sekiro.json` (esquema `estilo`, ampliado): controles, guardia, paso, bloqueo, `arma` (`modelo: katana`, `vaina: vaina_katana`, caja de la hoja), `reglas` (postura, tabla por resultado, desvío con penalización, `bloqueoDano`), ataques `tajo1`-`tajo4` (combo continuo) y `fuerte` (con `carga`), acciones `esquiva`, `desvio`, `desvio_choque`, `desvio_perfecto`, y las animaciones. Cada ataque trae `efectos.estela` (cuadros, ancho, tramo de la hoja, color, borde = aura, opacidad, desvanecer). `combate.json` suma la reacción común `desequilibrado` (con armadura).
+- **Arena (`arena.json`):** `peleadores.lalo.estilo = "sekiro"`; `practica.patron` (pasos `golpes` o `fuerte`) y `desviaCada`; `hud.postura`, `posturaAlta`, `posturaFondo`, `anchoPostura`; `efectos` (chispas, destello del perfecto, chispas del bloqueo, brillo de la carga, escalones de la estela); `textos.postura`. Todo en la pestaña Arena.
+- **Katana y vaina:** `objetos-mano.json → objetos.katana.mano3` (en la mano, medida desde el hombro) y `objetos.vaina_katana.mano3` (en la cadera, desde los pies), en la pestaña Objetos → «Armas del combate»; la arena las vuelve a armar en vivo.
+- **CLI:** `capturar combate <estilo>:<acción> [--cuadros] [--cadena tajo1,tajo2,…] [--carga n] [--hoja]` corre el motor de combate real y dibuja con el rig completo y el arma (`.claude/skills/animaciones-minecraft/posar-combate.html`).
+- **No editable aún en el Estudio:** `estilo-sekiro.json` (reglas, ataques, efectos de la estela y animaciones) se edita en el JSON hasta la pestaña Combate (N6); las medidas de la katana (`KATANA` en `modelos-mano.js`) y los sonidos sintetizados nuevos (campana, postura, carga) de `arena/arena.js`.
+

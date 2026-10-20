@@ -161,7 +161,21 @@
       "properties": {
         "ataqueCada": { "$ref": "#/$defs/rango" },
         "alcance": { "type": "number", "minimum": 0.5, "maximum": 5 },
-        "acercarse": { "description": "Fracción de la velocidad con que camina hacia ti.", "type": "number", "minimum": 0, "maximum": 1 }
+        "acercarse": { "description": "Fracción de la velocidad con que camina hacia ti.", "type": "number", "minimum": 0, "maximum": 1 },
+        "patron": {
+          "description": "Patrón fijo que repite (L2): cada paso, golpes = tajos seguidos del combo o fuerte = cuadros que mantiene la carga; entre pasos espera ataqueCada s.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "golpes": { "type": "integer", "minimum": 1, "maximum": 8 },
+              "fuerte": { "type": "integer", "minimum": 0, "maximum": 240 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "desviaCada": { "description": "Desvía uno de cada N ataques tuyos (0 = nunca).", "type": "integer", "minimum": 0, "maximum": 20 },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
       },
       "additionalProperties": false
     },
@@ -179,7 +193,9 @@
         "vida": { "$ref": "#/$defs/color" }, "vidaFondo": { "$ref": "#/$defs/color" }, "vidaPerdida": { "$ref": "#/$defs/color" },
         "reloj": { "$ref": "#/$defs/color" }, "ronda": { "$ref": "#/$defs/color" },
         "anchoVida": { "description": "Ancho de cada barra de vida en % de la pantalla.", "type": "number", "minimum": 10, "maximum": 48 },
-        "retrato": { "description": "Lado del retrato chico en px.", "type": "number", "minimum": 16, "maximum": 128 }
+        "retrato": { "description": "Lado del retrato chico en px.", "type": "number", "minimum": 16, "maximum": 128 },
+        "postura": { "$ref": "#/$defs/color" }, "posturaAlta": { "description": "Color de la barra de postura sobre el cansancio del estilo.", "$ref": "#/$defs/color" }, "posturaFondo": { "$ref": "#/$defs/color" },
+        "anchoPostura": { "description": "Ancho de la barra de postura (crece desde el centro) en % de la pantalla.", "type": "number", "minimum": 5, "maximum": 48 }
       },
       "additionalProperties": false
     },
@@ -197,6 +213,45 @@
             "additionalProperties": false
           }
         }
+      },
+      "additionalProperties": false
+    },
+    "efectos": {
+      "description": "Efectos de los golpes (L2, arena/efectos.js): chispas en el choque (vida y velocidad en s y bloques/s, tamaño en bloques; cuántas salen, de combate.json → peso.<x>.particulas), destello del desvío perfecto (s, bloques), escala de las chispas del bloqueo, brillo de la carga del golpe fuerte (en escalones) y escalones de transparencia de la estela (el resto de la estela va en cada ataque del estilo: efectos.estela).",
+      "type": "object",
+      "properties": {
+        "chispas": {
+          "type": "object",
+          "properties": {
+            "vida": { "type": "number", "minimum": 0.05, "maximum": 3 },
+            "velocidad": { "type": "number", "minimum": 0, "maximum": 20 },
+            "gravedad": { "type": "number", "minimum": 0, "maximum": 40 },
+            "tamano": { "type": "number", "minimum": 0.01, "maximum": 0.5 },
+            "colores": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 }
+          },
+          "additionalProperties": false
+        },
+        "perfecto": {
+          "type": "object",
+          "properties": {
+            "destello": { "type": "number", "minimum": 0, "maximum": 2 },
+            "tamano": { "type": "number", "minimum": 0, "maximum": 5 },
+            "color": { "$ref": "#/$defs/color" },
+            "chispasExtra": { "type": "number", "minimum": 0, "maximum": 5 }
+          },
+          "additionalProperties": false
+        },
+        "bloqueo": { "type": "object", "properties": { "escala": { "type": "number", "minimum": 0, "maximum": 3 } }, "additionalProperties": false },
+        "carga": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "opacidad": { "type": "number", "minimum": 0, "maximum": 1 },
+            "niveles": { "type": "integer", "minimum": 1, "maximum": 10 }
+          },
+          "additionalProperties": false
+        },
+        "estela": { "type": "object", "properties": { "escalones": { "type": "integer", "minimum": 2, "maximum": 16 } }, "additionalProperties": false }
       },
       "additionalProperties": false
     },

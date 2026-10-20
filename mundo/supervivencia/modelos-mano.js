@@ -100,7 +100,71 @@ function tambor(THREE, mat, grabar) {
     return f.g;
 }
 
-export const MODELOS = { guitarra, teclado, tambor };
+// ---------- Armas del combate (bloque 8 · L2) ----------
+// Katana: a lo largo de +Z (la hoja sale de la mano hacia +Z de la muñeca, como estilo-*.json → arma.caja), con el
+// filo hacia −Y y el lomo hacia +Y; el origen es donde la agarra la mano derecha, junto a la guarda (la izquierda
+// va atrás en el mango). La hoja se curva un poco hacia el lomo (sori) y termina en una punta (kissaki) que se angosta.
+const ACERO = [196, 204, 214], FILO = [240, 244, 250], LOMO = [128, 136, 148], HAMON = [222, 228, 238];
+const HIERRO = [46, 42, 40], ORO = [206, 168, 72], ITO = [34, 30, 52], SAME = [230, 224, 206], LACA = [26, 22, 28];
+export const KATANA = { mango: [-0.24, 0.06], guarda: 0.075, hoja: [0.1, 0.86], ancho: 0.058, grosor: 0.024, sori: 0.045 };
+function katana(THREE, mat, grabar) {
+    const f = fabricar(THREE, mat, grabar), K = KATANA;
+    // Mango (tsuka): piel clara (same) bajo el cordaje en rombos (ito), con su remate (kashira) y el collar (fuchi)
+    const [m0, m1] = K.mango, largoM = m1 - m0;
+    f.caja(0.046, 0.06, largoM, SAME, 0, 0, (m0 + m1) / 2);
+    const vueltas = 7;
+    for (let k = 0; k < vueltas; k++) {
+        const z = m0 + 0.02 + (k + 0.5) * (largoM - 0.04) / vueltas;
+        // Cada vuelta del cordaje cruza en X sobre las dos caras: queda el rombo de piel entre una y otra
+        f.caja(0.05, 0.064, 0.016, ITO, 0, 0, z, [0, 0, (k % 2 ? 1 : -1) * 0.5]);
+        f.caja(0.05, 0.03, 0.03, ITO, 0, 0, z);
+    }
+    f.caja(0.054, 0.068, 0.024, HIERRO, 0, 0, m0 - 0.008);          // kashira
+    f.caja(0.058, 0.07, 0.016, ORO, 0, 0, m0 - 0.022);              // remate dorado
+    f.caja(0.052, 0.066, 0.018, HIERRO, 0, 0, m1 + 0.004);          // fuchi
+    f.caja(0.012, 0.02, 0.05, ORO, 0.026, 0.004, (m0 + m1) / 2 + 0.02); // menuki (adorno bajo el cordaje)
+    // Guarda (tsuba): disco de hierro con borde dorado; habaki de cobre sobre la hoja
+    f.cilindro(0.075, 0.014, HIERRO, 0, 0, K.guarda, [Math.PI / 2, 0, 0], 12);
+    f.cilindro(0.078, 0.008, ORO, 0, 0, K.guarda, [Math.PI / 2, 0, 0], 12);
+    f.caja(0.03, 0.068, 0.03, [184, 120, 72], 0, 0.002, K.guarda + 0.024);
+    // Hoja: tramos que se curvan hacia el lomo; cada tramo con filo claro, línea del temple y lomo oscuro
+    const [h0, h1] = K.hoja, n = 8, largo = (h1 - h0) / n;
+    for (let k = 0; k < n; k++) {
+        const u0 = k / n, u1 = (k + 1) / n, u = (u0 + u1) / 2;
+        const y = K.sori * u * u, giro = -2 * K.sori * u / (h1 - h0); // la curva sube hacia la punta
+        const punta = k === n - 1, alto = K.ancho * (1 - 0.18 * u) * (punta ? 0.7 : 1);
+        const z = h0 + (k + 0.5) * largo, rot = [giro, 0, 0];
+        f.caja(K.grosor, alto, largo + 0.004, ACERO, 0, y, z, rot);
+        f.caja(K.grosor * 0.7, alto * 0.28, largo + 0.004, FILO, 0, y - alto * 0.38, z, rot);  // filo
+        f.caja(K.grosor + 0.002, alto * 0.08, largo + 0.004, HAMON, 0, y - alto * 0.16, z, rot); // temple (hamon)
+        f.caja(K.grosor * 0.8, alto * 0.18, largo + 0.004, LOMO, 0, y + alto * 0.42, z, rot);  // lomo
+    }
+    // Punta (kissaki): dos escalones que se angostan hacia el filo
+    const yp = K.sori;
+    f.caja(K.grosor * 0.8, K.ancho * 0.42, 0.04, ACERO, 0, yp + K.ancho * 0.12, h1 + 0.02, [-0.15, 0, 0]);
+    f.caja(K.grosor * 0.6, K.ancho * 0.2, 0.03, FILO, 0, yp + K.ancho * 0.2, h1 + 0.05, [-0.3, 0, 0]);
+    return f.g;
+}
+// Vaina (saya): laca negra con boca y contera de cuerno, y el cordón (sageo) atado cerca de la boca. Origen en la boca,
+// a lo largo de +Z (como la hoja), con la curva hacia +Y.
+function vaina_katana(THREE, mat, grabar) {
+    const f = fabricar(THREE, mat, grabar), K = KATANA, largo = K.hoja[1] - K.hoja[0] + 0.08, n = 6, tramo = largo / n;
+    for (let k = 0; k < n; k++) {
+        const u = (k + 0.5) / n, y = K.sori * u * u, giro = -2 * K.sori * u / largo;
+        f.caja(0.042, 0.078, tramo + 0.004, LACA, 0, y, (k + 0.5) * tramo, [giro, 0, 0]);
+        f.caja(0.044, 0.012, tramo + 0.004, [60, 54, 66], 0, y + 0.03, (k + 0.5) * tramo, [giro, 0, 0]); // brillo
+    }
+    f.caja(0.05, 0.086, 0.03, [70, 58, 48], 0, 0, 0.015);                          // koiguchi (boca)
+    f.caja(0.046, 0.082, 0.034, [70, 58, 48], 0, K.sori, largo - 0.017);           // kojiri (contera)
+    f.caja(0.05, 0.03, 0.04, [92, 72, 140], 0, 0.045, 0.12);                       // kurikata y cordón
+    f.caja(0.012, 0.02, 0.22, [92, 72, 140], 0.028, 0.03, 0.22, [0.25, 0, 0]);
+    return f.g;
+}
+
+export const MODELOS = { guitarra, teclado, tambor, katana, vaina_katana };
+// Las que no son objetos del inventario (por ahora): las elige el estilo (estilo-*.json → arma.modelo / arma.vaina) y
+// la pestaña Objetos del Estudio las muestra aparte para ajustar su agarre
+export const ARMAS = { katana: { es: 'Katana', en: 'Katana' }, vaina_katana: { es: 'Vaina de la katana', en: 'Katana scabbard' } };
 
 // Colgados del torso, como el bajo de Salonas. Aquí solo los giros [x, y, z] de cada brazo; la posición, el giro y la
 // escala del modelo en el torso están en AJUSTE_OBJETO.mano3 de objetos-mano-datos.js (y se editan en el Estudio).
@@ -109,6 +173,30 @@ export const COLGAR = {
     teclado: { brazoI: [-1.0, 0, 0.45], brazoD: [-1.0, 0, -0.1] },
     tambor: { brazoI: [-0.9, 0, 0.1], brazoD: [-0.9, 0, -0.1] }
 };
+
+// El arma de un estilo en una persona (arena, capturas): el modelo en la muñeca y la vaina en la cadera, con el agarre
+// de objetos-mano.json (agarre('mano3', clave, 'modelo'), que llega de afuera para que este módulo siga sin datos).
+// arma: estilo-*.json → arma ({ mano, modelo, vaina }). Devuelve { arma, vaina } (grupos ya colgados) o null.
+export function colocarArma(THREE, p, arma, material, agarre) {
+    if (!arma || !arma.modelo || !MODELOS[arma.modelo]) return null;
+    const muneca = arma.mano === 'I' ? p.munecaI : p.munecaD;
+    if (!muneca) return null;
+    const ag = agarre('mano3', arma.modelo, 'modelo');
+    const m = MODELOS[arma.modelo](THREE, material), g = new THREE.Group();
+    g.position.set(...ag.pos); g.rotation.set(...ag.rot); m.scale.setScalar(ag.escala);
+    g.add(m);
+    // La posición se mide desde el hombro (como los objetos de pose-jugador.js): se le suma lo que hay hasta la muñeca
+    g.position.y -= muneca.position.y + muneca.parent.position.y;
+    muneca.add(g);
+    let vaina = null;
+    if (arma.vaina && MODELOS[arma.vaina] && p.cuerpo) {
+        const av = agarre('mano3', arma.vaina, 'modelo');
+        vaina = MODELOS[arma.vaina](THREE, material);
+        vaina.position.set(...av.pos); vaina.rotation.set(...av.rot); vaina.scale.setScalar(av.escala);
+        p.cuerpo.add(vaina);
+    }
+    return { arma: g, vaina };
+}
 
 // ¿Este objeto (clave de OBJETOS en minúscula) tiene modelo?
 export const tieneModelo = clave => !!(clave && MODELOS[String(clave).toLowerCase()]);
