@@ -1076,7 +1076,7 @@ Riesgos 7g: escenas locales que mueven al NPC (`n.escena`) vs. lo compartido: la
   | S6 | Canciones 3 y 4 (bar: cumbia y funk disco) — **HECHO** (rama `salonas-s6-bar`, 2026-10-21) | **Opus** | no |
   | S7 | Canciones 5 y 6 (festival: metal y tema jefe con duelo de solos) — **HECHO** (rama `salonas-s7-festival`, 2026-10-21) | **Opus** | no |
   | S8 | Menú de la gira, récords, estrellas, Modo Primus, energía del público, final con resultados y Práctica — **HECHO** (rama `salonas-s8-gira`, 2026-10-21) | **Sonnet** | no |
-  | S9 | `salonas.schema.json` + `salonas.json` (valores del código) + textos ES/EN + página `salonas` en `ui-layout.json` — **HECHO** (rama `codex/salonas-s9-json`, 2026-10-21) | Codex → revisa Sonnet | **sí** |
+  | S9 | `salonas.schema.json` + `salonas.json` (valores del código) + textos ES/EN + página `salonas` en `ui-layout.json` — **HECHO** (rama `codex/salonas-s9-json`, 2026-10-21; Estudio: pestaña Salonas y página de layout, PR #155) | Codex → revisa Sonnet | **sí** |
   | S10 | Pestaña Ritmo en el Estudio (partitura en línea de tiempo, revisar, ajustes a mano, probar desde una sección) | **Sonnet** (+ Codex para los grupos de campos) | parcial |
 - Pendiente del dueño (sin apuro): los nombres de las canciones y del juego, si suma amistad (propuesta: sí, la regla general) y si las canciones entran a la rotación de Salonas en la aldea.
 
