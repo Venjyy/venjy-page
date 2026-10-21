@@ -213,12 +213,12 @@ setInterval(() => {
 // función propia, y la suelta con canales null. Si la persona ya está en otra escena, no la toca.
 // Devuelve dónde quedó la punta de cada mano (en el marco de la persona, desde los pies), como `capturar.mjs --medir`.
 const posadas = new Map(); // clave -> { canales, f }
-const NEUTRO = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0, bIx: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, salto: 0, pz: 0 };
+const NEUTRO = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0, bIx: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, salto: 0, pz: 0,
+    bDy: 0, bIy: 0, ry: 0, codoD: 0, codoI: 0, rodD: 0, rodI: 0, pX: 0, pY: 0, pZ: 0, pDz: 0, pIz: 0, armaX: 0, armaZ: 0 };
+// Los mismos ángulos que el juego (aplicarAngulos de pose-jugador.js: con codos, rodillas y pecho, recortado a los límites duros)
+let aplicarAngulos = null;
 function escribirPose(p, v) {
-    p.cuello.rotation.set(v.cx, v.cy, v.cz);
-    p.brazoD.rotation.x = v.bDx; p.brazoD.rotation.z = v.bDz; p.brazoI.rotation.x = v.bIx; p.brazoI.rotation.z = v.bIz;
-    p.piernaD.rotation.x = v.pDx; p.piernaI.rotation.x = v.pIx;
-    p.cuerpo.rotation.x = v.inc; p.cuerpo.rotation.z = v.rz; p.cuerpo.position.y = v.y + v.salto; p.cuerpo.position.z = v.pz;
+    aplicarAngulos(p, { ...v, y: v.y + v.salto });
 }
 async function pose(o) {
     if (!juegoListo()) throw new Error('el juego todavía no está listo');
@@ -239,11 +239,13 @@ async function pose(o) {
     posadas.set(o.clave, reg);
     // Se escribe ya (sin esperar al cuadro) para medir
     const THREE = await import('../vendor/three.module.js');
+    if (!aplicarAngulos) aplicarAngulos = (await import('../mundo/supervivencia/pose-jugador.js')).aplicarAngulos;
     escribirPose(n.p, reg.canales);
     n.p.g.updateMatrixWorld(true);
     const r3 = x => Math.round(x * 1000) / 1000;
-    const punta = b => { const w = n.p.g.worldToLocal(b.localToWorld(new THREE.Vector3(0, -0.75, 0))); return { adelante: r3(w.z), altura: r3(w.y), lado: r3(w.x) }; };
-    return { clave: o.clave, quieta: true, manoD: punta(n.p.brazoD), manoI: punta(n.p.brazoI) };
+    // la punta de la mano: el origen de la muñeca (punta del antebrazo) o, sin rig articulado, el extremo del brazo
+    const punta = (b, mu) => { const w = n.p.g.worldToLocal(mu ? mu.localToWorld(new THREE.Vector3(0, 0, 0)) : b.localToWorld(new THREE.Vector3(0, -0.75, 0))); return { adelante: r3(w.z), altura: r3(w.y), lado: r3(w.x) }; };
+    return { clave: o.clave, quieta: true, manoD: punta(n.p.brazoD, n.p.munecaD), manoI: punta(n.p.brazoI, n.p.munecaI) };
 }
 
 const juegoListo = () => !!(window.__venjy && window.__venjy.jugador && window.__venjy.consola);

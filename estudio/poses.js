@@ -41,6 +41,7 @@ export async function montarPoses(ctx) {
 
     // ---------- El instante: canales de lo elegido en t ----------
     let vivo = null; // { canal: valor } mientras se agarra una extremidad (manda sobre el dato)
+    let patinaje = null; // { clave, texto } de la última medición de «¿Patina un pie?»
     function canalesAhora() {
         if (!elegido) return { ...M.NEUTRAL, ...vivo };
         if (elegido.tipo !== 'codigo') return { ...M.instante(datos, ruta(), tiempo, T, info()), ...vivo };
@@ -313,7 +314,7 @@ export async function montarPoses(ctx) {
 
     // ---------- La vista propia: frente, 3/4 y lado (como posar.html) ----------
     async function crearVista() {
-        const [THREE, { crearModelo, BASES }] = await Promise.all([import('../vendor/three.module.js'), import('../mundo/supervivencia/skin.js')]);
+        const [THREE, { crearModelo, BASES }, { aplicarAngulos }] = await Promise.all([import('../vendor/three.module.js'), import('../mundo/supervivencia/skin.js'), import('../mundo/supervivencia/pose-jugador.js')]);
         const c = $('po-vista');
         const render = new THREE.WebGLRenderer({ canvas: c, antialias: false, preserveDrawingBuffer: true });
         render.setClearColor(0x87b4e8);
@@ -326,9 +327,10 @@ export async function montarPoses(ctx) {
             e.add(m.g);
             e.add(new THREE.GridHelper(4, 4, 0x2c4a22, 0x2c4a22));
             // la punta de cada mano: una cajita roja colgada del brazo en (0, −0,75, 0)
-            const puntas = [m.brazoD, m.brazoI].map(b => {
+            const puntas = [[m.antebrazoD, m.brazoD], [m.antebrazoI, m.brazoI]].map(([ante, brazo]) => {
+                const b = ante || brazo; // con codo, la punta cuelga del antebrazo
                 const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xff3030, depthTest: false }));
-                p.position.set(0, -0.75, 0); p.renderOrder = 9; b.add(p); return p;
+                p.position.set(0, ante ? -0.375 : -0.75, 0); p.renderOrder = 9; b.add(p); return p;
             });
             // silla para el caso sentado: bajo la cadera (0,75) y los muslos, que con pDx -1,5 quedan horizontales hacia adelante
             const silla = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.62, 0.7), new THREE.MeshBasicMaterial({ color: 0x6b4a2b }));
@@ -338,26 +340,29 @@ export async function montarPoses(ctx) {
             cam.lookAt(0, 1.0, Math.sin(giro) > 0.9 ? 0.3 : 0);
             return { e, m, cam, puntas, silla };
         });
-        return { THREE, render, vistas, ancho, alto: c.height, rayo: new THREE.Raycaster() };
+        return { THREE, render, vistas, ancho, alto: c.height, rayo: new THREE.Raycaster(), aplicarAngulos };
     }
     function dibujar() {
         const v = canalesAhora();
-        const mi = M.puntaMano(v, 'I'), md = M.puntaMano(v, 'D');
+        // con suelo automático, las manos se miden con el cuerpo ya ajustado (como se ve)
+        const suelo = $('po-suelo').checked, pie = M.medidaPie(v, suelo), vm = suelo ? { ...v, y: v.y + pie.ajuste } : v;
+        const mi = M.puntaMano(vm, 'I'), md = M.puntaMano(vm, 'D');
         $('po-medida').textContent = $('po-medir').checked
             ? t(`Mano D: adelante ${f2(md.adelante)}, alto ${f2(md.altura)}, lado ${f2(md.lado)} · Mano I: adelante ${f2(mi.adelante)}, alto ${f2(mi.altura)}, lado ${f2(mi.lado)} (bloques, desde los pies)`,
                 `Right hand: forward ${f2(md.adelante)}, height ${f2(md.altura)}, side ${f2(md.lado)} · Left hand: forward ${f2(mi.adelante)}, height ${f2(mi.altura)}, side ${f2(mi.lado)} (blocks, from the feet)`)
             : '';
+        const patina = patinaje && patinaje.clave === (elegido && elegido.clave) ? patinaje.texto : '';
+        $('po-pies').textContent = t(`Suela D ${f2(pie.D)} · I ${f2(pie.I)} (bloques sobre el suelo) · el suelo automático ${suelo ? 'mueve' : 'movería'} el cuerpo ${f2(pie.ajuste)} (− baja)${patina}`,
+            `Sole R ${f2(pie.D)} · L ${f2(pie.I)} (blocks above the ground) · auto ground ${suelo ? 'moves' : 'would move'} the body ${f2(pie.ajuste)} (− lowers)${patina}`);
         if (!vista) return;
         const { render, vistas, ancho, alto } = vista;
         render.setScissorTest(true);
         const sentado = caso === 'sentado' && !!elegido && elegido.tipo !== 'pose';
         vistas.forEach(({ e, m, cam, puntas, silla }, i) => {
             silla.visible = sentado;
-            m.cuello.rotation.set(v.cx, v.cy, v.cz);
-            m.brazoD.rotation.x = v.bDx; m.brazoD.rotation.z = v.bDz; m.brazoI.rotation.x = v.bIx; m.brazoI.rotation.z = v.bIz;
-            m.piernaD.rotation.x = v.pDx; m.piernaI.rotation.x = v.pIx;
-            m.cuerpo.rotation.x = v.inc; m.cuerpo.rotation.z = v.rz;
-            m.cuerpo.position.y = v.y + (caso === 'sentado' ? 0 : v.salto); m.cuerpo.position.z = v.pz;
+            // los mismos ángulos que el juego (aplicarAngulos recorta a los límites duros); con «suelo», el cuerpo baja o sube
+            // para que el pie más bajo toque el suelo, como en combate
+            vista.aplicarAngulos(m, { ...v, y: v.y + (caso === 'sentado' ? 0 : v.salto) + (suelo ? pie.ajuste : 0) });
             for (const p of puntas) p.visible = $('po-medir').checked;
             render.setViewport(i * ancho, 0, ancho, alto); render.setScissor(i * ancho, 0, ancho, alto);
             render.render(e, cam);
@@ -369,7 +374,7 @@ export async function montarPoses(ctx) {
         const { THREE, vistas } = vista;
         const { m } = vistas[0];
         m.g.updateMatrixWorld(true);
-        const w = m.g.worldToLocal((lado === 'I' ? m.brazoI : m.brazoD).localToWorld(new THREE.Vector3(0, -0.75, 0)));
+        const w = m.g.worldToLocal((lado === 'I' ? m.munecaI : m.munecaD).localToWorld(new THREE.Vector3(0, 0, 0)));
         const r3 = x => Math.round(x * 1000) / 1000;
         return { adelante: r3(w.z), altura: r3(w.y), lado: r3(w.x) };
     }
@@ -625,6 +630,15 @@ export async function montarPoses(ctx) {
     });
     $('po-jugar').addEventListener('click', () => jugar(!jugando));
     $('po-medir').addEventListener('change', dibujar);
+    $('po-suelo').addEventListener('change', dibujar);
+    // Mide si un pie patina en el gesto elegido (muestrea la duración T con suelo automático)
+    $('po-patina').addEventListener('click', () => {
+        if (!elegido || elegido.tipo === 'codigo') { patinaje = null; dibujar(); return; }
+        const p = M.patinaje(datos, ruta(), T, info());
+        const f = x => x === null ? t('no apoya', 'never planted') : f2(x);
+        patinaje = { clave: elegido.clave, texto: t(` · patinaje del pie D ${f(p.D)}, I ${f(p.I)} (bloques entre cuadros de apoyo)`, ` · foot slide R ${f(p.D)}, L ${f(p.I)} (blocks between planted frames)`) };
+        dibujar();
+    });
     $('po-en-juego').addEventListener('change', () => { if ($('po-en-juego').checked) posarEnJuego(true); else soltarEnJuego(); });
     $('po-persona').addEventListener('change', () => posarEnJuego(true));
     $('po-ir').addEventListener('click', async () => {

@@ -12,8 +12,10 @@
 //   - lo que no se toca no cambia de lugar: mover una clave cambia una línea del JSON.
 // =========================================================
 import { evaluarGesto } from '../mundo/datos/gestos.js';
+import { fk, punto, ajusteSuelo, alturaPie, tobillo } from '../mundo/supervivencia/combate/cinematica.js';
 
-// Los 14 canales del esquema con el rango útil de rig.md (cy, salto y pz no están en su tabla: rango propio).
+// Los canales del esquema con el rango útil de rig.md (cy, salto y pz no están en su tabla: rango propio). Los últimos 14 son
+// los del rig con codos, rodillas y pecho (bloque 8 · N2, COMBATE.md §15.5): su rango es el límite duro de limites.js.
 export const CANALES = [
     ['cx', -0.45, 0.5, 'cuello: + mira abajo', 'neck: + looks down'],
     ['cy', -1.1, 1.1, 'cuello: + gira a su izquierda', 'neck: + turns to their left'],
@@ -28,7 +30,21 @@ export const CANALES = [
     ['rz', -0.15, 0.15, 'cuerpo: ladeo', 'body: tilt'],
     ['y', -0.7, 0.6, 'cuerpo: sube', 'body: up'],
     ['salto', 0, 0.6, 'se suma a y (sentado, 0)', 'added to y (0 when seated)'],
-    ['pz', -0.3, 0.6, 'cuerpo: avanza (abrazos)', 'body: forward (hugs)']
+    ['pz', -0.3, 0.6, 'cuerpo: avanza (abrazos)', 'body: forward (hugs)'],
+    ['bDy', -1.2, 1.2, 'brazo D: gira sobre su eje', 'right arm: twists on its axis'],
+    ['bIy', -1.2, 1.2, 'brazo I: gira sobre su eje', 'left arm: twists on its axis'],
+    ['ry', -1.2, 1.2, 'cuerpo: gira entero (caderas y piernas)', 'body: turns whole (hips and legs)'],
+    ['codoD', -2.6, 0, 'codo D: − lleva el antebrazo adelante y arriba', 'right elbow: − brings the forearm forward and up'],
+    ['codoI', -2.6, 0, 'codo I: − lleva el antebrazo adelante y arriba', 'left elbow: − brings the forearm forward and up'],
+    ['rodD', 0, 2.4, 'rodilla D: + lleva la canilla atrás', 'right knee: + brings the shin back'],
+    ['rodI', 0, 2.4, 'rodilla I: + lleva la canilla atrás', 'left knee: + brings the shin back'],
+    ['pX', -0.35, 0.9, 'pecho: + se inclina adelante (sobre las caderas)', 'chest: + leans forward (over the hips)'],
+    ['pY', -0.9, 0.9, 'pecho: + gira a su izquierda', 'chest: + turns to their left'],
+    ['pZ', -0.3, 0.3, 'pecho: ladeo', 'chest: tilt'],
+    ['pDz', -0.15, 0.5, 'pierna D: + abre hacia afuera', 'right leg: + opens outwards'],
+    ['pIz', -0.15, 0.5, 'pierna I: + abre hacia afuera', 'left leg: + opens outwards'],
+    ['armaX', -1.6, 1.6, 'arma: giro de la muñeca (adelante/atrás)', 'weapon: wrist turn (forward/back)'],
+    ['armaZ', -1.6, 1.6, 'arma: giro de la muñeca (de lado)', 'weapon: wrist turn (sideways)']
 ];
 export const NOMBRES_CANAL = CANALES.map(c => c[0]);
 export const RANGO = Object.fromEntries(CANALES.map(([k, a, b]) => [k, [a, b]]));
@@ -37,7 +53,8 @@ export const INTERPS = ['suave', 'lineal', 'paso'];
 export const FORMAS = ['sin', 'abs', 'pos', 'neg'];
 export const VARIANTES = ['sentado', 'jugador'];
 // Neutral de pie (el de crearModelo): lo que vale un canal que la pose no nombra
-export const NEUTRAL = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0, bIx: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, salto: 0, pz: 0 };
+export const NEUTRAL = { cx: 0, cy: 0, cz: 0, bDx: 0, bDz: 0, bIx: 0, bIz: 0, pDx: 0, pIx: 0, inc: 0, rz: 0, y: 0, salto: 0, pz: 0,
+    bDy: 0, bIy: 0, ry: 0, codoD: 0, codoI: 0, rodD: 0, rodI: 0, pX: 0, pY: 0, pZ: 0, pDz: 0, pIz: 0, armaX: 0, armaZ: 0 };
 // Sentado en una silla (pose sentadoSilla de rig.md): la base de un gesto en el caso «sentado», como en el juego, donde las
 // piernas las pone la animación de la persona sentada y el gesto mueve lo suyo encima
 export const SENTADO = { pDx: -1.5, pIx: -1.5 };
@@ -48,7 +65,11 @@ export const CANAL_HUESO = {
     brazoI: { x: 'bIx', z: 'bIz' },
     piernaD: { x: 'pDx' },
     piernaI: { x: 'pIx' },
-    cuerpo: { x: 'inc', z: 'rz' }
+    cuerpo: { x: 'inc', z: 'rz' },
+    antebrazoD: { x: 'codoD' },
+    antebrazoI: { x: 'codoI' },
+    canillaD: { x: 'rodD' },
+    canillaI: { x: 'rodI' }
 };
 
 const r3 = v => Math.round(v * 1000) / 1000;
@@ -387,18 +408,41 @@ export function cambios(original, datos) {
 }
 
 // ---------- Medir ----------
-// Punta de la mano (la punta del brazo: (0, −0,75, 0) en el brazo) en el marco de la persona, con Euler XYZ como Three.js.
-// lado 'D' | 'I'. Devuelve { adelante, altura, lado } (lado + = a su izquierda) en bloques, desde los pies.
+// Punta de la mano (la punta del antebrazo, con codo y pecho) en el marco de la persona, con la cinemática del motor de
+// combate (la misma jerarquía que crearPersona). lado 'D' | 'I'. Devuelve { adelante, altura, lado } (lado + = a su
+// izquierda) en bloques, desde los pies.
 export function puntaMano(canales, lado = 'D') {
     const v = { ...NEUTRAL, ...canales };
-    const a = lado === 'I' ? v.bIx : v.bDx, b = lado === 'I' ? v.bIz : v.bDz;
-    // brazo: Rx(a)·Rz(b)·(0, −0,75, 0)
-    let x = 0.75 * Math.sin(b), y = -0.75 * Math.cos(b), z = 0;
-    [y, z] = [y * Math.cos(a) - z * Math.sin(a), y * Math.sin(a) + z * Math.cos(a)];
-    // hombro en el cuerpo
-    x += lado === 'I' ? 0.375 : -0.375; y += 1.5;
-    // cuerpo: Rx(inc)·Rz(rz)·p + (0, y + salto, pz)
-    [x, y] = [x * Math.cos(v.rz) - y * Math.sin(v.rz), x * Math.sin(v.rz) + y * Math.cos(v.rz)];
-    [y, z] = [y * Math.cos(v.inc) - z * Math.sin(v.inc), y * Math.sin(v.inc) + z * Math.cos(v.inc)];
-    return { adelante: r3(z + v.pz), altura: r3(y + v.y + v.salto), lado: r3(x) };
+    const m = fk({ ...v, y: v.y + v.salto });
+    const p = punto(lado === 'I' ? m.munecaI : m.munecaD, 0, 0, 0);
+    return { adelante: r3(p[2]), altura: r3(p[1]), lado: r3(p[0]) };
+}
+
+// Altura de la suela de cada pie (la esquina más baja de su canilla) y cuánto sube o baja el cuerpo el suelo automático
+// para que el más bajo toque el suelo. Con `suelo` el cuerpo ya está ajustado: el pie más bajo da 0.
+export function medidaPie(canales, suelo = false) {
+    const v = { ...NEUTRAL, ...canales };
+    const ajuste = ajusteSuelo(v);
+    const m = fk({ ...v, y: v.y + v.salto + (suelo ? ajuste : 0) });
+    return { D: r3(alturaPie(m, 'D')), I: r3(alturaPie(m, 'I')), ajuste: r3(ajuste) };
+}
+
+// ¿Patina un pie en el gesto? Muestrea n cuadros de 0 a T; un pie «apoya» en el cuadro en que su suela está a menos de
+// `tol` del suelo (con suelo automático). Su patinaje es lo que se aleja el tobillo, en horizontal, entre dos cuadros
+// de apoyo (el máximo de la distancia entre todos los cuadros de apoyo). 0 = quieto como una roca; un pie que nunca
+// apoya da null. Devuelve { D, I, apoyoD, apoyoI } (bloques y cuadros de apoyo).
+export function patinaje(datos, ruta, T = 3, info = {}, n = 60, tol = 0.02) {
+    const pies = { D: [], I: [] };
+    for (let i = 0; i <= n; i++) {
+        const v = instante(datos, ruta, T * i / n, T, info);
+        const m = fk({ ...v, y: v.y + v.salto + ajusteSuelo(v) });
+        for (const l of ['D', 'I']) if (alturaPie(m, l) < tol) { const p = tobillo(m, l); pies[l].push([p[0], p[2]]); }
+    }
+    const medir = ps => {
+        if (!ps.length) return null;
+        let mx = 0;
+        for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) mx = Math.max(mx, Math.hypot(ps[i][0] - ps[j][0], ps[i][1] - ps[j][1]));
+        return r3(mx);
+    };
+    return { D: medir(pies.D), I: medir(pies.I), apoyoD: pies.D.length, apoyoI: pies.I.length };
 }

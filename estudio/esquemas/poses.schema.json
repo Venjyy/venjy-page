@@ -44,8 +44,8 @@
   "additionalProperties": false,
   "$defs": {
     "nombreCanal": {
-      "description": "cx cy cz: cuello · bDx bDz bIx bIz: brazos · pDx pIx: piernas · inc rz y: cuerpo · salto: se suma a y (el motor lo apaga sentado) · pz: avanza el cuerpo (abrazos).",
-      "enum": ["cx", "cy", "cz", "bDx", "bDz", "bIx", "bIz", "pDx", "pIx", "inc", "rz", "y", "salto", "pz"]
+      "description": "cx cy cz: cuello · bDx bDz bIx bIz: brazos · pDx pIx: piernas · inc rz y: cuerpo · salto: se suma a y (el motor lo apaga sentado) · pz: avanza el cuerpo (abrazos) · bDy bIy: brazo gira sobre su eje · ry: cuerpo gira · codoD codoI: codos · rodD rodI: rodillas · pX pY pZ: pecho sobre las caderas · pDz pIz: pierna abre afuera · armaX armaZ: muñeca virtual del arma (rig con codos, rodillas y pecho; COMBATE.md §15.5).",
+      "enum": ["cx", "cy", "cz", "bDx", "bDz", "bIx", "bIz", "pDx", "pIx", "inc", "rz", "y", "salto", "pz", "bDy", "bIy", "ry", "codoD", "codoI", "rodD", "rodI", "pX", "pY", "pZ", "pDz", "pIz", "armaX", "armaZ"]
     },
     "canalesFijos": {
       "type": "object",

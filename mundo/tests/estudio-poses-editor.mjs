@@ -28,7 +28,7 @@ const valido = (d, msg) => {
 };
 
 // ---------- Canales ----------
-ok(M.NOMBRES_CANAL.length === 14 && M.NOMBRES_CANAL.join() === CANALES_POSE.join(), 'los 14 canales, iguales a los del puente');
+ok(M.NOMBRES_CANAL.length === 28 && M.NOMBRES_CANAL.join() === CANALES_POSE.join(), 'los 28 canales (14 de siempre + 14 del rig N2), iguales a los del puente');
 const esquema = JSON.parse(fs.readFileSync(path.join(RAIZ, 'estudio', 'esquemas', 'poses.schema.json'), 'utf8'));
 ok(esquema.$defs.nombreCanal.enum.join() === M.NOMBRES_CANAL.join(), 'los canales son los del esquema, en su orden');
 ok(M.RANGO.bDx[0] === -2.9 && M.RANGO.bDx[1] === 0.6 && M.RANGO.cx[0] === -0.45 && M.RANGO.inc[1] === 0.7, 'rangos de rig.md');
@@ -63,7 +63,7 @@ for (const [k, def] of Object.entries(datos.gestos)) {
             const a = M.instante(datos, G(k), t, T, { s, j });
             const b = evaluarGesto(def, u, t, { s, j, d: T }, {});
             for (const c of Object.keys(b)) ok(a[c] === b[c], `instante ${k}.${c} t=${t} s=${s} j=${j}`);
-            ok(Object.keys(a).length === 14, `instante trae los 14 canales (${k})`);
+            ok(Object.keys(a).length === 28, `instante trae los 28 canales (${k})`);
         }
     }
 }
@@ -206,6 +206,45 @@ ok(mi.lado === 0.375 && mi.adelante === M.puntaMano({ bDx: -1.6 }).adelante, 'ma
 ok(M.puntaMano({ bDz: 0.5 }).lado > -0.375 && M.puntaMano({ bIz: 0.5 }, 'I').lado > 0.375, 'bDz + al pecho, bIz + afuera');
 ok(cerca(M.puntaMano({ inc: 0.3 }).adelante, 0.75 * Math.sin(0.3), 1e-3), 'inc lleva la mano adelante');
 ok(M.puntaMano({ y: 0.2, salto: 0.1, pz: 0.3 }).altura === 0.75 + 0.3 && M.puntaMano({ pz: 0.3 }).adelante === 0.3, 'y, salto y pz');
+
+// ---------- N2: codo, rodilla, pecho y suelo automático ----------
+const { LIMITES_BASE } = await import('../datos/limites.js');
+for (const c of ['codoD', 'codoI', 'rodD', 'rodI', 'pX', 'pY', 'pZ', 'pDz', 'pIz', 'armaX', 'armaZ', 'bDy', 'bIy', 'ry']) {
+    ok(M.RANGO[c] && M.RANGO[c][0] === LIMITES_BASE[c][0] && M.RANGO[c][1] === LIMITES_BASE[c][1], `el rango de ${c} es su límite duro`);
+    ok(M.NEUTRAL[c] === 0, `${c} neutral 0`);
+}
+ok(M.CANAL_HUESO.antebrazoD.x === 'codoD' && M.CANAL_HUESO.canillaI.x === 'rodI', 'agarrar antebrazo y canilla mueve codo y rodilla');
+// codo a 90°: el antebrazo sale hacia adelante desde el codo (a 1,125 del suelo, el brazo cuelga)
+const co = M.puntaMano({ codoD: -Math.PI / 2 });
+ok(cerca(co.adelante, 0.375, 1e-3) && cerca(co.altura, 1.125, 1e-3) && co.lado === -0.375, `codo a 90°: ${JSON.stringify(co)}`);
+ok(M.puntaMano({ codoI: -Math.PI / 2 }, 'I').adelante === co.adelante, 'codo izquierdo: espejo');
+// pecho: girar 0,5 rad el pecho mueve la mano D hacia adelante (z) sin mover las caderas
+ok(M.puntaMano({ pY: 0.5 }).adelante !== 0 && M.puntaMano({ pY: 0 }).adelante === 0, 'pY mueve la mano');
+// medida del pie: de pie, suela a 0 y suelo sin ajuste; con las rodillas dobladas el suelo baja el cuerpo
+const pie0 = M.medidaPie({});
+ok(pie0.D === 0 && pie0.I === 0 && pie0.ajuste === 0, 'de pie: suelas a 0 y ajuste 0');
+const cuclillas = { pDx: -0.9, pIx: -0.9, rodD: 1.8, rodI: 1.8 };
+const pieC = M.medidaPie(cuclillas), pieS = M.medidaPie(cuclillas, true);
+ok(pieC.ajuste < 0 && pieC.D > 0, `rodillas dobladas: el cuerpo tiene que bajar (${pieC.ajuste})`);
+ok(Math.min(pieS.D, pieS.I) === 0 && pieS.D === pieS.I, 'con suelo, la suela más baja queda en 0');
+// patinaje: pose fija = 0; un pie que oscila (sin dejar de apoyar) patina; el que nunca apoya da null
+const sint = { version: 1, poses: { quieta: { canales: cuclillas } }, gestos: {
+    columpio: { reloj: 't', canales: { pDx: { base: 0, osc: [{ forma: 'sin', amp: 0.3, frec: 1 }] } } },
+    vuelo: { reloj: 't', canales: { salto: 0.5, pDx: 0, pIx: 0 } } } };
+const pat0 = M.patinaje(sint, P('quieta'));
+ok(pat0.D === 0 && pat0.I === 0 && pat0.apoyoD > 0, `pose quieta: ningún pie patina (${JSON.stringify(pat0)})`);
+const patC = M.patinaje(sint, G('columpio'));
+ok(patC.D > 0.05 && patC.I === 0, `un pie que se columpia patina, el otro no (${JSON.stringify(patC)})`);
+// el salto se suma sobre el suelo automático (como en el motor): en el aire ningún pie apoya
+const patV = M.patinaje(sint, G('vuelo'));
+ok(patV.D === null && patV.I === null, 'en el aire no hay pie apoyado');
+// editar un canal nuevo deja el archivo válido
+const rN = M.ponerValor(datos, P('doblarse'), 'codoD', -1.2);
+ok(rN.cambio && rN.datos.poses.doblarse.canales.codoD === -1.2, 'poner un codo en una pose');
+valido(rN.datos, 'codoD');
+const rG = M.ponerValor(datos, G('habla'), 'rodD', 0.8);
+valido(rG.datos, 'rodD en un gesto');
+ok(esquema.$defs.nombreCanal.enum.includes('armaZ') && esquema.$defs.nombreCanal.enum.includes('pY'), 'esquema con los canales nuevos');
 
 // ---------- Puente: pose ----------
 const llamadas = [];
