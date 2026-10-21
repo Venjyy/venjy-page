@@ -35,6 +35,9 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //   objeto({ clave })             pone en tu mano ese objeto de OBJETOS (o un id numérico), dándotelo si no lo tienes (pestaña Objetos)
 //   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
 //   carrera({ accion })           'ver' | 'mila' | 'gala' | 'terminar': la carrera de gatas (7h-1; 'ver' = la sala sin menú)
+//   salonas({ accion, cancion?, dificultad?, seccion? })
+//                                  'probar' abre esa canción de La Gira en Práctica, solo con esa sección (índice) y con los ajustes a mano
+//                                  actuales (pestaña Ritmo, S10b) o 'terminar' cierra Salonas
 //   arena({ accion })             'abrir' | 'lalo' | 'moises' | 'terminar': la arena del duelo de Lalo y Moisés (bloque 8 · L1)
 //   musica({ accion, tema?, instrumentos?, nivel?, tempo? })
 //                                  'tocar' suena ese tema (vista previa de la pestaña Música; calla la música del juego) o 'parar'
@@ -132,6 +135,18 @@ export function crearManejador(juego) {
                     if (m.pista !== undefined && (typeof m.pista !== 'string' || !/^[a-z0-9_]{1,24}$/.test(m.pista))) return error('pista no válida');
                     if (!juego.carrera) return error('este juego no tiene la carrera de gatas');
                     await juego.carrera({ accion: m.accion, pista: m.pista });
+                    return { ...base, tipo: 'ok' };
+                }
+                case 'salonas': {
+                    // Pestaña Ritmo (S10b): probar una sección de una canción en Práctica, o cerrar Salonas
+                    if (!['probar', 'terminar'].includes(m.accion)) return error('accion de salonas no válida');
+                    if (!juego.salonas) return error('este juego no tiene Salonas');
+                    if (m.accion === 'probar') {
+                        if (typeof m.cancion !== 'string' || !/^[a-z0-9_-]{1,40}$/i.test(m.cancion)) return error('cancion no válida');
+                        if (!['facil', 'normal', 'dificil', 'experto'].includes(m.dificultad)) return error('dificultad no válida');
+                        if (!Number.isInteger(m.seccion) || m.seccion < 0 || m.seccion > 99) return error('seccion no válida');
+                    }
+                    await juego.salonas({ accion: m.accion, cancion: m.cancion, dificultad: m.dificultad, seccion: m.seccion });
                     return { ...base, tipo: 'ok' };
                 }
                 case 'arena': {

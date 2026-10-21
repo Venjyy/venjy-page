@@ -5,7 +5,8 @@
 // «Revisar partitura» avisa de lo injugable. Ajustes a mano: elegir una nota y cambiarla de carril o quitarla; se
 // guarda en salonas.json → ajustes.<canción>.<dificultad>.<compás:paso> (ritmo-modelo.mjs) y nunca cambia cuándo suena.
 // Comparte los datos, el envío en vivo y Guardar con la pestaña Salonas (ctx.salonas), así no pisan el mismo archivo.
-// Pendiente (S10b/S10c): probar desde una sección y editar las canciones de musica.json.
+// «Probar en el juego» (S10b): mensaje `salonas` del puente; el juego abre esa canción en Práctica, solo con la sección elegida
+// y con los ajustes a mano actuales. Pendiente (S10c): editar las canciones de musica.json.
 // =========================================================
 import { armar, revisar, ponerAjuste, ajustesDe, contarAjustes, DIFICULTADES } from './ritmo-modelo.mjs';
 
@@ -20,7 +21,7 @@ export async function montarRitmo(ctx) {
     const t = (es, en) => (ctx.idioma === 'en' ? en : es);
     const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
     const lienzo = $('ri-lienzo'), caja = $('ri-caja'), msg = $('ri-mensaje'), btnGuardar = $('ri-guardar');
-    const selCancion = $('ri-cancion'), selDif = $('ri-dificultad'), zoom = $('ri-zoom');
+    const selCancion = $('ri-cancion'), selDif = $('ri-dificultad'), zoom = $('ri-zoom'), selSec = $('ri-seccion');
     const sa = ctx.salonas;
     if (!sa) { msg.textContent = 'La pestaña Salonas no cargó: recarga el Estudio.'; return; }
     let musica = null;
@@ -50,11 +51,27 @@ export async function montarRitmo(ctx) {
         selDif.value = dificultad;
     }
 
+    // Secciones de la canción elegida, con su número si se repite («Coro 2»); el índice es el mismo que usa la Práctica del juego
+    function llenarSecciones() {
+        const previa = selSec.value;
+        selSec.textContent = '';
+        if (!vista) return;
+        const total = {}, veces = {};
+        for (const s of vista.secciones) total[s.seccion] = (total[s.seccion] || 0) + 1;
+        vista.secciones.forEach((s, i) => {
+            veces[s.seccion] = (veces[s.seccion] || 0) + 1;
+            const o = el('option', '', nombreSec(s.seccion) + (total[s.seccion] > 1 ? ` ${veces[s.seccion]}` : '') + ` · ${s.t0.toFixed(1)} s`);
+            o.value = String(i); selSec.appendChild(o);
+        });
+        if (previa && Number(previa) < vista.secciones.length) selSec.value = previa;
+    }
+
     // ---------- armado ----------
     function recalcular() {
         const c = cancion && musica.canciones[cancion];
         vista = c ? armar(cancion, c, dificultad, datos().reglas, datos().ajustes) : null;
         if (vista && elegida && ![...vista.notas, ...vista.quitadas].some(n => n.clave === elegida)) elegida = null;
+        llenarSecciones();
     }
     const notaElegida = () => vista && elegida ? [...vista.notas, ...vista.quitadas].find(n => n.clave === elegida) : null;
 
@@ -204,10 +221,22 @@ export async function montarRitmo(ctx) {
     selDif.addEventListener('change', () => { dificultad = selDif.value; todo(); });
     zoom.addEventListener('input', () => dibujar());
     $('ri-revisar').addEventListener('click', revisarAhora);
+    $('ri-probar').addEventListener('click', async () => {
+        if (!cancion || !vista) return;
+        try {
+            ctx.puente.enviarDatos('salonas', datos());
+            await ctx.puente.enviar('salonas', { accion: 'probar', cancion, dificultad, seccion: Number(selSec.value) || 0 });
+            rotular('Listo: el juego toca esa sección en Práctica, con tus ajustes a mano. Haz clic en el juego y usa las teclas de carril.', 'Done: the game plays that section in Practice with your hand tweaks. Click the game and use the lane keys.', 'ok');
+        } catch (e) { rotular(e.message, e.message, 'error'); }
+    });
+    $('ri-parar').addEventListener('click', async () => {
+        try { await ctx.puente.enviar('salonas', { accion: 'terminar' }); rotular('Salonas cerrado en el juego.', 'Salonas closed in the game.'); } catch (e) { rotular(e.message, e.message, 'error'); }
+    });
     lienzo.addEventListener('click', e => {
         const r = lienzo.getBoundingClientRect(), k = lienzo.width / r.width;
         const n = notaEn((e.clientX - r.left) * k, (e.clientY - r.top) * k);
         elegida = n ? n.clave : null; dibujar(); pintarNota();
+        if (n && vista.secciones[n.n]) selSec.value = String(n.n); // «Probar» parte desde la sección de la nota
     });
     btnGuardar.addEventListener('click', async () => { rotular('Guardando…', 'Saving…'); await sa.guardar(); msg.textContent = sa.mensaje(); msg.className = 'mensaje'; estadoGuardar(); });
     $('ri-descartar').addEventListener('click', () => sa.descartar());

@@ -267,6 +267,19 @@ const responder = crearManejador({
         if (accion === 'ver') { if (!k.ver()) throw new Error('ahora no se puede: cierra lo que tengas abierto'); return; }
         k.elegir(accion, 'normal');
     },
+    async salonas({ accion, cancion, dificultad, seccion }) {
+        const v = window.__venjy;
+        if (!v || !v.cargarSalonas) throw new Error('el juego todavía no está listo');
+        const s = await v.cargarSalonas();
+        if (!s) throw new Error('no se pudo cargar Salonas');
+        if (accion === 'terminar') { s.terminar(); return; }
+        const r = s.probar({ cancion, dificultad, seccion });
+        const motivos = {
+            ocupado: 'ahora no se puede: cierra lo que tengas abierto', audio: 'haz clic en el juego una vez para activar el sonido y vuelve a probar',
+            cancion: 'esa canción no está en la gira o no se pudo tocar', dificultad: 'dificultad no válida', seccion: 'esa sección no existe en el juego'
+        };
+        if (r !== 'ok') throw new Error(motivos[r] || 'no se pudo probar');
+    },
     async arena({ accion }) {
         const v = window.__venjy;
         if (!v || !v.cargarArena) throw new Error('el juego todavía no está listo');
