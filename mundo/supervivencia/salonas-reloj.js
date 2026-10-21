@@ -7,7 +7,7 @@
 // Valores del jugable (segundos, unidades del mundo 3D y colores). ajustesDe() los mezcla con lo que venga del JSON.
 export const AJUSTES_SALONAS = {
     cancion: 'sala-ska',           // la que sale marcada al abrir el menú (musica.json → canciones; se toca aunque sea borrador)
-    canciones: ['sala-ska', 'sala-garage', 'bar-cumbia', 'bar-funk'], // las que ofrece el menú, en orden (sala: 1 y 2; bar: 3 y 4)
+    canciones: ['sala-ska', 'sala-garage', 'bar-cumbia', 'bar-funk', 'festival-metal', 'festival-jefe'], // el menú, en orden (sala: 1 y 2; bar: 3 y 4; festival: 5 y el tema jefe)
     dificultad: 'normal',         // la que sale marcada al abrir el menú
     teclas: ['KeyD', 'KeyF', 'KeyJ', 'KeyK'],
     letras: ['D', 'F', 'J', 'K'],
@@ -38,7 +38,7 @@ export const AJUSTES_SALONAS = {
     avisoSeg: 0.5,                 // cuánto dura el «Perfecto» / «Bien» en pantalla
     // ---------- S5: locales, banda, público y cámara (salonas-escena.js; z negativa = hacia el escenario) ----------
     local: 'sala',                 // el local de una canción que no esté en localDe
-    localDe: { 'sala-ska': 'sala', 'sala-garage': 'sala', 'bar-cumbia': 'bar', 'bar-funk': 'bar' }, // canción → local (el festival llega en S7)
+    localDe: { 'sala-ska': 'sala', 'sala-garage': 'sala', 'bar-cumbia': 'bar', 'bar-funk': 'bar', 'festival-metal': 'festival', 'festival-jefe': 'festival' }, // canción → local
     banda: {
         // pos: [x, z] sobre el piso del escenario; giro: radianes hacia el centro (0 = mira a la cámara)
         salonas: { pos: [-3.7, -6.8], giro: 0.32 },
