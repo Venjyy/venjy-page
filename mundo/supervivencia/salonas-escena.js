@@ -427,12 +427,13 @@ export function crearEscenaSalonas({ personasMundo = () => null, skin = null } =
 
     // ---------- Cada cuadro ----------
     // ritmo: { pulso, fase, seccion, golpe (0..1 al pulso), salto, energia }; toca: { carril, slap, fallo };
-    // animo: −1..1; celebra: 0..1 (envolvente de la celebración)
-    const luz = new THREE.Color(), gris = new THREE.Color();
-    function cuadro({ ritmo, toca, animo, t, dt, celebra = 0, G = GS.GESTOS_SALONAS, P }) {
+    // animo: −1..1; celebra: 0..1 (envolvente de la celebración); primus: 0..1 (tinte del Modo Primus)
+    const luz = new THREE.Color(), gris = new THREE.Color(), tintePrimus = new THREE.Color();
+    function cuadro({ ritmo, toca, animo, t, dt, celebra = 0, primus = 0, G = GS.GESTOS_SALONAS, P }) {
         if (!local) return;
         const L = local.L, Lz = L.luz;
         luz.set(Lz.color).multiplyScalar(Lz.base + Lz.pulso * ritmo.golpe);
+        if (primus > 0) luz.lerp(tintePrimus.set(P.primus.luz), P.primus.luzK * primus); // Modo Primus: las luces cambian
         tinte.aplicar(luz);
         for (const m of matsPersonas) m.color.setScalar(m.userData.sombra ?? 1).multiply(luz);
         if (tinteJugador) tinteJugador.aplicar(luz);
