@@ -1519,14 +1519,14 @@ async function arrancar(guardado, cx = null) {
     }
     // Arena del duelo (bloque 8 · L1, arena/arena.js y su escena propia del lago congelado): se carga al abrirla desde
     // Hablar con Lalo o Moisés; mientras peleas, su escena se dibuja en lugar del mundo (como la carrera)
-    let arena = null, cargandoArena = null;
+    let arena = null, cargandoArena = null, estilosArena = null; // estilosArena: el Estudio (N6) los cambia en el lugar
     function cargarArena() {
         if (!cargandoArena) cargandoArena = Promise.all([import('./arena/arena.js'), pedirArena(), cargarDatos('combate'), cargarDatos('estilo-prueba'), cargarDatos('estilo-sekiro'), cargarDatos('estilo-urbano'), import('./combate/datos.js')]).then(([m, json, comb, prueba, sekiro, urbano, D]) => {
             D.fijarCombate(comb);
             arena = m.crearArena({
                 idioma, inventario, entidades, jugador, misiones,
                 datos: () => window.__venjy?.datosArena || json,
-                estilos: { prueba, sekiro, urbano },
+                estilos: (estilosArena = { prueba, sekiro, urbano }),
                 personasMundo: k => { const n = amigos.lista.find(a => a.clave === k); return n ? n.p : null; },
                 tactil: () => !!tactil,
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena() && !uiSalonas(),
@@ -2207,7 +2207,7 @@ async function arrancar(guardado, cx = null) {
         get carrera() { return carrera; }, cargarCarrera: () => cargarCarrera(),
         get salonas() { return salonas; }, cargarSalonas: () => cargarSalonas(),
         // Arena del duelo (L1): cargarArena().then(a => a.elegir('lalo', 'normal')); arena.saltar(), arena.estado
-        get arena() { return arena; }, cargarArena: () => cargarArena(),
+        get arena() { return arena; }, cargarArena: () => cargarArena(), get estilosArena() { return estilosArena; },
         // Abrir un sobre de prueba (Estudio → Mesa, «Probar el sobre»): la escena de cartas-sobre.js sin cobrar ni sumar cartas
         probarSobre: () => Promise.all([import('./cartas-sobre.js'), import('./cartas-tienda.js'), cargarDatos('cartas-mesa')]).then(([s, t, d]) => {
             const D = window.__venjy?.datosMesa || d;

@@ -5,6 +5,7 @@
 // Formas: cajas de losas, escalones, vallas… (§22).
 // Carrera: la carrera de gatas de la Gatera (7h-1). Música: temas y sintetizadores de musica.json (§24).
 // Salonas: ajustes, reglas y textos de La Gira, salonas.json (S9). Ritmo: su partitura en línea de tiempo y ajustes a mano (S10a).
+// Combate: ataques, ventanas y fases de cada estilo de pelea, estilo-*.json y combate.json (bloque 8 · N6).
 // Vida: cómo caminan los amigos al dejar su sitio y sus visitas por horario, navegacion.json y rutinas.json (6d etapa 2, §25).
 // =========================================================
 import { montarLayout } from './layout.js';
@@ -20,6 +21,7 @@ import { montarInicio } from './inicio.js';
 import { montarFormas } from './formas.js';
 import { montarCarrera } from './carrera.js';
 import { montarArena } from './arena.js';
+import { montarCombate } from './combate.js';
 import { montarSalonas } from './salonas.js';
 import { montarRitmo } from './ritmo.js';
 import { montarMusica } from './musica.js';
@@ -90,6 +92,7 @@ await montarInicio(ctx);
 await montarFormas(ctx);
 await montarCarrera(ctx);
 await montarArena(ctx);
+await montarCombate(ctx);
 await montarSalonas(ctx);
 await montarMusica(ctx); // antes que Ritmo: Ritmo comparte sus datos (ctx.musica)
 await montarRitmo(ctx);
@@ -111,6 +114,9 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-vida').hidden = ctx.pestana !== 'vida';
         document.getElementById('panel-carrera').hidden = ctx.pestana !== 'carrera';
         document.getElementById('panel-arena').hidden = ctx.pestana !== 'arena';
+        document.getElementById('panel-combate').hidden = ctx.pestana !== 'combate';
+        document.getElementById('co-zona').hidden = ctx.pestana !== 'combate';
+        document.getElementById('seccion-juego').classList.toggle('modo-combate', ctx.pestana === 'combate');
         document.getElementById('panel-salonas').hidden = ctx.pestana !== 'salonas';
         document.getElementById('panel-ritmo').hidden = ctx.pestana !== 'ritmo';
         document.getElementById('ri-zona').hidden = ctx.pestana !== 'ritmo';

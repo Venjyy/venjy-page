@@ -576,3 +576,20 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .ri-voz output { min-width: 3.2rem; }
 .ri-voz-cambio { color: #8fdc6a; }
 #ri-bajo .ri-lienzo { cursor: crosshair; }
+
+/* Combate (N6a): línea de tiempo de un ataque; reusa .es-linea y .es-bloque de Escenas */
+#panel-combate[hidden], #co-zona[hidden] { display: none; }
+#co-zona { margin-top: 12px; }
+.modo-combate .marco-juego iframe { aspect-ratio: auto; height: 38vh; min-height: 240px; }
+#panel-combate .campo, #panel-combate .casilla-marca { margin-bottom: 8px; }
+#panel-combate details.panel > summary { cursor: pointer; margin-bottom: 8px; }
+.co-fase.co-anticipacion { background: #8a7a2e; }
+.co-fase.co-activo { background: #8a2e2e; }
+.co-fase.co-recuperacion { background: #3a5a8a; }
+.co-barra.co-cancelar { background: #4a6a3a; }
+.co-barra.co-cancelar.abierta { border-right-style: dashed; }
+.co-barra.co-iframes { background: #2e7a8a; }
+.co-barra.co-armadura { background: #a8642a; }
+.co-barra.co-ventana { background: #6a4a8a; }
+.co-barra.co-avance, .co-barra.fija { background: #555; cursor: default; }
+.co-barra .txt { cursor: grab; pointer-events: auto; }
