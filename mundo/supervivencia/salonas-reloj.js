@@ -6,7 +6,8 @@
 
 // Valores del jugable (segundos, unidades del mundo 3D y colores). ajustesDe() los mezcla con lo que venga del JSON.
 export const AJUSTES_SALONAS = {
-    cancion: 'pescador',          // canción de prueba de S3 (musica.json → canciones; se toca aunque sea borrador)
+    cancion: 'sala-ska',           // la que sale marcada al abrir el menú (musica.json → canciones; se toca aunque sea borrador)
+    canciones: ['sala-ska', 'sala-garage'], // las que ofrece el menú, en orden (sala de ensayo: canciones 1 y 2)
     dificultad: 'normal',         // la que sale marcada al abrir el menú
     teclas: ['KeyD', 'KeyF', 'KeyJ', 'KeyK'],
     letras: ['D', 'F', 'J', 'K'],

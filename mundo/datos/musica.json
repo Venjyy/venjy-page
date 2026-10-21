@@ -14,6 +14,43 @@
         { "onda": "sine", "ratio": 2.76, "vol": 0.25 },
         { "onda": "sine", "ratio": 5.4, "vol": 0.1 }
       ]
+    },
+    "guitarraSkank": {
+      "nombre": { "es": "Guitarra skank", "en": "Skank guitar" },
+      "nota": "Guitarra limpia y corta de Salonas para el contratiempo del ska.",
+      "onda": "square",
+      "ataque": 0.002,
+      "caida": 0.08,
+      "largo": 0.15,
+      "vol": 0.5,
+      "voces": 2,
+      "desafino": 9,
+      "filtro": { "tipo": "bandpass", "frec": 1900, "q": 1.1 }
+    },
+    "metales": {
+      "nombre": { "es": "Metales", "en": "Horns" },
+      "nota": "Trompeta y saxo juntos (sección de vientos del ska).",
+      "onda": "sawtooth",
+      "ataque": 0.025,
+      "caida": 0.12,
+      "largo": 0.85,
+      "vol": 0.32,
+      "voces": 2,
+      "desafino": 14,
+      "filtro": { "tipo": "lowpass", "frec": 2600, "q": 0.8 },
+      "vibrato": { "frec": 5.5, "cents": 12 }
+    },
+    "guitarraSucia": {
+      "nombre": { "es": "Guitarra sucia", "en": "Dirty guitar" },
+      "nota": "Guitarra saturada de garage (acordes de quinta).",
+      "onda": "sawtooth",
+      "ataque": 0.003,
+      "caida": 0.18,
+      "largo": 0.9,
+      "vol": 0.34,
+      "voces": 3,
+      "desafino": 16,
+      "filtro": { "tipo": "lowpass", "frec": 2300, "q": 1.6 }
     }
   },
   "temas": {
@@ -162,6 +199,485 @@
           "ritmo": "x...............................................................",
           "vol": 0.3,
           "niveles": ["coro", "final"]
+        }
+      ]
+    },
+    "sala-ska": {
+      "nombre": { "es": "Contratiempo (provisorio)", "en": "Offbeat (provisional)" },
+      "nota": "Canción 1 de la gira (sala de ensayo): reggae que se vuelve ska en el coro. Enseña notas simples a tiempo y el contratiempo. Nombre provisorio: lo elige el dueño.",
+      "bpm": 90,
+      "pasos": 16,
+      "vol": 0.1,
+      "swing": 0.12,
+      "prog": ["Am", "D"],
+      "progs": {
+        "intro": ["Am", "D"],
+        "verso": ["Am", "D"],
+        "precoro": ["Dm", "Em", "F", "G"],
+        "coro": ["F", "C", "G", "Am"],
+        "final": ["Am"]
+      },
+      "vozBajo": {
+        "vol": 0.6,
+        "saturacion": 1.3,
+        "nasal": { "frec": 700, "q": 1.2, "ganancia": 4 },
+        "tecnicas": {
+          "t": { "onda": "triangle", "brillo": 950, "q": 2, "ataque": 0.004, "vol": 0.62, "cola": 0.16 }
+        }
+      },
+      "estructura": [
+        { "seccion": "intro", "compases": 2 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "final", "compases": 2 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo (intro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["intro"],
+          "bajo": [[0, "t", 33, 6], [8, "t", 40, 4], [12, "t", 43, 4], [16, "t", 38, 6], [24, "t", 42, 4], [28, "a", 57, 4]]
+        },
+        {
+          "nombre": "bajo (verso)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["verso"],
+          "bajo": [[0, "t", 33, 3], [6, "t", 45, 2], [8, "t", 40, 2], [10, "g", 40, 1], [12, "t", 43, 2], [14, "t", 45, 1], [15, "t", 43, 1], [16, "t", 38, 3], [22, "t", 42, 2], [24, "t", 45, 2], [26, "g", 45, 1], [28, "t", 47, 2], [30, "t", 45, 2], [32, "t", 33, 3], [38, "t", 45, 2], [40, "t", 48, 2], [44, "t", 47, 2], [46, "t", 45, 1], [47, "t", 43, 1], [48, "t", 38, 3], [54, "t", 42, 2], [56, "t", 45, 2], [60, "t", 38, 2], [62, "t", 40, 2]]
+        },
+        {
+          "nombre": "bajo (precoro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["precoro"],
+          "bajo": [[0, "t", 38, 2], [4, "t", 45, 2], [6, "t", 41, 2], [8, "t", 38, 2], [12, "t", 45, 2], [14, "t", 48, 2], [16, "t", 40, 2], [20, "t", 47, 2], [22, "t", 43, 2], [24, "t", 40, 2], [28, "t", 47, 2], [30, "t", 50, 2], [32, "t", 41, 2], [36, "t", 48, 2], [38, "t", 45, 2], [40, "t", 41, 2], [44, "t", 48, 2], [46, "t", 45, 2], [48, "t", 43, 2], [50, "t", 43, 2], [52, "t", 43, 2], [54, "t", 43, 2], [56, "t", 47, 2], [58, "t", 50, 2], [60, "s", 43, 1], [62, "p", 55, 1]]
+        },
+        {
+          "nombre": "bajo (coro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["coro"],
+          "bajo": [[0, "s", 41, 2], [2, "t", 41, 2], [4, "t", 45, 2], [6, "t", 48, 2], [7, "g", 48, 1], [8, "t", 41, 2], [10, "p", 53, 1], [11, "t", 48, 1], [12, "t", 45, 2], [14, "t", 43, 2], [16, "s", 36, 2], [18, "t", 36, 2], [20, "t", 40, 2], [22, "t", 43, 2], [23, "g", 43, 1], [24, "t", 36, 2], [26, "p", 48, 1], [27, "t", 43, 1], [28, "t", 40, 2], [30, "t", 41, 2], [32, "s", 43, 2], [34, "t", 43, 2], [36, "t", 47, 2], [38, "t", 50, 2], [39, "g", 50, 1], [40, "t", 43, 2], [42, "p", 55, 1], [43, "t", 50, 1], [44, "t", 50, 2], [46, "t", 47, 2], [48, "s", 45, 2], [50, "t", 45, 2], [52, "t", 40, 2], [54, "t", 43, 2], [55, "g", 43, 1], [56, "t", 45, 2], [58, "p", 57, 1], [59, "t", 52, 1], [60, "t", 43, 2], [62, "t", 40, 2]]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "t", 33, 4],
+            [4, "t", 40, 2],
+            [6, "t", 43, 2],
+            [8, "t", 45, 4],
+            [12, "t", 40, 4],
+            [16, "r", 33, 8, [33, 40, 45, 48]]
+          ]
+        },
+        {
+          "nombre": "bombo (one drop)",
+          "inst": "kick",
+          "ritmo": "........x.......",
+          "vol": 0.7,
+          "niveles": ["intro", "verso"]
+        },
+        {
+          "nombre": "aro (one drop)",
+          "inst": "madera",
+          "ritmo": "........x.......",
+          "vol": 0.4,
+          "niveles": ["intro", "verso"]
+        },
+        {
+          "nombre": "charles",
+          "inst": "hat",
+          "ritmo": "o.x.o.x.o.x.o.x.",
+          "vol": 0.22,
+          "niveles": ["intro", "verso", "precoro"]
+        },
+        {
+          "nombre": "bombo (precoro)",
+          "inst": "kick",
+          "ritmo": "x...x...x...x...",
+          "vol": 0.65,
+          "niveles": ["precoro"]
+        },
+        {
+          "nombre": "caja (precoro)",
+          "inst": "caja",
+          "ritmo": "....x.......x.......x.......x.......x.......x.......x...x.x.xxxx",
+          "vol": 0.3,
+          "niveles": ["precoro"]
+        },
+        {
+          "nombre": "bombo (coro)",
+          "inst": "kick",
+          "ritmo": "x.......x.......",
+          "vol": 0.75,
+          "niveles": ["coro", "final"]
+        },
+        {
+          "nombre": "caja (coro)",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.38,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "charles abierto (coro)",
+          "inst": "hat",
+          "ritmo": "o.x.o.x.o.x.o.x.",
+          "vol": 0.3,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "platillo",
+          "inst": "platillo",
+          "ritmo": "x...............................................................",
+          "vol": 0.28,
+          "niveles": ["coro", "final"]
+        },
+        {
+          "nombre": "guitarra (reggae)",
+          "inst": "guitarraSkank",
+          "acorde": true,
+          "pasos": [4, 12],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.5,
+          "niveles": ["intro", "verso"]
+        },
+        {
+          "nombre": "guitarra (precoro)",
+          "inst": "guitarraSkank",
+          "acorde": true,
+          "pasos": [2, 6, 10, 14],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.45,
+          "niveles": ["precoro"]
+        },
+        {
+          "nombre": "guitarra (ska)",
+          "inst": "guitarraSkank",
+          "acorde": true,
+          "pasos": [2, 6, 10, 14],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.55,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "órgano",
+          "inst": "rhodes",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 12,
+          "vol": 0.12,
+          "niveles": ["verso", "precoro"]
+        },
+        {
+          "nombre": "metales (coro)",
+          "inst": "metales",
+          "vol": 0.5,
+          "niveles": ["coro"],
+          "notas": [69, 0, 0, 72, 0, 0, 69, 0, 67, 0, 0, 0, 65, 0, 0, 0, 64, 0, 0, 67, 0, 0, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 0, 0, 71, 0, 0, 67, 0, 69, 0, 0, 0, 71, 0, 0, 0, 72, 0, 71, 0, 69, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "acorde final",
+          "inst": "guitarraSkank",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 16,
+          "vol": 0.4,
+          "niveles": ["final"]
+        }
+      ]
+    },
+    "sala-garage": {
+      "nombre": { "es": "Garaje (provisorio)", "en": "Garage (provisional)" },
+      "nota": "Canción 2 de la gira (sala de ensayo): rock garage en Mi menor. Enseña corcheas seguidas y notas largas (precoro y puente). Nombre provisorio: lo elige el dueño.",
+      "bpm": 120,
+      "pasos": 16,
+      "vol": 0.1,
+      "prog": ["Em"],
+      "progs": {
+        "intro": ["Em", "Em", "C", "D"],
+        "verso": ["Em", "Em", "C", "D"],
+        "precoro": ["C", "D", "Am", "B"],
+        "coro": ["Em", "C", "G", "D"],
+        "puente": ["Am", "C", "Em", "B"],
+        "final": ["Em"]
+      },
+      "vozBajo": {
+        "vol": 0.58,
+        "saturacion": 3,
+        "tecnicas": {
+          "t": { "onda": "sawtooth", "brillo": 1500, "q": 4, "vol": 0.55, "cola": 0.12 }
+        }
+      },
+      "estructura": [
+        { "seccion": "intro", "compases": 4 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "puente", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "final", "compases": 2 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo (verso)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["intro", "verso"],
+          "bajo": [[0, "t", 28, 2], [2, "t", 28, 2], [4, "t", 28, 2], [6, "t", 40, 2], [8, "t", 28, 2], [10, "t", 28, 2], [12, "t", 31, 2], [14, "t", 33, 2], [16, "t", 28, 6], [22, "t", 40, 2], [24, "t", 28, 4], [28, "t", 35, 2], [30, "t", 31, 2], [32, "t", 36, 2], [34, "t", 36, 2], [36, "t", 36, 2], [38, "t", 43, 2], [40, "t", 36, 2], [42, "t", 36, 2], [44, "t", 40, 2], [46, "t", 36, 2], [48, "t", 38, 6], [54, "t", 45, 2], [56, "t", 38, 4], [60, "t", 40, 2], [62, "t", 42, 2]]
+        },
+        {
+          "nombre": "bajo (precoro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["precoro"],
+          "bajo": [[0, "t", 36, 8], [8, "t", 43, 4], [12, "t", 40, 4], [16, "t", 38, 8], [24, "t", 45, 4], [28, "t", 42, 4], [32, "t", 33, 8], [40, "t", 40, 4], [44, "t", 45, 4], [48, "t", 35, 2], [50, "t", 35, 2], [52, "t", 35, 2], [54, "t", 35, 2], [56, "t", 42, 2], [58, "t", 42, 2], [60, "s", 47, 2], [62, "p", 59, 1]]
+        },
+        {
+          "nombre": "bajo (coro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["coro"],
+          "bajo": [
+            [0, "r", 28, 2, [28, 35, 40]],
+            [2, "t", 40, 2],
+            [4, "t", 28, 2],
+            [6, "t", 40, 2],
+            [8, "t", 28, 2],
+            [10, "t", 40, 2],
+            [12, "t", 31, 1],
+            [13, "t", 33, 1],
+            [14, "t", 35, 2],
+            [16, "s", 36, 2],
+            [18, "t", 48, 2],
+            [20, "t", 36, 2],
+            [22, "t", 48, 2],
+            [24, "t", 36, 2],
+            [26, "t", 48, 2],
+            [28, "t", 43, 1],
+            [29, "t", 45, 1],
+            [30, "t", 47, 2],
+            [32, "r", 31, 2, [31, 38, 43]],
+            [34, "t", 43, 2],
+            [36, "t", 31, 2],
+            [38, "t", 43, 2],
+            [40, "t", 31, 2],
+            [42, "t", 43, 2],
+            [44, "t", 38, 1],
+            [45, "t", 40, 1],
+            [46, "t", 42, 2],
+            [48, "s", 38, 2],
+            [50, "t", 50, 2],
+            [52, "t", 38, 2],
+            [54, "t", 50, 2],
+            [56, "s", 38, 2],
+            [58, "p", 50, 1],
+            [60, "t", 38, 1],
+            [61, "t", 38, 1],
+            [62, "t", 40, 1],
+            [63, "t", 42, 1]
+          ]
+        },
+        {
+          "nombre": "bajo (puente)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["puente"],
+          "bajo": [[0, "t", 33, 12], [12, "t", 40, 4], [16, "t", 36, 12], [28, "t", 43, 4], [32, "t", 28, 12], [44, "t", 35, 4], [48, "t", 35, 8], [56, "a", 59, 8]]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "t", 28, 2],
+            [2, "t", 28, 2],
+            [4, "t", 31, 2],
+            [6, "t", 33, 2],
+            [8, "t", 35, 2],
+            [10, "t", 38, 2],
+            [12, "t", 40, 4],
+            [16, "r", 28, 16, [28, 35, 40, 47]]
+          ]
+        },
+        {
+          "nombre": "bombo (intro)",
+          "inst": "kick",
+          "ritmo": "................................x.....x.x.......x.....x.x...x.x.",
+          "vol": 0.75,
+          "niveles": ["intro"]
+        },
+        {
+          "nombre": "caja (intro)",
+          "inst": "caja",
+          "ritmo": "....................................x.......x.......x.......x.xx",
+          "vol": 0.38,
+          "niveles": ["intro"]
+        },
+        {
+          "nombre": "bombo (verso)",
+          "inst": "kick",
+          "ritmo": "x.....x.x.......",
+          "vol": 0.75,
+          "niveles": ["verso"]
+        },
+        {
+          "nombre": "caja",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.38,
+          "niveles": ["verso", "precoro", "coro"]
+        },
+        {
+          "nombre": "charles",
+          "inst": "hat",
+          "ritmo": "x.x.x.x.x.x.x.x.",
+          "vol": 0.22,
+          "niveles": ["intro", "verso", "precoro"]
+        },
+        {
+          "nombre": "bombo (precoro)",
+          "inst": "kick",
+          "ritmo": "x...x...x...x...",
+          "vol": 0.7,
+          "niveles": ["precoro"]
+        },
+        {
+          "nombre": "redoble (precoro)",
+          "inst": "caja",
+          "ritmo": "........................................................x.x.xxxx",
+          "vol": 0.3,
+          "niveles": ["precoro"]
+        },
+        {
+          "nombre": "bombo (coro)",
+          "inst": "kick",
+          "ritmo": "x.x...x.x.x...x.",
+          "vol": 0.8,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "ride (coro)",
+          "inst": "hat",
+          "ritmo": "o.x.o.x.o.x.o.x.",
+          "vol": 0.3,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "platillo",
+          "inst": "platillo",
+          "ritmo": "x...............................x...............................",
+          "vol": 0.3,
+          "niveles": ["coro", "final"]
+        },
+        {
+          "nombre": "bombo (puente)",
+          "inst": "kick",
+          "ritmo": "x.........x.....",
+          "vol": 0.65,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "caja (puente)",
+          "inst": "caja",
+          "ritmo": "........x.......",
+          "vol": 0.35,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "charles (puente)",
+          "inst": "hat",
+          "ritmo": "x...x...x...x...",
+          "vol": 0.2,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "bombo (final)",
+          "inst": "kick",
+          "ritmo": "x.x.x.x.x.......",
+          "vol": 0.8,
+          "niveles": ["final"]
+        },
+        {
+          "nombre": "guitarra (intro)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 6, 8],
+          "octava": 12,
+          "dur": 2,
+          "vol": 0.35,
+          "niveles": ["intro"]
+        },
+        {
+          "nombre": "guitarra (verso)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 2, 4, 6, 8, 10, 12, 14],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.35,
+          "niveles": ["verso"]
+        },
+        {
+          "nombre": "guitarra (precoro)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 8],
+          "octava": 12,
+          "dur": 8,
+          "vol": 0.4,
+          "niveles": ["precoro", "final"]
+        },
+        {
+          "nombre": "guitarra (coro)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 3, 6, 8, 11, 14],
+          "octava": 12,
+          "dur": 2,
+          "vol": 0.45,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "guitarra (puente)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 16,
+          "vol": 0.3,
+          "niveles": ["puente"]
         }
       ]
     }
