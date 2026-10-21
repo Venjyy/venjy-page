@@ -69,10 +69,10 @@ export function reglasDe(parcial) { return mezcla(REGLAS_BASE, parcial); }
 // nota (acotado a 0..carriles-1, y en un acorde se vuelve a aplicar la regla de arriba); null la quita. Las claves
 // que no existen se ignoran (revisarPartitura las avisa). Nunca cambian el tiempo de una nota.
 export function partitura(cancion, dificultad, reglas = REGLAS_BASE, { tempo = 1, ajustes = null } = {}) {
-    const r = reglas.dificultades[dificultad], mapa = mapaTiempo(cancion, tempo), P = mapa.secciones[0]?.pasos || cancion.pasos || 16;
+    const r = reglas.dificultades[dificultad], mapa = mapaTiempo(cancion, tempo);
     const datos = [];
     for (const p of mapa.pasos) {
-        const sec = mapa.secciones[p.n], compases = sec.compases, j = (p.k % (cancion.capas || []).find(x => x.bajo)?.compases || 1) * sec.pasos + p.i;
+        const sec = mapa.secciones[p.n];
         let elegida = null;
         for (const capa of cancion.capas || []) {
             if (!capa.bajo || capa.mudo || (capa.niveles && !capa.niveles.includes(sec.nivel)) || (capa.segunda && Math.floor(p.k / 4) % 2 === 0)) continue;
@@ -204,17 +204,18 @@ export function revisarPartitura(cancion, reglas = REGLAS_BASE, { tempo = 1, aju
         for (const sec of experto.secciones) {
             const ns = part.notas.filter(x => x.n === sec.n), local = ns.filter(x => x.t >= sec.t0 && x.t < sec.t1);
             if (!local.length) agrega('vacia', true, dificultad, sec.n, `La sección ${sec.seccion} no tiene notas en ${dificultad}.`);
-            if (local.some(x => local.filter(y => y.t >= x.t && y.t <= x.t + 1).length > r.maxNotasSeg)) agrega('densidad', true, dificultad, sec.n, `La sección ${sec.seccion} supera ${r.maxNotasSeg} notas por segundo en ${dificultad}.`);
+            if (local.some(x => local.filter(y => y.t >= x.t && y.t < x.t + 1).length > r.maxNotasSeg)) agrega('densidad', true, dificultad, sec.n, `La sección ${sec.seccion} supera ${r.maxNotasSeg} notas por segundo en ${dificultad}.`);
             if (local.some((x, i) => i > 0 && x.t - local[i - 1].t < r.minSep)) agrega('separacion', true, dificultad, sec.n, `La sección ${sec.seccion} tiene notas separadas por menos de ${r.minSep} s en ${dificultad}.`);
         }
         for (const clave of Object.keys(ajustes[dificultad] || {})) if (!part.notas.some(x => x.clave === clave)) agrega('huerfano', false, dificultad, null, `El ajuste ${clave} ya no corresponde a una nota.`);
     }
-    const p = partitura(cancion, 'experto', reglas, { tempo });
+    // el compás de acordeEn es el de la sección (el mismo k que usa el audio en tocarPasoCancion)
+    const p = experto, inicio = p.secciones.map((_, n) => p.secciones.slice(0, n).reduce((a, x) => a + x.compases, 0));
     for (const sec of p.secciones) {
         const ns = p.notas.filter(x => x.n === sec.n && x.tipo !== 'g');
         let fuera = false;
         for (const x of ns) {
-            const ac = acordeEn(cancion, (x.clave.split(':')[0] | 0), sec.nivel), raiz = ac[0];
+            const ac = acordeEn(cancion, (x.clave.split(':')[0] | 0) - inicio[sec.n], sec.nivel), raiz = ac[0];
             const menor = ac.some(y => ((y - raiz + 12) % 12) === 3), escala = new Set((menor ? [0, 2, 3, 5, 7, 8, 10] : [0, 2, 4, 5, 7, 9, 11]).map(y => (raiz + y) % 12));
             for (const y of ac) escala.add(y % 12);
             if (!escala.has(x.nota % 12)) { fuera = true; break; }
