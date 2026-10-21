@@ -18,7 +18,9 @@
 //   crearRelojFijo(hz, maxPasos)        acumulador: avanzar(dt, fn) llama a fn las veces que toque y devuelve alfa
 // Intención (la arma combate/intenciones.js en N4, o la CPU): { mover: [x, y], altura, atacar, defensa, esquivar,
 // agarre, especial, saltar, fuerte, accion }, cada botón 'apretar' (este cuadro), 'mantener' o 'soltar'; accion: la
-// clave de un ataque o una acción que empieza directo desde un estado libre (la CPU y los ataques peligrosos, L3).
+// clave de un ataque o una acción que empieza directo desde un estado libre (la CPU y los ataques peligrosos, L3);
+// sostener: cuadros que el ataque en curso se queda en su último cuadro de anticipación (la CPU, L4: tajos retrasados
+// y la anticipación mínima por dificultad; el jugador nunca lo manda).
 // =========================================================
 import { COMBATE, accionDe, largoFases, inicioFase, marca, enTramos, esAtaque } from './datos.js';
 import { curva } from '../../datos/curvas.js';
@@ -33,7 +35,7 @@ export function crearPeleador(estilo, { tactil = false } = {}) {
         estilo, tactil,
         estado: 'guardia', clave: null, def: null, c: 0,
         conecto: false, congelado: 0, quieto: false, buffer: null, defensa: false, carga: 0, cargando: false,
-        mover: [0, 0], dir: [1, 0], mov: [0, 0], velocidad: 0,
+        mover: [0, 0], dir: [1, 0], mov: [0, 0], velocidad: 0, sostener: 0,
         cambio: { n: 0, mezcla: 0 }, eventos: [], cuadros: 0
     };
 }
@@ -73,7 +75,7 @@ export function iniciar(p, clave, { buffer = false, dir = null } = {}) {
     const def = accionDe(p.estilo, clave);
     if (!def) return false;
     const m = COMBATE.motor.mezcla;
-    p.estado = def.estado; p.clave = clave; p.def = def; p.c = 0; p.conecto = false; p.carga = 0; p.cargando = false;
+    p.estado = def.estado; p.clave = clave; p.def = def; p.c = 0; p.conecto = false; p.carga = 0; p.cargando = false; p.sostener = 0;
     const base = def.direccion || [1, 0];
     p.dir = def.usaDireccion && dir && Math.hypot(dir[0], dir[1]) > 0.3 ? normal(dir) : [base[0], base[1]];
     marcarCambio(p, def.mezcla ?? (buffer ? m.buffer : m.normal));
@@ -136,7 +138,10 @@ export function paso(p, intencion = {}) {
     // Carga (S7): mientras se mantiene su intención, la acción se queda en el cuadro `en` hasta `max` cuadros
     const ca = p.def && p.def.carga, boton = ca ? intencion[p.def.intencion || 'atacar'] : null;
     p.cargando = !!ca && p.c === marca(ca.en, p.def.fases) && (boton === 'apretar' || boton === 'mantener') && p.carga < ca.max;
+    if (intencion.sostener > 0 && p.def && p.estado === 'ataque') p.sostener = intencion.sostener | 0;
+    const ga = p.def && p.def.fases && p.def.fases.activo ? inicioFase(p.def.fases, 'activo') : 0;
     if (p.cargando) p.carga++;
+    else if (p.sostener > 0 && ga > 0 && p.c === ga - 1) p.sostener--; // anticipación sostenida (CPU)
     else if (p.def) {
         p.c++;
         const f = p.def.fases, d = avanceEn(p.def, p.c) - avanceEn(p.def, p.c - 1);

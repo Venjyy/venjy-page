@@ -8,8 +8,10 @@
 //                                        cuerpos → paredes → golpes → animación → reloj y rondas. Deja en P.eventos lo
 //                                        que pasó ({ tipo: 'golpe' | 'ronda' | 'peleen' | 'ko' | 'tiempo' | 'final', … })
 //   empezarRondas(P)                     después de la entrada: «Ronda 1» → «¡Peleen!»
-//   intencionPractica(P, i)              el rival de práctica (repite practica.patron: tajos seguidos y golpes cargados,
-//                                        y desvía uno de cada desviaCada ataques tuyos; L4 trae la CPU)
+//   intencionCPU(P, i)                   la CPU de f[i] (L4, combate/ia.js): arena.json → cpu y estilo-*.json → cpu, con la
+//                                        dificultad de la pelea y su propia semilla. Evento 'provoca' (sale el cuadro que sigue)
+//   intencionPractica(P, i)              el rival de práctica de L2 (repite practica.patron); ya no lo usa la arena,
+//                                        queda para las pruebas que necesitan un patrón fijo
 // Postura y desvío (L2, combate/postura.js con estilo-*.json → reglas): cada peleador tiene F.post; los golpes la suben
 // según la tabla del estilo del que recibe, baja sola con calma y al tope deja al peleador desequilibrado.
 // Peso y reacciones (N5, combate/peso.js): cada golpe trae su nivel (ligero … remate) y su reacción (la del ataque o
@@ -37,6 +39,7 @@ import * as E from '../combate/estados.js';
 import * as A from '../combate/animacion.js';
 import * as S from '../combate/postura.js';
 import * as W from '../combate/peso.js';
+import * as I from '../combate/ia.js';
 import { EFECTOS } from './efectos.js';
 import { COMBATE, faseEn, inicioFase, accionDe, marca } from '../combate/datos.js';
 
@@ -77,6 +80,7 @@ export const ARENA = {
     premios: { amistad: true, primeraVictoria: {} },
     efectos: EFECTOS, // chispas, destello del perfecto, brillo de la carga y escalones de la estela (arena/efectos.js)
     dificultades: ['facil', 'normal', 'dificil', 'maestro'],
+    cpu: {}, // dificultades y reglas de todas las CPU (combate/ia.js → CPU_BASE es el valor base)
     textos: {}
 };
 
@@ -113,7 +117,7 @@ export function nuevaPelea(R, { estilos, yo = 'lalo', rival = 'moises', dificult
         R, dificultad, tactil, rnd: azar(semilla), aspecto, muneco,
         f: [crearF(R, estilos, yo, 0, tactil), crearF(R, estilos, rival, 1, tactil)],
         fase: 'entrada', c: 0, ronda: 0, rondasJugadas: 0, victorias: [0, 0], reloj: R.rondas.segundos,
-        ganadorRonda: null, ganador: undefined, eventos: [], cola: [], cuadros: 0, practica: nuevaPractica()
+        ganadorRonda: null, ganador: undefined, eventos: [], cola: [], cuadros: 0, practica: nuevaPractica(), cpu: [null, null], semilla
     };
     colocar(P, true);
     return P;
@@ -474,6 +478,21 @@ export function probarReaccion(P, i, clave, { espejo = false } = {}) {
     F.p.espejo = espejo;
     P.cola.push({ tipo: 'prueba', i, clave }); // (sale en P.eventos del cuadro que sigue)
     return true;
+}
+
+// ---------- CPU (L4) ----------
+// Se crea la primera vez que se le pide (y de nuevo en cada ronda, para que no arrastre su plan)
+export function intencionCPU(P, i = 1) {
+    const F = P.f[i];
+    if (P.muneco) return {};
+    let S = P.cpu[i];
+    if (!S || S.ronda !== P.ronda) {
+        S = P.cpu[i] = I.crearCPU(I.reglasCPU(P.R.cpu, F.estilo, P.dificultad), ((P.semilla * 2654435761) ^ (i + 1) * 40503) >>> 0);
+        S.ronda = P.ronda;
+    }
+    const it = I.intencionCPU(S, F, P.f[1 - i], P.fase === 'pelea');
+    for (const e of S.eventos) P.cola.push({ ...e, i });
+    return it;
 }
 
 // ---------- Rival de práctica ----------
