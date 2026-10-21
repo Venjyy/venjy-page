@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "salonas.schema.json",
+  "title": "Salonas: La Gira (mundo/datos/salonas.json)",
+  "description": "Ajustes del juego y reglas de partitura; las claves ausentes usan los valores del código. Textos editables en español e inglés.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "juego": { "$ref": "#/$defs/ajustes" },
+    "reglas": { "$ref": "#/$defs/ajustes" },
+    "textos": { "$ref": "#/$defs/textos" }
+  },
+  "required": ["version", "juego", "reglas", "textos"],
+  "additionalProperties": false,
+  "$defs": {
+    "ajustes": { "type": "object", "additionalProperties": { "$ref": "#/$defs/valor" } },
+    "valor": {
+      "anyOf": [
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/valor" } },
+        { "type": "array", "items": { "$ref": "#/$defs/valor" } },
+        { "type": ["string", "number", "boolean"] }
+      ]
+    },
+    "textos": { "type": "object", "additionalProperties": { "$ref": "#/$defs/textoOGrupo" } },
+    "textoOGrupo": {
+      "oneOf": [
+        { "$ref": "comun.schema.json#/$defs/texto" },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/textoOGrupo" } }
+      ]
+    }
+  }
+}

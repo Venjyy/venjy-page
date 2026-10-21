@@ -1,0 +1,346 @@
+{
+  "$schema": "../../estudio/esquemas/salonas.schema.json",
+  "version": 1,
+  "nota": "Valores base copiados del jugable; si falta una clave se usa el valor del código.",
+  "juego": {
+    "cancion": "sala-ska",
+    "canciones": ["sala-ska", "sala-garage", "bar-cumbia", "bar-funk", "festival-metal", "festival-jefe"],
+    "dificultad": "normal",
+    "teclas": ["KeyD", "KeyF", "KeyJ", "KeyK"],
+    "letras": ["D", "F", "J", "K"],
+    "carriles": {
+      "ancho": 1.1,
+      "largo": 26,
+      "velocidad": 9,
+      "colores": ["#55c34a", "#d8373a", "#f0d23c", "#3c78d8"],
+      "fondo": "#1a120c",
+      "borde": "#0a0604",
+      "linea": "#f2efe6",
+      "nota": { "alto": 0.28, "largo": 0.5 },
+      "cola": 0.22,
+      "barra": 0.12,
+      "brillo": 0.12
+    },
+    "camara": { "altura": 4.8, "distancia": 6, "mira": -7.5, "fov": 55, "mecer": 0.06, "margen": 0.5 },
+    "escena": {
+      "cielo": "#120c18",
+      "niebla": [18, 40]
+    },
+    "audio": { "retraso": 0.6, "adelanto": 0.2, "volBanda": 1, "volBajo": 1.15 },
+    "fallo": {
+      "volBajo": 0.12,
+      "seg": 0.45,
+      "muerta": { "vol": 0.9, "dur": 0.04, "nota": 28 }
+    },
+    "acordeGracia": 0.06,
+    "vacioEsFallo": true,
+    "pausa": { "cuenta": 3, "paso": 0.8 },
+    "final": { "cola": 1.5 },
+    "calibracion": {
+      "bpm": 100,
+      "previos": 4,
+      "toques": 8,
+      "minimo": 5,
+      "clic": { "frec": 1500, "frecFuerte": 2000, "dur": 0.03, "vol": 0.35 },
+      "rango": 0.25
+    },
+    "avisoSeg": 0.5,
+    "energia": {
+      "inicio": 0.55,
+      "sube": { "perfecto": 0.03, "bien": 0.02, "ok": 0.01 },
+      "baja": 0.08,
+      "pisoFacil": 0.2,
+      "suavidad": 4,
+      "abucheoSeg": 1.2
+    },
+    "primus": {
+      "llenar": 0.4,
+      "grito": "¡PRIMUS SUCKS!",
+      "gritoSeg": 1.6,
+      "fuegosCada": 2.5,
+      "celebraSeg": 2.5,
+      "luz": "#ffd0ff",
+      "luzK": 0.35,
+      "camara": {
+        "pos": [0, 2.4, 5.5],
+        "mira": [0, 0.8, -3],
+        "fov": 12,
+        "k": 3
+      }
+    },
+    "duelo": {
+      "secciones": ["solo"],
+      "ciclo": 4,
+      "turnoTuyo": 2,
+      "avisoAntes": 0.6,
+      "avisoSeg": 1.4
+    },
+    "practica": {
+      "velocidades": [0.5, 0.6, 0.7, 0.8, 0.9, 1],
+      "velocidad": 0.7
+    },
+    "local": "sala",
+    "localDe": {
+      "sala-ska": "sala",
+      "sala-garage": "sala",
+      "bar-cumbia": "bar",
+      "bar-funk": "bar",
+      "festival-metal": "festival",
+      "festival-jefe": "festival"
+    },
+    "banda": {
+      "salonas": {
+        "pos": [-3.7, -6.8],
+        "giro": 0.32
+      },
+      "jugador": {
+        "pos": [3.7, -6.8],
+        "giro": -0.32
+      },
+      "conejeros": {
+        "pos": [-8.4, -11.5],
+        "giro": 0.55,
+        "tarima": 0.45
+      },
+      "amplis": {
+        "pos": [7.4, -13],
+        "giro": -0.35
+      },
+      "baqueta": {
+        "pos": [0, -0.06, 0.1],
+        "rot": [1.1, 0, 0],
+        "largo": 0.55
+      },
+      "reposoBpm": 90,
+      "saltoCada": 8,
+      "carrilK": 10,
+      "slapSeg": 0.18,
+      "falloSeg": 0.45
+    },
+    "publico": { "reposo": 0.2, "aplaude": 0.35, "salta": 0.7, "abuchea": -0.25, "celebrarSeg": 2.5 },
+    "camaraSolo": {
+      "secciones": ["solo", "puente"],
+      "pos": [-1.1, -0.4, -1.4],
+      "mira": [-2.2, 0.6, 0],
+      "k": 2.5
+    },
+    "locales": {
+      "sala": {
+        "cielo": "#17110d",
+        "niebla": [22, 45],
+        "piso": "#5d5a55",
+        "pared": "#3b3430",
+        "ancho": 22,
+        "fondo": 26,
+        "alto": 8,
+        "colchones": ["#6f88a8", "#a86f6f", "#8fa86f", "#b39a62", "#7d6fa8"],
+        "lampara": {
+          "pos": [0, 6.2, -9],
+          "color": "#ffd98a",
+          "mecer": 0.06
+        },
+        "luz": { "color": "#ffe6c0", "base": 0.9, "pulso": 0.12 },
+        "afiches": 4,
+        "publico": [],
+        "intro": {
+          "desde": [-6, 2.2, -2],
+          "mira": [-3.7, 1.4, -6.8],
+          "seg": 2.6
+        }
+      },
+      "bar": {
+        "cielo": "#120a14",
+        "niebla": [24, 48],
+        "piso": "#6b4a2e",
+        "pared": "#7a3a2c",
+        "ancho": 26,
+        "fondo": 28,
+        "alto": 7,
+        "tarima": "#3a2618",
+        "barra": "#4a2c18",
+        "barraPos": [8.8, -3],
+        "mesas": [[-6, -1.5], [6, -1.5], [-7.5, -5]],
+        "neon": ["#ff4fb0", "#4fe0ff", "#ffe04f"],
+        "luz": { "color": "#ffc8e0", "base": 0.82, "pulso": 0.18 },
+        "publico": ["pony", "hadad", "andy", "nacho", "lucho", "braulio"],
+        "intro": {
+          "desde": [9, 3, 4],
+          "mira": [0, 1, -7],
+          "seg": 2.6
+        }
+      },
+      "festival": {
+        "cielo": "#070512",
+        "niebla": [30, 70],
+        "piso": "#26232b",
+        "pared": "#111018",
+        "ancho": 40,
+        "fondo": 34,
+        "alto": 14,
+        "torres": "#8a8a94",
+        "pantallas": ["#ff3c6e", "#3cc8ff", "#b4ff3c", "#ffb43c"],
+        "haces": ["#ff4f4f", "#4f8fff", "#ffe04f", "#c04fff"],
+        "luz": { "color": "#d8d0ff", "base": 0.78, "pulso": 0.25 },
+        "multitud": 220,
+        "colores": ["#c8503c", "#3c78c8", "#3ca050", "#d2b43c", "#8c50b4", "#e6e6e6", "#303030"],
+        "humo": 14,
+        "frente": -3.6,
+        "foso": 1.2,
+        "multitudZ": [-3.2, 1.2],
+        "torresPos": [10.5, -11],
+        "pantallaY": 5,
+        "publico": ["pony", "hadad", "andy"],
+        "intro": {
+          "desde": [0, 9, 14],
+          "mira": [0, 1.5, -8],
+          "seg": 3
+        }
+      }
+    }
+  },
+  "reglas": {
+    "dificultades": {
+      "facil": {
+        "carriles": 2,
+        "rejilla": {
+          "12": [0, 6],
+          "14": [0, 4, 8],
+          "defecto": 4
+        },
+        "fantasma": false,
+        "largas": false,
+        "acordes": false,
+        "recortar": true,
+        "minSep": 0.35,
+        "maxNotasSeg": 3
+      },
+      "normal": {
+        "carriles": 3,
+        "rejilla": { "defecto": 2 },
+        "fantasma": false,
+        "largas": false,
+        "acordes": false,
+        "recortar": false,
+        "minSep": 0.12,
+        "maxNotasSeg": 6
+      },
+      "dificil": {
+        "carriles": 4,
+        "rejilla": { "defecto": 1 },
+        "fantasma": false,
+        "largas": false,
+        "acordes": false,
+        "recortar": false,
+        "minSep": 0.07,
+        "maxNotasSeg": 9
+      },
+      "experto": {
+        "carriles": 4,
+        "rejilla": { "defecto": 1 },
+        "fantasma": true,
+        "largas": true,
+        "acordes": true,
+        "recortar": false,
+        "minSep": 0.05,
+        "maxNotasSeg": 12
+      }
+    },
+    "largaPasos": 4,
+    "brillantes": ["coro"],
+    "ventanas": { "perfecto": 0.045, "bien": 0.09, "ok": 0.135, "marcada": 0.7 },
+    "puntos": { "perfecto": 100, "bien": 60, "ok": 30, "marcada": 1.5, "larga": 50 },
+    "combo": { "paso": 10, "max": 4 },
+    "primus": { "seg": 8, "factor": 2 },
+    "estrellas": {
+      "umbrales": [0, 0.35, 0.55, 0.75, 0.92]
+    }
+  },
+  "textos": {
+    "titulo": { "es": "Ensayo con Salonas", "en": "Rehearsal with Salonas" },
+    "dificultad": { "es": "Dificultad", "en": "Difficulty" },
+    "cancion": { "es": "Canción", "en": "Song" },
+    "niveles": {
+      "facil": { "es": "Fácil", "en": "Easy" },
+      "normal": { "es": "Normal", "en": "Normal" },
+      "dificil": { "es": "Difícil", "en": "Hard" },
+      "experto": { "es": "Experto", "en": "Expert" }
+    },
+    "tocar": { "es": "¡A tocar! (Enter)", "en": "Play! (Enter)" },
+    "salir": { "es": "Salir (Esc)", "en": "Leave (Esc)" },
+    "calibrar": { "es": "Calibrar (C)", "en": "Calibrate (C)" },
+    "calibracion": { "es": "Calibración (ms)", "en": "Calibration (ms)" },
+    "calTexto": {
+      "es": "Toca una tecla (o la pantalla) con cada clic. Los primeros {n} clics son de entrada.",
+      "en": "Press a key (or tap the screen) with each click. The first {n} clicks are a count-in."
+    },
+    "calCuenta": { "es": "Toques: {x} de {n}", "en": "Taps: {x} of {n}" },
+    "calLista": { "es": "Listo: {x} ms", "en": "Done: {x} ms" },
+    "calFalta": { "es": "Faltaron toques. Prueba otra vez.", "en": "Not enough taps. Try again." },
+    "sinCancion": { "es": "Esa canción no está lista.", "en": "That song is not ready." },
+    "ayuda": {
+      "es": "D F J K tocan los trastes · mantén la tecla en las notas largas · los acordes van juntos · Esc pausa",
+      "en": "D F J K play the frets · hold the key on long notes · chords go together · Esc pauses"
+    },
+    "ayudaTactil": {
+      "es": "Toca los trastes de abajo · mantén en las notas largas · los acordes van juntos",
+      "en": "Tap the frets below · hold on long notes · chords go together"
+    },
+    "pausa": { "es": "Pausa", "en": "Paused" },
+    "seguir": { "es": "Seguir (Esc)", "en": "Resume (Esc)" },
+    "otraVez": { "es": "Otra vez (Enter)", "en": "Again (Enter)" },
+    "resultados": { "es": "Resultados", "en": "Results" },
+    "puntos": { "es": "Puntos", "en": "Score" },
+    "precision": { "es": "Precisión", "en": "Accuracy" },
+    "comboMax": { "es": "Combo máximo", "en": "Best combo" },
+    "juicios": {
+      "perfecto": { "es": "¡Perfecto!", "en": "Perfect!" },
+      "bien": { "es": "Bien", "en": "Good" },
+      "ok": { "es": "OK", "en": "OK" },
+      "fallo": { "es": "Fallo", "en": "Miss" }
+    },
+    "combo": { "es": "Combo", "en": "Combo" },
+    "locales": {
+      "sala": { "es": "Sala de ensayo", "en": "Rehearsal room" },
+      "bar": { "es": "Bar", "en": "Bar" },
+      "festival": { "es": "Festival", "en": "Festival" }
+    },
+    "record": { "es": "Récord", "en": "Best" },
+    "sinRecord": { "es": "sin récord", "en": "no record" },
+    "modo": { "es": "Modo", "en": "Mode" },
+    "modoGira": { "es": "La gira", "en": "The tour" },
+    "modoPractica": { "es": "Práctica", "en": "Practice" },
+    "practicaSeccion": { "es": "Sección", "en": "Section" },
+    "practicaVel": { "es": "Velocidad", "en": "Speed" },
+    "secciones": {
+      "intro": { "es": "Intro", "en": "Intro" },
+      "verso": { "es": "Verso", "en": "Verse" },
+      "precoro": { "es": "Precoro", "en": "Pre-chorus" },
+      "coro": { "es": "Coro", "en": "Chorus" },
+      "puente": { "es": "Puente", "en": "Bridge" },
+      "solo": { "es": "Solo", "en": "Solo" },
+      "final": { "es": "Final", "en": "Outro" }
+    },
+    "energia": { "es": "Público", "en": "Crowd" },
+    "primus": { "es": "Primus", "en": "Primus" },
+    "primusListo": { "es": "¡Espacio!", "en": "Press Space!" },
+    "primusToque": { "es": "Primus", "en": "Primus" },
+    "primusX": { "es": "PRIMUS ×{n}", "en": "PRIMUS ×{n}" },
+    "duelo": { "es": "Duelo", "en": "Duel" },
+    "teToca": { "es": "¡Te toca!", "en": "Your turn!" },
+    "escucha": { "es": "Escucha a Salonas", "en": "Listen to Salonas" },
+    "resAbucheo": { "es": "¡El público se fue!", "en": "The crowd left!" },
+    "resAbucheoTxt": {
+      "es": "La energía llegó a cero: esta vez no cuenta para el récord.",
+      "en": "The energy hit zero: this run does not count for the record."
+    },
+    "resPractica": { "es": "Práctica", "en": "Practice" },
+    "resPracticaTxt": { "es": "La práctica no cuenta para los récords.", "en": "Practice does not count for records." },
+    "recordNuevo": { "es": "¡Nuevo récord!", "en": "New best!" },
+    "recordAnterior": { "es": "Récord: {x}", "en": "Best: {x}" },
+    "primusVeces": { "es": "Modo Primus", "en": "Primus Mode" },
+    "dueloPuntos": { "es": "Duelo de solos", "en": "Solo duel" },
+    "publicoFin": { "es": "Público", "en": "Crowd" },
+    "volverMenu": { "es": "Menú", "en": "Menu" },
+    "ayudaPrimus": { "es": " · Espacio: Primus", "en": " · Space: Primus" }
+  }
+}

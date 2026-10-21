@@ -56,5 +56,18 @@
         "ar-modoEspecial": { "ancla": "id", "x": 204, "y": 216, "w": 88, "h": 48, "letra": 0.75 }
       }
     }
+  },
+  "salonas": {
+    "nota": "Los 4 trastes siguen la línea 3D; sus dimensiones se calculan para coincidir con ella. Pausa y Primus se ubican en la esquina superior derecha.",
+    "normal": {
+      "botones": {
+        "traste-0": { "ancla": "ii", "x": 0, "y": 0, "w": 24, "h": 120, "seguro": false },
+        "traste-1": { "ancla": "ii", "x": 24, "y": 0, "w": 24, "h": 120, "seguro": false },
+        "traste-2": { "ancla": "ii", "x": 48, "y": 0, "w": 24, "h": 120, "seguro": false },
+        "traste-3": { "ancla": "ii", "x": 72, "y": 0, "w": 24, "h": 120, "seguro": false },
+        "pausa": { "ancla": "sd", "x": 12, "y": 80, "w": 100, "h": 40 },
+        "primus": { "ancla": "sd", "x": 12, "y": 120, "w": 100, "h": 40 }
+      }
+    }
   }
 }

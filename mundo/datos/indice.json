@@ -92,6 +92,12 @@
       "fase": 13,
       "que": "Música: temas de capas (ritmo, notas sobre el acorde, acordes, melodía, arpegio) con progresión y niveles, y sintetizadores propios (onda, envolvente, filtro, voces, armónicos); un tema con la clave de uno del código lo reemplaza (carrera: living, cocina, patio, techo, podio; mundo: ambiente, venjy, pony, lona, campamento, iglu, lenera, playa, jefe) y con borrador: true el juego no lo usa; se edita en la pestaña Música y se aplica en vivo con supervivencia.html?estudio"
     },
+    "salonas": {
+      "esquema": "salonas",
+      "lee": "mundo/supervivencia/salonas.js",
+      "fase": 15,
+      "que": "Ajustes, reglas de partitura y textos ES/EN de Salonas «La Gira»; main.js los carga al abrir el juego"
+    },
     "borradores": {
       "esquema": "borradores",
       "lee": null,
