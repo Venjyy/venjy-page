@@ -1168,4 +1168,5 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - Comparte datos, envío en vivo y Guardar con la pestaña Salonas (`ctx.salonas`), para no pisar el mismo archivo. Prueba: `mundo/tests/ritmo.mjs`.
 - **S10b hecho**: «Probar en el juego» manda `salonas { accion: 'probar', cancion, dificultad, seccion }` (índice de la sección del selector, el mismo de la Práctica); el juego abre esa canción en Práctica solo con esa sección y con los ajustes a mano actuales. `terminar` cierra Salonas.
 - **S10c-1 hecho**: panel «Canción · estructura» (nombre ES/EN, bpm y pasos base; por sección: nombre, compases, nivel, bpm, pasos, mover/duplicar/quitar/agregar; progresión del nivel). Edita `musica.json → canciones` a través de `ctx.musica` (datos, deshacer y Guardar compartidos con la pestaña Música, que se monta antes). Funciones puras en `ritmo-modelo.mjs`. La partitura se regenera sola y va en vivo al juego.
-- **Falta** (S10c-2): editar la capa `bajo` (piano roll) y `vozBajo`.
+- **S10c-2 parte 1 hecho**: panel «Bajo · piano roll» (`ritmo-bajo.js`) sobre la capa de bajo del nivel de la sección elegida, con los carriles de cada dificultad debajo en vivo.
+- **Falta** (S10c-2 parte 2): escuchar la capa desde el Estudio y `vozBajo`.

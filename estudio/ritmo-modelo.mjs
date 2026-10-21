@@ -131,3 +131,92 @@ export function ponerProg(c, nivel, texto) {
     if (!lista.length || JSON.stringify(lista) === JSON.stringify(c.prog)) delete progs[nivel]; else progs[nivel] = lista;
     return { progs, malo: null };
 }
+
+// ---------- Capa `bajo` (S10c-2) ----------
+// Notas [paso, técnica, nota MIDI, duración en pasos, extra]. El `paso` cuenta desde el inicio del patrón de la capa
+// (`compases` × pasos de la sección). La partitura toma la primera nota de cada paso, así que aquí hay una por paso.
+export { nombreNota } from './musica-modelo.mjs';
+export const TECNICAS = ['s', 'p', 'g', 't', 'd', 'a', 'r'];
+export const NOMBRE_TECNICA = { s: ['Slap', 'Slap'], p: ['Pop', 'Pop'], g: ['Fantasma', 'Ghost'], t: ['Tapping', 'Tapping'], d: ['Glissando', 'Glissando'], a: ['Armónico', 'Harmonic'], r: ['Rasgueo', 'Strum'] };
+export const NOTA_MIN = 20, NOTA_MAX = 100;
+
+// Capas de bajo que suenan en un nivel: [{ i (índice en capas), capa }]
+export function capasBajo(c, nivel) {
+    const l = [];
+    (c.capas || []).forEach((capa, i) => { if (capa.bajo && (!capa.niveles || capa.niveles.includes(nivel))) l.push({ i, capa }); });
+    return l;
+}
+export const largoPatron = (capa, pasos) => (capa.compases || 1) * pasos;
+
+// El extra que pide cada técnica al crear una nota: d = nota final, r = acorde
+export function extraPorDefecto(tipo, nota) {
+    if (tipo === 'd') return Math.min(NOTA_MAX, nota + 5);
+    if (tipo === 'r') return [nota, Math.min(NOTA_MAX, nota + 7), Math.min(NOTA_MAX, nota + 12)];
+    return undefined;
+}
+export function notaValida(n) {
+    if (!Array.isArray(n) || n.length < 4 || n.length > 5) return false;
+    const [paso, tipo, nota, dur, extra] = n;
+    if (!Number.isInteger(paso) || paso < 0 || !TECNICAS.includes(tipo)) return false;
+    if (!Number.isInteger(nota) || nota < NOTA_MIN || nota > NOTA_MAX || !(dur >= 0.05 && dur <= 64)) return false;
+    if (tipo === 'd') return Number.isInteger(extra) && extra >= NOTA_MIN && extra <= NOTA_MAX;
+    if (tipo === 'r') return extra === undefined || (Array.isArray(extra) && extra.length >= 1 && extra.length <= 6 && extra.every(x => Number.isInteger(x) && x >= NOTA_MIN && x <= NOTA_MAX));
+    return n.length === 4;
+}
+export const notaEnPaso = (bajo, paso) => bajo.findIndex(n => n[0] === paso);
+
+// Pone una nota (reemplaza la que ya esté en ese paso). Devuelve el bajo nuevo o null si no es válida / no cabe en el patrón.
+export function ponerNotaBajo(bajo, nota, largo) {
+    if (!notaValida(nota) || nota[0] >= largo) return null;
+    const sal = clonar(bajo), i = notaEnPaso(sal, nota[0]);
+    if (i >= 0) sal[i] = clonar(nota); else sal.push(clonar(nota));
+    sal.sort((a, b) => a[0] - b[0]);
+    return sal;
+}
+// Quita la nota de un paso. Una capa necesita al menos una nota (esquema): con una sola, null.
+export function quitarNotaBajo(bajo, paso) {
+    const i = notaEnPaso(bajo, paso);
+    if (i < 0 || bajo.length <= 1) return null;
+    const sal = clonar(bajo); sal.splice(i, 1); return sal;
+}
+// Cambia un campo de la nota de un paso: tipo | nota | dur | extra | paso. Al cambiar la técnica se ajusta el extra que pide.
+export function cambiarNotaBajo(bajo, paso, campo, valor, largo) {
+    const i = notaEnPaso(bajo, paso);
+    if (i < 0) return null;
+    const n = clonar(bajo[i]);
+    if (campo === 'tipo') { n[1] = valor; if (valor === 'd' || valor === 'r') n[4] = (valor === 'd' && typeof n[4] === 'number') || (valor === 'r' && Array.isArray(n[4])) ? n[4] : extraPorDefecto(valor, n[2]); else n.length = 4; }
+    else if (campo === 'nota') { const d = valor - n[2]; n[2] = valor; if (typeof n[4] === 'number') n[4] += d; else if (Array.isArray(n[4])) n[4] = n[4].map(x => x + d); }
+    else if (campo === 'dur') n[3] = valor;
+    else if (campo === 'extra') n[4] = valor;
+    else if (campo === 'paso') { n[0] = valor; if (valor !== paso && notaEnPaso(bajo, valor) >= 0) return null; }
+    else return null;
+    if (!notaValida(n) || n[0] >= largo) return null;
+    const sal = clonar(bajo); sal[i] = n; sal.sort((a, b) => a[0] - b[0]);
+    return sal;
+}
+// Cambia los compases del patrón. Las notas que quedan fuera se quitan (devuelve { bajo, perdidas }); null si no queda ninguna.
+export function cambiarCompasesBajo(capa, compases, pasos) {
+    if (!Number.isInteger(compases) || compases < 1 || compases > 4) return null;
+    const largo = compases * pasos, bajo = capa.bajo.filter(n => n[0] < largo);
+    return bajo.length ? { bajo: clonar(bajo), perdidas: capa.bajo.length - bajo.length } : null;
+}
+// Texto <-> lista de notas para el acorde del rasgueo («28 35 40»)
+export const acordeATexto = a => (Array.isArray(a) ? a : []).join(' ');
+export function textoAAcorde(t) {
+    const l = String(t || '').split(/[\s,]+/).filter(Boolean).map(Number);
+    return l.length && l.length <= 6 && l.every(x => Number.isInteger(x) && x >= NOTA_MIN && x <= NOTA_MAX) ? l : null;
+}
+
+// Dónde cae cada nota de la partitura de una dificultad dentro del patrón de una capa, para dibujar los carriles bajo la rejilla.
+// Devuelve [{ col, carril, carriles, marcada }] para la sección `n` (índice), solo en la primera vuelta del patrón.
+export function carrilesEnPatron(vista, c, n, compasesPatron) {
+    const est = c.estructura || [];
+    if (!est[n]) return [];
+    const ini = est.slice(0, n).reduce((a, s) => a + s.compases, 0), P = est[n].pasos || c.pasos || 16, sal = [];
+    for (const x of vista.notas) {
+        if (x.n !== n) continue;
+        const [comp, paso] = x.clave.split(':').map(Number), k = comp - ini;
+        if (k < compasesPatron) sal.push({ col: k * P + paso, carriles: x.carriles || [x.carril], marcada: x.marcada });
+    }
+    return sal;
+}

@@ -8,10 +8,11 @@
 // «Probar en el juego» (S10b): mensaje `salonas` del puente; el juego abre esa canción en Práctica, solo con la sección elegida
 // y con los ajustes a mano actuales.
 // S10c-1: panel «Canción» para editar la estructura (secciones, compases, nivel, tempo, progresión) de musica.json → canciones;
-// comparte datos, deshacer y Guardar con la pestaña Música (ctx.musica). Pendiente (S10c-2): editar la capa `bajo`.
+// comparte datos, deshacer y Guardar con la pestaña Música (ctx.musica). S10c-2: panel «Bajo» (ritmo-bajo.js), piano roll de la capa `bajo` de la sección elegida con los carriles de cada dificultad debajo.
 // =========================================================
 import { armar, revisar, ponerAjuste, ajustesDe, contarAjustes, DIFICULTADES, NOMBRES_SECCION, nivelDe, nivelesUsados, agregarSeccion, duplicarSeccion, quitarSeccion, moverSeccion, cambiarSeccion, progDe, progATexto, ponerProg } from './ritmo-modelo.mjs';
 import { revisarCancion } from '../mundo/supervivencia/musica-motor.js';
+import { montarBajo } from './ritmo-bajo.js';
 
 const COLORES_BASE = ['#55c34a', '#d8373a', '#f0d23c', '#3c78d8'];
 const FONDO_SEC = ['#3a2a1c', '#2c3a1c', '#1c2f3a', '#3a1c33', '#3a331c'];
@@ -217,7 +218,7 @@ export async function montarRitmo(ctx) {
         mu.editar(d => f(d.canciones[cancion]));
         elegida = null; alCambiarDatos(); return true;
     }
-    const nuevaEst = (nueva, tras) => { if (editarCancion(c => { c.estructura = nueva; }, !!nueva) && tras) { tras(); pintarEstructura(); } };
+    const nuevaEst = (nueva, tras) => { if (editarCancion(c => { c.estructura = nueva; }, !!nueva) && tras) { tras(); pintarEstructura(); bajo.pintar(); } };
     function nivelesOfrecidos(c) {
         const s = new Set([...NOMBRES_SECCION, ...nivelesUsados(c)]);
         for (const p of c.capas || []) for (const n of p.niveles || []) s.add(n);
@@ -255,7 +256,7 @@ export async function montarRitmo(ctx) {
         // secciones
         est.forEach((sec, i) => {
             const fila = el('div', 'ri-fila' + (i === secEd ? ' sel' : ''));
-            fila.addEventListener('click', () => { secEd = i; pintarEstructura(); });
+            fila.addEventListener('click', () => { secEd = i; pintarEstructura(); bajo.pintar(); });
             fila.appendChild(el('span', 'ri-num', String(i + 1)));
             fila.appendChild(campo(t('sección', 'section'), 'text', sec.seccion, v => nuevaEst(cambiarSeccion(est, i, 'seccion', v.trim())), { lista: 'ri-niveles' }));
             fila.appendChild(campo(t('compases', 'bars'), 'number', sec.compases, v => nuevaEst(cambiarSeccion(est, i, 'compases', v)), { min: 1, max: 64 }));
@@ -290,11 +291,21 @@ export async function montarRitmo(ctx) {
         caja2.appendChild(ul);
     }
 
+    // ---------- capa bajo (S10c-2) ----------
+    const bajo = montarBajo({
+        el, t, ingles: () => ctx.idioma === 'en', rotular, cuerpo: $('ri-bajo'),
+        cancion: () => (cancion && cancionActual() ? { clave: cancion, datos: cancionActual() } : null),
+        seccion: () => secEd,
+        editar: f => editarCancion(f),
+        armar: d => armar(cancion, cancionActual(), d, datos().reglas, datos().ajustes),
+        colores
+    });
+
     // ---------- vida de la pestaña ----------
     function alCambiarDatos() {
         recalcular(); llenarSelectores();
         if (revisado) { const c = musica.canciones[cancion]; avisos = c ? revisar(cancion, c, datos().reglas, datos().ajustes) : []; pintarAvisos(); }
-        dibujar(); pintarNota(); pintarEstructura(); estadoGuardar();
+        dibujar(); pintarNota(); pintarEstructura(); bajo.pintar(); estadoGuardar();
     }
     const todo = () => { elegida = null; alCambiarDatos(); };
     function estadoGuardar() {

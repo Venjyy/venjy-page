@@ -127,5 +127,51 @@ ok(html.includes('id="ri-probar"') && html.includes('id="ri-seccion"') && html.i
     ok(/ctx.musica/.test(ritmoJs) && /pintarEstructura/.test(ritmoJs) && html.includes('id="ri-estructura"') && html.includes('id="ri-deshacer"'), 'Ritmo edita la estructura vía ctx.musica');
 }
 
+// ---------- capa bajo (S10c-2) ----------
+{
+    const est = C.estructura, i = est.findIndex(s => M.capasBajo(C, M.nivelDe(s)).length), niv = M.nivelDe(est[i]);
+    const { capa } = M.capasBajo(C, niv)[0], P = est[i].pasos || C.pasos || 16, largo = M.largoPatron(capa, P), b = capa.bajo;
+    ok(i >= 0 && b.every(M.notaValida), 'las notas de bajo del JSON pasan notaValida');
+    ok(M.capasBajo(C, 'no-existe').length === 0, 'capasBajo: nivel sin capa');
+    // poner: nota nueva en un paso libre, y reemplazo en uno ocupado
+    const libre = [...Array(largo).keys()].find(p => M.notaEnPaso(b, p) < 0);
+    const nuevo = M.ponerNotaBajo(b, [libre, 's', 40, 1], largo);
+    ok(nuevo && nuevo.length === b.length + 1 && nuevo.every((n, k) => !k || nuevo[k - 1][0] <= n[0]), 'ponerNotaBajo agrega y ordena');
+    ok(M.ponerNotaBajo(nuevo, [libre, 'p', 43, 2], largo).length === nuevo.length, 'ponerNotaBajo reemplaza el mismo paso');
+    ok(M.ponerNotaBajo(b, [largo, 's', 40, 1], largo) === null && M.ponerNotaBajo(b, [0, 'x', 40, 1], largo) === null && M.ponerNotaBajo(b, [0, 's', 5, 1], largo) === null, 'ponerNotaBajo rechaza paso fuera, técnica y nota inválidas');
+    ok(M.ponerNotaBajo(b, [0, 'd', 40, 1], largo) === null && M.ponerNotaBajo(b, [0, 'd', 40, 1, 45], largo) !== null, 'el glissando necesita nota final');
+    ok(b === capa.bajo && M.ponerNotaBajo(b, [libre, 's', 40, 1], largo) !== b && b.length === capa.bajo.length, 'no toca el original');
+    // quitar
+    ok(M.quitarNotaBajo(nuevo, libre).length === b.length && M.quitarNotaBajo(nuevo, 9999) === null && M.quitarNotaBajo([[0, 's', 40, 1]], 0) === null, 'quitarNotaBajo (la última no se quita)');
+    // cambiar: la técnica ajusta el extra; la altura mueve la nota final y el acorde
+    const g = M.cambiarNotaBajo([[0, 's', 40, 2]], 0, 'tipo', 'd', 16);
+    ok(g && g[0][1] === 'd' && g[0][4] === 45, 'cambiar a glissando pone una nota final');
+    ok(M.cambiarNotaBajo(g, 0, 'nota', 42, 16)[0][4] === 47, 'subir la altura sube la nota final');
+    const r = M.cambiarNotaBajo([[0, 's', 28, 2]], 0, 'tipo', 'r', 16);
+    ok(Array.isArray(r[0][4]) && M.cambiarNotaBajo(r, 0, 'tipo', 's', 16)[0].length === 4, 'rasgueo lleva acorde y al salir se quita el extra');
+    ok(M.cambiarNotaBajo(nuevo, libre, 'paso', b[0][0], largo) === null && M.cambiarNotaBajo(nuevo, libre, 'dur', 0, largo) === null, 'no se mueve a un paso ocupado ni dura 0');
+    ok(M.textoAAcorde('28 35, 40').join() === '28,35,40' && M.textoAAcorde('x') === null && M.acordeATexto([28, 35]) === '28 35', 'acorde <-> texto');
+    // compases del patrón: se pierden las notas de fuera
+    const dos = { ...capa, compases: 2, bajo: [[0, 's', 40, 1], [P + 1, 'p', 43, 1]] };
+    const uno = M.cambiarCompasesBajo(dos, 1, P);
+    ok(uno && uno.bajo.length === 1 && uno.perdidas === 1 && M.cambiarCompasesBajo(dos, 5, P) === null, 'cambiarCompasesBajo');
+    ok(M.cambiarCompasesBajo({ bajo: [[P, 's', 40, 1]] }, 1, P) === null, 'no deja una capa sin notas');
+    // la partitura sigue al bajo y los carriles caen en columnas del patrón
+    const Cn = JSON.parse(JSON.stringify(C)), capaN = Cn.capas.find(x => x.bajo && (!x.niveles || x.niveles.includes(niv)));
+    capaN.bajo = M.ponerNotaBajo(capaN.bajo, [libre, 's', 40, 1], largo);
+    const v0 = M.armar(K, C, D, R, null), v1 = M.armar(K, Cn, D, R, null);
+    ok(v1.notas.length >= v0.notas.length, 'agregar una nota al bajo no quita notas de la partitura');
+    const cp = M.carrilesEnPatron(v1, Cn, i, capaN.compases || 1);
+    ok(cp.length > 0 && cp.every(m => m.col >= 0 && m.col < largo && m.carriles.length >= 1), 'carrilesEnPatron: columnas dentro del patrón');
+    ok(cp.length <= M.carrilesEnPatron(M.armar(K, Cn, 'experto', R, null), Cn, i, capaN.compases || 1).length, 'experto tiene al menos tantas notas como normal');
+}
+
+// ---------- cableado S10c-2 ----------
+{
+    const bajoJs = leer('estudio', 'ritmo-bajo.js');
+    ok(/montarBajo/.test(ritmoJs) && html.includes('id="ri-bajo"') && /armar/.test(bajoJs) && /carrilesEnPatron/.test(bajoJs), 'Ritmo monta el piano roll del bajo');
+    ok(new Set((bajoJs.match(/\$\(['"]ri-[a-z-]+/g) || [])).size === 0 && /ri-nota-bajo/.test(bajoJs), 'el módulo del bajo no depende de ids ajenos');
+}
+
 console.log(fallos ? `${fallos} fallas` : 'ritmo: todo bien');
 process.exit(fallos ? 1 : 0);
