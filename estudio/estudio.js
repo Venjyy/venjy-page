@@ -91,8 +91,8 @@ await montarFormas(ctx);
 await montarCarrera(ctx);
 await montarArena(ctx);
 await montarSalonas(ctx);
+await montarMusica(ctx); // antes que Ritmo: Ritmo comparte sus datos (ctx.musica)
 await montarRitmo(ctx);
-await montarMusica(ctx);
 await montarVida(ctx);
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).

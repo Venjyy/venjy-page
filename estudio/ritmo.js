@@ -6,9 +6,12 @@
 // guarda en salonas.json → ajustes.<canción>.<dificultad>.<compás:paso> (ritmo-modelo.mjs) y nunca cambia cuándo suena.
 // Comparte los datos, el envío en vivo y Guardar con la pestaña Salonas (ctx.salonas), así no pisan el mismo archivo.
 // «Probar en el juego» (S10b): mensaje `salonas` del puente; el juego abre esa canción en Práctica, solo con la sección elegida
-// y con los ajustes a mano actuales. Pendiente (S10c): editar las canciones de musica.json.
+// y con los ajustes a mano actuales.
+// S10c-1: panel «Canción» para editar la estructura (secciones, compases, nivel, tempo, progresión) de musica.json → canciones;
+// comparte datos, deshacer y Guardar con la pestaña Música (ctx.musica). Pendiente (S10c-2): editar la capa `bajo`.
 // =========================================================
-import { armar, revisar, ponerAjuste, ajustesDe, contarAjustes, DIFICULTADES } from './ritmo-modelo.mjs';
+import { armar, revisar, ponerAjuste, ajustesDe, contarAjustes, DIFICULTADES, NOMBRES_SECCION, nivelDe, nivelesUsados, agregarSeccion, duplicarSeccion, quitarSeccion, moverSeccion, cambiarSeccion, progDe, progATexto, ponerProg } from './ritmo-modelo.mjs';
+import { revisarCancion } from '../mundo/supervivencia/musica-motor.js';
 
 const COLORES_BASE = ['#55c34a', '#d8373a', '#f0d23c', '#3c78d8'];
 const FONDO_SEC = ['#3a2a1c', '#2c3a1c', '#1c2f3a', '#3a1c33', '#3a331c'];
@@ -24,8 +27,9 @@ export async function montarRitmo(ctx) {
     const selCancion = $('ri-cancion'), selDif = $('ri-dificultad'), zoom = $('ri-zoom'), selSec = $('ri-seccion');
     const sa = ctx.salonas;
     if (!sa) { msg.textContent = 'La pestaña Salonas no cargó: recarga el Estudio.'; return; }
-    let musica = null;
-    try { musica = await (await fetch('../mundo/datos/musica.json', { cache: 'no-cache' })).json(); } catch (e) { msg.textContent = 'No se pudo leer mundo/datos/musica.json'; return; }
+    const mu = ctx.musica;
+    if (!mu) { msg.textContent = 'La pestaña Música no cargó: recarga el Estudio.'; return; }
+    const musica = { get canciones() { return mu.datos().canciones || {}; } }; // musica.json vivo, el mismo que edita la pestaña Música
 
     const datos = () => sa.datos();
     const canciones = () => ((datos().juego || {}).canciones || []).filter(k => musica.canciones && musica.canciones[k]);
@@ -204,20 +208,103 @@ export async function montarRitmo(ctx) {
         sa.cambio(); alCambiarDatos();
     }
 
+    // ---------- estructura de la canción (S10c-1) ----------
+    let secEd = 0; // sección cuya progresión se ve
+    const cancionActual = () => (cancion && musica.canciones[cancion]) || null;
+    // Aplica un cambio a la canción elegida (con deshacer y envío en vivo); valido=false: no se toca nada
+    function editarCancion(f, valido = true) {
+        if (!cancionActual() || !valido) { rotular('Ese valor no es válido.', 'That value is not valid.', 'error'); pintarEstructura(); return false; }
+        mu.editar(d => f(d.canciones[cancion]));
+        elegida = null; alCambiarDatos(); return true;
+    }
+    const nuevaEst = (nueva, tras) => { if (editarCancion(c => { c.estructura = nueva; }, !!nueva) && tras) { tras(); pintarEstructura(); } };
+    function nivelesOfrecidos(c) {
+        const s = new Set([...NOMBRES_SECCION, ...nivelesUsados(c)]);
+        for (const p of c.capas || []) for (const n of p.niveles || []) s.add(n);
+        return [...s];
+    }
+    function pintarEstructura() {
+        const cuerpo = $('ri-estructura'); cuerpo.textContent = '';
+        const c = cancionActual();
+        if (!c) { cuerpo.appendChild(el('p', 'mensaje', t('Elige una canción.', 'Pick a song.'))); return; }
+        const est = c.estructura || [];
+        if (secEd >= est.length) secEd = Math.max(0, est.length - 1);
+        const caja2 = el('div', 'ri-est'); cuerpo.appendChild(caja2);
+        const lista = el('datalist'); lista.id = 'ri-niveles'; for (const n of nivelesOfrecidos(c)) { const o = el('option'); o.value = n; lista.appendChild(o); }
+        caja2.appendChild(lista);
+        const campo = (rotulo, tipo, valor, alCambiar, extra = {}) => {
+            const lb = el('label'); lb.appendChild(el('span', '', rotulo));
+            const i = el('input'); i.type = tipo; i.value = valor == null ? '' : String(valor);
+            if (extra.lista) i.setAttribute('list', extra.lista);
+            if (extra.ph) i.placeholder = extra.ph;
+            if (extra.clase) i.className = extra.clase;
+            if (extra.min != null) { i.min = extra.min; i.max = extra.max; }
+            i.addEventListener('click', e => e.stopPropagation());
+            i.addEventListener('change', () => alCambiar(i.value));
+            lb.appendChild(i); return lb;
+        };
+        // nombre y tempo base de la canción
+        const cab = el('div', 'ri-fila');
+        const nom = c.nombre || {};
+        const poner = (k, v) => { const n = { es: nom.es || '', en: nom.en || '' }; n[k] = v; if (!n.es && !n.en) return; editarCancion(cc => { cc.nombre = { es: n.es || n.en, en: n.en || n.es }; }); };
+        cab.appendChild(campo('ES', 'text', nom.es, v => poner('es', v), { clase: 'ancho' }));
+        cab.appendChild(campo('EN', 'text', nom.en, v => poner('en', v), { clase: 'ancho' }));
+        cab.appendChild(campo('bpm', 'number', c.bpm, v => { const x = Number(v); editarCancion(cc => { cc.bpm = x; }, x >= 30 && x <= 300); }, { min: 30, max: 300 }));
+        cab.appendChild(campo(t('pasos', 'steps'), 'number', c.pasos || 16, v => { const x = Number(v); editarCancion(cc => { cc.pasos = x; }, Number.isInteger(x) && x >= 4 && x <= 32); }, { min: 4, max: 32 }));
+        caja2.appendChild(cab);
+        // secciones
+        est.forEach((sec, i) => {
+            const fila = el('div', 'ri-fila' + (i === secEd ? ' sel' : ''));
+            fila.addEventListener('click', () => { secEd = i; pintarEstructura(); });
+            fila.appendChild(el('span', 'ri-num', String(i + 1)));
+            fila.appendChild(campo(t('sección', 'section'), 'text', sec.seccion, v => nuevaEst(cambiarSeccion(est, i, 'seccion', v.trim())), { lista: 'ri-niveles' }));
+            fila.appendChild(campo(t('compases', 'bars'), 'number', sec.compases, v => nuevaEst(cambiarSeccion(est, i, 'compases', v)), { min: 1, max: 64 }));
+            fila.appendChild(campo(t('nivel', 'level'), 'text', sec.nivel || '', v => nuevaEst(cambiarSeccion(est, i, 'nivel', v.trim())), { lista: 'ri-niveles', ph: sec.seccion }));
+            fila.appendChild(campo('bpm', 'number', sec.bpm || '', v => nuevaEst(cambiarSeccion(est, i, 'bpm', v)), { min: 30, max: 300, ph: String(c.bpm) }));
+            fila.appendChild(campo(t('pasos', 'steps'), 'number', sec.pasos || '', v => nuevaEst(cambiarSeccion(est, i, 'pasos', v)), { min: 4, max: 32, ph: String(c.pasos || 16) }));
+            const boton = (txt, titulo, f) => { const b = el('button', 'boton chico secundario', txt); b.type = 'button'; b.title = titulo; b.addEventListener('click', e => { e.stopPropagation(); f(); }); fila.appendChild(b); };
+            boton('↑', t('Subir', 'Move up'), () => nuevaEst(moverSeccion(est, i, -1), () => { secEd = Math.max(0, i - 1); }));
+            boton('↓', t('Bajar', 'Move down'), () => nuevaEst(moverSeccion(est, i, 1), () => { secEd = Math.min(est.length - 1, i + 1); }));
+            boton('⧉', t('Duplicar', 'Duplicate'), () => nuevaEst(duplicarSeccion(est, i), () => { secEd = i + 1; }));
+            boton('✕', t('Quitar (una canción necesita al menos una sección)', 'Remove (a song needs at least one section)'), () => nuevaEst(quitarSeccion(est, i)));
+            caja2.appendChild(fila);
+        });
+        const mas = el('button', 'boton chico', t('Agregar sección', 'Add section')); mas.type = 'button';
+        mas.addEventListener('click', () => nuevaEst(agregarSeccion(est, est.length - 1, 'verso', 4), () => { secEd = est.length; }));
+        caja2.appendChild(mas);
+        // progresión del nivel de la sección elegida
+        const sec = est[secEd];
+        if (sec) {
+            const nivel = nivelDe(sec), fila = el('div', 'ri-fila ri-prog');
+            fila.appendChild(campo(t('acordes del nivel «' + nivel + '» (uno por compás: Am D F G)', 'chords of level «' + nivel + '» (one per bar: Am D F G)'), 'text', progATexto(progDe(c, nivel)), v => {
+                const r = ponerProg(c, nivel, v);
+                if (r.malo) { rotular('No conozco el acorde «' + r.malo + '».', 'I do not know the chord «' + r.malo + '».', 'error'); pintarEstructura(); return; }
+                editarCancion(cc => { if (Object.keys(r.progs).length) cc.progs = r.progs; else delete cc.progs; });
+            }, { clase: 'ancho' }));
+            caja2.appendChild(fila);
+        }
+        // problemas que ve el motor (p. ej. un nivel nuevo sin capas)
+        const problemas = revisarCancion(c, mu.datos().instrumentos);
+        const ul = el('ul', 'ri-avisos');
+        if (problemas.length) for (const p of problemas) ul.appendChild(el('li', 'error', '● ' + p)); else ul.appendChild(el('li', 'ok', t('La estructura es válida.', 'The structure is valid.')));
+        caja2.appendChild(ul);
+    }
+
     // ---------- vida de la pestaña ----------
     function alCambiarDatos() {
         recalcular(); llenarSelectores();
         if (revisado) { const c = musica.canciones[cancion]; avisos = c ? revisar(cancion, c, datos().reglas, datos().ajustes) : []; pintarAvisos(); }
-        dibujar(); pintarNota(); estadoGuardar();
+        dibujar(); pintarNota(); pintarEstructura(); estadoGuardar();
     }
     const todo = () => { elegida = null; alCambiarDatos(); };
     function estadoGuardar() {
-        btnGuardar.disabled = !sa.sucio() || !ctx.servidor.escritura;
+        btnGuardar.disabled = !(sa.sucio() || mu.sucio()) || !ctx.servidor.escritura;
+        $('ri-deshacer').disabled = !mu.puedeDeshacer();
         const n = contarAjustes(datos().ajustes, cancion);
         $('ri-resumen').textContent = vista ? t(`${vista.notas.length} notas · ${vista.duracion.toFixed(1)} s · ${n} ajustes a mano en esta canción`, `${vista.notas.length} notes · ${vista.duracion.toFixed(1)} s · ${n} hand tweaks in this song`) : '';
     }
 
-    selCancion.addEventListener('change', () => { cancion = selCancion.value; avisos = []; revisado = false; pintarAvisos(); todo(); });
+    selCancion.addEventListener('change', () => { cancion = selCancion.value; secEd = 0; avisos = []; revisado = false; pintarAvisos(); todo(); });
     selDif.addEventListener('change', () => { dificultad = selDif.value; todo(); });
     zoom.addEventListener('input', () => dibujar());
     $('ri-revisar').addEventListener('click', revisarAhora);
@@ -238,9 +325,18 @@ export async function montarRitmo(ctx) {
         elegida = n ? n.clave : null; dibujar(); pintarNota();
         if (n && vista.secciones[n.n]) selSec.value = String(n.n); // «Probar» parte desde la sección de la nota
     });
-    btnGuardar.addEventListener('click', async () => { rotular('Guardando…', 'Saving…'); await sa.guardar(); msg.textContent = sa.mensaje(); msg.className = 'mensaje'; estadoGuardar(); });
-    $('ri-descartar').addEventListener('click', () => sa.descartar());
+    btnGuardar.addEventListener('click', async () => {
+        rotular('Guardando…', 'Saving…');
+        const dicen = [];
+        if (mu.sucio()) { await mu.guardar(); dicen.push([mu.mensaje(), mu.sucio()]); }
+        if (sa.sucio()) { await sa.guardar(); dicen.push([sa.mensaje(), sa.sucio()]); }
+        const falla = dicen.find(d => d[1]);
+        msg.textContent = (falla || dicen[0] || [''])[0]; msg.className = 'mensaje' + (falla ? ' error' : ' ok'); estadoGuardar();
+    });
+    $('ri-descartar').addEventListener('click', () => { if (mu.sucio()) mu.descartar(); if (sa.sucio()) sa.descartar(); });
+    $('ri-deshacer').addEventListener('click', () => mu.deshacer());
     sa.alRehacer.push(() => { elegida = null; alCambiarDatos(); });
+    mu.alRehacer.push(() => { elegida = null; alCambiarDatos(); });
     window.addEventListener('keydown', e => {
         if (ctx.pestana !== 'ritmo' || /INPUT|SELECT|TEXTAREA/.test((e.target || {}).tagName || '')) return;
         const n = notaElegida();
