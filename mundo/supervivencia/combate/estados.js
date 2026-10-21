@@ -44,9 +44,11 @@ const objeto = v => v && typeof v === 'object' && !Array.isArray(v);
 const maxBuffer = p => (p.tactil ? COMBATE.tactil.buffer : COMBATE.entrada.buffer);
 
 // ---------- Destino de una intención guardada ----------
+// Un control por altura ({ alto, medio, bajo, neutro, adelante }): `adelante` es el de la altura neutra con el cuerpo
+// yendo hacia el rival (Urban Reign, §17.3: adelante + clic = medio)
 function controlDe(p, e) {
     let k = (p.estilo.controles || {})[e.tipo];
-    if (objeto(k)) k = k[e.altura] || k.medio || k.neutro || null;
+    if (objeto(k)) k = (e.adelante && k.adelante) || k[e.altura] || k.medio || k.neutro || null;
     return k || null;
 }
 export function destino(p, e) {
@@ -59,6 +61,7 @@ export function destino(p, e) {
         if (v.siConecto && !p.conecto) continue;
         const d = marca(v.desde, f), h = v.hasta === undefined ? fin : marca(v.hasta, f);
         if (d === null || h === null || p.c < d || p.c > h) continue;
+        if (v.altura && v.altura !== (e.adelante ? 'adelante' : e.altura)) continue; // (el castigo bajo de la esquiva neutra)
         // Un ataque de la lista que responda a esta intención (combos); si el control apunta a uno de ellos, ese
         const ataques = v.a.filter(k => esAtaque(p.estilo, k) && (p.estilo.ataques[k].intencion || 'atacar') === e.tipo);
         if (ataques.length) return ataques.includes(objetivo) ? objetivo : ataques[0];
@@ -119,7 +122,9 @@ export function avanceEn(def, c) {
 function guardar(p, tipo, intencion) {
     // Gana la última, salvo la defensa, que gana siempre (defenderse nunca se pierde por haber apretado atacar antes)
     if (p.buffer && p.buffer.tipo === 'defensa' && tipo !== 'defensa') return;
-    p.buffer = { tipo, altura: intencion.altura || 'neutro', dir: [...(intencion.mover || [0, 0])], edad: 0 };
+    const altura = intencion.altura || 'neutro', m = intencion.mover || [0, 0];
+    const neutra = altura === 'neutro' || altura === COMBATE.entrada.alturaNeutra;
+    p.buffer = { tipo, altura, adelante: neutra && m[0] >= COMBATE.entrada.adelante, dir: [m[0], m[1]], edad: 0 };
 }
 
 export function paso(p, intencion = {}) {

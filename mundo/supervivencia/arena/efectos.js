@@ -11,6 +11,7 @@
 //   polvo(x, z, motivo, superficie, escala)    (N5) polvo o nieve del suelo al caer, al chocar con la pared, al esquivar
 //   aro(pos, camara, escala)                   (N5) onda pixel que se abre (desvío perfecto, golpes medios y fuertes)
 //   sobre(clave, tipo, x, z, yaw, t)           (N5) estrellas del mareo o marca roja del pecho; tipo null = nada
+//   altura(clave, pos, color, tamano)          (L5) marca de altura en la mano o el pie que golpea; pos null = nada
 //   peligro(clave, base, punta, k)             (L3) destello rojo del arma al avisar un ataque peligroso (k 0..1)
 //   dibujar(dt) / aplicar(R) / destruir()
 // Los tamaños, colores, vidas y velocidades de chispas y destellos van en arena.json → efectos (Estudio → Arena).
@@ -215,6 +216,21 @@ export function crearEfectos(THREE, scene, R) {
     }
 
     // ---------- Estrellas del mareo y marca roja (sobre un peleador mientras dura su reacción) ----------
+    // ---------- Marca de altura (L5, Urban Reign §17.3) ----------
+    // Un cubo pixel en la mano o el pie que golpea durante los últimos cuadros de la anticipación: blanco alto,
+    // amarillo medio, azul bajo (estilo-*.json → avisos.altura)
+    const marcasAltura = new Map();
+    function altura(clave, pos, colorHex, tamano = 0.12) {
+        let s = marcasAltura.get(clave);
+        if (!s) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthWrite: false, transparent: true });
+            const m = new THREE.Mesh(geoChispa, mat); m.visible = false; m.renderOrder = 8; scene.add(m);
+            recursos.push(mat); s = { m, mat }; marcasAltura.set(clave, s);
+        }
+        s.m.visible = !!pos;
+        if (!pos) return;
+        s.m.position.copy(pos); s.m.scale.setScalar(tamano); s.mat.color.set(colorHex || '#ffffff');
+    }
     const sobres = new Map();
     function sobre(clave, tipo, x, z, yaw, t) {
         let s = sobres.get(clave);
@@ -349,7 +365,7 @@ export function crearEfectos(THREE, scene, R) {
         for (const r of recursos) if (r && r.dispose) r.dispose();
         estelas.clear(); cargas.clear(); peligros.clear();
     }
-    return { estela, chispas, carga, impacto, polvo, aro, sobre, peligro, dibujar, aplicar, destruir };
+    return { estela, chispas, carga, impacto, polvo, aro, sobre, peligro, altura, dibujar, aplicar, destruir };
 }
 
 const objeto = v => v && typeof v === 'object' && !Array.isArray(v);

@@ -136,7 +136,7 @@ async function posesCombate(nombre, op) {
         const def0 = D.accionDe(ES, cadena[0]);
         if (cadena.length > 1) { if (i % 2 === 0 && vistos.length < cadena.length) it.atacar = 'apretar'; }
         else if (i === 0 && def0.intencion === 'fuerte') it.fuerte = 'apretar';
-        else if (i === 0 && def0.tipo === 'ataque') it[def0.intencion || 'atacar'] = 'apretar';
+        else if (i === 0 && def0.tipo === 'ataque') it.accion = cadena[0]; // por su clave: con controles por altura (Urban Reign) el clic solo daría el jab
         if (def0.intencion === 'fuerte' && i > 0) it.fuerte = i <= carga ? 'mantener' : 'soltar';
         if (i === 0 && def0.tipo !== 'ataque' && cadena.length === 1) E.iniciar(p, cadena[0]);
         E.paso(p, it);

@@ -340,6 +340,17 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
         _hp.set(0, sori * Math.min(1, hasta) ** 2, z0 + L * hasta); a.local.localToWorld(_hp);
         return { base: _hb, punta: _hp };
     }
+    // Mano o pie que golpea (L5, la marca de altura de Urban Reign): 'manoD' | 'manoI' (la muñeca) | 'pieD' | 'pieI'
+    // (la punta de la canilla). null si no existe.
+    const _ex = new THREE.Vector3();
+    function extremo(clave, cual) {
+        const p = peleadores.get(clave);
+        const o = p && (cual === 'manoD' ? p.munecaD : cual === 'manoI' ? p.munecaI : cual === 'pieD' ? p.canillaD : cual === 'pieI' ? p.canillaI : null);
+        if (!o) return null;
+        o.updateWorldMatrix(true, false);
+        _ex.set(0, cual.startsWith('pie') ? -0.375 : 0, 0);
+        return o.localToWorld(_ex);
+    }
     // Golpe final (L3): la hoja entra a la vaina (se esconde la de la mano); false la vuelve a sacar
     function envainar(clave, si = true) { const a = armas.get(clave); if (a && a.g) a.g.visible = !si; }
     // El Estudio cambió el agarre (pestaña Objetos): se vuelve a armar
@@ -490,5 +501,5 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     for (const c of Object.keys(R.peleadores || {})) peleador(c);
     const efectos = crearEfectos(THREE, scene, R);
 
-    return { scene, peleador, armar, hoja, envainar, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
+    return { scene, peleador, armar, hoja, extremo, envainar, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
 }

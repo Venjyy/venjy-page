@@ -27,6 +27,11 @@
 // final (evento 'remate'); las acciones con `pareja` mueven al rival a su reacción y le dan postura y daño; el arte
 // cuesta espíritu (F.esp, lo llenan los desvíos). avisoPeligro(P, i): el aviso de f[i] en este cuadro. Otros eventos:
 // 'envainar' (efectos.envainar del golpe final) y 'sinEspiritu'.
+// Urban Reign (L5, combate/urbano.js con estilo-*.json → reglas.altura): quien recibe con una acción que `defiende`
+// una altura desvía (contraataque por altura, evento 'golpe' con resultado 'desviado') o revierte (resultado
+// 'reversion': la acción de pareja lanza al atacante) si acierta la altura dentro de la ventana; si erra, el golpe
+// entra con el daño × errada (golpe.errada). Los ataques con soloSi solo pegan al rival en esas reacciones (los
+// remates aéreos al lanzado). Un estilo con sinPostura no suma postura (sufre por vida).
 //   crearCamara(R) / pasoCamara(C, P, dt, aspecto)   cámara de lado al eje del duelo (§19.4): { pos, mira, fov }
 //   encuadre(cam, puntos, aspecto)       ¿todos los puntos caen dentro de la imagen? (las pruebas y el Estudio)
 //   puntosCuerpo(F)                      pies y cabeza de un peleador, para medir el encuadre
@@ -40,6 +45,7 @@ import * as A from '../combate/animacion.js';
 import * as S from '../combate/postura.js';
 import * as W from '../combate/peso.js';
 import * as I from '../combate/ia.js';
+import * as U from '../combate/urbano.js';
 import { EFECTOS } from './efectos.js';
 import { COMBATE, faseEn, inicioFase, accionDe, marca } from '../combate/datos.js';
 
@@ -130,7 +136,7 @@ function crearF(R, estilos, clave, i, tactil) {
         p: E.crearPeleador(estilo, { tactil: i === 0 && tactil }), an: A.crearAnimador(estilo),
         x: 0, z: 0, yaw: 0, vx: 0, vz: 0, vida: d.vida || 100, vidaMax: d.vida || 100,
         empuje: 0, enActivo: false, pego: false, marca: 0, post: S.crearPostura(S.reglasPostura(estilo), d.postura || 100),
-        pel: G.reglasPeligro(estilo), esp: null,
+        pel: G.reglasPeligro(estilo), alt: U.reglasAltura(estilo), esp: null,
         acc: W.crearAcumulador(), tiembla: null, temblor: [0, 0], calma: 0,
         pose: {}, poseAnt: {}
     };
@@ -380,6 +386,7 @@ function golpes(P, F, O) {
     if (!activo) { F.enActivo = false; return; }
     if (!F.enActivo) { F.enActivo = true; F.pego = false; }
     if (F.pego || !E.alcanza(def, F, O)) return;
+    if (def.soloSi && !def.soloSi.includes(O.p.clave)) return; // los remates aéreos: solo al rival en el aire
     F.pego = true;
     const RO = O.post.R;
     // La reacción que le tocaría si el golpe entra (cuenta en las leves acumuladas solo si entra)
@@ -388,19 +395,28 @@ function golpes(P, F, O) {
     if (!accionDe(O.p.estilo, reaccion)) reaccion = def.reaccion && accionDe(O.p.estilo, def.reaccion) ? def.reaccion : 'alto_leve';
     const espejo = W.ladoDe(def) < 0;
     const golpe = { reaccion, altura: def.altura, peligro: def.peligro, rompeGuardia: !!def.rompeGuardia };
-    // El desvío se mide con la ventana del toque (con el ajuste del peligro) y después manda la tabla de §16.4
-    const { resultado } = E.recibir(O.p, golpe, { alRecibir: (q, g, r) => G.responder(O.pel, q, g, S.clasificar(O.post, q, r, G.ajusteVentana(O.pel, g))) });
+    // El desvío se mide con la ventana del toque (con el ajuste del peligro) y después manda la tabla de §16.4; en
+    // Urban Reign, con la altura (combate/urbano.js)
+    const alRecibir = O.alt ? defensaAltura(O) : (q, g, r) => G.responder(O.pel, q, g, S.clasificar(O.post, q, r, G.ajusteVentana(O.pel, g)));
+    const { resultado } = E.recibir(O.p, golpe, { alRecibir });
     if (resultado === 'golpeado') { O.acc.leves = acc.leves; O.p.espejo = espejo; }
     else if (resultado !== 'armadura') W.soltarAcumulador(O.acc);
     const peso = COMBATE.peso || {}, pg = peso[def.hitstop] || peso[P.R.golpe.hitstop] || {};
     const carga = 1 + (def.carga ? (def.carga.extra || 0) * E.cargaDe(p) : 0);
     let dano = 0, hit = pg.hitstop || 0;
     if (resultado === 'golpeado' || resultado === 'armadura') {
-        dano = (def.dano || 0) * carga; E.conecto(p);
+        dano = (def.dano || 0) * carga * (golpe.errada ? O.alt.errada : 1); E.conecto(p);
         if (resultado === 'golpeado') O.empuje += def.empuje != null ? def.empuje : pg.empuje || 0;
     } else if (resultado === 'bloqueado') {
         dano = (def.dano || 0) * (RO.bloqueoDano ?? P.R.golpe.bloqueoDano);
         E.reaccionar(p, 'bloqueado'); O.empuje += (pg.empuje || 0) * 0.5;
+    } else if (resultado === 'desviado' && O.alt) {
+        // Urban Reign: el atacante rebota y el que leyó la altura contraataca (o revierte: la pareja lo lanza)
+        const pd = peso[golpe.urbano === 'reversion' ? 'perfecto' : 'desvio'] || {};
+        hit = pd.hitstop || hit;
+        E.reaccionar(p, 'desviado');
+        const k = U.accionDefensa(O.alt, golpe.urbano, def.altura || 'medio'), ad = k && accionDe(O.p.estilo, k);
+        if (ad) { E.iniciar(O.p, k); if (ad.pareja) pareja(P, O, F, ad, 'inicio'); }
     } else if (resultado === 'desviado' || resultado === 'perfecto') {
         // El atacante rebota; el que desvía hace su choque (en el perfecto queda adelante) y empuja al atacante
         const pd = peso[resultado === 'perfecto' ? 'perfecto' : 'desvio'] || {};
@@ -433,12 +449,25 @@ function golpes(P, F, O) {
     // La hoja contra el cuerpo suena a carne; contra la hoja o la guardia, al material del arma (metal)
     const material = resultado === 'golpeado' || resultado === 'armadura' ? 'carne' : def.material || 'metal';
     P.eventos.push({
-        tipo: 'golpe', de: F.i, a: O.i, resultado, dano, clave: p.clave, altura: def.altura, carga: E.cargaDe(p), fuerza: dano / Math.max(1, O.vidaMax),
-        nivel: W.nivelDe(def, resultado), reaccion: resultado === 'golpeado' ? O.p.clave : null, material, eje: O.tiembla ? O.tiembla.eje : null
+        tipo: 'golpe', de: F.i, a: O.i, resultado: golpe.urbano === 'reversion' ? 'reversion' : resultado, dano, clave: p.clave, altura: def.altura, carga: E.cargaDe(p), fuerza: dano / Math.max(1, O.vidaMax),
+        nivel: W.nivelDe(def, resultado), reaccion: resultado === 'golpeado' ? O.p.clave : null, material, eje: O.tiembla ? O.tiembla.eje : null, errada: !!golpe.errada
     });
+}
+// reglas.alRecibir de Urban Reign: la altura decide (urbano.clasificar) y la tabla de §16.4 del que recibe dice si ese
+// peligro se puede desviar. Marca en el golpe golpe.urbano (desviado o reversion) y golpe.errada.
+function defensaAltura(O) {
+    return (q, g, r) => {
+        const u = U.clasificar(O.alt, q, g, r);
+        if (u === 'errada') { g.errada = true; return G.responder(O.pel, q, g, 'golpeado'); }
+        if (u !== 'reversion' && u !== 'desviado') return G.responder(O.pel, q, g, u);
+        if (G.responder(O.pel, q, g, 'desviado') !== 'desviado') return G.responder(O.pel, q, g, r);
+        g.urbano = u;
+        return 'desviado';
+    };
 }
 // Suma postura; al tope, desequilibrado (la reacción del estilo o de combate.json) hasta que se recompone
 function subir(P, F, n) {
+    if (F.alt && F.alt.sinPostura) return;
     if (!S.sumar(F.post, n)) return;
     S.romper(F.post);
     const k = F.post.R.postura.desequilibrado;

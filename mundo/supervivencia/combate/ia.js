@@ -20,8 +20,13 @@
 //   · un peligroso cada `peligro.cada` s (× `peligro.factor` con menos de `peligro.pocaVida` de vida);
 //   · nunca empieza nada durante tu hitstop, no repite el mismo ataque más de `repetirMax` veces seguidas y
 //     su anticipación nunca baja de `minimo` (× `anticipacion` de la dificultad).
+// Urban Reign (L5, estilo con reglas.altura; F.alt de la arena): no bloquea. Desvía leyendo la altura de tu golpe (la
+// lee bien con prob. `acierto` de su dificultad; si erra, el golpe le entra con el extra de errada), hace la esquiva
+// neutra contra altos y medios, el paso lateral contra el resto, y castiga con el bajo rápido tras una esquiva neutra
+// (`castigoBajo`). Ataca con `cadenas` de alturas (jab de tanteo, combo básico, alto → bajo para engañar); la
+// cadena sigue solo si el golpe conecta (la cancelación de Urban Reign), así que una cadena fallada se corta sola.
 // =========================================================
-import { COMBATE, accionDe, inicioFase } from './datos.js';
+import { COMBATE, accionDe, inicioFase, marca } from './datos.js';
 import { LIBRES, TERMINALES, destino } from './estados.js';
 
 const DIF = (anticipacion, retraso, desvio, perfecto, bloqueo, esquiva, peligros, agresion) =>
@@ -47,7 +52,8 @@ export const CPU_BASE = {
         respiro: { cuadros: [36, 90], alejarse: 0.45, provocar: 0.35, lejos: 4 },
         distancia: { cerca: 1.2, margen: 0.85, acercarse: 0.8, alejarse: 0.7 },
         esperaInicial: [20, 50],
-        provocar: null
+        provocar: null,
+        cadenas: [], acierto: { facil: 0.5, normal: 0.65, dificil: 0.8, maestro: 0.92 }, castigoBajo: { prob: 0.5 }
     }
 };
 
@@ -82,7 +88,8 @@ export function crearCPU(reglas, semilla = 1) {
     return {
         R: reglas, rnd: azar(semilla), cuadro: 0, vista: [], eventos: [],
         modo: 'espera', espera: 0, cadena: 0, hechos: [], carga: -1, ultimoPeligro: 0, proximoPeligro: 0,
-        defensa: null, bloquea: 0, tirado: -1, cadenaVista: -1, castigo: 0, serial: -1, accion: null
+        defensa: null, bloquea: 0, tirado: -1, cadenaVista: -1, castigo: 0, serial: -1, accion: null,
+        alturas: null, golpes: 0, castigoTirado: -1
     };
 }
 
@@ -123,14 +130,28 @@ export function intencionCPU(S, F, O, libre = true) {
     if (S.bloquea > 0) { S.bloquea--; it.defensa = 'mantener'; if (O.p.estado === 'ataque') return it; S.bloquea = 0; }
     // Tu hitstop: nada empieza (la carga y la cadena esperan)
     const enHitstop = O.p.congelado > 0 || O.p.quieto;
+    // Urban Reign: después de una esquiva neutra, el bajo rápido si quedaste vendido (una vez por esquiva)
+    if (F.alt && F.p.def && F.p.def.iframesAlturas && !enHitstop && S.castigoTirado !== F.p.cambio.n) {
+        const k = destino(F.p, entradaAltura('atacar', 'bajo')), ak = k && accionDe(F.p.estilo, k);
+        if (ak && ak.estado === 'ataque') {
+            S.castigoTirado = F.p.cambio.n;
+            const vendido = O.p.estado === 'ataque' || O.p.estado === 'reaccion';
+            if (vendido && d <= (ak.alcance || 1.5) && S.rnd() < E.castigoBajo.prob) {
+                apretarAltura(it, 'atacar', 'bajo');
+                S.modo = 'cadena'; S.cadena = 1; S.golpes = 1; S.alturas = null; S.serial = F.p.cambio.n;
+                return it;
+            }
+        }
+    }
     // 2. La carga del fuerte en curso
     if (S.carga >= 0) { it.fuerte = S.carga-- > 0 ? 'mantener' : 'soltar'; return it; }
     // 3. La cadena en curso: aprieta atacar cuando el estado deja salir al tajo siguiente (sin repetir de más)
     if (S.modo === 'cadena') {
         if (F.p.estado === 'ataque' && F.p.cambio.n !== S.serial) { S.serial = F.p.cambio.n; S.cadena--; }
         if (S.cadena > 0 && !enHitstop && F.p.estado === 'ataque') {
-            const k = destino(F.p, { tipo: 'atacar', altura: 'neutro' });
-            if (k && !repite(S, k) && esAtaqueDe(F.p, k)) { it.atacar = 'apretar'; if (S.rnd() < E.retrasado.prob) S.retrasar = true; }
+            const alt = S.alturas ? S.alturas[Math.min(S.alturas.length - 1, S.golpes - S.cadena)] : 'medio';
+            const k = destino(F.p, entradaAltura('atacar', alt));
+            if (k && !repite(S, k) && esAtaqueDe(F.p, k)) { apretarAltura(it, 'atacar', alt); if (S.rnd() < E.retrasado.prob) S.retrasar = true; }
             else if (k && repite(S, k)) S.cadena = 0;
             return it;
         }
@@ -171,10 +192,40 @@ export function intencionCPU(S, F, O, libre = true) {
     }
     if (a.tipo === 'fuerte') { it.fuerte = 'apretar'; S.carga = entero(S, E.fuerte.carga); S.modo = 'cadena'; S.cadena = 1; S.serial = F.p.cambio.n; return it; }
     if (a.tipo === 'patada') { it.agarre = 'apretar'; S.modo = 'cadena'; S.cadena = 1; S.serial = F.p.cambio.n; return it; }
-    it.atacar = 'apretar';
+    apretarAltura(it, 'atacar', a.alturas ? a.alturas[0] : 'medio');
     if (S.rnd() < E.retrasado.prob) S.retrasar = true;
-    S.modo = 'cadena'; S.cadena = a.golpes; S.serial = F.p.cambio.n;
+    S.modo = 'cadena'; S.cadena = a.golpes; S.golpes = a.golpes; S.alturas = a.alturas || null; S.serial = F.p.cambio.n;
     return it;
+}
+
+// Una intención con altura (Urban Reign): adelante = altura neutra con el cuerpo yendo hacia el rival
+const entradaAltura = (tipo, alt) => (alt === 'adelante' ? { tipo, altura: 'medio', adelante: true } : { tipo, altura: alt || 'medio' });
+function apretarAltura(it, tipo, alt) {
+    it[tipo] = 'apretar';
+    it.altura = alt === 'adelante' ? 'medio' : alt || 'medio';
+    if (alt === 'adelante') it.mover = [1, 0];
+    else if (it.mover && it.mover[0] >= (COMBATE.entrada.adelante ?? 0.5)) it.mover = [0, it.mover[1]];
+    return it;
+}
+// Cadena de alturas con su peso (las que no repiten de más)
+function elegirCadena(S, F) {
+    const ctl = (F.estilo && F.estilo.controles) || {}, l = [];
+    let total = 0;
+    for (const c of S.R.e.cadenas) {
+        const k = c.alturas && c.alturas.length && destinoGuardia(F, ctl, c.alturas[0]);
+        if (!k || repite(S, k) || !(c.peso ?? 1)) continue;
+        l.push([c, k]); total += c.peso ?? 1;
+    }
+    if (!l.length) return null;
+    let r = S.rnd() * total;
+    for (const [c, k] of l) { r -= c.peso ?? 1; if (r <= 0) return { tipo: 'cadena', clave: k, golpes: c.alturas.length, alturas: c.alturas }; }
+    const [c, k] = l[l.length - 1];
+    return { tipo: 'cadena', clave: k, golpes: c.alturas.length, alturas: c.alturas };
+}
+function destinoGuardia(F, ctl, alt) {
+    let k = ctl.atacar;
+    if (k && typeof k === 'object') k = (alt === 'adelante' && k.adelante) || k[alt] || k.medio || k.neutro;
+    return k && esAtaqueDe(F.p, k) ? k : null;
 }
 
 // Cuadros de anticipación sostenida: el mínimo legible (× la dificultad) y, si toca, el tajo retrasado
@@ -212,7 +263,9 @@ function elegir(S, F, O, vO) {
     // Castigo: si te vio recuperándote o reaccionando, la cadena sale entera y sin esperar
     if (vO && (vO.estado === 'reaccion' || (vO.estado === 'ataque' && vO.def && vO.c >= inicioFase(vO.def.fases, 'recuperacion')))) { S.espera = 0; golpes = E.cadena[1]; }
     else S.espera = Math.max(S.espera, Math.round(12 / R.dif.agresion * S.rnd()));
-    const k = ctl.atacar;
+    // Urban Reign: una cadena de alturas de la tabla
+    if (E.cadenas && E.cadenas.length) { const c = elegirCadena(S, F); if (c) return c; }
+    const k = ctl.atacar && typeof ctl.atacar === 'object' ? destinoGuardia(F, ctl, 'medio') : ctl.atacar;
     if (!repite(S, k)) return { tipo: 'cadena', clave: k, golpes: Math.max(1, golpes) };
     // Ya repitió su tajo de más: otra cosa (el fuerte, la patada o un peligroso), o espera
     if (ctl.fuerte && esAtaqueDe(F.p, ctl.fuerte) && !repite(S, ctl.fuerte)) return { tipo: 'fuerte', clave: ctl.fuerte };
@@ -243,8 +296,8 @@ function defender(S, F, O, vO, it) {
     if (pl.tipo === 'bloqueo') { S.defensa = null; S.bloquea = 90; return { ...it, defensa: 'apretar' }; }
     if (p.c < g - pl.adelanto) return null;
     S.defensa = null;
-    if (pl.tipo === 'desvio') return { ...it, defensa: 'apretar' };
-    if (pl.tipo === 'esquiva') return { ...it, esquivar: 'apretar', mover: pl.mover };
+    if (pl.tipo === 'desvio') return pl.altura ? apretarAltura({ ...it }, 'defensa', pl.altura) : { ...it, defensa: 'apretar' };
+    if (pl.tipo === 'esquiva') return pl.altura ? { ...apretarAltura({ ...it }, 'esquivar', pl.altura), mover: pl.mover } : { ...it, esquivar: 'apretar', mover: pl.mover };
     return { ...it, saltar: 'apretar' };
 }
 function planear(S, F, O, vO) {
@@ -258,6 +311,7 @@ function planear(S, F, O, vO) {
     if (p.c >= g || S.castigo > 0) return; // tarde, o en su ventana de castigo
     const ctl = (F.estilo && F.estilo.controles) || {}, Pr = F.pel && F.pel.peligro && F.pel.peligro.respuestas;
     const r = S.rnd();
+    if (F.alt) return planearAltura(S, F, p, r, Pr);
     if (p.def.peligro) {
         if (r >= D.peligros) return;
         const t = (Pr && Pr[p.def.peligro]) || {};
@@ -274,4 +328,40 @@ function planear(S, F, O, vO) {
     } else if (ctl.defensaMantenida && r < D.desvio + D.bloqueo) S.defensa = { tipo: 'bloqueo', n: p.cambio.n };
     else if (ctl.esquivar && r < D.desvio + D.bloqueo + D.esquiva) S.defensa = { tipo: 'esquiva', n: p.cambio.n, adelanto: 4, mover: [-1, 0] };
     return null;
+}
+
+// Urban Reign: lee la altura (a veces mal) y desvía; si no, esquiva neutra contra altos y medios normales o paso lateral.
+// adelanto: cuadros antes de tu activo en que aprieta (reversión: dentro de reglas.altura.reversion; desvío: después).
+// Si te vio tarde y ya no alcanza la ventana del desvío, no lo intenta: apretar atrasado daría una reversión regalada.
+const ALTURAS_CPU = ['alto', 'medio', 'bajo'];
+function planearAltura(S, F, p, r, Pr) {
+    const R = S.R, D = R.dif, A = F.alt, n = p.cambio.n;
+    const h = p.def.altura || 'medio', pel = p.def.peligro, t = (pel && Pr && Pr[pel]) || null;
+    const acierto = (R.e.acierto && R.e.acierto[R.dificultad]) ?? 0.65;
+    const desviable = !pel || (t ? t.desvio !== false : !A.imparable.includes(pel));
+    const pDesvio = pel ? D.peligros : D.desvio;
+    // d: cuadros que llevará su defensa cuando llegue tu golpe (siendo f[1], su paso va después del tuyo: un cuadro menos)
+    const k = F.i === 1 ? 1 : 0, dMax = inicioFase(p.def.fases, 'activo') - p.c - k;
+    const plan = (tipo, d, altura, extra = {}) => { S.defensa = { tipo, n, adelanto: d + k, altura, ...extra }; };
+    if (desviable && r < pDesvio) {
+        const lee = S.rnd() < acierto ? h : ALTURAS_CPU.filter(x => x !== h)[Math.floor(S.rnd() * 2) % 2];
+        const rev = S.rnd() < D.perfecto;
+        let d = rev ? Math.floor(S.rnd() * (A.reversion + 1)) : A.reversion + 1 + Math.floor(S.rnd() * Math.max(1, A.ventana - A.reversion));
+        if (d > dMax) { if (!rev || dMax < 0) return; d = dMax; } // tarde para el desvío
+        plan('desvio', d, lee);
+        return;
+    }
+    if (r >= pDesvio + D.bloqueo + D.esquiva) return;
+    // La esquiva neutra pasa bajo los altos y medios normales; contra el resto, el paso lateral (sale del eje). Solo si
+    // todavía llega a sus i-frames
+    const ctl = (F.estilo && F.estilo.controles) || {}, d = Math.min(A.ventana + 2, dMax);
+    if (!pel && (h === 'alto' || h === 'medio')) { if (d >= desdeIframes(F, ctl.defensa, 'medio')) plan('desvio', d, 'medio'); return; }
+    if (t && t.esquiva === false) return;
+    const alt = S.rnd() < 0.5 ? 'alto' : 'bajo';
+    if (d >= desdeIframes(F, ctl.esquivar, alt)) plan('esquiva', d, alt, { mover: [0, 0] });
+}
+// Primer cuadro con i-frames de la acción de un control por altura
+function desdeIframes(F, c, alt) {
+    const k = c && typeof c === 'object' ? c[alt] || c.medio : c, a = k && accionDe(F.p.estilo, k);
+    return a && a.iframes && a.iframes.length ? marca(a.iframes[0][0], a.fases) ?? 0 : Infinity;
 }

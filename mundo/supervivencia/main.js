@@ -1455,12 +1455,12 @@ async function arrancar(guardado, cx = null) {
     // Hablar con Lalo o Moisés; mientras peleas, su escena se dibuja en lugar del mundo (como la carrera)
     let arena = null, cargandoArena = null;
     function cargarArena() {
-        if (!cargandoArena) cargandoArena = Promise.all([import('./arena/arena.js'), pedirArena(), cargarDatos('combate'), cargarDatos('estilo-prueba'), cargarDatos('estilo-sekiro'), import('./combate/datos.js')]).then(([m, json, comb, prueba, sekiro, D]) => {
+        if (!cargandoArena) cargandoArena = Promise.all([import('./arena/arena.js'), pedirArena(), cargarDatos('combate'), cargarDatos('estilo-prueba'), cargarDatos('estilo-sekiro'), cargarDatos('estilo-urbano'), import('./combate/datos.js')]).then(([m, json, comb, prueba, sekiro, urbano, D]) => {
             D.fijarCombate(comb);
             arena = m.crearArena({
                 idioma, inventario, entidades, jugador, misiones,
                 datos: () => window.__venjy?.datosArena || json,
-                estilos: { prueba, sekiro },
+                estilos: { prueba, sekiro, urbano },
                 personasMundo: k => { const n = amigos.lista.find(a => a.clave === k); return n ? n.p : null; },
                 tactil: () => !!tactil,
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena(),

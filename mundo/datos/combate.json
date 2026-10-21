@@ -358,6 +358,18 @@
         "sacudida": 0.4
       },
       "nota": "S14 · el que recibe el agarre: lo toman del hombro, lo voltean sobre la cadera del rival y cae de espalda (c18, polvo); tendido hasta levantarse."
+    },
+    "lanzado": {
+      "fases": { "anticipacion": 0, "activo": 40, "recuperacion": 18 },
+      "anim": "lanzado",
+      "siguiente": "levantarse",
+      "espejo": true,
+      "efectos": {
+        "polvo": ["recuperacion+0"],
+        "sacudida": 0.3
+      },
+      "nota": "Lanzado al aire (Urban Reign, §17.4: el gancho del combo básico): sube 0,9 de espaldas con los brazos sueltos, 40 c en el aire (ahí lo rematan el golpe y el agarre aéreos) y cae de espalda; queda tendido para pasar a levantarse.",
+      "velocidadMax": 0.6
     }
   },
   "anim": {
@@ -1086,6 +1098,48 @@
         },
         "codoI": {
           "k": [["g", 0, -0.8], ["g", 0.25, -0.3, "suave"], ["g", 0.75, -0.3], ["r", 1, -0.1, "suave"]]
+        }
+      }
+    },
+    "lanzado": {
+      "reloj": "fases",
+      "nota": "Lanzado: el golpe lo levanta del mentón (la cabeza atrás primero), sube hasta 0,9 con el pecho arqueado y los brazos abiertos, se va inclinando de espaldas en el aire y cae (c40, polvo) con un rebote; queda tendido como en derribo.",
+      "canales": {
+        "y": {
+          "k": [["g", 0, 0], ["g", 0.4, 0.9, "salida"], ["g", 0.95, 0.05, "entrada"], ["g", 1, 0.03], ["r", 0.1, 0.06, "suave"], ["r", 0.2, 0.03, "suave"], ["r", 1, 0.03]]
+        },
+        "inc": {
+          "k": [["g", 0, 0], ["g", 0.3, -0.15, "salida"], ["g", 0.7, -0.4, "suave"], ["g", 1, -0.6, "entrada"], ["r", 0.1, -0.5, "suave"], ["r", 0.2, -0.6, "suave"], ["r", 1, -0.6]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.1, -0.6, "latigo"], ["g", 0.5, -0.4, "suave"], ["g", 1, -0.6], ["r", 0.1, -0.9, "latigo"], ["r", 0.3, -0.4, "suave"], ["r", 1, -0.3]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 0.2, -0.3, "salida"], ["g", 1, -0.35], ["r", 1, -0.35]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.53], ["g", 0.4, -0.6, "suave"], ["g", 1, -1.3, "suave"], ["r", 1, -1.3]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.4, -0.4, "suave"], ["g", 1, -1.1, "suave"], ["r", 1, -1.1]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 0.4, 0.9, "suave"], ["g", 1, 0.25, "suave"], ["r", 1, 0.2]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 0.4, 0.7, "suave"], ["g", 1, 0.3, "suave"], ["r", 1, 0.3]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 0.3, -2, "salida"], ["g", 1, -1.6, "suave"], ["r", 0.4, -0.5, "suave"], ["r", 1, 0.1]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 0.3, -2.1, "salida"], ["g", 1, -1.7, "suave"], ["r", 0.4, -0.6, "suave"], ["r", 1, 0.1]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 0.3, -0.5, "salida"], ["g", 1, -0.6], ["r", 1, 0.1]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 0.3, 0.5, "salida"], ["g", 1, 0.6], ["r", 1, -0.1]]
         }
       }
     }

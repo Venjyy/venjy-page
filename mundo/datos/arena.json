@@ -20,7 +20,7 @@
     "moises": {
       "nombre": { "es": "Moisés", "en": "Moisés" },
       "titulo": { "es": "El de la Calle", "en": "The Street" },
-      "estilo": "prueba",
+      "estilo": "urbano",
       "vida": 100,
       "postura": 100,
       "aura": "#5aa0ff",
