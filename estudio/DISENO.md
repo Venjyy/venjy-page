@@ -1155,3 +1155,8 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **CPU (`estilo-*.json → cpu`):** `escape` (acierto por dificultad, × amago, cuadros), `amago` (por dificultad), `rompe` (prob., espera, vidaMax), `furia` (prob., distancia), `pisoton` (prob.); `peligro.lista` con los agarres.
 - **Arena y táctil:** `efectos.aura` y `hud.furia` (pestaña Arena), botón `ar-modoEspecial` FURIA (pestaña Layout); AGARRE y ESPECIAL por altura esperan el gesto (`intenciones.fijarGestos`). Textos `zafa`, `errado`, `arteRompe`, `furia`, `botonFuria`, `botonGiro`.
 - **No editable aún:** `reglas.spa`, `reglas.espiritu` y la CPU de Urban Reign (pestaña Combate, N6, que pasa al inicio de la Etapa B).
+
+## 36. Pestaña Salonas y página de layout (Salonas S9, 2026-10-21)
+
+- **Pestaña Salonas** (`estudio/salonas.js`): edita `mundo/datos/salonas.json` (`juego`, `reglas`, `textos`). Editor genérico sobre el JSON (un campo por valor; las claves nuevas aparecen solas), cambios en vivo por `datos` 'salonas', Guardar con `PUT /api/datos/salonas`.
+- **Layout, página «Salonas»**: botones `pausa` y `primus` (`SELECTORES_SALONAS`); vista `estudio/vista-salonas.html` con el CSS real (`CSS_SALONAS`). Los trastes táctiles no se editan: siguen la línea 3D.

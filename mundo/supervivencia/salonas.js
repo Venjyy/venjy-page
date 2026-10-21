@@ -87,7 +87,7 @@ export const TXT_SALONAS = {
     ayudaPrimus: t(' · Espacio: Primus', ' · Space: Primus')
 };
 
-const CSS = `
+export const CSS_SALONAS = `
 body.en-salonas #hud, body.en-salonas .mira, body.en-salonas .tactil, body.en-salonas .clic-seguir { display: none !important; }
 .sl-capa.sl-intro .sl-letra, .sl-capa.sl-intro .sl-trastes { opacity: 0; }
 .sl-letra, .sl-trastes { transition: opacity .4s; }
@@ -194,7 +194,7 @@ export function crearSalonas(ctx) {
     const cancionDe = clave => cancionMusica(clave) || (musicaJson && musicaJson.canciones && musicaJson.canciones[clave]) || null;
 
     // ---------- DOM ----------
-    const estilo = document.createElement('style'); estilo.textContent = CSS; document.head.appendChild(estilo);
+    const estilo = document.createElement('style'); estilo.textContent = CSS_SALONAS; document.head.appendChild(estilo);
     const el = (cls, padre, tag = 'div') => { const e = document.createElement(tag); if (cls) e.className = cls; padre.appendChild(e); return e; };
     const capa = el('sl sl-capa', document.body);
     const progEl = el('sl-progreso', capa);

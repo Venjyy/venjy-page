@@ -4,7 +4,7 @@
 // agrandar y numerar cada botón. Guarda mundo/datos/ui-layout.json con PUT /api/datos/ui-layout.
 // Contrato y reglas: estudio/DISENO.md §5.
 // =========================================================
-import { SELECTORES, SELECTORES_ARENA } from '../mundo/supervivencia/layout-datos.js';
+import { SELECTORES, SELECTORES_ARENA, SELECTORES_SALONAS } from '../mundo/supervivencia/layout-datos.js';
 import { formatear } from './formato.mjs';
 import { calcularAvisos, MIN_TOQUE } from './avisos-layout.js';
 
@@ -41,7 +41,12 @@ const BOTONES_ARENA = [
     ['ar-especial', 'Especial', 'Special'],
     ['ar-modoEspecial', 'Furia', 'Fury']
 ];
-const NOMBRE = Object.fromEntries([...BOTONES, ...BOTONES_ARENA].map(([c, es, en]) => [c, { es, en }]));
+// Página salonas: botones táctiles de La Gira (mundo/supervivencia/salonas.js). Los 4 trastes siguen la línea 3D y no se editan aquí.
+const BOTONES_SALONAS = [
+    ['pausa', 'Pausa', 'Pause'],
+    ['primus', 'Modo Primus', 'Primus mode']
+];
+const NOMBRE = Object.fromEntries([...BOTONES, ...BOTONES_ARENA, ...BOTONES_SALONAS].map(([c, es, en]) => [c, { es, en }]));
 
 // Ancla de cada botón en el CSS de hoy (para los que todavía no están en el JSON)
 const DEF = {
@@ -66,9 +71,11 @@ const DEF = {
 };
 const DEF_ARENA = Object.fromEntries(BOTONES_ARENA.map(([c]) => [c, { ancla: 'id' }]));
 // Cada página del archivo: qué botones tiene, cómo encontrarlos en su vista y si usa la franja inferior (pie)
+const DEF_SALONAS = { pausa: { ancla: 'sd' }, primus: { ancla: 'sd' } };
 const PAGINAS = {
     supervivencia: { botones: BOTONES, def: DEF, selectores: SELECTORES, delHud: DEL_HUD, sinTamano: SIN_TAMANO, contenedor: '.tactil', vista: 'vista-tactil.html', pie: true },
-    arena: { botones: BOTONES_ARENA, def: DEF_ARENA, selectores: SELECTORES_ARENA, delHud: new Set(), sinTamano: new Set(), contenedor: '.tactil-arena', vista: 'vista-arena.html', pie: false }
+    arena: { botones: BOTONES_ARENA, def: DEF_ARENA, selectores: SELECTORES_ARENA, delHud: new Set(), sinTamano: new Set(), contenedor: '.tactil-arena', vista: 'vista-arena.html', pie: false },
+    salonas: { botones: BOTONES_SALONAS, def: DEF_SALONAS, selectores: SELECTORES_SALONAS, delHud: new Set(), sinTamano: new Set(), contenedor: '.sl-capa', vista: 'vista-salonas.html', pie: false }
 };
 const LADOS = { si: ['left', 'top'], sd: ['right', 'top'], ii: ['left', 'bottom'], id: ['right', 'bottom'] };
 const ANCLAS = [['si', 'Arriba izquierda', 'Top left'], ['sd', 'Arriba derecha', 'Top right'], ['ii', 'Abajo izquierda', 'Bottom left'], ['id', 'Abajo derecha', 'Bottom right']];
