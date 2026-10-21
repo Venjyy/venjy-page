@@ -506,7 +506,9 @@ export function crearSalonas(ctx) {
         if (x.state !== 'running') x.resume();
         // Práctica: más lenta (mapaTiempo con el tempo) y solo la sección elegida; no cuenta para récords
         const prac = practica.activa, tempo = prac ? Math.max(0.5, Math.min(1, practica.tempo ?? A.practica.velocidad)) : 1;
-        const part0 = P.partitura(cancion, dificultad, R, { tempo });
+        // ajustes a mano de la pestaña Ritmo (salonas.json → ajustes.<canción>.<dificultad>): solo cambian el carril o quitan una nota
+        const mano = datos() && datos().ajustes && datos().ajustes[cancionElegida] && datos().ajustes[cancionElegida][dificultad];
+        const part0 = P.partitura(cancion, dificultad, R, { tempo, ajustes: mano || null });
         let part = part0, desde = 0, fin = part0.duracion;
         if (prac) {
             const sec = part0.secciones[Math.min(practica.seccion, part0.secciones.length - 1)];

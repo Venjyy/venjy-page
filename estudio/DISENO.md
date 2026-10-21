@@ -1160,3 +1160,10 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 
 - **Pestaña Salonas** (`estudio/salonas.js`): edita `mundo/datos/salonas.json` (`juego`, `reglas`, `textos`). Editor genérico sobre el JSON (un campo por valor; las claves nuevas aparecen solas), cambios en vivo por `datos` 'salonas', Guardar con `PUT /api/datos/salonas`.
 - **Layout, página «Salonas»**: botones `pausa` y `primus` (`SELECTORES_SALONAS`); vista `estudio/vista-salonas.html` con el CSS real (`CSS_SALONAS`). Los trastes táctiles no se editan: siguen la línea 3D.
+
+## 37. Pestaña Ritmo: la partitura en línea de tiempo (Salonas S10a, 2026-10-21)
+
+- **Pestaña Ritmo** (`estudio/ritmo.js` + modelo puro `estudio/ritmo-modelo.mjs`): bajo el juego, la partitura de la canción y dificultad elegidas (secciones arriba, un carril por fila, notas en su segundo; slap/pop con borde, brillantes con punto, largas con cola, zoom). **Revisar partitura** (`revisarPartitura`) lista los avisos con texto ES/EN y marca la sección en la línea de tiempo; un clic en el aviso lleva a ella.
+- **Ajustes a mano**: elegir una nota (clic) y cambiarla de carril (botones o teclas 1-4), quitarla (Supr) o volver a la generada (Retroceso). Se guardan en `salonas.json → ajustes.<canción>.<dificultad>.<compás:paso>` = carril | `null` (esquema `ajustesMano`); nunca cambian cuándo suena una nota. `salonas.js` los pasa a `partitura(..., { ajustes })`, en vivo.
+- Comparte datos, envío en vivo y Guardar con la pestaña Salonas (`ctx.salonas`), para no pisar el mismo archivo. Prueba: `mundo/tests/ritmo.mjs`.
+- **Falta** (S10b y S10c): probar desde una sección (mensaje `salonas { accion, cancion, dificultad, seccion }`) y editar `musica.json → canciones` (estructura y capa `bajo`).

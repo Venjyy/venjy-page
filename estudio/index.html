@@ -23,6 +23,7 @@
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
             <button class="pestana" type="button" data-pestana="arena" data-seccion="juego" data-es="Arena" data-en="Arena">Arena</button>
             <button class="pestana" type="button" data-pestana="salonas" data-seccion="juego" data-es="Salonas" data-en="Salonas">Salonas</button>
+            <button class="pestana" type="button" data-pestana="ritmo" data-seccion="juego" data-es="Ritmo" data-en="Rhythm">Ritmo</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
@@ -122,6 +123,17 @@
             </div>
             <div class="marco marco-juego">
                 <iframe id="juego" title="Juego" allow="fullscreen; autoplay"></iframe>
+            </div>
+            <div id="ri-zona" hidden>
+                <div class="fila-botones ri-barra">
+                    <label><span data-es="Canción" data-en="Song">Canción</span> <select id="ri-cancion" aria-label="Canción"></select></label>
+                    <label><span data-es="Dificultad" data-en="Difficulty">Dificultad</span> <select id="ri-dificultad" aria-label="Dificultad"></select></label>
+                    <label><span data-es="Zoom" data-en="Zoom">Zoom</span> <input id="ri-zoom" type="range" min="10" max="160" step="5" value="40" aria-label="Zoom"></label>
+                    <button id="ri-revisar" class="boton chico" type="button" data-es="Revisar partitura" data-en="Review chart">Revisar partitura</button>
+                </div>
+                <p id="ri-resumen" class="mensaje ri-resumen"></p>
+                <div id="ri-caja" class="ri-caja"><canvas id="ri-lienzo" class="ri-lienzo"></canvas></div>
+                <p class="mensaje ri-ayuda" data-es="Borde naranja = slap, celeste = pop. Punto blanco = nota brillante (carga el Modo Primus). Punto amarillo = movida a mano. Recuadro punteado = quitada a mano. Con una nota elegida: teclas 1-4 cambian el carril, Supr la quita, Retroceso vuelve a la generada." data-en="Orange border = slap, light blue = pop. White dot = bright note (charges Primus Mode). Yellow dot = moved by hand. Dashed box = removed by hand. With a note selected: keys 1-4 change lane, Del removes it, Backspace restores the generated one.">Borde naranja = slap, celeste = pop. Punto blanco = nota brillante (carga el Modo Primus). Punto amarillo = movida a mano. Recuadro punteado = quitada a mano. Con una nota elegida: teclas 1-4 cambian el carril, Supr la quita, Retroceso vuelve a la generada.</p>
             </div>
             <div id="ca-zona" hidden>
                 <div class="fila-botones ca-barra">
@@ -425,6 +437,27 @@
                         <button id="sa-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="sa-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-ritmo" hidden>
+                <section class="panel">
+                    <h2 data-es="Ritmo · la partitura" data-en="Rhythm · the chart">Ritmo · la partitura</h2>
+                    <p class="mensaje" data-es="La partitura sale sola del bajo de cada canción. Aquí la ves por dificultad, revisas si se puede tocar y, si hace falta, mueves una nota de carril o la quitas (nunca cambia cuándo suena). Va en vivo en el juego. Guardar escribe mundo/datos/salonas.json." data-en="The chart comes straight from each song's bass line. Here you see it per difficulty, check it is playable and, if needed, move a note to another lane or remove it (it never changes when it sounds). It is live in the game. Save writes mundo/datos/salonas.json.">La partitura sale sola del bajo de cada canción. Aquí la ves por dificultad, revisas si se puede tocar y, si hace falta, mueves una nota de carril o la quitas (nunca cambia cuándo suena). Va en vivo en el juego. Guardar escribe mundo/datos/salonas.json.</p>
+                </section>
+                <section class="panel">
+                    <h2 data-es="Revisión" data-en="Review">Revisión</h2>
+                    <ul id="ri-avisos" class="ri-avisos"></ul>
+                </section>
+                <section class="panel">
+                    <h2 data-es="Nota elegida" data-en="Selected note">Nota elegida</h2>
+                    <div id="ri-nota"></div>
+                </section>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="ri-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="ri-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="ri-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>

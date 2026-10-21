@@ -120,12 +120,16 @@ export async function montarSalonas(ctx) {
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
     }
 
-    $('sa-descartar').addEventListener('click', () => { datos = clonar(original); cambio(); pintar(); });
+    const alRehacer = []; // f() cuando se descartan los cambios: la pestaña Ritmo comparte estos datos (ajustes a mano)
+    const descartar = () => { datos = clonar(original); cambio(); pintar(); alRehacer.forEach(f => f()); };
+    $('sa-descartar').addEventListener('click', descartar);
     btnGuardar.addEventListener('click', guardar);
     window.addEventListener('keydown', e => {
         if (ctx.pestana === 'salonas' && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (!btnGuardar.disabled) guardar(); }
     });
     window.addEventListener('beforeunload', e => { if (sucio()) { e.preventDefault(); e.returnValue = ''; } });
     ctx.alIdioma.push(() => pintar());
+    // La pestaña Ritmo (S10a) edita ajustes dentro de este mismo JSON: comparte datos, envío en vivo y Guardar.
+    ctx.salonas = { datos: () => datos, cambio, sucio, guardar, descartar, alRehacer, mensaje: () => msg.textContent };
     pintar();
 }
