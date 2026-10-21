@@ -10,8 +10,8 @@
 //   empezarRondas(P)                     después de la entrada: «Ronda 1» → «¡Peleen!»
 //   intencionCPU(P, i)                   la CPU de f[i] (L4, combate/ia.js): arena.json → cpu y estilo-*.json → cpu, con la
 //                                        dificultad de la pelea y su propia semilla. Evento 'provoca' (sale el cuadro que sigue)
-//   intencionPractica(P, i)              el rival de práctica de L2 (repite practica.patron); ya no lo usa la arena,
-//                                        queda para las pruebas que necesitan un patrón fijo
+//   intencionPractica(P, i)              el rival de práctica de L2 (repite practica.patron); la arena solo lo usa al
+//                                        probar un ataque desde el Estudio (reglasProbar, N6c) y en las pruebas
 // Postura y desvío (L2, combate/postura.js con estilo-*.json → reglas): cada peleador tiene F.post; los golpes la suben
 // según la tabla del estilo del que recibe, baja sola con calma y al tope deja al peleador desequilibrado.
 // Peso y reacciones (N5, combate/peso.js): cada golpe trae su nivel (ligero … remate) y su reacción (la del ataque o
@@ -762,6 +762,12 @@ export function intencionCPU(P, i = 1) {
 // esperando ataqueCada s entre pasos (al azar con semilla); se acerca hasta su alcance y nunca empieza durante tu
 // hitstop. Desvía uno de cada desviaCada ataques tuyos. Sin patrón tira su ataque de atacar, como en L1.
 // La CPU de verdad (§19.6) llega en L4.
+// Estudio (N6c, «Probar en el juego»): las reglas con el rival de práctica repitiendo solo `accion` (sin peligros
+// intercalados ni desvíos) o, si es una reacción, con el muñeco jugando solo esa. Copia: R no se toca.
+export function reglasProbar(R, accion, reaccion = false) {
+    if (reaccion) return { ...R, muneco: { ...R.muneco, reacciones: [accion] } };
+    return { ...R, practica: { ...R.practica, patron: [{ accion }], peligros: [], peligroCada: 0, desviaCada: 0 } };
+}
 const nuevaPractica = () => ({ espera: 0, paso: 0, n: 0, peligro: 0, golpes: 0, serial: -1, fuerte: -1, visto: -1, cuenta: 0, desviar: false });
 export function intencionPractica(P, i = 1) {
     const F = P.f[i], O = P.f[1 - i], Q = P.R.practica, hz = HZ(), pr = P.practica;

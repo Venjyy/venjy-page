@@ -4,7 +4,7 @@
 // (los cuadros clave de la acción, en 3/4). Dos muñecos de cajas como los del juego (skin.js y aplicarAngulos): el que
 // hace la acción y su rival, que reacciona. El arma va colgada de la muñeca (sigue a la mano sola) con su punta marcada
 // en rojo y el camino de la punta durante la acción en amarillo. Las poses salen de combate-visor-modelo.mjs (simular).
-//   crearVisor(lienzo)        -> { fijarEstilo(estilo), fijarSim(sim, hoja), dibujar(i), medir(i) }
+//   crearVisor(lienzo)        -> { fijarEstilo(estilo, estiloR), fijarSim(sim, hoja), dibujar(i), medir(i) }
 // =========================================================
 import { indiceDe } from './combate-visor-modelo.mjs';
 
@@ -40,14 +40,15 @@ export async function crearVisor(lienzo) {
     const camHoja = new THREE.PerspectiveCamera(30, 1, 0.1, 60);
     let sim = null, hoja = [];
 
-    // El arma del estilo (arma.caja en coordenadas de la muñeca) en las dos manos que la llevan; sin caja, nada
-    function fijarEstilo(estilo) {
+    // El arma de cada estilo (arma.caja en coordenadas de la muñeca) en la mano que la lleva; sin caja, nada.
+    // estiloR: el del rival (N6c; sin él, el mismo)
+    function fijarEstilo(estilo, estiloR = estilo) {
         for (const v of vistas) {
             for (const a of v.armas) a.parent && a.parent.remove(a);
-            v.armas = [];
-            const arma = estilo && estilo.arma;
-            if (!arma || !arma.caja) continue;
-            for (const m of [v.A, v.R]) {
+            v.armas = []; v.armaA = null;
+            for (const [m, e] of [[v.A, estilo], [v.R, estiloR]]) {
+                const arma = e && e.arma;
+                if (!arma || !arma.caja) continue;
                 const muneca = arma.mano === 'I' ? m.munecaI : m.munecaD;
                 if (!muneca) continue;
                 const [cx, cy, cz] = arma.caja.centro, [w, h, d] = arma.caja.medidas;
@@ -58,6 +59,7 @@ export async function crearVisor(lienzo) {
                 const punta = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), matPunta);
                 punta.position.set(cx, cy, cz + d / 2); punta.renderOrder = 9; punta.name = 'punta'; g.add(punta);
                 muneca.add(g); v.armas.push(g);
+                if (m === v.A) v.armaA = g;
             }
         }
     }
@@ -75,7 +77,7 @@ export async function crearVisor(lienzo) {
     function posar(v, q) {
         aplicarAngulos(v.A, q.A); v.A.g.position.set(q.raizA.x, 0, q.raizA.z); v.A.g.rotation.y = q.raizA.yaw;
         aplicarAngulos(v.R, q.R); v.R.g.position.set(q.raizR.x, 0, q.raizR.z); v.R.g.rotation.y = q.raizR.yaw;
-        v.marca.visible = !v.armas.length && !!q.punta;
+        v.marca.visible = !v.armaA && !!q.punta;
         if (v.marca.visible) v.marca.position.set(...q.punta);
     }
     // Con una simulación nueva: el camino de la punta y la hoja de cuadros (que no cambia mientras corre el bucle)
@@ -110,7 +112,7 @@ export async function crearVisor(lienzo) {
         const v = vistas[0];
         posar(v, sim.cuadros[i]);
         v.A.g.updateMatrixWorld(true);
-        const p = v.armas[0] ? v.armas[0].getObjectByName('punta') : v.marca.visible ? v.marca : null;
+        const p = v.armaA ? v.armaA.getObjectByName('punta') : v.marca.visible ? v.marca : null;
         if (!p) return null;
         const w = p.getWorldPosition(new THREE.Vector3());
         return [w.x, w.y, w.z].map(x => Math.round(x * 1000) / 1000);

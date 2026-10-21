@@ -40,6 +40,9 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  'probar' abre esa canción de La Gira en Práctica, solo con esa sección (índice) y con los ajustes a mano
 //                                  actuales (pestaña Ritmo, S10b) o 'terminar' cierra Salonas
 //   arena({ accion })             'abrir' | 'lalo' | 'moises' | 'terminar': la arena del duelo de Lalo y Moisés (bloque 8 · L1)
+//   combate({ accion, estilo?, ataque?, reaccion?, dificultad? })
+//                                  (N6c) 'probar' abre la arena en práctica contra ese estilo (sin «estilo-»): el rival repite
+//                                  ese ataque o, con reaccion, es el muñeco que la juega con R; 'terminar' cierra la arena
 //   musica({ accion, tema?, instrumentos?, nivel?, tempo? })
 //                                  'tocar' suena ese tema (vista previa de la pestaña Música; calla la música del juego) o 'parar'
 //   caminar({ persona, destino })  (6d etapa 2) lleva a esa persona caminando a `destino` ('aqui', 'sitio', otra persona o
@@ -155,6 +158,19 @@ export function crearManejador(juego) {
                     if (!['abrir', 'lalo', 'moises', 'terminar'].includes(m.accion)) return error('accion de arena no válida');
                     if (!juego.arena) return error('este juego no tiene la arena del duelo');
                     await juego.arena({ accion: m.accion });
+                    return { ...base, tipo: 'ok' };
+                }
+                case 'combate': {
+                    // Pestaña Combate (N6c): «Probar en el juego» abre la arena en práctica contra ese estilo; el rival
+                    // repite ese ataque (o, si es una reacción, es el muñeco y R la juega). 'terminar' la cierra
+                    if (!['probar', 'terminar'].includes(m.accion)) return error('accion de combate no válida (probar o terminar)');
+                    if (m.accion === 'probar') {
+                        if (typeof m.estilo !== 'string' || !/^[a-z0-9_-]{1,24}$/.test(m.estilo)) return error('estilo no válido');
+                        if (typeof m.ataque !== 'string' || !/^[a-z0-9_]{1,40}$/.test(m.ataque)) return error('ataque no válido');
+                        if (m.dificultad !== undefined && !['facil', 'normal', 'dificil', 'maestro'].includes(m.dificultad)) return error('dificultad no válida');
+                    }
+                    if (!juego.combate) return error('este juego no tiene la arena del duelo');
+                    await juego.combate({ accion: m.accion, estilo: m.estilo, ataque: m.ataque, reaccion: m.reaccion === true, dificultad: m.dificultad || 'normal' });
                     return { ...base, tipo: 'ok' };
                 }
                 case 'musica': {

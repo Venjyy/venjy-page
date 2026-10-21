@@ -132,6 +132,8 @@
                         <select id="co-vel" aria-label="Velocidad">
                             <option value="1">×1</option><option value="0.5">×0,5</option><option value="0.25">×0,25</option><option value="0.1">×0,1</option>
                         </select></label>
+                    <label><span data-es="Rival" data-en="Rival">Rival</span> <select id="co-rival" aria-label="Estilo del rival"></select></label>
+                    <label class="casilla-marca"><input id="co-peso" type="checkbox" checked> <span data-es="Pausa del golpe y empuje" data-en="Hit pause and push">Pausa del golpe y empuje</span></label>
                     <span id="co-cuadro" class="mensaje co-cuadro" role="status"></span>
                 </div>
                 <canvas id="co-vista" class="po-vista co-vista" width="960" height="420"></canvas>
@@ -145,6 +147,7 @@
                 <div class="fila-botones">
                     <label><span data-es="Zoom" data-en="Zoom">Zoom</span> <input id="co-zoom" type="range" min="4" max="30" step="1" value="12" aria-label="Zoom"></label>
                     <label class="casilla-marca"><input id="co-ver-claves" type="checkbox"> <span data-es="Claves de la animación (avanzado)" data-en="Animation keys (advanced)">Claves de la animación (avanzado)</span></label>
+                    <span id="co-canal-nuevo" class="fila-botones" hidden></span>
                 </div>
                 <div id="co-linea"></div>
                 <div id="co-curva-zona" hidden>
@@ -473,6 +476,13 @@
                     <p class="mensaje" data-es="Ataques, movimientos y reacciones de cada estilo de pelea. Elige un estilo y una acción; la línea de tiempo de abajo muestra sus fases y ventanas. Todo va en vivo en la arena. Guardar escribe mundo/datos/estilo-*.json y combate.json." data-en="Attacks, moves and reactions of each fighting style. Pick a style and an action; the timeline below shows its phases and windows. Everything is live in the arena. Save writes mundo/datos/estilo-*.json and combate.json.">Ataques, movimientos y reacciones de cada estilo de pelea. Elige un estilo y una acción; la línea de tiempo de abajo muestra sus fases y ventanas. Todo va en vivo en la arena. Guardar escribe mundo/datos/estilo-*.json y combate.json.</p>
                     <label class="campo"><span data-es="Estilo" data-en="Style">Estilo</span> <select id="co-estilo" aria-label="Estilo"></select></label>
                     <label class="campo"><span data-es="Acción" data-en="Action">Acción</span> <select id="co-accion" aria-label="Acción"></select></label>
+                    <div class="fila-botones">
+                        <button id="co-probar" class="boton chico" type="button" data-es="Probar en el juego" data-en="Try in the game">Probar en el juego</button>
+                        <select id="co-probar-dif" aria-label="Dificultad para probar"></select>
+                        <button id="co-terminar" class="boton chico secundario" type="button" data-es="Cerrar la arena" data-en="Close the arena">Cerrar la arena</button>
+                    </div>
+                    <p class="mensaje" data-es="Probar abre la arena del juego (con ?estudio): el rival usa este estilo y repite la acción elegida; si es una reacción, el rival es el muñeco y R la juega." data-en="Try opens the game's arena (with ?estudio): the rival uses this style and repeats the chosen action; if it is a reaction, the rival is the dummy and R plays it.">Probar abre la arena del juego (con ?estudio): el rival usa este estilo y repite la acción elegida; si es una reacción, el rival es el muñeco y R la juega.</p>
+                    <div id="co-paneles" class="fila-botones co-paneles" role="tablist" aria-label="Paneles"></div>
                 </section>
                 <div id="co-campos"></div>
                 <section class="panel acciones">
