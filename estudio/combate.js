@@ -7,11 +7,18 @@
 // ancladas a la fase, así la animación y las ventanas siguen a la fase que se estira).
 // Vista simple: rapidez, las tres fases con nombres comunes, daño, postura, alcance y empuje; «Avanzado» para el resto.
 // Cada cambio va en vivo (mensaje `datos` con el nombre del archivo; el juego cambia el estilo en el lugar). Guardar
-// escribe con If-Match cada archivo tocado. Visor 3D y claves de canal: N6b. Peso, Controles, CPU y «Probar»: N6c.
+// escribe con If-Match cada archivo tocado. Peso, Controles, CPU y «Probar»: N6c.
+// N6b: visor 3D arriba de la línea (estudio/combate-visor.js; poses con el motor del juego en combate-visor-modelo.mjs),
+// cabezal en la línea (clic o arrastre en la regla), claves de cada canal como puntos anclados a la fase (con «Claves de
+// la animación») y la curva de un canal como en Poses (clic en el nombre del canal).
 // =========================================================
 import * as M from './combate-modelo.mjs';
 import { largoFases } from '../mundo/supervivencia/combate/datos.js';
 import { reglasEstilo, reglasCombate } from '../mundo/supervivencia/combate/reglas.js';
+import * as V from './combate-visor-modelo.mjs';
+import { crearVisor } from './combate-visor.js';
+import { CANALES as CANALES_POSE } from './poses-modelo.mjs';
+import { nombresCurvas } from '../mundo/datos/curvas.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 
@@ -41,6 +48,9 @@ export async function montarCombate(ctx) {
     let pxPorCuadro = 12;
     let avanzado = false;
     let baseRapidez = null; // fases al empezar a mover la rapidez
+    // Visor (N6b): simulación de la acción (se rehace tras cada cambio), cuadro del bucle, reproducción y canal elegido
+    let sim = null, iBucle = 0, play = true, vel = 1, canal = null, iClave = -1, verClaves = false, visor = null;
+    const DESC_CANAL = Object.fromEntries(CANALES_POSE.map(([k, , , es, en]) => [k, [es, en]]));
 
     const sucio = n => JSON.stringify(archivos[n].datos) !== JSON.stringify(archivos[n].original);
     const algunoSucio = () => Object.keys(archivos).some(sucio);
@@ -50,9 +60,11 @@ export async function montarCombate(ctx) {
     const esAtaque = () => !!sel && sel.grupo === 'ataques';
     // Un cambio: en vivo al juego, pinta lo que haga falta
     const cambio = (n = archivoSel(), repintar = 'linea') => {
+        sim = null;
         ctx.puente.enviarDatos(n, archivos[n].datos);
         btnGuardar.disabled = !algunoSucio() || !ctx.servidor.escritura;
         if (repintar === 'todo') pintar(); else { pintarLinea(); pintarResumen(); pintarProblemas(); }
+        pintarCurva();
     };
 
     // ---------- Controles chicos ----------
@@ -106,8 +118,9 @@ export async function montarCombate(ctx) {
         if (!sel || !defSel()) { const g = grupos[0]; sel = g ? { grupo: g.grupo, clave: g.claves[0] } : null; }
         if (sel) selAccion.value = sel.grupo + '|' + sel.clave;
     }
-    selEstilo.addEventListener('change', () => { estilo = selEstilo.value; sel = null; elegida = null; pintar(); });
-    selAccion.addEventListener('change', () => { const [g, k] = selAccion.value.split('|'); sel = { grupo: g, clave: k }; elegida = null; baseRapidez = null; pintar(); });
+    const nuevaAccion = () => { elegida = null; baseRapidez = null; sim = null; iBucle = 0; canal = null; iClave = -1; };
+    selEstilo.addEventListener('change', () => { estilo = selEstilo.value; sel = null; nuevaAccion(); if (visor) visor.fijarEstilo(archivos[estilo].datos); pintar(); });
+    selAccion.addEventListener('change', () => { const [g, k] = selAccion.value.split('|'); sel = { grupo: g, clave: k }; nuevaAccion(); pintar(); });
 
     // ---------- Línea de tiempo ----------
     const ANCHO_ROTULO = 130;
@@ -129,6 +142,14 @@ export async function montarCombate(ctx) {
             const m = el('div', 'es-marca-regla' + (c % 10 === 0 ? ' entera' : ''));
             m.style.left = c * pxPorCuadro + 'px'; if (c % 10 === 0) m.dataset.t = c; regla.appendChild(m);
         }
+        // Clic o arrastre en la regla: el cabezal va a ese cuadro (y se pausa)
+        regla.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            const ir = ev => irA((ev.clientX - regla.getBoundingClientRect().left) / pxPorCuadro);
+            ir(e);
+            const soltar = () => { window.removeEventListener('pointermove', ir); window.removeEventListener('pointerup', soltar); };
+            window.addEventListener('pointermove', ir); window.addEventListener('pointerup', soltar);
+        });
         // Fases: el borde derecho de cada una se arrastra (estira esa fase; lo que viene después se corre)
         const pf = fila(t('fases', 'phases'));
         let x = 0;
@@ -161,9 +182,207 @@ export async function montarCombate(ctx) {
             }
             p.appendChild(b);
         }
+        // Claves de cada canal (N6b): puntos anclados a la fase; se arrastran a los lados, clic en el nombre = su curva
+        if (verClaves) pintarFilasClaves(fila, def);
+        nodoCabezal = el('div', 'co-cabezal'); nodoCabezal.hidden = true; interior.appendChild(nodoCabezal);
         const l = el('div', 'es-linea'); l.appendChild(interior);
         linea.appendChild(l);
+        moverCabezal();
     }
+    let nodoCabezal = null;
+    function pintarFilasClaves(fila, def) {
+        const info = animSel();
+        if (!info || !V.usaFases(info.anim)) {
+            fila(t('claves', 'keys')).appendChild(el('span', 'txt', t('Esta acción no tiene animación con fases.', 'This action has no phase animation.')));
+            return;
+        }
+        if (!info.archivo) fila(t('claves', 'keys')).appendChild(el('span', 'txt', t('Animación del código: se ve, pero no se edita aquí.', 'Code animation: shown, not editable here.')));
+        for (const { canal: k, puntos } of V.clavesDe(info.anim, def.fases)) {
+            const p = fila(k, 'co-fila-clave' + (k === canal ? ' elegida' : ''));
+            p.style.height = '18px';
+            const rot = p.previousSibling;
+            if (DESC_CANAL[k]) rot.title = t(...DESC_CANAL[k]);
+            rot.addEventListener('click', () => { canal = k; iClave = -1; pintarLinea(); pintarCurva(); });
+            for (const q of puntos) {
+                const d = el('div', 'co-clave ' + (q.fase === 'activo' ? 'g' : q.fase === 'recuperacion' ? 'r' : 'a') + (k === canal && q.i === iClave ? ' elegida' : ''));
+                d.style.left = q.c * pxPorCuadro + 'px';
+                d.title = `${k}: ${q.v} · c${q.c} (${t(...M.NOMBRE_FASE[q.fase]).split(' (')[0]})`;
+                if (info.archivo) arrastrar(d, q.c, (dx, v0) => {
+                    if (Math.abs(dx) < pxPorCuadro / 2) return;
+                    if (V.moverClave(info.anim, k, q.i, Math.round(v0 + dx / pxPorCuadro), def.fases)) cambio(archivoAnim(info));
+                }, () => { canal = k; iClave = q.i; pintarCurva(); });
+                p.appendChild(d);
+            }
+        }
+    }
+    // La animación de la acción elegida y el archivo donde vive
+    const animSel = () => { const def = defSel(); return def ? V.animDeAccion(archivos[estilo].datos, archivos.combate.datos, def, sel.clave) : null; };
+    const archivoAnim = info => (info.archivo === 'estilo' ? estilo : 'combate');
+
+    // ---------- Visor y cabezal (N6b) ----------
+    function simAhora() {
+        if (sim || !sel) return sim;
+        sim = V.simular(archivos[estilo].datos, archivos.combate.datos, sel.clave);
+        const hoja = sim ? V.cuadrosHoja(sim.def.fases, 8) : [];
+        if (visor) visor.fijarSim(sim, hoja);
+        pintarHoja(hoja);
+        if (sim) iBucle = Math.min(iBucle, sim.cuadros.length - 1);
+        ultimoC = null;
+        return sim;
+    }
+    const cuadroActual = () => (sim ? sim.cuadros[Math.floor(iBucle)].c : 0);
+    function irA(c) {
+        if (!simAhora()) return;
+        iBucle = V.indiceDe(sim, Math.max(0, Math.min(sim.total - 1, c)));
+        ponerPlay(false); refrescarVisor();
+    }
+    function ponerPlay(v) {
+        play = v;
+        const b = $('co-play');
+        b.dataset.es = v ? 'Pausa' : 'Reproducir'; b.dataset.en = v ? 'Pause' : 'Play'; b.textContent = t(b.dataset.es, b.dataset.en);
+    }
+    $('co-play').addEventListener('click', () => ponerPlay(!play));
+    $('co-vel').addEventListener('change', e => { vel = Number(e.target.value) || 1; });
+    $('co-ver-claves').addEventListener('change', e => { verClaves = e.target.checked; pintarLinea(); pintarCurva(); });
+    function pintarHoja(hoja) {
+        const zona = $('co-hoja');
+        zona.textContent = '';
+        for (const h of hoja) {
+            const b = el('button', 'co-' + h.fase, `c${h.c}`); b.type = 'button'; b.dataset.c = h.c;
+            b.title = t(...M.NOMBRE_FASE[h.fase]);
+            b.addEventListener('click', () => irA(h.c));
+            zona.appendChild(b);
+        }
+    }
+    function moverCabezal() {
+        if (!nodoCabezal || !sim) return;
+        const c = cuadroActual();
+        nodoCabezal.hidden = !(c >= 0 && c < sim.total);
+        nodoCabezal.style.left = (ANCHO_ROTULO + c * pxPorCuadro + pxPorCuadro / 2) + 'px';
+    }
+    let ultimoC = null;
+    function refrescarVisor() {
+        if (!simAhora()) { $('co-cuadro').textContent = ''; return; }
+        if (visor) visor.dibujar(Math.floor(iBucle));
+        const q = sim.cuadros[Math.floor(iBucle)], c = q.c;
+        if (c === ultimoC) return;
+        ultimoC = c;
+        moverCabezal();
+        const dentro = c >= 0 && c < sim.total, fase = dentro ? V.FASE_DE[V.claveDeCuadro(c, sim.def.fases)[0]] : null;
+        const nf = fase ? t(...M.NOMBRE_FASE[fase]).split(' (')[0] : '';
+        $('co-cuadro').textContent = dentro
+            ? t(`Cuadro ${c} de ${sim.total} · ${nf}`, `Frame ${c} of ${sim.total} · ${nf}`) + (q.rc !== null ? t(` · rival: ${sim.reaccion} c${q.rc}`, ` · rival: ${sim.reaccion} f${q.rc}`) : '')
+            : t('Guardia (entre una vuelta y otra)', 'Guard (between loops)');
+        for (const b of $('co-hoja').children) b.classList.toggle('actual', Number(b.dataset.c) === c);
+        pintarCurva();
+    }
+    let tAnterior = null;
+    function tick(ahora) {
+        requestAnimationFrame(tick);
+        const dt = tAnterior === null ? 0 : Math.min(0.1, (ahora - tAnterior) / 1000);
+        tAnterior = ahora;
+        if (ctx.pestana !== 'combate' || !simAhora()) return;
+        if (play) iBucle = (iBucle + dt * V.HZ * vel) % sim.cuadros.length;
+        refrescarVisor();
+    }
+    $('co-vista').addEventListener('click', () => ponerPlay(!play));
+
+    // ---------- Curva de un canal (como en Poses) ----------
+    const lienzo = $('co-curva'), MARGEN = 30;
+    let escala = null, arrastreClave = null;
+    const aPx = (c, v) => [MARGEN + c / (escala.total || 1) * (lienzo.width - 2 * MARGEN), lienzo.height - 14 - (v - escala.a) / (escala.b - escala.a || 1) * (lienzo.height - 28)];
+    const dePx = (px, py) => [(px - MARGEN) / (lienzo.width - 2 * MARGEN) * escala.total, escala.a + (lienzo.height - 14 - py) / (lienzo.height - 28) * (escala.b - escala.a)];
+    const f2 = x => Math.round(x * 100) / 100;
+    function pintarCurva() {
+        const zona = $('co-curva-zona'), def = defSel(), info = animSel();
+        const k = info && canal && V.canalesConClaves(info.anim).includes(canal) ? info.anim.canales[canal].k : null;
+        zona.hidden = !k || !def || !def.fases || !verClaves;
+        if (zona.hidden) { escala = null; return; }
+        const f = def.fases, total = largoFases(f), [a, b] = V.rangoCanal(info.anim, canal, f);
+        escala = { total, a, b };
+        $('co-curva-titulo').textContent = `${sel.clave} · ${canal}` + (DESC_CANAL[canal] ? ` · ${t(...DESC_CANAL[canal])}` : '') + (info.archivo ? '' : t(' (código: no se edita)', ' (code: not editable)'));
+        const g = lienzo.getContext('2d');
+        g.fillStyle = '#1d1610'; g.fillRect(0, 0, lienzo.width, lienzo.height);
+        // fondo de cada fase (las claves se anclan a ellas)
+        const COLOR = { anticipacion: 'rgba(138,122,46,0.25)', activo: 'rgba(138,46,46,0.35)', recuperacion: 'rgba(58,90,138,0.25)' };
+        let x = 0;
+        for (const fase of M.FASES) {
+            const n = f[fase] || 0, [x0] = aPx(x, a), [x1] = aPx(x + n, a);
+            g.fillStyle = COLOR[fase]; g.fillRect(x0, 4, x1 - x0, lienzo.height - 18); x += n;
+        }
+        g.font = '12px PixelCraft, monospace'; g.fillStyle = '#aaaaaa';
+        if (a < 0 && b > 0) { const [, py] = aPx(0, 0); g.strokeStyle = '#6f6f6f'; g.lineWidth = 1; g.beginPath(); g.moveTo(MARGEN, py); g.lineTo(lienzo.width - MARGEN, py); g.stroke(); }
+        g.fillText(f2(b), 2, 14); g.fillText(f2(a), 2, lienzo.height - 16);
+        g.fillText('c0', MARGEN, lienzo.height - 2); g.fillText(`c${total}`, lienzo.width - MARGEN - 30, lienzo.height - 2);
+        g.strokeStyle = '#7fdc5a'; g.lineWidth = 2; g.beginPath();
+        V.muestras(info.anim, canal, f, 240).forEach(([c, v], i) => { const [px, py] = aPx(c, v); if (i) g.lineTo(px, py); else g.moveTo(px, py); });
+        g.stroke();
+        k.forEach((q, i) => {
+            const [px, py] = aPx(V.cuadroDeClave(q, f), q[2]);
+            g.fillStyle = i === iClave ? '#ffff55' : '#ffffff'; g.fillRect(px - 5, py - 5, 10, 10);
+            g.strokeStyle = '#000'; g.lineWidth = 1; g.strokeRect(px - 5, py - 5, 10, 10);
+        });
+        if (sim) {
+            const c = cuadroActual();
+            if (c >= 0 && c < total) { const [px] = aPx(c, a); g.strokeStyle = '#ffff55'; g.lineWidth = 1; g.beginPath(); g.moveTo(px, 4); g.lineTo(px, lienzo.height - 14); g.stroke(); }
+        }
+        const valor = $('co-valor'), llega = $('co-llega'), hay = iClave >= 0 && !!k[iClave];
+        valor.disabled = llega.disabled = !hay || !info.archivo;
+        if (!llega.options.length) for (const n of ['', ...nombresCurvas()]) { const o = el('option', '', n || t('suave (la de siempre)', 'smooth (default)')); o.value = n; llega.appendChild(o); }
+        if (hay && document.activeElement !== valor) valor.value = k[iClave][2];
+        if (hay) llega.value = k[iClave][3] || '';
+    }
+    const puntoLienzo = e => { const q = lienzo.getBoundingClientRect(); return [(e.clientX - q.left) * lienzo.width / q.width, (e.clientY - q.top) * lienzo.height / q.height]; };
+    function claveBajo(px, py) {
+        const info = animSel(), def = defSel();
+        if (!escala || !info) return -1;
+        return info.anim.canales[canal].k.findIndex(q => { const [qx, qy] = aPx(V.cuadroDeClave(q, def.fases), q[2]); return Math.abs(qx - px) <= 7 && Math.abs(qy - py) <= 7; });
+    }
+    lienzo.addEventListener('pointerdown', e => {
+        if (!escala) return;
+        const [px, py] = puntoLienzo(e), i = claveBajo(px, py), info = animSel();
+        lienzo.focus();
+        if (i >= 0) {
+            iClave = i;
+            if (info.archivo) { arrastreClave = { i, info }; lienzo.setPointerCapture(e.pointerId); }
+            pintarLinea(); pintarCurva();
+        } else irA(dePx(px, py)[0]);
+    });
+    lienzo.addEventListener('pointermove', e => {
+        if (!arrastreClave) return;
+        const [c, v] = dePx(...puntoLienzo(e)), { i, info } = arrastreClave, f = defSel().fases;
+        const a = V.moverClave(info.anim, canal, i, Math.round(c), f), b = V.fijarValor(info.anim, canal, i, v);
+        if (a || b) cambio(archivoAnim(info));
+    });
+    const soltarClave = () => { arrastreClave = null; };
+    lienzo.addEventListener('pointerup', soltarClave);
+    lienzo.addEventListener('pointercancel', soltarClave);
+    lienzo.addEventListener('dblclick', e => {
+        const info = animSel();
+        if (!escala || !info || !info.archivo) return;
+        const [px, py] = puntoLienzo(e);
+        if (claveBajo(px, py) >= 0) return;
+        const [c, v] = dePx(px, py), i = V.agregarClave(info.anim, canal, Math.round(c), v, defSel().fases);
+        if (i >= 0) { iClave = i; cambio(archivoAnim(info)); }
+    });
+    lienzo.addEventListener('keydown', e => {
+        const info = animSel();
+        if ((e.key === 'Delete' || e.key === 'Backspace') && iClave >= 0 && info && info.archivo) {
+            e.preventDefault();
+            if (V.borrarClave(info.anim, canal, iClave)) { iClave = -1; cambio(archivoAnim(info)); }
+        }
+    });
+    $('co-valor').addEventListener('change', e => {
+        const info = animSel();
+        if (info && info.archivo && iClave >= 0 && V.fijarValor(info.anim, canal, iClave, Number(e.target.value))) cambio(archivoAnim(info));
+    });
+    $('co-llega').addEventListener('change', e => {
+        const info = animSel(), q = info && info.archivo && iClave >= 0 && info.anim.canales[canal].k[iClave];
+        if (!q) return;
+        if (e.target.value) q[3] = e.target.value; else q.length = 3;
+        cambio(archivoAnim(info));
+    });
+
     const same = (a, b) => a.campo === b.campo && a.i === b.i;
     // Arrastre con puntero: f(dx, valorInicial) en cada movimiento. Escucha en window: cada cambio rehace la línea
     // (el nodo arrastrado desaparece), así que al soltar se pinta todo de nuevo
@@ -304,7 +523,7 @@ export async function montarCombate(ctx) {
     btnGuardar.addEventListener('click', guardar);
     $('co-descartar').addEventListener('click', () => {
         for (const n of Object.keys(archivos)) if (sucio(n)) { archivos[n].datos = clonar(archivos[n].original); ctx.puente.enviarDatos(n, archivos[n].datos); }
-        baseRapidez = null; elegida = null; pintar();
+        baseRapidez = null; elegida = null; sim = null; iClave = -1; pintar(); pintarCurva();
     });
     window.addEventListener('keydown', e => {
         if (ctx.pestana === 'combate' && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (!btnGuardar.disabled) guardar(); }
@@ -312,6 +531,12 @@ export async function montarCombate(ctx) {
     window.addEventListener('beforeunload', e => { if (algunoSucio()) { e.preventDefault(); e.returnValue = ''; } });
     ctx.alIdioma.push(() => pintar());
     // depuración y pruebas de navegador
-    ctx.combate = { archivos, elegir: (e, g, k) => { estilo = e; sel = { grupo: g, clave: k }; baseRapidez = null; pintar(); } };
+    ctx.combate = {
+        archivos, elegir: (e, g, k) => { estilo = e; sel = { grupo: g, clave: k }; nuevaAccion(); if (visor) visor.fijarEstilo(archivos[estilo].datos); pintar(); },
+        sim: () => simAhora(), irA, medir: i => (visor ? visor.medir(i) : null)
+    };
+    window.__estudioCombate = ctx.combate;
     pintar();
+    try { visor = await crearVisor($('co-vista')); visor.fijarEstilo(archivos[estilo].datos); sim = null; } catch (e) { console.warn('Visor de combate sin WebGL', e); }
+    requestAnimationFrame(tick);
 }
