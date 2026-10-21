@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mapaTiempo } from '../supervivencia/musica-motor.js';
+import { mapaTiempo, INSTRUMENTOS } from '../supervivencia/musica-motor.js';
 import * as S from '../supervivencia/salonas-partitura.js';
 import * as Z from '../supervivencia/salonas-reloj.js';
 
@@ -296,6 +296,42 @@ bloque('canciones de la sala de ensayo (S4)', () => {
     ok(garage.notas.filter(x => x.dur > 0).length >= 20, 'rock garage: notas largas en Experto');
     const ska = S.partitura(MUSICA.canciones['sala-ska'], 'normal');
     ok(ska.notas.some(x => [2, 6, 10, 14].includes(+x.clave.split(':')[1])), 'ska: notas en el contratiempo desde Normal');
+});
+
+// S6: canciones 3 y 4 del bar (SALONAS.md §2)
+bloque('canciones del bar (S6)', () => {
+    const tempo = { 'bar-cumbia': [92, 108], 'bar-funk': [105, 120] };
+    for (const [clave, [min, max]] of Object.entries(tempo)) {
+        const c = MUSICA.canciones[clave];
+        ok(c && !c.borrador, `${clave}: existe y no es borrador`);
+        if (!c) continue;
+        ok(c.bpm >= min && c.bpm <= max, `${clave}: ${c.bpm} bpm (entre ${min} y ${max})`);
+        ok(c.nombre && c.nombre.es && c.nombre.en, `${clave}: nombre ES/EN`);
+        ok(['verso', 'coro'].every(s => c.estructura.some(e => (e.nivel || e.seccion) === s)), `${clave}: verso y coro`);
+        const avisos = S.revisarPartitura(c);
+        ok(!avisos.length, `${clave}: revisarPartitura sin avisos (${JSON.stringify(avisos)})`);
+        const m = mapaTiempo(c);
+        ok(m.duracion > 90 && m.duracion < 180, `${clave}: dura ${m.duracion.toFixed(0)} s`);
+        for (const d of ['normal', 'dificil', 'experto']) {
+            const p = S.partitura(c, d);
+            const ritmo = nivel => { const ss = p.secciones.filter(s => s.nivel === nivel); return p.notas.filter(x => ss.some(s => s.n === x.n)).length / ss.reduce((a, s) => a + s.t1 - s.t0, 0); };
+            ok(ritmo('coro') > ritmo('verso') * 1.15, `${clave} ${d}: coro más intenso que el verso`);
+        }
+        const n = S.DIFICULTADES.map(d => S.partitura(c, d).notas.length);
+        ok(n[0] < n[1] && n[1] < n[2] && n[2] <= n[3], `${clave}: más notas a más dificultad (${n})`);
+        ok([0, 1, 2, 3].every(k => S.partitura(c, 'dificil').notas.some(x => x.carril === k)), `${clave}: Difícil usa los 4 carriles`);
+        ok(c.capas.every(p => INSTRUMENTOS.includes(p.inst) || (MUSICA.instrumentos && MUSICA.instrumentos[p.inst])), `${clave}: todos sus instrumentos existen`);
+    }
+    // Cumbia: la tónica en 1 y 3 y la quinta en la síncopa (el «y» de 2 y de 4: pasos 6 y 14)
+    const verso = MUSICA.canciones['bar-cumbia'].capas.find(p => p.bajo && p.niveles.includes('verso')).bajo;
+    ok(verso.filter(x => x[0] % 16 === 6 || x[0] % 16 === 14).length >= 6 && verso.filter(x => x[0] % 16 === 0 || x[0] % 16 === 8).length >= 6, 'cumbia: tónica en 1 y 3, quinta en la síncopa');
+    ok(S.partitura(MUSICA.canciones['bar-cumbia'], 'normal').notas.some(x => [6, 14].includes(+x.clave.split(':')[1])), 'cumbia: notas en la síncopa desde Normal');
+    // Funk: slap y pop en el coro, en octavas (el pop una octava sobre el slap de antes)
+    const coro = MUSICA.canciones['bar-funk'].capas.find(p => p.bajo && p.niveles.includes('coro')).bajo;
+    const octavas = coro.filter((x, i) => x[1] === 'p' && (coro.slice(0, i).reverse().find(y => y[1] === 's') || [])[2] === x[2] - 12).length;
+    ok(octavas >= 8, `funk: slap y pop en octavas en el coro (${octavas})`);
+    const A = Z.AJUSTES_SALONAS;
+    ok(['bar-cumbia', 'bar-funk'].every(k => A.canciones.includes(k) && A.localDe[k] === 'bar'), 'las dos en el menú y en el bar');
 });
 
 console.log(fallos ? `\n${fallos} fallos` : 'salonas: todo bien');
