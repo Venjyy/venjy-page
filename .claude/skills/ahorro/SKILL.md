@@ -135,3 +135,19 @@ Nada de pegar diffs, historiales ni resúmenes de lo que ya está en el reposito
 4. Commit y PR con descripción corta (qué, por qué, cómo se probó).
 5. Entregar el prompt de traspaso (§5): secciones a leer, estado en 5-10 líneas, lo que sigue.
 6. Terminar el chat; no seguir con la parte siguiente aquí.
+
+## 9. Forzado por hooks (venjy-page)
+
+Las reglas de arriba no se cargaban solas, así que el proyecto las fuerza (`.claude/settings.json`, scripts en `.claude/hooks/`):
+
+- **SessionStart** (`ahorro-inicio.mjs` lee `ahorro-reglas.md`): mete un resumen de 6 reglas en cada sesión, también tras `/clear` y compactar. Para cambiar la regla, editar `ahorro-reglas.md`.
+- **PreToolUse Read** (`ahorro-leer.mjs`): niega GIF, video, audio, `vendor/`, `respaldo-2026-10-06/`, `.impeccable/review/`, `centroeventostest/` y archivos de texto de más de 200 líneas leídos enteros. Salida: Grep + Read con `offset`/`limit`, o `allow_large: true` si de verdad hace falta.
+- **PostToolUse Bash** (`traspaso-pr.mjs`): tras `gh pr create` o `gh pr merge` ordena invocar `traspaso-chat` y entregar el prompt en un bloque de código.
+
+### Lo aprendido (gastos evitables)
+
+- **Shell**: no usar `node -e` ni `python -c` con comillas, backticks o barras invertidas (el shell las rompe y hay que rehacer). Escribir el script a `$TEMP` con `cat > f <<'E'` y ejecutarlo, o usar Edit/Write.
+- **Skills pesadas** (`update-config` trae un esquema enorme): no cargarlas para un cambio de 20 líneas; editar el JSON directo y validarlo con node.
+- **Navegador**: una sola prueba de lo nuevo, con `javascript_tool` que devuelva texto; captura solo si el cambio es visual. Lo visual lo prueba el dueño.
+- **Leer el archivo patrón entero solo si es corto**; los de más de 200 líneas, por tramos (el hook lo exige).
+- Un hook con `if` puede no filtrar: filtrar dentro del script leyendo `tool_input` del stdin.
