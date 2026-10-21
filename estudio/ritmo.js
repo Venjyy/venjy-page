@@ -298,7 +298,7 @@ export async function montarRitmo(ctx) {
         seccion: () => secEd,
         editar: f => editarCancion(f),
         armar: d => armar(cancion, cancionActual(), d, datos().reglas, datos().ajustes),
-        colores
+        colores, escuchar: mu.escuchar
     });
 
     // ---------- vida de la pestaña ----------

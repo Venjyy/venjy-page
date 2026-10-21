@@ -173,5 +173,30 @@ ok(html.includes('id="ri-probar"') && html.includes('id="ri-seccion"') && html.i
     ok(new Set((bajoJs.match(/\$\(['"]ri-[a-z-]+/g) || [])).size === 0 && /ri-nota-bajo/.test(bajoJs), 'el módulo del bajo no depende de ids ajenos');
 }
 
+// ---------- vozBajo (S10c-2 parte 2) ----------
+{
+    const c = {};
+    ok(M.valorVoz(c, ['vol']) === 0.55 && M.valorVoz(c, ['tecnicas', 's', 'brillo']) === 3200, 'valorVoz: sin cambios da el valor base (VOZ_BAJO)');
+    ok(M.ponerVoz(c, ['vol'], 0.8) && c.vozBajo.vol === 0.8 && Object.keys(c.vozBajo).length === 1, 'ponerVoz: solo añade esa clave');
+    ok(M.ponerVoz(c, ['tecnicas', 's', 'brillo'], 4000) && M.ponerVoz(c, ['tecnicas', 'p', 'chasquido', 'vol'], 0.2) && M.ponerVoz(c, ['nasal', 'frec'], 900), 'ponerVoz: técnica, chasquido y pico');
+    ok(c.vozBajo.tecnicas.s.brillo === 4000 && c.vozBajo.tecnicas.p.chasquido.vol === 0.2 && c.vozBajo.nasal.frec === 900, 'ponerVoz: anida donde toca');
+    ok(M.valorVoz(c, ['tecnicas', 's', 'brillo']) === 4000 && M.valorVoz(c, ['tecnicas', 's', 'q']) === 10, 'valorVoz: lo cambiado y, al lado, lo base');
+    ok(M.valorVoz(c, ['nasal', 'q']) === 1.6 && M.valorVoz(c, ['nasal', 'frec']) === 900, 'valorVoz: nasal mezcla base y canción');
+    const antes = JSON.stringify(c);
+    ok(!M.ponerVoz(c, ['vol'], 5) && !M.ponerVoz(c, ['vol'], NaN) && !M.ponerVoz(c, ['tecnicas', 'z', 'vol'], 1) && !M.ponerVoz(c, ['nasal', 'nada'], 1) && !M.ponerVoz(c, ['saturacion'], 0), 'ponerVoz: rechaza fuera de rango, NaN y rutas falsas');
+    ok(JSON.stringify(c) === antes, 'ponerVoz: un valor rechazado no toca nada');
+    ok(M.hayVoz(c) && !M.hayVoz({}) && !M.hayVoz({ vozBajo: {} }), 'hayVoz');
+    // los rangos del modelo son los del esquema
+    const esq = JSON.parse(leer('estudio', 'esquemas', 'musica.schema.json')).$defs;
+    const rangos = (campos, def) => campos.every(f => esq[def].properties[f[0]] && esq[def].properties[f[0]].minimum === f[1] && esq[def].properties[f[0]].maximum === f[2]);
+    ok(rangos(M.CAMPOS_VOZ, 'vozBajo') && rangos(M.CAMPOS_PICO, 'picoBajo'), 'CAMPOS_VOZ y CAMPOS_PICO = esquema');
+    const ch = esq.tecnicaBajo.properties.chasquido.properties;
+    ok(M.CAMPOS_CHASQUIDO.every(f => ch[f[0]].minimum === f[1] && ch[f[0]].maximum === f[2]), 'CAMPOS_CHASQUIDO = esquema');
+    ok(M.CAMPOS_TECNICA.every(f => esq.tecnicaBajo.properties[f[0]].minimum === f[1] && esq.tecnicaBajo.properties[f[0]].maximum === f[2]), 'CAMPOS_TECNICA = esquema');
+    const bajoJs = leer('estudio', 'ritmo-bajo.js'), musicaJs = leer('estudio', 'musica.js');
+    ok(/pintarVoz/.test(bajoJs) && /ponerVoz/.test(bajoJs) && /escuchar/.test(ritmoJs), 'Ritmo cablea la voz y el escuchar');
+    ok(/escuchar:\s*\{/.test(musicaJs) && /crearReproductorCancion/.test(musicaJs), 'Música expone ctx.musica.escuchar con el reproductor de canciones');
+}
+
 console.log(fallos ? `${fallos} fallas` : 'ritmo: todo bien');
 process.exit(fallos ? 1 : 0);
