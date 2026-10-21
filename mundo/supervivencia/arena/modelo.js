@@ -19,6 +19,12 @@
 // pared, esquivas; con su trauma), 'aire' (empieza el activo de un ataque), 'pared' y 'prueba' (muñeco).
 //   muñeco de práctica: nuevaPelea(R, { muneco: true }) → el rival no ataca ni se defiende, no cae y no corre el
 //   reloj; probarReaccion(P, i, clave) le hace jugar una reacción (para mirarlas una por una)
+// Peligrosos, mikiri, golpe final y arte (L3, combate/peligro.js con estilo-*.json → reglas.peligro, mikiri, remate y
+// espiritu): los ataques con `peligro` avisan (evento 'peligro') y se defienden según la tabla de §16.4; esquivar
+// hacia el rival durante su estocada es mikiri (evento 'mikiri'); atacar al desequilibrado a tu alcance es el golpe
+// final (evento 'remate'); las acciones con `pareja` mueven al rival a su reacción y le dan postura y daño; el arte
+// cuesta espíritu (F.esp, lo llenan los desvíos). avisoPeligro(P, i): el aviso de f[i] en este cuadro. Otros eventos:
+// 'envainar' (efectos.envainar del golpe final) y 'sinEspiritu'.
 //   crearCamara(R) / pasoCamara(C, P, dt, aspecto)   cámara de lado al eje del duelo (§19.4): { pos, mira, fov }
 //   encuadre(cam, puntos, aspecto)       ¿todos los puntos caen dentro de la imagen? (las pruebas y el Estudio)
 //   puntosCuerpo(F)                      pies y cabeza de un peleador, para medir el encuadre
@@ -26,6 +32,7 @@
 // 'tiempo' (finRonda) → 'anuncio' de la siguiente o 'final'. Coordenadas: centro de la arena en (0, 0), eje largo X,
 // yaw 0 = mira hacia +Z (como cuerpo.js y estados.alcanza).
 // =========================================================
+import * as G from '../combate/peligro.js';
 import * as E from '../combate/estados.js';
 import * as A from '../combate/animacion.js';
 import * as S from '../combate/postura.js';
@@ -52,14 +59,21 @@ export const ARENA = {
     publico: { personas: [], distancia: 1.6, gestos: [] },
     marcas: { separacion: 3.2, x: 0, z: 0 },
     movimiento: { radio: 0.35, distanciaMin: 0.7, duro: 0.45, empuje: 0.35, reorientar: 6, giroEje: 75 },
-    camara: { fov: 50, altura: 1.45, mira: 1.0, inclinacion: 8, distanciaMin: 3.5, distanciaMax: 8, margen: 1.1, resorte: 0.25, giroMax: 90, adelanto: 0.25, separacionMin: 3 },
+    camara: {
+        fov: 50, altura: 1.45, mira: 1.0, inclinacion: 8, distanciaMin: 3.5, distanciaMax: 8, margen: 1.1, resorte: 0.25, giroMax: 90, adelanto: 0.25, separacionMin: 3,
+        // Golpe final (L3, S13): plano de cine bajo que gira alrededor de los dos (s; bloques; grados; fov)
+        remate: { duracion: 1.6, distancia: 3.4, altura: 0.75, mira: 1.0, giro: 70, desde: 25, fov: 40 }
+    },
     planos: {},
     entrada: { guion: 'duelo-reto', viaje: 2.4, vs: 3, vuelo: 4, ventisca: 1.1, vuelos: [], caminarMarca: 1.1 },
     vs: { retrato: '3d', tambor: true, diagonal: 12 },
-    practica: { ataqueCada: [1.4, 2.6], alcance: 2.1, acercarse: 0.8, patron: [], desviaCada: 0 },
+    practica: { ataqueCada: [1.4, 2.6], alcance: 2.1, acercarse: 0.8, patron: [], desviaCada: 0, peligros: [], peligroCada: 0 },
     muneco: { recupera: 2, reacciones: [] }, // muñeco de práctica (N5): s sin golpes para recuperar la vida; orden de «probar» (vacío = todas)
     golpe: { hitstop: 'ligero', bloqueoDano: 0.15 },
-    hud: { vida: '#d83a2a', vidaFondo: '#3a0c0c', vidaPerdida: '#ffd040', reloj: '#ffff55', ronda: '#ffff55', anchoVida: 38, retrato: 44, postura: '#ffb030', posturaAlta: '#ff4a20', posturaFondo: '#2a1a08', anchoPostura: 22 },
+    hud: {
+        vida: '#d83a2a', vidaFondo: '#3a0c0c', vidaPerdida: '#ffd040', reloj: '#ffff55', ronda: '#ffff55', anchoVida: 38, retrato: 44, postura: '#ffb030', posturaAlta: '#ff4a20', posturaFondo: '#2a1a08', anchoPostura: 22,
+        espiritu: '#7ad8ff', espirituFondo: '#10222a' // segmentos del arte de combate (L3)
+    },
     premios: { amistad: true, primeraVictoria: {} },
     efectos: EFECTOS, // chispas, destello del perfecto, brillo de la carga y escalones de la estela (arena/efectos.js)
     dificultades: ['facil', 'normal', 'dificil', 'maestro'],
@@ -112,10 +126,12 @@ function crearF(R, estilos, clave, i, tactil) {
         p: E.crearPeleador(estilo, { tactil: i === 0 && tactil }), an: A.crearAnimador(estilo),
         x: 0, z: 0, yaw: 0, vx: 0, vz: 0, vida: d.vida || 100, vidaMax: d.vida || 100,
         empuje: 0, enActivo: false, pego: false, marca: 0, post: S.crearPostura(S.reglasPostura(estilo), d.postura || 100),
+        pel: G.reglasPeligro(estilo), esp: null,
         acc: W.crearAcumulador(), tiembla: null, temblor: [0, 0], calma: 0,
         pose: {}, poseAnt: {}
     };
 }
+const conEspiritu = F => { F.esp = G.crearEspiritu(F.pel); return F; };
 // En sus marcas (inicio de ronda) o en el punto de entrada, más afuera, para que caminen a la marca
 function colocar(P, entrada) {
     const R = P.R, m = R.marcas, s = m.separacion / 2;
@@ -126,7 +142,7 @@ function colocar(P, entrada) {
         F.x = m.x + lado * (s + extra); F.z = m.z; F.yaw = lado < 0 ? Math.PI / 2 : -Math.PI / 2;
         F.vx = F.vz = 0; F.empuje = 0; F.enActivo = F.pego = false; F.tiembla = null; F.temblor = [0, 0]; W.soltarAcumulador(F.acc);
         F.vida = F.vidaMax; F.p = E.crearPeleador(F.estilo, { tactil: F.p.tactil }); F.an = A.crearAnimador(F.estilo);
-        F.post = S.crearPostura(F.post.R, F.post.tope);
+        F.post = S.crearPostura(F.post.R, F.post.tope); conEspiritu(F);
         limitar(P, F);
         animarF(P, F, null); animarF(P, F, null);
     });
@@ -157,11 +173,13 @@ export function pasoPelea(P, intenciones = []) {
     const eje0 = Math.atan2(P.f[1].z - P.f[0].z, P.f[1].x - P.f[0].x);
     for (let i = 0; i < 2; i++) {
         const F = P.f[i], O = P.f[1 - i];
+        if (libre) it[i] = antesDelPaso(P, F, O, it[i]);
         // Cada toque de defensa abre la ventana de su desvío (con la penalización por repetir)
         if (libre && it[i].defensa === 'apretar') S.tocarDefensa(F.post, P.cuadros, F.p.tactil);
         E.paso(F.p, it[i]);
+        if (libre) despuesDelPaso(P, F, O);
         mover(P, F, O);
-        efectosAccion(P, F);
+        efectosAccion(P, F, O);
     }
     girarEje(P, eje0);
     separar(P);
@@ -278,20 +296,78 @@ function temblar(F) {
 }
 // Lo que deja una acción en el suelo: polvo al empezar una esquiva y en las marcas de efectos.polvo (caídas, pared),
 // y la capa del aire al empezar el activo de un ataque
-function efectosAccion(P, F) {
+function efectosAccion(P, F, O) {
     const p = F.p, def = p.def;
     for (const e of p.eventos) {
         const d = e.clave && accionDe(p.estilo, e.clave);
         if (!d) continue;
         if (e.tipo === 'inicio' && d.estado === 'esquiva') P.eventos.push({ tipo: 'polvo', i: F.i, motivo: 'esquiva', x: F.x, z: F.z, trauma: 0 });
         if (e.tipo === 'activo' && d.tipo === 'ataque') P.eventos.push({ tipo: 'aire', i: F.i, nivel: W.nivelDe(d, 'golpeado') });
+        if (d.pareja && (e.tipo === 'inicio' || e.tipo === 'activo')) pareja(P, F, O, d, e.tipo);
     }
-    const ef = def && def.efectos;
-    if (p.quieto || !ef || !ef.polvo) return;
-    ef.polvo.forEach((m, n) => {
+    if (p.quieto || !def) return;
+    // Aviso del peligro (§16.4): una vez, `aviso` cuadros después de empezar la anticipación
+    if (def.peligro && p.estado === 'ataque' && p.c === F.pel.peligro.aviso) P.eventos.push({ tipo: 'peligro', i: F.i, peligro: def.peligro, destello: F.pel.peligro.destello });
+    const ef = def.efectos;
+    if (!ef) return;
+    if (ef.envainar != null && marca(ef.envainar, def.fases) === p.c) P.eventos.push({ tipo: 'envainar', i: F.i });
+    if (ef.polvo) ef.polvo.forEach((m, n) => {
         if (marca(m, def.fases) === p.c) P.eventos.push({ tipo: 'polvo', i: F.i, motivo: 'caida', x: F.x, z: F.z, trauma: n === 0 ? ef.sacudida || 0 : 0 });
     });
 }
+
+// ---------- Ataques peligrosos, mikiri, golpe final y arte (L3, combate/peligro.js) ----------
+// Antes del paso: el golpe final reemplaza al tajo si el rival está desequilibrado a su alcance, y el arte de combate
+// no sale sin espíritu. Devuelve una copia de la intención (la de quien llama no se toca).
+function antesDelPaso(P, F, O, it) {
+    const ctl = (F.estilo && F.estilo.controles) || {};
+    if (it.atacar === 'apretar' && G.puedeRematar(F.pel, F, O) && accionDe(F.p.estilo, F.pel.remate.accion)) {
+        E.iniciar(F.p, F.pel.remate.accion);
+        P.eventos.push({ tipo: 'remate', de: F.i, a: O.i });
+        return { ...it, atacar: undefined };
+    }
+    const arte = ctl.especial && accionDe(F.p.estilo, ctl.especial);
+    if (it.especial === 'apretar' && arte && arte.costo && arte.costo.espiritu > F.esp.valor + 1e-9) {
+        P.eventos.push({ tipo: 'sinEspiritu', i: F.i });
+        return { ...it, especial: undefined };
+    }
+    return it;
+}
+// Después del paso: lo que cuesta espíritu lo gasta al empezar; una esquiva hacia el rival durante su estocada es mikiri
+function despuesDelPaso(P, F, O) {
+    for (const e of F.p.eventos) {
+        const d = e.tipo === 'inicio' && accionDe(F.p.estilo, e.clave);
+        if (d && d.costo && d.costo.espiritu) G.gastarEspiritu(F.esp, d.costo.espiritu);
+    }
+    const ctl = (F.estilo && F.estilo.controles) || {};
+    if (G.esMikiri(F.pel, F.p, O.p, ctl.esquivar) && accionDe(F.p.estilo, F.pel.mikiri.accion)) {
+        F.p.eventos.length = 0;
+        E.iniciar(F.p, F.pel.mikiri.accion); // (su inicio arma la pareja en efectosAccion: el rival pasa a «pisado»)
+        P.eventos.push({ tipo: 'mikiri', de: F.i, a: O.i });
+    }
+}
+// Animación de pareja (mikiri, golpe final): def.pareja = { rival, cuando, postura, dano, hitstop, nivel, resultado }.
+// El rival pasa a su reacción al empezar (cuando: inicio) o en el activo; en el activo recibe postura y daño, los dos
+// se congelan `hitstop` cuadros y sale un golpe con el peso de `nivel`.
+function pareja(P, F, O, d, tipo) {
+    const q = d.pareja;
+    if (!O || E.TERMINALES.has(O.p.estado)) return;
+    if ((q.cuando || 'activo') === tipo && q.rival && accionDe(O.p.estilo, q.rival)) { E.iniciar(O.p, q.rival); O.p.espejo = false; }
+    if (tipo !== 'activo') return;
+    const dano = q.dano || 0;
+    O.vida = Math.max(P.muneco && O.i === 1 ? 1 : 0, O.vida - dano);
+    if (q.postura) subir(P, O, q.postura);
+    if (q.hitstop) { E.congelar(F.p, q.hitstop); E.congelar(O.p, q.hitstop); }
+    W.soltarAcumulador(O.acc); O.calma = 0; O.post.calma = 0;
+    const ux = O.x - F.x, uz = O.z - F.z, dd = Math.hypot(ux, uz) || 1;
+    P.eventos.push({
+        tipo: 'golpe', de: F.i, a: O.i, resultado: q.resultado || 'golpeado', dano, clave: F.p.clave, altura: d.altura || 'medio', carga: 0,
+        fuerza: dano / Math.max(1, O.vidaMax), nivel: q.nivel || 'fuerte', reaccion: q.rival || null, material: q.material || 'carne', eje: [ux / dd, uz / dd], pareja: true
+    });
+}
+
+// El aviso que se ve sobre la cabeza de f[i] en este cuadro (null si no hay)
+export const avisoPeligro = (P, i) => G.avisoDe(P.f[i].p, P.f[i].pel);
 
 // ---------- Golpes (L2: postura y desvío de combate/postura.js, con las reglas del que recibe) ----------
 function golpes(P, F, O) {
@@ -307,7 +383,9 @@ function golpes(P, F, O) {
     let reaccion = W.reaccionPara(def, W.nivelDe(def, 'golpeado'), acc);
     if (!accionDe(O.p.estilo, reaccion)) reaccion = def.reaccion && accionDe(O.p.estilo, def.reaccion) ? def.reaccion : 'alto_leve';
     const espejo = W.ladoDe(def) < 0;
-    const { resultado } = E.recibir(O.p, { reaccion, altura: def.altura, peligro: def.peligro }, { alRecibir: (q, g, r) => S.clasificar(O.post, q, r) });
+    const golpe = { reaccion, altura: def.altura, peligro: def.peligro, rompeGuardia: !!def.rompeGuardia };
+    // El desvío se mide con la ventana del toque (con el ajuste del peligro) y después manda la tabla de §16.4
+    const { resultado } = E.recibir(O.p, golpe, { alRecibir: (q, g, r) => G.responder(O.pel, q, g, S.clasificar(O.post, q, r, G.ajusteVentana(O.pel, g))) });
     if (resultado === 'golpeado') { O.acc.leves = acc.leves; O.p.espejo = espejo; }
     else if (resultado !== 'armadura') W.soltarAcumulador(O.acc);
     const peso = COMBATE.peso || {}, pg = peso[def.hitstop] || peso[P.R.golpe.hitstop] || {};
@@ -335,9 +413,16 @@ function golpes(P, F, O) {
         O.tiembla = { c: 0, eje: [ux / dd, uz / dd] };
     }
     O.vida = Math.max(0, O.vida - dano);
-    // Postura: lo que dice la tabla del que recibe para este resultado (la armadura del desequilibrado no suma)
-    const T = RO.tabla[resultado], base = (def.postura || 0) * carga;
-    if (T) { subir(P, O, base * (T.recibe || 0)); subir(P, F, base * (T.atacante || 0) + (T.extra || 0)); }
+    // Postura: lo que dice la tabla del que recibe para este resultado (la armadura del desequilibrado no suma).
+    // posturaFija (pisotón, arte) se suma al rival aunque la bloquee; posturaPropia se suma (o resta) al que ataca.
+    const T = RO.tabla[resultado], base = (def.postura || 0) * carga, conecta = resultado !== 'esquivado' && resultado !== 'sinEfecto';
+    if (T) { subir(P, O, def.posturaFija != null ? 0 : base * (T.recibe || 0)); subir(P, F, base * (T.atacante || 0) + (T.extra || 0)); }
+    if (conecta && def.posturaFija != null && resultado !== 'desviado' && resultado !== 'perfecto') subir(P, O, def.posturaFija);
+    if (conecta && def.posturaPropia) { if (def.posturaPropia > 0) subir(P, F, def.posturaPropia); else if (!F.post.roto) F.post.valor = Math.max(0, F.post.valor + def.posturaPropia); }
+    // Espíritu del arte de combate: lo llenan los desvíos del que defiende
+    if (resultado === 'desviado' || resultado === 'perfecto') G.ganarEspiritu(O.esp, O.pel, resultado);
+    // El agarre que entra sigue con su lanzamiento (animación de pareja del que agarra)
+    if (resultado === 'golpeado' && def.alConectar && accionDe(p.estilo, def.alConectar)) E.iniciar(p, def.alConectar);
     O.post.calma = 0;
     if (P.muneco && O.i === 1) O.vida = Math.max(1, O.vida);
     O.calma = 0;
@@ -392,11 +477,12 @@ export function probarReaccion(P, i, clave, { espejo = false } = {}) {
 }
 
 // ---------- Rival de práctica ----------
-// Repite practica.patron (cada paso: «golpes» = tajos seguidos del combo, «fuerte» = cuadros que mantiene la carga),
+// Repite practica.patron (cada paso: «golpes» = tajos seguidos del combo, «fuerte» = cuadros que mantiene la carga,
+// «accion» = un ataque por su clave, como los peligrosos),
 // esperando ataqueCada s entre pasos (al azar con semilla); se acerca hasta su alcance y nunca empieza durante tu
 // hitstop. Desvía uno de cada desviaCada ataques tuyos. Sin patrón tira su ataque de atacar, como en L1.
 // La CPU de verdad (§19.6) llega en L4.
-const nuevaPractica = () => ({ espera: 0, paso: 0, golpes: 0, serial: -1, fuerte: -1, visto: -1, cuenta: 0, desviar: false });
+const nuevaPractica = () => ({ espera: 0, paso: 0, n: 0, peligro: 0, golpes: 0, serial: -1, fuerte: -1, visto: -1, cuenta: 0, desviar: false });
 export function intencionPractica(P, i = 1) {
     const F = P.f[i], O = P.f[1 - i], Q = P.R.practica, hz = HZ(), pr = P.practica;
     if (P.fase !== 'pelea' || P.muneco) return {};
@@ -418,8 +504,12 @@ export function intencionPractica(P, i = 1) {
     if (pr.espera > 1) { pr.espera--; return it; }
     if (!(d <= Q.alcance + 0.2 && E.LIBRES.has(F.p.estado) && O.p.congelado === 0 && !F.p.quieto)) return it;
     pr.espera = 0;
-    const lista = Q.patron || [], paso = lista.length ? lista[pr.paso++ % lista.length] : { golpes: 1 };
-    if (paso.fuerte != null && F.estilo && F.estilo.controles && F.estilo.controles.fuerte) { it.fuerte = 'apretar'; pr.fuerte = paso.fuerte; }
+    // Cada peligroCada pasos intercala un peligroso de la lista (los que su estilo tenga), en orden
+    const pel = (Q.peligros || []).filter(k => accionDe(F.p.estilo, k)), toca = Q.peligroCada > 0 && pel.length && ++pr.n % (Q.peligroCada + 1) === 0;
+    const lista = Q.patron || [], paso = toca ? { accion: pel[pr.peligro++ % pel.length] } : lista.length ? lista[pr.paso++ % lista.length] : { golpes: 1 };
+    // accion: un ataque por su clave (los peligrosos de §16.4: barrido, estocada, agarre), si el estilo lo tiene
+    if (paso.accion && accionDe(F.p.estilo, paso.accion)) it.accion = paso.accion;
+    else if (paso.fuerte != null && F.estilo && F.estilo.controles && F.estilo.controles.fuerte) { it.fuerte = 'apretar'; pr.fuerte = paso.fuerte; }
     else { it.atacar = 'apretar'; pr.golpes = Math.max(1, paso.golpes || 1); pr.serial = -1; }
     return it;
 }
@@ -467,6 +557,26 @@ function vistaCamara(C) {
     const y = Math.max(K.altura, K.mira + C.dist * Math.tan(inc));
     const pos = [C.cx + nx * C.dist, y, C.cz + nz * C.dist];
     return { pos, mira: [C.cx, y - C.dist * Math.tan(inc), C.cz], fov: K.fov };
+}
+// Golpe final (S13): plano de cine bajo que orbita a los dos. u = 0..1 del plano; empieza del lado de la cámara de
+// la pelea (desde ° hacia el que remata) y gira `giro` ° con una curva suave; se aleja si hace falta para encuadrarlos.
+export function camaraRemate(R, P, de, a, u, aspecto = 16 / 9) {
+    const K = R.camara.remate, F = P.f[de], O = P.f[a];
+    const mx = (F.x + O.x) / 2, mz = (F.z + O.z) / 2;
+    let ux = O.x - F.x, uz = O.z - F.z; const d = Math.hypot(ux, uz) || 1; ux /= d; uz /= d;
+    const lado = de === 0 ? 1 : -1; // la cámara de la pelea mira desde la normal (−uz, ux) con f[0] a la izquierda
+    const nx = -uz * lado, nz = ux * lado, k = Math.max(0, Math.min(1, u)), s = k * k * (3 - 2 * k);
+    const th = (-(K.desde || 0) - (K.giro || 0) * s) * RAD;
+    const dx = Math.cos(th) * nx + Math.sin(th) * ux, dz = Math.cos(th) * nz + Math.sin(th) * uz;
+    // A `distancia` o más lejos, lo justo para que los dos quepan enteros en el plano (de lado entran a esa distancia;
+    // cuando el giro los pone uno detrás del otro, la cámara se aleja)
+    const puntos = [...puntosCuerpo(F, R), ...puntosCuerpo(O, R)];
+    let cam = null;
+    for (let dist = K.distancia; dist <= K.distancia + 12; dist += 0.2) {
+        cam = { pos: [mx + dx * dist, K.altura, mz + dz * dist], mira: [mx, K.mira, mz], fov: K.fov };
+        if (encuadre(cam, puntos, aspecto, 0.04).dentro) break;
+    }
+    return cam;
 }
 // Proyección en una cámara { pos, mira, fov } (vertical, grados): true si todos los puntos [x, y, z] caen dentro
 export function encuadre(cam, puntos, aspecto = 16 / 9, holgura = 0) {

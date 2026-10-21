@@ -4,6 +4,7 @@
 // todo se ve pixelado como el resto del juego. Lo usa arena/arena.js:
 //   golpe(nivel)                 líneas de velocidad en los bordes, flash y viñeta según el nivel (ligero … remate)
 //   numero(texto, x, y, critico) número de daño que salta en (x, y) de 0..1 de la pantalla (si numeros.activo)
+//   avisos(lista)                (L3) los rombos de peligro de este cuadro: [{ x, y }] en 0..1 de la pantalla
 //   dibujar(dt) / aplicar(R) / destruir()
 // =========================================================
 export function crearPantalla(padre, R) {
@@ -16,7 +17,7 @@ export function crearPantalla(padre, R) {
     const lineas = [], numeros = [];
     let flash = { t: 0, max: 1, fuerza: 0 }, vineta = { t: 0, max: 1 }, lin = { t: 0, max: 1 };
     const fuente = 'PixelCraft, monospace';
-    let limpio = true;
+    let limpio = true, rombos = [], reloj = 0;
 
     function medir() {
         const w = Math.max(64, (E.resolucion | 0) || 192), ar = (window.innerHeight || 9) / (window.innerWidth || 16);
@@ -40,8 +41,24 @@ export function crearPantalla(padre, R) {
         numeros.push({ texto: String(texto), x, y, t: N.dur, max: N.dur, critico });
         if (numeros.length > 12) numeros.shift();
     }
+    function avisos(lista) { rombos = lista || []; }
+    // Rombo rojo con borde oscuro y un «!» pixel adentro, dibujado a mano (sin emoji ni glifo del original)
+    function rombo(cx, cy, A) {
+        const r = Math.max(4, A.tamano | 0) >> 1;
+        for (let dy = -r - 1; dy <= r + 1; dy++) {
+            const ancho = r + 1 - Math.abs(dy);
+            if (ancho < 0) continue;
+            g.fillStyle = A.borde || '#000'; g.fillRect(cx - ancho, cy + dy, ancho * 2 + 1, 1);
+            if (ancho > 1) { g.fillStyle = A.color || '#d81c1c'; g.fillRect(cx - ancho + 1, cy + dy, ancho * 2 - 1, 1); }
+        }
+        const alto = Math.max(3, Math.round(r * 0.9)), k = Math.max(1, Math.round(r / 5));
+        g.fillStyle = A.signo || '#fff';
+        g.fillRect(cx - (k >> 1), cy - alto + 1, k, alto - k);
+        g.fillRect(cx - (k >> 1), cy + 1, k, k);
+    }
     function dibujar(dt) {
-        const activo = flash.t > 0 || vineta.t > 0 || lin.t > 0 || numeros.length;
+        reloj += dt;
+        const activo = flash.t > 0 || vineta.t > 0 || lin.t > 0 || numeros.length || rombos.length;
         if (!activo) { if (!limpio) { g.clearRect(0, 0, cv.width, cv.height); limpio = true; } return; }
         limpio = false;
         medir();
@@ -92,9 +109,13 @@ export function crearPantalla(padre, R) {
             g.fillStyle = '#000'; g.fillText(q.texto, Math.round(q.x * w) + 1, Math.round(y) + 1);
             g.fillStyle = q.critico ? N.critico || '#f55' : N.color || '#ff5'; g.fillText(q.texto, Math.round(q.x * w), Math.round(y));
         }
+        // Avisos de peligro (L3): encima de todo, sin transparencia (se tienen que leer de lejos)
+        const A = E.aviso || {};
+        g.globalAlpha = 1;
+        if (rombos.length && !(A.parpadeo > 0 && Math.floor(reloj * A.parpadeo * 2) % 2)) for (const q of rombos) rombo(Math.round(q.x * w), Math.round(q.y * h), A);
         g.globalAlpha = 1;
     }
     function aplicar(R2) { E = (R2 && R2.efectos && R2.efectos.pantalla) || E; }
     function destruir() { cv.remove(); }
-    return { golpe, numero, dibujar, aplicar, destruir };
+    return { golpe, numero, avisos, dibujar, aplicar, destruir };
 }

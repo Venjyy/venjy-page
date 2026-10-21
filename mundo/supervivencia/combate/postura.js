@@ -6,7 +6,7 @@
 //   crearPostura(reglas, tope)         { valor, tope, calma, toques, ultimoToque, perfecto, ventana, roto }
 //   tocarDefensa(s, cuadro, tactil)    un toque de defensa: calcula la ventana del desvío que empieza (con la
 //                                      penalización por repetir) y la guarda en s.perfecto / s.ventana
-//   clasificar(s, p, resultado)        para estados.recibir (reglas.alRecibir): un 'desviado' del motor pasa a
+//   clasificar(s, p, resultado, ajuste) para estados.recibir (reglas.alRecibir): un 'desviado' del motor pasa a
 //                                      'perfecto', 'desviado', 'bloqueado' o 'golpeado' según el cuadro del desvío
 //   sumar(s, n)                        suma postura; true si llegó al tope (se rompe)
 //   pasoPostura(s, { vida, bloqueo, activo })   un cuadro: baja sola tras `espera` s de calma
@@ -58,12 +58,13 @@ export function tocarDefensa(s, cuadro, tactil = false) {
 
 // p: el peleador que recibe (estados.js); resultado: lo que dijo el motor. Solo cambia los desvíos: el motor deja
 // pasar como 'desviado' toda la fase activa del desvío y aquí se mide con la ventana del toque.
-export function clasificar(s, p, resultado) {
+// ajuste: cuadros que se suman a los dos tramos para este golpe (la estocada, −2: combate/peligro.js)
+export function clasificar(s, p, resultado, ajuste = 0) {
     if (resultado !== 'desviado' || !p || p.estado !== 'desvio') return resultado;
     // En el choque de un desvío anterior no hay ventana: cada golpe pide su toque (cancela a desvío desde activo+N)
     if (p.clave !== p.estilo?.controles?.defensa) return p.defensa ? 'bloqueado' : 'golpeado';
-    if (p.c < s.perfecto) return 'perfecto';
-    if (p.c < s.ventana) return 'desviado';
+    if (p.c < s.perfecto + ajuste) return 'perfecto';
+    if (p.c < s.ventana + ajuste) return 'desviado';
     return p.defensa ? 'bloqueado' : 'golpeado';
 }
 

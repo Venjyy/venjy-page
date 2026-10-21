@@ -50,6 +50,10 @@ body.en-arena #hud, body.en-arena .mira, body.en-arena .tactil { display: none !
 .ar-postura { position: relative; height: 10px; margin-top: 4px; border: 2px solid #000; align-self: center; }
 .ar-postura i { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); }
 .ar-postura.rota i { animation: ar-parpadeo 0.18s steps(2) infinite; }
+.ar-espiritu { display: flex; gap: 3px; margin-top: 3px; align-self: center; }
+.ar-espiritu b { width: 18px; height: 7px; border: 2px solid #000; position: relative; overflow: hidden; }
+.ar-espiritu b i { position: absolute; top: 0; bottom: 0; left: 0; }
+.ar-espiritu b.lleno { box-shadow: 0 0 6px currentColor; }
 @keyframes ar-parpadeo { 50% { opacity: 0.35; } }
 .ar-nombre { font-size: 1.05rem; margin-top: 3px; display: flex; gap: 6px; align-items: center; }
 .ar-lado.der .ar-nombre { justify-content: flex-end; }
@@ -99,6 +103,11 @@ const SFX = {
     capas: (nivel, op) => voces(W.capasSonido(nivel, op)),
     postura: () => { tono({ f0: 140, f1: 70, dur: 0.6, vol: 0.2, forma: 'triangle' }); ruido({ dur: 0.3, frec: 600, q: 1.5, vol: 0.15 }); },
     carga: () => tono({ f0: 300, f1: 900, dur: 0.25, vol: 0.05, forma: 'square' }),
+    // L3: aviso del peligroso (agudo y corto), mikiri (metal grave), golpe final (gong) y arte sin espíritu
+    peligro: () => [1568, 2093].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.06, vol: 0.09, forma: 'square', retardo: i * 0.07 })),
+    mikiri: () => { tono({ f0: 180, f1: 120, dur: 0.5, vol: 0.18, forma: 'triangle' }); ruido({ dur: 0.18, frec: 2400, q: 3, vol: 0.12 }); },
+    remate: () => { tono({ f0: 98, f1: 92, dur: 1.4, vol: 0.22, forma: 'sine' }); tono({ f0: 196, f1: 190, dur: 0.9, vol: 0.08, forma: 'triangle' }); },
+    nada: () => tono({ f0: 160, f1: 120, dur: 0.08, vol: 0.06, forma: 'square' }),
     ko: () => { ruido({ dur: 0.6, frec: 200, q: 0.5, vol: 0.35, tipo: 'lowpass' }); tono({ f0: 300, f1: 60, dur: 0.8, vol: 0.15, forma: 'sawtooth' }); },
     final: gana => (gana ? [523, 659, 784, 1046] : [392, 349, 330, 262]).forEach((f, i) => tono({ f0: f, f1: f, dur: 0.18, vol: 0.09, forma: 'square', retardo: i * 0.14 }))
 };
@@ -130,8 +139,10 @@ export function crearArena(ctx) {
         const col = el('', lado), barra = el('ar-barra', col), perdida = el('', barra, 'i'), vida = el('', barra, 'i');
         // Postura (L2): crece desde el centro, como en Sekiro; se pone roja sobre el cansancio y parpadea rota
         const post = el('ar-postura', col), postI = el('', post, 'i');
+        // Espíritu (L3): segmentos del arte de combate, solo si el estilo tiene arte
+        const esp = el('ar-espiritu', col);
         const nom = el('ar-nombre', col), txt = el('', nom, 'span'), pips = el('', nom, 'span');
-        return { lado, ret, barra, perdida, vida, txt, pips, post, postI, vista: 1 };
+        return { lado, ret, barra, perdida, vida, txt, pips, post, postI, esp, espI: [], vista: 1 };
     });
     const avisoEl = el('ar-aviso', capa), tituloEl = el('ar-caja ar-titulo', capa), ayudaEl = el('ar-caja ar-ayuda', capa);
     const menuEl = el('ar-caja ar-menu', capa), pausaEl = el('ar-caja ar-pausa', capa), finalEl = el('ar-caja ar-final', capa);
@@ -147,6 +158,7 @@ export function crearArena(ctx) {
         tactilCargando = import('../combate/tactil-arena.js').then(m => {
             tactilUI = m.montarTactilArena({ intenciones, idioma: L, padre: capa });
             tactilUI.especial(false);
+            rotularTactil();
             tactilUI.mostrar(!!(c && c.fase === 'pelea' && !c.pausa));
         }).catch(err => console.error('No se pudieron cargar los botones de la arena', err)).finally(() => { tactilCargando = null; });
     }
@@ -326,6 +338,17 @@ export function crearArena(ctx) {
         c.retratosPendientes = true; // (los pinta el primer dibujo: hace falta el renderer)
         pintarHud(true);
         if (tactilUI) tactilUI.mostrar(true);
+        rotularTactil();
+    }
+    // Sekiro: AGARRE es la patada y ESPECIAL el arte (arena.json → textos.boton<Acción>, si existe)
+    function rotularTactil() {
+        if (!tactilUI || !c || !c.P) return;
+        const ctl = (c.P.f[0].estilo && c.P.f[0].estilo.controles) || {};
+        for (const b of ['agarre', 'especial']) {
+            const k = ctl[b] && 'boton' + ctl[b][0].toUpperCase() + ctl[b].slice(1);
+            if (k && R.textos[k]) tactilUI.rotular(b, R.textos[k]);
+        }
+        tactilUI.especial(!!ctl.especial);
     }
     function saltar() {
         if (!c) return;
@@ -449,7 +472,15 @@ export function crearArena(ctx) {
             dibujarPeleadores(alfa);
             efectosPeleadores(dtE);
             const vista = M.pasoCamara(c.C, P, dtE, aspecto());
-            ponerCamara(vista.pos, vista.mira, vista.fov);
+            // Golpe final (L3): plano de cine que orbita a los dos; la cámara de la pelea sigue por debajo
+            if (c.cine) {
+                c.cine.t += dt;
+                const u = c.cine.t / Math.max(0.1, R.camara.remate.duracion);
+                if (u >= 1) c.cine = null;
+                else { const v = M.camaraRemate(R, P, c.cine.de, c.cine.a, u, aspecto()); ponerCamara(v.pos, v.mira, v.fov); }
+            }
+            if (!c.cine) ponerCamara(vista.pos, vista.mira, vista.fov);
+            avisosPeligro();
             sacudir(dt);
             pantalla.dibujar(dt);
             pintarHud(false);
@@ -496,9 +527,24 @@ export function crearArena(ctx) {
             if (nivel > (F.nivelCarga || 0)) sonar('carga');
             F.nivelCarga = nivel;
             // Estrellas del mareo o marca roja del desequilibrado mientras dura su reacción (efectos.sobre)
+            // Destello rojo del arma al avisar un peligroso (L3)
+            if (F.destello > 0) F.destello -= dt;
+            const hp = F.destello > 0 ? esc.hoja(F.clave, 0, 1) : null;
+            if (ef.peligro) ef.peligro(F.clave, hp && hp.base, hp && hp.punta, F.destello > 0 ? 1 : 0);
             const so = def && def.efectos && def.efectos.sobre;
             ef.sobre(F.clave, so || null, F.x + F.temblor[0], F.z + F.temblor[1], F.yaw, c.tc);
         }
+    }
+    // Rombo rojo sobre la cabeza del que avisa un peligroso (§16.4), proyectado a la capa de pantalla
+    const _a = new THREE.Vector3();
+    function avisosPeligro() {
+        const A = (R.efectos.pantalla && R.efectos.pantalla.aviso) || {}, lista = [];
+        c.P.f.forEach((F, i) => {
+            if (!M.avisoPeligro(c.P, i)) return;
+            _a.set(F.x, A.alto ?? 2.35, F.z).project(cam);
+            if (_a.z < 1) lista.push({ x: (_a.x + 1) / 2, y: (1 - _a.y) / 2 });
+        });
+        pantalla.avisos(lista);
     }
     // Donde chocan: la mitad de la hoja del que defiende (o entre los dos, a la altura del golpe)
     function puntoChoque(e) {
@@ -528,7 +574,10 @@ export function crearArena(ctx) {
     }
     function evento(e) {
         const P = c.P;
-        if (e.tipo === 'ronda') { aviso(e.final ? tx('rondaFinal') : `${tx('ronda')} ${e.n}`, R.rondas.anuncio); sonar('ronda'); }
+        if (e.tipo === 'ronda') {
+            aviso(e.final ? tx('rondaFinal') : `${tx('ronda')} ${e.n}`, R.rondas.anuncio); sonar('ronda');
+            c.cine = null; for (const F of P.f) { esc.envainar && esc.envainar(F.clave, false); F.destello = 0; } // (la katana vuelve a la mano)
+        }
         else if (e.tipo === 'peleen') { aviso(tx('peleen'), R.rondas.peleen, true); sonar('peleen'); }
         else if (e.tipo === 'golpe') {
             const fuerte = e.fuerza >= 0.1, ef = esc.efectos, pg = W.pesoDe(e.nivel);
@@ -549,6 +598,7 @@ export function crearArena(ctx) {
                 }
             }
             else if (e.resultado === 'bloqueado') chispas(e, 'bloqueo');
+            else if (e.resultado === 'mikiri') { chispas(e, 'perfecto'); if (ef) ef.aro(puntoChoque(e), cam, 1.2); sonar('mikiri'); if (e.a === 0 || e.de === 0) intenciones.vibrar('perfecto'); }
             else if (e.resultado === 'desviado') { chispas(e, 'desvio'); if (ef) ef.aro(puntoChoque(e), cam, 1); if (e.a === 0) intenciones.vibrar('desvio'); }
             else if (e.resultado === 'perfecto') {
                 // Clang: campana más aguda y larga, chispas grandes con destello, aro, flash y cámara lenta (peso.perfecto)
@@ -567,6 +617,12 @@ export function crearArena(ctx) {
         } else if (e.tipo === 'postura') { aviso(tx('postura'), 1, true); sonar('postura'); esc.celebrar(0.6); }
         else if (e.tipo === 'ko') { aviso(tx('ko'), R.rondas.finRonda, true); sonar('ko'); c.lentaHasta = c.tc + R.rondas.lentaKo; c.escalaLenta = R.rondas.escalaLenta; esc.celebrar(1); }
         else if (e.tipo === 'tiempo') aviso(tx('tiempo'), R.rondas.finRonda, true);
+        // L3: aviso del peligroso (sonido, destello rojo del arma y vibración si va contra ti), mikiri, golpe final
+        else if (e.tipo === 'peligro') { sonar('peligro'); P.f[e.i].destello = (e.destello || 0) / COMBATE.motor.hz; if (e.i === 1) intenciones.vibrar('golpe'); }
+        else if (e.tipo === 'mikiri') aviso(tx('mikiri'), 0.9, true);
+        else if (e.tipo === 'remate') { aviso(tx('golpeFinal'), R.camara.remate.duracion, true); sonar('remate'); c.cine = { t: 0, de: e.de, a: e.a }; esc.celebrar(1); }
+        else if (e.tipo === 'envainar') { if (esc.envainar) esc.envainar(P.f[e.i].clave, true); }
+        else if (e.tipo === 'sinEspiritu') sonar('nada');
         else if (e.tipo === 'final') terminar(P);
     }
     // Donde entra un golpe: en el cuerpo del que recibe, a la altura del ataque, del lado del que pega
@@ -663,6 +719,7 @@ export function crearArena(ctx) {
             l.postI.style.width = (fp * 100).toFixed(1) + '%';
             l.postI.style.background = cansado(F.post) ? H.posturaAlta : H.postura;
             l.post.classList.toggle('rota', !!F.post.roto);
+            pintarEspiritu(l, F, todo);
             l.perdida.style.width = (l.vista * 100).toFixed(1) + '%';
             const pips = Math.ceil(R.rondas.mejorDe / 2);
             if (todo || l.pipsN !== P.victorias[i]) {
@@ -673,6 +730,18 @@ export function crearArena(ctx) {
         if (relojEl) { relojEl.textContent = String(Math.ceil(P.reloj)); relojEl.style.color = H.reloj; }
     }
 
+    function pintarEspiritu(l, F, todo) {
+        const H = R.hud, arte = F.estilo && F.estilo.controles && F.estilo.controles.especial, n = arte && F.esp ? F.esp.tope : 0;
+        if (todo || l.espI.length !== n) {
+            l.esp.textContent = ''; l.espI = [];
+            for (let k = 0; k < n; k++) { const b = el('', l.esp, 'b'); b.style.background = H.espirituFondo; b.style.color = H.espiritu; const i = el('', b, 'i'); i.style.background = H.espiritu; i.caja = b; l.espI.push(i); }
+        }
+        l.espI.forEach((i, k) => {
+            const f = Math.max(0, Math.min(1, F.esp.valor - k));
+            i.style.width = (f * 100).toFixed(0) + '%';
+            i.caja.classList.toggle('lleno', f >= 1);
+        });
+    }
     // Se dibuja en lugar del mundo (main.js): true si dibujó la arena
     function dibuja(renderer) {
         if (!c || c.enMundo || !esc) return false;

@@ -17,7 +17,8 @@
 //   alcanza(ataque, de, a)              ¿el objetivo está dentro del alcance y el arco del ataque?
 //   crearRelojFijo(hz, maxPasos)        acumulador: avanzar(dt, fn) llama a fn las veces que toque y devuelve alfa
 // Intención (la arma combate/intenciones.js en N4, o la CPU): { mover: [x, y], altura, atacar, defensa, esquivar,
-// agarre, especial, saltar, fuerte }, cada botón 'apretar' (este cuadro), 'mantener' o 'soltar'.
+// agarre, especial, saltar, fuerte, accion }, cada botón 'apretar' (este cuadro), 'mantener' o 'soltar'; accion: la
+// clave de un ataque o una acción que empieza directo desde un estado libre (la CPU y los ataques peligrosos, L3).
 // =========================================================
 import { COMBATE, accionDe, largoFases, inicioFase, marca, enTramos, esAtaque } from './datos.js';
 import { curva } from '../../datos/curvas.js';
@@ -148,6 +149,8 @@ export function paso(p, intencion = {}) {
         const k = destino(p, p.buffer);
         if (k) { const b = p.buffer; p.buffer = null; iniciar(p, k, { buffer: b.edad > 0, dir: b.dir }); }
     }
+    // 2b. La CPU pide una acción por su clave (no sale de ningún control: los peligrosos de §16.4)
+    if (intencion.accion && LIBRES.has(p.estado) && accionDe(p.estilo, intencion.accion)) { p.buffer = null; iniciar(p, intencion.accion); }
     // 3. Estados libres: guardia, paso (caminar en guardia) y bloqueo (mientras se mantiene la defensa)
     if (LIBRES.has(p.estado)) {
         if (p.estado === 'bloqueo') { if (!p.defensa) volver(p, 'guardia'); }

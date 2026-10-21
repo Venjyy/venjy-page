@@ -127,7 +127,21 @@
         "resorte": { "description": "Segundos del resorte de la distancia y del centro.", "type": "number", "minimum": 0.02, "maximum": 2 },
         "giroMax": { "description": "Grados por segundo que puede girar al seguir el eje.", "type": "number", "minimum": 10, "maximum": 720 },
         "adelanto": { "description": "Cuánto se adelanta hacia donde va el que se mueve (s de su velocidad).", "type": "number", "minimum": 0, "maximum": 1.5 },
-        "separacionMin": { "description": "Lo más chico que puede ser el tope de separación (pantallas angostas).", "type": "number", "minimum": 1, "maximum": 12 }
+        "separacionMin": { "description": "Lo más chico que puede ser el tope de separación (pantallas angostas).", "type": "number", "minimum": 1, "maximum": 12 },
+        "remate": {
+          "description": "Plano de cine del golpe final (L3, S13): duracion en s; distancia y altura de la cámara y altura del punto al que mira, en bloques; empieza `desde` ° hacia el que remata y gira `giro` °; fov.",
+          "type": "object",
+          "properties": {
+            "duracion": { "type": "number", "minimum": 0.2, "maximum": 6 },
+            "distancia": { "type": "number", "minimum": 1, "maximum": 12 },
+            "altura": { "type": "number", "minimum": 0.1, "maximum": 6 },
+            "mira": { "type": "number", "minimum": 0, "maximum": 3 },
+            "giro": { "type": "number", "minimum": -360, "maximum": 360 },
+            "desde": { "type": "number", "minimum": -180, "maximum": 180 },
+            "fov": { "type": "number", "minimum": 15, "maximum": 100 }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },
@@ -170,12 +184,15 @@
             "type": "object",
             "properties": {
               "golpes": { "type": "integer", "minimum": 1, "maximum": 8 },
-              "fuerte": { "type": "integer", "minimum": 0, "maximum": 240 }
+              "fuerte": { "type": "integer", "minimum": 0, "maximum": 240 },
+              "accion": { "description": "Un ataque por su clave (los peligrosos: barrido, estocada, agarre).", "$ref": "comun.schema.json#/$defs/clave" }
             },
             "additionalProperties": false
           }
         },
         "desviaCada": { "description": "Desvía uno de cada N ataques tuyos (0 = nunca).", "type": "integer", "minimum": 0, "maximum": 20 },
+        "peligros": { "description": "Ataques peligrosos que intercala (L3), en orden, si su estilo los tiene.", "type": "array", "items": { "$ref": "comun.schema.json#/$defs/clave" }, "maxItems": 8 },
+        "peligroCada": { "description": "Cada cuántos pasos del patrón tira un peligroso (0 = nunca).", "type": "integer", "minimum": 0, "maximum": 20 },
         "nota": { "$ref": "comun.schema.json#/$defs/nota" }
       },
       "additionalProperties": false
@@ -205,7 +222,8 @@
         "anchoVida": { "description": "Ancho de cada barra de vida en % de la pantalla.", "type": "number", "minimum": 10, "maximum": 48 },
         "retrato": { "description": "Lado del retrato chico en px.", "type": "number", "minimum": 16, "maximum": 128 },
         "postura": { "$ref": "#/$defs/color" }, "posturaAlta": { "description": "Color de la barra de postura sobre el cansancio del estilo.", "$ref": "#/$defs/color" }, "posturaFondo": { "$ref": "#/$defs/color" },
-        "anchoPostura": { "description": "Ancho de la barra de postura (crece desde el centro) en % de la pantalla.", "type": "number", "minimum": 5, "maximum": 48 }
+        "anchoPostura": { "description": "Ancho de la barra de postura (crece desde el centro) en % de la pantalla.", "type": "number", "minimum": 5, "maximum": 48 },
+        "espiritu": { "description": "Color de los segmentos de espíritu del arte de combate (L3).", "$ref": "#/$defs/color" }, "espirituFondo": { "$ref": "#/$defs/color" }
       },
       "additionalProperties": false
     },
@@ -324,6 +342,16 @@
           },
           "additionalProperties": false
         },
+        "peligro": {
+          "description": "Destello rojo del arma cuando avisa un ataque peligroso (L3): color, opacidad y grosor en bloques.",
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "opacidad": { "type": "number", "minimum": 0, "maximum": 1 },
+            "grueso": { "type": "number", "minimum": 0.01, "maximum": 0.5 }
+          },
+          "additionalProperties": false
+        },
         "marca": {
           "type": "object",
           "properties": {
@@ -382,6 +410,19 @@
               "sube": { "type": "number", "minimum": 0, "maximum": 100 },
               "color": { "$ref": "#/$defs/color" },
               "critico": { "$ref": "#/$defs/color" }
+            },
+            "additionalProperties": false
+          },
+            "aviso": {
+            "description": "Aviso del ataque peligroso (L3, §16.4): rombo rojo con un signo pixel sobre la cabeza. tamano en px del canvas; alto en bloques desde los pies; parpadeo por s (0 = fijo).",
+            "type": "object",
+            "properties": {
+              "color": { "$ref": "#/$defs/color" },
+              "borde": { "$ref": "#/$defs/color" },
+              "signo": { "$ref": "#/$defs/color" },
+              "tamano": { "type": "integer", "minimum": 4, "maximum": 40 },
+              "alto": { "type": "number", "minimum": 0.5, "maximum": 4 },
+              "parpadeo": { "type": "number", "minimum": 0, "maximum": 20 }
             },
             "additionalProperties": false
           }
