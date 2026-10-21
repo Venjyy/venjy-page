@@ -50,6 +50,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `sonidos.js` (104) / `musica.js` (~220) | Efectos y música sintetizados con WebAudio. `sonidos:63` · `crearMusica`. Un tema de `musica.json` con la misma clave reemplaza al del código |
 | `musica-instrumentos.js` (~110) | Instrumentos de la música (`I`: piano, pulsar, chip, bajo, colchon, batería…), puros (sin Three): también suenan en el Estudio |
 | `musica-motor.js` (~400) | Temas como datos, puro: `tocarPaso`, `tocarSinte` (sintetizadores de `musica.json`), `acordeDe`, `crearSecuenciador`, `revisarTema`, `USOS` (temas del código y niveles). Canciones de Salonas: `mapaTiempo`, `pasoEnTiempo`, `tocarPasoCancion`, `crearReproductorCancion`, `revisarCancion` (SALONAS.md §3). Estudio DISENO §24 |
+| `salonas-partitura.js` (~110) | Salonas, puro: `partitura` (notas por dificultad desde la capa de bajo y `mapaTiempo`), `juicio`, `golpe`, `vencidas`, `sumar`/`puntajeMaximo`, `estrellas`, `revisarPartitura`, `REGLAS_BASE`/`reglasDe`. Contrato `tests/salonas.mjs`; SALONAS.md §4-6 |
 | `musica-bajo.js` (~130) | La voz del bajo de Salonas como instrumento (`bajoSlap`): `VOZ_BAJO`, `vozDe(cancion.vozBajo)`, `tocarBajo` con las técnicas s/p/g/t/d/a/r (mismo sonido que `criaturas/bajo.js`) |
 | `musica-datos.js` (~25) | `musica.json` en el juego: `cargarMusica`, `aplicarMusica` (en vivo), `temaMusica(clave)` (no borradores), `instrumentosPropios`, `enPrueba` (vista previa del Estudio) |
 | `interpolacion.js` (66) | Búfer de red a 2-5 Hz. `Bufer:14` `mezclar:61` |
