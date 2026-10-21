@@ -30,8 +30,9 @@ const M = await imp('mundo/supervivencia/arena/modelo.js');
 D.fijarCombate(leer('combate'));
 L.fijarLimites(leer('poses').limites);
 const JSON_ARENA = leer('arena'), ESTILO = leer('estilo-prueba'), SEKIRO = leer('estilo-sekiro');
-const R = M.reglasArena(JSON_ARENA);
-const estilos = { prueba: ESTILO, sekiro: SEKIRO };
+// (las reglas de la arena se prueban con Moisés en el estilo de prueba, como en L1-L4; su Urban Reign, en estilo-urbano.mjs)
+const R = M.reglasArena({ ...JSON_ARENA, peleadores: { ...JSON_ARENA.peleadores, moises: { ...JSON_ARENA.peleadores.moises, estilo: 'prueba' } } });
+const estilos = { prueba: ESTILO, sekiro: SEKIRO, urbano: leer('estilo-urbano') };
 const HZ = D.COMBATE.motor.hz, DT = 1 / HZ;
 const nueva = (o = {}) => M.nuevaPelea(o.R || R, { estilos, semilla: 7, ...o });
 function entrar(P, C = null) {

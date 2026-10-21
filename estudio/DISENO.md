@@ -1123,3 +1123,12 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **Tabla del estilo (`estilo-*.json → cpu`):** `cadena`, `retrasado` (prob. y cuadros), `fuerte`, `patada`, `arte`, `peligro` (cada, pocaVida, factor, lista; vacía = todos los ataques con `peligro`), `respiro` (cuadros, alejarse, provocar, lejos), `distancia` (cerca, margen × alcance, velocidades), `esperaInicial` y `provocar` (acción; `null` = solo el evento `provoca`). Sin tabla, el estilo usa `CPU_BASE.estilo` (Moisés hasta L5).
 - **Motor:** `intencion.sostener` (estados.js) deja el ataque en su último cuadro de anticipación; solo lo manda la CPU.
 - **No editable aún en el Estudio:** la tabla del estilo (pestaña Combate, N6). La práctica de L2 (`arena.json → practica`) queda para las pruebas.
+
+## 33. Urban Reign I: alturas, combo y defensa (bloque 8 · L5, 2026-10-21)
+
+- **Controles por altura:** `controles.atacar|defensa|esquivar` como `{ medio, alto, bajo, adelante }`; `adelante` vale cuando la altura es la neutra y el cuerpo va hacia el rival (`combate.json → entrada.adelante`, 0,5). Las ventanas de `cancelar` aceptan `altura` (el castigo bajo de la esquiva neutra).
+- **Defensa por altura (`combate/urbano.js`, `estilo-*.json → reglas.altura`):** una acción con `defiende` desvía si el golpe de esa altura llega hasta `ventana` c después de empezar (reversión hasta `reversion`; +`tactil`); otra altura dentro de la ventana entra × `errada`; fuera mandan sus i-frames (`iframesAlturas` limita los de la esquiva neutra a alto y medio normales). `contra` y `reversionAccion` son las acciones de pareja; `imparable` no se desvía; `sinPostura` apaga la postura y su barra. La tabla de §16.4 del que recibe (`reglas.peligro.respuestas`) sigue mandando sobre los peligrosos.
+- **Ataques:** `soloSi` (solo pega al rival en esas reacciones: los remates aéreos al `lanzado`), `golpea` (mano o pie: ahí sale la marca de altura) y `material` (a qué suena desviado). `avisos.altura` (activo, cuadros, tamaño, colores) es la marca de §17.3.
+- **CPU (`estilo-*.json → cpu`):** `cadenas` (alturas con peso; la cadena sigue solo si conecta), `acierto` por dificultad (leer bien la altura) y `castigoBajo`.
+- **No editable aún en el Estudio:** todo lo nuevo de `estilo-urbano.json` (pestaña Combate, N6).
+

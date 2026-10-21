@@ -48,7 +48,7 @@ D.fijarCombate(COMB);
 L.fijarLimites(POSES.limites);
 const SK = leer('estilo-sekiro'), PRUEBA = leer('estilo-prueba'), ARENA = leer('arena');
 const HZ = D.COMBATE.motor.hz, SALTO = D.COMBATE.motor.saltoMax;
-const estilos = { sekiro: SK, prueba: PRUEBA };
+const estilos = { sekiro: SK, prueba: PRUEBA, urbano: leer('estilo-urbano') };
 const RS = SK.reglas;
 
 // ---------- 1. Datos ----------
@@ -277,7 +277,7 @@ function golpe(defensa, tocaAntes = null) {
 
 // ---------- 7. Lalo de práctica ----------
 {
-    const Rp = M.reglasArena({ ...ARENA, peleadores: { ...ARENA.peleadores, moises: { ...ARENA.peleadores.moises } } });
+    const Rp = M.reglasArena({ ...ARENA, peleadores: { ...ARENA.peleadores, moises: { ...ARENA.peleadores.moises, estilo: 'prueba' } } }); // (Moisés en el estilo de prueba, como en L2-L3)
     const correr = semilla => {
         const P = M.nuevaPelea(Rp, { estilos, semilla, yo: 'moises', rival: 'lalo' });
         let n = 0; while (!P.listaEntrada && n++ < 2000) M.pasoPelea(P, []);
@@ -500,7 +500,7 @@ function correr(P, n, it = () => [{}, {}], d = null) {
 
 // ---------- 13. La práctica intercala los peligrosos ----------
 {
-    const P = enPelea(M.reglasArena(ARENA), 5);
+    const P = enPelea(M.reglasArena({ ...ARENA, peleadores: { ...ARENA.peleadores, moises: { ...ARENA.peleadores.moises, estilo: 'prueba' } } }), 5); // (Moisés en el estilo de prueba, como en L3)
     const vistos = new Set();
     for (let i = 0; i < HZ * 40 && P.fase === 'pelea'; i++) {
         P.f[0].vida = P.f[0].vidaMax; P.f[1].vida = P.f[1].vidaMax;

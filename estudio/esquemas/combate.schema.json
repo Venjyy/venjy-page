@@ -78,7 +78,8 @@
       "type": "object",
       "properties": {
         "buffer": { "description": "Cuadros que se guarda una intención apretada (PC).", "type": "integer", "minimum": 0, "maximum": 30 },
-        "alturaNeutra": { "description": "Altura de un golpe sin W ni S (ni deslizar): la de un toque en el táctil.", "enum": ["alto", "medio", "bajo", "neutro"] }
+        "alturaNeutra": { "description": "Altura de un golpe sin W ni S (ni deslizar): la de un toque en el táctil.", "enum": ["alto", "medio", "bajo", "neutro"] },
+        "adelante": { "description": "Cuánto hay que ir hacia el rival (0..1 del joystick o A/D) para que un control con altura neutra use su variante «adelante» (Urban Reign: adelante + clic = medio, L5).", "type": "number", "minimum": 0.05, "maximum": 1 }
       },
       "additionalProperties": false
     },
@@ -412,6 +413,7 @@
           "desde": { "$ref": "#/$defs/marca" },
           "hasta": { "$ref": "#/$defs/marca" },
           "siConecto": { "type": "boolean" },
+          "altura": { "description": "Solo con esta altura de la intención (alto, medio, bajo o adelante): el castigo bajo de la esquiva neutra (L5).", "enum": ["alto", "medio", "bajo", "neutro", "adelante"] },
           "nota": { "$ref": "comun.schema.json#/$defs/nota" }
         },
         "required": ["a", "desde"],
@@ -470,6 +472,8 @@
         "avance": { "anyOf": [{ "$ref": "#/$defs/avance" }, { "type": "array", "items": { "$ref": "#/$defs/avance" } }] },
         "direccion": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2 },
         "usaDireccion": { "type": "boolean" },
+        "defiende": { "description": "Urban Reign (L5, §17.5): la altura que desvía esta acción si el golpe llega dentro de reglas.altura.ventana cuadros desde que empezó (reversión dentro de reglas.altura.reversion); otra altura dentro de la ventana entra con reglas.altura.errada.", "enum": ["alto", "medio", "bajo"] },
+        "iframesAlturas": { "description": "Sus i-frames solo sirven contra golpes normales (sin peligro) de estas alturas (la esquiva neutra: alto y medio).", "type": "array", "items": { "enum": ["alto", "medio", "bajo"] } },
         "mezcla": { "description": "Cuadros de la inercialización al entrar (falta = la de motor.mezcla).", "type": "integer", "minimum": 0, "maximum": 60 },
         "velocidadMax": { "description": "Rad por cuadro que se permiten en sus cuadros activos (hasta motor.velocidadMax).", "type": "number", "minimum": 0.05, "maximum": 2 },
         "sinMirada": { "type": "boolean" },

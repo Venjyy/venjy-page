@@ -33,8 +33,9 @@ D.fijarCombate(COMB);
 L.fijarLimites(POSES.limites);
 const SK = leer('estilo-sekiro'), PRUEBA = leer('estilo-prueba'), ARENA = leer('arena');
 const HZ = D.COMBATE.motor.hz;
-const estilos = { sekiro: SK, prueba: PRUEBA };
-const R = M.reglasArena(ARENA);
+const estilos = { sekiro: SK, prueba: PRUEBA, urbano: leer('estilo-urbano') };
+// (L4 se probó con Moisés en el estilo de prueba; su Urban Reign se prueba en estilo-urbano.mjs)
+const R = M.reglasArena({ ...ARENA, peleadores: { ...ARENA.peleadores, moises: { ...ARENA.peleadores.moises, estilo: 'prueba' } } });
 
 // Tú eres Moisés (f[0]) y la CPU es Lalo (f[1]); o al revés con yo/rival
 function enPelea({ semilla = 3, dificultad = 'normal', yo = 'moises', rival = 'lalo' } = {}) {

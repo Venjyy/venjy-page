@@ -27,7 +27,7 @@ import { crearPantalla } from './pantalla.js';
 import { aplicarAngulos } from '../pose-jugador.js';
 import { interpolar } from '../combate/animacion.js';
 import { crearRelojFijo, cargaDe } from '../combate/estados.js';
-import { COMBATE, faseEn } from '../combate/datos.js';
+import { COMBATE, faseEn, inicioFase } from '../combate/datos.js';
 import { fraccion, cansado } from '../combate/postura.js';
 import { crearIntenciones } from '../combate/intenciones.js';
 import { crearEscenaArena } from './escena.js';
@@ -531,6 +531,14 @@ export function crearArena(ctx) {
             if (F.destello > 0) F.destello -= dt;
             const hp = F.destello > 0 ? esc.hoja(F.clave, 0, 1) : null;
             if (ef.peligro) ef.peligro(F.clave, hp && hp.base, hp && hp.punta, F.destello > 0 ? 1 : 0);
+            // Marca de altura (L5, §17.3): los últimos `cuadros` de la anticipación, en la mano o el pie que golpea
+            const MA = F.estilo && F.estilo.avisos && F.estilo.avisos.altura;
+            let pm = null;
+            if (MA && MA.activo !== false && ef.altura && def && p.estado === 'ataque' && def.golpea && def.altura) {
+                const g = inicioFase(def.fases, 'activo');
+                if (p.c < g && p.c >= g - (MA.cuadros ?? 3)) pm = esc.extremo(F.clave, def.golpea);
+            }
+            if (ef.altura) ef.altura(F.clave, pm, MA && MA.colores && def ? MA.colores[def.altura] : null, MA && MA.tamano);
             const so = def && def.efectos && def.efectos.sobre;
             ef.sobre(F.clave, so || null, F.x + F.temblor[0], F.z + F.temblor[1], F.yaw, c.tc);
         }
@@ -714,7 +722,7 @@ export function crearArena(ctx) {
                 l.txt.textContent = tt(F.d.nombre);
             }
             l.vida.style.width = (v * 100).toFixed(1) + '%';
-            if (todo) { l.post.style.width = `${H.anchoPostura}vw`; l.post.style.background = H.posturaFondo; }
+            if (todo) { l.post.style.width = `${H.anchoPostura}vw`; l.post.style.background = H.posturaFondo; l.post.style.display = F.alt && F.alt.sinPostura ? 'none' : ''; } // (Urban Reign no tiene postura, L5)
             const fp = fraccion(F.post);
             l.postI.style.width = (fp * 100).toFixed(1) + '%';
             l.postI.style.background = cansado(F.post) ? H.posturaAlta : H.postura;

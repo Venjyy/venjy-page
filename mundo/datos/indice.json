@@ -128,6 +128,12 @@
       "fase": 8,
       "que": "Estilo Sekiro (bloque 8 · L2, COMBATE.md §16): katana con combo continuo de 4 tajos, golpe cargado, desvío normal y perfecto con penalización, bloqueo, esquiva, postura (reglas) y la estela de cada tajo (efectos); lo usa Lalo en la arena (arena.json → peleadores.lalo.estilo)"
     },
+    "estilo-urbano": {
+      "esquema": "estilo",
+      "lee": "mundo/supervivencia/arena/modelo.js",
+      "fase": 8,
+      "que": "Estilo Urban Reign (bloque 8 · L5, COMBATE.md §17.3-17.5): puños sin bloqueo; combo básico de 3 que lanza, golpes alto (W), medio (adelante) y bajo (S), cancelación solo al conectar, esquiva neutra, paso lateral, desvío por altura con contraataque y reversión (reglas.altura, combate/urbano.js), remates aéreos y la tabla de la CPU (cpu); lo usa Moisés en la arena (arena.json → peleadores.moises.estilo)"
+    },
     "arena": {
       "esquema": "arena",
       "lee": "mundo/supervivencia/arena/arena.js",

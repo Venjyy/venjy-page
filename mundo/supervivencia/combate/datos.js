@@ -27,7 +27,7 @@ export const COMBATE_BASE = {
         mirada: { cabeza: { tope: 0.5, rapidez: 0.35 }, pecho: { tope: 0.3, rapidez: 0.08 } },
         paso: { umbral: 0.15, rapidez: 0.12 }        // |mover| para caminar en guardia; qué tan rápido entra la caminata
     },
-    entrada: { buffer: 8, alturaNeutra: 'medio' },
+    entrada: { buffer: 8, alturaNeutra: 'medio', adelante: 0.5 }, // adelante: |mover| hacia el rival que vuelve «adelante» la altura neutra (L5)
     // Asistencias del celular (§15.1). deslizar: un toque en ATACAR o DEFENSA se vuelve deslizamiento (alto o bajo) si
     // el dedo recorre px en vertical antes de ms; pasados los ms sin recorrerlos, es mantener. esquiva: deslizar rápido
     // en la zona libre de la derecha. especialModo: cuadros manteniendo ESPECIAL que dan modoEspecial.

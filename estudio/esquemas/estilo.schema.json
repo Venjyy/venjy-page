@@ -173,6 +173,22 @@
           },
           "additionalProperties": false
         },
+        "altura": {
+          "description": "Defensa por altura de Urban Reign (L5, §17.5; combate/urbano.js). Una acción con `defiende` desvía si el golpe de esa altura llega a lo más `ventana` cuadros desde que empezó (reversión hasta `reversion`; +`tactil` en el celular); otra altura dentro de la ventana entra con el daño × `errada`. contra: la acción del contraataque por altura; reversionAccion: la de la reversión; imparable: peligros que no se desvían; sinPostura: este estilo no tiene postura (sufre por vida y zonas).",
+          "type": "object",
+          "properties": {
+            "ventana": { "type": "integer", "minimum": 0, "maximum": 30 },
+            "reversion": { "type": "integer", "minimum": 0, "maximum": 30 },
+            "tactil": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "errada": { "type": "number", "minimum": 1, "maximum": 3 },
+            "contra": { "type": "object", "properties": { "alto": { "$ref": "combate.schema.json#/$defs/clave" }, "medio": { "$ref": "combate.schema.json#/$defs/clave" }, "bajo": { "$ref": "combate.schema.json#/$defs/clave" } }, "additionalProperties": false },
+            "reversionAccion": { "$ref": "combate.schema.json#/$defs/clave" },
+            "imparable": { "type": "array", "items": { "type": "string" } },
+            "sinPostura": { "type": "boolean" },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
         "espiritu": {
           "description": "Espíritu del arte de combate (§16.1): segmentos; el desvío perfecto llena `perfecto` y el normal `desvio`.",
           "type": "object",
@@ -181,6 +197,24 @@
             "perfecto": { "type": "number", "minimum": 0, "maximum": 10 },
             "desvio": { "type": "number", "minimum": 0, "maximum": 10 },
             "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "avisos": {
+      "description": "Avisos del estilo (L5, Urban Reign §17.3). altura: marca de color en la mano o el pie que golpea durante los últimos `cuadros` de la anticipación (colores por altura); activo false la apaga.",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "altura": {
+          "type": "object",
+          "properties": {
+            "activo": { "type": "boolean" },
+            "cuadros": { "type": "integer", "minimum": 0, "maximum": 20 },
+            "tamano": { "type": "number", "minimum": 0.02, "maximum": 0.5 },
+            "colores": { "type": "object", "properties": { "alto": { "type": "string" }, "medio": { "type": "string" }, "bajo": { "type": "string" } }, "additionalProperties": false }
           },
           "additionalProperties": false
         }
@@ -201,7 +235,10 @@
         "respiro": { "type": "object", "properties": { "cuadros": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 }, "alejarse": { "type": "number", "minimum": 0, "maximum": 1 }, "provocar": { "type": "number", "minimum": 0, "maximum": 1 }, "lejos": { "type": "number", "minimum": 0, "maximum": 20 } }, "additionalProperties": false },
         "distancia": { "type": "object", "properties": { "cerca": { "type": "number", "minimum": 0, "maximum": 5 }, "margen": { "type": "number", "minimum": 0.3, "maximum": 1 }, "acercarse": { "type": "number", "minimum": 0, "maximum": 1 }, "alejarse": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
         "esperaInicial": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 },
-        "provocar": { "type": ["string", "null"] }
+        "provocar": { "type": ["string", "null"] },
+        "cadenas": { "description": "Urban Reign (L5): cadenas de alturas que elige al atacar (medio = el combo básico, adelante = el medio de verdad), con su peso.", "type": "array", "items": { "type": "object", "properties": { "alturas": { "type": "array", "minItems": 1, "items": { "enum": ["alto", "medio", "bajo", "adelante"] } }, "peso": { "type": "number", "minimum": 0 }, "nota": { "$ref": "comun.schema.json#/$defs/nota" } }, "required": ["alturas"], "additionalProperties": false } },
+        "acierto": { "description": "Urban Reign (L5): prob. de leer bien la altura de tu golpe al desviar, por dificultad.", "type": "object", "properties": { "facil": { "type": "number", "minimum": 0, "maximum": 1 }, "normal": { "type": "number", "minimum": 0, "maximum": 1 }, "dificil": { "type": "number", "minimum": 0, "maximum": 1 }, "maestro": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "castigoBajo": { "description": "Urban Reign (L5): prob. de castigar con el golpe bajo rápido después de una esquiva neutra que te hizo fallar.", "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false }
       },
       "additionalProperties": false
     },
@@ -250,7 +287,8 @@
             "alto": { "$ref": "combate.schema.json#/$defs/clave" },
             "medio": { "$ref": "combate.schema.json#/$defs/clave" },
             "bajo": { "$ref": "combate.schema.json#/$defs/clave" },
-            "neutro": { "$ref": "combate.schema.json#/$defs/clave" }
+            "neutro": { "$ref": "combate.schema.json#/$defs/clave" },
+            "adelante": { "$ref": "combate.schema.json#/$defs/clave" }
           },
           "additionalProperties": false
         }
@@ -275,6 +313,9 @@
           "properties": { "espiritu": { "type": "number", "minimum": 0, "maximum": 10 } },
           "additionalProperties": false
         },
+        "golpea": { "description": "Con qué golpea (la marca de altura de avisos.altura sale ahí): mano o pie, derecho o izquierdo.", "enum": ["manoD", "manoI", "pieD", "pieI"] },
+        "soloSi": { "description": "Solo pega si el rival está en una de estas reacciones (los remates aéreos: lanzado).", "type": "array", "items": { "$ref": "combate.schema.json#/$defs/clave" } },
+        "material": { "description": "A qué suena el golpe cuando lo desvían o lo bloquean (falta = metal).", "enum": ["carne", "metal", "madera"] },
         "alConectar": { "description": "Acción que empieza el que ataca cuando el golpe entra (el agarre sigue con su lanzamiento).", "$ref": "combate.schema.json#/$defs/clave" },
         "zona": {
           "type": "object",
