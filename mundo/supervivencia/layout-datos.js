@@ -33,9 +33,14 @@ export const SELECTORES_ARENA = {
     'ar-agarre': '.tactil-arena .ar-agarre',
     'ar-especial': '.tactil-arena .ar-especial'
 };
+export const SELECTORES_SALONAS = {
+    pausa: '.sl-pausaT',
+    primus: '.sl-primusT'
+};
 export const PAGINAS_LAYOUT = {
     supervivencia: { selectores: SELECTORES, clase: 'layout-datos', estilo: 'layout-datos' },
-    arena: { selectores: SELECTORES_ARENA, clase: 'layout-datos-arena', estilo: 'layout-datos-arena' }
+    arena: { selectores: SELECTORES_ARENA, clase: 'layout-datos-arena', estilo: 'layout-datos-arena' },
+    salonas: { selectores: SELECTORES_SALONAS, clase: 'layout-datos-salonas', estilo: 'layout-datos-salonas' }
 };
 // pausa y pantalla: mundo/mundo.css fija su posición con !important (bajan bajo el minimapa); el layout tiene que ganarle
 const IMPORTANTES = new Set(['pausa', 'pantalla']);

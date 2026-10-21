@@ -9,11 +9,36 @@
     "version": { "$ref": "comun.schema.json#/$defs/version" },
     "nota": { "$ref": "comun.schema.json#/$defs/nota" },
     "supervivencia": { "$ref": "#/$defs/pantalla" },
-    "arena": { "$ref": "#/$defs/pantallaArena" }
+    "arena": { "$ref": "#/$defs/pantallaArena" },
+    "salonas": { "$ref": "#/$defs/pantallaSalonas" }
   },
   "required": ["version"],
   "additionalProperties": false,
   "$defs": {
+    "pantallaSalonas": {
+      "description": "Botones táctiles de Salonas (pausa y Modo Primus). Los 4 trastes siguen la línea 3D y no se ajustan aquí.",
+      "type": "object",
+      "properties": {
+        "normal": { "$ref": "#/$defs/perfilSalonas" },
+        "baja": { "$ref": "#/$defs/perfilSalonas" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "perfilSalonas": {
+      "type": "object",
+      "properties": {
+        "botones": {
+          "type": "object",
+          "properties": {
+            "pausa": { "$ref": "#/$defs/boton" }, "primus": { "$ref": "#/$defs/boton" }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
     "pantallaArena": {
       "description": "Botones de la arena del combate (bloque 8 · N4, mundo/supervivencia/combate/tactil-arena.js). Lo que falta usa tactil-arena.css. Sin franja inferior: se mide desde el borde. El joystick es flotante (nace donde se apoya el dedo; su tamaño está en combate.json → tactil.joystick).",
       "type": "object",

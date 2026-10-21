@@ -11,8 +11,8 @@
 //  · Esc pausa: el audio se suspende y vuelve con una cuenta de 3.
 // La partitura, el juicio y el puntaje son los de salonas-partitura.js; el audio, el de musica-motor.js (dos
 // reproductores con el mismo mapa: la banda y el bajo por separado, para poder apagar solo el bajo).
-// No editable aún: AJUSTES_SALONAS y REGLAS_BASE (pasan a mundo/datos/salonas.json en S9), los textos (TXT_SALONAS)
-// y los colores del HUD (CSS).
+// Ajustes y textos editables en mundo/datos/salonas.json; TXT_SALONAS queda como respaldo si falta una clave.
+// Los colores del HUD siguen en CSS.
 // Depuración: __venjy.salonas (abrir(), tocar(dificultad), estado, pausar(), calibrar(), local('sala'|'bar'|'festival'), primus(), practica, records()).
 // S8: el menú por local con estrellas y récord (localStorage, salonas-reloj.js), la energía del público (a cero te abuchean), el Modo
 // Primus (Espacio con la barra llena), el duelo de solos (puntaje aparte y «¡Te toca!») y la Práctica (sección y velocidad).
@@ -28,6 +28,7 @@ import { cargarMusica, cancionMusica, instrumentosPropios } from './musica-datos
 import * as P from './salonas-partitura.js';
 import * as Z from './salonas-reloj.js';
 import { crearEscenaSalonas } from './salonas-escena.js';
+import { aplicarLayout } from './layout-datos.js';
 
 const t = (es, en) => ({ es, en });
 export const TXT_SALONAS = {
@@ -168,8 +169,23 @@ function pintarEstrellas(lienzo, n, p = 4) {
 // ctx: { idioma, tactil(), puede(), bloquear(), liberar(), datos() (salonas.json en S9; hoy null) }
 export function crearSalonas(ctx) {
     let L = ctx.idioma || 'es';
-    const tx = (o, v = {}) => Object.entries(v).reduce((s, [k, x]) => s.replace(`{${k}}`, x), o ? o[L] || o.es : '');
+    const rutasTexto = new Map();
+    const indexarTextos = (nodo, ruta = []) => {
+        for (const [k, valor] of Object.entries(nodo || {})) {
+            if (valor && typeof valor === 'object' && typeof valor.es === 'string' && typeof valor.en === 'string') rutasTexto.set(valor, [...ruta, k]);
+            else if (valor && typeof valor === 'object' && !Array.isArray(valor)) indexarTextos(valor, [...ruta, k]);
+        }
+    };
+    indexarTextos(TXT_SALONAS);
+    const tx = (o, v = {}) => {
+        const ruta = rutasTexto.get(o);
+        let texto = ruta && datos()?.textos;
+        for (const k of ruta || []) texto = texto && texto[k];
+        const fuente = texto && (texto[L] || texto.es) ? texto : o;
+        return Object.entries(v).reduce((s, [k, x]) => s.replace(`{${k}}`, x), fuente ? fuente[L] || fuente.es : '');
+    };
     const datos = () => (ctx.datos && ctx.datos()) || null;
+    const layout = () => (ctx.layout && ctx.layout()) || null;
     const ajustes = () => Z.ajustesDe(datos() && datos().juego);
     const reglas = () => P.reglasDe(datos() && datos().reglas);
     let musicaJson = null;
@@ -338,6 +354,7 @@ export function crearSalonas(ctx) {
         ctx.bloquear();
         if (document.pointerLockElement) document.exitPointerLock();
         document.body.classList.add('en-salonas');
+        if (ctx.tactil && ctx.tactil()) aplicarLayout(layout(), 'salonas');
         capa.classList.add('visible');
         esc.esconder();
         hud(false);
@@ -680,6 +697,7 @@ export function crearSalonas(ctx) {
         panel(null); hud(false);
         capa.classList.remove('visible');
         document.body.classList.remove('en-salonas');
+        aplicarLayout(null, 'salonas');
         for (const k of [...apretadas]) soltar(k);
         ctx.liberar();
     }

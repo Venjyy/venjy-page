@@ -1458,9 +1458,11 @@ async function arrancar(guardado, cx = null) {
     // panel de Salonas; mientras tocas, su escena se dibuja en lugar del mundo (como la carrera)
     let salonas = null, cargandoSalonas = null;
     function cargarSalonas() {
-        if (!cargandoSalonas) cargandoSalonas = import('./salonas.js').then(m => {
+        if (!cargandoSalonas) cargandoSalonas = Promise.all([import('./salonas.js'), cargarDatos('salonas'), cargarDatos('ui-layout')]).then(([m, json, layout]) => {
             salonas = m.crearSalonas({
                 idioma, tactil: () => !!tactil,
+                datos: () => window.__venjy?.datosSalonas || json,
+                layout: () => window.__venjy?.datosUiLayout || layout,
                 // La banda y el público del local (salonas-escena.js): copias de las personas del mundo y tu skin
                 personasMundo: k => personasEscena().find(n => n.clave === k) || null,
                 skin: () => crearModeloSkin(cargarSkin()),

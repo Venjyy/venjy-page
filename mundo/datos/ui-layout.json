@@ -56,5 +56,14 @@
         "ar-modoEspecial": { "ancla": "id", "x": 204, "y": 216, "w": 88, "h": 48, "letra": 0.75 }
       }
     }
+  },
+  "salonas": {
+    "nota": "Pausa y Primus táctiles, en la esquina superior derecha. Los 4 trastes no se ajustan aquí: siguen la línea 3D y salonas.js mide su posición en cada cuadro.",
+    "normal": {
+      "botones": {
+        "pausa": { "ancla": "sd", "x": 12, "y": 80, "w": 100, "h": 40 },
+        "primus": { "ancla": "sd", "x": 12, "y": 120, "w": 100, "h": 40 }
+      }
+    }
   }
 }
