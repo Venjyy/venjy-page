@@ -35,7 +35,63 @@ export const AJUSTES_SALONAS = {
         clic: { frec: 1500, frecFuerte: 2000, dur: 0.03, vol: 0.35 },
         rango: 0.25                // ± segundos que acepta el número a mano
     },
-    avisoSeg: 0.5                  // cuánto dura el «Perfecto» / «Bien» en pantalla
+    avisoSeg: 0.5,                 // cuánto dura el «Perfecto» / «Bien» en pantalla
+    // ---------- S5: locales, banda, público y cámara (salonas-escena.js; z negativa = hacia el escenario) ----------
+    local: 'sala',                 // el local de una canción que no esté en localDe
+    localDe: { 'sala-ska': 'sala', 'sala-garage': 'sala' }, // canción → local (bar y festival llegan en S6 y S7)
+    banda: {
+        // pos: [x, z] sobre el piso del escenario; giro: radianes hacia el centro (0 = mira a la cámara)
+        salonas: { pos: [-3.7, -6.8], giro: 0.32 },
+        jugador: { pos: [3.7, -6.8], giro: -0.32 },
+        conejeros: { pos: [-8.4, -11.5], giro: 0.55, tarima: 0.45 }, // tarima: alto del podio (lo sentado está en salonas-gestos.js)
+        amplis: { pos: [7.4, -13], giro: -0.35 },
+        baqueta: { pos: [0, -0.06, 0.1], rot: [1.1, 0, 0], largo: 0.55 }, // en la muñeca de Conejeros
+        reposoBpm: 90,             // el pulso de la banda en el menú y en los resultados (sin canción)
+        saltoCada: 8,              // en el coro, Salonas salta cada tantos pulsos
+        carrilK: 10,               // qué tan rápido la mano del bajo sigue al carril (1/s)
+        slapSeg: 0.18, falloSeg: 0.45 // lo que dura el golpe del slap y el «uf» del fallo
+    },
+    // Ánimo del público (−1 abuchea … 1 salta): sube con cada acierto, baja con cada fallo y vuelve a reposo
+    publico: { subida: 0.045, bajada: 0.22, reposo: 0.2, vuelta: 0.15, aplaude: 0.35, salta: 0.7, abuchea: -0.25, celebrarSeg: 2.5 },
+    // Mientras dura una sección de `secciones` (el solo de Salonas; el puente mientras no haya solos), la cámara se corre hacia Salonas (suma a la posición y a la mira); k = rapidez (1/s)
+    camaraSolo: { secciones: ['solo', 'puente'], pos: [-1.1, -0.4, -1.4], mira: [-2.2, 0.6, 0], k: 2.5 },
+    locales: {
+        sala: {
+            cielo: '#17110d', niebla: [22, 45],
+            piso: '#5d5a55', pared: '#3b3430', ancho: 22, fondo: 26, alto: 8,
+            colchones: ['#6f88a8', '#a86f6f', '#8fa86f', '#b39a62', '#7d6fa8'],
+            lampara: { pos: [0, 6.2, -9], color: '#ffd98a', mecer: 0.06 },
+            luz: { color: '#ffe6c0', base: 0.9, pulso: 0.12 }, // tinte de todo el local y su latido al pulso
+            afiches: 4,
+            publico: [],
+            intro: { desde: [-6, 2.2, -2], mira: [-3.7, 1.4, -6.8], seg: 2.6 }
+        },
+        bar: {
+            cielo: '#120a14', niebla: [24, 48],
+            piso: '#6b4a2e', pared: '#7a3a2c', ancho: 26, fondo: 28, alto: 7,
+            tarima: '#3a2618', barra: '#4a2c18',
+            barraPos: [8.8, -3], mesas: [[-6, -1.5], [6, -1.5], [-7.5, -5]], // [x, z]; el público se para junto a las mesas
+            neon: ['#ff4fb0', '#4fe0ff', '#ffe04f'],
+            luz: { color: '#ffc8e0', base: 0.82, pulso: 0.18 },
+            publico: ['pony', 'hadad', 'andy', 'nacho', 'lucho', 'braulio'],
+            intro: { desde: [9, 3, 4], mira: [0, 1, -7], seg: 2.6 }
+        },
+        festival: {
+            cielo: '#070512', niebla: [30, 70],
+            piso: '#26232b', pared: '#111018', ancho: 40, fondo: 34, alto: 14,
+            torres: '#8a8a94', pantallas: ['#ff3c6e', '#3cc8ff', '#b4ff3c', '#ffb43c'],
+            haces: ['#ff4f4f', '#4f8fff', '#ffe04f', '#c04fff'],
+            luz: { color: '#d8d0ff', base: 0.78, pulso: 0.25 },
+            multitud: 220, colores: ['#c8503c', '#3c78c8', '#3ca050', '#d2b43c', '#8c50b4', '#e6e6e6', '#303030'],
+            humo: 14,
+            frente: -3.6, foso: 1.2,  // el escenario termina en z = frente; la multitud está foso más abajo, delante
+            multitudZ: [-3.2, 1.2],     // entre qué z se reparte la multitud (a los lados de la autopista)
+            torresPos: [10.5, -11],   // [x a cada lado, z] de las torres de luces
+            pantallaY: 5,             // altura del centro de las pantallas
+            publico: ['pony', 'hadad', 'andy'],
+            intro: { desde: [0, 9, 14], mira: [0, 1.5, -8], seg: 3 }
+        }
+    }
 };
 
 const clona = x => Array.isArray(x) ? x.map(clona) : x && typeof x === 'object'

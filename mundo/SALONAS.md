@@ -174,6 +174,10 @@ la clave `compás:paso` con el compás contado en toda la canción.
 - **Animaciones** (con la skill `animaciones-minecraft`, primero Haiku y después Sonnet según su §0): tu cuerpo
   toca el bajo (la mano de los trastes se mueve con el carril y la del slap golpea). Salonas toca la guitarra,
   cabecea y salta en el coro. Conejeros toca la batería al pulso real. El público aplaude o abuchea.
+- **Hecho en S5** (2026-10-21): `salonas-escena.js` (locales, banda, público, luces) y `salonas-gestos.js` (gestos puros).
+  La banda queda a los lados de la autopista mirando a la cámara (Salonas a la izquierda, tú a la derecha, Conejeros
+  atrás a la izquierda en su tarima); en el bar el público está en las mesas de adelante y en el festival en un foso
+  delante del escenario. Mientras no haya solos (S7), el acercamiento a Salonas también sale en el puente.
 - **HUD** con PixelCraft y la estética Minecraft: puntaje, combo, multiplicador, barra de energía, carga del
   Modo Primus, avisos grandes («¡×4!», «¡Modo Primus!», «Perfecto») y el progreso de la canción.
 

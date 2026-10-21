@@ -49,7 +49,7 @@ import { crearCartelesCamino } from './caminos-carteles.js';
 import { crearCuaderno } from './cuaderno.js';
 import { crearJefes } from './jefes.js';
 import { mostrarCreditos } from './creditos.js';
-import { crearEditorSkin, cargarSkin, BASES, caraDeSkin } from './skin.js';
+import { crearEditorSkin, cargarSkin, BASES, caraDeSkin, crearModelo as crearModeloSkin } from './skin.js';
 import { crearCamaras } from './camaras.js';
 import { crearRuleta } from './ruleta.js';
 import { crearEscenasSkin } from './escenas-skin.js';
@@ -1461,6 +1461,9 @@ async function arrancar(guardado, cx = null) {
         if (!cargandoSalonas) cargandoSalonas = import('./salonas.js').then(m => {
             salonas = m.crearSalonas({
                 idioma, tactil: () => !!tactil,
+                // La banda y el público del local (salonas-escena.js): copias de las personas del mundo y tu skin
+                personasMundo: k => personasEscena().find(n => n.clave === k) || null,
+                skin: () => crearModeloSkin(cargarSkin()),
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena() && !uiSalonas(),
                 bloquear: () => bloquearEscena(true), liberar: liberarEscena
             });
