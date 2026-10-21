@@ -26,7 +26,7 @@
       "cielo": "#120c18",
       "niebla": [18, 40]
     },
-    "audio": { "retraso": 0.6, "adelanto": 0.2, "volBanda": 1, "volBajo": 1.15 },
+    "audio": { "retraso": 0.6, "adelanto": 0.2, "volBanda": 1.8, "volBajo": 2.1 },
     "fallo": {
       "volBajo": 0.12,
       "seg": 0.45,
@@ -123,7 +123,7 @@
       "activa": true,
       "soloNoche": true,
       "canciones": ["sala-ska", "sala-garage", "bar-cumbia", "bar-funk", "festival-metal", "festival-jefe"],
-      "vol": 0.5,
+      "vol": 1.6,
       "distancia": 34,
       "pausaSeg": 12,
       "tempo": 1

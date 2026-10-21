@@ -23,7 +23,7 @@ export const AJUSTES_SALONAS = {
     // mecer: cuánto baja al pulso; margen: lo que sobra a cada lado de la autopista (en pantallas angostas la cámara se aleja)
     camara: { altura: 4.8, distancia: 6, mira: -7.5, fov: 55, mecer: 0.06, margen: 0.5 },
     escena: { cielo: '#120c18', niebla: [18, 40] },
-    audio: { retraso: 0.6, adelanto: 0.2, volBanda: 1, volBajo: 1.15 }, // retraso: segundos antes de la 1.ª nota
+    audio: { retraso: 0.6, adelanto: 0.2, volBanda: 1.8, volBajo: 2.1 }, // retraso: segundos antes de la 1.ª nota
     // el bajo baja a volBajo durante seg; muerta = la cuerda muerta (nota MIDI si no hay una nota cerca)
     fallo: { volBajo: 0.12, seg: 0.45, muerta: { vol: 0.9, dur: 0.04, nota: 28 } },
     acordeGracia: 0.06,           // segundos para apretar la segunda tecla de un acorde
@@ -68,7 +68,7 @@ export const AJUSTES_SALONAS = {
     // Amistad con Salonas al terminar una canción (no cuenta la práctica ni el abucheo): con `estrellas` o más suma «gana»
     amistad: { estrellas: 2 },
     // Salonas en la aldea: de noche (y en el concierto, cuando exista) toca estas canciones en vez de los riffs de siempre
-    aldea: { activa: true, soloNoche: true, canciones: ['sala-ska', 'sala-garage', 'bar-cumbia', 'bar-funk', 'festival-metal', 'festival-jefe'], vol: 0.5, distancia: 34, pausaSeg: 12, tempo: 1 },
+    aldea: { activa: true, soloNoche: true, canciones: ['sala-ska', 'sala-garage', 'bar-cumbia', 'bar-funk', 'festival-metal', 'festival-jefe'], vol: 1.6, distancia: 34, pausaSeg: 12, tempo: 1 },
     // Mientras dura una sección de `secciones` (el solo de Salonas; el puente mientras no haya solos), la cámara se corre hacia Salonas (suma a la posición y a la mira); k = rapidez (1/s)
     camaraSolo: { secciones: ['solo', 'puente'], pos: [-1.1, -0.4, -1.4], mira: [-2.2, 0.6, 0], k: 2.5 },
     locales: {
