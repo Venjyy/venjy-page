@@ -252,6 +252,7 @@
       "en": "R: next reaction (Shift + R: mirrored)"
     },
     "espejo": { "es": "espejo", "en": "mirrored" },
+    "probando": { "es": "Probando: {accion}", "en": "Testing: {accion}" },
     "golpeFinal": { "es": "¡Golpe final!", "en": "Final strike!" },
     "mikiri": { "es": "¡Mikiri!", "en": "Mikiri!" },
     "botonPatada": { "es": "PATADA", "en": "KICK" },

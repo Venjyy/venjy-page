@@ -311,6 +311,15 @@ const responder = crearManejador({
         if (accion === 'abrir') { a.abrir(); return; }
         a.elegir(accion, 'normal');
     },
+    // Pestaña Combate (N6c): probar un ataque o una reacción en la arena, o cerrarla
+    async combate({ accion, estilo, ataque, reaccion, dificultad }) {
+        const v = window.__venjy;
+        if (!v || !v.cargarArena) throw new Error('el juego todavía no está listo');
+        const a = await v.cargarArena();
+        if (!a) throw new Error('no se pudo cargar la arena');
+        if (accion === 'terminar') { if (a.activa) a.terminar(); return; }
+        if (!a.probar({ estilo, accion: ataque, reaccion, dificultad })) throw new Error(a.activa ? 'la arena ya está abierta en otra cosa: ciérrala y vuelve a probar' : `la arena no tiene el estilo «${estilo}» o ahora no se puede abrir`);
+    },
     // Pestaña Objetos: deja en tu mano (barra rápida) el objeto o bloque pedido, dándotelo si no lo tienes
     objeto({ clave }) {
         const v = window.__venjy;

@@ -246,7 +246,7 @@ export function crearArena(ctx) {
         return true;
     }
     function colocarMenu() {
-        c.fase = 'menu'; c.t = 0; c.muneco = false;
+        c.fase = 'menu'; c.t = 0; c.muneco = false; c.probar = null;
         const P = nuevaP();
         P.fase = 'quieto'; // en el menú esperan en guardia, sin caminar
         c.P = P; c.C = M.crearCamara(R);
@@ -257,7 +257,11 @@ export function crearArena(ctx) {
         const rival = claves.find(k => k !== sel) || sel;
         const estilos = {};
         for (const k of [sel, rival]) { const e = R.peleadores[k].estilo; estilos[k] = (ctx.estilos && (ctx.estilos[e] || ctx.estilos.prueba)) || null; }
+        // Probar desde el Estudio (N6c): el rival lleva el estilo que se prueba
+        const pr = c && c.probar;
+        if (pr && ctx.estilos && ctx.estilos[pr.estilo]) estilos[rival] = ctx.estilos[pr.estilo];
         const P = M.nuevaPelea(R, { estilos, yo: sel, rival, dificultad, tactil: tactilActivo(), semilla: (Math.random() * 1e9) | 0, aspecto: aspecto(), muneco: !!(c && c.muneco) });
+        if (pr) P.R = M.reglasProbar(R, pr.accion, pr.reaccion);
         P.f.forEach(F => { F.xa = F.x; F.za = F.z; F.yawa = F.yaw; });
         const e = escena();
         for (const F of P.f) {
@@ -484,7 +488,7 @@ export function crearArena(ctx) {
             const alfa = c.reloj.avanzar(dtE, () => {
                 if (g) intenciones.leerMando(g);
                 const it0 = c.fase === 'pelea' ? intenciones.leer(performance.now()) : {};
-                const it1 = M.intencionCPU(P, 1);
+                const it1 = c.probar && !c.probar.reaccion ? M.intencionPractica(P, 1) : M.intencionCPU(P, 1);
                 P.f.forEach(F => { F.xa = F.x; F.za = F.z; F.yawa = F.yaw; });
                 P.aspecto = aspecto();
                 M.pasoPelea(P, [it0, it1]);
@@ -844,7 +848,28 @@ export function crearArena(ctx) {
         aplicarDatos(d) {
             datos = d; R = M.reglasArena(d);
             if (esc && esc.aplicar) esc.aplicar(R);
-            if (c && c.P) { c.P.R = R; if (c.C) c.C.R = R; }
+            if (c && c.P) { c.P.R = c.probar ? M.reglasProbar(R, c.probar.accion, c.probar.reaccion) : R; if (c.C) c.C.R = R; }
+        },
+        // Estudio (N6c, «Probar en el juego»): pelea de práctica contra el estilo `estilo` (el rival lo lleva aunque
+        // ningún peleador lo use); el rival repite `accion` o, si es una reacción, es el muñeco y R la juega
+        probar({ estilo, accion, reaccion = false, dificultad: dif = 'normal' }) {
+            if (!ctx.estilos || !ctx.estilos[estilo]) return false;
+            const claves = Object.keys(R.peleadores);
+            const rival = claves.find(k => R.peleadores[k].estilo === estilo) || claves[claves.length - 1];
+            const yo = claves.find(k => k !== rival) || rival;
+            if (!c && !abrir(yo)) return false;
+            const ir = () => {
+                if (!c) return;
+                sel = yo; dificultad = R.dificultades.includes(dif) ? dif : 'normal';
+                colocarMenu();
+                c.probar = { estilo, accion, reaccion: !!reaccion };
+                c.muneco = !!reaccion; c.reaccionN = 0;
+                pelear();
+                if (!c.muneco) { empezarVuelo(); empezarPelea(); }
+                aviso(tx('probando', { accion }), 2);
+            };
+            if (c.enMundo) { const f = ventisca.enMedio; ventisca.enMedio = () => { if (f) f(); ir(); }; } else ir();
+            return true;
         },
         // Estudio y depuración: directo a la pelea con ese peleador
         elegir(clave, dif = 'normal') {

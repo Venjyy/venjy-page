@@ -11,6 +11,9 @@
 // N6b: visor 3D arriba de la línea (estudio/combate-visor.js; poses con el motor del juego en combate-visor-modelo.mjs),
 // cabezal en la línea (clic o arrastre en la regla), claves de cada canal como puntos anclados a la fase (con «Claves de
 // la animación») y la curva de un canal como en Poses (clic en el nombre del canal).
+// N6c: paneles Peso, Reacciones, Controles y CPU (estudio/combate-paneles.js) en pestañas junto a «Acción»; «Probar
+// en el juego» (mensaje `combate`: la arena en práctica contra ese estilo); en el visor, la pausa del golpe y el empuje,
+// el estilo del rival y «+ Canal» para mover un canal nuevo en la animación.
 // =========================================================
 import * as M from './combate-modelo.mjs';
 import { largoFases } from '../mundo/supervivencia/combate/datos.js';
@@ -19,6 +22,8 @@ import * as V from './combate-visor-modelo.mjs';
 import { crearVisor } from './combate-visor.js';
 import { CANALES as CANALES_POSE } from './poses-modelo.mjs';
 import { nombresCurvas } from '../mundo/datos/curvas.js';
+import * as PM from './combate-paneles-modelo.mjs';
+import { crearPaneles } from './combate-paneles.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 
@@ -51,6 +56,11 @@ export async function montarCombate(ctx) {
     // Visor (N6b): simulación de la acción (se rehace tras cada cambio), cuadro del bucle, reproducción y canal elegido
     let sim = null, iBucle = 0, play = true, vel = 1, canal = null, iClave = -1, verClaves = false, visor = null;
     const DESC_CANAL = Object.fromEntries(CANALES_POSE.map(([k, , , es, en]) => [k, [es, en]]));
+    // N6c: panel a la vista ('accion' | 'peso' | 'reacciones' | 'controles' | 'cpu'), estilo del rival en el visor
+    // (null = el mismo) y si el visor muestra la pausa del golpe y el empuje
+    let panelSel = 'accion', estiloR = null, conPeso = true, paneles = null;
+    const estiloRival = () => (estiloR && archivos[estiloR] ? estiloR : estilo);
+    const PANELES = [['accion', 'Acción', 'Action'], ['peso', 'Peso', 'Weight'], ['reacciones', 'Reacciones', 'Reactions'], ['controles', 'Controles', 'Controls'], ['cpu', 'CPU', 'CPU']];
 
     const sucio = n => JSON.stringify(archivos[n].datos) !== JSON.stringify(archivos[n].original);
     const algunoSucio = () => Object.keys(archivos).some(sucio);
@@ -117,9 +127,42 @@ export async function montarCombate(ctx) {
         }
         if (!sel || !defSel()) { const g = grupos[0]; sel = g ? { grupo: g.grupo, clave: g.claves[0] } : null; }
         if (sel) selAccion.value = sel.grupo + '|' + sel.clave;
+        // Rival del visor y dificultad para probar
+        const selR = $('co-rival');
+        selR.textContent = '';
+        const mismo = el('option', '', t('el mismo estilo', 'the same style')); mismo.value = ''; selR.appendChild(mismo);
+        for (const n of estilos) { const d = archivos[n].datos, o = el('option', '', (d.nombre && (d.nombre[ctx.idioma] || d.nombre.es)) || n); o.value = n; selR.appendChild(o); }
+        selR.value = estiloR || '';
+        const selD = $('co-probar-dif'), difAntes = selD.value || 'normal';
+        selD.textContent = '';
+        for (const [k, es, en] of PM.DIFICULTADES) { const o = el('option', '', t(es, en)); o.value = k; selD.appendChild(o); }
+        selD.value = difAntes;
+        // Pestañas de paneles
+        const pp = $('co-paneles');
+        pp.textContent = '';
+        for (const [k, es, en] of PANELES) {
+            const b = boton(es, en, () => { if (paneles) paneles.cancelarCaptura(); panelSel = k; pintar(); }, 'boton chico' + (k === panelSel ? '' : ' secundario'));
+            b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(k === panelSel)); b.dataset.panel = k;
+            pp.appendChild(b);
+        }
     }
+    $('co-rival').addEventListener('change', e => { estiloR = e.target.value || null; sim = null; if (visor) visor.fijarEstilo(archivos[estilo].datos, archivos[estiloRival()].datos); });
+    $('co-peso').addEventListener('change', e => { conPeso = e.target.checked; sim = null; });
+    // Probar en el juego (N6c): la arena en práctica contra este estilo, el rival repite la acción elegida
+    $('co-probar').addEventListener('click', async () => {
+        if (!sel) return;
+        const m = PM.mensajeProbar(estilo, sel.grupo, sel.clave, $('co-probar-dif').value || 'normal');
+        rotular('Abriendo la arena…', 'Opening the arena…');
+        try {
+            await ctx.puente.enviar('combate', m);
+            rotular(m.reaccion ? `Arena abierta: el muñeco juega «${sel.clave}» con R.` : `Arena abierta: el rival repite «${sel.clave}».`, m.reaccion ? `Arena open: the dummy plays «${sel.clave}» with R.` : `Arena open: the rival repeats «${sel.clave}».`, 'ok');
+        } catch (e) { rotular(`No se pudo probar: ${e.message}`, `Could not try it: ${e.message}`, 'error'); }
+    });
+    $('co-terminar').addEventListener('click', async () => {
+        try { await ctx.puente.enviar('combate', { accion: 'terminar' }); rotular('Arena cerrada.', 'Arena closed.', 'ok'); } catch (e) { rotular(e.message, e.message, 'error'); }
+    });
     const nuevaAccion = () => { elegida = null; baseRapidez = null; sim = null; iBucle = 0; canal = null; iClave = -1; };
-    selEstilo.addEventListener('change', () => { estilo = selEstilo.value; sel = null; nuevaAccion(); if (visor) visor.fijarEstilo(archivos[estilo].datos); pintar(); });
+    selEstilo.addEventListener('change', () => { estilo = selEstilo.value; sel = null; nuevaAccion(); if (visor) visor.fijarEstilo(archivos[estilo].datos, archivos[estiloRival()].datos); pintar(); });
     selAccion.addEventListener('change', () => { const [g, k] = selAccion.value.split('|'); sel = { grupo: g, clave: k }; nuevaAccion(); pintar(); });
 
     // ---------- Línea de tiempo ----------
@@ -184,12 +227,29 @@ export async function montarCombate(ctx) {
         }
         // Claves de cada canal (N6b): puntos anclados a la fase; se arrastran a los lados, clic en el nombre = su curva
         if (verClaves) pintarFilasClaves(fila, def);
+        pintarCanalNuevo(def);
         nodoCabezal = el('div', 'co-cabezal'); nodoCabezal.hidden = true; interior.appendChild(nodoCabezal);
         const l = el('div', 'es-linea'); l.appendChild(interior);
         linea.appendChild(l);
         moverCabezal();
     }
     let nodoCabezal = null;
+    // N6c: agregar un canal que la animación todavía no mueve (dos claves con su valor de hoy; después se arrastran)
+    function pintarCanalNuevo(def) {
+        const zona = $('co-canal-nuevo');
+        zona.textContent = '';
+        const info = verClaves && def && def.fases ? animSel() : null;
+        const libres = info && info.archivo ? V.canalesLibres(info.anim, CANALES_POSE.map(c => c[0])) : [];
+        zona.hidden = !libres.length;
+        if (!libres.length) return;
+        const s = el('select'); s.setAttribute('aria-label', t('Canal nuevo', 'New channel'));
+        for (const k of libres) { const o = el('option', '', DESC_CANAL[k] ? `${k} · ${t(...DESC_CANAL[k])}` : k); o.value = k; s.appendChild(o); }
+        zona.append(s, boton('+ Canal', '+ Channel', () => {
+            if (!V.agregarCanal(info.anim, s.value, def.fases)) return;
+            canal = s.value; iClave = 0;
+            cambio(archivoAnim(info));
+        }));
+    }
     function pintarFilasClaves(fila, def) {
         const info = animSel();
         if (!info || !V.usaFases(info.anim)) {
@@ -222,7 +282,7 @@ export async function montarCombate(ctx) {
     // ---------- Visor y cabezal (N6b) ----------
     function simAhora() {
         if (sim || !sel) return sim;
-        sim = V.simular(archivos[estilo].datos, archivos.combate.datos, sel.clave);
+        sim = V.simular(archivos[estilo].datos, archivos.combate.datos, sel.clave, { estiloR: archivos[estiloRival()].datos, peso: conPeso });
         const hoja = sim ? V.cuadrosHoja(sim.def.fases, 8) : [];
         if (visor) visor.fijarSim(sim, hoja);
         pintarHoja(hoja);
@@ -271,7 +331,8 @@ export async function montarCombate(ctx) {
         const dentro = c >= 0 && c < sim.total, fase = dentro ? V.FASE_DE[V.claveDeCuadro(c, sim.def.fases)[0]] : null;
         const nf = fase ? t(...M.NOMBRE_FASE[fase]).split(' (')[0] : '';
         $('co-cuadro').textContent = dentro
-            ? t(`Cuadro ${c} de ${sim.total} · ${nf}`, `Frame ${c} of ${sim.total} · ${nf}`) + (q.rc !== null ? t(` · rival: ${sim.reaccion} c${q.rc}`, ` · rival: ${sim.reaccion} f${q.rc}`) : '')
+            ? t(`Cuadro ${c} de ${sim.total} · ${nf}`, `Frame ${c} of ${sim.total} · ${nf}`) + (q.rc !== null ? t(` · rival: ${sim.reaccion} c${q.rc}`, ` · rival: ${sim.reaccion} f${q.rc}`) : '') +
+              (sim.hitstop && c === sim.golpe ? t(` · pausa del golpe ${sim.hitstop} c, empuje ${sim.empuje}`, ` · hit pause ${sim.hitstop} f, push ${sim.empuje}`) : '')
             : t('Guardia (entre una vuelta y otra)', 'Guard (between loops)');
         for (const b of $('co-hoja').children) b.classList.toggle('actual', Number(b.dataset.c) === c);
         pintarCurva();
@@ -411,8 +472,11 @@ export async function montarCombate(ctx) {
         if (!nodoProblemas) return;
         nodoProblemas.textContent = '';
         const c = archivos.combate.datos;
-        const todos = archivoSel() === 'combate' ? reglasCombate(c, { limites }) : reglasEstilo(archivos[estilo].datos, { combate: c, limites });
-        const prefijo = sel ? `$.${sel.grupo === 'comunes' ? 'reacciones' : sel.grupo}.${sel.clave}` : '';
+        // Paneles (N6c): Peso, Reacciones y Controles revisan combate.json (y los controles del estilo); CPU, la del estilo
+        const deCombate = panelSel === 'peso' || panelSel === 'reacciones' || panelSel === 'controles' || (panelSel === 'accion' && archivoSel() === 'combate');
+        const todos = deCombate ? reglasCombate(c, { limites }) : reglasEstilo(archivos[estilo].datos, { combate: c, limites });
+        if (panelSel === 'controles') todos.push(...reglasEstilo(archivos[estilo].datos, { combate: c, limites }).filter(r => r.texto.startsWith('$.controles')));
+        const prefijo = panelSel === 'cpu' ? '$.cpu' : panelSel !== 'accion' ? '$' : sel ? `$.${sel.grupo === 'comunes' ? 'reacciones' : sel.grupo}.${sel.clave}` : '';
         const mios = todos.filter(r => r.texto.startsWith(prefijo + '.') || r.texto.startsWith(prefijo + ':') || r.texto.startsWith(prefijo + ' '));
         if (!mios.length) { nodoProblemas.appendChild(el('p', 'mensaje ok', t('Sin problemas.', 'No problems.'))); return; }
         for (const r of mios) nodoProblemas.appendChild(el('p', 'mensaje ' + (r.tipo === 'error' ? 'error' : ''), r.texto));
@@ -420,6 +484,15 @@ export async function montarCombate(ctx) {
     function pintar() {
         pintarSelectores();
         caja.textContent = '';
+        nodoResumen = null; nodoProblemas = null;
+        if (panelSel !== 'accion' && paneles) {
+            paneles[panelSel](caja);
+            const pP = panel(t('Revisión', 'Check'));
+            nodoProblemas = el('div'); pP.appendChild(nodoProblemas);
+            pintarProblemas(); pintarLinea();
+            btnGuardar.disabled = !algunoSucio() || !ctx.servidor.escritura;
+            return;
+        }
         const def = defSel();
         if (!def) { caja.appendChild(el('p', 'mensaje', t('Elige una acción.', 'Pick an action.'))); pintarLinea(); return; }
         const ataque = esAtaque();
@@ -531,12 +604,21 @@ export async function montarCombate(ctx) {
     window.addEventListener('beforeunload', e => { if (algunoSucio()) { e.preventDefault(); e.returnValue = ''; } });
     ctx.alIdioma.push(() => pintar());
     // depuración y pruebas de navegador
+    paneles = crearPaneles({
+        t, el, boton, numero, lista, casilla, archivos, rotular, panel,
+        estilo: () => estilo, idioma: () => ctx.idioma,
+        cambio: (n, r) => cambio(n, r), repintar: () => pintar(),
+        elegirAccion: (g, k) => { panelSel = 'accion'; sel = { grupo: g, clave: k }; nuevaAccion(); pintar(); }
+    });
     ctx.combate = {
-        archivos, elegir: (e, g, k) => { estilo = e; sel = { grupo: g, clave: k }; nuevaAccion(); if (visor) visor.fijarEstilo(archivos[estilo].datos); pintar(); },
-        sim: () => simAhora(), irA, medir: i => (visor ? visor.medir(i) : null)
+        archivos, elegir: (e, g, k) => { estilo = e; sel = { grupo: g, clave: k }; nuevaAccion(); if (visor) visor.fijarEstilo(archivos[estilo].datos, archivos[estiloRival()].datos); pintar(); },
+        sim: () => simAhora(), irA, medir: i => (visor ? visor.medir(i) : null),
+        // N6c
+        panel: k => { panelSel = k; pintar(); }, rival: n => { estiloR = n || null; sim = null; if (visor) visor.fijarEstilo(archivos[estilo].datos, archivos[estiloRival()].datos); },
+        get ultimoSonido() { return paneles.ultimoSonido || null; }
     };
     window.__estudioCombate = ctx.combate;
     pintar();
-    try { visor = await crearVisor($('co-vista')); visor.fijarEstilo(archivos[estilo].datos); sim = null; } catch (e) { console.warn('Visor de combate sin WebGL', e); }
+    try { visor = await crearVisor($('co-vista')); visor.fijarEstilo(archivos[estilo].datos, archivos[estiloRival()].datos); sim = null; } catch (e) { console.warn('Visor de combate sin WebGL', e); }
     requestAnimationFrame(tick);
 }

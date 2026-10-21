@@ -613,3 +613,14 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .co-clave.r { background: #9ab8ff; }
 .co-clave.a { background: #e8d870; }
 .co-clave.elegida { outline: 2px solid var(--amarillo); }
+/* Combate (N6c): pestañas de paneles, teclas, voces del sonido y canal nuevo */
+.co-paneles { margin-top: 8px; }
+/* el texto del cuadro cambia de largo en cada cuadro: en una sola línea para que la página no salte */
+.co-visor-barra .co-cuadro { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#co-canal-nuevo[hidden] { display: none; }
+.co-tecla { align-items: center; margin-bottom: 4px; }
+.co-tecla-nombre { min-width: 14em; font-size: 0.8rem; }
+.boton.co-choque { border-color: var(--rojo); color: var(--rojo); }
+.boton.capturando { color: var(--amarillo); }
+.co-voz { border-left: 3px solid var(--gris); padding-left: 8px; margin-bottom: 8px; }
+#panel-combate h3 { font-size: 0.8rem; margin: 10px 0 4px; color: var(--amarillo); }

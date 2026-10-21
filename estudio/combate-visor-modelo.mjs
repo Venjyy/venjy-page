@@ -12,11 +12,14 @@
 //   muestras(anim, canal, fases, n)            la curva de un canal (como en Poses) para dibujarla
 //   puntaArma(pose, raiz, estilo, def)         la punta del arma (o la mano o el pie que golpea) en el mundo
 //   cuadrosHoja(fases, n)                      qué cuadros van en la hoja de cuadros (incluye el primero del golpe)
+// N6c: el hitstop congela a los dos en el cuadro del golpe (el rival tiembla, temblor de peso.js) y el empuje lo corre
+// hacia atrás como en la arena (30 % de lo que falta en cada cuadro, también durante el hitstop); el rival puede tener
+// otro estilo (opciones.estiloR). canalesLibres / agregarCanal: un canal nuevo en una animación con claves de fase.
 // =========================================================
 import { COMBATE, fijarCombate, accionDe, animDe, largoFases, inicioFase, faseEn, NOMBRES_FASES } from '../mundo/supervivencia/combate/datos.js';
 import { crearAnimador, animar } from '../mundo/supervivencia/combate/animacion.js';
 import { avanceEn } from '../mundo/supervivencia/combate/estados.js';
-import { reaccionPara, nivelDe } from '../mundo/supervivencia/combate/peso.js';
+import { reaccionPara, nivelDe, pesoDe, temblor } from '../mundo/supervivencia/combate/peso.js';
 import { fk, punto } from '../mundo/supervivencia/combate/cinematica.js';
 import { evaluarGesto } from '../mundo/datos/gestos.js';
 import { LIMITES } from '../mundo/datos/limites.js';
@@ -28,6 +31,8 @@ export const LETRA = { anticipacion: 'a', activo: 'g', recuperacion: 'r' };
 export const FASE_DE = { a: 'anticipacion', g: 'activo', r: 'recuperacion' };
 const r3 = x => Math.round(x * 1000) / 1000;
 const acotar = (v, a, b) => (v < a ? a : v > b ? b : v);
+// Fracción del empuje que se recorre en cada cuadro (la misma de arena/modelo.js → mover)
+export const REPARTO_EMPUJE = 0.3;
 const esClaveFase = q => Array.isArray(q) && typeof q[0] === 'string' && q[0] in FASE_DE;
 
 // ---------- Simulación (el motor del juego, cuadro a cuadro) ----------
@@ -47,38 +52,58 @@ export function distancia(def) {
     return r3(acotar((def.alcance || 1.5) * 0.85, 1.1, 3));
 }
 // estilo y combate: los datos tal como están en la pestaña (combate se aplica al motor antes de simular)
-export function simular(estilo, combate, clave, { antes = BUCLE.antes, despues = BUCLE.despues } = {}) {
+// opciones.estiloR: el estilo del rival (su reacción y su animador; sin él, el mismo). opciones.peso: false quita el
+// hitstop y el empuje (para mirar la acción sola).
+export function simular(estilo, combate, clave, { antes = BUCLE.antes, despues = BUCLE.despues, estiloR = null, peso = true } = {}) {
     if (combate) fijarCombate(combate);
     const def = accionDe(estilo, clave);
     if (!def || !def.fases) return null;
+    const eR = estiloR || estilo;
     const f = def.fases, total = largoFases(f);
     const ataque = def.tipo === 'ataque';
     const golpe = ataque && (f.activo || 0) > 0 ? inicioFase(f, 'activo') : null;
-    const reaccion = golpe !== null ? reaccionPara(def, nivelDe(def)) : null;
-    const rdef = reaccion ? accionDe(estilo, reaccion) : null;
+    const nivel = golpe !== null ? nivelDe(def) : null;
+    const reaccion = golpe !== null ? reaccionPara(def, nivel) : null;
+    const rdef = reaccion ? accionDe(eR, reaccion) : null;
     const largoR = rdef && rdef.fases ? largoFases(rdef.fases) : 0;
+    // Peso del golpe: hitstop (cuadros congelados) y empuje (bloques que se corre el rival), como en la arena
+    const pg = nivel && peso ? pesoDe(nivel) : {};
+    const hitstop = rdef ? Math.max(0, Math.round(pg.hitstop || 0)) : 0;
+    const empuje = rdef && peso ? (def.empuje != null ? def.empuje : pg.empuje || 0) : 0;
     const dist = distancia(def);
     const zR = (golpe !== null ? avanceEn(def, golpe) : 0) + dist;
-    const anA = crearAnimador(estilo), anR = crearAnimador(estilo);
+    const anA = crearAnimador(estilo), anR = crearAnimador(eR);
     const A = peleador(), R = peleador();
     // con una reacción larga, el bucle espera a que el rival vuelva a la guardia
     const fin = Math.max(total, golpe !== null ? golpe + largoR : 0) + despues;
+    // Los pasos del bucle: [c, k] con k = cuadro del hitstop (los dos quietos en el cuadro del golpe) o null
+    const pasos = [];
+    for (let c = -antes; c < fin; c++) {
+        if (c === golpe) for (let k = 0; k < hitstop; k++) pasos.push([c, k]);
+        pasos.push([c, null]);
+    }
     const cuadros = [];
-    for (let i = 0; i < antes + fin; i++) {
-        const c = i - antes;
+    let corrido = 0, tras = false;
+    pasos.forEach(([c, hs], i) => {
         if (c >= 0 && c < total) poner(A, def.estado, def, clave, c); else poner(A, 'guardia', null, null, 0);
         const rc = rdef && golpe !== null && c >= golpe && c - golpe < largoR ? c - golpe : null;
         if (rc !== null) poner(R, rdef.estado, rdef, reaccion, rc); else poner(R, 'guardia', null, null, 0);
+        // el empuje empieza el cuadro que sigue al golpe y se reparte (también durante el hitstop)
+        if (golpe !== null && c >= golpe) { if (tras) corrido += (empuje - corrido) * REPARTO_EMPUJE; tras = true; }
         const zA = avanceEn(def, acotar(c, 0, total));
-        const raizA = { x: 0, z: zA, yaw: 0 }, raizR = { x: 0, z: zR, yaw: Math.PI };
+        const tb = hs !== null ? temblor(hs, [0, 1]) : [0, 0];
+        const raizA = { x: 0, z: zA, yaw: 0 }, raizR = { x: tb[0], z: zR + corrido + tb[1], yaw: Math.PI };
         const pA = { ...animar(anA, A, { t: i / HZ, raiz: raizA, mirada: 0 }) };
         const pR = { ...animar(anR, R, { t: i / HZ, raiz: raizR, mirada: 0 }) };
-        cuadros.push({ c, A: pA, R: pR, raizA, raizR, rc, punta: puntaArma(pA, raizA, estilo, def) });
-    }
-    return { def, clave, total, antes, golpe, reaccion, dist, zR, cuadros };
+        cuadros.push({ c, hs, A: pA, R: pR, raizA, raizR, rc, punta: puntaArma(pA, raizA, estilo, def) });
+    });
+    return { def, clave, total, antes, golpe, reaccion, nivel, hitstop, empuje: r3(empuje), dist, zR, cuadros };
 }
-// El cuadro del bucle que corresponde al cuadro c de la acción
-export const indiceDe = (sim, c) => acotar(Math.round(c) + sim.antes, 0, sim.cuadros.length - 1);
+// El cuadro del bucle que corresponde al cuadro c de la acción (desde el golpe, corrido por el hitstop)
+export const indiceDe = (sim, c) => {
+    const n = Math.round(c);
+    return acotar(n + sim.antes + (sim.hitstop && sim.golpe !== null && n > sim.golpe ? sim.hitstop : 0), 0, sim.cuadros.length - 1);
+};
 
 // ---------- Punta del arma ----------
 // Con arma (estilo.arma.caja, en coordenadas de la muñeca: la hoja sale hacia +Z), su punta; sin arma, la mano o el pie
@@ -160,6 +185,20 @@ export function borrarClave(anim, canal, i) {
     k.splice(i, 1);
     return true;
 }
+// ---------- Canales nuevos ----------
+// Los canales de la lista (los de una pose) que esta animación todavía no tiene
+export const canalesLibres = (anim, lista) => (usaFases(anim) ? lista.filter(k => !(k in anim.canales)) : []);
+// Agrega el canal con dos claves (al empezar y al terminar) en el valor que hoy produce la animación (0 si no lo
+// mueve), dentro de su límite. Solo añade: un canal que ya existe no se toca. Devuelve true si lo agregó.
+export function agregarCanal(anim, canal, fases) {
+    if (!usaFases(anim) || typeof canal !== 'string' || !canal || canal in anim.canales) return false;
+    const v0 = valorEn(anim, canal, 0, fases), lim = LIMITES[canal];
+    const v = r3(lim ? acotar(Number.isFinite(v0) ? v0 : 0, lim[0], lim[1]) : Number.isFinite(v0) ? v0 : 0);
+    const ultima = [...NOMBRES_FASES].reverse().find(f => (fases[f] || 0) > 0) || 'recuperacion';
+    anim.canales[canal] = { k: [['a', 0, v], [LETRA[ultima], 1, v]] };
+    return true;
+}
+
 // Valor del canal en el cuadro c y la curva entera (n puntos de 0 al final), con el mismo evaluador del juego
 const tmp = {};
 export function valorEn(anim, canal, c, fases) {
