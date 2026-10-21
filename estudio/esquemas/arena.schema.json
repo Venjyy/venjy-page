@@ -234,7 +234,7 @@
         "retrato": { "description": "Lado del retrato chico en px.", "type": "number", "minimum": 16, "maximum": 128 },
         "postura": { "$ref": "#/$defs/color" }, "posturaAlta": { "description": "Color de la barra de postura sobre el cansancio del estilo.", "$ref": "#/$defs/color" }, "posturaFondo": { "$ref": "#/$defs/color" },
         "anchoPostura": { "description": "Ancho de la barra de postura (crece desde el centro) en % de la pantalla.", "type": "number", "minimum": 5, "maximum": 48 },
-        "espiritu": { "description": "Color de los segmentos de espíritu del arte de combate (L3).", "$ref": "#/$defs/color" }, "espirituFondo": { "$ref": "#/$defs/color" },
+        "espiritu": { "description": "Color de los segmentos de espíritu del arte de combate (L3).", "$ref": "#/$defs/color" }, "espirituFondo": { "$ref": "#/$defs/color" }, "furia": { "description": "Color de la barra SPA mientras dura la Furia (L6b).", "$ref": "#/$defs/color" },
         "silueta": { "description": "Alto de la silueta de zonas en px (L6a; solo para los estilos con zonas).", "type": "number", "minimum": 16, "maximum": 128 },
         "zonaVerde": { "$ref": "#/$defs/color" }, "zonaAmarilla": { "$ref": "#/$defs/color" }, "zonaRoja": { "$ref": "#/$defs/color" }, "zonaCritica": { "description": "Color con que parpadea la zona en crítico.", "$ref": "#/$defs/color" }, "zonaBorde": { "$ref": "#/$defs/color" }
       },
@@ -354,6 +354,20 @@
             "alto": { "type": "number", "minimum": 0, "maximum": 1.5 },
             "vueltas": { "type": "number", "minimum": 0, "maximum": 5 },
             "tamano": { "type": "number", "minimum": 0.01, "maximum": 0.5 }
+          },
+          "additionalProperties": false
+        },
+        "aura": {
+          "description": "Aura de la Furia (L6b): un cubo cada `cada` s, nace hasta `alto` bloques del suelo a `radio` del cuerpo, sube a `sube` bloques/s, vive `vida` s; colores al azar de la lista.",
+          "type": "object",
+          "properties": {
+            "cada": { "type": "number", "minimum": 0.005, "maximum": 0.5 },
+            "vida": { "type": "number", "minimum": 0.1, "maximum": 3 },
+            "sube": { "type": "number", "minimum": 0, "maximum": 5 },
+            "tamano": { "type": "number", "minimum": 0.01, "maximum": 0.5 },
+            "radio": { "type": "number", "minimum": 0, "maximum": 1.5 },
+            "alto": { "type": "number", "minimum": 0, "maximum": 3 },
+            "colores": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 }
           },
           "additionalProperties": false
         },

@@ -281,7 +281,12 @@ function lanzar(remate) {
     // Urban Reign → Sekiro: Lalo desvía los golpes de Moisés sin adivinar la altura
     const P = enPelea({ yo: 'moises', rival: 'lalo', lalo: 'sekiro', moises: 'urbano' });
     const ls = cambio(P, 0, 'bajo', { defensa: 'apretar' }, 6);
-    ok(ls.res === 'desviado' || ls.res === 'perfecto', `Lalo desvía la barrida sin adivinar (${ls.res})`);
+    // L6b (§19.2): la barrida es «barrido» para Sekiro (comoPeligro): no se desvía; se salta
+    ok(ls.res === 'golpeado', `Lalo no desvía la barrida: es un barrido (${ls.res})`);
+    const sa = cambio(enPelea({ yo: 'moises', rival: 'lalo', lalo: 'sekiro', moises: 'urbano' }), 0, 'bajo', { saltar: 'apretar' }, 4);
+    ok(sa.res === 'esquivado' || !sa.ev, `Lalo salta la barrida (${sa.res})`);
+    const lg = cambio(enPelea({ yo: 'moises', rival: 'lalo', lalo: 'sekiro', moises: 'urbano' }), 0, 'medio', { defensa: 'apretar' }, 6);
+    ok(lg.res === 'desviado' || lg.res === 'perfecto', `Lalo desvía la patada frontal sin adivinar (${lg.res})`);
 }
 
 // ---------- 9. CPU de Moisés ----------
@@ -526,6 +531,251 @@ function pegar(P, h) {
     ok(ad.salen.length / 2 / (150 / 60) < 4, `cadencia: ${(ad.salen.length / 2 / 2.5).toFixed(1)} ciclos por segundo`);
     const fr = UR.anim.respira.canales.y.osc[0].frec;
     ok(fr / Math.PI < 1.6, `rebote quieto: ${(fr / Math.PI).toFixed(2)} por segundo (antes 2,2)`);
+}
+
+// ---------- 10. Urban Reign II-b (L6b): agarres, amago, pisotón, barra SPA, arte especial y Furia ----------
+const Q = await imp('mundo/supervivencia/combate/spa.js');
+const G = await imp('mundo/supervivencia/combate/peligro.js');
+const SP = UR.reglas.spa, AG = SP.agarre;
+{
+    for (const [h, k] of [['alto', 'agarre_alto'], ['medio', 'agarre_medio'], ['bajo', 'agarre_bajo']]) {
+        ok(controla('agarre', h) === k, `E con ${h}: ${k} (${controla('agarre', h)})`);
+        ok(UR.ataques[k].sujeta && UR.ataques[k].comoPeligro === 'agarre' && !UR.ataques[k].peligro, `${k}: sujeta y es «agarre» para Sekiro sin aviso`);
+        ok(D.accionDe(UR, AG.remates[h]), `remate ${h}: ${AG.remates[h]}`);
+    }
+    ok(controla('especial', 'medio') === 'giro' && controla('especial', 'alto') === 'cabezazo_salto' && controla('especial', 'bajo') === 'barrida_doble', 'Q: giro; W + Q: cabezazo; S + Q: barrida doble');
+    for (const k of ['giro', 'cabezazo_salto', 'barrida_doble']) ok(UR.ataques[k].comoPeligro === 'imparable' && UR.ataques[k].costo.espiritu === 1, `${k}: imparable y cuesta 1 segmento`);
+    ok(UR.ataques.barrida.comoPeligro === 'barrido', 'la barrida es «barrido» para Sekiro (§19.2)');
+    for (const k of [AG.sujetado, AG.zafarse, AG.soltado]) ok(D.accionDe(SK, k) && D.accionDe(UR, k), `${k} existe para los dos estilos (combate.json)`);
+    ok(AG.ventana === 18 && AG.tactil === 24 && Math.abs(AG.errado - 1.2) < 1e-9 && AG.pista === 4, 'escape: 18 c (24 en el táctil), errado ×1,2, pista de 4 c (§17.7)');
+    const R = Q.reglasSpa(UR);
+    ok(R && R.furia.costo === 4 && R.furia.segundos === 8 && Math.abs(R.furia.prisa - 1.25) < 1e-9 && Math.abs(R.furia.zona - 1.5) < 1e-9, 'Furia: 4 segmentos, 8 s, +25 %, zona ×1,5');
+    ok(Q.reglasSpa(SK) === null, 'Sekiro no usa reglas.spa');
+    const pe = G.reglasPeligro(UR);
+    ok(pe.espiritu.segmentos === 4 && pe.espiritu.porHecho === 40 && pe.espiritu.porRecibido === 60, 'barra SPA: 4 segmentos, 40 hecho, 60 recibido');
+    const s = G.crearEspiritu(pe); G.ganarPorDano(s, pe, 40, 0); const s1 = s.valor; G.ganarPorDano(s, pe, 0, 60);
+    ok(Math.abs(s1 - 1) < 1e-9 && Math.abs(s.valor - 2) < 1e-9, `40 hecho = 1 segmento, 60 recibido = 1 más (${s1}, ${s.valor})`);
+    G.ganarPorDano(s, pe, 999, 999); ok(s.valor === 4, 'la barra no pasa de 4');
+    const sk = G.crearEspiritu(G.reglasPeligro(SK)); G.ganarPorDano(sk, G.reglasPeligro(SK), 100, 100); ok(sk.valor === 0, 'el espíritu de Sekiro no se llena con daño');
+}
+// F (urbano) agarra a O con la altura h. Devuelve la pelea en el cuadro en que entra la sujeción
+function agarrar(h, { cabe = 'urbano', semilla = 3, tactil = false, a = 0, it = null } = {}) {
+    const P = enPelea({ lalo: a === 0 ? 'urbano' : cabe, moises: a === 0 ? cabe : 'urbano', semilla, tactil });
+    const F = P.f[a], O = P.f[1 - a];
+    O.x = F.x + (a === 0 ? 0.95 : -0.95); O.z = F.z;
+    const ints = [{}, {}]; ints[a] = it || { agarre: 'apretar', altura: h };
+    let ev = null, c = 0, inicio = -1, amago = null;
+    for (let i = 0; i < 60 && !ev; i++) {
+        M.pasoPelea(P, i === 0 ? ints : [{}, {}]);
+        if (F.p.estado === 'ataque' && inicio < 0) inicio = c;
+        amago = amago || P.eventos.find(e => e.tipo === 'amago') || null;
+        ev = P.eventos.find(e => e.tipo === 'sujeta') || null; c++;
+    }
+    return { P, F, O, ev, a, b: 1 - a, amago };
+}
+// Sigue la sujeción: O aprieta `def` en el cuadro `en` (contado desde la sujeción). Junta los eventos
+function sujecion(r, def = null, en = 0, cuadros = 90) {
+    const ev = [], v0 = r.O.vida; let fin = -1;
+    for (let i = 0; i < cuadros; i++) {
+        const ints = [{}, {}];
+        if (def && i === en) ints[r.b] = def;
+        M.pasoPelea(r.P, ints);
+        for (const e of r.P.eventos) { ev.push({ ...e, c: i }); if (e.tipo === 'agarre' && fin < 0) fin = i; }
+    }
+    return { ev, dv: v0 - r.O.vida, fin };
+}
+{
+    for (const h of ['alto', 'medio', 'bajo']) {
+        const r = agarrar(h);
+        ok(r.ev && r.ev.altura === h, `agarre ${h}: entra la sujeción (${r.ev && r.ev.altura})`);
+        ok(r.F.p.clave === AG.sujetar && r.O.p.clave === AG.sujetado, `sujetar / sujetado (${r.F.p.clave} / ${r.O.p.clave})`);
+        const nada = sujecion(r);
+        ok(Math.abs(nada.fin - AG.ventana) <= 1, `sin zafarse: el remate sale a los ${AG.ventana} c (${nada.fin})`);
+        const golpes = nada.ev.filter(e => e.tipo === 'golpe' && e.de === r.a);
+        const par = UR.acciones[AG.remates[h]].pareja;
+        ok(golpes.length === 1 + (par.repetir || []).length, `remate ${AG.remates[h]}: ${golpes.length} golpes`);
+        if (h === 'bajo') ok(golpes[0] && golpes[0].reaccion === 'derribo', `el derribo de piernas lo tumba (${golpes[0] && golpes[0].reaccion})`);
+        ok(nada.dv > 0, `el remate hace daño (${nada.dv.toFixed(1)})`);
+        // Se zafa con la altura correcta: empujón, los dos neutros y sin daño
+        const z = sujecion(agarrar(h), { defensa: 'apretar', altura: h }, 8, 30);
+        const e = z.ev.find(x => x.tipo === 'escape');
+        ok(e && e.resultado === 'zafa' && z.dv === 0 && !z.ev.some(x => x.tipo === 'agarre'), `se zafa del ${h} con la defensa ${h} (${e && e.resultado}, ${z.dv})`);
+        // Se equivoca: el agarre sigue y el remate hace ×1,2
+        const otra = h === 'alto' ? 'bajo' : 'alto';
+        const mal = sujecion(agarrar(h), { defensa: 'apretar', altura: otra }, 8);
+        const em = mal.ev.find(x => x.tipo === 'escape');
+        ok(em && em.resultado === 'errado' && mal.fin >= 0, `con la defensa ${otra}: se equivoca y sale el remate (${em && em.resultado})`);
+        ok(Math.abs(mal.dv / nada.dv - AG.errado) < 1e-6, `remate × ${AG.errado} por equivocarse (${(mal.dv / nada.dv).toFixed(3)})`);
+        // Tarde (después de la ventana): ya no se zafa
+        const tarde = sujecion(agarrar(h), { defensa: 'apretar', altura: h }, AG.ventana + 2);
+        ok(!tarde.ev.some(x => x.tipo === 'escape' && x.resultado === 'zafa'), `después de la ventana ya no se zafa (${h})`);
+    }
+    // Un solo intento
+    const r = agarrar('medio');
+    const dos = sujecion(r, { defensa: 'apretar', altura: 'alto' }, 4, 8);
+    let otro = 0;
+    for (let i = 0; i < 3; i++) { M.pasoPelea(r.P, [{}, { defensa: 'apretar', altura: 'medio' }]); otro += r.P.eventos.filter(e => e.tipo === 'escape').length; }
+    ok(dos.ev.filter(x => x.tipo === 'escape').length === 1 && otro === 0 && r.F.sujeta, `solo un intento de zafarse (${otro} de más)`);
+    // Táctil: 24 c (el agarrado es f[0], el del celular)
+    const t = agarrar('alto', { tactil: true, a: 1 });
+    ok(t.F.sujeta && t.F.sujeta.ventana === AG.tactil, `en el táctil la ventana es ${AG.tactil} c (${t.F.sujeta && t.F.sujeta.ventana})`);
+    const tz = sujecion(t, { defensa: 'apretar', altura: 'alto' }, AG.ventana + 2, 30);
+    ok(tz.ev.some(x => x.tipo === 'escape' && x.resultado === 'zafa'), 'en el táctil se zafa pasados los 18 c');
+    // Sekiro también puede ser agarrado y zafarse (defensa con la altura)
+    const sk = agarrar('bajo', { cabe: 'sekiro' });
+    ok(sk.ev && sk.O.p.clave === AG.sujetado, `Sekiro queda sujetado (${sk.O.p.clave})`);
+    const skz = sujecion(sk, { defensa: 'apretar', altura: 'bajo' }, 6, 20);
+    ok(skz.ev.some(x => x.tipo === 'escape' && x.resultado === 'zafa'), 'Sekiro se zafa con defensa + S');
+    // Sekiro no bloquea el agarre (es «agarre»): mantener la defensa no sirve
+    const P = enPelea({ lalo: 'urbano', moises: 'sekiro' }); P.f[1].x = P.f[0].x + 0.95;
+    let ev = null;
+    for (let i = 0; i < 40 && !ev; i++) { M.pasoPelea(P, [i === 0 ? { agarre: 'apretar', altura: 'medio' } : {}, { defensa: i === 0 ? 'apretar' : 'mantener' }]); ev = P.eventos.find(e => e.tipo === 'golpe' && e.de === 0); }
+    ok(ev && ev.resultado === 'golpeado', `la guardia de Sekiro no para el agarre (${ev && ev.resultado})`);
+}
+// Amago: la anticipación es de una altura y a 4 c del activo pasa a la de verdad
+{
+    const r = agarrar(null, { it: { accion: 'agarre_alto', amago: 'bajo' } });
+    ok(r.amago && r.amago.de === 'agarre_alto' && r.amago.a === 'agarre_bajo', `amago: alto → bajo (${r.amago && r.amago.de} → ${r.amago && r.amago.a})`);
+    ok(r.ev && r.ev.altura === 'bajo', `la sujeción es de la altura de verdad (${r.ev && r.ev.altura})`);
+    // Cuándo: medido en un agarre sin rival cerca (que no conecte)
+    const P = enPelea(); P.f[1].x = P.f[0].x + 3;
+    let cAmago = -1, cActivo = -1;
+    for (let i = 0; i < 30; i++) {
+        M.pasoPelea(P, [i === 0 ? { accion: 'agarre_medio', amago: 'alto' } : {}, {}]);
+        if (P.eventos.some(e => e.tipo === 'amago')) cAmago = i;
+        if (cActivo < 0 && P.f[0].p.estado === 'ataque' && D.faseEn(P.f[0].p.def.fases, P.f[0].p.c).fase === 'activo') cActivo = i;
+    }
+    ok(cAmago >= 0 && cActivo - cAmago === AG.pista, `la pista dura ${AG.pista} c (amago en ${cAmago}, activo en ${cActivo})`);
+    const sin = agarrar('medio');
+    ok(!sin.amago, 'sin amago no hay evento');
+}
+// Pisotón: S + clic con el rival derribado cerca; lo deja en el suelo
+{
+    const P = enPelea(), F = P.f[0], O = P.f[1];
+    O.x = F.x + 1; E.reaccionar(O.p, 'derribo');
+    const v0 = O.vida;
+    M.pasoPelea(P, [{ atacar: 'apretar', altura: 'bajo' }, {}]);
+    ok(F.p.clave === 'pisoton', `S + clic al derribado: pisotón (${F.p.clave})`);
+    let ev = null;
+    for (let i = 0; i < 20 && !ev; i++) { M.pasoPelea(P, [{}, {}]); ev = P.eventos.find(e => e.tipo === 'golpe' && e.de === 0); }
+    ok(ev && ev.resultado === 'golpeado' && O.p.clave === 'derribo', `pisa y lo deja en el suelo (${ev && ev.resultado}, ${O.p.clave})`);
+    ok(O.zonas.torso >= 35 - 1e-9 && v0 - O.vida >= 10 - 1e-9, `mucho daño al torso (zona ${O.zonas.torso}, vida −${(v0 - O.vida).toFixed(1)})`);
+    const P2 = enPelea(); P2.f[1].x = P2.f[0].x + 2; E.reaccionar(P2.f[1].p, 'derribo');
+    M.pasoPelea(P2, [{ atacar: 'apretar', altura: 'bajo' }, {}]);
+    ok(P2.f[0].p.clave === 'barrida', `lejos del derribado: la barrida de siempre (${P2.f[0].p.clave})`);
+    const P3 = enPelea(); P3.f[1].x = P3.f[0].x + 1;
+    M.pasoPelea(P3, [{ atacar: 'apretar', altura: 'bajo' }, {}]);
+    ok(P3.f[0].p.clave === 'barrida', 'de pie: la barrida');
+}
+// Barra SPA en la pelea y arte especial que rompe la reacción
+{
+    const P = enPelea({ lalo: 'urbano', moises: 'urbano' }), F = P.f[0], O = P.f[1];
+    const g = cambio(P, 0, 'alto', null, null);
+    ok(Math.abs(F.esp.valor - g.dv / 40) < 1e-9 && Math.abs(O.esp.valor - g.dv / 60) < 1e-9, `un golpe llena la barra de los dos (${F.esp.valor.toFixed(3)}, ${O.esp.valor.toFixed(3)})`);
+    for (const [alt, k] of [['medio', 'giro'], ['alto', 'cabezazo_salto'], ['bajo', 'barrida_doble']]) {
+        const P2 = enPelea(), O2 = P2.f[1];
+        E.reaccionar(O2.p, 'alto_leve'); E.congelar(O2.p, 6); O2.esp.valor = 1.5;
+        M.pasoPelea(P2, [{}, { especial: 'apretar', altura: alt }]);
+        ok(O2.p.clave === k && Math.abs(O2.esp.valor - 0.5) < 1e-9 && P2.eventos.some(e => e.tipo === 'arte' && e.rompe), `en plena reacción, Q (${alt}) rompe con ${k} (${O2.p.clave}, barra ${O2.esp.valor})`);
+    }
+    const P3 = enPelea(), O3 = P3.f[1];
+    E.reaccionar(O3.p, 'alto_leve'); O3.esp.valor = 0.5;
+    M.pasoPelea(P3, [{}, { especial: 'apretar' }]);
+    ok(O3.p.clave === 'alto_leve' && P3.eventos.some(e => e.tipo === 'sinEspiritu'), `sin un segmento no sale (${O3.p.clave})`);
+    const P4 = enPelea(), O4 = P4.f[1];
+    E.reaccionar(O4.p, 'lanzado'); O4.esp.valor = 2;
+    M.pasoPelea(P4, [{}, { especial: 'apretar' }]);
+    ok(O4.p.clave === 'lanzado', 'en el aire (lanzado) no rompe');
+    // El giro tiene i-frames: el golpe que llega en su anticipación no entra
+    const P5 = enPelea(); P5.f[1].esp.valor = 1;
+    const gi = cambio(P5, 0, 'alto', { especial: 'apretar' }, 3);
+    ok(gi.res === 'esquivado', `el giro pasa por debajo del golpe (${gi.res})`);
+    // Imparable: Sekiro no lo desvía
+    const P6 = enPelea({ yo: 'moises', rival: 'lalo', lalo: 'sekiro', moises: 'urbano' }); P6.f[0].esp.valor = 1;
+    const im = cambio(P6, 0, null, { defensa: 'apretar' }, 5, { it: { especial: 'apretar' }, clave: 'giro', dist: 1.5 });
+    ok(im.res === 'golpeado', `Sekiro no desvía el arte (imparable: ${im.res})`);
+}
+// Furia
+{
+    const largo = P => { let n = 0; M.pasoPelea(P, [{ atacar: 'apretar', altura: 'medio' }, {}]); while (P.f[0].p.clave === 'jab' && n < 60) { M.pasoPelea(P, [{}, {}]); n++; } return n + 1; };
+    const normal = largo((() => { const P = enPelea(); P.f[1].x = P.f[0].x + 3; return P; })());
+    const P = enPelea({ lalo: 'urbano', moises: 'sekiro' }), F = P.f[0], O = P.f[1];
+    F.esp.valor = 3.9;
+    M.pasoPelea(P, [{ modoEspecial: 'apretar' }, {}]);
+    ok(!(F.furia > 0) && P.eventos.some(e => e.tipo === 'sinEspiritu'), 'sin la barra llena no hay Furia');
+    F.esp.valor = 4;
+    M.pasoPelea(P, [{ modoEspecial: 'apretar' }, {}]);
+    ok(F.furia > 0 && F.p.clave === 'furia' && Math.abs(F.p.prisa - 1.25) < 1e-9 && P.eventos.some(e => e.tipo === 'furia' && e.activa), `Q + E: Furia (${F.furia} c, ${F.p.clave})`);
+    let n = 0; while (F.p.clave === 'furia' && n++ < 60) M.pasoPelea(P, [{}, {}]);
+    O.x = F.x + 3;
+    const rapido = largo(P);
+    ok(rapido < normal && Math.abs(normal / rapido - 1.25) < 0.12, `ataca un 25 % más rápido (jab ${normal} → ${rapido} c)`);
+    // Armadura: el tajo de Sekiro entra (daño) pero no lo hace reaccionar
+    const ar = cambio(P, 1, null, null, null, { it: { atacar: 'apretar' }, clave: 'tajo1' });
+    ok(ar.res === 'armadura' && ar.dv > 0 && F.p.estado !== 'reaccion', `armadura en la Furia (${ar.res}, −${ar.dv.toFixed(1)})`);
+    // La guardia mantenida de Sekiro no frena sus golpes, y la zona suma × 1,5
+    O.x = F.x + 1.3; O.z = F.z;
+    let ev = null;
+    // (la defensa se aprieta 30 c antes: queda en bloqueo, fuera de la ventana del desvío)
+    for (let i = 0; i < 70 && !ev; i++) { M.pasoPelea(P, [i === 30 ? { atacar: 'apretar', altura: 'alto' } : {}, { defensa: i === 0 ? 'apretar' : 'mantener' }]); O.x = F.x + 1.3; ev = P.eventos.find(e => e.tipo === 'golpe' && e.de === 0); }
+    ok(ev && ev.resultado === 'golpeado' && O.p.estado !== 'bloqueo', `la guardia de Sekiro no la frena (${ev && ev.resultado})`);
+    const Pz = enPelea(), Fz = Pz.f[0]; Fz.esp.valor = 4; M.pasoPelea(Pz, [{ modoEspecial: 'apretar' }, {}]);
+    n = 0; while (Fz.p.clave === 'furia' && n++ < 60) M.pasoPelea(Pz, [{}, {}]);
+    const z = cambio(Pz, 0, 'alto', null, null);
+    ok(Math.abs(z.ev.zonas.cabeza - UR.ataques.gancho_alto.dano * UR.zonas.porDano * SP.furia.zona) < 1e-6, `zona × ${SP.furia.zona} (${z.ev.zonas.cabeza})`);
+    // Se vacía en 8 s y vuelve todo
+    let fin = false; n = 0;
+    while (!fin && n++ < 600) { M.pasoPelea(Pz, [{}, {}]); Pz.f[0].vida = Pz.f[1].vida = 100; fin = Pz.eventos.some(e => e.tipo === 'furia' && !e.activa); }
+    ok(fin && Fz.furia === 0 && Fz.p.prisa === 1 && Fz.esp.valor < 1e-9, `a los 8 s se apaga (prisa ${Fz.p.prisa}, barra ${Fz.esp.valor})`);
+    // Q y E casi juntos: el arte que acaba de empezar se devuelve y sale la Furia
+    const Pq = enPelea(), Fq = Pq.f[0]; Fq.esp.valor = 4; Pq.f[1].x = Fq.x + 3;
+    M.pasoPelea(Pq, [{ especial: 'apretar' }, {}]);
+    ok(Fq.p.clave === 'giro' && Math.abs(Fq.esp.valor - 3) < 1e-9, 'Q solo: el giro (cuesta 1)');
+    M.pasoPelea(Pq, [{ agarre: 'apretar', modoEspecial: 'apretar' }, {}]);
+    ok(Fq.furia > 0 && Fq.p.clave === 'furia', `E justo después: Furia con el giro devuelto (${Fq.p.clave})`);
+}
+// CPU: se zafa leyendo la altura, amaga en difícil y maestro, rompe la reacción y entra en Furia
+{
+    const tasa = dificultad => {
+        let zafa = 0, n = 0;
+        for (let s = 1; s <= 40; s++) {
+            const r = agarrar(['alto', 'medio', 'bajo'][s % 3], { semilla: s * 31 });
+            r.P.dificultad = dificultad; r.P.cpu = [null, null];
+            for (let i = 0; i < 30; i++) { M.pasoPelea(r.P, [{}, M.intencionCPU(r.P, 1)]); if (r.P.eventos.some(e => e.tipo === 'escape' && e.resultado === 'zafa')) { zafa++; break; } }
+            n++;
+        }
+        return zafa / n;
+    };
+    const tf = tasa('facil'), tm = tasa('maestro');
+    ok(tm > tf && tm >= 0.7 && tf <= 0.6, `la CPU se zafa más en maestro (${(tf * 100).toFixed(0)} % fácil, ${(tm * 100).toFixed(0)} % maestro)`);
+    const amagos = dificultad => {
+        let a = 0;
+        for (let s = 1; s <= 6; s++) {
+            const P = enPelea({ lalo: 'sekiro', moises: 'urbano', semilla: s * 7, dificultad });
+            for (let i = 0; i < 3600 && P.fase === 'pelea'; i++) {
+                M.pasoPelea(P, [{}, M.intencionCPU(P, 1)]);
+                a += P.eventos.filter(e => e.tipo === 'amago').length;
+                P.f[0].vida = P.f[1].vida = 100; P.reloj = 60;
+            }
+        }
+        return a;
+    };
+    const an = amagos('normal'), am = amagos('maestro');
+    ok(an === 0 && am > 0, `la CPU amaga solo en difícil y maestro (normal ${an}, maestro ${am})`);
+    // Rompe la reacción con el arte cuando tiene barra
+    let rompe = 0;
+    for (let s = 1; s <= 20; s++) {
+        const P = enPelea({ semilla: s }), O = P.f[1];
+        O.esp.valor = 1; E.reaccionar(O.p, 'medio_fuerte');
+        for (let i = 0; i < 30; i++) { M.pasoPelea(P, [{}, M.intencionCPU(P, 1)]); if (P.eventos.some(e => e.tipo === 'arte' && e.rompe)) { rompe++; break; } }
+    }
+    ok(rompe >= 6 && rompe <= 18, `la CPU rompe la reacción con el arte a veces (${rompe} de 20)`);
+    let furias = 0;
+    for (let s = 1; s <= 10; s++) {
+        const P = enPelea({ semilla: s }), O = P.f[1]; O.esp.valor = 4;
+        for (let i = 0; i < 240; i++) { M.pasoPelea(P, [{}, M.intencionCPU(P, 1)]); if (P.eventos.some(e => e.tipo === 'furia' && e.activa)) { furias++; break; } }
+    }
+    ok(furias >= 7, `la CPU entra en Furia con la barra llena (${furias} de 10)`);
 }
 
 console.log(fallos ? `estilo-urbano: ${fallos} de ${pruebas} pruebas fallaron` : `estilo-urbano: ${pruebas} pruebas OK`);

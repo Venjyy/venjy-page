@@ -13,6 +13,7 @@
 //                                       (desde el aviso hasta activo + hasta)?
 //   puedeRematar(R, F, O)               ¿F puede dar el golpe final a O (desequilibrado, a su alcance, F libre)?
 //   crearEspiritu(R) / ganarEspiritu(s, resultado) / gastarEspiritu(s, n)   segmentos del arte de combate
+//   ganarPorDano(s, R, hecho, recibido)  la barra SPA de Urban Reign (L6b): se llena con el daño hecho y el recibido
 // =========================================================
 import { inicioFase } from './datos.js';
 import { LIBRES } from './estados.js';
@@ -29,7 +30,8 @@ export const PELIGRO_BASE = {
     },
     mikiri: { accion: 'mikiri', hasta: 2, umbral: 0.5 },
     remate: { accion: 'remate', alcance: 2.8 },
-    espiritu: { segmentos: 3, perfecto: 1, desvio: 0.34 }
+    // porHecho / porRecibido (L6b, la barra SPA de Urban Reign): un segmento por cada tanto de daño hecho o recibido (0 = no)
+    espiritu: { segmentos: 3, perfecto: 1, desvio: 0.34, porHecho: 0, porRecibido: 0 }
 };
 const objeto = v => v && typeof v === 'object' && !Array.isArray(v);
 function fundir(base, extra) {
@@ -89,6 +91,12 @@ export const crearEspiritu = R => ({ valor: 0, tope: R.espiritu.segmentos });
 export function ganarEspiritu(s, R, resultado) {
     const n = resultado === 'perfecto' ? R.espiritu.perfecto : resultado === 'desviado' ? R.espiritu.desvio : 0;
     s.valor = Math.min(s.tope, s.valor + n);
+    return s;
+}
+export function ganarPorDano(s, R, hecho = 0, recibido = 0) {
+    const E = R.espiritu;
+    const n = (E.porHecho > 0 ? hecho / E.porHecho : 0) + (E.porRecibido > 0 ? recibido / E.porRecibido : 0);
+    if (n > 0) s.valor = Math.min(s.tope, s.valor + n);
     return s;
 }
 export function gastarEspiritu(s, n = 1) {

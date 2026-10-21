@@ -12,6 +12,8 @@
 //   reaccionar(p, clave)                pasa a una reacción (la del que recibe, o «desviado» del atacante)
 //   congelar(p, n)                      hitstop: n cuadros sin avanzar (el buffer sigue guardando)
 //   conecto(p)                          el ataque actual pegó (abre las cancelaciones con siConecto)
+//   cambiarAccion(p, clave, mezcla)     otra acción en el mismo cuadro (el amago del agarre, L6b)
+//   p.prisa (> 1)                       la arena lo pone en la Furia: los ataques avanzan × prisa (L6b)
 //   cargaDe(p)                          0..1: cuánto cargó el ataque actual (def.carga: se queda en el cuadro `en`
 //                                       mientras se mantiene su intención, hasta `max` cuadros)
 //   alcanza(ataque, de, a)              ¿el objetivo está dentro del alcance y el arco del ataque?
@@ -127,6 +129,15 @@ function guardar(p, tipo, intencion) {
     p.buffer = { tipo, altura, adelante: neutra && m[0] >= COMBATE.entrada.adelante, dir: [m[0], m[1]], edad: 0 };
 }
 
+// Un cuadro de la acción en curso (con su avance)
+function avanzar(p) {
+    p.c++;
+    const f = p.def.fases, d = avanceEn(p.def, p.c) - avanceEn(p.def, p.c - 1);
+    p.mov = [p.mov[0] + p.dir[0] * d, p.mov[1] + p.dir[1] * d];
+    if (f.activo && p.c === inicioFase(f, 'activo')) p.eventos.push({ tipo: 'activo', clave: p.clave });
+    if (p.c >= largoFases(f)) terminar(p);
+}
+
 export function paso(p, intencion = {}) {
     p.eventos.length = 0;
     p.mov = [0, 0];
@@ -148,11 +159,13 @@ export function paso(p, intencion = {}) {
     if (p.cargando) p.carga++;
     else if (p.sostener > 0 && ga > 0 && p.c === ga - 1) p.sostener--; // anticipación sostenida (CPU)
     else if (p.def) {
-        p.c++;
-        const f = p.def.fases, d = avanceEn(p.def, p.c) - avanceEn(p.def, p.c - 1);
-        p.mov = [p.dir[0] * d, p.dir[1] * d];
-        if (f.activo && p.c === inicioFase(f, 'activo')) p.eventos.push({ tipo: 'activo', clave: p.clave });
-        if (p.c >= largoFases(f)) terminar(p);
+        const clave = p.clave;
+        avanzar(p);
+        // p.prisa (> 1): los ataques avanzan más rápido (la Furia de Urban Reign, L6b): un cuadro extra cada tanto
+        if (p.prisa > 1 && p.def && p.estado === 'ataque' && p.clave === clave) {
+            p.prisaAcc = (p.prisaAcc || 0) + p.prisa - 1;
+            if (p.prisaAcc >= 1) { p.prisaAcc -= 1; avanzar(p); }
+        }
     }
     // 2. El buffer se consume en el primer cuadro en que el estado deja salir hacia lo guardado
     if (p.buffer) {
@@ -192,7 +205,7 @@ export function recibir(p, golpe = {}, reglas = null) {
     else if (p.estado === 'bloqueo' || (p.estado === 'desvio' && p.defensa)) r = 'bloqueado';
     else r = 'golpeado';
     if (reglas && reglas.alRecibir) r = reglas.alRecibir(p, golpe, r) || r;
-    if (r === 'golpeado') reaccionar(p, golpe.reaccion || 'alto_leve');
+    if (r === 'golpeado' && !golpe.mantener) reaccionar(p, golpe.reaccion || 'alto_leve'); // (mantener: el pisotón no lo levanta)
     return { resultado: r };
 }
 // Ventana del desvío: su tramo `ventana` o la fase activa entera (+ los cuadros extra del táctil)
@@ -204,6 +217,15 @@ function enVentana(p, extra) {
 }
 
 export function reaccionar(p, clave) { return iniciar(p, clave); }
+// Cambia la acción en curso por otra sin volver a empezarla (mismo cuadro): el amago del agarre (L6b) muestra una
+// altura en la anticipación y en los últimos cuadros pasa a la de verdad, con una mezcla de `mezcla` cuadros
+export function cambiarAccion(p, clave, mezcla = COMBATE.motor.mezcla.normal) {
+    const def = accionDe(p.estilo, clave);
+    if (!def || !p.def) return false;
+    p.clave = clave; p.def = def;
+    marcarCambio(p, mezcla);
+    return true;
+}
 export function congelar(p, n) { p.congelado = Math.max(p.congelado, n | 0); }
 export function conecto(p) { p.conecto = true; }
 export const cargaDe = p => (p.def && p.def.carga && p.def.carga.max ? Math.min(1, p.carga / p.def.carga.max) : 0);

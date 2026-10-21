@@ -34,7 +34,8 @@
             "ar-defensa": { "$ref": "#/$defs/boton", "description": "DEFENSA (toque, mantener, deslizar arriba o abajo)." },
             "ar-saltar": { "$ref": "#/$defs/boton" },
             "ar-agarre": { "$ref": "#/$defs/boton", "description": "AGARRE o ARTE, según el estilo." },
-            "ar-especial": { "$ref": "#/$defs/boton", "description": "ESPECIAL: solo aparece si hay barra (mantener = modoEspecial)." }
+            "ar-especial": { "$ref": "#/$defs/boton", "description": "ESPECIAL: solo aparece si hay barra (mantener = modoEspecial)." },
+            "ar-modoEspecial": { "$ref": "#/$defs/boton", "description": "FURIA (modoEspecial, L6b): solo aparece con la barra SPA llena (Q + E en PC)." }
           },
           "additionalProperties": false
         },

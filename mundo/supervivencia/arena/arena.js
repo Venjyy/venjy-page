@@ -166,7 +166,7 @@ export function crearArena(ctx) {
         // tactil-arena.js carga su CSS y su layout; solo en aparatos táctiles
         tactilCargando = import('../combate/tactil-arena.js').then(m => {
             tactilUI = m.montarTactilArena({ intenciones, idioma: L, padre: capa });
-            tactilUI.especial(false);
+            tactilUI.especial(false); tactilUI.furia(false);
             rotularTactil();
             tactilUI.mostrar(!!(c && c.fase === 'pelea' && !c.pausa));
         }).catch(err => console.error('No se pudieron cargar los botones de la arena', err)).finally(() => { tactilCargando = null; });
@@ -353,11 +353,23 @@ export function crearArena(ctx) {
     function rotularTactil() {
         if (!tactilUI || !c || !c.P) return;
         const ctl = (c.P.f[0].estilo && c.P.f[0].estilo.controles) || {};
+        // (un control por altura, como los de Urban Reign, se rotula con el de la altura media)
+        const clave = v => (v && typeof v === 'object' ? v.medio || v.neutro || null : v);
         for (const b of ['agarre', 'especial']) {
-            const k = ctl[b] && 'boton' + ctl[b][0].toUpperCase() + ctl[b].slice(1);
+            const k0 = clave(ctl[b]), k = k0 && 'boton' + k0[0].toUpperCase() + k0.slice(1);
             if (k && R.textos[k]) tactilUI.rotular(b, R.textos[k]);
         }
         tactilUI.especial(!!ctl.especial);
+        // L6b: AGARRE y ESPECIAL por altura esperan el gesto (deslizar arriba = W, abajo = S); FURIA con la barra llena
+        intenciones.fijarGestos(['agarre', 'especial'].filter(b => ctl[b] && typeof ctl[b] === 'object'));
+        if (R.textos.botonFuria) tactilUI.rotular('modoEspecial', R.textos.botonFuria);
+        c.furiaVisible = null;
+    }
+    // El botón FURIA aparece cuando la barra SPA está llena (y no estás ya en Furia)
+    function botonFuria(F) {
+        if (!tactilUI || F.i !== 0) return;
+        const v = !!(F.spa && F.esp && F.esp.valor + 1e-9 >= F.spa.furia.costo && !(F.furia > 0));
+        if (v !== c.furiaVisible) { c.furiaVisible = v; tactilUI.furia(v); }
     }
     function saltar() {
         if (!c) return;
@@ -549,6 +561,7 @@ export function crearArena(ctx) {
                 if (p.c < g && p.c >= g - (MA.cuadros ?? 3)) pm = esc.extremo(F.clave, def.golpea);
             }
             if (ef.altura) ef.altura(F.clave, pm, MA && MA.colores && def ? MA.colores[def.altura] : null, MA && MA.tamano);
+            if (ef.aura) ef.aura(F.clave, F.x, F.z, F.furia > 0, dt); // (L6b: la Furia)
             const so = def && def.efectos && def.efectos.sobre;
             ef.sobre(F.clave, so || null, F.x + F.temblor[0], F.z + F.temblor[1], F.yaw, c.tc);
         }
@@ -648,6 +661,14 @@ export function crearArena(ctx) {
         else if (e.tipo === 'remate') { aviso(tx('golpeFinal'), R.camara.remate.duracion, true); sonar('remate'); c.cine = { t: 0, de: e.de, a: e.a }; esc.celebrar(1); }
         else if (e.tipo === 'envainar') { if (esc.envainar) esc.envainar(P.f[e.i].clave, true); }
         else if (e.tipo === 'sinEspiritu') sonar('nada');
+        // L6b: agarre por altura (se zafa o se equivoca), arte especial que rompe la reacción y Furia
+        else if (e.tipo === 'sujeta') sonar('capas', 'medio', { material: 'carne', resultado: 'golpeado' });
+        else if (e.tipo === 'escape') { aviso(tx(e.resultado === 'zafa' ? 'zafa' : 'errado'), 0.8, true); if (e.resultado === 'zafa') sonar('capas', 'medio', { material: 'carne', resultado: 'bloqueado' }); else sonar('nada'); }
+        else if (e.tipo === 'arte' && e.rompe) { aviso(tx('arteRompe'), 0.8, true); sonar('mikiri'); if (esc.efectos) esc.efectos.polvo(P.f[e.i].x, P.f[e.i].z, 'esquiva', R.escenario.superficie, 1.5); }
+        else if (e.tipo === 'furia') {
+            if (e.activa) { aviso(tx('furia'), 1.2, true); sonar('remate'); W.sumarTrauma(c.sac, 0.5); esc.celebrar(0.8); if (e.i === 0 || e.i === 1) intenciones.vibrar('fuerte'); }
+            if (tactilUI) rotularTactil();
+        }
         else if (e.tipo === 'final') terminar(P);
     }
     // Donde entra un golpe: en el cuerpo del que recibe, a la altura del ataque, del lado del que pega
@@ -778,7 +799,10 @@ export function crearArena(ctx) {
             l.esp.textContent = ''; l.espI = [];
             for (let k = 0; k < n; k++) { const b = el('', l.esp, 'b'); b.style.background = H.espirituFondo; b.style.color = H.espiritu; const i = el('', b, 'i'); i.style.background = H.espiritu; i.caja = b; l.espI.push(i); }
         }
+        botonFuria(F);
+        const cf = F.furia > 0 ? H.furia : H.espiritu; // (L6b: en la Furia la barra se pone roja y se vacía)
         l.espI.forEach((i, k) => {
+            if (i.color !== cf) { i.color = cf; i.style.background = cf; i.caja.style.color = cf; }
             const f = Math.max(0, Math.min(1, F.esp.valor - k));
             i.style.width = (f * 100).toFixed(0) + '%';
             i.caja.classList.toggle('lleno', f >= 1);

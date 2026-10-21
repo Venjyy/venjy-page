@@ -25,6 +25,8 @@
 .tactil-arena .ar-saltar { right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; }
 .tactil-arena .ar-agarre { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: 80px; height: 56px; font-size: 0.75rem; }
 .tactil-arena .ar-especial { right: calc(204px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: 88px; height: 56px; font-size: 0.75rem; }
+/* FURIA (modoEspecial, L6b): sobre ESPECIAL, roja; solo con la barra SPA llena */
+.tactil-arena .ar-modoEspecial { right: calc(204px + env(safe-area-inset-right, 0px)); bottom: calc(216px + env(safe-area-inset-bottom, 0px)); width: 88px; height: 48px; font-size: 0.75rem; background: #8a1a10; border-color: #ff3a1a; color: #ffe0a0; }
 
 /* Joystick flotante: nace donde se apoya el dedo (left/top los pone tactil-arena.js); solo se mueve en el eje */
 .tactil-arena .ar-joy-base {

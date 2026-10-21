@@ -119,6 +119,12 @@ const PESO_NUM = [
     [['estrellas', 'alto'], 'estrellas: altura sobre la cabeza', 'stars: height above the head', 0, 1.5, 0.01],
     [['estrellas', 'vueltas'], 'estrellas: vueltas por segundo', 'stars: turns per second', 0, 5, 0.05],
     [['estrellas', 'tamano'], 'estrellas: tamaño', 'stars: size', 0.01, 0.5, 0.01],
+    [['aura', 'cada'], 'aura de la Furia: s entre cubos', 'Fury aura: s between cubes', 0.005, 0.5, 0.005],
+    [['aura', 'vida'], 'aura: vida de cada cubo (s)', 'aura: cube life (s)', 0.1, 3, 0.05],
+    [['aura', 'sube'], 'aura: velocidad de subida', 'aura: rise speed', 0, 5, 0.05],
+    [['aura', 'tamano'], 'aura: tamaño', 'aura: size', 0.01, 0.5, 0.01],
+    [['aura', 'radio'], 'aura: radio alrededor del cuerpo', 'aura: radius around the body', 0, 1.5, 0.01],
+    [['aura', 'alto'], 'aura: hasta qué altura nace', 'aura: spawn height', 0, 3, 0.05],
     [['marca', 'tamano'], 'marca roja: tamaño', 'red mark: size', 0.01, 1, 0.01],
     [['marca', 'alto'], 'marca roja: altura en el pecho', 'red mark: chest height', 0, 2.5, 0.01],
     [['marca', 'frente'], 'marca roja: delante del pecho', 'red mark: in front of the chest', -1, 1, 0.01],
@@ -142,10 +148,11 @@ const PESO_COLOR = [[['impacto', 'color'], 'destello del impacto', 'impact flash
     [['pantalla', 'lineas', 'color'], 'líneas de velocidad', 'speed lines'], [['pantalla', 'flash', 'color'], 'flash', 'flash'], [['pantalla', 'vineta', 'color'], 'viñeta', 'vignette'],
     [['pantalla', 'numeros', 'color'], 'números', 'numbers'], [['pantalla', 'numeros', 'critico'], 'números de golpe fuerte', 'heavy-hit numbers'],
     [['peligro', 'color'], 'destello rojo del arma (peligro)', 'red weapon flash (peril)'], [['pantalla', 'aviso', 'color'], 'rombo del peligro', 'peril diamond'],
-    [['pantalla', 'aviso', 'borde'], 'borde del rombo', 'diamond border'], [['pantalla', 'aviso', 'signo'], 'signo del rombo', 'diamond sign']];
+    [['pantalla', 'aviso', 'borde'], 'borde del rombo', 'diamond border'], [['pantalla', 'aviso', 'signo'], 'signo del rombo', 'diamond sign'],
+    [['aura', 'colores', 0], 'aura de la Furia: color 1', 'Fury aura: color 1'], [['aura', 'colores', 1], 'aura: color 2', 'aura: color 2'], [['aura', 'colores', 2], 'aura: color 3', 'aura: color 3'], [['aura', 'colores', 3], 'aura: color 4', 'aura: color 4']];
 const NIVELES_PESO = [['ligero', 'ligero', 'light'], ['medio', 'medio', 'medium'], ['fuerte', 'fuerte', 'heavy'], ['desvio', 'desvío', 'deflect'], ['perfecto', 'perfecto', 'perfect'], ['remate', 'remate', 'finisher']];
 const COLORES_HUD = [['vida', 'vida', 'life'], ['vidaFondo', 'fondo de la vida', 'life background'], ['vidaPerdida', 'vida perdida', 'lost life'], ['reloj', 'reloj', 'clock'], ['ronda', 'texto de ronda', 'round text'],
-    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background'], ['espiritu', 'espíritu (arte de combate)', 'spirit (combat art)'], ['espirituFondo', 'fondo del espíritu', 'spirit background'],
+    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background'], ['espiritu', 'espíritu (arte de combate)', 'spirit (combat art)'], ['espirituFondo', 'fondo del espíritu', 'spirit background'], ['furia', 'barra SPA en la Furia', 'SPA bar during Fury'],
     ['zonaVerde', 'silueta: zona sana', 'silhouette: healthy zone'], ['zonaAmarilla', 'silueta: zona dañada', 'silhouette: hurt zone'], ['zonaRoja', 'silueta: zona roja', 'silhouette: red zone'],
     ['zonaCritica', 'silueta: zona en crítico (parpadea)', 'silhouette: critical zone (blinks)'], ['zonaBorde', 'silueta: borde', 'silhouette: outline']];
 // Plano de cine del golpe final (L3): camara.remate

@@ -52,7 +52,8 @@
         "ar-defensa": { "ancla": "id", "x": 150, "y": 24, "w": 92, "h": 92, "letra": 0.85 },
         "ar-saltar": { "ancla": "id", "x": 24, "y": 150, "w": 72, "h": 72, "letra": 0.85 },
         "ar-agarre": { "ancla": "id", "x": 110, "y": 150, "w": 80, "h": 56, "letra": 0.75 },
-        "ar-especial": { "ancla": "id", "x": 204, "y": 150, "w": 88, "h": 56, "letra": 0.75 }
+        "ar-especial": { "ancla": "id", "x": 204, "y": 150, "w": 88, "h": 56, "letra": 0.75 },
+        "ar-modoEspecial": { "ancla": "id", "x": 204, "y": 216, "w": 88, "h": 48, "letra": 0.75 }
       }
     }
   }

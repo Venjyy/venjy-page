@@ -25,9 +25,13 @@
 // neutra contra altos y medios, el paso lateral contra el resto, y castiga con el bajo rápido tras una esquiva neutra
 // (`castigoBajo`). Ataca con `cadenas` de alturas (jab de tanteo, combo básico, alto → bajo para engañar); la
 // cadena sigue solo si el golpe conecta (la cancelación de Urban Reign), así que una cadena fallada se corta sola.
+// Urban Reign II (L6b, F.spa de la arena): se zafa de los agarres leyendo la altura (cualquier estilo), amaga sus
+// agarres en difícil y maestro, rompe la reacción con el arte especial, entra en Furia con la barra llena y pisa al
+// derribado (estilo-*.json → cpu: escape, amago, rompe, furia, pisoton).
 // =========================================================
 import { COMBATE, accionDe, inicioFase, marca } from './datos.js';
 import { LIBRES, TERMINALES, destino } from './estados.js';
+import { puedeRomper, puedePisar, controlAltura } from './spa.js';
 
 const DIF = (anticipacion, retraso, desvio, perfecto, bloqueo, esquiva, peligros, agresion) =>
     ({ anticipacion, retraso, desvio, perfecto, bloqueo, esquiva, peligros, agresion });
@@ -53,7 +57,16 @@ export const CPU_BASE = {
         distancia: { cerca: 1.2, margen: 0.85, acercarse: 0.8, alejarse: 0.7 },
         esperaInicial: [20, 50],
         provocar: null,
-        cadenas: [], acierto: { facil: 0.5, normal: 0.65, dificil: 0.8, maestro: 0.92 }, castigoBajo: { prob: 0.5 }
+        cadenas: [], acierto: { facil: 0.5, normal: 0.65, dificil: 0.8, maestro: 0.92 }, castigoBajo: { prob: 0.5 },
+        // L6b (combate/spa.js): zafarse de un agarre (acierto de la altura por dificultad, × amago si el agarre amagó;
+        // aprieta `cuadros` después de quedar sujeto), amagar sus agarres (prob. por dificultad), el arte especial que
+        // rompe la reacción (prob. por reacción, `espera` cuadros después y solo con `vidaMax` de vida o menos), la
+        // Furia con la barra llena (prob. por cuadro, a `distancia` o menos) y el pisotón al derribado
+        escape: { acierto: { facil: 0.35, normal: 0.55, dificil: 0.75, maestro: 0.9 }, amago: 0.6, cuadros: [5, 12] },
+        amago: { facil: 0, normal: 0, dificil: 0.5, maestro: 0.7 },
+        rompe: { prob: 0.5, espera: [2, 8], vidaMax: 1 },
+        furia: { prob: 0.05, distancia: 3 },
+        pisoton: { prob: 0.7 }
     }
 };
 
@@ -89,7 +102,7 @@ export function crearCPU(reglas, semilla = 1) {
         R: reglas, rnd: azar(semilla), cuadro: 0, vista: [], eventos: [],
         modo: 'espera', espera: 0, cadena: 0, hechos: [], carga: -1, ultimoPeligro: 0, proximoPeligro: 0,
         defensa: null, bloquea: 0, tirado: -1, cadenaVista: -1, castigo: 0, serial: -1, accion: null,
-        alturas: null, golpes: 0, castigoTirado: -1
+        alturas: null, golpes: 0, castigoTirado: -1, escape: null, rompe: null, pisado: -1
     };
 }
 
@@ -124,6 +137,9 @@ export function intencionCPU(S, F, O, libre = true) {
     const R = S.R, E = R.e, d = Math.hypot(O.x - F.x, O.z - F.z);
     const vO = vista(S);
     if (S.castigo > 0) S.castigo--;
+    // 0. Agarres, arte especial, Furia y pisotón (L6b)
+    const spa = intencionSpa(S, F, O, it, d);
+    if (spa) return spa;
     // 1. Defensa contra tu ataque
     const def = defender(S, F, O, vO, it);
     if (def) return def;
@@ -185,6 +201,12 @@ export function intencionCPU(S, F, O, libre = true) {
     S.accion = null;
     if (a.tipo === 'peligro' || a.tipo === 'arte') {
         it.accion = a.tipo === 'arte' ? undefined : a.clave;
+        // Un agarre por altura (L6b): en difícil y maestro amaga con otra altura y usa la que eligió
+        if (a.tipo === 'peligro' && ad.sujeta && S.rnd() < (E.amago[R.dificultad] || 0)) {
+            const ctl = (F.estilo && F.estilo.controles) || {}, g = ctl.agarre && typeof ctl.agarre === 'object' ? ctl.agarre : null;
+            const otras = g ? ALTURAS_CPU.filter(h => h !== ad.altura && g[h] && g[h] !== a.clave) : [];
+            if (otras.length) { it.accion = g[otras[Math.floor(S.rnd() * otras.length) % otras.length]]; it.amago = ad.altura; }
+        }
         if (a.tipo === 'arte') it.especial = 'apretar';
         if (a.tipo === 'peligro') S.ultimoPeligro = S.cuadro;
         S.modo = 'cadena'; S.cadena = 1; S.serial = F.p.cambio.n;
@@ -275,6 +297,53 @@ function elegir(S, F, O, vO) {
     return { tipo: 'cadena', clave: k, golpes: 1, nada: true };
 }
 
+// ---------- Urban Reign II (L6b, combate/spa.js) ----------
+// F.spa: las reglas de su estilo; O.spa y O.sujeta: el agarre del rival. Devuelve la intención si decide algo (si no, null)
+const cadenaDeUno = (S, F) => { S.modo = 'cadena'; S.cadena = 1; S.golpes = 1; S.alturas = null; S.serial = F.p.cambio.n; S.accion = null; };
+function intencionSpa(S, F, O, it, d) {
+    const R = S.R, E = R.e;
+    // Sujeto por un agarre del rival: aprieta defensa con la altura que leyó (a veces mal; peor si el agarre amagó)
+    const A = O.spa && O.spa.agarre;
+    if (A && O.sujeta && F.p.clave === A.sujetado) {
+        if (!S.escape || S.escape.n !== F.p.cambio.n) {
+            const acierto = (E.escape.acierto[R.dificultad] ?? 0.55) * (O.sujeta.amago ? E.escape.amago : 1);
+            const real = O.sujeta.altura;
+            const altura = S.rnd() < acierto ? real : ALTURAS_CPU.filter(h => h !== real)[Math.floor(S.rnd() * 2) % 2];
+            S.escape = { n: F.p.cambio.n, en: S.cuadro + Math.min(O.sujeta.ventana - 2, entero(S, E.escape.cuadros)), altura, hecho: false };
+        }
+        if (!S.escape.hecho && S.cuadro >= S.escape.en) { S.escape.hecho = true; return apretarAltura({ ...it }, 'defensa', S.escape.altura); }
+        return it;
+    }
+    const Q = F.spa;
+    if (!Q) return null;
+    const ctl = (F.estilo && F.estilo.controles) || {};
+    // El arte especial que rompe la reacción (el escape de los combos): se decide una vez por reacción y sale unos
+    // cuadros después
+    if (puedeRomper(Q, F.p)) {
+        if (!S.rompe || S.rompe.n !== F.p.cambio.n) {
+            const k = controlAltura(ctl.especial, 'medio'), ak = k && accionDe(F.p.estilo, k);
+            const costo = (ak && ak.costo && ak.costo.espiritu) || 0;
+            const quiere = !!ak && !!F.esp && F.esp.valor + 1e-9 >= costo && F.vida / F.vidaMax <= E.rompe.vidaMax && S.rnd() < E.rompe.prob;
+            S.rompe = { n: F.p.cambio.n, en: quiere ? S.cuadro + entero(S, E.rompe.espera) : Infinity };
+        }
+        if (S.cuadro >= S.rompe.en) { S.rompe.en = Infinity; cadenaDeUno(S, F); return { ...it, especial: 'apretar', altura: 'medio' }; }
+        return null;
+    }
+    if (!LIBRES.has(F.p.estado) || O.p.congelado > 0) return null;
+    // La Furia con la barra llena, cerca del rival
+    const fu = Q.furia;
+    if (!(F.furia > 0) && F.esp && F.esp.valor + 1e-9 >= fu.costo && d <= E.furia.distancia && S.rnd() < E.furia.prob) {
+        S.accion = null;
+        return { ...it, modoEspecial: 'apretar' };
+    }
+    // El pisotón al derribado (una vez por caída)
+    if (puedePisar(Q, F, O) && S.pisado !== O.p.cambio.n) {
+        S.pisado = O.p.cambio.n;
+        if (S.rnd() < E.pisoton.prob) { cadenaDeUno(S, F); return apretarAltura({ ...it }, 'atacar', 'bajo'); }
+    }
+    return null;
+}
+
 function respirar(S) {
     const E = S.R.e;
     S.modo = 'respiro'; S.espera = entero(S, E.respiro.cuadros); S.castigo = S.R.castigo; S.accion = null;
@@ -312,11 +381,12 @@ function planear(S, F, O, vO) {
     const ctl = (F.estilo && F.estilo.controles) || {}, Pr = F.pel && F.pel.peligro && F.pel.peligro.respuestas;
     const r = S.rnd();
     if (F.alt) return planearAltura(S, F, p, r, Pr);
-    if (p.def.peligro) {
+    const pel = p.def.peligro || p.def.comoPeligro; // (comoPeligro, L6b: se defiende igual, sin aviso)
+    if (pel) {
         if (r >= D.peligros) return;
-        const t = (Pr && Pr[p.def.peligro]) || {};
-        if (p.def.peligro === 'barrido' && t.salto && ctl.saltar) S.defensa = { tipo: 'salto', n: p.cambio.n, adelanto: 4 };
-        else if (p.def.peligro === 'estocada' && ctl.esquivar) S.defensa = { tipo: 'esquiva', n: p.cambio.n, adelanto: 3, mover: [1, 0] }; // mikiri
+        const t = (Pr && Pr[pel]) || {};
+        if (pel === 'barrido' && t.salto && ctl.saltar) S.defensa = { tipo: 'salto', n: p.cambio.n, adelanto: 4 };
+        else if (pel === 'estocada' && ctl.esquivar) S.defensa = { tipo: 'esquiva', n: p.cambio.n, adelanto: 3, mover: [1, 0] }; // mikiri
         else if (t.esquiva && ctl.esquivar) S.defensa = { tipo: 'esquiva', n: p.cambio.n, adelanto: 5, mover: [-1, 0] };
         return;
     }
@@ -336,7 +406,7 @@ function planear(S, F, O, vO) {
 const ALTURAS_CPU = ['alto', 'medio', 'bajo'];
 function planearAltura(S, F, p, r, Pr) {
     const R = S.R, D = R.dif, A = F.alt, n = p.cambio.n;
-    const h = p.def.altura || 'medio', pel = p.def.peligro, t = (pel && Pr && Pr[pel]) || null;
+    const h = p.def.altura || 'medio', pel = p.def.peligro || p.def.comoPeligro, t = (pel && Pr && Pr[pel]) || null;
     const acierto = (R.e.acierto && R.e.acierto[R.dificultad]) ?? 0.65;
     const desviable = !pel || (t ? t.desvio !== false : !A.imparable.includes(pel));
     const pDesvio = pel ? D.peligros : D.desvio;
