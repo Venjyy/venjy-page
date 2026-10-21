@@ -14,6 +14,8 @@
 //   suelo           el pie más bajo toca el suelo (doblar las rodillas baja el cuerpo solo)
 //   pasos           en guardia (quieto, caminando o girando) cada pie queda plantado y da un paso cuando se aleja de
 //                   donde lo pone la guardia (IK de las piernas): nunca patina, a ninguna velocidad
+//                   (o, en modo arrastre, el paso de boxeo: guía el pie del lado del avance; L6a). Cojo (p.ritmo < 1
+//                   con paso.cojera): la caminata coja y la pierna rota más lenta
 //   pies            en una acción, el pie apoyado no se mueve en el mundo: IK de la pierna mientras está en el suelo
 //   espejo          (N5) una reacción con espejo: true recibida por la derecha (p.espejo) se refleja
 // La capa 3 (reacción sobre una acción, p. ej. la leve con armadura) sigue pendiente; el temblor del hitstop lo pone
@@ -24,7 +26,7 @@
 //                                          (+ = a su izquierda) o null
 //   interpolar(a, b, alfa, salida)         pose intermedia para el dibujo
 // =========================================================
-import { COMBATE, animDe } from './datos.js';
+import { COMBATE, animDe, accionDe } from './datos.js';
 import { LIBRES } from './estados.js';
 import { evaluarGesto } from '../../datos/gestos.js';
 import { curva } from '../../datos/curvas.js';
@@ -68,10 +70,18 @@ export function animar(an, p, { t = 0, raiz = null, mirada = null } = {}) {
     for (const k of CANALES) raw[k] = 0;
     const g = animDe(est, est.guardia && est.guardia.anim);
     if (g) { for (const k in tmp) delete tmp[k]; evaluarGesto(g, 0, t, null, tmp); for (const k in tmp) raw[k] = tmp[k]; }
-    const pa = animDe(est, est.paso && est.paso.anim);
+    // Cojo (las piernas en crítico de Urban Reign, p.ritmo < 1): la caminata es la de paso.cojera (reloj «fases»: un
+    // ciclo cada `largo` bloques recorridos)
+    const cj = p.ritmo < 1 && est.paso && est.paso.cojera, dcj = cj && accionDe(est, cj.accion || 'cojera');
+    const pa = dcj ? animDe(est, dcj.anim || cj.accion) : animDe(est, est.paso && est.paso.anim);
+    an.cojo = dcj ? cj : null;
     if (pa && an.wPaso > 1e-4) {
         for (const k in tmp) delete tmp[k];
-        evaluarGesto(pa, 0, an.recorrido, null, tmp);
+        if (dcj) {
+            const f = dcj.fases, total = (f.anticipacion || 0) + (f.activo || 0) + (f.recuperacion || 0) || 1;
+            const u = (an.recorrido / Math.max(0.05, cj.largo || 0.6)) % 1, c = u * total;
+            evaluarGesto(pa, u, c / M.hz, { fases: f, c }, tmp);
+        } else evaluarGesto(pa, 0, an.recorrido, null, tmp);
         for (const k in tmp) raw[k] += (tmp[k] - raw[k]) * an.wPaso;
     }
     if (p.estado === 'bloqueo') {
@@ -144,6 +154,9 @@ export function animar(an, p, { t = 0, raiz = null, mirada = null } = {}) {
 // en arco (`altura`) hasta ese lugar, adelantado `adelanto` pasos según la velocidad (cae adelante y el cuerpo lo pasa).
 // Da un paso a la vez (el otro puede salir cuando el primero va en el 40 %, o al tiro si su pierna se quedó casi
 // estirada). Las piernas se resuelven con IK.
+// paso.modo 'arrastre' (L6a, boxeo de Urban Reign): mientras camina, guía siempre el pie del lado hacia donde va el
+// cuerpo y el otro lo sigue a ras del suelo (paso.arrastre: umbral, [cuadros], [altura], [adelanto] del que guía y del que
+// arrastra, espera); quieto o girando en el lugar vuelve al modo de siempre.
 function pasosLibres(an, o, raiz, est) {
     const pa = est.paso || {}, umbral = pa.umbral ?? 0.12, dur = Math.max(2, pa.cuadros ?? 9), alto = pa.altura ?? 0.06, adelanto = pa.adelanto ?? 0.5;
     const m = fk(o, raiz), ps = an.pasos;
@@ -159,7 +172,7 @@ function pasosLibres(an, o, raiz, est) {
             const t = an.tobillo[lado] || lugar[lado];
             ps[lado] = { pos: [t[0], t[1], t[2]], desde: null };
             // Si quedó en el aire, baja con un paso
-            if (t[1] > lugar[lado][1] + 0.01) Object.assign(ps[lado], { desde: [...ps[lado].pos], t: 0, f: 0, dur });
+            if (t[1] > lugar[lado][1] + 0.01) Object.assign(ps[lado], { desde: [...ps[lado].pos], t: 0, f: 0, dur, alto, adelanto });
         }
         ps.listos = true; an.pies.listos = false;
     }
@@ -167,11 +180,35 @@ function pasosLibres(an, o, raiz, est) {
     const libre = l => !ps[l].desde || (ps[l].f || 0) > 0.4;
     // La pierna que se va quedando estirada también pide su paso (aunque el pie no esté tan lejos)
     const estirada = l => an.piernas && an.piernas[l][1] < COMBATE.motor.pies.rodillaMin;
-    // Un pie con la pierna casi estirada da su paso aunque el otro todavía vaya en el aire
-    for (const [l] of LADOS) if (!ps[l].desde && estirada(l)) Object.assign(ps[l], { desde: [...ps[l].pos], t: 0, f: 0, dur });
-    if (libre('D') && libre('I')) {
+    // Cojo (p.ritmo < 1 con paso.cojera): la pierna rota da su paso `lento` veces más largo y casi sin levantarla
+    const cj = an.cojo, durDe = (l, d) => (cj && cj.pierna === l ? Math.round(d * (cj.lento || 1)) : d);
+    const empezar = (l, d, h, ad) => Object.assign(ps[l], { desde: [...ps[l].pos], t: 0, f: 0, dur: durDe(l, d), alto: cj && cj.pierna === l ? h * (cj.alzar ?? 0.3) : h, adelanto: ad });
+    const AR = pa.modo === 'arrastre' ? pa.arrastre || {} : null, rapido = Math.hypot(v[0], v[1]) > 1e-3;
+    // Un pie con la pierna casi estirada da su paso aunque el otro todavía vaya en el aire (en el arrastre, lo ordena
+    // el paso de boxeo: si se estira el que arrastra, sale primero el que guía)
+    if (!(AR && rapido)) for (const [l] of LADOS) if (!ps[l].desde && estirada(l)) empezar(l, dur, alto, adelanto);
+    if (AR && rapido) {
+        // Paso de boxeo (arrastre): guía el pie que la guardia pone más lejos en la dirección en que va el cuerpo
+        // (adelante el de adelante, atrás el de atrás, de lado el de ese lado); el otro lo sigue a ras del suelo cuando
+        // el primero va en `espera`. Como cada uno vuelve a su lugar de la guardia, la base no cambia y no se cruzan.
+        const n = Math.hypot(v[0], v[1]), ux = v[0] / n, uz = v[1] / n;
+        const guia = lugar.D[0] * ux + lugar.D[2] * uz >= lugar.I[0] * ux + lugar.I[2] * uz ? 'D' : 'I', otro = guia === 'D' ? 'I' : 'D';
+        const C = AR.cuadros || [dur, dur], H = AR.altura || [alto, alto * 0.2], AD = AR.adelanto || [adelanto, adelanto * 0.3];
+        const u = AR.umbral ?? umbral, espera = AR.espera ?? 0.75;
+        if (!ps.D.desde && !ps.I.desde) {
+            // Sale el que guía (si se alejó o si a alguno se le estira la pierna); el que arrastra, solo si se quedó muy
+            // atrás sin que el que guía lo necesite (frenó o cambió la dirección)
+            if (lejos(guia) > u || estirada(guia) || estirada(otro)) { empezar(guia, C[0], H[0], AD[0]); ps.sigue = otro; }
+            else if (lejos(otro) > 1.5 * u) { empezar(otro, C[1], H[1], AD[1]); ps.sigue = null; }
+        } else if (ps.sigue && !ps[ps.sigue].desde) {
+            // El que arrastra sale cuando el que guía va en `espera` (o antes, si su pierna ya no da más)
+            const g = ps[ps.sigue === 'D' ? 'I' : 'D'];
+            if (!g.desde || g.f >= espera || estirada(ps.sigue)) { empezar(ps.sigue, C[1], H[1], AD[1]); ps.sigue = null; }
+        }
+    } else if (libre('D') && libre('I')) {
+        ps.sigue = null;
         const cual = [['D', lejos('D')], ['I', lejos('I')]].filter(([l]) => !ps[l].desde).sort((a, b) => b[1] - a[1])[0];
-        if (cual && cual[1] > umbral) Object.assign(ps[cual[0]], { desde: [...ps[cual[0]].pos], t: 0, f: 0, dur });
+        if (cual && cual[1] > umbral) empezar(cual[0], dur, alto, adelanto);
     }
     for (const [lado] of LADOS) {
         const s = ps[lado];
@@ -189,10 +226,10 @@ function pasosLibres(an, o, raiz, est) {
         for (let intento = 0; intento < 5; intento++, df /= 2) {
             f = Math.min(1, (s.f || 0) + df);
             PIERNA[lado].forEach((k, i) => { o[k] = base[i]; });
-            const e = curva('suave', f), resto = Math.max(0, s.dur - s.t) + s.dur * adelanto, L = lugar[lado];
+            const e = curva('suave', f), resto = Math.max(0, s.dur - s.t) + s.dur * (s.adelanto ?? adelanto), L = lugar[lado];
             const hasta = [L[0] + v[0] * resto, L[1], L[2] + v[1] * resto];
             obj = [s.desde[0] + (hasta[0] - s.desde[0]) * e, s.desde[1] + (hasta[1] - s.desde[1]) * f, s.desde[2] + (hasta[2] - s.desde[2]) * e];
-            arco = alto * Math.sin(Math.PI * f);
+            arco = (s.alto ?? alto) * Math.sin(Math.PI * f);
             resolverPierna(o, lado, obj, raiz);
             apoyar(o, lado, obj, raiz, arco); // la esquina del pie a la altura del arco
             if (!prev || PIERNA[lado].every((k, i) => Math.abs(o[k] - prev[i]) <= tope)) break;

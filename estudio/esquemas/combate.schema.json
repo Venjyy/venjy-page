@@ -489,7 +489,8 @@
             "hitstop": { "type": "integer", "minimum": 0, "maximum": 60 },
             "nivel": { "$ref": "#/$defs/clave" },
             "resultado": { "type": "string" },
-            "material": { "type": "string" }
+            "material": { "type": "string" },
+            "zona": { "description": "Lo que suma a las zonas del rival (L6a): un número (a la zona de la altura de la acción) o { cabeza, torso, piernas }; sin esto, daño × zonas.porDano.", "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "object", "properties": { "cabeza": { "type": "number", "minimum": 0 }, "torso": { "type": "number", "minimum": 0 }, "piernas": { "type": "number", "minimum": 0 } }, "additionalProperties": false }] }
           },
           "additionalProperties": false
         },

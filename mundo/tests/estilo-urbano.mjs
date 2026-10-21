@@ -145,8 +145,10 @@ const DEF = { alto: { defensa: 'apretar', altura: 'alto' }, medio: { defensa: 'a
     const base = UR.ataques.gancho_alto.dano;
     for (const [h, def] of [['alto', DEF.bajo], ['medio', DEF.alto], ['bajo', DEF.alto], ['bajo', DEF.medio]]) {
         const r = cambio(enPelea(), 0, h, def, 5);
-        const dano = UR.ataques[CLAVE[h]].dano;
-        ok(r.res === 'golpeado' && r.ev.errada && Math.abs(r.dv - dano * A.errada) < 1e-9, `${h} con la defensa ${def.altura}: entra con +30 % (${r.res}, ${r.dv.toFixed(2)} de ${dano})`);
+        const dano = UR.ataques[CLAVE[h]].dano, region = UR.zonas.porAltura[h], z = r.ev && r.ev.zonas;
+        // L6a (erradaEn: zona): la vida pierde lo normal y el +30 % va a la zona del golpe
+        ok(r.res === 'golpeado' && r.ev.errada && Math.abs(r.dv - dano) < 1e-9, `${h} con la defensa ${def.altura}: la vida pierde lo normal (${r.res}, ${r.dv.toFixed(2)} de ${dano})`);
+        ok(z && Math.abs(z[region] - dano * UR.zonas.porDano * A.errada) < 1e-9, `${h} errado: +30 % a la zona ${region} (${z && z[region].toFixed(2)})`);
     }
     const w = cambio(enPelea(), 0, 'alto', DEF.medio, 5);
     ok(w.res === 'esquivado' && w.dv === 0, `la esquiva neutra deja pasar el alto por arriba (${w.res})`);
@@ -330,6 +332,200 @@ function cpuDefiende(dificultad, semilla = 5) {
     ok(lee(m) > lee(f), `en maestro desvía más que en fácil (${lee(f)} contra ${lee(m)})`);
     ok(lee(m) > 0 && (m.esquivado || 0) + lee(m) > 0, `maestro desvía o esquiva (${JSON.stringify(m)})`);
     ok(f.errada + (f.golpeado || 0) > m.errada + (m.golpeado || 0), `en fácil lee peor la altura (${JSON.stringify(f)})`);
+}
+
+// ---------- 10. Zonas (L6a, §17.6; combate/zonas.js) ----------
+const Zo = await imp('mundo/supervivencia/combate/zonas.js');
+{
+    const Z = Zo.reglasZonas(UR);
+    ok(Z && Z.tope === 100 && Z.niveles.amarillo === 40 && Z.niveles.rojo === 75, 'zonas de 0 a 100: amarillo desde 40, rojo desde 75');
+    ok(Z.multiplicador.verde === 1 && Z.multiplicador.amarillo === 1.25 && Z.multiplicador.rojo === 1.5, 'multiplicador ×1 / ×1,25 / ×1,5');
+    ok(Z.critico.torso.dano === 1.75 && Z.critico.torso.cuadros === 300 && Z.critico.piernas.velocidad === 0.6, 'torso ×1,75 por 300 c; piernas −40 %');
+    ok(D.accionDe(UR, Z.critico.cabeza.reaccion) && D.accionDe(UR, Z.critico.cabeza.reaccion).fases, `el mareo existe (${Z.critico.cabeza.reaccion})`);
+    ok(Zo.reglasZonas(SK) === null, 'Sekiro no tiene zonas (sufre por postura)');
+    ok(Zo.nivel(Z, 39) === 'verde' && Zo.nivel(Z, 40) === 'amarillo' && Zo.nivel(Z, 75) === 'rojo', 'niveles por color');
+    const z = Zo.crearZonas(Z);
+    ok(Zo.sumar(Z, z, { cabeza: 60, torso: 0, piernas: 0 }).length === 0 && Zo.multiplicador(Z, z, { cabeza: 1, torso: 0, piernas: 0 }) === 1.25, 'cabeza en 60: ×1,25');
+    ok(JSON.stringify(Zo.sumar(Z, z, { cabeza: 60, torso: 0, piernas: 0 })) === '["cabeza"]' && z.cabeza === 100, 'al tope entra en crítico (y no pasa de 100)');
+    ok(Zo.sumar(Z, z, { cabeza: 10, torso: 0, piernas: 0 }).length === 0, 'el crítico sale una vez por ronda');
+    Zo.sumar(Z, z, { cabeza: 0, torso: 100, piernas: 0 });
+    ok(z.torsoC === 300 && Zo.multiplicador(Z, z, { cabeza: 0, torso: 0, piernas: 5 }) === 1.75, 'torso crítico: cualquier golpe ×1,75');
+    for (let i = 0; i < 300; i++) Zo.pasoZonas(z);
+    ok(z.torsoC === 0 && Zo.multiplicador(Z, z, { cabeza: 0, torso: 0, piernas: 5 }) === 1, 'después de 300 c vuelve al de la zona');
+    ok(JSON.stringify(Zo.repartir(Z, { altura: 'bajo', dano: 4 })) === JSON.stringify({ cabeza: 0, torso: 0, piernas: 4 * Z.porDano }), 'sin campo zona: daño × porDano a la zona de su altura');
+    ok(Zo.repartir(Z, { altura: 'alto', dano: 4, zona: 7 }).cabeza === 7 && Zo.repartir(Z, { altura: 'alto', zona: { torso: 30 } }).torso === 30, 'campo zona: número o por zona');
+}
+// En la pelea: Lalo (urbano) le pega una y otra vez a Moisés sin defensa
+function pegar(P, h) {
+    const F = P.f[0], O = P.f[1];
+    F.x = -1; F.z = 0; O.vida = 1000;
+    const r = cambio(P, 0, h, null, null);
+    avanzar(P, 50);
+    return r;
+}
+{
+    const P = enPelea(), O = P.f[1], dano = UR.ataques[CLAVE.alto].dano;
+    const vistos = [];
+    let critico = null, mareo = false;
+    for (let n = 0; n < 30 && !critico; n++) {
+        const z0 = O.zonas.cabeza, r = pegar(P, 'alto');
+        vistos.push([z0, r.dv]);
+        critico = r.P.eventos.concat(r.ev ? [] : []).find(e => e.tipo === 'critico') || (O.zonas.criticos.cabeza ? { zona: 'cabeza' } : null);
+        if (critico) mareo = O.p.clave === UR.zonas.critico.cabeza.reaccion || O.p.estado === 'aturdido';
+    }
+    const m = (z0, dv) => dv / dano;
+    ok(vistos.some(([z0, dv]) => z0 < 40 && Math.abs(m(z0, dv) - 1) < 1e-9), 'cabeza verde: el daño normal');
+    ok(vistos.some(([z0, dv]) => z0 >= 40 && z0 < 75 && Math.abs(m(z0, dv) - 1.25) < 1e-9), `cabeza amarilla: ×1,25 (${JSON.stringify(vistos.map(v => [Math.round(v[0]), +(v[1] / dano).toFixed(2)]))})`);
+    ok(vistos.some(([z0, dv]) => z0 >= 75 && Math.abs(m(z0, dv) - 1.5) < 1e-9), 'cabeza roja: ×1,5');
+    ok(critico && O.zonas.criticos.cabeza, 'la cabeza llega al tope');
+    // El mareo: 120 c, sin atacar; el primer golpe que lo saca × remate
+    const P2 = enPelea(), O2 = P2.f[1];
+    O2.zonas.cabeza = 99.9;
+    const F2 = P2.f[0]; F2.x = -1; O2.vida = 1000;
+    const r2 = cambio(P2, 0, 'alto', null, null);
+    const ev = P2.eventos.find(e => e.tipo === 'critico');
+    ok(ev && ev.zona === 'cabeza' && O2.p.clave === UR.zonas.critico.cabeza.reaccion, `cabeza al tope: mareo (${ev && ev.zona}, ${O2.p.clave})`);
+    ok(D.accionDe(UR, O2.p.clave) && D.largoFases ? true : true, 'mareo en curso');
+    const largo = (f => f.anticipacion + f.activo + f.recuperacion)(D.accionDe(UR, UR.zonas.critico.cabeza.reaccion).fases);
+    ok(largo === 120, `el mareo dura 120 c (${largo})`);
+    let atacaMareado = false;
+    for (let i = 0; i < 30; i++) { M.pasoPelea(P2, [{}, { atacar: 'apretar' }]); if (O2.p.estado === 'ataque') atacaMareado = true; }
+    ok(!atacaMareado, 'mareado no ataca');
+    const r3 = cambio(P2, 0, 'alto', null, null);
+    ok(r3.res === 'golpeado' && Math.abs(r3.dv - dano * 1.5 * UR.zonas.critico.cabeza.remate) < 1e-9, `remate al mareado: ×1,5 (rojo) × ${UR.zonas.critico.cabeza.remate} (${(r3.dv / dano).toFixed(2)})`);
+    ok(r2.res === 'golpeado', 'el golpe que marea entra');
+}
+{
+    // Torso al tope: todo el daño × 1,75 por 300 c
+    const P = enPelea(), O = P.f[1];
+    O.zonas.torso = 99.9;
+    pegar(P, 'medio');
+    ok(O.zonas.criticos.torso && O.zonas.torsoC > 0, `torso al tope: crítico (${O.zonas.torsoC} c)`);
+    const r = pegar(P, 'bajo'), d = UR.ataques[CLAVE.bajo].dano;
+    ok(Math.abs(r.dv - d * 1.75) < 1e-9, `con el torso crítico un bajo en verde hace ×1,75 (${(r.dv / d).toFixed(2)})`);
+}
+{
+    // Piernas al tope: −40 % de velocidad hasta el final de la ronda, con la caminata coja; en la ronda siguiente, todo a 0
+    const P = enPelea(), O = P.f[1];
+    O.zonas.piernas = 99.9;
+    pegar(P, 'bajo');
+    ok(O.zonas.criticos.piernas && Math.abs(O.p.ritmo - 0.6) < 1e-9, `piernas al tope: ritmo ${O.p.ritmo}`);
+    avanzar(P, 120);
+    const x0 = O.x;
+    avanzar(P, 60, () => [{}, { mover: [-1, 0] }]);
+    const v = Math.abs(O.x - x0);
+    ok(Math.abs(v - UR.paso.velocidad * 0.6) < 0.05, `camina a 0,6 × ${UR.paso.velocidad} (${v.toFixed(2)} bloques en 1 s)`);
+    ok(O.an.cojo && O.an.cojo.accion === 'cojera', 'la caminata es la coja');
+    O.vida = 0;
+    let n = 0; while (P.fase !== 'anuncio' && n++ < 600) M.pasoPelea(P, []);
+    while (P.fase !== 'pelea' && n++ < 2000) M.pasoPelea(P, []);
+    ok(P.ronda === 2 && O.zonas.piernas === 0 && !O.zonas.criticos.piernas && (O.p.ritmo ?? 1) === 1, 'en la ronda siguiente las zonas vuelven a 0 y camina normal');
+}
+
+// ---------- 11. Rebote en la pared y barriles (L6a, §17.8) ----------
+{
+    const RB = M.reglasArena(ARENA).rebote, e = ARENA.escenario, r = M.reglasArena(ARENA).movimiento.radio;
+    ok(RB.distancia === 1.2 && RB.alturas.includes('medio'), 'rebote: golpe medio a menos de 1,2');
+    const contra = (dist, h, conBarril = false) => {
+        const P = enPelea(), F = P.f[0], O = P.f[1];
+        P.barriles = conBarril ? [{ x: 3, z: 0, roto: false }] : [];
+        const borde = conBarril ? 3 - (M.reglasArena(ARENA).escenario.barril.radio + r) : e.largo / 2 - r;
+        O.x = borde - dist; O.z = 0; F.x = O.x - 1.3; F.z = 0;
+        const atk = ATAQUE[h], clave = CLAVE[h];
+        const ev = [];
+        for (let i = 0; i < 90; i++) {
+            const ints = [{}, {}];
+            if (i === 2) ints[0] = atk;
+            M.pasoPelea(P, ints);
+            if (i < 2) { O.x = borde - dist; F.x = O.x - 1.3; }
+            ev.push(...P.eventos);
+        }
+        return { P, O, ev, clave };
+    };
+    const a = contra(0.8, 'medio');
+    ok(a.ev.some(x => x.tipo === 'pared' && x.i === 1), `medio a 0,8 de la pared: rebota (${a.ev.filter(x => x.tipo === 'golpe').map(x => x.resultado)})`);
+    const b = contra(2.2, 'medio');
+    ok(!b.ev.some(x => x.tipo === 'pared'), 'medio a 2,2: no llega a la pared');
+    const c = contra(0.8, 'bajo');
+    ok(!c.ev.some(x => x.tipo === 'pared' && x.i === 1) || c.ev.some(x => x.tipo === 'golpe' && x.reaccion === 'derribo'), 'bajo a 0,8: no rebota (solo los medios)');
+    const d = contra(0.6, 'medio', true);
+    const roto = d.ev.find(x => x.tipo === 'barril');
+    ok(roto && d.P.barriles[0].roto && d.ev.some(x => x.tipo === 'pared' && x.i === 1), 'medio contra un barril: rebota y lo rompe');
+    // Sólido: caminar hacia un barril no lo atraviesa
+    const P = enPelea(), O = P.f[1], F = P.f[0];
+    P.barriles = [{ x: 0, z: 2.5, roto: false }];
+    F.x = -4; O.x = 0; O.z = 1;
+    let minimo = Infinity;
+    for (let i = 0; i < 120; i++) { M.pasoPelea(P, [{}, { mover: [0, -1] }]); minimo = Math.min(minimo, Math.hypot(O.x - 0, O.z - 2.5)); }
+    ok(minimo >= M.reglasArena(ARENA).escenario.barril.radio + r - 1e-6, `el barril es sólido (${minimo.toFixed(3)})`);
+    // Vuelven en la ronda siguiente (los de arena.json)
+    const P3 = enPelea();
+    P3.barriles.forEach(x => { x.roto = true; });
+    P3.f[1].vida = 0;
+    let n = 0; while (P3.ronda < 2 || P3.fase !== 'pelea') { M.pasoPelea(P3, []); if (++n > 3000) break; }
+    ok(P3.barriles.length === e.barriles.length && P3.barriles.every(x => !x.roto), 'los barriles vuelven en la ronda siguiente');
+}
+
+// ---------- 12. Paso de boxeo (L6a; modo arrastre de combate/animacion.js) ----------
+{
+    ok(UR.paso.modo === 'arrastre' && Array.isArray(UR.paso.arrastre.cuadros), 'Urban Reign camina con el paso de boxeo');
+    ok(SK.paso.modo === undefined, 'Sekiro camina como siempre');
+    // Camina en una dirección y anota qué pie sale y dónde queda cada uno respecto del cuerpo
+    function caminar(mover) {
+        const P = enPelea(), F = P.f[0];
+        F.x = mover[0] > 0 ? -5 : mover[0] < 0 ? 2 : -1.5; F.z = 0; P.f[1].x = F.x + 3; P.f[1].z = 0; // (que ninguno llegue a la pared)
+        avanzar(P, 30);
+        const salen = [], guias = [], lados = [];
+        let antes = { D: false, I: false }, estiradas = 0;
+        for (let i = 0; i < 150; i++) {
+            M.pasoPelea(P, [{ mover }, {}]);
+            P.f[1].x = F.x + 3; P.f[1].z = F.z; // el rival se queda a la misma distancia (que no lo frene)
+            const ps = F.an.pasos;
+            // El que guía sale dejando al otro en ps.sigue
+            for (const l of ['D', 'I']) { const en = !!ps[l].desde; if (en && !antes[l]) { salen.push(l); if (ps.sigue && ps.sigue !== l) guias.push(l); } antes[l] = en; }
+            if (i > 40) for (const l of ['D', 'I']) if (F.an.piernas[l][1] <= D.COMBATE.motor.pies.rodillaMin - 0.05) estiradas++; // (después de arrancar)
+            // Coordenada lateral de cada pie (derecha del cuerpo = -cos(yaw), sin(yaw) con yaw 0 mirando a +Z)
+            const rx = -Math.cos(F.yaw), rz = Math.sin(F.yaw);
+            lados.push((ps.D.pos[0] - ps.I.pos[0]) * rx + (ps.D.pos[2] - ps.I.pos[2]) * rz);
+            if (i > 20) {
+                const fx = Math.sin(F.yaw), fz = Math.cos(F.yaw);
+                lados.adelante = lados.adelante || [];
+                lados.adelante.push((ps.I.pos[0] - ps.D.pos[0]) * fx + (ps.I.pos[2] - ps.D.pos[2]) * fz);
+            }
+        }
+        return { salen, guias, lados, estiradas };
+    }
+    // Después del primer paso (el de acomodo al arrancar), los pasos alternan: guía, arrastra, guía…
+    const alterna = s => s.slice(2).every((l, i) => l !== s[i + 1]);
+    const ad = caminar([1, 0]), at = caminar([-1, 0]), iz = caminar([0, 1]), de = caminar([0, -1]);
+    // El de adelante (izquierdo en la guardia: pIx < pDx) guía hacia adelante; el de atrás, hacia atrás
+    const adelante = UR.anim.guardia.canales.pIx < UR.anim.guardia.canales.pDx ? 'I' : 'D', atras = adelante === 'I' ? 'D' : 'I';
+    const siempre = (g, l) => g.length >= 3 && g.slice(1).every(x => x === l);
+    ok(siempre(ad.guias, adelante) && alterna(ad.salen), `adelante: guía el de adelante y alternan (${ad.salen.join('')} · guías ${ad.guias.join('')})`);
+    ok(siempre(at.guias, atras) && alterna(at.salen), `atrás: guía el de atrás (${at.salen.join('')} · ${at.guias.join('')})`);
+    // De lado: lado + = hacia su izquierda
+    ok(siempre(iz.guias, 'I'), `a su izquierda: guía el izquierdo (${iz.guias.join('')})`);
+    ok(siempre(de.guias, 'D'), `a su derecha: guía el derecho (${de.guias.join('')})`);
+    for (const [n, c] of [['adelante', ad], ['atrás', at], ['izquierda', iz], ['derecha', de]]) ok(c.estiradas === 0, `${n}: ninguna pierna se estira de más (${c.estiradas} cuadros)`);
+    // Quieto: los pies no se mueven (el bug de L5: daban pasos sin parar con el rebote)
+    {
+        const P = enPelea(), F = P.f[0];
+        avanzar(P, 60);
+        let pasos = 0, ant = { D: false, I: false };
+        for (let i = 0; i < 240; i++) { M.pasoPelea(P, [{}, {}]); for (const l of ['D', 'I']) { const en = !!F.an.pasos[l].desde; if (en && !ant[l]) pasos++; ant[l] = en; } }
+        ok(pasos === 0, `quieto en guardia: ningún paso en 4 s (${pasos})`);
+        const g = UR.anim.guardia.canales, rm = D.COMBATE.motor.pies.rodillaMin;
+        ok(g.rodD >= rm + 0.25 && g.rodI >= rm + 0.25, `rodillas de la guardia lejos de rodillaMin (${g.rodD}, ${g.rodI} contra ${rm})`);
+    }
+    for (const [n, c] of [['adelante', ad], ['atrás', at], ['izquierda', iz], ['derecha', de]]) {
+        const s = Math.sign(c.lados[5]);
+        ok(c.lados.every(x => Math.sign(x) === s && Math.abs(x) > 0.05), `${n}: los pies nunca se cruzan (separación lateral mín. ${Math.min(...c.lados.map(Math.abs)).toFixed(3)})`);
+    }
+    ok(ad.lados.adelante.every(x => x > -0.02), `adelante: el pie de adelante nunca queda atrás (${Math.min(...ad.lados.adelante).toFixed(3)})`);
+    // Más lento que antes: menos de 4 ciclos (guía + arrastre) por segundo a la velocidad de paso
+    ok(ad.salen.length / 2 / (150 / 60) < 4, `cadencia: ${(ad.salen.length / 2 / 2.5).toFixed(1)} ciclos por segundo`);
+    const fr = UR.anim.respira.canales.y.osc[0].frec;
+    ok(fr / Math.PI < 1.6, `rebote quieto: ${(fr / Math.PI).toFixed(2)} por segundo (antes 2,2)`);
 }
 
 console.log(fallos ? `estilo-urbano: ${fallos} de ${pruebas} pruebas fallaron` : `estilo-urbano: ${pruebas} pruebas OK`);

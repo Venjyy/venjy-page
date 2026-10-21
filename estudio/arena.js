@@ -65,7 +65,12 @@ const GRUPOS = [
     ['hud', 'HUD', 'HUD', {
         anchoVida: ['ancho de cada barra de vida (% de pantalla)', 'life bar width (% of screen)', 10, 48, 1],
         retrato: ['lado del retrato chico (px)', 'small portrait side (px)', 16, 128, 1],
-        anchoPostura: ['ancho de la barra de postura (% de pantalla)', 'posture bar width (% of screen)', 5, 48, 1]
+        anchoPostura: ['ancho de la barra de postura (% de pantalla)', 'posture bar width (% of screen)', 5, 48, 1],
+        silueta: ['alto de la silueta de zonas (px)', 'zone silhouette height (px)', 16, 128, 1]
+    }],
+    ['rebote', 'Rebote en la pared', 'Wall bounce', {
+        distancia: ['un golpe medio a menos de esto de la pared (o un barril) lo hace rebotar', 'a mid hit closer than this to the wall (or a barrel) bounces', 0, 4, 0.05],
+        extra: ['bloques de más que lo lleva el golpe (para que llegue)', 'extra blocks the hit carries (so it arrives)', 0, 1, 0.05]
     }]
 ];
 // Una dificultad de la CPU (arena.json → cpu.dificultades.<clave>)
@@ -140,7 +145,9 @@ const PESO_COLOR = [[['impacto', 'color'], 'destello del impacto', 'impact flash
     [['pantalla', 'aviso', 'borde'], 'borde del rombo', 'diamond border'], [['pantalla', 'aviso', 'signo'], 'signo del rombo', 'diamond sign']];
 const NIVELES_PESO = [['ligero', 'ligero', 'light'], ['medio', 'medio', 'medium'], ['fuerte', 'fuerte', 'heavy'], ['desvio', 'desvío', 'deflect'], ['perfecto', 'perfecto', 'perfect'], ['remate', 'remate', 'finisher']];
 const COLORES_HUD = [['vida', 'vida', 'life'], ['vidaFondo', 'fondo de la vida', 'life background'], ['vidaPerdida', 'vida perdida', 'lost life'], ['reloj', 'reloj', 'clock'], ['ronda', 'texto de ronda', 'round text'],
-    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background'], ['espiritu', 'espíritu (arte de combate)', 'spirit (combat art)'], ['espirituFondo', 'fondo del espíritu', 'spirit background']];
+    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background'], ['espiritu', 'espíritu (arte de combate)', 'spirit (combat art)'], ['espirituFondo', 'fondo del espíritu', 'spirit background'],
+    ['zonaVerde', 'silueta: zona sana', 'silhouette: healthy zone'], ['zonaAmarilla', 'silueta: zona dañada', 'silhouette: hurt zone'], ['zonaRoja', 'silueta: zona roja', 'silhouette: red zone'],
+    ['zonaCritica', 'silueta: zona en crítico (parpadea)', 'silhouette: critical zone (blinks)'], ['zonaBorde', 'silueta: borde', 'silhouette: outline']];
 // Plano de cine del golpe final (L3): camara.remate
 const CAMARA_REMATE = {
     duracion: ['golpe final: segundos del plano de cine', 'final strike: cinematic shot seconds', 0.2, 6, 0.1],
@@ -435,6 +442,9 @@ export async function montarArena(ctx) {
         se.appendChild(num(['escenario', 'pared', 'grosor'], ['grosor de la pared', 'wall thickness', 0.5, 3, 0.1]));
         puntos(se, t('Fogatas [x, z]', 'Campfires [x, z]'), ['escenario', 'fogatas'], 12);
         puntos(se, t('Barriles [x, z]', 'Barrels [x, z]'), ['escenario', 'barriles'], 12);
+        se.appendChild(num(['escenario', 'barril', 'radio'], ['barril: radio del choque', 'barrel: hit radius', 0.1, 1, 0.02]));
+        se.appendChild(num(['escenario', 'barril', 'dano'], ['barril: daño al que lo rompe', 'barrel: damage to whoever breaks it', 0, 50, 1]));
+        se.appendChild(interruptor(t('los barriles se rompen', 'barrels break'), ['escenario', 'barril', 'rompe'], true));
         se.appendChild(num(['escenario', 'nieve', 'cantidad'], ['copos de nieve', 'snowflakes', 0, 3000, 50]));
         se.appendChild(vector(t('viento de la nieve (x, z)', 'snow wind (x, z)'), ['escenario', 'nieve', 'viento'], 2, ['x', 'z'], 0.05));
         se.appendChild(num(['escenario', 'nieve', 'caida'], ['caída de la nieve', 'snow fall speed', 0, 6, 0.1]));

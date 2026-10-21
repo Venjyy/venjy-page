@@ -84,6 +84,7 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     const tinte = crearTinte();
     tinte.aplicar(new THREE.Color(1, 1, 1));
     let estatico = null;            // grupo con todo lo que se rearma en aplicar()
+    let barriles = [];              // un grupo por barril (L6a: se esconde al romperse)
     let recursos = [];              // geometrías, materiales y texturas del estático
     let nieve = null, fogatas = [], luces = [];
     let llamaMats = [];
@@ -190,12 +191,16 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
         tramo(-W / 2, W / 2, -L / 2 - gr / 2, false);
         tramo(-W / 2, W / 2, L / 2 + gr / 2, false);
 
-        // Barriles de madera con aros (decorado)
+        // Barriles de madera con aros: cada uno es su grupo (se rompen en la pelea y vuelven en la ronda siguiente, L6a)
         const mMad = lambert(texMadera()), mAro = lambert(texAro());
-        for (const [bx, bz] of (E.barriles || [])) {
-            caja3(0.56, 0.8, 0.56, bx, 0.4, bz, mMad);
-            for (const y of [0.18, 0.62]) caja3(0.62, 0.07, 0.62, bx, y, bz, mAro);
-        }
+        const geoBarril = new THREE.BoxGeometry(0.56, 0.8, 0.56), geoAro = new THREE.BoxGeometry(0.62, 0.07, 0.62);
+        recursos.push(geoBarril, geoAro);
+        barriles = (E.barriles || []).map(([bx, bz]) => {
+            const g = new THREE.Group(); g.position.set(bx, 0, bz); estatico.add(g);
+            const b = new THREE.Mesh(geoBarril, mMad); b.position.y = 0.4; g.add(b);
+            for (const y of [0.18, 0.62]) { const a = new THREE.Mesh(geoAro, mAro); a.position.y = y; g.add(a); }
+            return g;
+        });
 
         // Fogatas: troncos cruzados sobre piedras, llamas de cajas y luz puntual
         const mTronco = lambert(texTronco()), mPiedra = lambert(texPiedra());
@@ -474,7 +479,7 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     function liberarEstatico() {
         if (estatico) scene.remove(estatico);
         for (const r of recursos) if (r && r.dispose) r.dispose();
-        recursos = []; fogatas = []; luces = []; llamaMats = []; nieve = null; estatico = null;
+        recursos = []; fogatas = []; luces = []; llamaMats = []; nieve = null; estatico = null; barriles = [];
     }
     function aplicar(R2) {
         if (R2) R = R2;
@@ -501,5 +506,8 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     for (const c of Object.keys(R.peleadores || {})) peleador(c);
     const efectos = crearEfectos(THREE, scene, R);
 
-    return { scene, peleador, armar, hoja, extremo, envainar, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
+    // Barriles (L6a): romperBarril(n) lo esconde; estadoBarriles(lista) los deja como dice el modelo ({ roto } por barril)
+    function romperBarril(n) { if (barriles[n]) barriles[n].visible = false; }
+    function estadoBarriles(lista) { if (lista) barriles.forEach((g, n) => { g.visible = !(lista[n] && lista[n].roto); }); }
+    return { scene, peleador, armar, hoja, extremo, envainar, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir, romperBarril, estadoBarriles };
 }
