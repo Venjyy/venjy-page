@@ -36,6 +36,18 @@ export const AJUSTES_SALONAS = {
         rango: 0.25                // ± segundos que acepta el número a mano
     },
     avisoSeg: 0.5,                 // cuánto dura el «Perfecto» / «Bien» en pantalla
+    // ---------- S8: energía del público, Modo Primus, duelo de solos, Práctica y récords ----------
+    // Energía (0..1): sube con cada acierto y baja con cada fallo; a 0 te abuchean y la canción termina (en Fácil no baja de pisoFacil)
+    energia: { inicio: 0.55, sube: { perfecto: 0.03, bien: 0.02, ok: 0.01 }, baja: 0.08, pisoFacil: 0.2, suavidad: 4, abucheoSeg: 1.2 }, // suavidad: qué tan rápido el público sigue a la energía (1/s)
+    // Modo Primus: se carga con notas brillantes (llenar = fracción de las brillantes de la canción que llena la barra), Espacio lo activa
+    primus: {
+        llenar: 0.4, grito: '¡PRIMUS SUCKS!', gritoSeg: 1.6, fuegosCada: 2.5, celebraSeg: 2.5,
+        luz: '#ffd0ff', luzK: 0.35,              // tinte de las luces mientras dura
+        camara: { pos: [0, 2.4, 5.5], mira: [0, 0.8, -3], fov: 12, k: 3 } // la cámara se abre (suma a posición y mira; fov = grados de más; k = rapidez 1/s)
+    },
+    // Duelo de solos: en las secciones `secciones`, Salonas toca los compases 0..turnoTuyo-1 de cada `ciclo` y tú el resto
+    duelo: { secciones: ['solo'], ciclo: 4, turnoTuyo: 2, avisoAntes: 0.6, avisoSeg: 1.4 },
+    practica: { velocidades: [0.5, 0.6, 0.7, 0.8, 0.9, 1], velocidad: 0.7 }, // factor de tempo de la Práctica (mínimo 0.5)
     // ---------- S5: locales, banda, público y cámara (salonas-escena.js; z negativa = hacia el escenario) ----------
     local: 'sala',                 // el local de una canción que no esté en localDe
     localDe: { 'sala-ska': 'sala', 'sala-garage': 'sala', 'bar-cumbia': 'bar', 'bar-funk': 'bar', 'festival-metal': 'festival', 'festival-jefe': 'festival' }, // canción → local
@@ -51,8 +63,8 @@ export const AJUSTES_SALONAS = {
         carrilK: 10,               // qué tan rápido la mano del bajo sigue al carril (1/s)
         slapSeg: 0.18, falloSeg: 0.45 // lo que dura el golpe del slap y el «uf» del fallo
     },
-    // Ánimo del público (−1 abuchea … 1 salta): sube con cada acierto, baja con cada fallo y vuelve a reposo
-    publico: { subida: 0.045, bajada: 0.22, reposo: 0.2, vuelta: 0.15, aplaude: 0.35, salta: 0.7, abuchea: -0.25, celebrarSeg: 2.5 },
+    // Ánimo del público (−1 abuchea … 1 salta): sigue a la energía (energia); en el menú y los resultados vuelve a reposo
+    publico: { reposo: 0.2, aplaude: 0.35, salta: 0.7, abuchea: -0.25, celebrarSeg: 2.5 },
     // Mientras dura una sección de `secciones` (el solo de Salonas; el puente mientras no haya solos), la cámara se corre hacia Salonas (suma a la posición y a la mira); k = rapidez (1/s)
     camaraSolo: { secciones: ['solo', 'puente'], pos: [-1.1, -0.4, -1.4], mira: [-2.2, 0.6, 0], k: 2.5 },
     locales: {
@@ -146,4 +158,36 @@ export function guardarCalibracion(almacen, seg, rango = AJUSTES_SALONAS.calibra
     const v = Math.max(-rango, Math.min(rango, Number.isFinite(seg) ? seg : 0));
     try { if (almacen) almacen.setItem(CLAVE_CALIBRACION, String(Math.round(v * 1000) / 1000)); } catch (e) { /* sin almacenamiento */ }
     return v;
+}
+
+// ---------- S8: energía, Modo Primus, récords ----------
+// Energía del público tras un juicio ('perfecto' | 'bien' | 'ok' | 'fallo'); piso = lo mínimo (Fácil: pisoFacil)
+export function energiaTras(energia, juicio, E = AJUSTES_SALONAS.energia, piso = 0) {
+    const d = juicio === 'fallo' ? -E.baja : (E.sube[juicio] || 0);
+    return Math.max(piso, Math.min(1, energia + d));
+}
+// Cuánta barra de Primus da una nota brillante: 1 / (brillantes × llenar), con al menos 1 nota
+export function cargaPorNota(brillantes, llenar = AJUSTES_SALONAS.primus.llenar) { return 1 / Math.max(1, Math.round(brillantes * llenar)); }
+
+// Récords (localStorage; puede no existir). { cancion: { dificultad: { puntos, estrellas } } }
+export const CLAVE_RECORDS = 'venjy-salonas-records';
+export function leerRecords(almacen) {
+    try {
+        const v = JSON.parse(almacen && almacen.getItem(CLAVE_RECORDS));
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch (e) { return {}; }
+}
+export function recordDe(records, cancion, dificultad) {
+    const r = records && records[cancion] && records[cancion][dificultad];
+    return r && Number.isFinite(r.puntos) ? { puntos: r.puntos, estrellas: r.estrellas | 0 } : null;
+}
+// Guarda si mejora (puntos y estrellas por separado: se queda el mayor de cada uno) → { nuevo, record, anterior }
+export function guardarRecord(almacen, cancion, dificultad, { puntos, estrellas }) {
+    const records = leerRecords(almacen), anterior = recordDe(records, cancion, dificultad);
+    const record = { puntos: Math.max(puntos, anterior ? anterior.puntos : 0), estrellas: Math.max(estrellas, anterior ? anterior.estrellas : 0) };
+    const nuevo = !anterior || puntos > anterior.puntos;
+    if (!records[cancion] || typeof records[cancion] !== 'object') records[cancion] = {};
+    records[cancion][dificultad] = record;
+    try { if (almacen) almacen.setItem(CLAVE_RECORDS, JSON.stringify(records)); } catch (e) { /* sin almacenamiento */ }
+    return { nuevo, record, anterior };
 }

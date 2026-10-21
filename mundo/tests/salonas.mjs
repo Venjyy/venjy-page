@@ -379,5 +379,34 @@ bloque('canciones del festival (S7)', () => {
     }
 });
 
+// ---------- S8: energía, Primus, récords, duelo y Práctica ----------
+bloque('S8', () => {
+    const E = Z.AJUSTES_SALONAS.energia;
+    ok(casi(Z.energiaTras(0.5, 'perfecto', E), 0.5 + E.sube.perfecto), 'energía: el Perfecto sube');
+    ok(casi(Z.energiaTras(0.5, 'fallo', E), 0.5 - E.baja), 'energía: el fallo baja');
+    ok(Z.energiaTras(0.99, 'perfecto', E) === 1 && Z.energiaTras(0.05, 'fallo', E) === 0, 'energía: se queda entre 0 y 1');
+    ok(Z.energiaTras(0.21, 'fallo', E, E.pisoFacil) === E.pisoFacil, 'energía: el piso de Fácil no deja llegar a cero');
+    ok(casi(Z.cargaPorNota(100, 0.4), 1 / 40) && Z.cargaPorNota(0, 0.4) === 1, 'Primus: la carga por nota brillante');
+    // Récords (con un almacén falso, y sin almacén)
+    const mem = new Map(), alm = { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, v) };
+    ok(Z.recordDe(Z.leerRecords(alm), 'x', 'normal') === null, 'récords: vacío al principio');
+    let g = Z.guardarRecord(alm, 'x', 'normal', { puntos: 500, estrellas: 2 });
+    ok(g.nuevo && g.anterior === null && g.record.puntos === 500, 'récords: el primero es nuevo');
+    g = Z.guardarRecord(alm, 'x', 'normal', { puntos: 300, estrellas: 3 });
+    ok(!g.nuevo && g.record.puntos === 500 && g.record.estrellas === 3, 'récords: se queda el mayor de puntos y de estrellas');
+    ok(Z.recordDe(Z.leerRecords(alm), 'x', 'dificil') === null && Z.recordDe(Z.leerRecords(alm), 'x', 'normal').estrellas === 3, 'récords: uno por dificultad');
+    ok(iguales(Z.leerRecords({ getItem() { throw new Error('no'); } }), {}) && iguales(Z.leerRecords({ getItem: () => 'basura' }), {}), 'récords: un almacén roto da vacío');
+    ok(Z.guardarRecord(null, 'x', 'normal', { puntos: 1, estrellas: 1 }).nuevo, 'récords: sin almacén no falla');
+    // Duelo: las secciones de AJUSTES_SALONAS.duelo existen en el tema jefe y su ciclo cuadra
+    const jefe = MUSICA.canciones['festival-jefe'], D = Z.AJUSTES_SALONAS.duelo;
+    ok(mapaTiempo(jefe).secciones.filter(q => D.secciones.includes(q.seccion)).length >= 2 && D.turnoTuyo < D.ciclo, 'duelo: secciones y ciclo');
+    // Práctica: más lenta = más larga, y la sección elegida cabe en ella
+    const normal = S.partitura(jefe, 'normal'), lenta = S.partitura(jefe, 'normal', R, { tempo: 0.5 });
+    ok(casi(lenta.duracion, normal.duracion * 2, 1e-6) && lenta.notas.length === normal.notas.length, 'práctica: a 50 % dura el doble con las mismas notas');
+    ok(Z.AJUSTES_SALONAS.practica.velocidades.every(v => v >= 0.5 && v <= 1), 'práctica: velocidades entre 50 y 100 %');
+    // Todas las canciones del menú tienen local conocido
+    ok(Z.AJUSTES_SALONAS.canciones.every(k => Z.AJUSTES_SALONAS.locales[Z.AJUSTES_SALONAS.localDe[k]]), 'menú: cada canción con su local');
+});
+
 console.log(fallos ? `\n${fallos} fallos` : 'salonas: todo bien');
 process.exit(fallos ? 1 : 0);
