@@ -897,8 +897,22 @@ export function crearSalonas(ctx) {
         return true;
     }
 
+    // Pestaña Ritmo del Estudio (S10b): abre esa canción en Práctica, solo con esa sección, con sus ajustes a mano. Devuelve 'ok' o el motivo
+    function probar({ cancion: k, dificultad: d, seccion }) {
+        if (c && c.fase !== 'menu') aMenu();
+        if (!c && !abrir()) return 'ocupado';
+        if (!au) return 'audio';
+        if (!c.A.canciones.includes(k) || !cancionDe(k)) return 'cancion';
+        if (!P.DIFICULTADES.includes(d)) return 'dificultad';
+        const n = seccionesDe(cancionDe(k)).length;
+        if (!Number.isInteger(seccion) || seccion < 0 || seccion >= n) return 'seccion';
+        elegirCancion(k);
+        dificultad = d; practica.activa = true; practica.seccion = seccion;
+        tocar();
+        return c && c.fase === 'juega' ? 'ok' : 'cancion';
+    }
     return {
-        abrir, actualizar, dibuja, cerrar, terminar: cerrar, listo,
+        abrir, probar, actualizar, dibuja, cerrar, terminar: cerrar, listo,
         get activa() { return !!c; },
         get estado() { return c; },
         setIdioma(l) { L = l; },

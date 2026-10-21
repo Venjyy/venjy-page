@@ -265,13 +265,14 @@ try {
     ok(CANAL === 'venjy-estudio', 'el canal se llama venjy-estudio');
     ok(DATOS_VIVOS.includes('ui-layout') && DATOS_VIVOS.includes('textos'), 'layout y textos se aplican en vivo');
     // Un «juego» de mentira detrás de un canal real y un cliente real, como entre dos pestañas
-    const aplicados = [], viajes = [];
+    const aplicados = [], viajes = [], salonasPedido = [];
     let listoJuego = false;
     const responder = crearManejador({
         listo: () => listoJuego,
         idioma: () => 'en',
         aplicarDatos(nombre, datos) { if (datos.romper) throw new Error('rompe'); aplicados.push([nombre, datos]); },
-        async teletransportar(d) { if (d.destino === 'nada') throw new Error('no existe'); viajes.push(d); return { x: 1, y: 2, z: 3 }; }
+        async teletransportar(d) { if (d.destino === 'nada') throw new Error('no existe'); viajes.push(d); return { x: 1, y: 2, z: 3 }; },
+        async salonas(d) { salonasPedido.push(d); }
     });
     const canalJuego = new BroadcastChannel(CANAL);
     canalJuego.onmessage = async e => { const r = await responder(e.data); if (r) canalJuego.postMessage(r); };
@@ -302,6 +303,17 @@ try {
             ok(e !== null, `tp rechaza el destino «${malo.slice(0, 12)}»`);
         }
         ok((await cliente.tp('nada').then(() => null, e => e.message)) === 'no existe', 'el error de teletransportar llega');
+        // S10b: Ritmo manda `salonas` (probar una sección en Práctica / cerrar)
+        const sp = await cliente.enviar('salonas', { accion: 'probar', cancion: 'bar-funk', dificultad: 'dificil', seccion: 3 });
+        ok(sp.tipo === 'ok' && salonasPedido[0].cancion === 'bar-funk' && salonasPedido[0].seccion === 3 && salonasPedido[0].dificultad === 'dificil', 'salonas probar llega al juego con canción, dificultad y sección');
+        await cliente.enviar('salonas', { accion: 'terminar' });
+        ok(salonasPedido[1].accion === 'terminar', 'salonas terminar llega al juego');
+        for (const malo of [{ accion: 'volar' }, { accion: 'probar', cancion: '../x', dificultad: 'normal', seccion: 0 }, { accion: 'probar', cancion: 'a', dificultad: 'imposible', seccion: 0 },
+            { accion: 'probar', cancion: 'a', dificultad: 'normal', seccion: -1 }, { accion: 'probar', cancion: 'a', dificultad: 'normal', seccion: 1.5 }, { accion: 'probar', cancion: 'a', dificultad: 'normal' }]) {
+            const e = await cliente.enviar('salonas', malo).then(() => null, er => er.message);
+            ok(e !== null, `salonas rechaza ${JSON.stringify(malo).slice(0, 60)}`);
+        }
+        ok(salonasPedido.length === 2, 'un pedido de salonas inválido no llega al juego');
         const desc = await cliente.enviar('volar').then(() => null, e => e.message);
         ok(desc && desc.includes('desconocido'), 'un mensaje desconocido da error');
         // varios cambios en el mismo cuadro llegan como uno solo

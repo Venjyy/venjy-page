@@ -83,5 +83,10 @@ ok(esquema.properties.ajustes && esquema.$defs.ajustesMano, 'el esquema de salon
 ok(/ajustes:\s*mano/.test(leer('mundo', 'supervivencia', 'salonas.js')), 'salonas.js pasa los ajustes a mano a la partitura');
 ok(esquema.$defs.ajustesMano.additionalProperties.additionalProperties.additionalProperties.type.includes('null'), 'el esquema admite null (quitar)');
 
+ok(/function probar\(/.test(leer('mundo', 'supervivencia', 'salonas.js')) && /abrir, probar,/.test(leer('mundo', 'supervivencia', 'salonas.js')), 'salonas.js expone probar()');
+ok(/ctx\.puente\.enviar\('salonas'/.test(ritmoJs) && /accion: 'probar'/.test(ritmoJs), 'Ritmo manda el mensaje salonas al juego');
+ok(/async salonas\(/.test(leer('estudio', 'puente-juego.js')) && /case 'salonas'/.test(leer('estudio', 'puente-protocolo.js')), 'el puente conoce el mensaje salonas');
+ok(html.includes('id="ri-probar"') && html.includes('id="ri-seccion"') && html.includes('id="ri-parar"'), 'botones de probar en index.html');
+
 console.log(fallos ? `${fallos} fallas` : 'ritmo: todo bien');
 process.exit(fallos ? 1 : 0);
