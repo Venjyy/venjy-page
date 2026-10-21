@@ -4,6 +4,8 @@
 // y la pestaña Música del Estudio, que suena con estos mismos instrumentos. Firma: (ctx, salida, t, midi, dur, vol);
 // la batería, (ctx, salida, t, vol); colchon y rhodes reciben una lista de notas.
 // =========================================================
+import { tocarBajo } from './musica-bajo.js'; // (importación circular segura: solo se usa al tocar)
+
 export const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 
 // Ruido blanco reutilizable (uno por frecuencia de muestreo)
@@ -80,6 +82,8 @@ export const I = {
         lp.connect(g); g.connect(out);
         osc(ctx, 'sawtooth', mtof(m), t, t + dur, lp);
     },
+    // El bajo de Salonas (musica-bajo.js) como slap; en una capa `bajo` de canción suena con cada técnica
+    bajoSlap(ctx, out, t, m, dur, vol) { tocarBajo(ctx, out, t, 's', m, dur, null, vol); },
     colchon(ctx, out, t, notas, dur, vol) { // pad: acorde con ataque lento
         const g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, t);

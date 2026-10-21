@@ -18,6 +18,12 @@
       "type": "object",
       "propertyNames": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
       "additionalProperties": { "$ref": "#/$defs/tema" }
+    },
+    "canciones": {
+      "description": "Canciones completas del minijuego Salonas (mundo/SALONAS.md §3): un tema más «estructura» (secciones en orden). Deterministas: el audio y la partitura salen del mismo mapa de tiempo (mapaTiempo en musica-motor.js). Con \"borrador\": true el juego no la usa.",
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+      "additionalProperties": { "$ref": "#/$defs/cancion" }
     }
   },
   "additionalProperties": false,
@@ -63,8 +69,115 @@
       },
       "additionalProperties": false
     },
+    "cancion": {
+      "type": "object",
+      "required": ["bpm", "prog", "capas", "estructura"],
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "borrador": { "description": "true = el juego no la usa todavía.", "type": "boolean" },
+        "bpm": { "description": "Tempo base (una sección puede cambiarlo).", "type": "number", "minimum": 30, "maximum": 300 },
+        "pasos": { "description": "Pasos por compás base (16 = 4/4, 14 = 7/8, 20 = 5/4; una sección puede cambiarlo).", "type": "integer", "minimum": 4, "maximum": 32 },
+        "vol": { "type": "number", "minimum": 0, "maximum": 1 },
+        "swing": { "description": "Atraso fijo de los pasos impares (fracción de un paso; entra en el mapa de tiempo).", "type": "number", "minimum": 0, "maximum": 0.5 },
+        "prog": { "$ref": "#/$defs/tema/properties/prog" },
+        "progs": { "description": "Progresión por nivel de sección (verso, coro…).", "$ref": "#/$defs/tema/properties/progs" },
+        "acordePor": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "acordes": { "$ref": "#/$defs/tema/properties/acordes" },
+        "vozBajo": { "$ref": "#/$defs/vozBajo" },
+        "estructura": {
+          "description": "Secciones en orden. Cada una toca las capas y la progresión de su nivel (sin nivel: el nombre de la sección); los patrones vuelven al compás 1 al empezar cada sección.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/seccion" },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "capas": { "type": "array", "items": { "$ref": "#/$defs/capa" }, "maxItems": 24 }
+      },
+      "additionalProperties": false
+    },
+    "seccion": {
+      "type": "object",
+      "required": ["seccion", "compases"],
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "seccion": { "description": "intro, verso, precoro, coro, puente, solo, final u otro nombre.", "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,23}$" },
+        "compases": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "nivel": { "description": "Qué capas y progresión suenan (las capas con este nivel en «niveles»). Sin nivel: el nombre de la sección.", "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,23}$" },
+        "bpm": { "description": "Tempo de la sección (cambio de tempo).", "type": "number", "minimum": 30, "maximum": 300 },
+        "pasos": { "description": "Pasos por compás de la sección (cambio de compás).", "type": "integer", "minimum": 4, "maximum": 32 }
+      },
+      "additionalProperties": false
+    },
+    "notaBajo": {
+      "description": "[paso, técnica, nota MIDI, duración en pasos, extra]. Técnicas: s slap, p pop, g fantasma, t tapping, d glissando (extra = nota final), r rasgueo (extra = acorde), a armónico.",
+      "type": "array",
+      "prefixItems": [
+        { "type": "integer", "minimum": 0, "maximum": 127 },
+        { "type": "string", "enum": ["s", "p", "g", "t", "d", "a", "r"] },
+        { "$ref": "#/$defs/midi" },
+        { "type": "number", "minimum": 0.05, "maximum": 64 },
+        { "anyOf": [{ "$ref": "#/$defs/midi" }, { "type": "array", "items": { "$ref": "#/$defs/midi" }, "minItems": 1, "maxItems": 6 }] }
+      ],
+      "minItems": 4,
+      "maxItems": 5
+    },
+    "vozBajo": {
+      "description": "Cambios a la voz del bajo de Salonas (valores base en VOZ_BAJO de mundo/supervivencia/musica-bajo.js).",
+      "type": "object",
+      "properties": {
+        "vol": { "type": "number", "minimum": 0, "maximum": 2 },
+        "saturacion": { "type": "number", "minimum": 0.1, "maximum": 10 },
+        "nasal": { "description": "Formante nasal.", "$ref": "#/$defs/picoBajo" },
+        "metal": { "description": "Presencia metálica.", "$ref": "#/$defs/picoBajo" },
+        "tecnicas": {
+          "type": "object",
+          "properties": {
+            "s": { "$ref": "#/$defs/tecnicaBajo" }, "p": { "$ref": "#/$defs/tecnicaBajo" }, "g": { "$ref": "#/$defs/tecnicaBajo" },
+            "t": { "$ref": "#/$defs/tecnicaBajo" }, "d": { "$ref": "#/$defs/tecnicaBajo" }, "a": { "$ref": "#/$defs/tecnicaBajo" },
+            "r": { "$ref": "#/$defs/tecnicaBajo" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "picoBajo": {
+      "type": "object",
+      "properties": {
+        "frec": { "type": "number", "minimum": 20, "maximum": 20000 },
+        "q": { "type": "number", "minimum": 0, "maximum": 30 },
+        "ganancia": { "type": "number", "minimum": -24, "maximum": 24 }
+      },
+      "additionalProperties": false
+    },
+    "tecnicaBajo": {
+      "type": "object",
+      "properties": {
+        "brillo": { "description": "Frecuencia del filtro al pulsar (Hz).", "type": "number", "minimum": 50, "maximum": 20000 },
+        "q": { "type": "number", "minimum": 0, "maximum": 30 },
+        "ataque": { "type": "number", "minimum": 0.001, "maximum": 0.5 },
+        "vol": { "type": "number", "minimum": 0, "maximum": 2 },
+        "cola": { "description": "Segundos que suena después de soltar.", "type": "number", "minimum": 0, "maximum": 4 },
+        "largo": { "description": "Duración fija en segundos (la fantasma).", "type": "number", "minimum": 0.005, "maximum": 2 },
+        "onda": { "type": "string", "enum": ["sine", "square", "sawtooth", "triangle"] },
+        "golpes": { "description": "Rasgueo: idas y vueltas.", "type": "integer", "minimum": 1, "maximum": 6 },
+        "separacion": { "description": "Rasgueo: segundos entre golpes.", "type": "number", "minimum": 0, "maximum": 0.5 },
+        "rasgueo": { "description": "Rasgueo: segundos entre cuerdas.", "type": "number", "minimum": 0, "maximum": 0.1 },
+        "chasquido": {
+          "type": "object",
+          "properties": {
+            "frec": { "type": "number", "minimum": 20, "maximum": 20000 },
+            "vol": { "type": "number", "minimum": 0, "maximum": 2 },
+            "largo": { "type": "number", "minimum": 0.002, "maximum": 0.5 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "capa": {
-      "description": "Una capa es de un solo tipo: ritmo (batería), rel (notas sobre la raíz del acorde), acorde, notas (melodía en MIDI) o arpegio. Un patrón dura 1 compás o 4.",
+      "description": "Una capa es de un solo tipo: ritmo (batería), rel (notas sobre la raíz del acorde), acorde, notas (melodía en MIDI), arpegio o (solo en una canción) bajo. Un patrón dura 1 compás o 4.",
       "type": "object",
       "required": ["inst", "vol"],
       "properties": {
@@ -84,7 +197,9 @@
         "pasos": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 31 }, "maxItems": 32 },
         "intervalos": { "type": "array", "items": { "type": "integer", "minimum": -24, "maximum": 48 }, "maxItems": 8 },
         "notas": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 108 }, "minItems": 4, "maxItems": 128 },
-        "arpegio": { "type": "array", "items": { "type": ["integer", "null"], "minimum": 0, "maximum": 7 }, "minItems": 1, "maxItems": 32 }
+        "arpegio": { "type": "array", "items": { "type": ["integer", "null"], "minimum": 0, "maximum": 7 }, "minItems": 1, "maxItems": 32 },
+        "bajo": { "description": "Notas del bajo con técnica (solo en canciones; con inst bajoSlap suena la voz de Salonas).", "type": "array", "items": { "$ref": "#/$defs/notaBajo" }, "minItems": 1, "maxItems": 256 },
+        "compases": { "description": "Cuántos compases dura el patrón del bajo (1 a 4).", "type": "integer", "minimum": 1, "maximum": 4 }
       },
       "additionalProperties": false
     },

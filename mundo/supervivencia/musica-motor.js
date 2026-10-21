@@ -8,6 +8,7 @@
 // (un sintetizador: forma de onda, envolvente, filtro, voces, armónicos, barrido de tono y vibrato).
 // =========================================================
 import { mtof, bufferRuido } from './musica-instrumentos.js';
+import { tocarBajo, vozDe, TECNICAS_BAJO } from './musica-bajo.js';
 
 // Acordes en MIDI (raíz, tercera, quinta, séptima opcional): los de siempre de la carrera; el resto se arma por nombre
 export const AC = {
@@ -47,10 +48,12 @@ const G = {
     cajaGrande: (I, c, o, t, vol) => I.ruido(c, o, t, vol, 0.3, 1500, 'bandpass')
 };
 // Instrumentos del código que puede usar una capa; los de batería se tocan con patrones de ritmo
-export const INSTRUMENTOS = ['piano', 'pulsar', 'banjo', 'cajita', 'steel', 'chip', 'bajo', 'bajoSierra', 'colchon', 'rhodes', 'kick', 'caja', 'hat', 'madera', ...Object.keys(G)];
+export const INSTRUMENTOS = ['piano', 'pulsar', 'banjo', 'cajita', 'steel', 'chip', 'bajo', 'bajoSierra', 'bajoSlap', 'colchon', 'rhodes', 'kick', 'caja', 'hat', 'madera', ...Object.keys(G)];
 export const BATERIA = ['kick', 'caja', 'hat', 'madera', ...Object.keys(G)];
 const DE_ACORDE = new Set(['colchon', 'rhodes']); // reciben todas las notas juntas
 export const TIPOS_CAPA = ['ritmo', 'rel', 'acorde', 'notas', 'arpegio'];
+// En una canción además: bajo (notas del bajo de Salonas con técnica, [paso, tipo, nota, duración, extra])
+export const TIPOS_CAPA_CANCION = [...TIPOS_CAPA, 'bajo'];
 export const ONDAS = ['sine', 'square', 'sawtooth', 'triangle', 'ruido'];
 export const FILTROS = ['lowpass', 'highpass', 'bandpass'];
 
@@ -136,6 +139,17 @@ function largoDe(notas) {
     }
     return l;
 }
+// Notas de una capa `bajo` agrupadas por paso del patrón (el patrón dura `compases` compases)
+const porPaso = new WeakMap();
+function notasBajo(lista) {
+    let m = porPaso.get(lista);
+    if (!m) {
+        m = new Map();
+        for (const n of lista) { if (!m.has(n[0])) m.set(n[0], []); m.get(n[0]).push(n); }
+        porPaso.set(lista, m);
+    }
+    return m;
+}
 // Acorde que suena en el compás k (prog por nivel con `progs`, un acorde cada `acordePor` compases)
 export function acordeEn(def, k, nivel) {
     const prog = (def.progs && def.progs[nivel]) || def.prog || ['C'];
@@ -179,6 +193,17 @@ export function tocarPaso(I, def, c, o, t, i, k, s, nivel, propios = null, azar 
             const idx = p.arpegio[i % p.arpegio.length];
             if (idx === null || idx === undefined) continue;
             nota(ac[idx % ac.length] + oct, dur, p.vol);
+        } else if (p.bajo) {
+            const lista = notasBajo(p.bajo).get((k % (p.compases || 1)) * P + i);
+            if (!lista) continue;
+            for (const [, tipo, m, d, extra] of lista) {
+                if (!suena()) continue;
+                const dd = s * d, ex = Array.isArray(extra) ? extra.map(x => x + oct) : typeof extra === 'number' ? extra + oct : null;
+                if (!sinte && p.inst === 'bajoSlap') tocarBajo(c, o, tt, tipo, m + oct, dd, ex, p.vol, vozDe(def.vozBajo));
+                else if (tipo === 'r') for (const x of (ex || [m + oct])) nota(x, dd, p.vol * 0.5);
+                else if (tipo === 'g') nota(m + oct, Math.min(dd, 0.04), p.vol * 0.5);
+                else nota(m + oct, dd, p.vol);
+            }
         }
     }
 }
@@ -217,14 +242,22 @@ export function crearSecuenciador() {
 // Revisión de un tema (además del esquema): instrumentos, acordes y largos de los patrones
 // ---------------------------------------------------------
 export function revisarTema(def, propios = {}) {
-    const e = [], P = def.pasos || 16;
-    const prog = [].concat(def.prog || [], ...Object.values(def.progs || {}));
+    const e = revisarProg(def);
+    revisarCapas(def.capas || [], def.pasos || 16, propios, TIPOS_CAPA, e);
+    return e;
+}
+function revisarProg(def) {
+    const e = [], prog = [].concat(def.prog || [], ...Object.values(def.progs || {}));
     for (const a of prog) if (!acordeDe(a, def.acordes)) e.push(`acorde desconocido: ${a}`);
-    (def.capas || []).forEach((p, n) => {
-        const donde = `capa ${n + 1} (${p.inst})`;
+    return e;
+}
+// capas = lista de capas o de [n, capa]; P = pasos por compás; los errores se agregan a e
+function revisarCapas(capas, P, propios, TIPOS, e, sufijo = '') {
+    for (const [n, p] of capas.map((x, i) => Array.isArray(x) ? x : [i, x])) {
+        const donde = `capa ${n + 1} (${p.inst})${sufijo}`;
         if (!INSTRUMENTOS.includes(p.inst) && !(propios && propios[p.inst])) e.push(`${donde}: instrumento desconocido`);
-        const tipos = TIPOS_CAPA.filter(x => p[x] !== undefined && p[x] !== false);
-        if (tipos.length !== 1) e.push(`${donde}: tiene que ser de un solo tipo (${TIPOS_CAPA.join(', ')})`);
+        const tipos = TIPOS.filter(x => p[x] !== undefined && p[x] !== false);
+        if (tipos.length !== 1) e.push(`${donde}: tiene que ser de un solo tipo (${TIPOS.join(', ')})`);
         for (const x of ['ritmo', 'rel', 'notas']) {
             const l = p[x] && p[x].length;
             if (l && l !== P && l !== P * 4) e.push(`${donde}: ${x} dura ${l} pasos (tiene que ser ${P} o ${P * 4})`);
@@ -232,6 +265,116 @@ export function revisarTema(def, propios = {}) {
         if (p.ritmo && /[^xo.]/.test(p.ritmo)) e.push(`${donde}: el ritmo solo lleva x, o y .`);
         if (p.acorde && !(Array.isArray(p.pasos) && p.pasos.every(x => x >= 0 && x < P))) e.push(`${donde}: pasos del acorde fuera del compás`);
         if (p.notas && p.notas.some(m => m && (m < 24 || m > 108))) e.push(`${donde}: nota fuera de rango (24-108)`);
+        if (p.bajo) {
+            const largo = (p.compases || 1) * P;
+            p.bajo.forEach((x, m) => {
+                const [paso, tipo, nota, dur, extra] = x, aqui = `${donde}: nota ${m + 1} del bajo`;
+                if (!TECNICAS_BAJO.includes(tipo)) e.push(`${aqui}: técnica desconocida (${tipo})`);
+                if (!(paso >= 0 && paso < largo)) e.push(`${aqui}: paso ${paso} fuera del patrón (0-${largo - 1})`);
+                if (!(nota >= 20 && nota <= 100)) e.push(`${aqui}: nota fuera de rango (20-100)`);
+                if (!(dur > 0)) e.push(`${aqui}: sin duración`);
+                if (tipo === 'd' && typeof extra !== 'number') e.push(`${aqui}: el glissando necesita la nota final`);
+                if (tipo === 'r' && extra !== undefined && !Array.isArray(extra)) e.push(`${aqui}: el rasgueo lleva un acorde (lista de notas)`);
+            });
+        }
+    }
+}
+
+// ---------------------------------------------------------
+// Canciones (minijuego Salonas, mundo/SALONAS.md §3): un tema con `estructura`, la lista de secciones en orden.
+// Cada sección { seccion, compases, nivel?, bpm?, pasos? } toca las capas y la progresión de su nivel (sin nivel:
+// el nombre de la sección) y puede cambiar el tempo y los pasos por compás. Los patrones vuelven al compás 1 al
+// empezar cada sección. Determinista: en una canción no se sortea nada (prob no va) y el swing ya está en el mapa.
+// ---------------------------------------------------------
+// Segundo exacto de cada paso (puro). Lo usan el audio y la partitura, así no pueden separarse.
+// tempo = factor del dueño (±10 % en la pestaña) → { duracion, secciones: [...], pasos: [{ t, n, k, i, s }] }
+// n = sección, k = compás dentro de la sección, i = paso dentro del compás, s = segundos por paso
+export function mapaTiempo(c, tempo = 1) {
+    const f = Math.max(0.5, Math.min(2, tempo || 1)), secciones = [], pasos = [];
+    let t = 0;
+    (c.estructura || []).forEach((e, n) => {
+        const bpm = (e.bpm || c.bpm) * f, P = e.pasos || c.pasos || 16, s = 60 / bpm / 4, sw = (c.swing || 0) * s;
+        const t0 = t, desde = pasos.length, total = Math.max(0, Math.round(e.compases || 0)) * P;
+        for (let x = 0; x < total; x++) {
+            const i = x % P;
+            pasos.push({ t: t0 + x * s + (i % 2 ? sw : 0), n, k: Math.floor(x / P), i, s });
+        }
+        t = t0 + total * s;
+        secciones.push({ n, seccion: e.seccion, nivel: e.nivel || e.seccion, compases: total / P, pasos: P, bpm, s, t0, t1: t, desde, hasta: pasos.length });
     });
-    return e;
+    return { duracion: t, secciones, pasos };
+}
+// Índice del último paso que ya sonó en el segundo t de la canción, o -1 (antes del primero)
+export function pasoEnTiempo(mapa, t) {
+    const L = mapa.pasos;
+    let a = 0, b = L.length - 1, r = -1;
+    while (a <= b) {
+        const m = (a + b) >> 1;
+        if (L[m].t <= t + 1e-9) { r = m; a = m + 1; } else b = m - 1;
+    }
+    return r;
+}
+// La canción como tema de una sección (pasos de la sección; el swing ya viene en el mapa)
+const vistas = new WeakMap();
+function vistaDe(c, P) {
+    let m = vistas.get(c);
+    if (!m) { m = new Map(); vistas.set(c, m); }
+    if (!m.has(P)) m.set(P, { ...c, pasos: P, swing: 0 });
+    return m.get(P);
+}
+const SIN_AZAR = () => 0;
+// Toca el paso n.º idx del mapa en la hora t del audio
+export function tocarPasoCancion(I, c, ctx, salida, t, mapa, idx, propios = null) {
+    const p = mapa.pasos[idx], sec = mapa.secciones[p.n];
+    tocarPaso(I, vistaDe(c, sec.pasos), ctx, salida, t, p.i, p.k, p.s, sec.nivel, propios, SIN_AZAR);
+}
+// Reproductor de una canción de principio a fin (o desde un segundo): programa adelantado como crearSecuenciador
+export function crearReproductorCancion() {
+    let cancion = null, mapa = null, inicio = 0, sig = 0;
+    return {
+        // Empieza en `desde` segundos de la canción; devuelve el mapa (o usa el que le pasen)
+        empezar(ctx, c, { tempo = 1, desde = 0, mapa: m = null, retraso = 0.1 } = {}) {
+            cancion = c; mapa = m || mapaTiempo(c, tempo);
+            inicio = ctx.currentTime + retraso - desde;
+            sig = 0;
+            while (sig < mapa.pasos.length && mapa.pasos[sig].t < desde - 1e-9) sig++;
+            return mapa;
+        },
+        parar() { mapa = null; },
+        // Programa hasta `adelanto` segundos; false cuando ya programó el último paso (o está parado)
+        avanzar({ I, ctx, salida, propios = null, adelanto = 0.2 }) {
+            if (!mapa) return false;
+            const ahora = ctx.currentTime, hasta = ahora + adelanto - inicio;
+            while (sig < mapa.pasos.length && mapa.pasos[sig].t < hasta) {
+                const t = inicio + mapa.pasos[sig].t;
+                if (t >= ahora - 0.05) { try { tocarPasoCancion(I, cancion, ctx, salida, t, mapa, sig, propios); } catch (e) { /* nota perdida */ } }
+                sig++; // (si la pestaña estuvo dormida, lo atrasado se salta: la canción sigue a su hora)
+            }
+            return sig < mapa.pasos.length;
+        },
+        // Segundo de la canción en la hora t del audio (con él se dibujan las notas)
+        segundoEn(t) { return t - inicio; },
+        get mapa() { return mapa; },
+        get inicio() { return inicio; }
+    };
+}
+// Revisión de una canción (además del esquema): estructura, capas por sección, bajo y lo que no puede sortearse
+export function revisarCancion(c, propios = {}) {
+    const e = revisarProg(c), capas = c.capas || [], est = c.estructura || [];
+    if (!est.length) e.push('la canción no tiene estructura (secciones)');
+    const suena = (p, nivel) => !p.mudo && (!p.niveles || p.niveles.includes(nivel));
+    const porP = new Map(); // pasos por compás → niveles que lo usan
+    est.forEach((s, n) => {
+        const P = s.pasos || c.pasos || 16, nivel = s.nivel || s.seccion;
+        if (!porP.has(P)) porP.set(P, new Set());
+        porP.get(P).add(nivel);
+        if (!(s.compases >= 1)) e.push(`sección ${n + 1} (${s.seccion}): sin compases`);
+        if (!capas.some(p => suena(p, nivel))) e.push(`sección ${n + 1} (${s.seccion}): no suena ninguna capa en el nivel ${nivel}`);
+    });
+    for (const [P, niveles] of porP) {
+        const activas = capas.map((p, n) => [n, p]).filter(([, p]) => !p.niveles || p.niveles.some(x => niveles.has(x)));
+        revisarCapas(activas, P, propios, TIPOS_CAPA_CANCION, e, porP.size > 1 ? ` en ${P} pasos` : '');
+    }
+    capas.forEach((p, n) => { if (p.prob !== undefined) e.push(`capa ${n + 1} (${p.inst}): prob no va en una canción (tiene que sonar siempre igual)`); });
+    return [...new Set(e)];
 }

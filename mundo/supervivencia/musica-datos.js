@@ -20,6 +20,11 @@ export function temaMusica(clave) {
     const t = datos && datos.temas && datos.temas[clave];
     return t && !t.borrador && Array.isArray(t.capas) && t.bpm > 0 ? t : null;
 }
+// La canción de musica.json con esa clave (minijuego Salonas), si no es borrador y tiene estructura; si no, null
+export function cancionMusica(clave) {
+    const c = datos && datos.canciones && datos.canciones[clave];
+    return c && !c.borrador && Array.isArray(c.capas) && Array.isArray(c.estructura) && c.estructura.length && c.bpm > 0 ? c : null;
+}
 export function instrumentosPropios() { return (datos && datos.instrumentos) || null; }
 export function enPrueba() { return prueba; }
 export function ponerPrueba(v) { prueba = !!v; }

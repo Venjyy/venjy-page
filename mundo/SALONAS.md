@@ -67,6 +67,13 @@ tres cosas que no existen todavía:
 `mapaTiempo(cancion)` (puro) da, para cada paso, su segundo exacto, contando los cambios de tempo. Lo usan el
 audio y la partitura, y así no pueden separarse.
 
+**Hecho en S1** (detalle en `estudio/DISENO.md` §24): la sección es `{ seccion, compases, nivel?, bpm?, pasos? }` y
+toca las capas cuyo `niveles` incluye su nivel (sin `nivel`, el nombre de la sección). La capa de bajo es
+`{ inst: "bajoSlap", bajo: [...], compases }`, y la voz está en `musica-bajo.js` (`vozBajo` la ajusta por canción).
+En una canción, `prob` es un error de `revisarCancion` y el swing ya viene en el mapa. Para la partitura (S2):
+`mapaTiempo(c).pasos[x]` = `{ t, n, k, i, s }`, y la nota del bajo del paso es la de la capa `bajo` del nivel de la sección
+en el índice `(k % compases) * pasos + i`.
+
 ## 4. La partitura sale del bajo (por qué el dueño no puede romperla)
 
 `partitura(cancion, dificultad)` es puro y determinista. Lee la capa `bajo` y arma las notas del juego:

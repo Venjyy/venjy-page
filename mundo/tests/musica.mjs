@@ -10,7 +10,8 @@ import { crearManejador } from '../../estudio/puente-protocolo.js';
 import * as MO from '../supervivencia/musica-motor.js';
 import { I } from '../supervivencia/musica-instrumentos.js';
 import { TEMAS_CARRERA, LISTA_TEMAS } from '../supervivencia/carrera-musica-datos.js';
-import { aplicarMusica, temaMusica, instrumentosPropios, enPrueba, ponerPrueba } from '../supervivencia/musica-datos.js';
+import { aplicarMusica, temaMusica, cancionMusica, instrumentosPropios, enPrueba, ponerPrueba } from '../supervivencia/musica-datos.js';
+import { VOZ_BAJO, vozDe, tocarBajo, TECNICAS_BAJO } from '../supervivencia/musica-bajo.js';
 
 let fallos = 0;
 const ok = (cond, msg) => { if (!cond) { fallos++; console.log('FALLA:', msg); } };
@@ -33,8 +34,9 @@ function ctxFalso() {
         cuenta, currentTime: 0, sampleRate: 8000, state: 'running',
         createGain() { cuenta.gain++; return nodo({ gain: param(1) }); },
         createOscillator() { cuenta.osc++; return nodo({ type: 'sine', frequency: param(440), detune: param(0), start() {}, stop() {} }); },
-        createBiquadFilter() { cuenta.filtro++; return nodo({ type: 'lowpass', frequency: param(350), Q: param(1) }); },
-        createBufferSource() { cuenta.ruido++; return nodo({ buffer: null, start() {} }); },
+        createWaveShaper() { return nodo({ curve: null }); },
+        createBiquadFilter() { cuenta.filtro++; return nodo({ type: 'lowpass', frequency: param(350), Q: param(1), gain: param(0) }); },
+        createBufferSource() { cuenta.ruido++; return nodo({ buffer: null, start() {}, stop() {} }); },
         createBuffer(c, n, sr) { return { sampleRate: sr, getChannelData: () => new Float32Array(n) }; }
     };
 }
@@ -96,7 +98,7 @@ ok(JSON.stringify(MO.acordeEn({ prog: ['C', 'G'], progs: { noche: ['Am'] } }, 1,
 }
 // USOS.mundo: las claves, bpm, pasos y vol de los temas de musica.js
 {
-    const src = fs.readFileSync(path.join(RAIZ, 'mundo', 'supervivencia', 'musica.js'), 'utf8');
+    const src = fs.readFileSync(path.join(RAIZ, 'mundo', 'supervivencia', 'musica.js'), 'utf8').replace(/\r\n/g, '\n'); // (con core.autocrlf la copia trae CRLF)
     const vistos = [...src.matchAll(/^ {4}(\w+): \{(?: \/\/.*)?\n {8}bpm: (\d+), pasos: (\d+), vol: ([\d.]+),/gm)].map(m => [m[1], { bpm: +m[2], pasos: +m[3], vol: +m[4] }]);
     ok(JSON.stringify(Object.fromEntries(vistos)) === JSON.stringify(MO.USOS.mundo.temas), 'USOS.mundo no coincide con TEMAS de musica.js: ' + JSON.stringify(vistos.map(v => v[0])));
 }
@@ -186,6 +188,104 @@ ponerPrueba(true); ok(enPrueba(), 'vista previa encendida'); ponerPrueba(false);
     ok(llamadas.length === 2 && llamadas[0].nivel === 'corre', 'el juego recibe tocar y parar');
     const r = await responder({ de: 'estudio', id: 2, tipo: 'datos', nombre: 'musica', datos: DATOS });
     ok(r.tipo === 'ok', 'musica.json se aplica en vivo');
+}
+
+// ---------- 9. Canciones (Salonas, S1): esquema, mapa de tiempo, determinismo, bajo con técnicas y revisión ----------
+{
+    malo(d => { delete d.canciones.pescador.estructura; }, 'estructura');
+    malo(d => { d.canciones.pescador.capas[0].bajo[0][1] = 'x'; }, 'bajo[0][1]');
+    malo(d => { d.canciones.pescador.estructura[0].compases = 0; }, 'compases');
+    malo(d => { d.canciones.pescador.vozBajo = { tecnicas: { s: { brillo: 1 } } }; }, 'brillo');
+    const pescador = DATOS.canciones.pescador;
+    ok(MO.revisarCancion(pescador, DATOS.instrumentos).length === 0, 'pescador: ' + MO.revisarCancion(pescador, DATOS.instrumentos).join(' · '));
+    // Mapa de tiempo: 2 compases de 16 a 120 bpm (0,125 s por paso) y 1 de 12 a 60 bpm (0,25 s por paso)
+    const C = {
+        bpm: 120, pasos: 16, prog: ['E'],
+        estructura: [{ seccion: 'intro', compases: 2 }, { seccion: 'puente', compases: 1, bpm: 60, pasos: 12, nivel: 'intro' }],
+        capas: [{ inst: 'bajoSlap', vol: 1, bajo: [[0, 's', 28, 1], [4, 'p', 40, 1], [8, 'r', 28, 2, [28, 35, 40]], [11, 'd', 33, 1, 36]] }, { inst: 'kick', ritmo: 'x...x...x...', vol: 1, niveles: ['nada'] }]
+    };
+    const M = MO.mapaTiempo(C);
+    const cerca = (a, b) => Math.abs(a - b) < 1e-9;
+    ok(M.pasos.length === 44 && cerca(M.duracion, 7), `mapa: ${M.pasos.length} pasos, ${M.duracion} s (quería 44 y 7)`);
+    ok(cerca(M.pasos[32].t, 4) && M.pasos[32].n === 1 && M.pasos[32].k === 0 && M.pasos[32].i === 0 && cerca(M.pasos[33].t - M.pasos[32].t, 0.25), 'mapa: el cambio de tempo y de compás');
+    ok(M.secciones[1].nivel === 'intro' && M.secciones[0].nivel === 'intro' && cerca(M.secciones[1].t0, 4) && M.secciones[1].desde === 32, 'mapa: secciones y nivel');
+    ok(M.pasos[17].k === 1 && M.pasos[17].i === 1, 'mapa: compás y paso dentro de la sección');
+    ok(cerca(MO.mapaTiempo(C, 1.1).duracion, 7 / 1.1), 'mapa: el tempo del dueño escala todo');
+    const Msw = MO.mapaTiempo({ ...C, swing: 0.5 });
+    ok(cerca(Msw.pasos[1].t, 0.125 * 1.5) && cerca(Msw.pasos[2].t, 0.25) && cerca(Msw.duracion, 7), 'mapa: el swing atrasa los impares sin mover el resto');
+    ok(MO.pasoEnTiempo(M, -0.01) === -1 && MO.pasoEnTiempo(M, 0) === 0 && MO.pasoEnTiempo(M, 4.1) === 32 && MO.pasoEnTiempo(M, 99) === 43, 'pasoEnTiempo');
+    ok(JSON.stringify(MO.mapaTiempo(C)) === JSON.stringify(MO.mapaTiempo(clon(C))), 'mapa: puro');
+    // Determinista: dos pasadas con azar distinto suenan igual (prob se ignora; Math.random solo elige el punto del ruido)
+    const tocarTodo = cancion => {
+        const traza = [], c = ctxFalso();
+        const I2 = new Proxy({}, { get: (_, inst) => (...a) => traza.push(JSON.stringify([inst, ...a.slice(2)])) });
+        const mapa = MO.mapaTiempo(cancion);
+        for (let x = 0; x < mapa.pasos.length; x++) MO.tocarPasoCancion(I2, cancion, c, {}, mapa.pasos[x].t, mapa, x, DATOS.instrumentos);
+        return traza.join('\n') + JSON.stringify(c.cuenta);
+    };
+    const conProb = clon(pescador); conProb.capas[3].prob = 0.5;
+    const rnd = Math.random;
+    Math.random = () => 0.99;
+    const a1 = tocarTodo(conProb);
+    Math.random = () => 0.01;
+    const a2 = tocarTodo(conProb);
+    Math.random = rnd;
+    ok(a1 === a2, 'una canción suena distinto según el azar');
+    ok(a1.includes('"kick"'), 'la batería de la canción suena');
+    ok(MO.revisarCancion(conProb).some(e => e.includes('prob')), 'revisarCancion avisa de prob');
+    // Bajo: cada técnica arma nodos válidos (ctxFalso revisa las rampas); el slap = 2 osciladores + chasquido
+    for (const tipo of TECNICAS_BAJO) {
+        const c = ctxFalso();
+        tocarBajo(c, {}, 0.5, tipo, 33, 0.3, tipo === 'd' ? 40 : tipo === 'r' ? [28, 35, 40] : null, 1, VOZ_BAJO);
+        ok(c.cuenta.osc > 0, `técnica ${tipo}: no sonó`);
+        if (tipo === 's') ok(c.cuenta.osc === 2 && c.cuenta.ruido === 1, `slap: ${JSON.stringify(c.cuenta)}`);
+        if (tipo === 'r') ok(c.cuenta.osc === 18, `rasgueo: 3 golpes × 3 cuerdas × 2 osciladores (${c.cuenta.osc})`);
+    }
+    const v = vozDe({ nasal: { frec: 900 }, tecnicas: { p: { brillo: 6000 } } });
+    ok(v.nasal.frec === 900 && v.nasal.q === VOZ_BAJO.nasal.q && v.tecnicas.p.brillo === 6000 && v.tecnicas.p.chasquido.frec === 3800 && v.tecnicas.s.brillo === VOZ_BAJO.tecnicas.s.brillo, 'vozDe mezcla los cambios con la base');
+    ok(vozDe(null) === VOZ_BAJO && vozDe(v) !== VOZ_BAJO, 'vozDe sin cambios = VOZ_BAJO');
+    // El bajo suena en su paso del patrón (2 compases) y vuelve al compás 1 en cada sección
+    {
+        const c = ctxFalso(), m = MO.mapaTiempo(pescador);
+        const oscEn = idx => { const antes = c.cuenta.osc; MO.tocarPasoCancion(I, pescador, c, {}, 1, m, idx, null); return c.cuenta.osc - antes; };
+        const verso = m.secciones[1].desde, coro = m.secciones[2].desde;
+        ok(oscEn(verso + 1) === 2 && oscEn(verso + 5) === 0 && oscEn(verso + 7) === 2, 'bajo del verso: paso 1 suena, 5 no, 7 sí (impares: sin batería)');
+        ok(oscEn(verso + 32 + 10) > 2 && oscEn(coro + 5) === 2, 'bajo: el patrón de 2 compases se repite y el coro usa su capa');
+    }
+    // Con otro instrumento, una capa bajo toca notas simples (el rasgueo, cada nota del acorde)
+    {
+        const traza = [], I2 = new Proxy({}, { get: (_, inst) => (...a) => traza.push([inst, a[3]]) });
+        const C2 = { ...C, capas: [{ ...C.capas[0], inst: 'piano' }] }, m = MO.mapaTiempo(C2);
+        MO.tocarPasoCancion(I2, C2, null, null, 0, m, 8, null);
+        ok(traza.length === 3 && traza.every(x => x[0] === 'piano'), 'capa bajo con piano: rasgueo = 3 notas');
+    }
+    // Revisión
+    const err = cambia => { const x = clon(C); cambia(x); return MO.revisarCancion(x).join(' · '); };
+    ok(MO.revisarCancion(C).length === 0, 'canción de prueba: ' + MO.revisarCancion(C).join(' · '));
+    ok(err(x => { x.capas[0].bajo.push([16, 's', 28, 1]); }).includes('fuera del patrón'), 'revisar: paso fuera del patrón');
+    ok(err(x => { x.capas[0].bajo.push([0, 'd', 28, 1]); }).includes('glissando'), 'revisar: glissando sin nota final');
+    ok(err(x => { x.capas[0].niveles = ['coro']; }).includes('no suena ninguna capa'), 'revisar: sección muda');
+    ok(err(x => { x.estructura = []; }).includes('estructura'), 'revisar: sin estructura');
+    ok(err(x => { x.prog = ['Hm']; }).includes('acorde desconocido'), 'revisar: acorde');
+    ok(err(x => { x.capas[1].niveles = ['intro']; }).includes('en 16 pasos'), 'revisar: un ritmo de 12 en una sección de 16');
+    ok(MO.revisarTema({ bpm: 100, prog: ['C'], capas: [C.capas[0]] }).some(e => e.includes('un solo tipo')), 'la capa bajo es solo de canciones');
+    // Reproductor: programa a su hora, salta lo atrasado y termina
+    {
+        const c = ctxFalso(), R = MO.crearReproductorCancion(), I2 = new Proxy({}, { get: () => () => {} });
+        const m = R.empezar(c, C, { desde: 4 });
+        ok(cerca(R.segundoEn(c.currentTime + 0.1), 4), 'reproductor: empieza en el segundo pedido');
+        let vueltas = 0;
+        while (R.avanzar({ I: I2, ctx: c, salida: {} }) && vueltas++ < 100) c.currentTime += 0.1;
+        ok(vueltas > 20 && vueltas < 40 && m.pasos.length === 44, `reproductor: termina (${vueltas} vueltas)`);
+        ok(R.avanzar({ I: I2, ctx: c, salida: {} }) === false, 'reproductor: después del final no hace nada');
+    }
+    // El juego: borrador no
+    aplicarMusica(DATOS);
+    ok(cancionMusica('pescador') === null, 'una canción borrador no se usa');
+    const sin = clon(DATOS); delete sin.canciones.pescador.borrador; aplicarMusica(sin);
+    ok(cancionMusica('pescador') && cancionMusica('nada') === null, 'cancionMusica');
+    aplicarMusica(null);
+    ok(typeof I.bajoSlap === 'function', 'bajoSlap está en los instrumentos');
 }
 
 if (fallos) { console.error(`\n${fallos} fallos`); process.exit(1); }
