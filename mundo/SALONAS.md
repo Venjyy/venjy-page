@@ -125,6 +125,12 @@ o volver a la generada, para cada dificultad. Se guarda aparte (`ajustes.<cancio
 `compás:paso`) y nunca cambia cuándo suena una nota, solo dónde cae. Si la música cambia y un ajuste queda
 huérfano, la revisión lo avisa.
 
+**Contrato en S2** (lo implementa Codex en S2b): las firmas y las reglas están en `mundo/supervivencia/salonas-partitura.js`
+y la prueba en `mundo/tests/salonas.mjs`. Decisiones de Claude: la frase del contorno es una vuelta de la capa de bajo; los
+tiempos fuertes salen de una rejilla por pasos del compás (16: cada 4; 12, el 6/8: pasos 0 y 6; 14, el 7/8: 0, 4 y 8), y
+Normal toma los pasos pares; el rasgueo es acorde solo en Experto (los demás lo tocan como una nota); el ajuste a mano usa
+la clave `compás:paso` con el compás contado en toda la canción.
+
 ## 5. Sincronía y juicio
 
 - **Reloj**: el de `AudioContext.currentTime`. El audio se programa con anticipación (`crearSecuenciador`). La
