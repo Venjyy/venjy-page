@@ -1467,13 +1467,35 @@ async function arrancar(guardado, cx = null) {
                 personasMundo: k => personasEscena().find(n => n.clave === k) || null,
                 skin: () => crearModeloSkin(cargarSkin()),
                 puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena() && !uiSalonas(),
-                bloquear: () => bloquearEscena(true), liberar: liberarEscena
+                bloquear: () => bloquearEscena(true), liberar: liberarEscena,
+                // Amistad con Salonas (misiones.js → AMIGOS_MINIJUEGO.salonas)
+                alTerminar: final => { misiones.estado.minijuegos.add('salonas'); if (misiones.alMinijuego) misiones.alMinijuego('salonas', final); }
             });
             return salonas.listo.then(() => salonas);
         }).catch(err => { cargandoSalonas = null; console.error('No se pudo cargar el juego de Salonas', err); return null; });
         return cargandoSalonas;
     }
     const uiSalonas = () => !!(salonas && salonas.activa);
+    // Salonas en la aldea (salonas-aldea.js): de noche toca las canciones de «La Gira» junto al escenario en vez de los riffs.
+    // Se carga con import() la primera vez que es de noche; devuelve true si el bajo de los riffs debe callarse.
+    let aldeaSalonas = null, cargandoAldea = false;
+    function actualizarAldeaSalonas() {
+        if (!aldeaSalonas) {
+            if (!cargandoAldea && dia.esNoche && npcs.salonas) {
+                cargandoAldea = true;
+                Promise.all([import('./salonas-aldea.js'), cargarDatos('salonas')]).then(([m, json]) => {
+                    aldeaSalonas = m.crearAldeaSalonas({
+                        datos: () => window.__venjy?.datosSalonas || json,
+                        posicion: () => npcs.salonas, jugador: () => jugador.pos,
+                        esNoche: () => dia.esNoche,
+                        ocupado: () => uiSalonas() || vida.muerto
+                    });
+                }).catch(err => { console.error('No se pudo cargar Salonas en la aldea', err); });
+            }
+            return false;
+        }
+        return aldeaSalonas.actualizar();
+    }
     // Arena del duelo (bloque 8 · L1, arena/arena.js y su escena propia del lago congelado): se carga al abrirla desde
     // Hablar con Lalo o Moisés; mientras peleas, su escena se dibuja en lugar del mundo (como la carrera)
     let arena = null, cargandoArena = null;
@@ -2252,7 +2274,7 @@ async function arrancar(guardado, cx = null) {
         cielo.actualizar(camara, corre ? dt : 0);
         const dtC = corre ? dt : 0;
         gatas.actualizar(dtC);
-        npcs.actualizar(dtC, uiSalonas()); // (tocando con Salonas, el bajo del escenario se calla)
+        npcs.actualizar(dtC, uiSalonas(), actualizarAldeaSalonas()); // (tocando con Salonas, el bajo del escenario se calla; de noche suenan sus canciones)
         animales.actualizar(dtC, false);
         rutinas.actualizar(dtC);
         paseos.actualizar(dtC);

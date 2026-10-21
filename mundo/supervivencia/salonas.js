@@ -666,6 +666,8 @@ export function crearSalonas(ctx) {
         const p = c.pts, notas = c.part.notas.length, aciertos = p.conteo.perfecto + p.conteo.bien + p.conteo.ok;
         const nEstrellas = abucheo ? 0 : P.estrellas(p.puntos, c.maximo, c.R);
         const rec = abucheo || c.practica ? null : Z.guardarRecord(almacen(), c.clave, c.dif, { puntos: p.puntos, estrellas: nEstrellas });
+        // Amistad con Salonas (misiones.alMinijuego): tocar una canción entera suma; con las estrellas de `amistad.estrellas`, también «gana»
+        if (!abucheo && !c.practica && ctx.alTerminar) ctx.alTerminar(nEstrellas >= c.A.amistad.estrellas ? 'gana' : 'pierde');
         finalEl.textContent = '';
         let titulo = tx(TXT_SALONAS.resultados);
         if (abucheo) titulo = tx(TXT_SALONAS.resAbucheo);

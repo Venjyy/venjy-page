@@ -26,7 +26,7 @@
       "cielo": "#120c18",
       "niebla": [18, 40]
     },
-    "audio": { "retraso": 0.6, "adelanto": 0.2, "volBanda": 1, "volBajo": 1.15 },
+    "audio": { "retraso": 0.6, "adelanto": 0.2, "volBanda": 1.8, "volBajo": 2.1 },
     "fallo": {
       "volBajo": 0.12,
       "seg": 0.45,
@@ -118,6 +118,16 @@
       "falloSeg": 0.45
     },
     "publico": { "reposo": 0.2, "aplaude": 0.35, "salta": 0.7, "abuchea": -0.25, "celebrarSeg": 2.5 },
+    "amistad": { "estrellas": 2 },
+    "aldea": {
+      "activa": true,
+      "soloNoche": true,
+      "canciones": ["sala-ska", "sala-garage", "bar-cumbia", "bar-funk", "festival-metal", "festival-jefe"],
+      "vol": 1.6,
+      "distancia": 34,
+      "pausaSeg": 12,
+      "tempo": 1
+    },
     "camaraSolo": {
       "secciones": ["solo", "puente"],
       "pos": [-1.1, -0.4, -1.4],
