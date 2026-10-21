@@ -49,7 +49,11 @@ const GRUPOS = [
     ['vs', 'Pantalla VS', 'VS screen', {
         diagonal: ['grados de la línea que parte la pantalla', 'degrees of the split line', 0, 40, 1]
     }],
-    ['practica', 'Práctica (rival de prueba)', 'Practice (test rival)', {
+    ['cpu', 'CPU peleador', 'CPU fighter', {
+        repetirMax: ['veces seguidas que puede repetir un ataque', 'times in a row it may repeat an attack', 1, 10, 1],
+        castigo: ['cuadros tras su cadena en que no se defiende', 'frames after its chain without defending', 0, 180, 1]
+    }],
+    ['practica', 'Práctica (patrón fijo; solo las pruebas)', 'Practice (fixed pattern; tests only)', {
         alcance: ['alcance del ataque', 'attack reach', 0.5, 5, 0.1],
         acercarse: ['fracción de la velocidad con que camina hacia ti', 'fraction of speed walking toward you', 0, 1, 0.05],
         desviaCada: ['desvía uno de cada N ataques tuyos (0 = nunca)', 'deflects one of every N of your attacks (0 = never)', 0, 20, 1],
@@ -64,6 +68,17 @@ const GRUPOS = [
         anchoPostura: ['ancho de la barra de postura (% de pantalla)', 'posture bar width (% of screen)', 5, 48, 1]
     }]
 ];
+// Una dificultad de la CPU (arena.json → cpu.dificultades.<clave>)
+const CPU_DIF = {
+    anticipacion: ['× la anticipación de sus ataques', '× wind-up of its attacks', 1, 3, 0.05],
+    retraso: ['cuadros de atraso con que te ve', 'frames late it sees you', 0, 60, 1],
+    desvio: ['probabilidad de desviar tu ataque', 'chance to deflect your attack', 0, 1, 0.05],
+    perfecto: ['de esos, probabilidad de perfecto', 'of those, chance of perfect', 0, 1, 0.05],
+    bloqueo: ['probabilidad de bloquear', 'chance to block', 0, 1, 0.05],
+    esquiva: ['probabilidad de esquivar', 'chance to dodge', 0, 1, 0.05],
+    peligros: ['probabilidad de leer tus peligrosos', 'chance to read your perilous attacks', 0, 1, 0.05],
+    agresion: ['agresión (más = espera menos)', 'aggression (more = waits less)', 0.1, 3, 0.05]
+};
 // Efectos de los golpes (L2, arena/efectos.js): [grupo, campo, es, en, min, max, paso]
 const EFECTOS_NUM = [
     ['chispas', 'vida', 'chispas: segundos que duran', 'sparks: seconds they last', 0.05, 3, 0.05],
@@ -316,6 +331,19 @@ export async function montarArena(ctx) {
                 sec.appendChild(campo(t('retrato', 'portrait'), sel));
             }
             if (g === 'camara') for (const [k, def] of Object.entries(CAMARA_REMATE)) sec.appendChild(num(['camara', 'remate', k], def));
+            if (g === 'cpu') {
+                // L4 (combate/ia.js): anticipación mínima y una ficha por dificultad. La tabla de cada estilo
+                // (estilo-*.json → cpu) llega con la pestaña Combate (N6).
+                sec.appendChild(num(['cpu', 'minimo', 'normal'], ['anticipación mínima de un ataque (c)', 'minimum attack wind-up (f)', 0, 60, 1]));
+                sec.appendChild(num(['cpu', 'minimo', 'peligroso'], ['anticipación mínima de un peligroso (c)', 'minimum perilous wind-up (f)', 0, 90, 1]));
+                for (const [d, es2, en2] of [['facil', 'Fácil', 'Easy'], ['normal', 'Normal', 'Normal'], ['dificil', 'Difícil', 'Hard'], ['maestro', 'Maestro', 'Master']]) {
+                    const f = document.createElement('div'); f.className = 'panel';
+                    const h = document.createElement('strong'); h.textContent = t(es2, en2); f.appendChild(h);
+                    const D = ['cpu', 'dificultades', d];
+                    for (const [k, def] of Object.entries(CPU_DIF)) f.appendChild(num([...D, k], def));
+                    sec.appendChild(f);
+                }
+            }
             if (g === 'practica') {
                 lugarDelRango(sec);
                 // Peligrosos que intercala (L3): claves de ataques de su estilo, separadas por coma

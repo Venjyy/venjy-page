@@ -75,7 +75,7 @@
     "gestos": ["saluda", "risa"]
   },
   "marcas": { "separacion": 3.2, "x": 0, "z": 0 },
-  "movimiento": { "radio": 0.35, "distanciaMin": 0.7, "duro": 0.45, "empuje": 0.35, "reorientar": 6, "giroEje": 75 },
+  "movimiento": { "radio": 0.35, "distanciaMin": 1.1, "duro": 0.8, "empuje": 0.35, "reorientar": 6, "giroEje": 75 },
   "camara": {
     "fov": 50,
     "altura": 1.45,
@@ -153,6 +153,54 @@
       "dificil": { "objeto": "DIAMANTE", "cantidad": 2 },
       "maestro": { "objeto": "DIAMANTE", "cantidad": 5 }
     }
+  },
+  "cpu": {
+    "nota": "CPU peleador (L4, combate/ia.js; §15.7). Por dificultad: anticipacion (× la de sus ataques), retraso (cuadros con que ve tu estado), desvio/perfecto/bloqueo/esquiva (probabilidades contra tus ataques), peligros (prob. de leer tus peligrosos) y agresion. minimo: anticipación mínima (c). repetirMax: veces seguidas el mismo ataque. castigo: c tras su cadena sin defenderse.",
+    "dificultades": {
+      "facil": {
+        "anticipacion": 1.5,
+        "retraso": 22,
+        "desvio": 0.15,
+        "perfecto": 0.1,
+        "bloqueo": 0.25,
+        "esquiva": 0.1,
+        "peligros": 0.25,
+        "agresion": 0.6
+      },
+      "normal": {
+        "anticipacion": 1.15,
+        "retraso": 16,
+        "desvio": 0.35,
+        "perfecto": 0.25,
+        "bloqueo": 0.3,
+        "esquiva": 0.15,
+        "peligros": 0.5,
+        "agresion": 0.8
+      },
+      "dificil": {
+        "anticipacion": 1,
+        "retraso": 11,
+        "desvio": 0.6,
+        "perfecto": 0.4,
+        "bloqueo": 0.25,
+        "esquiva": 0.2,
+        "peligros": 0.75,
+        "agresion": 1
+      },
+      "maestro": {
+        "anticipacion": 1,
+        "retraso": 8,
+        "desvio": 0.8,
+        "perfecto": 0.6,
+        "bloqueo": 0.15,
+        "esquiva": 0.2,
+        "peligros": 0.9,
+        "agresion": 1.15
+      }
+    },
+    "minimo": { "normal": 8, "peligroso": 14 },
+    "repetirMax": 3,
+    "castigo": 24
   },
   "dificultades": ["facil", "normal", "dificil", "maestro"],
   "efectos": {

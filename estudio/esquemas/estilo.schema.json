@@ -187,6 +187,24 @@
       },
       "additionalProperties": false
     },
+    "cpu": {
+      "description": "Tabla de la CPU para este estilo (L4, combate/ia.js → CPU_BASE.estilo; §19.6). cadena: tajos por cadena [mín, máx]; retrasado: prob. y cuadros extra de anticipación; fuerte: prob. y cuadros de carga; patada: prob. contra tu bloqueo; arte: prob. con espíritu; peligro: cada [s], con menos de pocaVida × factor, y lista (vacía = todos los ataques con peligro); respiro: cuadros, prob. de alejarse y de provocar, y distancia «lejos»; distancia: cerca (retrocede), margen (× alcance del ataque), velocidades; esperaInicial: cuadros; provocar: acción de provocación (null = solo el evento).",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "cadena": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 },
+        "retrasado": { "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 }, "cuadros": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 } }, "additionalProperties": false },
+        "fuerte": { "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 }, "carga": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 } }, "additionalProperties": false },
+        "patada": { "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "arte": { "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "peligro": { "type": "object", "properties": { "cada": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 }, "pocaVida": { "type": "number", "minimum": 0, "maximum": 1 }, "factor": { "type": "number", "minimum": 0.1, "maximum": 2 }, "lista": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false },
+        "respiro": { "type": "object", "properties": { "cuadros": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 }, "alejarse": { "type": "number", "minimum": 0, "maximum": 1 }, "provocar": { "type": "number", "minimum": 0, "maximum": 1 }, "lejos": { "type": "number", "minimum": 0, "maximum": 20 } }, "additionalProperties": false },
+        "distancia": { "type": "object", "properties": { "cerca": { "type": "number", "minimum": 0, "maximum": 5 }, "margen": { "type": "number", "minimum": 0.3, "maximum": 1 }, "acercarse": { "type": "number", "minimum": 0, "maximum": 1 }, "alejarse": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "esperaInicial": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 },
+        "provocar": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
     "ataques": {
       "type": "object",
       "propertyNames": { "$ref": "combate.schema.json#/$defs/clave" },

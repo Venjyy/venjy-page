@@ -10,7 +10,7 @@
 // Controles (combate/intenciones.js, perfiles en combate.json → teclas): teclado y mouse, mando (Gamepad API) y en
 // el celular los botones de la arena (combate/tactil-arena.js, ui-layout.json → arena). Mientras peleas, la capa
 // táctil de la supervivencia y el HUD del mundo se ocultan (body.en-arena) y la música del mundo calla.
-// El rival de L1 es de práctica (modelo.intencionPractica); la CPU de verdad llega en L4 y los estilos en L2 y L5.
+// El rival es la CPU (modelo.intencionCPU → combate/ia.js, L4) con la dificultad del menú.
 // Valores: mundo/datos/arena.json (Estudio → Arena, en vivo con aplicarDatos).
 // Peso de los golpes (N5): hitstop con temblor, trauma de la cámara y cámara lenta (combate/peso.js con combate.json →
 // peso e impacto), impacto, polvo, aro, estrellas y marca roja (arena/efectos.js), líneas de velocidad, flash, viñeta
@@ -463,7 +463,7 @@ export function crearArena(ctx) {
             const alfa = c.reloj.avanzar(dtE, () => {
                 if (g) intenciones.leerMando(g);
                 const it0 = c.fase === 'pelea' ? intenciones.leer(performance.now()) : {};
-                const it1 = M.intencionPractica(P, 1);
+                const it1 = M.intencionCPU(P, 1);
                 P.f.forEach(F => { F.xa = F.x; F.za = F.z; F.yawa = F.yaw; });
                 P.aspecto = aspecto();
                 M.pasoPelea(P, [it0, it1]);

@@ -81,6 +81,35 @@
       "desvio": 0.34
     }
   },
+  "cpu": {
+    "nota": "Lalo como CPU (L4, §19.6): cadenas de 2 a 4 tajos, a veces un tajo retrasado (anticipación + 8 a 16 c) para castigar al que desvía por ritmo; un peligroso cada 6 a 12 s (más seguido con poca vida); respira y provoca cuando te alejas.",
+    "cadena": [2, 4],
+    "retrasado": {
+      "prob": 0.25,
+      "cuadros": [8, 16]
+    },
+    "fuerte": {
+      "prob": 0.15,
+      "carga": [8, 30]
+    },
+    "patada": { "prob": 0.5 },
+    "arte": { "prob": 0.3 },
+    "peligro": {
+      "cada": [6, 12],
+      "pocaVida": 0.4,
+      "factor": 0.6,
+      "lista": ["estocada", "barrido", "agarre"]
+    },
+    "respiro": {
+      "cuadros": [36, 90],
+      "alejarse": 0.45,
+      "provocar": 0.35,
+      "lejos": 4
+    },
+    "distancia": { "cerca": 1.2, "margen": 0.85, "acercarse": 0.8, "alejarse": 0.7 },
+    "esperaInicial": [20, 50],
+    "provocar": null
+  },
   "ataques": {
     "tajo1": {
       "nombre": { "es": "Tajo diagonal", "en": "Diagonal slash" },
