@@ -5,16 +5,18 @@
 // (la partitura se regenera sola desde el bajo). Los cambios pasan por ritmo.js (editarCancion): deshacer, envío en vivo
 // y Guardar son los de musica.json. Modelo puro en ritmo-modelo.mjs.
 // =========================================================
-import { DIFICULTADES, capasBajo, largoPatron, extraPorDefecto, ponerNotaBajo, quitarNotaBajo, cambiarNotaBajo, cambiarCompasesBajo, notaEnPaso, carrilesEnPatron, acordeATexto, textoAAcorde, nombreNota, TECNICAS, NOMBRE_TECNICA, NOTA_MIN, NOTA_MAX, nivelDe } from './ritmo-modelo.mjs';
+import { DIFICULTADES, capasBajo, largoPatron, extraPorDefecto, ponerNotaBajo, quitarNotaBajo, cambiarNotaBajo, cambiarCompasesBajo, notaEnPaso, carrilesEnPatron, acordeATexto, textoAAcorde, nombreNota, TECNICAS, NOMBRE_TECNICA, NOTA_MIN, NOTA_MAX, nivelDe, CAMPOS_VOZ, CAMPOS_PICO, PICOS_VOZ, CAMPOS_TECNICA, CAMPOS_CHASQUIDO, valorVoz, ponerVoz, hayVoz } from './ritmo-modelo.mjs';
+import { VOZ_BAJO } from '../mundo/supervivencia/musica-bajo.js';
 
 const ANCHO_COL = 26, ALTO_FILA = 14, ANCHO_ROT = 44, ALTO_CARRIL = 8, MARGEN_V = 4;
 const COLOR_TEC = { s: '#ff9a2e', p: '#59d8ff', g: '#8a8a8a', t: '#55c34a', d: '#c46ae8', a: '#f0d23c', r: '#d8373a' };
 const NOMBRE_DIF = { facil: ['Fácil', 'Easy'], normal: ['Normal', 'Normal'], dificil: ['Difícil', 'Hard'], experto: ['Experto', 'Expert'] };
 
-// api: { el, t, ingles(), rotular, cuerpo, cancion() -> { clave, datos }|null, seccion() -> índice, editar(f, valido), armar(dificultad) -> vista, colores() }
+// api: { el, t, ingles(), rotular, cuerpo, cancion() -> { clave, datos }|null, seccion() -> índice, editar(f, valido), armar(dificultad) -> vista, colores(), escuchar: { tocar(fuente), parar(), sonando(), refrescar() } }
 export function montarBajo(api) {
     const { el, t, cuerpo } = api;
-    let capaI = null, selPaso = null, base = null;
+    let capaI = null, selPaso = null, base = null, tecVoz = 's';
+    let modoEsc = 'bajo'; // qué suena al escuchar: 'bajo' (solo las capas de bajo) | 'banda' (toda la sección)
     const herr = { tipo: 's', dur: 1 };
 
     function contexto() {
@@ -74,13 +76,31 @@ export function montarBajo(api) {
         const mover = d => { const r = rango(x.capa); base = Math.max(NOTA_MIN, Math.min(NOTA_MAX - r.filas + 1, r.lo + d)); pintarRejilla(); };
         bBaja.addEventListener('click', () => mover(-6)); bSube.addEventListener('click', () => mover(6));
         barra.appendChild(bBaja); barra.appendChild(bSube);
+        // escuchar la sección elegida en bucle (con el secuenciador de Música)
+        const fila2 = el('div', 'ri-fila-bajo'); cuerpo.appendChild(fila2);
+        const lm = el('label'); lm.appendChild(el('span', '', t('escuchar', 'listen')));
+        const sm = el('select');
+        for (const [k, es, en] of [['bajo', 'solo el bajo', 'bass only'], ['banda', 'toda la sección', 'whole section']]) { const o = el('option', '', t(es, en)); o.value = k; sm.appendChild(o); }
+        sm.value = modoEsc; sm.addEventListener('change', () => { modoEsc = sm.value; if (api.escuchar.sonando()) escuchar(); }); lm.appendChild(sm); fila2.appendChild(lm);
+        const sonando = api.escuchar.sonando();
+        const bEsc = el('button', 'boton chico' + (sonando ? ' activo' : ''), sonando ? t('Parar', 'Stop') : t('Escuchar en bucle', 'Listen in a loop')); bEsc.type = 'button';
+        bEsc.addEventListener('click', () => { if (api.escuchar.sonando()) { api.escuchar.parar(); pintar(); } else escuchar(); });
+        fila2.appendChild(bEsc);
         cuerpo.appendChild(el('p', 'mensaje ri-ayuda', t('Clic en una casilla vacía = nota nueva con la técnica de arriba; clic en una nota = elegirla; clic en otra altura del mismo paso = moverla. Con la rejilla enfocada: ↑ ↓ cambian la altura, ← → la duración, Supr la quita.', 'Click an empty cell = new note with the technique above; click a note = select it; click another pitch on the same step = move it. With the grid focused: ↑ ↓ change pitch, ← → length, Del removes it.')));
         const caja = el('div', 'ri-caja'); const cv = el('canvas', 'ri-lienzo'); cv.tabIndex = 0; caja.appendChild(cv); cuerpo.appendChild(caja);
         cuerpo.appendChild(el('div', 'ri-nota-bajo')).id = 'ri-nota-bajo';
         cv.addEventListener('click', e => alClic(e, cv));
         cv.addEventListener('keydown', alTecla);
         pintarRejilla(cv); pintarInspector();
+        pintarVoz(x);
         if (enfocado) cv.focus();
+        api.escuchar.refrescar(); // si suena, vuelve a armar la sección con lo editado
+    }
+
+    function escuchar() {
+        const ok = api.escuchar.tocar(() => { const x = contexto(); return x ? { c: x.c, n: x.n, soloBajo: modoEsc === 'bajo' } : null; });
+        if (!ok) api.rotular('No hay sección que escuchar.', 'There is no section to listen to.', 'error');
+        pintar();
     }
 
     function pintarRejilla(cvDado) {
@@ -192,6 +212,44 @@ export function montarBajo(api) {
         if (n[1] === 'r') fila.appendChild(campo(t('acorde (notas MIDI)', 'chord (MIDI notes)'), 'text', acordeATexto(n[4]), v => { const a = textoAAcorde(v); if (a) cambiar(n[0], 'extra', a); else { api.rotular('Acorde no válido: de 1 a 6 notas MIDI separadas por espacios.', 'Invalid chord: 1 to 6 MIDI notes separated by spaces.', 'error'); pintarInspector(); } }));
         const q = el('button', 'boton chico secundario', t('Quitar nota', 'Remove note')); q.type = 'button'; q.addEventListener('click', () => quitar(n[0])); fila.appendChild(q);
         dest.appendChild(fila);
+    }
+
+    // Voz del bajo: `vozBajo` de la canción. Solo se guardan los valores que el dueño mueve; el resto es VOZ_BAJO.
+    function pintarVoz(x) {
+        const caja = el('div', 'ri-voz'); cuerpo.appendChild(caja);
+        caja.appendChild(el('h3', '', t('Voz del bajo (toda la canción)', 'Bass voice (whole song)')));
+        caja.appendChild(el('p', 'mensaje ri-ayuda', t('Suelta el control para aplicar el cambio (se puede deshacer). En verde, lo que esta canción cambió; el resto usa el valor base.', 'Release the control to apply the change (undoable). Green = changed by this song; the rest uses the base value.')));
+        const cambiado = ruta => { let o = x.c.vozBajo; for (const k of ruta) { if (o == null || typeof o !== 'object' || !(k in o)) return false; o = o[k]; } return true; };
+        const control = (ruta, [, min, max, paso, es, en], dest) => {
+            const v = valorVoz(x.c, ruta); if (typeof v !== 'number') return;
+            const lb = el('label', cambiado(ruta) ? 'ri-voz-cambio' : ''); lb.appendChild(el('span', '', t(es, en)));
+            const r = el('input'); r.type = 'range'; r.min = min; r.max = max; r.step = paso; r.value = v;
+            const n = el('output', '', String(+v.toFixed(4)));
+            r.addEventListener('input', () => { n.textContent = String(+Number(r.value).toFixed(4)); });
+            r.addEventListener('change', () => {
+                const val = Number(r.value);
+                if (!ponerVoz({}, ruta, val)) { api.rotular('Ese valor no es válido.', 'That value is not valid.', 'error'); pintar(); return; }
+                api.editar(c => { ponerVoz(c, ruta, val); });
+            });
+            lb.appendChild(r); lb.appendChild(n); dest.appendChild(lb);
+        };
+        const gen = el('div', 'ri-voz-grupo'); caja.appendChild(gen);
+        for (const f of CAMPOS_VOZ) control([f[0]], f, gen);
+        for (const [pico, es, en] of PICOS_VOZ) {
+            const g = el('div', 'ri-voz-grupo'); g.appendChild(el('strong', '', t(es, en))); caja.appendChild(g);
+            for (const f of CAMPOS_PICO) control([pico, f[0]], f, g);
+        }
+        const lt = el('label'); lt.appendChild(el('span', '', t('técnica', 'technique')));
+        const st = el('select'); for (const k of TECNICAS) { const o = el('option', '', `${k} · ${NOMBRE_TECNICA[k][api.ingles() ? 1 : 0]}`); o.value = k; st.appendChild(o); }
+        st.value = tecVoz; st.addEventListener('change', () => { tecVoz = st.value; pintar(); }); lt.appendChild(st);
+        const gt = el('div', 'ri-voz-grupo'); gt.appendChild(lt); caja.appendChild(gt);
+        const baseT = VOZ_BAJO.tecnicas[tecVoz] || {};
+        for (const f of CAMPOS_TECNICA) if (f[0] in baseT) control(['tecnicas', tecVoz, f[0]], f, gt);
+        if (baseT.chasquido) for (const f of CAMPOS_CHASQUIDO) control(['tecnicas', tecVoz, 'chasquido', f[0]], [f[0], f[1], f[2], f[3], 'chasquido · ' + f[4], 'click · ' + f[5]], gt);
+        if (hayVoz(x.c)) {
+            const q = el('button', 'boton chico secundario', t('Volver a los valores base', 'Back to base values')); q.type = 'button';
+            q.addEventListener('click', () => api.editar(c => { delete c.vozBajo; })); caja.appendChild(q);
+        }
     }
 
     return { pintar };

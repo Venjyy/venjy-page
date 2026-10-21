@@ -7,6 +7,7 @@
 // =========================================================
 import { partitura, revisarPartitura, reglasDe, DIFICULTADES } from '../mundo/supervivencia/salonas-partitura.js';
 import { acordeDe } from '../mundo/supervivencia/musica-motor.js';
+import { vozDe, TECNICAS_BAJO } from '../mundo/supervivencia/musica-bajo.js';
 
 export { DIFICULTADES };
 
@@ -220,3 +221,58 @@ export function carrilesEnPatron(vista, c, n, compasesPatron) {
     }
     return sal;
 }
+
+// ---------- Voz del bajo (`vozBajo` de la canción, S10c-2 parte 2) ----------
+// Los valores base son VOZ_BAJO (musica-bajo.js); la canción solo guarda lo que el dueño cambió.
+// Campos: [clave, mínimo, máximo, paso, rótulo es, rótulo en] (rangos del esquema musica.schema.json).
+export const CAMPOS_VOZ = [
+    ['vol', 0, 2, 0.01, 'volumen del bajo', 'bass volume'],
+    ['saturacion', 0.1, 10, 0.1, 'saturación', 'saturation']
+];
+export const CAMPOS_PICO = [
+    ['frec', 20, 20000, 10, 'frecuencia (Hz)', 'frequency (Hz)'],
+    ['q', 0, 30, 0.1, 'Q', 'Q'],
+    ['ganancia', -24, 24, 0.5, 'ganancia (dB)', 'gain (dB)']
+];
+export const PICOS_VOZ = [['nasal', 'Nasal', 'Nasal'], ['metal', 'Metal', 'Metal']];
+export const CAMPOS_TECNICA = [
+    ['brillo', 50, 20000, 10, 'brillo (Hz)', 'brightness (Hz)'],
+    ['q', 0, 30, 0.1, 'Q', 'Q'],
+    ['ataque', 0.001, 0.5, 0.001, 'ataque (s)', 'attack (s)'],
+    ['vol', 0, 2, 0.01, 'volumen', 'volume'],
+    ['cola', 0, 4, 0.01, 'cola (s)', 'tail (s)'],
+    ['largo', 0.005, 2, 0.005, 'largo fijo (s)', 'fixed length (s)'],
+    ['golpes', 1, 6, 1, 'golpes', 'strokes'],
+    ['separacion', 0, 0.5, 0.005, 'separación (s)', 'spacing (s)'],
+    ['rasgueo', 0, 0.1, 0.001, 'rasgueo (s)', 'strum (s)']
+];
+export const CAMPOS_CHASQUIDO = [
+    ['frec', 20, 20000, 10, 'frecuencia (Hz)', 'frequency (Hz)'],
+    ['vol', 0, 2, 0.01, 'volumen', 'volume'],
+    ['largo', 0.002, 0.5, 0.002, 'largo (s)', 'length (s)']
+];
+// Ruta de un valor: ['vol'] | ['nasal','frec'] | ['tecnicas','s','brillo'] | ['tecnicas','s','chasquido','vol']
+const rangoDe = ruta => {
+    const u = ruta[ruta.length - 1];
+    const tabla = ruta[0] === 'tecnicas' ? (ruta[2] === 'chasquido' ? CAMPOS_CHASQUIDO : CAMPOS_TECNICA) : (ruta.length === 2 ? CAMPOS_PICO : CAMPOS_VOZ);
+    return tabla.find(f => f[0] === u) || null;
+};
+// Valor que suena: el de la canción si lo cambió, si no el base
+export function valorVoz(c, ruta) {
+    const efectiva = vozDe(c && c.vozBajo ? clonar(c.vozBajo) : null); // copia: vozDe guarda su resultado por objeto
+    let v = efectiva;
+    for (const k of ruta) v = v == null ? undefined : v[k];
+    return v;
+}
+// Pone un valor en c.vozBajo (crea lo que falte, solo esa clave). Devuelve false si la ruta o el número no valen.
+export function ponerVoz(c, ruta, valor) {
+    const r = rangoDe(ruta);
+    if (!r || typeof valor !== 'number' || !isFinite(valor) || valor < r[1] || valor > r[2]) return false;
+    if (ruta[0] === 'tecnicas' && !TECNICAS_BAJO.includes(ruta[1])) return false;
+    let o = c.vozBajo = c.vozBajo || {};
+    for (const k of ruta.slice(0, -1)) o = o[k] = o[k] || {};
+    o[ruta[ruta.length - 1]] = valor;
+    return true;
+}
+// ¿Hay algún ajuste de voz en la canción?
+export const hayVoz = c => !!(c && c.vozBajo && Object.keys(c.vozBajo).length);

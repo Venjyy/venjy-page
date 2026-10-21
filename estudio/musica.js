@@ -8,7 +8,7 @@
 // Lo puro está en musica-modelo.mjs. Guardar escribe con If-Match, como Inicio.
 // =========================================================
 import { I } from '../mundo/supervivencia/musica-instrumentos.js';
-import { crearSecuenciador, tocarSinte, revisarTema, revisarCancion, acordeDe, acordeEn, INSTRUMENTOS, BATERIA, TIPOS_CAPA, ONDAS, FILTROS, USOS } from '../mundo/supervivencia/musica-motor.js';
+import { crearSecuenciador, crearReproductorCancion, tocarSinte, revisarTema, revisarCancion, acordeDe, acordeEn, INSTRUMENTOS, BATERIA, TIPOS_CAPA, ONDAS, FILTROS, USOS } from '../mundo/supervivencia/musica-motor.js';
 import * as MM from './musica-modelo.mjs';
 
 const { clonar } = MM;
@@ -133,6 +133,44 @@ export async function montarMusica(ctx) {
             else if (inst === 'colchon' || inst === 'rhodes') I[inst](c, A.suelta, t0, [m], dur, 0.6);
             else I[inst](c, A.suelta, t0, m, dur, 0.6);
         } catch (e) { /* nota perdida */ }
+    }
+
+    // ---------- Escuchar una sección de una canción (pestaña Ritmo, S10c-2) ----------
+    // Toca en bucle la sección elegida, con toda la banda o solo las capas de bajo de su nivel. `fuente()` da { c, n, soloBajo }
+    // con los datos vivos; `refrescar()` vuelve a armarla tras una edición sin cortar el sonido.
+    const rep = crearReproductorCancion();
+    let escucha = null;
+    function derivar() {
+        const f = escucha.fuente(), est = f && f.c.estructura && f.c.estructura[f.n]; if (!est) return null;
+        const nivel = est.nivel || est.seccion;
+        const capas = f.soloBajo ? f.c.capas.filter(p => p.bajo && (!p.niveles || p.niveles.includes(nivel))) : f.c.capas;
+        return { ...clonar(f.c), estructura: [clonar(est)], capas: clonar(capas), swing: f.c.swing || 0 };
+    }
+    function pasoEscucha() {
+        if (!escucha || !escucha.der) return;
+        const A = audio, c = escucha.der;
+        A.salida.gain.setTargetAtTime(c.vol === undefined ? 0.1 : c.vol, A.ctx.currentTime, 0.05);
+        const sigue = rep.avanzar({ I, ctx: A.ctx, salida: A.salida, propios: datos.instrumentos });
+        if (!sigue && A.ctx.currentTime >= rep.inicio + rep.mapa.duracion) rep.empezar(A.ctx, c, { tempo: tempo() }); // bucle
+    }
+    function escucharSeccion(fuente) {
+        pararEscucha(); if (sonandoAqui()) parar();
+        escucha = { fuente, der: null, reloj: null };
+        escucha.der = derivar(); if (!escucha.der) { escucha = null; return false; }
+        const A = asegurarAudio(); rep.empezar(A.ctx, escucha.der, { tempo: tempo() });
+        escucha.reloj = setInterval(pasoEscucha, 25); pasoEscucha();
+        return true;
+    }
+    function refrescarEscucha() {
+        if (!escucha) return;
+        const der = derivar(); if (!der) { pararEscucha(); return; }
+        const A = asegurarAudio(), desde = Math.max(0, (rep.segundoEn(A.ctx.currentTime) || 0) % Math.max(0.1, rep.mapa ? rep.mapa.duracion : 1));
+        escucha.der = der; rep.empezar(A.ctx, der, { tempo: tempo(), desde, retraso: 0.05 });
+    }
+    function pararEscucha() {
+        if (!escucha) return;
+        clearInterval(escucha.reloj); escucha = null; rep.parar();
+        if (audio) audio.salida.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.03);
     }
 
     // ---------- En el juego ----------
@@ -619,12 +657,13 @@ export async function montarMusica(ctx) {
         else if (e.key === ' ' && !enCampo) { e.preventDefault(); $('mu-tocar').click(); }
     });
     window.addEventListener('resize', () => { if (ctx.pestana === 'musica') for (const L of lienzos) dibujarRejilla(L, null); });
-    ctx.alPestana.push(p => { if (p === 'musica') pintar(); else if (sonandoAqui()) parar(); });
+    ctx.alPestana.push(p => { if (p === 'musica') pintar(); else if (sonandoAqui()) parar(); if (p !== 'ritmo') pararEscucha(); });
     ctx.alIdioma.push(() => { pintar(); pintarTeclado(); pintarBotonJuego(); $('mu-tocar').textContent = sonandoAqui() ? t('Parar', 'Stop') : t('Reproducir', 'Play'); });
     // La pestaña Ritmo (S10c) edita `canciones` dentro de este mismo JSON: comparte datos, deshacer, envío en vivo y Guardar.
     ctx.musica = {
         datos: () => datos, sucio, guardar, alRehacer, mensaje: () => msg.textContent, puedeDeshacer: () => deshacer.length > 0,
         editar(f) { deshacer.push(JSON.stringify(datos)); if (deshacer.length > 80) deshacer.shift(); f(datos); ctx.puente.enviarDatos('musica', datos); cambio({ pintarTodo: ctx.pestana === 'musica' }); },
+        escuchar: { tocar: escucharSeccion, refrescar: refrescarEscucha, parar: pararEscucha, sonando: () => !!escucha },
         deshacer() { $('mu-deshacer').click(); },
         descartar() { $('mu-descartar').click(); }
     };
