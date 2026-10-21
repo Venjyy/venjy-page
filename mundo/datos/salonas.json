@@ -118,6 +118,16 @@
       "falloSeg": 0.45
     },
     "publico": { "reposo": 0.2, "aplaude": 0.35, "salta": 0.7, "abuchea": -0.25, "celebrarSeg": 2.5 },
+    "amistad": { "estrellas": 2 },
+    "aldea": {
+      "activa": true,
+      "soloNoche": true,
+      "canciones": ["sala-ska", "sala-garage", "bar-cumbia", "bar-funk", "festival-metal", "festival-jefe"],
+      "vol": 0.5,
+      "distancia": 34,
+      "pausaSeg": 12,
+      "tempo": 1
+    },
     "camaraSolo": {
       "secciones": ["solo", "puente"],
       "pos": [-1.1, -0.4, -1.4],

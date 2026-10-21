@@ -65,6 +65,10 @@ export const AJUSTES_SALONAS = {
     },
     // Ánimo del público (−1 abuchea … 1 salta): sigue a la energía (energia); en el menú y los resultados vuelve a reposo
     publico: { reposo: 0.2, aplaude: 0.35, salta: 0.7, abuchea: -0.25, celebrarSeg: 2.5 },
+    // Amistad con Salonas al terminar una canción (no cuenta la práctica ni el abucheo): con `estrellas` o más suma «gana»
+    amistad: { estrellas: 2 },
+    // Salonas en la aldea: de noche (y en el concierto, cuando exista) toca estas canciones en vez de los riffs de siempre
+    aldea: { activa: true, soloNoche: true, canciones: ['sala-ska', 'sala-garage', 'bar-cumbia', 'bar-funk', 'festival-metal', 'festival-jefe'], vol: 0.5, distancia: 34, pausaSeg: 12, tempo: 1 },
     // Mientras dura una sección de `secciones` (el solo de Salonas; el puente mientras no haya solos), la cámara se corre hacia Salonas (suma a la posición y a la mira); k = rapidez (1/s)
     camaraSolo: { secciones: ['solo', 'puente'], pos: [-1.1, -0.4, -1.4], mira: [-2.2, 0.6, 0], k: 2.5 },
     locales: {
@@ -191,3 +195,13 @@ export function guardarRecord(almacen, cancion, dificultad, { puntos, estrellas 
     try { if (almacen) almacen.setItem(CLAVE_RECORDS, JSON.stringify(records)); } catch (e) { /* sin almacenamiento */ }
     return { nuevo, record, anterior };
 }
+
+// ---- Salonas en la aldea (salonas-aldea.js) ----
+// ¿Suena la aldea? → true si Salonas toca sus canciones en vez de los riffs de siempre
+export function aldeaActiva(A, { esNoche, concierto = false }) {
+    return !!A.activa && (!A.soloNoche || !!esNoche || !!concierto) && A.canciones.length > 0;
+}
+// Volumen según la distancia (0 al llegar a `distancia`)
+export function volumenAldea(A, d) { return A.vol * Math.pow(Math.max(0, 1 - d / A.distancia), 1.4); }
+// Próxima canción de la rotación (el índice da la vuelta)
+export const siguienteCancion = (A, n) => A.canciones[((n % A.canciones.length) + A.canciones.length) % A.canciones.length];

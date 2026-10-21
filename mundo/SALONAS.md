@@ -36,7 +36,7 @@ local (cámara de cine, Salonas presenta la canción) → canción → final (es
 récord nuevo) → «Otra vez», «Siguiente» o «Salir». Con Esc se pausa (el audio se suspende y vuelve con una cuenta de 3).
 
 **Los locales y sus canciones** (todas abiertas desde el inicio, porque el dueño no eligió desbloqueos; los
-nombres los elige el dueño, estos son provisorios):
+nombres los eligió el dueño el 2026-10-21, ver `musica.json`):
 
 | Local | Canción | Estilo | bpm aprox. | Lo que enseña |
 |---|---|---|---|---|
@@ -219,6 +219,6 @@ la clave `compás:paso` con el compás contado en toda la canción.
 
 ## 10. Preguntas abiertas (para el dueño, sin apuro)
 
-- Los nombres de las 6 canciones y el nombre del juego (provisorio: «La Gira» / «The Tour»).
+- Hecho (2026-10-21): nombres de las 6 canciones y del juego («La Gira» / «The Tour»).
 - Si jugar la gira suma amistad con Salonas y Conejeros como los otros minijuegos (propuesta: sí, la regla general).
 - Si al terminar la gira las canciones entran a la rotación de Salonas en la aldea.

@@ -426,7 +426,7 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         // Lado: proyección de la dirección hacia Salonas sobre la derecha de la cámara
         const dx = n.x - jugador.pos.x, dz = n.z - jugador.pos.z, d = Math.hypot(dx, dz) || 1;
         const lado = (dx * Math.cos(jugador.yaw) - dz * Math.sin(jugador.yaw)) / d;
-        bajo.actualizar(dJ, lado);
+        bajo.actualizar(bajoCallado ? 999 : dJ, lado); // callado: la supervivencia pone otras canciones de Salonas (salonas-aldea.js)
         for (const ev of bajo.sacarEventos()) {
             n.golpe = ev.tipo === 'g' ? 0.5 : 1;
             // La mano izquierda recorre el mástil según la nota (graves cerca de la pala)
@@ -805,7 +805,7 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
         if (n.inter) { aplicarInter(n); frasesInter(n); }
     }
 
-    let tiempo = 0;
+    let tiempo = 0, bajoCallado = false;
     return {
         lista, pony, salonas, lona, bajo,
         // Depuración del repertorio de Lona: forzarLona('pluma', 'mila') la pone junto a la gata y empieza;
@@ -821,8 +821,8 @@ export function crearNPCs(scene, { terreno, mundo, jugador, materiales, gatas, c
             empezarInter(lona, g, tipo); lona.ultimaInter = tipo;
             return true;
         },
-        actualizar(dt, oculto = false) {
-            tiempo += dt;
+        actualizar(dt, oculto = false, callarBajo = false) {
+            tiempo += dt; bajoCallado = callarBajo;
             dt = Math.min(dt, 0.05);
             tinte.aplicar(materiales.solido.color);
             const dtBase = dt;
