@@ -38,6 +38,9 @@ export const EFECTOS = {
     marca: { color: '#e81c1c', tamano: 0.16, alto: 1.25, frente: 0.2, parpadeo: 4 },
     // L3 · destello rojo del arma cuando avisa un peligroso (dura reglas.peligro.destello cuadros del estilo)
     peligro: { color: '#ff2a2a', opacidad: 0.95, grueso: 0.1 },
+    // L6b · aura de la Furia: un cubo cada `cada` s desde hasta `alto` bloques del suelo, a `radio` del cuerpo; sube a
+    // `sube` bloques/s, vive `vida` s y se achica
+    aura: { cada: 0.03, vida: 0.7, sube: 1.4, tamano: 0.08, radio: 0.4, alto: 1.8, colores: ['#ff2a1a', '#ff6a20', '#c01010', '#ffb040'] },
     topeCuadro: 40,
     // Capa de pantalla (arena/pantalla.js, un canvas de `resolucion` px de ancho escalado sin suavizar): líneas de
     // velocidad en los bordes, flash y viñeta (s y fuerza 0..1 por nivel del golpe) y números de daño (opcionales)
@@ -183,6 +186,25 @@ export function crearEfectos(THREE, scene, R) {
             s.t0 = P.tamano * (0.7 + Math.random() * 0.6); s.crece = 0.6;
             s.m.scale.setScalar(s.t0); s.m.visible = true; s.g = P.gravedad;
             s.vida = s.max = P.vida * (0.6 + Math.random() * 0.6);
+        }
+    }
+    // Aura de la Furia (L6b): cubos que suben alrededor del cuerpo mientras dura (uno cada `cada` s por peleador)
+    const auraT = {};
+    function aura(clave, x, z, activa, dt) {
+        const A = E.aura;
+        if (!activa || !A) { auraT[clave] = 0; return; }
+        auraT[clave] = (auraT[clave] || 0) + dt;
+        const cols = A.colores && A.colores.length ? A.colores : ['#ff2a1a'];
+        while (auraT[clave] >= A.cada) {
+            auraT[clave] -= A.cada;
+            if (!cupo(1)) break;
+            const s = tomar(), a = Math.random() * Math.PI * 2, r = A.radio * (0.6 + Math.random() * 0.4);
+            s.m.position.set(x + Math.cos(a) * r, 0.1 + Math.random() * A.alto, z + Math.sin(a) * r);
+            s.v.set(0, A.sube * (0.6 + Math.random() * 0.6), 0);
+            s.mat.color.set(cols[Math.floor(Math.random() * cols.length)]);
+            s.t0 = A.tamano * (0.7 + Math.random() * 0.6); s.crece = -0.5;
+            s.m.scale.setScalar(s.t0); s.m.visible = true; s.g = -A.sube * 3; // (sube contra el freno del aire)
+            s.vida = s.max = A.vida * (0.7 + Math.random() * 0.6);
         }
     }
     // Golpe que entra: destello blanco y polvo gris en el punto; el aro sale en los niveles de E.aro.niveles
@@ -365,7 +387,7 @@ export function crearEfectos(THREE, scene, R) {
         for (const r of recursos) if (r && r.dispose) r.dispose();
         estelas.clear(); cargas.clear(); peligros.clear();
     }
-    return { estela, chispas, carga, impacto, polvo, aro, sobre, peligro, altura, dibujar, aplicar, destruir };
+    return { estela, chispas, carga, impacto, polvo, aura, aro, sobre, peligro, altura, dibujar, aplicar, destruir };
 }
 
 const objeto = v => v && typeof v === 'object' && !Array.isArray(v);

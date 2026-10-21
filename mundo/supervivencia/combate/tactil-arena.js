@@ -1,25 +1,26 @@
 // =========================================================
 // VENJY · Combate · controles táctiles de la arena (bloque 8 · N4, mundo/COMBATE.md §15.1)
 // La capa DOM sobre combate/intenciones.js: joystick flotante en la mitad izquierda (nace donde se apoya el dedo),
-// botones ATACAR, DEFENSA, SALTAR, AGARRE y ESPECIAL, y la zona libre de la derecha para esquivar deslizando.
+// botones ATACAR, DEFENSA, SALTAR, AGARRE, ESPECIAL y FURIA (modoEspecial, L6b), y la zona libre de la derecha para esquivar deslizando.
 // Cada dedo va por su lado (pointer events con captura), así que caminar y atacar a la vez funciona; nada de la
 // derecha pide dos dedos. Posición y tamaño de los botones: ui-layout.json → arena (arrastrables en /estudio/,
 // pestaña Layout, página Arena); rótulos: textos.json → arena; umbrales: combate.json → tactil.
 // Todavía no la usa el juego: la arena llega en L1. La muestra estudio/vista-arena.html.
-//   montarTactilArena({ intenciones, idioma, padre })  ->  { raiz, botones, mostrar(b), especial(b), rotular(clave, t), destruir() }
+//   montarTactilArena({ intenciones, idioma, padre })  ->  { raiz, botones, mostrar(b), especial(b), furia(b), rotular(clave, t), destruir() }
 //   aplicarDatosVivos(nombre, datos)   el Estudio cambia ui-layout o textos sin recargar
 // =========================================================
 import { cargarDatos, fusionar, texto } from '../../datos/cargador.js';
 import { aplicarLayout } from '../layout-datos.js';
 import { COMBATE } from './datos.js';
 
-export const BOTONES_ARENA = ['atacar', 'defensa', 'saltar', 'agarre', 'especial'];
+export const BOTONES_ARENA = ['atacar', 'defensa', 'saltar', 'agarre', 'especial', 'modoEspecial'];
 const TEXTOS = {
     atacar: { es: 'ATACAR', en: 'ATTACK' },
     defensa: { es: 'DEFENSA', en: 'GUARD' },
     saltar: { es: 'SALTAR', en: 'JUMP' },
     agarre: { es: 'AGARRE', en: 'GRAB' },
-    especial: { es: 'ESPECIAL', en: 'SPECIAL' }
+    especial: { es: 'ESPECIAL', en: 'SPECIAL' },
+    modoEspecial: { es: 'FURIA', en: 'FURY' } // (L6b: Q + E en PC; aparece con la barra llena)
 };
 
 let datosLayout = null, datosTextos = null;
@@ -136,6 +137,8 @@ export function montarTactilArena({ intenciones, idioma = 'es', padre = document
         mostrar(v) { raiz.hidden = !v; if (!v) { dedos.clear(); intenciones.soltarTodo(); dibujarJoy(); } },
         // ESPECIAL es contextual: solo aparece si hay barra
         especial(v) { botones.especial.hidden = !v; },
+        // FURIA (modoEspecial, L6b) también es contextual: solo con la barra llena
+        furia(v) { botones.modoEspecial.hidden = !v; },
         destruir() {
             pendientes.delete(pintar);
             raiz.remove();

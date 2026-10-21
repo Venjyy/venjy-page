@@ -37,6 +37,13 @@
 // por ronda, entra en crítico (evento 'critico' con { i, zona }: mareo, torso que recibe más o cojera). Un golpe de
 // las alturas de rebote.alturas a menos de rebote.distancia de una pared o un barril lo lleva hasta ahí y rebota
 // (reacción `pared`); el barril se rompe (evento 'barril' con { n, x, z }) y vuelve en la ronda siguiente.
+// Agarres, pisotón, arte especial y Furia (L6b, combate/spa.js con estilo-*.json → reglas.spa; la barra SPA es la del
+// espíritu, que con reglas.espiritu.porHecho y porRecibido se llena con el daño): un ataque con `sujeta` que conecta
+// deja a los dos en la sujeción (evento 'sujeta'); el agarrado se zafa apretando defensa con la altura del agarre
+// (evento 'escape' con resultado 'zafa' o 'errado') o, al cerrar la ventana, sale el remate de esa altura (evento
+// 'agarre'; × errado si se equivocó). La CPU amaga (evento 'amago'). S + clic con el rival derribado es el pisotón;
+// el arte especial rompe la reacción (evento 'arte' con rompe); Q + E (modoEspecial) es la Furia (evento 'furia' con
+// activa: armadura, ataques × prisa, zona × zona, rompe la guardia; F.furia son los cuadros que le quedan).
 //   sinAnimar: nuevaPelea(R, { sinAnimar: true }) no arma poses (las simulaciones de balance; la lógica no las lee)
 //   distanciaObstaculo(P, x, z, ux, uz)  bloques libres detrás de (x, z) hasta la pared o un barril entero
 //   crearCamara(R) / pasoCamara(C, P, dt, aspecto)   cámara de lado al eje del duelo (§19.4): { pos, mira, fov }
@@ -54,6 +61,7 @@ import * as W from '../combate/peso.js';
 import * as I from '../combate/ia.js';
 import * as U from '../combate/urbano.js';
 import * as Z from '../combate/zonas.js';
+import * as Q from '../combate/spa.js';
 import { EFECTOS } from './efectos.js';
 import { COMBATE, faseEn, inicioFase, accionDe, marca } from '../combate/datos.js';
 
@@ -94,6 +102,7 @@ export const ARENA = {
     hud: {
         vida: '#d83a2a', vidaFondo: '#3a0c0c', vidaPerdida: '#ffd040', reloj: '#ffff55', ronda: '#ffff55', anchoVida: 38, retrato: 44, postura: '#ffb030', posturaAlta: '#ff4a20', posturaFondo: '#2a1a08', anchoPostura: 22,
         espiritu: '#7ad8ff', espirituFondo: '#10222a', // segmentos del arte de combate (L3)
+        furia: '#ff3a1a', // la barra SPA mientras dura la Furia (L6b)
         // Silueta de las zonas (L6a): alto en px y colores por nivel (el crítico parpadea)
         silueta: 40, zonaVerde: '#4ac83a', zonaAmarilla: '#f0d030', zonaRoja: '#e0301e', zonaCritica: '#ffffff', zonaBorde: '#000000'
     },
@@ -151,6 +160,7 @@ function crearF(R, estilos, clave, i, tactil) {
         x: 0, z: 0, yaw: 0, vx: 0, vz: 0, vida: d.vida || 100, vidaMax: d.vida || 100,
         empuje: 0, enActivo: false, pego: false, marca: 0, post: S.crearPostura(S.reglasPostura(estilo), d.postura || 100),
         pel: G.reglasPeligro(estilo), alt: U.reglasAltura(estilo), esp: null, zon: Z.reglasZonas(estilo), zonas: null, aPared: false,
+        spa: Q.reglasSpa(estilo), sujeta: null, amago: null, amagoPide: null, amagado: false, remate: null, furia: 0, furiaMax: 0, furiaResto: 0,
         acc: W.crearAcumulador(), tiembla: null, temblor: [0, 0], calma: 0,
         pose: {}, poseAnt: {}
     };
@@ -168,6 +178,7 @@ function colocar(P, entrada) {
         F.vida = F.vidaMax; F.p = E.crearPeleador(F.estilo, { tactil: F.p.tactil }); F.an = A.crearAnimador(F.estilo);
         F.post = S.crearPostura(F.post.R, F.post.tope); conEspiritu(F);
         F.zonas = F.zon ? Z.crearZonas(F.zon) : null; F.aPared = false; // las zonas vuelven a 0 en cada ronda
+        F.sujeta = F.amago = F.amagoPide = F.remate = null; F.amagado = false; F.furia = 0; // (L6b: la barra SPA también vuelve a 0)
         limitar(P, F);
         animarF(P, F, null); animarF(P, F, null);
     });
@@ -218,7 +229,7 @@ export function pasoPelea(P, intenciones = []) {
     if (libre) for (let j = 0; j < 2; j++) { const i = (j + P.cuadros) % 2; golpes(P, P.f[i], P.f[1 - i]); }
     for (const F of P.f) temblar(F);
     if (P.muneco && libre) munecoPaso(P, P.f[1]);
-    if (libre) for (const F of P.f) { postura(F); if (F.zonas) Z.pasoZonas(F.zonas); }
+    if (libre) for (const F of P.f) { postura(F); if (F.zonas) Z.pasoZonas(F.zonas); pasoFuria(P, F); }
     for (const F of P.f) animarF(P, F, P.f[1 - F.i]);
     // Reloj y rondas
     P.c++;
@@ -379,6 +390,8 @@ function efectosAccion(P, F, O) {
         if (d.pareja && (e.tipo === 'inicio' || e.tipo === 'activo')) pareja(P, F, O, d, e.tipo);
     }
     if (p.quieto || !def) return;
+    // Los golpes de más de una pareja (los rodillazos, L6b): pareja.repetir son marcas de cuadro
+    if (def.pareja && def.pareja.repetir) for (const m of def.pareja.repetir) if (marca(m, def.fases) === p.c) pareja(P, F, O, def, 'repetir');
     // Aviso del peligro (§16.4): una vez, `aviso` cuadros después de empezar la anticipación
     if (def.peligro && p.estado === 'ataque' && p.c === F.pel.peligro.aviso) P.eventos.push({ tipo: 'peligro', i: F.i, peligro: def.peligro, destello: F.pel.peligro.destello });
     const ef = def.efectos;
@@ -394,12 +407,41 @@ function efectosAccion(P, F, O) {
 // no sale sin espíritu. Devuelve una copia de la intención (la de quien llama no se toca).
 function antesDelPaso(P, F, O, it) {
     const ctl = (F.estilo && F.estilo.controles) || {};
+    // Sujetado por el rival (L6b): solo cuenta el intento de zafarse (defensa con la altura del agarre)
+    if (O.sujeta && F.p.clave === O.spa.agarre.sujetado) {
+        if (it.defensa === 'apretar') intentarEscape(P, O, F, Q.alturaDe(it));
+        return {};
+    }
+    const A = F.spa;
+    if (A) {
+        if (it.modoEspecial === 'apretar' && empezarFuria(P, F, A, ctl)) return { mover: it.mover };
+        // El arte especial sale aunque te estén pegando: rompe la reacción (y el hitstop)
+        if (it.especial === 'apretar' && Q.puedeRomper(A, F.p)) {
+            const k = Q.controlAltura(ctl.especial, Q.alturaDe(it)), d = k && accionDe(F.p.estilo, k);
+            if (d) {
+                const costo = (d.costo && d.costo.espiritu) || 0;
+                if (costo > F.esp.valor + 1e-9) { P.eventos.push({ tipo: 'sinEspiritu', i: F.i }); return { ...it, especial: undefined }; }
+                G.gastarEspiritu(F.esp, costo);
+                F.p.congelado = 0; F.p.buffer = null; F.empuje = 0; F.aPared = false;
+                E.iniciar(F.p, k);
+                P.eventos.push({ tipo: 'arte', i: F.i, clave: k, rompe: true });
+                return { mover: it.mover };
+            }
+        }
+        // S + clic con el rival derribado a tu alcance: pisotón
+        if (it.atacar === 'apretar' && Q.alturaDe(it) === 'bajo' && Q.puedePisar(A, F, O) && accionDe(F.p.estilo, A.pisoton.accion)) {
+            F.p.buffer = null;
+            E.iniciar(F.p, A.pisoton.accion);
+            return { ...it, atacar: undefined };
+        }
+        F.amagoPide = it.amago || null; // (la CPU: el agarre que empiece en este cuadro amaga)
+    }
     if (it.atacar === 'apretar' && G.puedeRematar(F.pel, F, O) && accionDe(F.p.estilo, F.pel.remate.accion)) {
         E.iniciar(F.p, F.pel.remate.accion);
         P.eventos.push({ tipo: 'remate', de: F.i, a: O.i });
         return { ...it, atacar: undefined };
     }
-    const arte = ctl.especial && accionDe(F.p.estilo, ctl.especial);
+    const arte = ctl.especial && accionDe(F.p.estilo, Q.controlAltura(ctl.especial, Q.alturaDe(it)));
     if (it.especial === 'apretar' && arte && arte.costo && arte.costo.espiritu > F.esp.valor + 1e-9) {
         P.eventos.push({ tipo: 'sinEspiritu', i: F.i });
         return { ...it, especial: undefined };
@@ -418,6 +460,91 @@ function despuesDelPaso(P, F, O) {
         E.iniciar(F.p, F.pel.mikiri.accion); // (su inicio arma la pareja en efectosAccion: el rival pasa a «pisado»)
         P.eventos.push({ tipo: 'mikiri', de: F.i, a: O.i });
     }
+    if (F.spa) agarreSpa(P, F, O, ctl);
+}
+// ---------- Agarre por altura, amago y Furia (L6b, combate/spa.js) ----------
+function agarreSpa(P, F, O, ctl) {
+    const A = F.spa.agarre;
+    // El amago de la CPU: el agarre que empezó en este cuadro muestra una altura y usa otra
+    if (F.amagoPide) {
+        const e = F.p.eventos.find(x => x.tipo === 'inicio'), d = e && accionDe(F.p.estilo, e.clave);
+        const real = d && d.sujeta ? Q.controlAltura(ctl.agarre, F.amagoPide) : null;
+        if (real && real !== e.clave && accionDe(F.p.estilo, real)) F.amago = real;
+        F.amagoPide = null;
+    }
+    if (F.amago) {
+        // A `pista` cuadros del activo pasa a la de verdad (el pie de apoyo se acomoda: la mezcla dura la pista)
+        if (F.p.estado !== 'ataque' || !F.p.def || !F.p.def.sujeta) F.amago = null;
+        else if (Q.faltanActivo(F.p) <= A.pista) {
+            const de = F.p.clave;
+            E.cambiarAccion(F.p, F.amago, A.pista);
+            P.eventos.push({ tipo: 'amago', i: F.i, de, a: F.amago });
+            F.amago = null; F.amagado = true;
+        }
+    } else if (F.p.estado !== 'ataque') F.amagado = false;
+    // La sujeción: al cerrar la ventana sin que se zafe, el remate de la altura del agarre
+    const s = F.sujeta;
+    if (!s) return;
+    if (F.p.clave !== A.sujetar || O.p.clave !== A.sujetado) { F.sujeta = null; return; }
+    if (++s.c < s.ventana) return;
+    F.sujeta = null;
+    const k = A.remates[s.altura];
+    F.remate = { clave: k, extra: s.errado ? A.errado : 1 };
+    P.eventos.push({ tipo: 'agarre', i: F.i, a: O.i, altura: s.altura, errado: s.errado });
+    if (k && accionDe(F.p.estilo, k)) E.iniciar(F.p, k); // (su inicio arma la pareja: el rival pasa a su reacción)
+    else { E.iniciar(F.p, 'guardia'); E.iniciar(O.p, 'guardia'); }
+}
+// El agarre que conecta: los dos quedan en la sujeción y el agarrado tiene su ventana para zafarse
+function sujetar(P, F, O, def) {
+    const A = F.spa.agarre;
+    if (!accionDe(F.p.estilo, A.sujetar) || !accionDe(O.p.estilo, A.sujetado)) return;
+    E.iniciar(F.p, A.sujetar);
+    if (O.p.clave !== A.sujetado) E.reaccionar(O.p, A.sujetado);
+    O.p.espejo = false; O.empuje = 0; O.aPared = false;
+    F.sujeta = { altura: def.altura || 'medio', c: 0, ventana: Q.ventanaEscape(F.spa, O.p.tactil), intento: false, errado: false, amago: !!F.amagado };
+    P.eventos.push({ tipo: 'sujeta', i: F.i, a: O.i, altura: F.sujeta.altura });
+}
+// O (sujetado por F) aprieta defensa con una altura: se zafa (los dos quedan neutros y se separan) o se equivoca
+function intentarEscape(P, F, O, altura) {
+    const A = F.spa.agarre, r = Q.escape(F.spa, F.sujeta, altura);
+    if (!r) return;
+    P.eventos.push({ tipo: 'escape', i: O.i, de: F.i, resultado: r, altura });
+    if (r !== 'zafa') return;
+    F.sujeta = null;
+    if (accionDe(O.p.estilo, A.zafarse)) E.iniciar(O.p, A.zafarse); else E.iniciar(O.p, 'guardia');
+    if (accionDe(F.p.estilo, A.soltado)) E.reaccionar(F.p, A.soltado); else E.iniciar(F.p, 'guardia');
+    F.empuje += A.empujon; O.empuje += A.empujon;
+}
+// Q + E: desde un estado libre o recién empezado el agarre o el arte (se devuelve lo que costó el arte)
+function empezarFuria(P, F, A, ctl) {
+    const fu = A.furia, p = F.p;
+    if (F.furia > 0) return false;
+    const propias = [ctl.agarre, ctl.especial].flatMap(c => (c && typeof c === 'object' ? Object.values(c) : [c])).filter(Boolean);
+    const recien = !!(p.def && p.c <= fu.entrada && propias.includes(p.clave));
+    if (!E.LIBRES.has(p.estado) && !recien) return false;
+    const devuelve = recien && p.def.costo && p.def.costo.espiritu ? p.def.costo.espiritu : 0;
+    if (F.esp.valor + devuelve + 1e-9 < fu.costo) { P.eventos.push({ tipo: 'sinEspiritu', i: F.i }); return false; }
+    F.esp.valor = Math.min(F.esp.tope, F.esp.valor + devuelve);
+    F.furia = F.furiaMax = Math.max(1, Math.round(fu.segundos * HZ()));
+    F.furiaResto = Math.max(0, F.esp.valor - fu.costo);
+    p.prisa = fu.prisa; p.buffer = null; F.amago = null;
+    if (fu.accion && accionDe(p.estilo, fu.accion)) E.iniciar(p, fu.accion); else E.iniciar(p, 'guardia');
+    P.eventos.push({ tipo: 'furia', i: F.i, activa: true });
+    return true;
+}
+// La barra se vacía mientras dura; al terminar, todo vuelve a la normalidad
+function pasoFuria(P, F) {
+    if (!(F.furia > 0)) return;
+    F.furia--;
+    F.esp.valor = F.furiaResto + F.spa.furia.costo * F.furia / F.furiaMax;
+    if (F.furia === 0) { F.p.prisa = 1; P.eventos.push({ tipo: 'furia', i: F.i, activa: false }); }
+}
+const furiaZona = F => (F.furia > 0 && F.spa ? F.spa.furia.zona : 1);
+// La barra SPA (el espíritu con porHecho / porRecibido) se llena con el daño; en la Furia no
+function ganarSpa(F, O, dano) {
+    if (!(dano > 0)) return;
+    if (F.esp && !(F.furia > 0)) G.ganarPorDano(F.esp, F.pel, dano, 0);
+    if (O.esp && !(O.furia > 0)) G.ganarPorDano(O.esp, O.pel, 0, dano);
 }
 // Animación de pareja (mikiri, golpe final): def.pareja = { rival, cuando, postura, dano, hitstop, nivel, resultado }.
 // El rival pasa a su reacción al empezar (cuando: inicio) o en el activo; en el activo recibe postura y daño, los dos
@@ -426,12 +553,14 @@ function pareja(P, F, O, d, tipo) {
     const q = d.pareja;
     if (!O || E.TERMINALES.has(O.p.estado)) return;
     if ((q.cuando || 'activo') === tipo && q.rival && accionDe(O.p.estilo, q.rival)) { E.iniciar(O.p, q.rival); O.p.espejo = false; }
-    if (tipo !== 'activo') return;
-    let dano = q.dano || 0;
+    if (tipo !== 'activo' && tipo !== 'repetir') return;
+    // El remate de un agarre del que se equivocó al zafarse hace × errado (L6b)
+    let dano = (q.dano || 0) * (F.remate && F.remate.clave === F.p.clave ? F.remate.extra : 1);
     // Con zonas (L6a): la pareja suma a la zona de su altura (o a las de q.zona) y el daño lleva su multiplicador
-    const reparto = O.zon && dano > 0 ? Z.repartir(O.zon, { altura: d.altura, dano, zona: q.zona }) : null;
+    const reparto = O.zon && dano > 0 ? Z.repartir(O.zon, { altura: d.altura, dano, zona: q.zona }, furiaZona(F)) : null;
     if (reparto) dano *= Z.multiplicador(O.zon, O.zonas, reparto);
     O.vida = Math.max(P.muneco && O.i === 1 ? 1 : 0, O.vida - dano);
+    ganarSpa(F, O, dano);
     if (reparto) for (const k of Z.sumar(O.zon, O.zonas, reparto)) critico(P, O, k);
     if (q.postura) subir(P, O, q.postura);
     if (q.hitstop) { E.congelar(F.p, q.hitstop); E.congelar(O.p, q.hitstop); }
@@ -461,12 +590,15 @@ function golpes(P, F, O) {
     let reaccion = W.reaccionPara(def, W.nivelDe(def, 'golpeado'), acc);
     if (!accionDe(O.p.estilo, reaccion)) reaccion = def.reaccion && accionDe(O.p.estilo, def.reaccion) ? def.reaccion : 'alto_leve';
     const espejo = W.ladoDe(def) < 0;
-    const golpe = { reaccion, altura: def.altura, peligro: def.peligro, rompeGuardia: !!def.rompeGuardia };
+    // En la Furia (L6b) la guardia mantenida no frena; mantieneReaccion (el pisotón) no levanta al derribado
+    const golpe = { reaccion, altura: def.altura, peligro: def.peligro || def.comoPeligro || null, rompeGuardia: !!def.rompeGuardia || (F.furia > 0 && F.spa.furia.rompeGuardia), mantener: !!def.mantieneReaccion };
     // Mareado (la cabeza en crítico): el primer golpe que lo saca hace × remate
     const mareado = !!(O.zon && O.p.clave === O.zon.critico.cabeza.reaccion);
     // El desvío se mide con la ventana del toque (con el ajuste del peligro) y después manda la tabla de §16.4; en
     // Urban Reign, con la altura (combate/urbano.js)
-    const alRecibir = O.alt ? defensaAltura(O) : (q, g, r) => G.responder(O.pel, q, g, S.clasificar(O.post, q, r, G.ajusteVentana(O.pel, g)));
+    const defensa = O.alt ? defensaAltura(O) : (q, g, r) => G.responder(O.pel, q, g, S.clasificar(O.post, q, r, G.ajusteVentana(O.pel, g)));
+    // En la Furia (L6b): armadura contra los golpes normales (el daño entra, la reacción no)
+    const alRecibir = (q, g, r) => { const x = defensa(q, g, r); return x === 'golpeado' && O.furia > 0 && O.spa.furia.armadura && !g.peligro ? 'armadura' : x; };
     const { resultado } = E.recibir(O.p, golpe, { alRecibir });
     if (resultado === 'golpeado') { O.acc.leves = acc.leves; O.p.espejo = espejo; }
     else if (resultado !== 'armadura') W.soltarAcumulador(O.acc);
@@ -478,7 +610,7 @@ function golpes(P, F, O) {
         const enZona = !!(golpe.errada && O.zon && O.alt.erradaEn === 'zona');
         dano = (def.dano || 0) * carga * (golpe.errada && !enZona ? O.alt.errada : 1); E.conecto(p);
         if (O.zon) {
-            reparto = Z.repartir(O.zon, def, carga * (enZona ? O.alt.errada : 1));
+            reparto = Z.repartir(O.zon, def, carga * (enZona ? O.alt.errada : 1) * furiaZona(F));
             dano *= Z.multiplicador(O.zon, O.zonas, reparto) * (mareado && resultado === 'golpeado' ? O.zon.critico.cabeza.remate : 1);
         }
         if (resultado === 'golpeado') { O.empuje += def.empuje != null ? def.empuje : pg.empuje || 0; reboteHacia(P, F, O, def); }
@@ -508,6 +640,7 @@ function golpes(P, F, O) {
         O.tiembla = { c: 0, eje: [ux / dd, uz / dd] };
     }
     O.vida = Math.max(0, O.vida - dano);
+    ganarSpa(F, O, dano);
     const criticos = reparto ? Z.sumar(O.zon, O.zonas, reparto) : [];
     // Postura: lo que dice la tabla del que recibe para este resultado (la armadura del desequilibrado no suma).
     // posturaFija (pisotón, arte) se suma al rival aunque la bloquee; posturaPropia se suma (o resta) al que ataca.
@@ -519,6 +652,8 @@ function golpes(P, F, O) {
     if (resultado === 'desviado' || resultado === 'perfecto') G.ganarEspiritu(O.esp, O.pel, resultado);
     // El agarre que entra sigue con su lanzamiento (animación de pareja del que agarra)
     if (resultado === 'golpeado' && def.alConectar && accionDe(p.estilo, def.alConectar)) E.iniciar(p, def.alConectar);
+    // El agarre por altura que entra (L6b): la sujeción con su ventana para zafarse
+    if (resultado === 'golpeado' && def.sujeta && F.spa) sujetar(P, F, O, def);
     O.post.calma = 0;
     if (P.muneco && O.i === 1) O.vida = Math.max(1, O.vida);
     O.calma = 0;

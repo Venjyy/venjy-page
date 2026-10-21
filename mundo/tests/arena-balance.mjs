@@ -7,8 +7,8 @@
 // Un combate es una pelea entera (mejor de arena.json → rondas.mejorDe) con su propia semilla; el empate (por tiempo
 // con la misma vida) no cuenta para nadie. 400 combates por combinación (o los del argumento, para probar rápido).
 // Imprime la tabla y la duración media de las rondas (para ver que nadie gana por tiempo siempre).
-// Estilo contra estilo: hasta L6b solo se informa (Sekiro encadena tajos y Urban Reign todavía no tiene el arte especial
-// que rompe la reacción, §17.6); con --estricto (o cuando L6b lo active en ESTRICTO) falla sobre el 60 %. Los espejos
+// Estilo contra estilo: desde L6b (arte especial que rompe la reacción, Furia, agarres y la barrida como «barrido»)
+// se exige igual que los espejos; con --informar solo se informa (para probar cambios de balance a medias). Los espejos
 // y que haya KO se exigen siempre.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -30,7 +30,7 @@ L.fijarLimites(leer('poses').limites);
 const ARENA = leer('arena');
 const estilos = { urbano: leer('estilo-urbano'), sekiro: leer('estilo-sekiro'), prueba: leer('estilo-prueba') };
 const N = Math.max(1, parseInt(process.argv[2], 10) || 400), TOPE = 0.6;
-const ESTRICTO = process.argv.includes('--estricto'); // L6b: true
+const ESTRICTO = !process.argv.includes('--informar'); // (desde L6b; --estricto se acepta por compatibilidad)
 const HZ = D.COMBATE.motor.hz;
 
 // Lalo y Moisés con el estilo que toque (los dos con la misma vida de arena.json)
@@ -76,7 +76,7 @@ console.log(`  ${N} combates por combinación en ${((Date.now() - t0) / 1000).to
 {
     const us = tabla['urbano-sekiro'], su = tabla['sekiro-urbano'];
     const urbano = us.g[0] + su.g[1], sekiro = us.g[1] + su.g[0], total = urbano + sekiro;
-    const cruce = (cond, msg) => (ESTRICTO ? ok(cond, msg) : console.log(`  ${cond ? 'bien' : 'PENDIENTE (L6b)'}: ${msg}`));
+    const cruce = (cond, msg) => (ESTRICTO ? ok(cond, msg) : console.log(`  ${cond ? 'bien' : 'FUERA (solo se informa)'}: ${msg}`));
     cruce(total > 0 && urbano / total <= TOPE && sekiro / total <= TOPE, `Urban Reign contra Sekiro: ninguno sobre el 60 % (Urban Reign ${(100 * urbano / total).toFixed(1)} %, Sekiro ${(100 * sekiro / total).toFixed(1)} %)`);
     // Y en cada lado por separado (que no dependa de quién está a la izquierda)
     for (const [k, x] of [['urbano-sekiro', us], ['sekiro-urbano', su]]) {

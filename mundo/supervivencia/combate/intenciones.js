@@ -47,6 +47,7 @@ export function crearIntenciones({ perfil = null, lado = 1, carga = false } = {}
     let joy = null, ultima = 'pc', gamepad = null;
     const mando = { x: 0, altura: null, prev: {} };
     let nombrePerfil = perfil;
+    let gesto = new Set(GESTO); // (fijarGestos: los controles por altura del estilo también esperan el gesto, L6b)
 
     const T = () => COMBATE.tactil;
     const K = () => COMBATE.teclas;
@@ -114,7 +115,7 @@ export function crearIntenciones({ perfil = null, lado = 1, carga = false } = {}
     }
     function revisarTiempo(ahora) {
         const ms = T().deslizar.ms;
-        for (const [id, q] of toques) if (GESTO.has(q.zona) && !q.decidido && ahora - q.t0 >= ms) decidir(id, ahora, alturaNeutra());
+        for (const [id, q] of toques) if (gesto.has(q.zona) && !q.decidido && ahora - q.t0 >= ms) decidir(id, ahora, alturaNeutra());
     }
     function tactilAbajo(zona, id, x, y, t) {
         ultima = 'tactil';
@@ -122,7 +123,7 @@ export function crearIntenciones({ perfil = null, lado = 1, carga = false } = {}
         if (zona !== 'libre' && !c[zona]) return;
         const q = { zona, x0: x, y0: y, t0: t, decidido: false };
         toques.set(id, q);
-        if (zona !== 'libre' && !GESTO.has(zona)) decidir(id, t, null);
+        if (zona !== 'libre' && !gesto.has(zona)) decidir(id, t, null);
     }
     function tactilMover(id, x, y, t) {
         if (joy && joy.id === id) { joy.x = x; joy.y = y; return; }
@@ -139,7 +140,7 @@ export function crearIntenciones({ perfil = null, lado = 1, carga = false } = {}
             }
             return;
         }
-        if (!GESTO.has(q.zona)) return;
+        if (!gesto.has(q.zona)) return;
         const u = T().deslizar;
         if (t - q.t0 >= u.ms) { decidir(id, t, alturaNeutra()); return; }
         if (Math.abs(dy) >= u.px && Math.abs(dy) >= Math.abs(dx)) decidir(id, t, dy < 0 ? 'alto' : 'bajo');
@@ -252,6 +253,8 @@ export function crearIntenciones({ perfil = null, lado = 1, carga = false } = {}
         fijarPerfil(p) { soltarTodo(); nombrePerfil = p; },
         fijarLado(l) { lado = l < 0 ? -1 : 1; },
         fijarCarga(b) { carga = !!b; },
+        // Controles que en el táctil esperan el gesto (deslizar arriba o abajo = altura), además de ATACAR y DEFENSA
+        fijarGestos(lista = []) { gesto = new Set([...GESTO, ...lista]); },
         get ultima() { return ultima; }
     };
 }

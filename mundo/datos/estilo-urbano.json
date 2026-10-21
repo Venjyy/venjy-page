@@ -7,7 +7,9 @@
     "atacar": { "medio": "jab", "alto": "gancho_alto", "bajo": "barrida", "adelante": "patada_frontal" },
     "defensa": { "medio": "esquiva_neutra", "alto": "defensa_alta", "bajo": "defensa_baja" },
     "esquivar": { "medio": "esquiva_neutra", "alto": "paso_lateral_alto", "bajo": "paso_lateral_bajo" },
-    "saltar": "salto"
+    "saltar": "salto",
+    "agarre": { "medio": "agarre_medio", "alto": "agarre_alto", "bajo": "agarre_bajo" },
+    "especial": { "medio": "giro", "alto": "cabezazo_salto", "bajo": "barrida_doble" }
   },
   "zonas": {
     "nota": "L6a (§17.6): cabeza, torso y piernas de 0 a 100. Cada golpe suma a la zona de su altura (daño × porDano si el ataque no trae zona; × errada si leíste mal la altura) y la vida pierde daño × 1 / 1,25 / 1,5 según el color de esa zona. Al tope, una vez por ronda: cabeza = mareo de 120 c (aturdido; el primer golpe que lo saca × remate), torso = todo el daño × 1,75 durante 300 c, piernas = paso × 0,6 y cojera hasta el final de la ronda. Vuelven a 0 en cada ronda.",
@@ -79,6 +81,48 @@
         "agarre": { "desvio": false, "guardia": false, "salto": true, "esquiva": true },
         "imparable": { "desvio": false, "guardia": false, "salto": false, "esquiva": true }
       }
+    },
+    "espiritu": {
+      "nota": "L6b (§17.6): la barra SPA. 4 segmentos; uno por cada 40 de daño hecho y uno por cada 60 recibido (los desvíos no la llenan).",
+      "segmentos": 4,
+      "perfecto": 0,
+      "desvio": 0,
+      "porHecho": 40,
+      "porRecibido": 60
+    },
+    "spa": {
+      "nota": "L6b (§17.6-17.7, combate/spa.js). agarre: el agarrado tiene ventana c (tactil en el celular) para apretar defensa con la altura del agarre; si acierta se zafa (zafarse / soltado, los dos se separan empujon), si se equivoca el remate hace × errado; la CPU amaga y a pista c del activo pasa a la altura de verdad. pisoton: S + clic con el rival en una de reacciones a menos de distancia. arte: el arte especial (Q) sale desde los estados de rompe salvo las reacciones de excepto. furia: Q + E con la barra en costo; segundos de armadura contra golpes normales, ataques × prisa, zona × zona, la guardia de Sekiro no la frena (rompeGuardia); sale desde un estado libre o en los primeros entrada c de un agarre o un arte.",
+      "agarre": {
+        "ventana": 18,
+        "tactil": 24,
+        "errado": 1.2,
+        "empujon": 0.5,
+        "pista": 4,
+        "sujetar": "sujetar",
+        "sujetado": "sujetado",
+        "zafarse": "zafarse",
+        "soltado": "soltado",
+        "remates": { "alto": "cabezazo", "medio": "rodillazos", "bajo": "derribo_piernas" }
+      },
+      "pisoton": {
+        "accion": "pisoton",
+        "reacciones": ["derribo"],
+        "distancia": 1.2
+      },
+      "arte": {
+        "rompe": ["reaccion"],
+        "excepto": ["lanzado"]
+      },
+      "furia": {
+        "accion": "furia",
+        "costo": 4,
+        "segundos": 8,
+        "prisa": 1.25,
+        "zona": 1.5,
+        "armadura": true,
+        "rompeGuardia": true,
+        "entrada": 6
+      }
     }
   },
   "cpu": {
@@ -92,7 +136,7 @@
       "cada": [8, 14],
       "pocaVida": 0.4,
       "factor": 0.7,
-      "lista": []
+      "lista": ["agarre_alto", "agarre_medio", "agarre_bajo"]
     },
     "respiro": {
       "cuadros": [30, 70],
@@ -131,7 +175,20 @@
       }
     ],
     "acierto": { "facil": 0.5, "normal": 0.65, "dificil": 0.8, "maestro": 0.92 },
-    "castigoBajo": { "prob": 0.6 }
+    "castigoBajo": { "prob": 0.6 },
+    "escape": {
+      "acierto": { "facil": 0.35, "normal": 0.55, "dificil": 0.75, "maestro": 0.9 },
+      "amago": 0.6,
+      "cuadros": [5, 12]
+    },
+    "amago": { "facil": 0, "normal": 0, "dificil": 0.5, "maestro": 0.7 },
+    "rompe": {
+      "prob": 0.6,
+      "espera": [2, 8],
+      "vidaMax": 1
+    },
+    "furia": { "prob": 0.05, "distancia": 3 },
+    "pisoton": { "prob": 0.7 }
   },
   "ataques": {
     "jab": {
@@ -278,7 +335,7 @@
       "velocidadMax": 0.6,
       "golpea": "pieD",
       "nombre": { "es": "Barrida", "en": "Leg sweep" },
-      "nota": "U8 · bajo (S + clic): barre las piernas en un arco bajo y derriba. Golpe normal: un peligroso pide 24 c de anticipación y este tiene 11 (Sekiro lo desvía o lo bloquea; §19.2 queda para el balance de L6).",
+      "nota": "U8 · bajo (S + clic): barre las piernas en un arco bajo y derriba. Para Sekiro se defiende como un «barrido» (§19.2, L6b, comoPeligro): se salta o se esquiva, no se bloquea ni se desvía; sin el aviso de los peligrosos (es rápido). Urban Reign lo desvía con S.",
       "fases": { "anticipacion": 11, "activo": 4, "recuperacion": 22 },
       "altura": "bajo",
       "dano": 7,
@@ -295,7 +352,8 @@
           "siConecto": true
         }
       ],
-      "anim": "barrida"
+      "anim": "barrida",
+      "comoPeligro": "barrido"
     },
     "barrida_castigo": {
       "peligro": null,
@@ -364,6 +422,165 @@
       "reaccion": "agarrado",
       "alConectar": "azote",
       "anim": "agarre_aereo"
+    },
+    "agarre_alto": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "golpea": "manoD",
+      "nombre": { "es": "Agarre alto", "en": "High grab" },
+      "intencion": "agarre",
+      "nota": "§17.7 · W + E: toma al rival del cuello. Si conecta, la sujeción; sin zafarse, cabezazo. Para Sekiro es un «agarre» peligroso (solo se esquiva o se salta).",
+      "fases": { "anticipacion": 8, "activo": 4, "recuperacion": 24 },
+      "altura": "alto",
+      "peligro": null,
+      "comoPeligro": "agarre",
+      "sujeta": true,
+      "dano": 0,
+      "postura": 0,
+      "alcance": 1.3,
+      "arco": [-40, 40],
+      "empuje": 0,
+      "hitstop": "ligero",
+      "reaccion": "sujetado",
+      "anim": "agarre_alto"
+    },
+    "agarre_medio": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "golpea": "manoD",
+      "nombre": { "es": "Agarre medio", "en": "Mid grab" },
+      "intencion": "agarre",
+      "nota": "§17.7 · E: toma al rival de los hombros. Si conecta, la sujeción; sin zafarse, rodillazos al estómago (3 golpes).",
+      "fases": { "anticipacion": 8, "activo": 4, "recuperacion": 24 },
+      "altura": "medio",
+      "peligro": null,
+      "comoPeligro": "agarre",
+      "sujeta": true,
+      "dano": 0,
+      "postura": 0,
+      "alcance": 1.3,
+      "arco": [-40, 40],
+      "empuje": 0,
+      "hitstop": "ligero",
+      "reaccion": "sujetado",
+      "anim": "agarre_medio"
+    },
+    "agarre_bajo": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "golpea": "manoD",
+      "nombre": { "es": "Agarre bajo", "en": "Low grab" },
+      "intencion": "agarre",
+      "nota": "§17.7 · S + E: se agacha a las piernas. Si conecta, la sujeción; sin zafarse, derribo de piernas (lo tumba).",
+      "fases": { "anticipacion": 8, "activo": 4, "recuperacion": 24 },
+      "altura": "bajo",
+      "peligro": null,
+      "comoPeligro": "agarre",
+      "sujeta": true,
+      "dano": 0,
+      "postura": 0,
+      "alcance": 1.3,
+      "arco": [-40, 40],
+      "empuje": 0,
+      "hitstop": "ligero",
+      "reaccion": "sujetado",
+      "anim": "agarre_bajo"
+    },
+    "pisoton": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "golpea": "pieD",
+      "nombre": { "es": "Pisotón", "en": "Stomp" },
+      "nota": "§17.7 · S + clic con el rival derribado a menos de 1,2 (reglas.spa.pisoton): mucho daño al torso; el derribado sigue en el suelo (mantieneReaccion).",
+      "fases": { "anticipacion": 8, "activo": 4, "recuperacion": 18 },
+      "altura": "bajo",
+      "soloSi": ["derribo"],
+      "mantieneReaccion": true,
+      "dano": 10,
+      "zona": { "torso": 35 },
+      "postura": 15,
+      "alcance": 1.4,
+      "arco": [-60, 60],
+      "empuje": 0,
+      "hitstop": "medio",
+      "reaccion": "derribo",
+      "anim": "pisoton"
+    },
+    "giro": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "intencion": "especial",
+      "peligro": null,
+      "comoPeligro": "imparable",
+      "costo": { "espiritu": 1 },
+      "golpea": "pieD",
+      "nombre": { "es": "Patada giratoria", "en": "Spinning kick" },
+      "nota": "§17.6 · Q (1 segmento): sale aunque te estén pegando (rompe la reacción). Gira de espaldas y patea hacia atrás: pega alrededor (arco entero) con i-frames hasta la recuperación. Imparable: no se desvía ni se bloquea.",
+      "fases": { "anticipacion": 6, "activo": 6, "recuperacion": 18 },
+      "iframes": [["anticipacion+0", "recuperacion+0"]],
+      "altura": "alto",
+      "dano": 12,
+      "postura": 20,
+      "alcance": 1.9,
+      "arco": [-180, 180],
+      "empuje": 0.6,
+      "hitstop": "fuerte",
+      "reaccion": "alto_fuerte",
+      "anim": "giro"
+    },
+    "cabezazo_salto": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "intencion": "especial",
+      "peligro": null,
+      "comoPeligro": "imparable",
+      "costo": { "espiritu": 1 },
+      "golpea": "manoD",
+      "nombre": { "es": "Cabezazo con salto", "en": "Jumping headbutt" },
+      "nota": "§17.6 · W + Q (1 segmento): salta y da un cabezazo que marea (aturdido). Sale aunque te estén pegando; i-frames en la anticipación.",
+      "fases": { "anticipacion": 8, "activo": 4, "recuperacion": 20 },
+      "iframes": [["anticipacion+0", "activo+0"]],
+      "altura": "alto",
+      "dano": 10,
+      "zona": { "cabeza": 40 },
+      "postura": 20,
+      "alcance": 1.5,
+      "arco": [-40, 40],
+      "empuje": 0.3,
+      "hitstop": "fuerte",
+      "reaccion": "aturdido",
+      "avance": { "fase": "anticipacion", "hasta": 0.4, "curva": "salida" },
+      "anim": "cabezazo_salto"
+    },
+    "barrida_doble": {
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "material": "carne",
+      "velocidadMax": 0.6,
+      "intencion": "especial",
+      "peligro": null,
+      "comoPeligro": "imparable",
+      "costo": { "espiritu": 1 },
+      "golpea": "pieD",
+      "nombre": { "es": "Barrida doble", "en": "Double sweep" },
+      "nota": "§17.6 · S + Q (1 segmento): agachado, barre con una pierna y vuelve con la otra; derriba. Sale aunque te estén pegando; i-frames en la anticipación.",
+      "fases": { "anticipacion": 8, "activo": 8, "recuperacion": 22 },
+      "iframes": [["anticipacion+0", "activo+0"]],
+      "altura": "bajo",
+      "dano": 12,
+      "zona": { "piernas": 30 },
+      "postura": 20,
+      "alcance": 2,
+      "arco": [-120, 120],
+      "empuje": 0.2,
+      "hitstop": "fuerte",
+      "reaccion": "derribo",
+      "anim": "barrida_doble"
     }
   },
   "acciones": {
@@ -548,6 +765,91 @@
         "sacudida": 0.4
       },
       "anim": "azote"
+    },
+    "sujetar": {
+      "estado": "agarre",
+      "ininterrumpible": true,
+      "nombre": { "es": "Sujeción", "en": "Clinch" },
+      "nota": "§17.7 · el agarre que conecta: lo sujeta del cuello y los hombros (la misma pose para las tres alturas: la altura solo se ve en la anticipación). La arena lo corta al cerrar la ventana del escape (reglas.spa.agarre).",
+      "fases": { "anticipacion": 0, "activo": 40, "recuperacion": 0 },
+      "anim": "sujetar"
+    },
+    "cabezazo": {
+      "estado": "agarre",
+      "ininterrumpible": true,
+      "altura": "alto",
+      "nombre": { "es": "Cabezazo", "en": "Headbutt" },
+      "nota": "§17.7 · remate del agarre alto: tira la cabeza atrás y la estrella contra la del rival (c6).",
+      "fases": { "anticipacion": 6, "activo": 4, "recuperacion": 16 },
+      "pareja": {
+        "rival": "alto_fuerte",
+        "cuando": "activo",
+        "dano": 14,
+        "zona": { "cabeza": 35 },
+        "postura": 20,
+        "hitstop": 6,
+        "nivel": "fuerte",
+        "resultado": "golpeado",
+        "material": "carne"
+      },
+      "anim": "cabezazo"
+    },
+    "rodillazos": {
+      "estado": "agarre",
+      "ininterrumpible": true,
+      "altura": "medio",
+      "nombre": { "es": "Rodillazos", "en": "Knee strikes" },
+      "nota": "§17.7 · remate del agarre medio: le baja la cabeza y le da 3 rodillazos al estómago (c4, c14, c24; pareja.repetir).",
+      "fases": { "anticipacion": 4, "activo": 30, "recuperacion": 12 },
+      "pareja": {
+        "rival": "medio_fuerte",
+        "cuando": "inicio",
+        "dano": 5,
+        "zona": { "torso": 12 },
+        "postura": 8,
+        "hitstop": 4,
+        "nivel": "medio",
+        "resultado": "golpeado",
+        "material": "carne",
+        "repetir": ["activo+10", "activo+20"]
+      },
+      "anim": "rodillazos"
+    },
+    "derribo_piernas": {
+      "estado": "agarre",
+      "ininterrumpible": true,
+      "altura": "bajo",
+      "nombre": { "es": "Derribo de piernas", "en": "Leg takedown" },
+      "nota": "§17.7 · remate del agarre bajo: baja a las piernas, las levanta y lo tumba de espalda (c6; queda derribado: pisotón).",
+      "fases": { "anticipacion": 6, "activo": 8, "recuperacion": 14 },
+      "pareja": {
+        "rival": "derribo",
+        "cuando": "activo",
+        "dano": 12,
+        "zona": { "piernas": 30 },
+        "postura": 20,
+        "hitstop": 6,
+        "nivel": "fuerte",
+        "resultado": "golpeado",
+        "material": "carne"
+      },
+      "efectos": {
+        "polvo": ["activo+6"],
+        "sacudida": 0.3
+      },
+      "anim": "derribo_piernas"
+    },
+    "furia": {
+      "estado": "furia",
+      "ininterrumpible": true,
+      "nombre": { "es": "Furia", "en": "Fury" },
+      "nota": "§17.6 · Q + E con la barra llena: ruge con los brazos abiertos (no lo interrumpen) y sale el aura (8 s, reglas.spa.furia).",
+      "fases": { "anticipacion": 6, "activo": 12, "recuperacion": 6 },
+      "efectos": {
+        "polvo": ["activo+0"],
+        "sacudida": 0.3
+      },
+      "anim": "furia"
     }
   },
   "anim": {
@@ -1154,6 +1456,453 @@
         },
         "rodI": {
           "k": [["g", 0, 1.3], ["g", 0.8, 1.2], ["g", 1, 1.2], ["r", 0.5, 0.8], ["r", 1, 0.4, "asentar"]]
+        }
+      }
+    },
+    "agarre_alto": {
+      "reloj": "fases",
+      "nota": "§17.7 agarre alto: las dos manos suben al cuello del rival con los codos casi estirados. La segunda mitad de la anticipación acomoda el pie de apoyo según la altura (la pista del amago, 4 c): alto = paso corto con las rodillas más estiradas, medio = rodillas a media flexión, bajo = paso largo y rodillas muy dobladas.",
+      "canales": {
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -1.75, "suave"], ["g", 1, -1.8], ["r", 0.5, -1.575], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -1.75, "suave"], ["g", 1, -1.8], ["r", 0.5, -1.625], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -2.2], ["a", 1, -0.5, "salida"], ["g", 1, -0.3], ["r", 0.5, -1.2], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -0.5, "salida"], ["g", 1, -0.3], ["r", 0.5, -1], ["r", 1, -1.6, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.5], ["a", 1, 0.25], ["g", 1, 0.25], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.25], ["g", 1, -0.25], ["r", 1, -0.35, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.15, "suave"], ["g", 1, 0.2], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.05], ["g", 1, 0.05], ["r", 1, 0.15, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.1, "suave"], ["g", 1, -0.05], ["r", 1, -0.35, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.45], ["a", 0.5, -0.45], ["a", 1, -0.7, "salida"], ["g", 1, -0.7], ["r", 1, -0.45, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 0.5, 0.8], ["a", 1, 0.6, "salida"], ["g", 1, 0.6], ["r", 1, 0.8, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 0.5, 1], ["a", 1, 0.7, "salida"], ["g", 1, 0.7], ["r", 1, 1, "asentar"]]
+        }
+      }
+    },
+    "agarre_medio": {
+      "reloj": "fases",
+      "nota": "§17.7 agarre medio: se inclina y las manos van a los hombros del rival, a la altura del pecho. La segunda mitad de la anticipación acomoda el pie de apoyo según la altura (la pista del amago, 4 c): alto = paso corto con las rodillas más estiradas, medio = rodillas a media flexión, bajo = paso largo y rodillas muy dobladas.",
+      "canales": {
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -1.25, "suave"], ["g", 1, -1.3], ["r", 0.5, -1.325], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -1.25, "suave"], ["g", 1, -1.3], ["r", 0.5, -1.375], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -2.2], ["a", 1, -0.6, "salida"], ["g", 1, -0.39999999999999997], ["r", 0.5, -1.2], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -0.6, "salida"], ["g", 1, -0.39999999999999997], ["r", 0.5, -1], ["r", 1, -1.6, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.5], ["a", 1, 0.3], ["g", 1, 0.3], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.3], ["g", 1, -0.3], ["r", 1, -0.35, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.55, "suave"], ["g", 1, 0.6000000000000001], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.3], ["g", 1, 0.3], ["r", 1, 0.15, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.1, "suave"], ["g", 1, -0.05], ["r", 1, -0.35, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.45], ["a", 0.5, -0.45], ["a", 1, -0.6, "salida"], ["g", 1, -0.6], ["r", 1, -0.45, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 0.5, 0.8], ["a", 1, 1, "salida"], ["g", 1, 1], ["r", 1, 0.8, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 0.5, 1], ["a", 1, 1.1, "salida"], ["g", 1, 1.1], ["r", 1, 1, "asentar"]]
+        }
+      }
+    },
+    "agarre_bajo": {
+      "reloj": "fases",
+      "nota": "§17.7 agarre bajo: se agacha doblado hacia las piernas del rival con las manos bajas. La segunda mitad de la anticipación acomoda el pie de apoyo según la altura (la pista del amago, 4 c): alto = paso corto con las rodillas más estiradas, medio = rodillas a media flexión, bajo = paso largo y rodillas muy dobladas.",
+      "canales": {
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -0.7, "suave"], ["g", 1, -0.75], ["r", 0.5, -1.0499999999999998], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -0.7, "suave"], ["g", 1, -0.75], ["r", 0.5, -1.1], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -2.2], ["a", 1, -0.3, "salida"], ["g", 1, -0.09999999999999998], ["r", 0.5, -1.2], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -0.3, "salida"], ["g", 1, -0.09999999999999998], ["r", 0.5, -1], ["r", 1, -1.6, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.5], ["a", 1, 0.2], ["g", 1, 0.2], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.2], ["g", 1, -0.2], ["r", 1, -0.35, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.9, "suave"], ["g", 1, 0.9], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.1], ["g", 1, 0.1], ["r", 1, 0.15, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.1, "suave"], ["g", 1, -0.05], ["r", 1, -0.35, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.45], ["a", 0.5, -0.45], ["a", 1, -0.85, "salida"], ["g", 1, -0.85], ["r", 1, -0.45, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 0.5, 0.8], ["a", 1, 1.5, "salida"], ["g", 1, 1.5], ["r", 1, 0.8, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 0.5, 1], ["a", 1, 1.6, "salida"], ["g", 1, 1.6], ["r", 1, 1, "asentar"]]
+        }
+      }
+    },
+    "sujetar": {
+      "reloj": "fases",
+      "nota": "§17.7 sujeción: las manos en el cuello y los hombros del rival, los codos doblados, el pecho adelante; forcejea (el pecho y el cuerpo se mueven poco).",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -1.55], ["g", 1, -1.55]]
+        },
+        "bIx": {
+          "k": [["g", 0, -1.55], ["g", 1, -1.55]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.8]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.8]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.35]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.35], ["g", 1, -0.35]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.35]]
+        },
+        "cx": {
+          "k": [["g", 0, 0.2], ["g", 1, 0.2]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.9], ["g", 1, 0.9]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.8], ["g", 1, 0.8]]
+        },
+        "ry": {
+          "k": [["g", 0, -0.1], ["g", 0.25, 0.01999999999999999, "suave"], ["g", 0.5, -0.1, "suave"], ["g", 0.75, -0.22, "suave"], ["g", 1, -0.1, "suave"]]
+        },
+        "pY": {
+          "k": [["g", 0, 0], ["g", 0.25, 0.08, "suave"], ["g", 0.5, 0, "suave"], ["g", 0.75, -0.08, "suave"], ["g", 1, 0, "suave"]]
+        }
+      }
+    },
+    "cabezazo": {
+      "reloj": "fases",
+      "nota": "§17.7 cabezazo: con las manos en la cabeza del rival, tira el pecho y la cabeza atrás (c0-6) y los estrella adelante (c6, latigo); suelta y vuelve a la guardia.",
+      "canales": {
+        "bDx": {
+          "k": [["a", 0, -1.55], ["a", 1, -1.5], ["g", 1, -1.4], ["r", 0.4, -1.3], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.55], ["a", 1, -1.5], ["g", 1, -1.4], ["r", 0.4, -1.35], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.8], ["a", 1, -1], ["g", 1, -1.2], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -1], ["g", 1, -1.2], ["r", 1, -1.6, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["g", 1, 0.4], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["g", 1, -0.35], ["r", 1, -0.35, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.35], ["a", 1, -0.15, "suave"], ["g", 0.5, 0.7, "latigo"], ["g", 1, 0.65], ["r", 0.4, 0.45], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.2], ["a", 1, -0.35, "suave"], ["g", 0.5, 0.45, "latigo"], ["g", 1, 0.4], ["r", 1, 0.15, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.9], ["a", 1, 1], ["g", 0.5, 0.7], ["r", 1, 1, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 0.9], ["g", 0.5, 0.6], ["r", 1, 0.8, "asentar"]]
+        }
+      }
+    },
+    "rodillazos": {
+      "reloj": "fases",
+      "nota": "§17.7 rodillazos: baja la cabeza del rival con las manos y sube la rodilla derecha al estómago tres veces (c4, c14, c24); entre uno y otro el pie casi toca el suelo.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.2], ["a", 1, -1.1, "salida"], ["g", 0, -1.35, "latigo"], ["g", 0.17, -0.3, "suave"], ["g", 0.33, -1.35, "latigo"], ["g", 0.5, -0.3, "suave"], ["g", 0.67, -1.35, "latigo"], ["g", 0.83, -0.3, "suave"], ["g", 1, -0.2], ["r", 1, -0.2]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 1, 1.8, "salida"], ["g", 0, 1.9, "latigo"], ["g", 0.17, 0.6, "suave"], ["g", 0.33, 1.9, "latigo"], ["g", 0.5, 0.6, "suave"], ["g", 0.67, 1.9, "latigo"], ["g", 0.83, 0.6, "suave"], ["g", 1, 1], ["r", 1, 1]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.4], ["g", 0, 0.5, "latigo"], ["g", 0.17, 0.35, "suave"], ["g", 0.33, 0.5, "latigo"], ["g", 0.5, 0.35, "suave"], ["g", 0.67, 0.5, "latigo"], ["g", 0.83, 0.35, "suave"], ["g", 1, 0.35], ["r", 1, 0.25, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 0.9], ["g", 1, 0.9], ["r", 1, 0.8, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -1.35], ["g", 1, -1.35], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -1.35], ["g", 1, -1.35], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -2.2], ["a", 1, -1], ["g", 1, -1], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -1], ["g", 1, -1], ["r", 1, -1.6, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.5], ["a", 1, 0.35], ["g", 1, 0.35], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.35], ["g", 1, -0.35], ["r", 1, -0.35]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.3], ["g", 1, 0.3], ["r", 1, 0.15, "asentar"]]
+        }
+      }
+    },
+    "derribo_piernas": {
+      "reloj": "fases",
+      "nota": "§17.7 derribo de piernas: baja de golpe a las piernas del rival (c0-6), las levanta girando el cuerpo (c6-14) y se para con un rebote.",
+      "canales": {
+        "pX": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.9, "suave"], ["g", 0.5, 0.4, "salida"], ["g", 1, 0.2], ["r", 1, 0.25, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.9], ["a", 1, 1.6, "suave"], ["g", 0.5, 0.9], ["g", 1, 0.9], ["r", 1, 1, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 1.5, "suave"], ["g", 0.5, 0.8], ["g", 1, 0.8], ["r", 1, 0.8, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.55], ["a", 1, -0.7, "suave"], ["g", 0.5, -1.6, "salida"], ["g", 1, -1.8], ["r", 0.5, -1.5], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.55], ["a", 1, -0.7, "suave"], ["g", 0.5, -1.6, "salida"], ["g", 1, -1.8], ["r", 0.5, -1.6], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3], ["g", 1, -0.4], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3], ["g", 1, -0.4], ["r", 1, -1.6, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.35], ["g", 1, 0.4, "salida"], ["r", 1, -0.35, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.2], ["a", 1, 0.1], ["g", 1, 0.15], ["r", 1, 0.15]]
+        }
+      }
+    },
+    "pisoton": {
+      "reloj": "fases",
+      "nota": "§17.7 pisotón: sube la rodilla derecha al pecho mirando al suelo (c0-8) y pisa con todo el peso adelante (c8, latigo); baja el pie y vuelve al rebote.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.2], ["a", 1, -1.3, "salida"], ["g", 0.5, -0.35, "latigo"], ["g", 1, -0.35], ["r", 1, -0.2, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 1, 1.9, "salida"], ["g", 0.5, 0.3, "latigo"], ["g", 1, 0.35], ["r", 0.5, 0.8], ["r", 1, 1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.35], ["g", 1, 0.55], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.45], ["g", 1, 0.5], ["r", 1, 0.15, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 0.9], ["g", 1, 1], ["r", 1, 0.8, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -1.2], ["g", 1, -1], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -1.3], ["g", 1, -1.1], ["r", 1, -1.5, "asentar"]]
+        }
+      }
+    },
+    "giro": {
+      "reloj": "fases",
+      "nota": "§17.6 patada giratoria (patada de gancho en arco): carga el cuerpo girado atrás (c0-6, ry −1,2) y suelta la pierna derecha alta en un arco de lado a lado con el cuerpo girando hasta ry 1,2 (c6, latigo; el giro tope de poses.json → limites es ±1,2) y los brazos abiertos; vuelve a la guardia.",
+      "canales": {
+        "ry": {
+          "k": [["a", 0, -0.35], ["a", 1, -1.2, "suave"], ["g", 0.5, 1.2, "latigo"], ["g", 1, 1.1], ["r", 0.5, 0.4, "suave"], ["r", 1, -0.35, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.2], ["a", 1, -0.3], ["g", 0.4, -1.4, "latigo"], ["g", 1, -1.3], ["r", 0.5, -0.6], ["r", 1, -0.2, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 1, 1.6], ["g", 0.4, 0.15, "latigo"], ["g", 1, 0.2], ["r", 0.5, 0.9], ["r", 1, 1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.3], ["g", 0.4, -0.2], ["g", 1, -0.15], ["r", 0.5, 0.1], ["r", 1, 0.25, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -1], ["g", 1, -0.9], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -1.1], ["g", 1, -1], ["r", 1, -1.5, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.5], ["a", 1, -0.2], ["g", 1, -0.25], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 1, 0.3], ["g", 1, 0.35], ["r", 1, -0.35, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 0.9], ["g", 1, 0.9], ["r", 1, 0.8]]
+        },
+        "pDz": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.2], ["g", 0.4, 0.45, "latigo"], ["g", 1, 0.4], ["r", 1, 0.12, "asentar"]]
+        }
+      }
+    },
+    "cabezazo_salto": {
+      "reloj": "fases",
+      "nota": "§17.6 cabezazo con salto: se agacha con los brazos atrás (c0-8), salta (salto 0,55) balanceando los brazos adelante y mete la cabeza (c8, latigo); cae flexionado.",
+      "canales": {
+        "salto": {
+          "k": [["a", 0, 0], ["a", 1, 0], ["g", 0.5, 0.55, "salida"], ["g", 1, 0.4], ["r", 0.4, 0, "entrada"], ["r", 1, 0]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 1, 1.6, "suave"], ["g", 0.3, 0.5, "salida"], ["g", 1, 0.9], ["r", 0.4, 1.3], ["r", 1, 1, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 1.5, "suave"], ["g", 0.3, 0.4, "salida"], ["g", 1, 0.9], ["r", 0.4, 1.2], ["r", 1, 0.8, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.55, "suave"], ["g", 0.5, 0.75, "latigo"], ["g", 1, 0.7], ["r", 0.4, 0.4], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, -0.3], ["g", 0.5, 0.45, "latigo"], ["g", 1, 0.4], ["r", 1, 0.15, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -0.3, "salida"], ["g", 0.5, -1.7, "latigo"], ["g", 1, -1.6], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -0.3, "salida"], ["g", 0.5, -1.7, "latigo"], ["g", 1, -1.6], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -2.2], ["a", 1, -0.2], ["g", 1, -1], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -0.2], ["g", 1, -1], ["r", 1, -1.6, "asentar"]]
+        }
+      }
+    },
+    "barrida_doble": {
+      "reloj": "fases",
+      "nota": "§17.6 barrida doble: se agacha con la mano izquierda casi en el suelo, barre con la pierna derecha (c8-11) y vuelve barriendo con la izquierda (c13-15) con el cuerpo girando de un lado al otro; se para.",
+      "canales": {
+        "ry": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.6, "suave"], ["g", 0.4, 0.9, "latigo"], ["g", 0.6, 0.8], ["g", 0.9, -0.5, "latigo"], ["g", 1, -0.55], ["r", 1, -0.35, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.7, "suave"], ["g", 1, 0.7], ["r", 0.5, 0.4], ["r", 1, 0.25, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 1, 0.7], ["g", 0.4, 0.25, "latigo"], ["g", 0.6, 1.6], ["g", 1, 1.5], ["r", 0.5, 1.2], ["r", 1, 1, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 1.6, "suave"], ["g", 0.4, 1.6], ["g", 0.75, 0.3, "latigo"], ["g", 1, 0.4], ["r", 0.5, 1], ["r", 1, 0.8, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.2], ["a", 1, 0], ["g", 0.4, -0.85, "latigo"], ["g", 0.6, 0], ["g", 1, 0], ["r", 1, -0.2, "asentar"]]
+        },
+        "pDz": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.2], ["g", 0.4, 0.45, "latigo"], ["g", 0.6, 0.12], ["r", 1, 0.12]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.45], ["a", 1, -0.3], ["g", 0.6, -0.3], ["g", 0.85, -0.85, "latigo"], ["g", 1, -0.8], ["r", 0.5, -0.5], ["r", 1, -0.45, "asentar"]]
+        },
+        "pIz": {
+          "k": [["a", 0, 0.12], ["g", 0.6, 0.12], ["g", 0.85, 0.45, "latigo"], ["g", 1, 0.4], ["r", 1, 0.12, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -0.6, "suave"], ["g", 1, -0.6], ["r", 0.5, -1], ["r", 1, -1.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -0.4, "suave"], ["g", 1, -0.4], ["r", 0.5, -1], ["r", 1, -1.6, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -0.9], ["g", 1, -0.9], ["r", 1, -1.4, "asentar"]]
+        }
+      }
+    },
+    "furia": {
+      "reloj": "fases",
+      "nota": "§17.6 Furia: se encoge (c0-6) y ruge abriendo el pecho con los brazos bajos y abiertos y la cabeza atrás (c6-18); vuelve a la guardia. El aura de cubos rojos la pone la arena.",
+      "canales": {
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.5, "suave"], ["g", 0.2, -0.25, "salida"], ["g", 1, -0.2], ["r", 1, 0.25, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.35], ["g", 0.2, -0.4, "salida"], ["g", 1, -0.35], ["r", 1, 0.15, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -1.4], ["a", 1, -0.4, "suave"], ["g", 0.2, -0.6], ["g", 1, -0.6], ["r", 1, -1.4, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -1.5], ["a", 1, -0.4, "suave"], ["g", 0.2, -0.6], ["g", 1, -0.6], ["r", 1, -1.5, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.5], ["a", 1, 0.2], ["g", 0.2, -0.5, "salida"], ["g", 1, -0.5], ["r", 1, 0.5, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.35], ["a", 1, -0.2], ["g", 0.2, 0.5, "salida"], ["g", 1, 0.5], ["r", 1, -0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -2.2], ["a", 1, -1.8], ["g", 0.2, -1.7], ["g", 1, -1.7], ["r", 1, -2.2, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -1.6], ["a", 1, -1.6], ["g", 0.2, -1.7], ["g", 1, -1.7], ["r", 1, -1.6, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1], ["a", 1, 1.4], ["g", 0.2, 1], ["g", 1, 1], ["r", 1, 1]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.8], ["a", 1, 1.3], ["g", 0.2, 0.9], ["g", 1, 0.9], ["r", 1, 0.8]]
         }
       }
     }

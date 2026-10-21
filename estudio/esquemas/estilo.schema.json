@@ -217,6 +217,53 @@
           },
           "additionalProperties": false
         },
+        "spa": {
+          "description": "Urban Reign II (L6b, §17.6-17.7, combate/spa.js): agarre por altura con escape, pisotón, arte especial que rompe la reacción y Furia. Lo que falte usa SPA_BASE.",
+          "type": "object",
+          "properties": {
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+            "agarre": {
+              "description": "ventana: cuadros para zafarse (tactil en el celular); errado: × al remate si se equivocó de altura; empujon: bloques que se separan al zafarse; pista: cuadros del amago con la altura de verdad; las acciones de la sujeción, el escape y los remates por altura.",
+              "type": "object",
+              "properties": {
+                "ventana": { "type": "integer", "minimum": 1, "maximum": 120 },
+                "tactil": { "type": "integer", "minimum": 1, "maximum": 120 },
+                "errado": { "type": "number", "minimum": 1, "maximum": 3 },
+                "empujon": { "type": "number", "minimum": 0, "maximum": 3 },
+                "pista": { "type": "integer", "minimum": 0, "maximum": 30 },
+                "sujetar": { "$ref": "combate.schema.json#/$defs/clave" },
+                "sujetado": { "$ref": "combate.schema.json#/$defs/clave" },
+                "zafarse": { "$ref": "combate.schema.json#/$defs/clave" },
+                "soltado": { "$ref": "combate.schema.json#/$defs/clave" },
+                "remates": { "type": "object", "properties": { "alto": { "type": ["string", "null"] }, "medio": { "type": ["string", "null"] }, "bajo": { "type": ["string", "null"] } }, "additionalProperties": false }
+              },
+              "additionalProperties": false
+            },
+            "pisoton": {
+              "description": "S + clic con el rival en una de reacciones a menos de distancia: la acción accion.",
+              "type": "object",
+              "properties": { "accion": { "type": ["string", "null"] }, "reacciones": { "type": "array", "items": { "type": "string" } }, "distancia": { "type": "number", "minimum": 0, "maximum": 5 } },
+              "additionalProperties": false
+            },
+            "arte": {
+              "description": "El arte especial sale desde los estados de rompe (rompe la reacción), salvo las reacciones de excepto.",
+              "type": "object",
+              "properties": { "rompe": { "type": "array", "items": { "type": "string" } }, "excepto": { "type": "array", "items": { "type": "string" } } },
+              "additionalProperties": false
+            },
+            "furia": {
+              "description": "Q + E con la barra en costo: accion (la pose); segundos con armadura contra golpes normales, ataques × prisa, zona × zona y rompeGuardia; sale desde un estado libre o en los primeros entrada cuadros de un agarre o un arte.",
+              "type": "object",
+              "properties": {
+                "accion": { "type": ["string", "null"] }, "costo": { "type": "number", "minimum": 0, "maximum": 10 }, "segundos": { "type": "number", "minimum": 0, "maximum": 60 },
+                "prisa": { "type": "number", "minimum": 1, "maximum": 3 }, "zona": { "type": "number", "minimum": 0, "maximum": 5 }, "armadura": { "type": "boolean" },
+                "rompeGuardia": { "type": "boolean" }, "entrada": { "type": "integer", "minimum": 0, "maximum": 30 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "espiritu": {
           "description": "Espíritu del arte de combate (§16.1): segmentos; el desvío perfecto llena `perfecto` y el normal `desvio`.",
           "type": "object",
@@ -224,6 +271,8 @@
             "segmentos": { "type": "integer", "minimum": 1, "maximum": 10 },
             "perfecto": { "type": "number", "minimum": 0, "maximum": 10 },
             "desvio": { "type": "number", "minimum": 0, "maximum": 10 },
+            "porHecho": { "description": "L6b (barra SPA de Urban Reign): daño hecho por segmento (0 = no se llena así).", "type": "number", "minimum": 0, "maximum": 1000 },
+            "porRecibido": { "description": "L6b: daño recibido por segmento (0 = no se llena así).", "type": "number", "minimum": 0, "maximum": 1000 },
             "nota": { "$ref": "comun.schema.json#/$defs/nota" }
           },
           "additionalProperties": false
@@ -288,7 +337,12 @@
         "provocar": { "type": ["string", "null"] },
         "cadenas": { "description": "Urban Reign (L5): cadenas de alturas que elige al atacar (medio = el combo básico, adelante = el medio de verdad), con su peso.", "type": "array", "items": { "type": "object", "properties": { "alturas": { "type": "array", "minItems": 1, "items": { "enum": ["alto", "medio", "bajo", "adelante"] } }, "peso": { "type": "number", "minimum": 0 }, "nota": { "$ref": "comun.schema.json#/$defs/nota" } }, "required": ["alturas"], "additionalProperties": false } },
         "acierto": { "description": "Urban Reign (L5): prob. de leer bien la altura de tu golpe al desviar, por dificultad.", "type": "object", "properties": { "facil": { "type": "number", "minimum": 0, "maximum": 1 }, "normal": { "type": "number", "minimum": 0, "maximum": 1 }, "dificil": { "type": "number", "minimum": 0, "maximum": 1 }, "maestro": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
-        "castigoBajo": { "description": "Urban Reign (L5): prob. de castigar con el golpe bajo rápido después de una esquiva neutra que te hizo fallar.", "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false }
+        "castigoBajo": { "description": "Urban Reign (L5): prob. de castigar con el golpe bajo rápido después de una esquiva neutra que te hizo fallar.", "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "escape": { "description": "L6b: zafarse de un agarre: acierto de la altura por dificultad (× amago si el agarre amagó) y cuadros [mín, máx] hasta que aprieta.", "type": "object", "properties": { "acierto": { "type": "object", "properties": { "facil": { "type": "number", "minimum": 0, "maximum": 1 }, "normal": { "type": "number", "minimum": 0, "maximum": 1 }, "dificil": { "type": "number", "minimum": 0, "maximum": 1 }, "maestro": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false }, "amago": { "type": "number", "minimum": 0, "maximum": 1 }, "cuadros": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 } }, "additionalProperties": false },
+        "amago": { "description": "L6b: prob. de amagar sus agarres (otra altura en la anticipación), por dificultad.", "type": "object", "properties": { "facil": { "type": "number", "minimum": 0, "maximum": 1 }, "normal": { "type": "number", "minimum": 0, "maximum": 1 }, "dificil": { "type": "number", "minimum": 0, "maximum": 1 }, "maestro": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "rompe": { "description": "L6b: arte especial que rompe la reacción: prob. por reacción, cuadros [mín, máx] de espera y solo con vidaMax de vida o menos.", "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 }, "espera": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0 }, { "type": "number", "minimum": 0 }], "minItems": 2, "maxItems": 2 }, "vidaMax": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false },
+        "furia": { "description": "L6b: prob. por cuadro de entrar en Furia con la barra llena, a distancia o menos.", "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 }, "distancia": { "type": "number", "minimum": 0, "maximum": 20 } }, "additionalProperties": false },
+        "pisoton": { "description": "L6b: prob. de pisar al derribado (una vez por caída).", "type": "object", "properties": { "prob": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false }
       },
       "additionalProperties": false
     },
@@ -359,6 +413,9 @@
         "posturaFija": { "description": "Postura que recibe el rival aunque lo bloquee (pisotón, arte de combate; L3). Reemplaza a la de la tabla.", "type": "number", "minimum": 0, "maximum": 200 },
         "posturaPropia": { "description": "Postura que se suma (o se resta, si es negativa) al que ataca cuando el golpe conecta (el arte baja 15 la tuya).", "type": "number", "minimum": -200, "maximum": 200 },
         "rompeGuardia": { "description": "La guardia mantenida no lo para (la patada, el pisotón); el desvío sí.", "type": "boolean" },
+        "comoPeligro": { "description": "L6b (§19.2): el que recibe lo defiende como este peligro (su tabla reglas.peligro.respuestas: agarre y barrido se saltan o se esquivan, imparable solo se esquiva), pero sin aviso ni los 24 cuadros de anticipación de un peligroso (los agarres, la barrida y las artes de Urban Reign).", "enum": ["barrido", "estocada", "agarre", "imparable"] },
+        "sujeta": { "description": "L6b (§17.7): agarre por altura. Si conecta, los dos pasan a la sujeción de reglas.spa.agarre (escape con la altura del agarre; si no, el remate de esa altura).", "type": "boolean" },
+        "mantieneReaccion": { "description": "L6b: el que recibe sigue en su reacción (el pisotón al derribado: no lo levanta).", "type": "boolean" },
         "costo": {
           "description": "Lo que cuesta empezarlo: espiritu = segmentos (el arte de combate). Sin espíritu no sale.",
           "type": "object",
@@ -369,11 +426,6 @@
         "soloSi": { "description": "Solo pega si el rival está en una de estas reacciones (los remates aéreos: lanzado).", "type": "array", "items": { "$ref": "combate.schema.json#/$defs/clave" } },
         "material": { "description": "A qué suena el golpe cuando lo desvían o lo bloquean (falta = metal).", "enum": ["carne", "metal", "madera"] },
         "alConectar": { "description": "Acción que empieza el que ataca cuando el golpe entra (el agarre sigue con su lanzamiento).", "$ref": "combate.schema.json#/$defs/clave" },
-        "zona": {
-          "type": "object",
-          "propertyNames": { "enum": ["cabeza", "cuerpo", "piernas"] },
-          "additionalProperties": { "type": "number", "minimum": 0 }
-        },
         "alcance": { "type": "number", "minimum": 0, "maximum": 20 },
         "arco": { "type": "array", "prefixItems": [{ "type": "number", "minimum": -180, "maximum": 180 }, { "type": "number", "minimum": -180, "maximum": 180 }], "minItems": 2, "maxItems": 2 },
         "empuje": { "type": "number", "minimum": 0, "maximum": 5 },

@@ -258,6 +258,12 @@
     "botonArte": { "es": "ARTE", "en": "ART" },
     "criticoCabeza": { "es": "¡Mareado!", "en": "Dazed!" },
     "criticoTorso": { "es": "¡Costillas rotas!", "en": "Cracked ribs!" },
-    "criticoPiernas": { "es": "¡Cojea!", "en": "Limping!" }
+    "criticoPiernas": { "es": "¡Cojea!", "en": "Limping!" },
+    "zafa": { "es": "¡Se zafó!", "en": "Broke free!" },
+    "errado": { "es": "¡Mal leído!", "en": "Wrong read!" },
+    "arteRompe": { "es": "¡Escape!", "en": "Breakout!" },
+    "furia": { "es": "¡FURIA!", "en": "FURY!" },
+    "botonFuria": { "es": "FURIA", "en": "FURY" },
+    "botonGiro": { "es": "ARTE", "en": "ART" }
   }
 }

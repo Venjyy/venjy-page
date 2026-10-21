@@ -899,7 +899,7 @@ Fuentes: [Wikipedia](https://en.wikipedia.org/wiki/Urban_Reign), [Hardcore Gamin
 
 ### 17.7 Agarre y remate en el suelo
 
-- **Agarre** (E, alcance 1,1): 8 / 4 / 24 c si falla. La altura se elige con W, S o sin dirección, y al conectar entra la animación de pareja:
+- **Agarre** (E, alcance 1,1; en L6b quedó en 1,3 porque `movimiento.distanciaMin` es 1,1): 8 / 4 / 24 c si falla. La altura se elige con W, S o sin dirección, y al conectar entra la animación de pareja:
   - alto: **cabezazo**;
   - medio: **rodillazos al estómago** (3 golpes);
   - bajo: **derribo de piernas** (lo tumba).
@@ -1076,6 +1076,8 @@ Minijuego completo (regla de los minijuegos: escenario propio, dificultad y sens
 | Recursos | Cada uno sufre según su sistema: Sekiro pierde por postura (golpe final) o por vida; Urban Reign, por vida, con las zonas como multiplicador y estado crítico |
 
 Así cada estilo tiene una ventaja clara: Sekiro tiene una guardia que perdona; Urban Reign desvía incluso lo peligroso. El balance se mide (§19.8).
+
+**Hecho en L6b (2026-10-21):** los agarres, la barrida y las artes de Urban Reign son rápidos (8 a 11 c), así que no llevan `peligro` (que pide 24 c y el aviso rojo) sino `comoPeligro`: Sekiro los defiende con su tabla (agarre y barrido se saltan o se esquivan; el imparable solo se esquiva), sin aviso. Medido con `arena-balance.mjs`: Urban Reign 48,5 % contra Sekiro 51,5 %.
 
 ### 19.3 Escenario y entrada animada (§9: la entrada tiene gracia)
 

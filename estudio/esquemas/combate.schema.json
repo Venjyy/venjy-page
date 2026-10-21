@@ -461,7 +461,7 @@
       "type": "object",
       "properties": {
         "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
-        "estado": { "enum": ["esquiva", "desvio", "contra", "carga", "agarre", "agarrado", "reaccion", "aturdido", "derribado", "levantarse", "remate", "rematado", "salto"] },
+        "estado": { "enum": ["esquiva", "desvio", "contra", "carga", "agarre", "agarrado", "reaccion", "aturdido", "derribado", "levantarse", "remate", "rematado", "salto", "sujetado", "furia"] },
         "fases": { "$ref": "#/$defs/fases" },
         "anim": { "$ref": "#/$defs/clave" },
         "siguiente": { "$ref": "#/$defs/clave" },
@@ -478,12 +478,14 @@
         "velocidadMax": { "description": "Rad por cuadro que se permiten en sus cuadros activos (hasta motor.velocidadMax).", "type": "number", "minimum": 0.05, "maximum": 2 },
         "sinMirada": { "type": "boolean" },
         "ininterrumpible": { "type": "boolean" },
+        "altura": { "description": "L6b: la altura de la acción (los remates de agarre: a qué zona va su pareja).", "enum": ["alto", "medio", "bajo"] },
         "pareja": {
           "description": "Animación de pareja (L3: mikiri, golpe final). rival: la reacción que juega el otro, al empezar (cuando: inicio) o en el activo; en el activo el rival recibe postura y dano, los dos se congelan hitstop cuadros y sale un golpe con el peso de nivel (combate.json → peso), con su resultado y material.",
           "type": "object",
           "properties": {
             "rival": { "$ref": "#/$defs/clave" },
             "cuando": { "enum": ["inicio", "activo"] },
+            "repetir": { "description": "L6b: más golpes de la pareja en estas marcas (los rodillazos): cada uno hace dano, zona y postura otra vez, sin repetir la reacción.", "type": "array", "items": { "type": ["string", "integer"] } },
             "postura": { "type": "number", "minimum": 0, "maximum": 200 },
             "dano": { "type": "number", "minimum": 0, "maximum": 999 },
             "hitstop": { "type": "integer", "minimum": 0, "maximum": 60 },

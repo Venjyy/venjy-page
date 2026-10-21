@@ -38,7 +38,8 @@ const BOTONES_ARENA = [
     ['ar-defensa', 'Defensa', 'Guard'],
     ['ar-saltar', 'Saltar', 'Jump'],
     ['ar-agarre', 'Agarre / arte', 'Grab / art'],
-    ['ar-especial', 'Especial', 'Special']
+    ['ar-especial', 'Especial', 'Special'],
+    ['ar-modoEspecial', 'Furia', 'Fury']
 ];
 const NOMBRE = Object.fromEntries([...BOTONES, ...BOTONES_ARENA].map(([c, es, en]) => [c, { es, en }]));
 

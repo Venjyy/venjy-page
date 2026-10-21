@@ -370,6 +370,24 @@
       },
       "nota": "Lanzado al aire (Urban Reign, §17.4: el gancho del combo básico): sube 0,9 de espaldas con los brazos sueltos, 40 c en el aire (ahí lo rematan el golpe y el agarre aéreos) y cae de espalda; queda tendido para pasar a levantarse.",
       "velocidadMax": 0.6
+    },
+    "sujetado": {
+      "fases": { "anticipacion": 0, "activo": 40, "recuperacion": 0 },
+      "anim": "sujetado",
+      "estado": "sujetado",
+      "ininterrumpible": true,
+      "nota": "§17.7 (L6b) · el que recibe un agarre por altura: sujetado del cuello, encorvado con los antebrazos contra el pecho del rival, forcejea. Defensa con la altura del agarre lo zafa. La arena lo corta al cerrar la ventana."
+    },
+    "zafarse": {
+      "fases": { "anticipacion": 0, "activo": 6, "recuperacion": 10 },
+      "anim": "zafarse",
+      "nota": "§17.7 (L6b) · se zafó del agarre: empuja al rival con las dos palmas y queda neutro (16 c, lo mismo que el soltado)."
+    },
+    "soltado": {
+      "fases": { "anticipacion": 0, "activo": 6, "recuperacion": 10 },
+      "anim": "medio_empuje",
+      "espejo": false,
+      "nota": "§17.7 (L6b) · el que agarraba y lo zafaron: lo empujan y retrocede (16 c, neutro con el que se zafó). Usa la animación del medio con empuje."
     }
   },
   "anim": {
@@ -1140,6 +1158,75 @@
         },
         "bIz": {
           "k": [["g", 0, -0.5], ["g", 0.3, 0.5, "salida"], ["g", 1, 0.6], ["r", 1, -0.1]]
+        }
+      }
+    },
+    "sujetado": {
+      "reloj": "fases",
+      "nota": "§17.7 sujetado: encorvado, mirando abajo, con los antebrazos contra el pecho del rival; forcejea de lado a lado.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -1], ["g", 1, -1]]
+        },
+        "bIx": {
+          "k": [["g", 0, -1], ["g", 1, -1]]
+        },
+        "codoD": {
+          "k": [["g", 0, -1.5], ["g", 1, -1.5]]
+        },
+        "codoI": {
+          "k": [["g", 0, -1.5], ["g", 1, -1.5]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.55], ["g", 1, 0.55]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.55], ["g", 1, -0.55]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.15], ["g", 1, 0.15]]
+        },
+        "cx": {
+          "k": [["g", 0, 0.3], ["g", 1, 0.3]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.6], ["g", 1, 0.6]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.6], ["g", 1, 0.6]]
+        },
+        "pY": {
+          "k": [["g", 0, 0], ["g", 0.25, 0.1, "suave"], ["g", 0.5, 0, "suave"], ["g", 0.75, -0.1, "suave"], ["g", 1, 0, "suave"]]
+        }
+      }
+    },
+    "zafarse": {
+      "reloj": "fases",
+      "nota": "§17.7 zafarse: empuja con las dos palmas estirando los codos (c0-3, latigo) y da medio paso con el pie izquierdo; recoge los brazos.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -1], ["g", 0.5, -1.55, "latigo"], ["g", 1, -1.55], ["r", 1, -1.3, "suave"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -1], ["g", 0.5, -1.55, "latigo"], ["g", 1, -1.55], ["r", 1, -1.3, "suave"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -1.5], ["g", 0.5, -0.1, "latigo"], ["g", 1, -0.1], ["r", 1, -1.2, "suave"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -1.5], ["g", 0.5, -0.1, "latigo"], ["g", 1, -0.1], ["r", 1, -1.2, "suave"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.5], ["g", 0.5, 0.15], ["r", 1, 0.4]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 0.5, -0.15], ["r", 1, -0.4]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.1], ["g", 0.5, -0.1], ["r", 1, 0.2, "suave"]]
+        },
+        "pIx": {
+          "k": [["g", 0, 0], ["g", 0.5, -0.4], ["r", 1, -0.3, "suave"]]
         }
       }
     }
