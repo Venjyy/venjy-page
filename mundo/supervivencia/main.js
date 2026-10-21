@@ -70,7 +70,7 @@ import { crearMusica } from './musica.js';
 import { crearConsola } from './consola.js';
 import { crearRecorridoEscenas } from './recorrido-escenas.js';
 import { crearComandosDev } from './comandos-dev.js';
-import { TXT_CARTAS_BOTON, CARRERA_BOTON, DUELO_BOTON } from './minijuegos-datos.js';
+import { TXT_CARTAS_BOTON, CARRERA_BOTON, DUELO_BOTON, SALONAS_BOTON } from './minijuegos-datos.js';
 import { rayoCaja } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { crearCofresCompaneros } from './cofres-companeros.js';
@@ -1075,13 +1075,15 @@ async function arrancar(guardado, cx = null) {
             }
             const b = conLugar(clave, clave === 'lucho'
                 ? { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo: inventario.contar(O.MAZO) >= 1 ? null : textoCartas(TXT_CARTAS_BOTON.faltaMazo) }
-                : clave === 'lona' ? { texto: textoCartas(CARRERA_BOTON.boton), motivo: null } : minijuegos.botonPara(clave));
+                : clave === 'lona' ? { texto: textoCartas(CARRERA_BOTON.boton), motivo: null }
+                : clave === 'salonas' ? { texto: textoCartas(SALONAS_BOTON.boton), motivo: null } : minijuegos.botonPara(clave));
             if (!b || b.motivo) return;
             capaPanel.hidden = true; capaPanel.textContent = '';
             document.body.classList.remove('panel-lado');
             camaras.terminarCine();
             if (clave === 'lucho') { abrirMesaCartas(modo === 'tutorial' || !tutoCartasVisto() ? 'tutorial' : 'facil'); return; }
             if (clave === 'lona') { cargarCarrera().then(k => { if (!k || !k.abrir()) { uiAbierta = false; if (!vida.muerto) entrar(); } }); return; }
+            if (clave === 'salonas') { cargarSalonas().then(k => { if (!k || !k.abrir()) { uiAbierta = false; if (!vida.muerto) entrar(); } }); return; }
             if (!minijuegos.intentar(b.juego)) { uiAbierta = false; if (!vida.muerto) entrar(); }
         }
     };
@@ -1091,6 +1093,7 @@ async function arrancar(guardado, cx = null) {
             return { texto: textoCartas(TXT_CARTAS_BOTON.boton), motivo, extra: tutoCartasVisto() && !motivo ? [{ texto: textoCartas(TXT_CARTAS_BOTON.tuto), modo: 'tutorial' }] : [] };
         }
         if (clave === 'lona') return { texto: textoCartas(CARRERA_BOTON.boton), motivo: null };
+        if (clave === 'salonas') return { texto: textoCartas(SALONAS_BOTON.boton), motivo: null };
         if (PELEADORES_DUELO.has(clave)) {
             const base = minijuegos.botonPara(clave), du = botonDuelo(clave);
             if (!du) return base;
@@ -1441,7 +1444,7 @@ async function arrancar(guardado, cx = null) {
                 jugador, gatas, npcs, inventario, entidades, hud, misiones, idioma, musica,
                 datos: () => window.__venjy?.datosCarrera || json,
                 tactil: () => !!tactil,
-                puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena(),
+                puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena() && !uiSalonas(),
                 bloquear: () => bloquearEscena(true), liberar: liberarEscena,
                 // Con sala: la carrera entre jugadores (carrera-red.js sobre las actividades compartidas)
                 acts: () => actividades, yo: () => (coop ? coop.yoId : null), nombreJugador: id => (coop ? coop.nombreDe(id) : String(id))
@@ -1451,6 +1454,21 @@ async function arrancar(guardado, cx = null) {
         return cargandoCarrera;
     }
     const uiCarrera = () => !!(carrera && carrera.activa);
+    // Salonas «La Gira» (S3, juego de ritmo con su bajo: salonas.js y su escena propia): se carga al abrirla desde el
+    // panel de Salonas; mientras tocas, su escena se dibuja en lugar del mundo (como la carrera)
+    let salonas = null, cargandoSalonas = null;
+    function cargarSalonas() {
+        if (!cargandoSalonas) cargandoSalonas = import('./salonas.js').then(m => {
+            salonas = m.crearSalonas({
+                idioma, tactil: () => !!tactil,
+                puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena() && !uiSalonas(),
+                bloquear: () => bloquearEscena(true), liberar: liberarEscena
+            });
+            return salonas.listo.then(() => salonas);
+        }).catch(err => { cargandoSalonas = null; console.error('No se pudo cargar el juego de Salonas', err); return null; });
+        return cargandoSalonas;
+    }
+    const uiSalonas = () => !!(salonas && salonas.activa);
     // Arena del duelo (bloque 8 · L1, arena/arena.js y su escena propia del lago congelado): se carga al abrirla desde
     // Hablar con Lalo o Moisés; mientras peleas, su escena se dibuja en lugar del mundo (como la carrera)
     let arena = null, cargandoArena = null;
@@ -1463,7 +1481,7 @@ async function arrancar(guardado, cx = null) {
                 estilos: { prueba, sekiro, urbano },
                 personasMundo: k => { const n = amigos.lista.find(a => a.clave === k); return n ? n.p : null; },
                 tactil: () => !!tactil,
-                puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena(),
+                puede: () => !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo && !uiCarrera() && !uiArena() && !uiSalonas(),
                 bloquear: () => bloquearEscena(true), liberar: liberarEscena
             });
             return arena;
@@ -2139,6 +2157,7 @@ async function arrancar(guardado, cx = null) {
         get actividades() { return actividades; }, get duelo() { return duelo; },
         // Carrera de gatas (7h-1): cargarCarrera().then(k => k.elegir('mila', 'normal')); carrera.saltarIntro(), carrera.saltarA(3)
         get carrera() { return carrera; }, cargarCarrera: () => cargarCarrera(),
+        get salonas() { return salonas; }, cargarSalonas: () => cargarSalonas(),
         // Arena del duelo (L1): cargarArena().then(a => a.elegir('lalo', 'normal')); arena.saltar(), arena.estado
         get arena() { return arena; }, cargarArena: () => cargarArena(),
         // Abrir un sobre de prueba (Estudio → Mesa, «Probar el sobre»): la escena de cartas-sobre.js sin cobrar ni sumar cartas
@@ -2203,6 +2222,7 @@ async function arrancar(guardado, cx = null) {
         escenaCuello.actualizar(corre ? dt : 0);
         minijuegos.actualizar(corre ? dt : 0);
         if (carrera) carrera.actualizar(corre ? dt : 0);
+        if (salonas) salonas.actualizar();
         if (arena) arena.actualizar(corre ? dt : 0);
         if (escenaAmistad) escenaAmistad.actualizar(corre ? dt : 0);
         if (mesaCartas) mesaCartas.actualizar(corre ? dt : 0);
@@ -2221,13 +2241,13 @@ async function arrancar(guardado, cx = null) {
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
             const cueva = jugador.pos.y < DY + 8 && l >= 0 && (l >> 4) < 6;
-            musica.actualizar({ jx: jugador.pos.x, jz: jugador.pos.z, personas: personasMusica(), enJefe: jefes.enCurso, modo: cueva ? 'cueva' : dia.esNoche ? 'noche' : 'dia', pausa: !corre, silencio: uiCarrera() || uiArena() });
+            musica.actualizar({ jx: jugador.pos.x, jz: jugador.pos.z, personas: personasMusica(), enJefe: jefes.enCurso, modo: cueva ? 'cueva' : dia.esNoche ? 'noche' : 'dia', pausa: !corre, silencio: uiCarrera() || uiArena() || uiSalonas() });
         }
         vista.sincronizar();
         cielo.actualizar(camara, corre ? dt : 0);
         const dtC = corre ? dt : 0;
         gatas.actualizar(dtC);
-        npcs.actualizar(dtC, false);
+        npcs.actualizar(dtC, uiSalonas()); // (tocando con Salonas, el bajo del escenario se calla)
         animales.actualizar(dtC, false);
         rutinas.actualizar(dtC);
         paseos.actualizar(dtC);
@@ -2243,7 +2263,7 @@ async function arrancar(guardado, cx = null) {
         minimapa.actualizar(jugador.pos.x, jugador.pos.z, jugador.yaw);
         mundo.planificar(jugador.pos.x, jugador.pos.z);
         mundo.procesar(5);
-        if (!(carrera && carrera.dibuja(renderer)) && !(arena && arena.dibuja(renderer))) { // la carrera de gatas y la arena se dibujan en lugar del mundo
+        if (!(carrera && carrera.dibuja(renderer)) && !(arena && arena.dibuja(renderer)) && !(salonas && salonas.dibuja(renderer))) { // la carrera de gatas, la arena y Salonas se dibujan en lugar del mundo
             renderer.render(scene, camara);
             if (mesaCartas) mesaCartas.dibujar(); // la mesa de cartas: vista de arriba (3.ª persona) y tu mano
             if (!vida.muerto && !uiAbierta && camaras.vista === 0 && !camaras.enCine && !camaras.enOrbita) mano.dibujar();

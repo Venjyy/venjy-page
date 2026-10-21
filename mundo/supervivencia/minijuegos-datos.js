@@ -26,6 +26,11 @@ export const CARRERA_BOTON = {
     boton: t('Gran Premio de las gatas (carrera: living, cocina, patio y techo)', 'Cat Grand Prix (race: living room, kitchen, backyard and rooftop)')
 };
 
+// Botón del minijuego de ritmo en el panel de Salonas (Salonas «La Gira», mundo/SALONAS.md; salonas.js se carga al usarlo)
+export const SALONAS_BOTON = {
+    boton: t('Ensayar con Salonas', 'Rehearse with Salonas')
+};
+
 // Botón del duelo en el lago en el panel de Lalo y Moisés (bloque 8 · L1; arena/arena.js se carga al usarlo). Son los
 // valores de antes de leer arena.json (que trae `textos.boton` y `nivelDuelo`, editables en Estudio → Arena)
 export const DUELO_BOTON = {

@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mapaTiempo } from '../supervivencia/musica-motor.js';
 import * as S from '../supervivencia/salonas-partitura.js';
+import * as Z from '../supervivencia/salonas-reloj.js';
 
 let fallos = 0;
 const ok = (cond, msg) => { if (!cond) { fallos++; console.log('FALLA:', msg); } };
@@ -237,6 +238,32 @@ bloque('revisar partitura', () => {
     const h = S.revisarPartitura(A, R, { ajustes: { facil: { '0:0': 1, '9:9': 0 }, experto: { '0:2': null } } });
     const hu = h.filter(a => a.tipo === 'huerfano');
     ok(hu.length === 1 && hu[0].dificultad === 'facil' && hu[0].grave === false && hu[0].n === null && hu[0].texto.includes('9:9'), `huérfano ${JSON.stringify(hu)}`);
+});
+
+// ---------- S3: reloj, calibración y ajustes del jugable (salonas-reloj.js) ----------
+bloque('reloj', () => {
+    const ctx = { currentTime: 10, outputLatency: 0.05, baseLatency: 0.01 };
+    ok(casi(Z.horaAudio(ctx, 1000, 1000), 9.94), 'sin getOutputTimestamp: currentTime - outputLatency - baseLatency');
+    ok(casi(Z.horaAudio(ctx, 900, 1000), 9.84), 'sin getOutputTimestamp: un evento 100 ms antes');
+    ok(casi(Z.horaAudio(ctx, 1200, 1300, { contextTime: 9.9, performanceTime: 1100 }), 10.0), 'con getOutputTimestamp: contextTime corrido');
+    ok(casi(Z.horaAudio(ctx, 1000, 1000, { contextTime: 0, performanceTime: 0 }), 9.94), 'getOutputTimestamp sin datos: como sin él');
+    ok(Z.mediana([]) === null && Z.mediana([3, 1, 2]) === 2 && Z.mediana([4, 1, 3, 2]) === 2.5, 'mediana');
+    // Clics cada 0.6 s desde 1.0; los 4 primeros no cuentan
+    const clic = i => 1 + i * 0.6, toques = [4, 5, 6, 7, 8, 9, 10, 11].map((i, k) => clic(i) + [0.03, 0.05, 0.04, 0.2, 0.04, 0.05, 0.03, 0.04][k]);
+    ok(casi(Z.calibrar(toques, 1, 0.6, { desde: 4, minimo: 5 }), 0.04), `calibrar: mediana ${Z.calibrar(toques, 1, 0.6, { desde: 4 })}`);
+    ok(casi(Z.calibrar([clic(5) - 0.02], 1, 0.6, { desde: 4 }), -0.02), 'calibrar: temprano es negativo');
+    ok(Z.calibrar(toques.slice(0, 3), 1, 0.6, { desde: 4, minimo: 5 }) === null, 'calibrar: pocos toques → null');
+    ok(Z.calibrar([clic(1)], 1, 0.6, { desde: 4 }) === null, 'calibrar: un toque en los clics de entrada no cuenta');
+    const mem = new Map(), alm = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+    ok(Z.leerCalibracion(alm) === 0, 'sin calibración guardada: 0');
+    ok(Z.guardarCalibracion(alm, 0.0423) === 0.0423 && Z.leerCalibracion(alm) === 0.042, 'guarda en ms redondeados');
+    ok(Z.guardarCalibracion(alm, 9) === Z.AJUSTES_SALONAS.calibracion.rango, 'acota al rango');
+    const roto = { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } };
+    ok(Z.leerCalibracion(roto) === 0 && Z.guardarCalibracion(roto, 0.01) === 0.01 && Z.leerCalibracion(null) === 0, 'almacenamiento roto o ausente: no falla');
+    const a = Z.ajustesDe({ carriles: { velocidad: 12 }, teclas: ['KeyA'] });
+    ok(a.carriles.velocidad === 12 && a.carriles.ancho === Z.AJUSTES_SALONAS.carriles.ancho && a.teclas.length === 1 && Z.AJUSTES_SALONAS.teclas.length === 4, 'ajustesDe mezcla sin cambiar la base');
+    ok(Z.AJUSTES_SALONAS.teclas.length === 4 && Z.AJUSTES_SALONAS.carriles.colores.length === 4, '4 teclas y 4 colores');
+    ok(MUSICA.canciones && MUSICA.canciones[Z.AJUSTES_SALONAS.cancion], 'la canción de prueba existe en musica.json');
 });
 
 console.log(fallos ? `\n${fallos} fallos` : 'salonas: todo bien');
