@@ -564,3 +564,8 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .ri-est .ri-num { min-width: 1.6rem; text-align: center; color: var(--gris); }
 .ri-est .boton.chico { flex: 0 0 auto; padding: 2px 8px; }
 .ri-est .ri-prog { width: 100%; box-sizing: border-box; }
+.ri-fila-bajo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ri-fila-bajo label { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; }
+.ri-fila-bajo input[type="number"] { width: 4.5rem; }
+.ri-fila-bajo input[type="text"] { width: 8rem; }
+#ri-bajo .ri-lienzo { cursor: crosshair; }
