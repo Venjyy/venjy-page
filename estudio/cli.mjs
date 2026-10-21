@@ -21,7 +21,7 @@ import { leerGlifos, tablaDeRangos } from './glifos.mjs';
 import { reglasEscenas } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
-import { USOS } from '../mundo/supervivencia/musica-motor.js';
+import { USOS, mapaTiempo } from '../mundo/supervivencia/musica-motor.js';
 import { reglasCombate, reglasEstilo, lineaDeTiempo } from '../mundo/supervivencia/combate/reglas.js';
 import { largoFases } from '../mundo/supervivencia/combate/datos.js';
 
@@ -81,7 +81,7 @@ function cuentaTextos(d) {
 const RESUMEN_JSON = {
     musica: d => {
         const t = Object.entries(d.temas || {}), b = t.filter(([, x]) => x.borrador).map(([k]) => k);
-        return `${t.length} temas (${b.length ? 'borradores: ' + b.join(', ') : 'ningún borrador'}), ${Object.keys(d.instrumentos || {}).length} instrumentos propios`;
+        return `${t.length} temas (${b.length ? 'borradores: ' + b.join(', ') : 'ningún borrador'}), ${Object.keys(d.canciones || {}).length} canciones, ${Object.keys(d.instrumentos || {}).length} instrumentos propios`;
     },
     'ui-layout': d => {
         const s = d.supervivencia || {};
@@ -340,19 +340,25 @@ function filasBorradores(d, filtro, op) {
 
 // musica: un tema por fila (y a quién reemplaza en el juego); con una clave, sus capas
 function filasMusica(d, filtro) {
-    const temas = d.temas || {};
-    if (filtro && temas[filtro]) {
-        const T = temas[filtro];
-        return (T.capas || []).map((c, n) => {
-            const tipo = ['ritmo', 'rel', 'acorde', 'notas', 'arpegio'].find(x => c[x] !== undefined) || '?';
-            return { clave: `${n + 1}. ${c.nombre || c.inst}`, texto: `${tipo} · ${c.inst} · vol ${c.vol}${c.niveles ? ' · ' + c.niveles.join('/') : ''}${c.mudo ? ' · muda' : ''}` };
-        });
+    const temas = d.temas || {}, canciones = d.canciones || {};
+    const capas = T => (T.capas || []).map((c, n) => {
+        const tipo = ['ritmo', 'rel', 'acorde', 'notas', 'arpegio', 'bajo'].find(x => c[x] !== undefined) || '?';
+        return { clave: `${n + 1}. ${c.nombre || c.inst}`, texto: `${tipo}${c.bajo ? ` (${c.bajo.length} notas)` : ''} · ${c.inst} · vol ${c.vol}${c.niveles ? ' · ' + c.niveles.join('/') : ''}${c.mudo ? ' · muda' : ''}` };
+    });
+    if (filtro && temas[filtro]) return capas(temas[filtro]);
+    if (filtro && canciones[filtro]) {
+        const C = canciones[filtro], M = mapaTiempo(C);
+        return [...M.secciones.map(s => ({ clave: `${s.n + 1}. ${s.seccion}`, texto: `${s.compases} compases · ${num(s.bpm)} bpm · ${s.pasos} pasos · ${num(s.t0)}-${num(s.t1)} s${s.nivel !== s.seccion ? ' · nivel ' + s.nivel : ''}` })), ...capas(C)];
     }
     const filas = Object.entries(temas).filter(([k]) => !filtro || k.includes(filtro)).map(([k, T]) => {
         const reemplaza = Object.entries(USOS).find(([, u]) => [].concat(Array.isArray(u.temas) ? u.temas : Object.keys(u.temas)).includes(k));
         const estado = T.borrador ? 'BORRADOR' : reemplaza ? `suena: reemplaza a ${k} (${reemplaza[0]})` : 'listo (no reemplaza a ninguno)';
         return { clave: k, texto: `${estado} · ${T.bpm} bpm · ${(T.prog || []).join(' ')} · ${(T.capas || []).length} capas` };
     });
+    for (const [k, C] of Object.entries(canciones)) if (!filtro || k.includes(filtro)) {
+        const M = mapaTiempo(C);
+        filas.push({ clave: 'cancion:' + k, texto: `${C.borrador ? 'BORRADOR' : 'lista'} · ${num(M.duracion)} s · ${M.secciones.map(s => s.seccion).join(' ')} · ${(C.capas || []).length} capas` });
+    }
     for (const [k, I] of Object.entries(d.instrumentos || {})) if (!filtro || k.includes(filtro)) filas.push({ clave: 'inst:' + k, texto: `${I.onda || 'square'}${I.filtro ? ' · filtro ' + I.filtro.tipo : ''}${I.voces > 1 ? ' · ' + I.voces + ' voces' : ''}` });
     return filas;
 }

@@ -46,5 +46,124 @@
         }
       ]
     }
+  },
+  "canciones": {
+    "pescador": {
+      "nombre": { "es": "Pescador de sapos", "en": "Toad Fisher" },
+      "nota": "Ejemplo del formato (el riff de mundo/criaturas/bajo.js con secciones). Las 6 canciones de la gira van después.",
+      "borrador": true,
+      "bpm": 100,
+      "pasos": 16,
+      "vol": 0.1,
+      "prog": ["E"],
+      "estructura": [
+        { "seccion": "intro", "compases": 2 },
+        { "seccion": "verso", "compases": 4 },
+        { "seccion": "coro", "compases": 4 },
+        { "seccion": "verso", "compases": 4 },
+        { "seccion": "coro", "compases": 4 },
+        { "seccion": "final", "compases": 1 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["intro", "verso"],
+          "bajo": [
+            [0, "s", 28, 1],
+            [1, "g", 28, 1],
+            [2, "p", 40, 1],
+            [3, "g", 28, 1],
+            [4, "s", 28, 1],
+            [6, "s", 29, 1],
+            [7, "p", 41, 1],
+            [8, "s", 28, 2],
+            [10, "r", 28, 2, [28, 35, 40, 43]],
+            [12, "s", 23, 2],
+            [14, "p", 35, 1],
+            [15, "s", 24, 1],
+            [16, "s", 28, 1],
+            [18, "p", 43, 1],
+            [19, "p", 42, 1],
+            [20, "s", 28, 2],
+            [22, "a", 52, 4],
+            [26, "d", 40, 4, 28],
+            [30, "r", 28, 1, [28, 35, 40]],
+            [31, "g", 28, 1]
+          ]
+        },
+        {
+          "nombre": "bajo (coro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["coro"],
+          "bajo": [
+            [0, "s", 28, 1],
+            [1, "g", 28, 1],
+            [2, "p", 40, 1],
+            [3, "g", 28, 1],
+            [4, "s", 31, 1],
+            [5, "p", 43, 1],
+            [6, "s", 32, 1],
+            [7, "p", 44, 1],
+            [8, "s", 33, 2],
+            [10, "r", 33, 2, [33, 40, 45, 48]],
+            [12, "s", 23, 2],
+            [14, "p", 35, 1],
+            [15, "s", 24, 1],
+            [16, "s", 28, 1],
+            [17, "g", 28, 1],
+            [18, "p", 40, 1],
+            [19, "p", 39, 1],
+            [20, "p", 38, 1],
+            [21, "p", 37, 1],
+            [22, "s", 28, 2],
+            [24, "d", 28, 6, 52],
+            [30, "p", 52, 1],
+            [31, "g", 28, 1]
+          ]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "r", 28, 8, [28, 35, 40, 43]]
+          ]
+        },
+        {
+          "nombre": "bombo",
+          "inst": "kick",
+          "ritmo": "x..x....x..x....x..x....x.......x..x....x..x....x..x....x.......",
+          "vol": 0.7,
+          "niveles": ["verso", "coro"]
+        },
+        {
+          "nombre": "caja",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.35,
+          "niveles": ["verso", "coro"]
+        },
+        {
+          "nombre": "charles",
+          "inst": "hat",
+          "ritmo": "x.x.x.x.x.x.x.x.",
+          "vol": 0.25,
+          "niveles": ["intro", "verso", "coro"]
+        },
+        {
+          "nombre": "platillo",
+          "inst": "platillo",
+          "ritmo": "x...............................................................",
+          "vol": 0.3,
+          "niveles": ["coro", "final"]
+        }
+      ]
+    }
   }
 }
