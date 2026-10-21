@@ -63,6 +63,44 @@ export const COMBATE_BASE = {
         }
     },
     peso: {},
+    // Peso de los golpes (N5, combate/peso.js): temblor del que recibe durante el hitstop (bloques, cada n cuadros
+    // cambia de lado), sacudida de la cámara por trauma (baja por segundo, topes en bloques y grados, frecuencia del
+    // ruido en Hz)
+    impacto: {
+        temblor: { amplitud: 0.03, cada: 2 },
+        sacudida: { baja: 1.6, desplazamiento: 0.12, giro: 1.5, frecuencia: 14 }
+    },
+    // Qué reacción toca (N5, §18): tabla altura × nivel cuando el ataque no trae la suya; subir: con golpes fuertes o
+    // remates la reacción del ataque sube a la pesada; acumular: tres leves seguidas sin defenderse = la pesada;
+    // pared: empujado contra una pared con al menos `empuje` bloques pendientes
+    elegir: {
+        tabla: {
+            alto: { ligero: 'alto_leve', medio: 'alto_leve', fuerte: 'alto_fuerte' },
+            medio: { ligero: 'medio_leve', medio: 'medio_empuje', fuerte: 'medio_fuerte' },
+            bajo: { ligero: 'bajo_leve', medio: 'bajo_leve', fuerte: 'derribo' }
+        },
+        subir: {
+            fuerte: { alto_leve: 'alto_fuerte', medio_leve: 'medio_fuerte', medio_empuje: 'medio_fuerte', bajo_leve: 'derribo' },
+            remate: { alto_leve: 'rematado', alto_fuerte: 'rematado', medio_leve: 'rematado', medio_empuje: 'rematado', medio_fuerte: 'rematado', bajo_leve: 'rematado', derribo: 'rematado' }
+        },
+        acumular: { leves: 3, a: { alto_leve: 'alto_fuerte', medio_leve: 'medio_fuerte', bajo_leve: 'derribo' } },
+        pared: { empuje: 0.2, reaccion: 'pared', hitstop: 4, rebote: 0.3 }
+    },
+    // Sonido por capas de un golpe (N5, §15.4; lo arma combate/peso.js → capasSonido y lo toca sonidos.js → voces).
+    // Cada voz: { tipo: 'ruido', frec, q, dur, vol, filtro } o { tipo: 'tono', f0, f1, dur, vol, forma }
+    sonidos: {
+        volumen: 1,
+        aire: { voces: [{ tipo: 'ruido', frec: 1800, q: 1.2, dur: 0.12, vol: 0.1, filtro: 'bandpass' }], subeConNivel: 0.25 },
+        impacto: {
+            carne: [{ tipo: 'ruido', frec: 420, q: 0.8, dur: 0.09, vol: 0.32, filtro: 'lowpass' }, { tipo: 'tono', f0: 190, f1: 70, dur: 0.1, vol: 0.14, forma: 'square' }],
+            metal: [{ tipo: 'tono', f0: 1760, f1: 1720, dur: 0.45, vol: 0.09, forma: 'sine' }, { tipo: 'tono', f0: 2637, f1: 2600, dur: 0.32, vol: 0.05, forma: 'sine' }, { tipo: 'tono', f0: 4105, f1: 4050, dur: 0.2, vol: 0.03, forma: 'sine' }, { tipo: 'ruido', frec: 4200, q: 3, dur: 0.02, vol: 0.2, filtro: 'bandpass' }],
+            madera: [{ tipo: 'ruido', frec: 900, q: 2, dur: 0.06, vol: 0.25, filtro: 'bandpass' }, { tipo: 'tono', f0: 420, f1: 300, dur: 0.07, vol: 0.08, forma: 'triangle' }]
+        },
+        cuerpo: { voces: [{ tipo: 'tono', f0: 120, f1: 45, dur: 0.16, vol: 0.2, forma: 'sine' }], graveConNivel: 0.15 },
+        cola: { ecos: 2, retardo: 0.07, caida: 0.35 },
+        niveles: { ligero: 0.8, medio: 1, fuerte: 1.25, desvio: 1, perfecto: 1.2, remate: 1.4 },
+        perfecto: { tono: 1.2, alarga: 1.6 }
+    },
     reacciones: {},
     anim: {}
 };
@@ -83,7 +121,7 @@ function fundir(base, extra) {
 export function fijarCombate(datos) {
     const d = objeto(datos) ? datos : {};
     for (const k of Object.keys(COMBATE)) delete COMBATE[k];
-    Object.assign(COMBATE, fundir(COMBATE_BASE, { motor: d.motor, entrada: d.entrada, tactil: d.tactil, teclas: d.teclas, peso: d.peso, reacciones: d.reacciones, anim: d.anim }));
+    Object.assign(COMBATE, fundir(COMBATE_BASE, { motor: d.motor, entrada: d.entrada, tactil: d.tactil, teclas: d.teclas, peso: d.peso, impacto: d.impacto, elegir: d.elegir, sonidos: d.sonidos, reacciones: d.reacciones, anim: d.anim }));
     fijarCurvas(d.curvas || null);
     return COMBATE;
 }

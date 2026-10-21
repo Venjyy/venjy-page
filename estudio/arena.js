@@ -77,6 +77,45 @@ const EFECTOS_NUM = [
     ['carga', 'niveles', 'carga: escalones del brillo', 'charge: glow steps', 1, 10, 1],
     ['estela', 'escalones', 'estela: escalones de transparencia', 'trail: transparency steps', 2, 16, 1]
 ];
+// Peso de los golpes (N5, arena/efectos.js y arena/pantalla.js): [ruta dentro de efectos, es, en, min, max, paso]
+const PESO_NUM = [
+    [['impacto', 'destello'], 'impacto: segundos del destello blanco', 'impact: white flash seconds', 0, 1, 0.01],
+    [['impacto', 'tamano'], 'impacto: tamaño del destello', 'impact: flash size', 0, 3, 0.05],
+    [['polvo', 'vida'], 'polvo: segundos que dura', 'dust: seconds it lasts', 0.05, 3, 0.05],
+    [['polvo', 'velocidad'], 'polvo: velocidad', 'dust: speed', 0, 10, 0.1],
+    [['polvo', 'gravedad'], 'polvo: gravedad', 'dust: gravity', 0, 30, 0.1],
+    [['polvo', 'tamano'], 'polvo: tamaño (bloques)', 'dust: size (blocks)', 0.01, 0.5, 0.01],
+    [['polvo', 'cuantos', 'impacto'], 'polvo: cubitos en un golpe fuerte', 'dust: cubes on a heavy hit', 0, 60, 1],
+    [['polvo', 'cuantos', 'caida'], 'polvo: cubitos al caer', 'dust: cubes on a fall', 0, 60, 1],
+    [['polvo', 'cuantos', 'esquiva'], 'polvo: cubitos al esquivar', 'dust: cubes on a dodge', 0, 60, 1],
+    [['polvo', 'cuantos', 'pared'], 'polvo: cubitos contra la pared', 'dust: cubes against the wall', 0, 60, 1],
+    [['aro', 'vida'], 'aro: segundos', 'ring: seconds', 0.05, 2, 0.01],
+    [['aro', 'radio'], 'aro: radio (bloques)', 'ring: radius (blocks)', 0, 5, 0.05],
+    [['aro', 'cubos'], 'aro: cubos', 'ring: cubes', 0, 48, 1],
+    [['aro', 'tamano'], 'aro: tamaño de cada cubo', 'ring: cube size', 0.01, 0.5, 0.01],
+    [['estrellas', 'cuantas'], 'estrellas del mareo: cuántas', 'dizzy stars: how many', 0, 6, 1],
+    [['estrellas', 'radio'], 'estrellas: radio de la vuelta', 'stars: orbit radius', 0, 1.5, 0.01],
+    [['estrellas', 'alto'], 'estrellas: altura sobre la cabeza', 'stars: height above the head', 0, 1.5, 0.01],
+    [['estrellas', 'vueltas'], 'estrellas: vueltas por segundo', 'stars: turns per second', 0, 5, 0.05],
+    [['estrellas', 'tamano'], 'estrellas: tamaño', 'stars: size', 0.01, 0.5, 0.01],
+    [['marca', 'tamano'], 'marca roja: tamaño', 'red mark: size', 0.01, 1, 0.01],
+    [['marca', 'alto'], 'marca roja: altura en el pecho', 'red mark: chest height', 0, 2.5, 0.01],
+    [['marca', 'frente'], 'marca roja: delante del pecho', 'red mark: in front of the chest', -1, 1, 0.01],
+    [['marca', 'parpadeo'], 'marca roja: parpadeos por segundo', 'red mark: blinks per second', 0, 20, 0.5],
+    [['topeCuadro'], 'tope de partículas nuevas por cuadro', 'new particle cap per frame', 0, 160, 1],
+    [['pantalla', 'resolucion'], 'pantalla: ancho en píxeles de la capa', 'screen: layer width in pixels', 64, 640, 8],
+    [['pantalla', 'lineas', 'dur'], 'líneas de velocidad: segundos', 'speed lines: seconds', 0, 2, 0.01],
+    [['pantalla', 'lineas', 'cuantas'], 'líneas de velocidad: cuántas', 'speed lines: how many', 0, 80, 1],
+    [['pantalla', 'lineas', 'largo'], 'líneas de velocidad: largo', 'speed lines: length', 0, 1, 0.01],
+    [['pantalla', 'vineta', 'dur'], 'viñeta: segundos', 'vignette: seconds', 0, 3, 0.05],
+    [['pantalla', 'vineta', 'fuerza'], 'viñeta: fuerza', 'vignette: strength', 0, 1, 0.05],
+    [['pantalla', 'numeros', 'dur'], 'números de daño: segundos', 'damage numbers: seconds', 0.1, 3, 0.05],
+    [['pantalla', 'numeros', 'sube'], 'números de daño: cuánto saltan', 'damage numbers: jump height', 0, 100, 1]
+];
+const PESO_COLOR = [[['impacto', 'color'], 'destello del impacto', 'impact flash'], [['aro', 'color'], 'aro', 'ring'], [['estrellas', 'color'], 'estrellas', 'stars'], [['marca', 'color'], 'marca roja', 'red mark'],
+    [['pantalla', 'lineas', 'color'], 'líneas de velocidad', 'speed lines'], [['pantalla', 'flash', 'color'], 'flash', 'flash'], [['pantalla', 'vineta', 'color'], 'viñeta', 'vignette'],
+    [['pantalla', 'numeros', 'color'], 'números', 'numbers'], [['pantalla', 'numeros', 'critico'], 'números de golpe fuerte', 'heavy-hit numbers']];
+const NIVELES_PESO = [['ligero', 'ligero', 'light'], ['medio', 'medio', 'medium'], ['fuerte', 'fuerte', 'heavy'], ['desvio', 'desvío', 'deflect'], ['perfecto', 'perfecto', 'perfect'], ['remate', 'remate', 'finisher']];
 const COLORES_HUD = [['vida', 'vida', 'life'], ['vidaFondo', 'fondo de la vida', 'life background'], ['vidaPerdida', 'vida perdida', 'lost life'], ['reloj', 'reloj', 'clock'], ['ronda', 'texto de ronda', 'round text'],
     ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background']];
 const DIFICULTADES = [['facil', 'Fácil', 'Easy'], ['normal', 'Normal', 'Normal'], ['dificil', 'Difícil', 'Hard'], ['maestro', 'En serio', 'For real']];
@@ -300,6 +339,41 @@ export async function montarArena(ctx) {
         const nota = document.createElement('p'); nota.className = 'nota';
         nota.textContent = t('Cuántas chispas salen: combate.json → peso (particulas). La estela de cada tajo (largo, ancho, color, desvanecer) va en estilo-sekiro.json → ataques.<tajo>.efectos.estela.', 'How many sparks: combate.json → peso (particulas). Each slash trail (length, width, color, fade) is in estilo-sekiro.json → ataques.<slash>.efectos.estela.');
         sf.appendChild(nota);
+        // Peso de los golpes (N5): impacto, polvo, aro, estrellas, marca roja y capa de pantalla
+        const sp = seccion(t('Peso de los golpes', 'Hit weight'));
+        for (const [ruta, es2, en2, a, b, p] of PESO_NUM) sp.appendChild(num(['efectos', ...ruta], [es2, en2, a, b, p]));
+        for (const [ruta, es2, en2] of PESO_COLOR) sp.appendChild(color(t(es2, en2), ['efectos', ...ruta]));
+        sp.appendChild(interruptor(t('números de daño', 'damage numbers'), ['efectos', 'pantalla', 'numeros', 'activo'], false));
+        // En qué niveles salen el aro, las líneas de velocidad y la viñeta; flash por nivel [segundos, fuerza]
+        for (const [ruta, es2, en2] of [[['aro', 'niveles'], 'aro en', 'ring on'], [['pantalla', 'lineas', 'niveles'], 'líneas de velocidad en', 'speed lines on'], [['pantalla', 'vineta', 'niveles'], 'viñeta en', 'vignette on']]) {
+            const f = document.createElement('div'); f.className = 'campo';
+            const s2 = document.createElement('span'); s2.textContent = t(es2, en2); f.appendChild(s2);
+            for (const [k, e3, n3] of NIVELES_PESO) {
+                const l = document.createElement('label'), c = document.createElement('input'); c.type = 'checkbox';
+                c.checked = (leer(['efectos', ...ruta], []) || []).includes(k);
+                c.addEventListener('change', () => {
+                    const a = new Set(leer(['efectos', ...ruta], []) || []);
+                    if (c.checked) a.add(k); else a.delete(k);
+                    poner(['efectos', ...ruta], NIVELES_PESO.map(x => x[0]).filter(x => a.has(x)));
+                });
+                l.append(c, ' ' + t(e3, n3)); f.appendChild(l);
+            }
+            sp.appendChild(f);
+        }
+        for (const [k, e3, n3] of NIVELES_PESO) {
+            const ruta = ['efectos', 'pantalla', 'flash', k], fl = () => { const v = leer(ruta, null); return Array.isArray(v) ? v : [0, 1]; };
+            sp.appendChild(numero(t(`flash en ${e3}: segundos (0 = no)`, `flash on ${n3}: seconds (0 = none)`), fl()[0], 0, 2, 0.01, v => poner(ruta, [v, fl()[1]])));
+            sp.appendChild(numero(t(`flash en ${e3}: fuerza`, `flash on ${n3}: strength`), fl()[1], 0, 1, 0.05, v => poner(ruta, [fl()[0], v])));
+        }
+        const sel = document.createElement('select');
+        for (const [v, e3, n3] of [['nieve', 'nieve', 'snow'], ['hielo', 'hielo', 'ice'], ['tierra', 'tierra', 'dirt']]) sel.appendChild(new Option(t(e3, n3), v));
+        sel.value = leer(['escenario', 'superficie'], 'nieve');
+        sel.addEventListener('change', () => poner(['escenario', 'superficie'], sel.value));
+        sp.appendChild(campo(t('superficie del suelo (color del polvo)', 'floor surface (dust color)'), sel));
+        sp.appendChild(num(['muneco', 'recupera'], ['muñeco: segundos para recuperar la vida', 'dummy: seconds to recover life', 0, 30, 0.5]));
+        const np = document.createElement('p'); np.className = 'nota';
+        np.textContent = t('Hitstop, temblor, sacudida de la cámara, cámara lenta, qué reacción toca y sonido por capas: combate.json → peso, impacto, elegir y sonidos (pestaña Combate, N6). Colores del polvo por superficie: arena.json → efectos.polvo.colores.', 'Hitstop, shake, camera trauma, slow motion, which reaction plays and layered sound: combate.json → peso, impacto, elegir and sonidos (Combat tab, N6). Dust colors per surface: arena.json → efectos.polvo.colores.');
+        sp.appendChild(np);
         // Escenario
         const se = seccion(t('Escenario', 'Scenery'));
         se.appendChild(parTexto(t('nombre del escenario', 'scenery name'), ['escenario', 'nombre']));

@@ -1100,3 +1100,10 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **CLI:** `capturar combate <estilo>:<acción> [--cuadros] [--cadena tajo1,tajo2,…] [--carga n] [--hoja]` corre el motor de combate real y dibuja con el rig completo y el arma (`.claude/skills/animaciones-minecraft/posar-combate.html`).
 - **No editable aún en el Estudio:** `estilo-sekiro.json` (reglas, ataques, efectos de la estela y animaciones) se edita en el JSON hasta la pestaña Combate (N6); las medidas de la katana (`KATANA` en `modelos-mano.js`) y los sonidos sintetizados nuevos (campana, postura, carga) de `arena/arena.js`.
 
+## 30. Peso de los golpes y reacciones (bloque 8 · N5, 2026-10-20)
+
+- **Datos nuevos en `combate.json`:** `impacto` (temblor del hitstop y sacudida por trauma), `elegir` (qué reacción toca), `sonidos` (voces de las capas: aire, impacto por material, cuerpo, cola, volumen por nivel, perfecto) y las 12 reacciones que faltaban de §18 con su `anim` (`espejo`, `efectos.sobre` y `efectos.polvo` nuevos en el esquema de la acción).
+- **Datos nuevos en `arena.json`:** `efectos.impacto`, `polvo` (colores por superficie), `aro`, `estrellas`, `marca`, `topeCuadro` y `pantalla` (líneas, flash por nivel, viñeta, números); `escenario.superficie`; `muneco` (`recupera`, `reacciones`); textos `muneco`, `ayudaMuneco` y `espejo`.
+- **Estudio → Arena:** sección «Peso de los golpes» con todos los números y colores de los efectos, los niveles en que salen el aro, las líneas y la viñeta, el flash por nivel, la superficie y el muñeco.
+- **No editable aún en el Estudio:** `combate.json → peso, impacto, elegir, sonidos` y las reacciones (hasta la pestaña Combate, N6; mientras, en el JSON).
+- **Muñeco de práctica:** botón en el menú de la arena; no ataca, no cae y el reloj no corre; R juega la reacción siguiente (Mayús + R, en espejo).

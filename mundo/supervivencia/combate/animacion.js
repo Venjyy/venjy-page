@@ -15,7 +15,9 @@
 //   pasos           en guardia (quieto, caminando o girando) cada pie queda plantado y da un paso cuando se aleja de
 //                   donde lo pone la guardia (IK de las piernas): nunca patina, a ninguna velocidad
 //   pies            en una acción, el pie apoyado no se mueve en el mundo: IK de la pierna mientras está en el suelo
-// La capa 3 (reacción sobre una acción, p. ej. la leve con armadura) y el temblor del hitstop llegan en N5.
+//   espejo          (N5) una reacción con espejo: true recibida por la derecha (p.espejo) se refleja
+// La capa 3 (reacción sobre una acción, p. ej. la leve con armadura) sigue pendiente; el temblor del hitstop lo pone
+// arena/modelo.js con combate/peso.js (desplaza al cuerpo entero, no a la pose).
 //   crearAnimador(estilo)                  estado del motor para un peleador
 //   animar(an, p, { t, raiz, mirada })     pose del cuadro: t = reloj en s (respiración), raiz = { x, z, yaw } en el
 //                                          mundo (para anclar los pies), mirada = ángulo al objetivo respecto del frente
@@ -83,6 +85,7 @@ export function animar(an, p, { t = 0, raiz = null, mirada = null } = {}) {
             const f = p.def.fases, total = (f.anticipacion || 0) + (f.activo || 0) + (f.recuperacion || 0);
             for (const k in tmp) delete tmp[k];
             evaluarGesto(a, total ? p.c / total : 0, p.c / M.hz, { fases: f, c: p.c }, tmp);
+            if (p.espejo && p.def.espejo) espejar(tmp);
             for (const k in tmp) raw[k] = tmp[k];
         }
         // Carga (S7): la hoja vibra mientras carga (estilo-*.json → ataques.<x>.carga.temblor)
@@ -331,6 +334,20 @@ function ceder(an, o, lado, M) {
     if (prev) PIERNA[lado].forEach((k, i) => { o[k] = prev[i] + Math.max(-tope, Math.min(tope, o[k] - prev[i])); });
 }
 
+// Reacción en espejo (N5): el golpe llegó por la derecha del que recibe. Los pares derecha/izquierda se cambian (los
+// giros laterales, y y z, cambian de signo) y los giros del cuello y del pecho hacia los lados también. El arma no.
+const PARES = [['bDx', 'bIx', 1], ['bDy', 'bIy', -1], ['bDz', 'bIz', -1], ['pDx', 'pIx', 1], ['pDz', 'pIz', -1], ['codoD', 'codoI', 1], ['rodD', 'rodI', 1]];
+const LATERALES = ['cy', 'cz', 'pY', 'pZ', 'ry', 'rz'];
+export function espejar(o) {
+    for (const [d, i, s] of PARES) {
+        const hd = d in o, hi = i in o, vd = o[d], vi = o[i];
+        delete o[d]; delete o[i];
+        if (hi) o[d] = vi * s;
+        if (hd) o[i] = vd * s;
+    }
+    for (const k of LATERALES) if (k in o) o[k] = -o[k];
+    return o;
+}
 export function interpolar(a, b, alfa, salida = {}) {
     for (const k in b) salida[k] = a[k] === undefined ? b[k] : a[k] + (b[k] - a[k]) * alfa;
     return salida;

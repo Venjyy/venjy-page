@@ -504,6 +504,7 @@ Todos los números en `combate.json → peso` (pestaña Combate, panel Peso). Pu
   - El desvío perfecto sube el tono un 20 % y alarga la campana. Cada capa tiene su volumen y tono en `combate.json → sonidos`.
 - **Reacción visible:** siempre una animación de §18. Nunca el parpadeo rojo solo (el parpadeo queda como capa extra de 2 c).
 - Módulo: `combate/peso.js` (puro: decide hitstop, trauma y cámara lenta; los efectos los dibuja quien lo usa).
+- **Hecho en N5 (2026-10-20), con estos ajustes:** los números nuevos van en `combate.json → impacto` (temblor y sacudida), `→ elegir` (qué reacción toca: tabla altura × nivel, `subir` por nivel, `acumular` y `pared`) y `→ sonidos` (voces de cada capa); los efectos que se ven, en `arena.json → efectos` (impacto, polvo, aro, estrellas, marca, `topeCuadro`, `pantalla`) y la superficie en `escenario.superficie`. La reacción de un golpe por la derecha se refleja (`espejo: true` en la reacción, `lado: derecha` en el ataque). El parpadeo rojo de 2 c no se hizo (habría que teñir el material de los clones); queda pendiente. Material del impacto: el que recibe en el cuerpo suena a `carne`; el arma contra el arma, al `material` del ataque (por defecto `metal`).
 
 ### 15.5 Rig con codos, rodillas y pecho (§4.4)
 

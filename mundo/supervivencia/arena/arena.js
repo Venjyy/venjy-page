@@ -12,12 +12,18 @@
 // táctil de la supervivencia y el HUD del mundo se ocultan (body.en-arena) y la música del mundo calla.
 // El rival de L1 es de práctica (modelo.intencionPractica); la CPU de verdad llega en L4 y los estilos en L2 y L5.
 // Valores: mundo/datos/arena.json (Estudio → Arena, en vivo con aplicarDatos).
-// No editable aún: el CSS de las capas (tamaños de letra, sombras) y los sonidos sintetizados (SFX).
+// Peso de los golpes (N5): hitstop con temblor, trauma de la cámara y cámara lenta (combate/peso.js con combate.json →
+// peso e impacto), impacto, polvo, aro, estrellas y marca roja (arena/efectos.js), líneas de velocidad, flash, viñeta
+// y números (arena/pantalla.js) y el sonido por capas de los golpes (combate.json → sonidos). Muñeco de práctica en
+// el menú: no pelea ni cae; R le hace jugar la reacción siguiente (Mayús + R, en espejo).
+// No editable aún: el CSS de las capas (tamaños de letra, sombras) y los sonidos sintetizados de la presentación (SFX).
 // Depuración: __venjy.arena (abrir(), elegir(clave, dificultad), saltar(), estado, terminar()).
 // =========================================================
 import * as THREE from '../../../vendor/three.module.js';
 import { O, nombreDe } from '../objetos.js';
-import { tono, ruido } from '../sonidos.js';
+import { tono, ruido, voces } from '../sonidos.js';
+import * as W from '../combate/peso.js';
+import { crearPantalla } from './pantalla.js';
 import { aplicarAngulos } from '../pose-jugador.js';
 import { interpolar } from '../combate/animacion.js';
 import { crearRelojFijo, cargaDe } from '../combate/estados.js';
@@ -89,12 +95,8 @@ const SFX = {
     tambor: () => { ruido({ dur: 0.35, frec: 120, q: 0.7, vol: 0.4, tipo: 'lowpass' }); tono({ f0: 110, f1: 50, dur: 0.4, vol: 0.25, forma: 'sine' }); },
     ronda: () => [523, 659].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.14, vol: 0.09, forma: 'square', retardo: i * 0.12 })),
     peleen: () => { ruido({ dur: 0.25, frec: 900, q: 0.6, vol: 0.2 }); [784, 1046].forEach((f, i) => tono({ f0: f, f1: f, dur: 0.2, vol: 0.1, forma: 'square', retardo: i * 0.08 })); },
-    tajo: () => ruido({ dur: 0.1, frec: 2600, q: 1.4, vol: 0.12 }),
-    golpe: () => { ruido({ dur: 0.12, frec: 380, q: 0.8, vol: 0.3, tipo: 'lowpass' }); tono({ f0: 220, f1: 90, dur: 0.12, vol: 0.12, forma: 'square' }); },
-    bloqueo: () => { ruido({ dur: 0.08, frec: 1600, q: 3, vol: 0.2 }); tono({ f0: 900, f1: 700, dur: 0.12, vol: 0.06, forma: 'triangle' }); },
-    desvio: () => { tono({ f0: 1760, f1: 1500, dur: 0.35, vol: 0.12, forma: 'triangle' }); ruido({ dur: 0.06, frec: 4000, q: 4, vol: 0.18 }); },
-    // Desvío perfecto: campana aguda con su armónico y un chasquido metálico
-    campana: () => { [2093, 3136, 4186].forEach((f, i) => tono({ f0: f, f1: f * 0.995, dur: 0.9 - i * 0.2, vol: 0.11 / (i + 1), forma: 'sine' })); ruido({ dur: 0.05, frec: 5200, q: 5, vol: 0.2 }); },
+    // Los golpes, el desvío y la campana del perfecto suenan por capas (combate.json → sonidos, N5)
+    capas: (nivel, op) => voces(W.capasSonido(nivel, op)),
     postura: () => { tono({ f0: 140, f1: 70, dur: 0.6, vol: 0.2, forma: 'triangle' }); ruido({ dur: 0.3, frec: 600, q: 1.5, vol: 0.15 }); },
     carga: () => tono({ f0: 300, f1: 900, dur: 0.25, vol: 0.05, forma: 'square' }),
     ko: () => { ruido({ dur: 0.6, frec: 200, q: 0.5, vol: 0.35, tipo: 'lowpass' }); tono({ f0: 300, f1: 60, dur: 0.8, vol: 0.15, forma: 'sawtooth' }); },
@@ -116,6 +118,7 @@ export function crearArena(ctx) {
     const el = (cls, padre, tag = 'div') => { const e = document.createElement(tag); if (cls) e.className = cls; padre.appendChild(e); return e; };
     const boton = (padre, texto, f, cls = 'boton') => { const b = el(cls, padre, 'button'); b.type = 'button'; b.textContent = texto; b.addEventListener('click', e => { e.preventDefault(); f(); }); return b; };
     const capa = el('ar ar-capa', document.body);
+    const pantalla = crearPantalla(capa, R); // líneas de velocidad, flash, viñeta y números (N5), bajo el HUD
     const ventEl = el('ar-ventisca', capa, 'canvas'); ventEl.width = 160; ventEl.height = 90;
     const vsEl = el('ar-vs', capa);
     const hud = el('ar-hud', capa);
@@ -161,6 +164,7 @@ export function crearArena(ctx) {
         if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && (c.fase === 'vs' || c.fase === 'vuelo')) { e.preventDefault(); e.stopPropagation(); saltar(); return; }
         if (c.fase === 'menu' && e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); pelear(); return; }
         if (c.fase === 'final' && e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); revancha(); return; }
+        if (peleando() && c.P && c.P.muneco && e.code === 'KeyR' && !e.repeat) { e.preventDefault(); e.stopPropagation(); probarSiguiente(e.shiftKey); return; }
         if (peleando() && intenciones.teclaAbajo(e.code)) { e.preventDefault(); e.stopPropagation(); return; }
         if (c.fase !== 'cerrando') e.stopPropagation(); // el mundo no recibe teclas mientras la arena está abierta
     }, true);
@@ -184,6 +188,13 @@ export function crearArena(ctx) {
         return esc;
     }
     const v3 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+    // Sacudida por trauma (combate/peso.js): desplaza la cámara y la gira un poco (topes en combate.json → impacto)
+    function sacudir(dt) {
+        const s = W.pasoSacudida(c.sac, dt);
+        if (s.trauma <= 0) return;
+        cam.position.x += s.x; cam.position.y += s.y; cam.position.z += s.z;
+        cam.rotateX(s.rx); cam.rotateY(s.ry); cam.rotateZ(s.rz);
+    }
     function ponerCamara(pos, mira, fov) {
         cam.position.set(pos[0], pos[1], pos[2]); cam.lookAt(mira[0], mira[1], mira[2]);
         if (fov && Math.abs(cam.fov - fov) > 1e-3) { cam.fov = fov; cam.updateProjectionMatrix(); }
@@ -201,7 +212,7 @@ export function crearArena(ctx) {
         datos = ctx.datos ? ctx.datos() : datos; R = M.reglasArena(datos);
         if (clave && R.peleadores[clave]) sel = clave;
         if (!R.peleadores[sel]) sel = Object.keys(R.peleadores)[0];
-        c = { fase: 'menu', t: 0, tc: 0, pausa: false };
+        c = { fase: 'menu', t: 0, tc: 0, pausa: false, sac: W.crearSacudida(), lenta: W.crearLenta(), muneco: false };
         ctx.bloquear();
         if (document.pointerLockElement) document.exitPointerLock();
         document.body.classList.add('en-arena');
@@ -214,7 +225,7 @@ export function crearArena(ctx) {
         return true;
     }
     function colocarMenu() {
-        c.fase = 'menu'; c.t = 0;
+        c.fase = 'menu'; c.t = 0; c.muneco = false;
         const P = nuevaP();
         P.fase = 'quieto'; // en el menú esperan en guardia, sin caminar
         c.P = P; c.C = M.crearCamara(R);
@@ -225,7 +236,7 @@ export function crearArena(ctx) {
         const rival = claves.find(k => k !== sel) || sel;
         const estilos = {};
         for (const k of [sel, rival]) { const e = R.peleadores[k].estilo; estilos[k] = (ctx.estilos && (ctx.estilos[e] || ctx.estilos.prueba)) || null; }
-        const P = M.nuevaPelea(R, { estilos, yo: sel, rival, dificultad, tactil: tactilActivo(), semilla: (Math.random() * 1e9) | 0, aspecto: aspecto() });
+        const P = M.nuevaPelea(R, { estilos, yo: sel, rival, dificultad, tactil: tactilActivo(), semilla: (Math.random() * 1e9) | 0, aspecto: aspecto(), muneco: !!(c && c.muneco) });
         P.f.forEach(F => { F.xa = F.x; F.za = F.z; F.yawa = F.yaw; });
         const e = escena();
         for (const F of P.f) {
@@ -252,6 +263,7 @@ export function crearArena(ctx) {
         for (const k of R.dificultades) boton(nv, tx(k), () => { dificultad = k; pintarMenu(); }, 'boton' + (k === dificultad ? ' sel' : ''));
         const bt = el('ar-botones', menuEl);
         boton(bt, tx('pelear') + ' (Enter)', pelear);
+        boton(bt, tx('muneco'), practicar, 'boton secundario');
         boton(bt, tx('salir') + ' (Esc)', salir, 'boton secundario');
     }
     function pelear() {
@@ -260,7 +272,24 @@ export function crearArena(ctx) {
         c.P = nuevaP(); c.C = M.crearCamara(R);
         intenciones.soltarTodo();
         intenciones.fijarLado(1); // la cámara está de tu lado: siempre miras a la derecha de la pantalla
-        empezarVs();
+        if (c.muneco) empezarPelea(); // el muñeco no tiene presentación
+        else empezarVs();
+    }
+    // Muñeco de práctica (N5): el rival no pelea ni cae y R le hace jugar las reacciones una por una
+    function practicar() {
+        if (!c || c.fase !== 'menu') return;
+        c.muneco = true; c.reaccionN = 0;
+        pelear();
+    }
+    function probarSiguiente(espejo) {
+        const P = c && c.P;
+        if (!P || !P.muneco || c.fase !== 'pelea') return;
+        const lista = M.reaccionesMuneco(P);
+        if (!lista.length) return;
+        const k = lista[c.reaccionN++ % lista.length];
+        M.probarReaccion(P, 1, k, { espejo });
+        const def = COMBATE.reacciones[k];
+        aviso(`${(def && def.nombre && tt(def.nombre)) || k}${espejo ? ' · ' + tx('espejo') : ''}`, 1.4);
     }
     function empezarVs() {
         c.fase = 'vs'; c.t = 0;
@@ -293,7 +322,7 @@ export function crearArena(ctx) {
         c.fase = 'pelea'; c.t = 0;
         c.reloj = crearRelojFijo();
         mostrar(hud, true);
-        mostrar(ayudaEl, !tactilActivo()); ayudaEl.textContent = tx('ayuda');
+        mostrar(ayudaEl, !tactilActivo()); ayudaEl.textContent = tx('ayuda') + (c.muneco ? ' · ' + tx('ayudaMuneco') : '');
         c.retratosPendientes = true; // (los pinta el primer dibujo: hace falta el renderer)
         pintarHud(true);
         if (tactilUI) tactilUI.mostrar(true);
@@ -388,7 +417,9 @@ export function crearArena(ctx) {
         pasoVentisca(dt);
         if (!c || c.enMundo || !esc) return; // (la ventisca de salida pudo cerrar la arena)
         c.tc += dt;
-        const lento = c.lentaHasta && c.tc < c.lentaHasta ? c.escalaLenta || R.rondas.escalaLenta : 1;
+        // Cámara lenta: la del KO (arena.json → rondas) o la del golpe (combate.json → peso.<nivel>.camaraLenta), la más lenta
+        const lentaGolpe = c.pausa ? 1 : W.pasoLenta(c.lenta, dt);
+        const lento = Math.min(lentaGolpe, c.lentaHasta && c.tc < c.lentaHasta ? c.escalaLenta || R.rondas.escalaLenta : 1);
         const dtE = c.pausa ? 0 : dt * lento;
         esc.dibujar(dtE, c.tc);
         if (c.pausa) return;
@@ -419,6 +450,8 @@ export function crearArena(ctx) {
             efectosPeleadores(dtE);
             const vista = M.pasoCamara(c.C, P, dtE, aspecto());
             ponerCamara(vista.pos, vista.mira, vista.fov);
+            sacudir(dt);
+            pantalla.dibujar(dt);
             pintarHud(false);
             if (c.avisoHasta && c.tc > c.avisoHasta) { mostrar(avisoEl, false); c.avisoHasta = 0; }
         }
@@ -441,7 +474,8 @@ export function crearArena(ctx) {
             interpolar(F.poseAnt, F.pose, alfa, tmp);
             aplicarAngulos(pe, tmp);
             const yaw = F.yawa + Math.atan2(Math.sin(F.yaw - F.yawa), Math.cos(F.yaw - F.yawa)) * alfa;
-            pe.g.position.set(F.xa + (F.x - F.xa) * alfa, 0, F.za + (F.z - F.za) * alfa);
+            // (+ el temblor del hitstop del que recibió el golpe, N5)
+            pe.g.position.set(F.xa + (F.x - F.xa) * alfa + F.temblor[0], 0, F.za + (F.z - F.za) * alfa + F.temblor[1]);
             pe.g.rotation.set(0, yaw, 0);
         }
     }
@@ -461,6 +495,9 @@ export function crearArena(ctx) {
             const nivel = k > 0 ? Math.ceil(k * (def.carga.niveles || 3)) : 0;
             if (nivel > (F.nivelCarga || 0)) sonar('carga');
             F.nivelCarga = nivel;
+            // Estrellas del mareo o marca roja del desequilibrado mientras dura su reacción (efectos.sobre)
+            const so = def && def.efectos && def.efectos.sobre;
+            ef.sobre(F.clave, so || null, F.x + F.temblor[0], F.z + F.temblor[1], F.yaw, c.tc);
         }
     }
     // Donde chocan: la mitad de la hoja del que defiende (o entre los dos, a la altura del golpe)
@@ -494,21 +531,57 @@ export function crearArena(ctx) {
         if (e.tipo === 'ronda') { aviso(e.final ? tx('rondaFinal') : `${tx('ronda')} ${e.n}`, R.rondas.anuncio); sonar('ronda'); }
         else if (e.tipo === 'peleen') { aviso(tx('peleen'), R.rondas.peleen, true); sonar('peleen'); }
         else if (e.tipo === 'golpe') {
-            const fuerte = e.fuerza >= 0.1;
-            if (e.resultado === 'golpeado') { sonar('golpe'); if (e.a === 0 || e.de === 0) intenciones.vibrar(fuerte ? 'fuerte' : 'golpe'); if (fuerte) esc.celebrar(Math.min(1, e.fuerza * 4)); }
-            else if (e.resultado === 'bloqueado') { sonar('bloqueo'); chispas(e, 'bloqueo'); }
-            else if (e.resultado === 'desviado') { sonar('desvio'); chispas(e, 'desvio'); if (e.a === 0) intenciones.vibrar('desvio'); }
-            else if (e.resultado === 'perfecto') {
-                // Clang: campana, chispas grandes con destello, vibración y cámara lenta (combate.json → peso.perfecto)
-                sonar('desvio'); sonar('campana'); chispas(e, 'perfecto');
-                if (e.a === 0) intenciones.vibrar('perfecto');
-                const cl = (COMBATE.peso.perfecto || {}).camaraLenta;
-                if (cl) { c.lentaHasta = c.tc + cl.segundos; c.escalaLenta = cl.escala; }
+            const fuerte = e.fuerza >= 0.1, ef = esc.efectos, pg = W.pesoDe(e.nivel);
+            if (e.resultado === 'esquivado' || e.resultado === 'sinEfecto') return;
+            // Peso (N5): trauma de la cámara, cámara lenta del nivel, sonido por capas y capa de pantalla
+            W.sumarTrauma(c.sac, pg.trauma);
+            W.pedirLenta(c.lenta, pg.camaraLenta);
+            sonar('capas', e.nivel, { material: e.material, resultado: e.resultado });
+            pantalla.golpe(e.nivel);
+            if (e.resultado === 'golpeado' || e.resultado === 'armadura') {
+                const punto = puntoCuerpo(e);
+                if (ef) ef.impacto(punto, e.nivel, cam, pg.particulas || 0);
+                if (ef && (e.nivel === 'fuerte' || e.nivel === 'remate')) ef.polvo(P.f[e.a].x, P.f[e.a].z, 'impacto', R.escenario.superficie);
+                numero(e, punto);
+                if (e.resultado === 'golpeado') {
+                    if (e.a === 0 || e.de === 0) intenciones.vibrar(fuerte ? 'fuerte' : 'golpe');
+                    if (fuerte) esc.celebrar(Math.min(1, e.fuerza * 4));
+                }
             }
+            else if (e.resultado === 'bloqueado') chispas(e, 'bloqueo');
+            else if (e.resultado === 'desviado') { chispas(e, 'desvio'); if (ef) ef.aro(puntoChoque(e), cam, 1); if (e.a === 0) intenciones.vibrar('desvio'); }
+            else if (e.resultado === 'perfecto') {
+                // Clang: campana más aguda y larga, chispas grandes con destello, aro, flash y cámara lenta (peso.perfecto)
+                chispas(e, 'perfecto'); if (ef) ef.aro(puntoChoque(e), cam, 1.4);
+                if (e.a === 0) intenciones.vibrar('perfecto');
+            }
+        } else if (e.tipo === 'aire') sonar('capas', e.nivel, { aire: true });
+        else if (e.tipo === 'polvo') {
+            if (esc.efectos) esc.efectos.polvo(e.x, e.z, e.motivo, R.escenario.superficie);
+            if (e.trauma) W.sumarTrauma(c.sac, e.trauma);
+        } else if (e.tipo === 'pared') {
+            const F = P.f[e.i];
+            W.sumarTrauma(c.sac, e.trauma);
+            if (esc.efectos) esc.efectos.polvo(F.x, F.z, 'pared', R.escenario.superficie);
+            sonar('capas', 'fuerte', { material: 'madera', resultado: 'bloqueado' });
         } else if (e.tipo === 'postura') { aviso(tx('postura'), 1, true); sonar('postura'); esc.celebrar(0.6); }
         else if (e.tipo === 'ko') { aviso(tx('ko'), R.rondas.finRonda, true); sonar('ko'); c.lentaHasta = c.tc + R.rondas.lentaKo; c.escalaLenta = R.rondas.escalaLenta; esc.celebrar(1); }
         else if (e.tipo === 'tiempo') aviso(tx('tiempo'), R.rondas.finRonda, true);
         else if (e.tipo === 'final') terminar(P);
+    }
+    // Donde entra un golpe: en el cuerpo del que recibe, a la altura del ataque, del lado del que pega
+    function puntoCuerpo(e) {
+        const O = c.P.f[e.a], F = c.P.f[e.de];
+        const y = e.altura === 'bajo' ? 0.55 : e.altura === 'medio' ? 1.1 : 1.55;
+        const ux = F.x - O.x, uz = F.z - O.z, d = Math.hypot(ux, uz) || 1;
+        return new THREE.Vector3(O.x + ux / d * 0.25, y, O.z + uz / d * 0.25);
+    }
+    // Número de daño que salta sobre el punto (arena.json → efectos.pantalla.numeros; apagado de fábrica)
+    const _p = new THREE.Vector3();
+    function numero(e, punto) {
+        if (!(e.dano > 0)) return;
+        _p.copy(punto).project(cam);
+        pantalla.numero(Math.round(e.dano), (_p.x + 1) / 2, (1 - _p.y) / 2, e.nivel === 'fuerte' || e.nivel === 'remate');
     }
     function chispas(e, tipo) {
         if (!esc.efectos) return;
