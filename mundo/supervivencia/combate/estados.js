@@ -12,6 +12,8 @@
 //   reaccionar(p, clave)                pasa a una reacción (la del que recibe, o «desviado» del atacante)
 //   congelar(p, n)                      hitstop: n cuadros sin avanzar (el buffer sigue guardando)
 //   conecto(p)                          el ataque actual pegó (abre las cancelaciones con siConecto)
+//   cargaDe(p)                          0..1: cuánto cargó el ataque actual (def.carga: se queda en el cuadro `en`
+//                                       mientras se mantiene su intención, hasta `max` cuadros)
 //   alcanza(ataque, de, a)              ¿el objetivo está dentro del alcance y el arco del ataque?
 //   crearRelojFijo(hz, maxPasos)        acumulador: avanzar(dt, fn) llama a fn las veces que toque y devuelve alfa
 // Intención (la arma combate/intenciones.js en N4, o la CPU): { mover: [x, y], altura, atacar, defensa, esquivar,
@@ -29,7 +31,7 @@ export function crearPeleador(estilo, { tactil = false } = {}) {
     return {
         estilo, tactil,
         estado: 'guardia', clave: null, def: null, c: 0,
-        conecto: false, congelado: 0, quieto: false, buffer: null, defensa: false,
+        conecto: false, congelado: 0, quieto: false, buffer: null, defensa: false, carga: 0, cargando: false,
         mover: [0, 0], dir: [1, 0], mov: [0, 0], velocidad: 0,
         cambio: { n: 0, mezcla: 0 }, eventos: [], cuadros: 0
     };
@@ -70,7 +72,7 @@ export function iniciar(p, clave, { buffer = false, dir = null } = {}) {
     const def = accionDe(p.estilo, clave);
     if (!def) return false;
     const m = COMBATE.motor.mezcla;
-    p.estado = def.estado; p.clave = clave; p.def = def; p.c = 0; p.conecto = false;
+    p.estado = def.estado; p.clave = clave; p.def = def; p.c = 0; p.conecto = false; p.carga = 0; p.cargando = false;
     const base = def.direccion || [1, 0];
     p.dir = def.usaDireccion && dir && Math.hypot(dir[0], dir[1]) > 0.3 ? normal(dir) : [base[0], base[1]];
     marcarCambio(p, def.mezcla ?? (buffer ? m.buffer : m.normal));
@@ -130,7 +132,11 @@ export function paso(p, intencion = {}) {
     if (p.quieto) { p.congelado--; return p; }
     p.cuadros++;
     // 1. El estado con tiempo avanza un cuadro (y el cuerpo, con su avance)
-    if (p.def) {
+    // Carga (S7): mientras se mantiene su intención, la acción se queda en el cuadro `en` hasta `max` cuadros
+    const ca = p.def && p.def.carga, boton = ca ? intencion[p.def.intencion || 'atacar'] : null;
+    p.cargando = !!ca && p.c === marca(ca.en, p.def.fases) && (boton === 'apretar' || boton === 'mantener') && p.carga < ca.max;
+    if (p.cargando) p.carga++;
+    else if (p.def) {
         p.c++;
         const f = p.def.fases, d = avanceEn(p.def, p.c) - avanceEn(p.def, p.c - 1);
         p.mov = [p.dir[0] * d, p.dir[1] * d];
@@ -186,6 +192,7 @@ function enVentana(p, extra) {
 export function reaccionar(p, clave) { return iniciar(p, clave); }
 export function congelar(p, n) { p.congelado = Math.max(p.congelado, n | 0); }
 export function conecto(p) { p.conecto = true; }
+export const cargaDe = p => (p.def && p.def.carga && p.def.carga.max ? Math.min(1, p.carga / p.def.carga.max) : 0);
 export function fijarEstado(p, estado) { if (p.def) p.def = null; p.estado = estado; p.clave = null; p.c = 0; marcarCambio(p, COMBATE.motor.mezcla.normal); }
 
 // de / a: { x, z, yaw } (yaw 0 = mira hacia +Z). Alcance en bloques; arco en grados respecto del frente.

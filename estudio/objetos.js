@@ -5,9 +5,13 @@
 // Comparte pantalla con el juego: «Ponerlo en mi mano» lo deja en tu barra rápida (mensaje `objeto`) y cada
 // número va en vivo (mensaje `datos`). Los valores que muestra son los reales (código + JSON), de
 // mundo/supervivencia/objetos-mano-datos.js. Guardar escribe con If-Match, como Mesa.
+// Armas del combate (katana y su vaina, modelos-mano.js → ARMAS): no son objetos del inventario; su agarre en `mano3`
+// es el que usa la arena (la katana en la mano, medida desde el hombro; la vaina en la cadera, desde los pies) y se ve
+// en vivo con el juego en la arena (__venjy.arena.elegir('lalo')).
 // =========================================================
 import { agarre, fijarDatosObjetosMano, TIPOS } from '../mundo/supervivencia/objetos-mano-datos.js';
 import { OBJETOS } from '../mundo/supervivencia/objetos.js';
+import { ARMAS } from '../mundo/supervivencia/modelos-mano.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const RAD = 180 / Math.PI;
@@ -56,11 +60,14 @@ export async function montarObjetos(ctx) {
         for (const k of TIPOS) g1.appendChild(new Option(t(...NOMBRE_TIPO[k]), 'tipo:' + k));
         const g2 = document.createElement('optgroup'); g2.label = t('Un objeto', 'One object');
         for (const o of objetos) g2.appendChild(new Option(`${o.nombre[ctx.idioma] || o.nombre.es} (${o.clave})`, 'objeto:' + o.clave));
-        lista.append(g1, g2);
+        const g3 = document.createElement('optgroup'); g3.label = t('Armas del combate (arena)', 'Combat weapons (arena)');
+        for (const [k, n] of Object.entries(ARMAS)) g3.appendChild(new Option(`${n[ctx.idioma] || n.es} (${k})`, 'arma:' + k));
+        lista.append(g1, g2, g3);
         lista.value = previo || `${sel.modo}:${sel.clave}`;
     }
     const actual = () => {
         if (sel.modo === 'tipo') return { tipo: sel.clave, clave: null, destino: datos.tipos, k: sel.clave };
+        if (sel.modo === 'arma') return { tipo: 'modelo', clave: sel.clave, destino: datos.objetos, k: sel.clave, arma: true };
         const o = objetos.find(x => x.clave === sel.clave);
         return { tipo: o ? o.tipo : 'objeto', clave: sel.clave, destino: datos.objetos, k: sel.clave };
     };
@@ -85,6 +92,7 @@ export async function montarObjetos(ctx) {
         caja.textContent = '';
         const a = actual();
         for (const [vista, es, en] of VISTAS) {
+            if (a.arma && vista === 'mano1') continue; // las armas del combate solo se ven en el cuerpo (la arena)
             const v = valores(vista, a);
             const sec = document.createElement('details'); sec.className = 'panel'; sec.open = true;
             const h = document.createElement('summary'); h.textContent = t(es, en);
@@ -125,6 +133,7 @@ export async function montarObjetos(ctx) {
     }
     async function enMano() {
         const a = actual();
+        if (a.arma) { rotular('Las armas del combate se ven en la arena: abre el duelo con Lalo en el juego.', 'Combat weapons show in the arena: open the duel with Lalo in the game.', 'ok'); ctx.puente.enviarDatos('objetos-mano', datos); return; }
         const clave = a.clave ? a.clave : MUESTRA[a.tipo];
         try {
             await ctx.puente.enviar('objeto', { clave });

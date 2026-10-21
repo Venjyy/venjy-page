@@ -38,6 +38,11 @@ export const AJUSTE_OBJETO = {
     },
     // Instrumentos 3D colgados del torso (en coordenadas de `cuerpo`, no del brazo): ver COLGAR en modelos-mano.js
     mano3: {
+        // Armas del combate (modelos-mano.js → ARMAS). Katana: en la mano, medida desde el hombro como los demás objetos
+        // (la muñeca está a 0,75); vaina: en coordenadas de `cuerpo` (desde los pies), en la cadera izquierda, la boca
+        // adelante y la punta hacia atrás y abajo
+        katana: { pos: [0, -0.68, 0.0], rot: [0, 0, 0], escala: 1 },
+        vaina_katana: { pos: [0.3, 0.78, 0.16], rot: [-0.35, Math.PI, 0.12], escala: 1 },
         guitarra: { pos: [0.05, 0.86, 0.2], rot: [0, 0, 0.42], escala: 1 },
         teclado: { pos: [0, 0.8, 0.22], rot: [0, 0, 0.12], escala: 1 },
         tambor: { pos: [0, 0.62, 0.32], rot: [0.5, 0, 0], escala: 1 }

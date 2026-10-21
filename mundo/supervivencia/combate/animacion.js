@@ -85,6 +85,9 @@ export function animar(an, p, { t = 0, raiz = null, mirada = null } = {}) {
             evaluarGesto(a, total ? p.c / total : 0, p.c / M.hz, { fases: f, c: p.c }, tmp);
             for (const k in tmp) raw[k] = tmp[k];
         }
+        // Carga (S7): la hoja vibra mientras carga (estilo-*.json → ataques.<x>.carga.temblor)
+        const tb = p.cargando && p.def.carga.temblor;
+        if (tb && tb.canal in raw) raw[tb.canal] += (tb.amp || 0) * Math.sin(2 * Math.PI * (tb.frec || 0) * an.cuadros / M.hz);
     }
     // ---- 5 · secundario: respiración en los estados libres ----
     an.wLibre = acercar(an.wLibre, libre ? 1 : 0, 0.15);

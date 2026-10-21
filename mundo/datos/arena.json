@@ -7,7 +7,7 @@
     "lalo": {
       "nombre": { "es": "Lalo", "en": "Lalo" },
       "titulo": { "es": "El Ronin", "en": "The Ronin" },
-      "estilo": "prueba",
+      "estilo": "sekiro",
       "vida": 100,
       "postura": 100,
       "aura": "#e8c050",
@@ -113,7 +113,16 @@
   "practica": {
     "ataqueCada": [1.4, 2.6],
     "alcance": 2.1,
-    "acercarse": 0.8
+    "acercarse": 0.8,
+    "patron": [
+      { "golpes": 2 },
+      { "golpes": 1 },
+      { "fuerte": 30 },
+      { "golpes": 4 },
+      { "golpes": 3 }
+    ],
+    "desviaCada": 3,
+    "nota": "Rival de práctica (L2): repite el patrón (golpes = tajos seguidos del combo; fuerte = cuadros que mantiene la carga) con ataqueCada s entre pasos, y desvía uno de cada desviaCada ataques tuyos (0 = nunca)."
   },
   "golpe": { "hitstop": "ligero", "bloqueoDano": 0.15 },
   "hud": {
@@ -123,7 +132,11 @@
     "reloj": "#ffff55",
     "ronda": "#ffff55",
     "anchoVida": 38,
-    "retrato": 44
+    "retrato": 44,
+    "postura": "#ffb030",
+    "posturaAlta": "#ff4a20",
+    "posturaFondo": "#2a1a08",
+    "anchoPostura": 22
   },
   "premios": {
     "amistad": true,
@@ -135,6 +148,19 @@
     }
   },
   "dificultades": ["facil", "normal", "dificil", "maestro"],
+  "efectos": {
+    "chispas": {
+      "vida": 0.35,
+      "velocidad": 3.2,
+      "gravedad": 9,
+      "tamano": 0.05,
+      "colores": ["#fff6c0", "#ffc040", "#ff8a20"]
+    },
+    "perfecto": { "destello": 0.12, "tamano": 0.9, "color": "#ffffff", "chispasExtra": 1.5 },
+    "bloqueo": { "escala": 0.5 },
+    "carga": { "color": "#fff4c8", "opacidad": 0.75, "niveles": 3 },
+    "estela": { "escalones": 4 }
+  },
   "textos": {
     "boton": { "es": "¡Un duelo en el lago!", "en": "A duel on the lake!" },
     "falta": { "es": "Necesitas más amistad para retarlo.", "en": "You need more friendship to challenge him." },
@@ -159,6 +185,7 @@
     "otraVez": { "es": "Elegir otra vez", "en": "Choose again" },
     "salir": { "es": "Salir", "en": "Leave" },
     "premio": { "es": "Primera victoria en {d}: {o}", "en": "First win on {d}: {o}" },
+    "postura": { "es": "¡Postura rota!", "en": "Posture broken!" },
     "amistad": { "es": "Amistad con Lalo y Moisés", "en": "Friendship with Lalo and Moisés" },
     "ayuda": {
       "es": "A/D caminar · clic atacar · clic derecho desviar (mantener: bloquear) · Shift esquivar (con W/S: paso lateral) · Esc pausa",

@@ -151,6 +151,13 @@
       "fases": { "anticipacion": 0, "activo": 3, "recuperacion": 10 },
       "anim": "bloqueado",
       "nota": "Tu ataque chocó con una guardia: rebote corto."
+    },
+    "desequilibrado": {
+      "fases": { "anticipacion": 0, "activo": 12, "recuperacion": 78 },
+      "anim": "desequilibrado",
+      "armadura": [["activo+0", "fin"]],
+      "nota": "Postura rota (§16.1, L2): 90 c tambaleándose con la guardia abierta; no puede defenderse y los golpes le quitan vida sin sacarlo del tambaleo (armadura). En L3 se le da el golpe final.",
+      "velocidadMax": 0.6
     }
   },
   "anim": {
@@ -195,6 +202,60 @@
         },
         "armaX": {
           "k": [["g", 0, 0.6], ["g", 1, 0.9, "salida"], ["r", 1, 0.75, "suave"]]
+        }
+      }
+    },
+    "desequilibrado": {
+      "reloj": "fases",
+      "nota": "S1 de la postura rota (L2): en 12 c la guardia se abre (los brazos caen, la hoja apunta al suelo, las rodillas ceden y el pecho se va atrás) y durante 78 c tambalea de lado a lado con la cabeza gacha; en los últimos 14 c se recompone con asentar.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.35, "salida"], ["r", 0.2, -0.45], ["r", 0.45, -0.28], ["r", 0.65, -0.42], ["r", 0.82, -0.35], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.3, "salida"], ["r", 0.82, 0.3], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 1, -0.3, "salida"], ["r", 0.82, -0.3], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.75], ["g", 1, 1.15, "salida"], ["r", 0.82, 1.15], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["g", 0, 0], ["g", 1, 0, "salida"], ["r", 0.82, 0], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.15, "salida"], ["r", 0.2, -0.25], ["r", 0.45, -0.08], ["r", 0.65, -0.22], ["r", 0.82, -0.15], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.35, "salida"], ["r", 0.82, -0.35], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.3, "salida"], ["r", 0.82, -0.3], ["r", 1, -0.8, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, -0.22, "salida"], ["r", 0.2, -0.3], ["r", 0.45, -0.15], ["r", 0.65, -0.28], ["r", 0.82, -0.22], ["r", 1, 0.12, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 1, 0.98, "salida"], ["r", 0.15, 1.1], ["r", 0.38, 0.9], ["r", 0.6, 1.08], ["r", 0.82, 0.98], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 1, 1.2, "salida"], ["r", 0.15, 1.3], ["r", 0.38, 1.12], ["r", 0.6, 1.28], ["r", 0.82, 1.2], ["r", 1, 0.96, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, 0.3, "salida"], ["r", 0.2, 0.42], ["r", 0.45, 0.2], ["r", 0.7, 0.38], ["r", 0.82, 0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "pY": {
+          "k": [["g", 0, -0.1], ["g", 1, -0.1, "salida"], ["r", 0.12, 0.1], ["r", 0.3, -0.3], ["r", 0.5, 0.05], ["r", 0.68, -0.25], ["r", 0.82, -0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.53], ["g", 1, -0.5, "salida"], ["r", 0.82, -0.5], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 1, -0.05, "salida"], ["r", 0.82, -0.05], ["r", 1, -0.11, "asentar"]]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0.05, "salida"], ["r", 0.12, 0.12], ["r", 0.3, -0.12], ["r", 0.5, 0.1], ["r", 0.68, -0.1], ["r", 0.82, 0], ["r", 1, 0, "asentar"]]
         }
       }
     }
