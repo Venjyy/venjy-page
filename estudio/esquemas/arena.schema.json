@@ -49,6 +49,7 @@
       "type": "object",
       "properties": {
         "tipo": { "enum": ["lago"] },
+        "superficie": { "description": "Material del suelo para el polvo de los golpes, caídas y esquivas (N5; colores en efectos.polvo.colores).", "enum": ["nieve", "hielo", "tierra"] },
         "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
         "largo": { "description": "Bloques de pared a pared en el eje largo (X).", "type": "number", "minimum": 6, "maximum": 40 },
         "ancho": { "description": "Bloques de pared a pared en Z.", "type": "number", "minimum": 4, "maximum": 30 },
@@ -179,6 +180,15 @@
       },
       "additionalProperties": false
     },
+    "muneco": {
+      "description": "Muñeco de práctica (N5): segundos sin golpes para recuperar la vida y las reacciones que juega con R, en orden (vacío = todas las de combate.json).",
+      "type": "object",
+      "properties": {
+        "recupera": { "type": "number", "minimum": 0, "maximum": 30 },
+        "reacciones": { "type": "array", "items": { "$ref": "comun.schema.json#/$defs/clave" }, "maxItems": 40 }
+      },
+      "additionalProperties": false
+    },
     "golpe": {
       "type": "object",
       "properties": {
@@ -251,7 +261,133 @@
           },
           "additionalProperties": false
         },
-        "estela": { "type": "object", "properties": { "escalones": { "type": "integer", "minimum": 2, "maximum": 16 } }, "additionalProperties": false }
+        "estela": { "type": "object", "properties": { "escalones": { "type": "integer", "minimum": 2, "maximum": 16 } }, "additionalProperties": false },
+        "impacto": {
+          "type": "object",
+          "properties": {
+            "destello": { "type": "number", "minimum": 0, "maximum": 1 },
+            "tamano": { "type": "number", "minimum": 0, "maximum": 3 },
+            "color": { "$ref": "#/$defs/color" }
+          },
+          "additionalProperties": false
+        },
+        "polvo": {
+          "type": "object",
+          "properties": {
+            "vida": { "type": "number", "minimum": 0.05, "maximum": 3 },
+            "velocidad": { "type": "number", "minimum": 0, "maximum": 10 },
+            "gravedad": { "type": "number", "minimum": 0, "maximum": 30 },
+            "tamano": { "type": "number", "minimum": 0.01, "maximum": 0.5 },
+            "cuantos": {
+            "type": "object",
+            "properties": {
+              "impacto": { "type": "integer", "minimum": 0, "maximum": 60 },
+              "caida": { "type": "integer", "minimum": 0, "maximum": 60 },
+              "esquiva": { "type": "integer", "minimum": 0, "maximum": 60 },
+              "pared": { "type": "integer", "minimum": 0, "maximum": 60 }
+            },
+            "additionalProperties": false
+          },
+            "colores": {
+            "type": "object",
+            "properties": {
+              "nieve": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 },
+              "hielo": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 },
+              "tierra": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 }
+            },
+            "additionalProperties": false
+          }
+          },
+          "additionalProperties": false
+        },
+        "aro": {
+          "type": "object",
+          "properties": {
+            "vida": { "type": "number", "minimum": 0.05, "maximum": 2 },
+            "radio": { "type": "number", "minimum": 0, "maximum": 5 },
+            "cubos": { "type": "integer", "minimum": 0, "maximum": 48 },
+            "tamano": { "type": "number", "minimum": 0.01, "maximum": 0.5 },
+            "color": { "$ref": "#/$defs/color" },
+            "niveles": { "type": "array", "items": { "enum": ["ligero", "medio", "fuerte", "desvio", "perfecto", "remate"] }, "maxItems": 6 }
+          },
+          "additionalProperties": false
+        },
+        "estrellas": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "cuantas": { "type": "integer", "minimum": 0, "maximum": 6 },
+            "radio": { "type": "number", "minimum": 0, "maximum": 1.5 },
+            "alto": { "type": "number", "minimum": 0, "maximum": 1.5 },
+            "vueltas": { "type": "number", "minimum": 0, "maximum": 5 },
+            "tamano": { "type": "number", "minimum": 0.01, "maximum": 0.5 }
+          },
+          "additionalProperties": false
+        },
+        "marca": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "tamano": { "type": "number", "minimum": 0.01, "maximum": 1 },
+            "alto": { "type": "number", "minimum": 0, "maximum": 2.5 },
+            "frente": { "type": "number", "minimum": -1, "maximum": 1 },
+            "parpadeo": { "type": "number", "minimum": 0, "maximum": 20 }
+          },
+          "additionalProperties": false
+        },
+        "topeCuadro": { "type": "integer", "minimum": 0, "maximum": 160 },
+        "pantalla": {
+          "type": "object",
+          "properties": {
+            "resolucion": { "type": "integer", "minimum": 64, "maximum": 640 },
+            "lineas": {
+            "type": "object",
+            "properties": {
+              "niveles": { "type": "array", "items": { "enum": ["ligero", "medio", "fuerte", "desvio", "perfecto", "remate"] }, "maxItems": 6 },
+              "dur": { "type": "number", "minimum": 0, "maximum": 2 },
+              "cuantas": { "type": "integer", "minimum": 0, "maximum": 80 },
+              "largo": { "type": "number", "minimum": 0, "maximum": 1 },
+              "color": { "$ref": "#/$defs/color" }
+            },
+            "additionalProperties": false
+          },
+            "flash": {
+            "type": "object",
+            "properties": {
+              "ligero": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 2 }, { "type": "number", "minimum": 0, "maximum": 1 }], "minItems": 2, "maxItems": 2 },
+              "medio": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 2 }, { "type": "number", "minimum": 0, "maximum": 1 }], "minItems": 2, "maxItems": 2 },
+              "fuerte": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 2 }, { "type": "number", "minimum": 0, "maximum": 1 }], "minItems": 2, "maxItems": 2 },
+              "desvio": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 2 }, { "type": "number", "minimum": 0, "maximum": 1 }], "minItems": 2, "maxItems": 2 },
+              "perfecto": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 2 }, { "type": "number", "minimum": 0, "maximum": 1 }], "minItems": 2, "maxItems": 2 },
+              "remate": { "type": "array", "prefixItems": [{ "type": "number", "minimum": 0, "maximum": 2 }, { "type": "number", "minimum": 0, "maximum": 1 }], "minItems": 2, "maxItems": 2 },
+              "color": { "$ref": "#/$defs/color" }
+            },
+            "additionalProperties": false
+          },
+            "vineta": {
+            "type": "object",
+            "properties": {
+              "niveles": { "type": "array", "items": { "enum": ["ligero", "medio", "fuerte", "desvio", "perfecto", "remate"] }, "maxItems": 6 },
+              "dur": { "type": "number", "minimum": 0, "maximum": 3 },
+              "fuerza": { "type": "number", "minimum": 0, "maximum": 1 },
+              "color": { "$ref": "#/$defs/color" }
+            },
+            "additionalProperties": false
+          },
+            "numeros": {
+            "type": "object",
+            "properties": {
+              "activo": { "type": "boolean" },
+              "dur": { "type": "number", "minimum": 0.1, "maximum": 3 },
+              "sube": { "type": "number", "minimum": 0, "maximum": 100 },
+              "color": { "$ref": "#/$defs/color" },
+              "critico": { "$ref": "#/$defs/color" }
+            },
+            "additionalProperties": false
+          }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },

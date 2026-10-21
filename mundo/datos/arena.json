@@ -43,6 +43,7 @@
   },
   "escenario": {
     "tipo": "lago",
+    "superficie": "nieve",
     "nombre": { "es": "Lago congelado", "en": "Frozen Lake" },
     "largo": 14,
     "ancho": 8,
@@ -124,6 +125,10 @@
     "desviaCada": 3,
     "nota": "Rival de práctica (L2): repite el patrón (golpes = tajos seguidos del combo; fuerte = cuadros que mantiene la carga) con ataqueCada s entre pasos, y desvía uno de cada desviaCada ataques tuyos (0 = nunca)."
   },
+  "muneco": {
+    "recupera": 2,
+    "reacciones": []
+  },
   "golpe": { "hitstop": "ligero", "bloqueoDano": 0.15 },
   "hud": {
     "vida": "#d83a2a",
@@ -190,6 +195,12 @@
     "ayuda": {
       "es": "A/D caminar · clic atacar · clic derecho desviar (mantener: bloquear) · Shift esquivar (con W/S: paso lateral) · Esc pausa",
       "en": "A/D walk · click attack · right click deflect (hold: block) · Shift dodge (with W/S: sidestep) · Esc pause"
-    }
+    },
+    "muneco": { "es": "Muñeco de práctica", "en": "Training dummy" },
+    "ayudaMuneco": {
+      "es": "R: siguiente reacción (Mayús + R: en espejo)",
+      "en": "R: next reaction (Shift + R: mirrored)"
+    },
+    "espejo": { "es": "espejo", "en": "mirrored" }
   }
 }

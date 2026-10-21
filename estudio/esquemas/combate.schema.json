@@ -214,6 +214,114 @@
         "additionalProperties": false
       }
     },
+    "impacto": {
+      "description": "Peso de los golpes (N5, combate/peso.js): temblor del que recibe durante el hitstop (amplitud en bloques; cambia de lado cada `cada` cuadros), sacudida de la cámara por trauma (baja por segundo; topes de desplazamiento en bloques y de giro en grados; frecuencia del ruido).",
+      "type": "object",
+      "properties": {
+        "temblor": {
+          "type": "object",
+          "properties": {
+            "amplitud": { "type": "number", "minimum": 0, "maximum": 0.3 },
+            "cada": { "type": "integer", "minimum": 1, "maximum": 10 }
+          },
+          "additionalProperties": false
+        },
+        "sacudida": {
+          "type": "object",
+          "properties": {
+            "baja": { "type": "number", "minimum": 0, "maximum": 10 },
+            "desplazamiento": { "type": "number", "minimum": 0, "maximum": 1 },
+            "giro": { "type": "number", "minimum": 0, "maximum": 15 },
+            "frecuencia": { "type": "number", "minimum": 0, "maximum": 60 }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "elegir": {
+      "description": "Qué reacción toca (N5, §18). tabla: altura × nivel cuando el ataque no trae `reaccion`. subir: por nivel, la reacción del ataque sube a otra (golpes fuertes y remates). acumular: tantas leves seguidas sin defenderse se vuelven la de `a`. pared: empujado contra una pared con al menos `empuje` bloques pendientes pasa a `reaccion`, con hitstop extra y un rebote hacia adelante.",
+      "type": "object",
+      "properties": {
+        "tabla": {
+          "type": "object",
+          "propertyNames": { "enum": ["alto", "medio", "bajo"] },
+          "additionalProperties": { "$ref": "#/$defs/mapaClaves" }
+        },
+        "subir": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/clave" },
+          "additionalProperties": { "$ref": "#/$defs/mapaClaves" }
+        },
+        "acumular": {
+          "type": "object",
+          "properties": {
+            "leves": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "a": { "$ref": "#/$defs/mapaClaves" }
+          },
+          "additionalProperties": false
+        },
+        "pared": {
+          "type": "object",
+          "properties": {
+            "empuje": { "type": "number", "minimum": 0, "maximum": 5 },
+            "reaccion": { "$ref": "#/$defs/clave" },
+            "hitstop": { "type": "integer", "minimum": 0, "maximum": 30 },
+            "rebote": { "type": "number", "minimum": 0, "maximum": 3 }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
+    "sonidos": {
+      "description": "Sonido por capas de un golpe (N5, §15.4; combate/peso.js → capasSonido, sonidos.js → voces): aire al empezar el activo (sube de tono con el nivel), impacto según el material (carne, metal, madera), cuerpo del que recibe (más grave cuanto más pesado) y cola (ecos cortos del escenario). niveles: volumen por nivel; perfecto: el desvío perfecto sube el tono y alarga la campana.",
+      "type": "object",
+      "properties": {
+        "volumen": { "type": "number", "minimum": 0, "maximum": 2 },
+        "aire": {
+          "type": "object",
+          "properties": { "voces": { "$ref": "#/$defs/voces" }, "subeConNivel": { "type": "number", "minimum": 0, "maximum": 2 } },
+          "additionalProperties": false
+        },
+        "impacto": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/clave" },
+          "additionalProperties": { "$ref": "#/$defs/voces" }
+        },
+        "cuerpo": {
+          "type": "object",
+          "properties": { "voces": { "$ref": "#/$defs/voces" }, "graveConNivel": { "type": "number", "minimum": 0, "maximum": 0.9 } },
+          "additionalProperties": false
+        },
+        "cola": {
+          "type": "object",
+          "properties": {
+            "ecos": { "type": "integer", "minimum": 0, "maximum": 6 },
+            "retardo": { "type": "number", "minimum": 0, "maximum": 0.5 },
+            "caida": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "niveles": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/clave" },
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 3 }
+        },
+        "perfecto": {
+          "type": "object",
+          "properties": {
+            "tono": { "type": "number", "minimum": 0.5, "maximum": 3 },
+            "alarga": { "type": "number", "minimum": 0.5, "maximum": 4 }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "additionalProperties": false
+    },
     "reacciones": {
       "description": "Reacciones comunes a todos los estilos (§18): una acción con fases cuya animación está en `anim`. Un estilo puede reemplazar una con la suya (estilo-*.json → reacciones).",
       "type": "object",
@@ -322,6 +430,30 @@
       "required": ["fase", "hasta"],
       "additionalProperties": false
     },
+    "mapaClaves": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/clave" }
+    },
+    "voz": {
+      "description": "Una voz sintetizada: ruido filtrado (frec, q, filtro) o tono que cae de f0 a f1 (forma). dur y retardo en s; vol de 0 a 1.",
+      "type": "object",
+      "properties": {
+        "tipo": { "enum": ["ruido", "tono"] },
+        "frec": { "type": "number", "minimum": 20, "maximum": 12000 },
+        "q": { "type": "number", "minimum": 0.01, "maximum": 30 },
+        "filtro": { "enum": ["bandpass", "lowpass", "highpass"] },
+        "f0": { "type": "number", "minimum": 20, "maximum": 12000 },
+        "f1": { "type": "number", "minimum": 20, "maximum": 12000 },
+        "forma": { "enum": ["sine", "square", "triangle", "sawtooth"] },
+        "dur": { "type": "number", "minimum": 0.005, "maximum": 3 },
+        "vol": { "type": "number", "minimum": 0, "maximum": 1 },
+        "retardo": { "type": "number", "minimum": 0, "maximum": 2 }
+      },
+      "required": ["tipo"],
+      "additionalProperties": false
+    },
+    "voces": { "type": "array", "items": { "$ref": "#/$defs/voz" }, "maxItems": 8 },
     "accion": {
       "description": "Estado con tiempo que no es un ataque: esquiva, desvío, reacción, levantarse. estado: el nombre del estado de la máquina (§15.2; por defecto el de la clave, o reaccion). siguiente: a qué pasa al terminar (por defecto la guardia; el desvío con la defensa mantenida pasa a controles.defensaMantenida). ventana: el tramo en que desvía (por defecto todo el activo). usaDireccion: el avance va hacia donde apunta mover al apretar (si no, `direccion`, [adelante, lado]).",
       "type": "object",
@@ -342,6 +474,18 @@
         "velocidadMax": { "description": "Rad por cuadro que se permiten en sus cuadros activos (hasta motor.velocidadMax).", "type": "number", "minimum": 0.05, "maximum": 2 },
         "sinMirada": { "type": "boolean" },
         "ininterrumpible": { "type": "boolean" },
+        "espejo": { "description": "La animación está hecha para un golpe que llega por la izquierda del que recibe; si llega por la derecha (el ataque trae lado: derecha) va en espejo (N5).", "type": "boolean" },
+        "efectos": {
+          "description": "Efectos de la reacción (N5): sobre dibuja estrellas sobre la cabeza o la marca roja en el pecho mientras dura; polvo levanta polvo del suelo en esas marcas (al caer); sacudida suma ese trauma a la cámara en la primera marca de polvo.",
+          "type": "object",
+          "properties": {
+            "sobre": { "enum": ["estrellas", "marcaRoja"] },
+            "polvo": { "type": "array", "items": { "$ref": "#/$defs/marca" }, "maxItems": 8 },
+            "sacudida": { "type": "number", "minimum": 0, "maximum": 1 },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
         "nota": { "$ref": "comun.schema.json#/$defs/nota" }
       },
       "required": ["fases"],

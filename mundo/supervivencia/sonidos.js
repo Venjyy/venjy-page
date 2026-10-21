@@ -48,6 +48,16 @@ export function tono({ f0 = 440, f1 = 220, dur = 0.12, vol = 0.2, forma = 'squar
     o.stop(t + dur + 0.02);
 }
 
+// Varias voces de datos a la vez (el sonido por capas del combate, N5: combate.json → sonidos y combate/peso.js →
+// capasSonido). Cada voz: { tipo: 'ruido', frec, q, filtro, dur, vol, retardo } o { tipo: 'tono', f0, f1, forma, … }
+export function voces(lista) {
+    for (const v of lista || []) {
+        if (!(v.vol > 0)) continue;
+        if (v.tipo === 'tono') tono({ f0: v.f0, f1: v.f1, dur: v.dur, vol: v.vol, forma: v.forma || 'sine', retardo: v.retardo || 0 });
+        else ruido({ dur: v.dur, frec: v.frec, q: v.q ?? 1, vol: v.vol, tipo: v.filtro || 'bandpass', retardo: v.retardo || 0 });
+    }
+}
+
 // Material del bloque para elegir el timbre
 const MATERIAL = { piedra: 2200, madera: 900, tierra: 500, arena: 3200, hojas: 4200, vidrio: 5200, lana: 300 };
 export function materialDe(id) {

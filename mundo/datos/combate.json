@@ -134,12 +134,83 @@
       "nota": "Empuje según la animación; acercamiento de cámara."
     }
   },
+  "impacto": {
+    "temblor": { "amplitud": 0.03, "cada": 2 },
+    "sacudida": { "baja": 1.6, "desplazamiento": 0.12, "giro": 1.5, "frecuencia": 14 },
+    "nota": "N5: el que recibe tiembla durante el hitstop; la cámara se sacude con trauma² (cada golpe suma su peso.<nivel>.trauma)."
+  },
+  "elegir": {
+    "tabla": {
+      "alto": { "ligero": "alto_leve", "medio": "alto_leve", "fuerte": "alto_fuerte" },
+      "medio": { "ligero": "medio_leve", "medio": "medio_empuje", "fuerte": "medio_fuerte" },
+      "bajo": { "ligero": "bajo_leve", "medio": "bajo_leve", "fuerte": "derribo" }
+    },
+    "subir": {
+      "fuerte": {
+        "alto_leve": "alto_fuerte",
+        "medio_leve": "medio_fuerte",
+        "medio_empuje": "medio_fuerte",
+        "bajo_leve": "derribo"
+      },
+      "remate": {
+        "alto_leve": "rematado",
+        "alto_fuerte": "rematado",
+        "medio_leve": "rematado",
+        "medio_empuje": "rematado",
+        "medio_fuerte": "rematado",
+        "bajo_leve": "rematado",
+        "derribo": "rematado"
+      }
+    },
+    "acumular": {
+      "leves": 3,
+      "a": { "alto_leve": "alto_fuerte", "medio_leve": "medio_fuerte", "bajo_leve": "derribo" }
+    },
+    "pared": { "empuje": 0.2, "reaccion": "pared", "hitstop": 4, "rebote": 0.3 },
+    "nota": "N5 (§18): la reacción del ataque, o la de la tabla; los golpes fuertes la suben; tres leves seguidas sin defenderse, también."
+  },
+  "sonidos": {
+    "volumen": 1,
+    "aire": {
+      "voces": [
+        { "tipo": "ruido", "frec": 1800, "q": 1.2, "dur": 0.12, "vol": 0.1, "filtro": "bandpass" }
+      ],
+      "subeConNivel": 0.25
+    },
+    "impacto": {
+      "carne": [
+        { "tipo": "ruido", "frec": 420, "q": 0.8, "dur": 0.09, "vol": 0.32, "filtro": "lowpass" },
+        { "tipo": "tono", "f0": 190, "f1": 70, "dur": 0.1, "vol": 0.14, "forma": "square" }
+      ],
+      "metal": [
+        { "tipo": "tono", "f0": 1760, "f1": 1720, "dur": 0.45, "vol": 0.09, "forma": "sine" },
+        { "tipo": "tono", "f0": 2637, "f1": 2600, "dur": 0.32, "vol": 0.05, "forma": "sine" },
+        { "tipo": "tono", "f0": 4105, "f1": 4050, "dur": 0.2, "vol": 0.03, "forma": "sine" },
+        { "tipo": "ruido", "frec": 4200, "q": 3, "dur": 0.02, "vol": 0.2, "filtro": "bandpass" }
+      ],
+      "madera": [
+        { "tipo": "ruido", "frec": 900, "q": 2, "dur": 0.06, "vol": 0.25, "filtro": "bandpass" },
+        { "tipo": "tono", "f0": 420, "f1": 300, "dur": 0.07, "vol": 0.08, "forma": "triangle" }
+      ]
+    },
+    "cuerpo": {
+      "voces": [
+        { "tipo": "tono", "f0": 120, "f1": 45, "dur": 0.16, "vol": 0.2, "forma": "sine" }
+      ],
+      "graveConNivel": 0.15
+    },
+    "cola": { "ecos": 2, "retardo": 0.07, "caida": 0.35 },
+    "niveles": { "ligero": 0.8, "medio": 1, "fuerte": 1.25, "desvio": 1, "perfecto": 1.2, "remate": 1.4 },
+    "perfecto": { "tono": 1.2, "alarga": 1.6 },
+    "nota": "N5 (§15.4): aire al empezar el activo, impacto por material (la hoja contra la hoja suena a metal), cuerpo del que recibe y una cola de ecos."
+  },
   "reacciones": {
     "alto_leve": {
       "fases": { "anticipacion": 0, "activo": 4, "recuperacion": 10 },
       "anim": "alto_leve",
       "nota": "Golpe alto ligero (§18). Las 16 reacciones completas llegan en N5.",
-      "velocidadMax": 0.6
+      "velocidadMax": 0.6,
+      "espejo": true
     },
     "desviado": {
       "fases": { "anticipacion": 0, "activo": 6, "recuperacion": 14 },
@@ -157,7 +228,117 @@
       "anim": "desequilibrado",
       "armadura": [["activo+0", "fin"]],
       "nota": "Postura rota (§16.1, L2): 90 c tambaleándose con la guardia abierta; no puede defenderse y los golpes le quitan vida sin sacarlo del tambaleo (armadura). En L3 se le da el golpe final.",
+      "velocidadMax": 0.6,
+      "efectos": { "sobre": "marcaRoja" }
+    },
+    "alto_fuerte": {
+      "fases": { "anticipacion": 0, "activo": 6, "recuperacion": 24 },
+      "anim": "alto_fuerte",
+      "espejo": true,
+      "direccion": [-1, 0],
+      "avance": [
+        { "fase": "activo", "hasta": -0.25, "curva": "salida" },
+        { "fase": "recuperacion", "hasta": -0.3, "curva": "suave" }
+      ],
+      "nota": "Golpe alto fuerte (§18): la cabeza se va atrás y gira lejos del golpe (hecha para un golpe por la izquierda), el pecho cae atrás y retrocede dos pasos tambaleando.",
       "velocidadMax": 0.6
+    },
+    "medio_leve": {
+      "fases": { "anticipacion": 0, "activo": 6, "recuperacion": 12 },
+      "anim": "medio_leve",
+      "espejo": true,
+      "nota": "Golpe medio ligero (§18): se dobla, el pecho adelante, los brazos al estómago y las rodillas ceden; se endereza en 2 tiempos.",
+      "velocidadMax": 0.6
+    },
+    "medio_empuje": {
+      "fases": { "anticipacion": 0, "activo": 8, "recuperacion": 18 },
+      "anim": "medio_empuje",
+      "espejo": true,
+      "direccion": [-1, 0],
+      "avance": [
+        { "fase": "activo", "hasta": -0.3, "curva": "salida" },
+        { "fase": "recuperacion", "hasta": -0.6, "curva": "suave" }
+      ],
+      "nota": "Golpe medio con empuje (§18): doblado como el leve y empujado hacia atrás en 3 pasos reales (uno en el activo y dos en la recuperación, el pie en el aire en cada uno).",
+      "velocidadMax": 0.6
+    },
+    "medio_fuerte": {
+      "fases": { "anticipacion": 0, "activo": 8, "recuperacion": 32 },
+      "anim": "medio_fuerte",
+      "espejo": true,
+      "nota": "Golpe al hígado, rodillazo (§18): doblado profundo, una rodilla casi al suelo, y se para.",
+      "velocidadMax": 0.6
+    },
+    "bajo_leve": {
+      "fases": { "anticipacion": 0, "activo": 4, "recuperacion": 12 },
+      "anim": "bajo_leve",
+      "espejo": true,
+      "nota": "Golpe bajo sin derribo (§18): la rodilla del lado golpeado cede y el cuerpo baja de ese lado; recupera con un paso.",
+      "velocidadMax": 0.6
+    },
+    "derribo": {
+      "fases": { "anticipacion": 6, "activo": 8, "recuperacion": 24 },
+      "anim": "derribo",
+      "estado": "derribado",
+      "siguiente": "levantarse",
+      "efectos": {
+        "polvo": ["recuperacion+0"],
+        "sacudida": 0.3
+      },
+      "nota": "Caída de espalda en 4 fases (§18): pierde los pies (6 c), en el aire (8 c), impacto con rebote y polvo (4 c) y tendido (20 c). Después pasa solo a levantarse."
+    },
+    "levantarse": {
+      "fases": { "anticipacion": 0, "activo": 10, "recuperacion": 20 },
+      "anim": "levantarse",
+      "estado": "levantarse",
+      "iframes": [["activo+0", "fin"]],
+      "nota": "Después de derribo (§18): gira de lado, apoya una mano y una rodilla y se para en guardia; invulnerable todo el tiempo."
+    },
+    "pared": {
+      "fases": { "anticipacion": 0, "activo": 8, "recuperacion": 52 },
+      "anim": "pared",
+      "espejo": true,
+      "direccion": [1, 0],
+      "avance": { "fase": "recuperacion", "hasta": 0.3, "curva": "salida" },
+      "efectos": {
+        "polvo": ["activo+3"],
+        "sacudida": 0.3
+      },
+      "nota": "Rebote contra una pared (§18): choca de espalda (el motor suma 4 c de hitstop), rebota 0,3 hacia adelante y queda aturdido con los brazos abajo y la cabeza ladeada.",
+      "velocidadMax": 0.6
+    },
+    "aturdido": {
+      "fases": { "anticipacion": 0, "activo": 12, "recuperacion": 108 },
+      "anim": "aturdido",
+      "estado": "aturdido",
+      "efectos": { "sobre": "estrellas" },
+      "nota": "Mareo (§18): tambaleo en círculo con estrellas sobre la cabeza, 120 c."
+    },
+    "desviado_largo": {
+      "fases": { "anticipacion": 0, "activo": 8, "recuperacion": 22 },
+      "anim": "desviado_largo",
+      "direccion": [-1, 0],
+      "avance": [
+        { "fase": "activo", "hasta": -0.2, "curva": "salida" },
+        { "fase": "recuperacion", "hasta": -0.2, "curva": "suave" }
+      ],
+      "nota": "Desvío perfecto o mikiri (§18): como desviado pero más abierto, con un segundo paso atrás. Deja una ventana real de castigo.",
+      "velocidadMax": 0.6
+    },
+    "rematado": {
+      "fases": { "anticipacion": 6, "activo": 8, "recuperacion": 166 },
+      "anim": "rematado",
+      "estado": "rematado",
+      "efectos": {
+        "polvo": ["recuperacion+0"],
+        "sacudida": 0.5
+      },
+      "nota": "Rematado (§18): cae de espalda como derribo, con más sacudida, y se queda tendido y quieto hasta el final (180 c)."
+    },
+    "cojera": {
+      "fases": { "anticipacion": 0, "activo": 40, "recuperacion": 0 },
+      "anim": "cojera",
+      "nota": "Caminata coja (§18; capa de paso para Urban Reign en L5): la pierna derecha rota no dobla la rodilla y el pecho se ladea hacia ese lado en cada paso. Ciclo de 40 c."
     }
   },
   "anim": {
@@ -256,6 +437,552 @@
         },
         "pZ": {
           "k": [["g", 0, 0], ["g", 1, 0.05, "salida"], ["r", 0.12, 0.12], ["r", 0.3, -0.12], ["r", 0.5, 0.1], ["r", 0.68, -0.1], ["r", 0.82, 0], ["r", 1, 0, "asentar"]]
+        }
+      }
+    },
+    "alto_fuerte": {
+      "reloj": "fases",
+      "nota": "Cabeza atrás y girada hacia su derecha, pecho atrás, brazos abiertos; paso 1 (pie de atrás en el aire) en el activo y paso 2 (pie de adelante) en la recuperación, con el pecho ladeándose a cada paso.",
+      "canales": {
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.5, -0.45, "salida"], ["r", 0.35, -0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "cy": {
+          "k": [["g", 0, 0], ["g", 1, -0.6, "salida"], ["r", 0.5, -0.4], ["r", 1, 0, "suave"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, -0.3, "salida"], ["r", 0.5, -0.05], ["r", 1, 0.12, "asentar"]]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0.1, "salida"], ["r", 0.25, -0.15], ["r", 0.5, 0.15], ["r", 0.75, -0.08], ["r", 1, 0, "suave"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.4, "salida"], ["r", 0.6, -0.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.5, "salida"], ["r", 0.6, -0.6], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.05, "salida"], ["r", 1, 0.35, "suave"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.1, "salida"], ["r", 1, -0.5, "suave"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.5, 0.35, "salida"], ["g", 1, -0.05], ["r", 1, -0.11, "suave"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 0.5, 1.5, "salida"], ["g", 1, 0.96], ["r", 1, 0.96]]
+        },
+        "pDx": {
+          "k": [["g", 1, -0.53], ["r", 0.3, -0.53], ["r", 0.5, -0.1, "salida"], ["r", 0.75, -0.5], ["r", 1, -0.53]]
+        },
+        "rodD": {
+          "k": [["g", 1, 0.72], ["r", 0.3, 0.72], ["r", 0.5, 1.3, "salida"], ["r", 0.75, 0.72], ["r", 1, 0.72]]
+        }
+      }
+    },
+    "medio_leve": {
+      "reloj": "fases",
+      "nota": "Doblado de cintura con los codos al estómago (el golpe llega por la izquierda: el lado golpeado se hunde un poco) y rodillas cediendo; se endereza en 2 tiempos.",
+      "canales": {
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, 0.6, "salida"], ["r", 0.3, 0.55], ["r", 0.55, 0.3, "suave"], ["r", 1, 0.12, "asentar"]]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0.1, "salida"], ["r", 1, 0, "suave"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, 0.3, "salida"], ["r", 0.55, 0.15], ["r", 1, -0.1, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 1, -1.5, "salida"], ["r", 0.5, -1.2], ["r", 1, -0.9, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 1, -1.5, "salida"], ["r", 0.5, -1.2], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.3, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.3, "salida"], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.5, "salida"], ["r", 0.5, 0.45], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.45, "salida"], ["r", 0.5, -0.45], ["r", 1, -0.5, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 1, 1.1, "salida"], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 1, 1.3, "salida"], ["r", 1, 0.96, "asentar"]]
+        }
+      }
+    },
+    "medio_empuje": {
+      "reloj": "fases",
+      "nota": "Doblado y empujado: paso 1 con el pie de atrás (activo), paso 2 con el de adelante y paso 3 otra vez con el de atrás (recuperación); luego se endereza.",
+      "canales": {
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, 0.55, "salida"], ["r", 0.5, 0.4], ["r", 1, 0.12, "asentar"]]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0.1, "salida"], ["r", 0.25, -0.1], ["r", 0.55, 0.1], ["r", 1, 0, "suave"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, 0.25, "salida"], ["r", 0.6, 0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 1, -1.5, "salida"], ["r", 0.6, -1.2], ["r", 1, -0.9, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 1, -1.5, "salida"], ["r", 0.6, -1.2], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.3, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.3, "salida"], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.5, "salida"], ["r", 0.6, 0.45], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.45, "salida"], ["r", 0.6, -0.45], ["r", 1, -0.5, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.5, 0.35, "salida"], ["g", 1, -0.05], ["r", 0.45, -0.05], ["r", 0.6, 0.35, "salida"], ["r", 0.8, -0.11], ["r", 1, -0.11]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 0.5, 1.5, "salida"], ["g", 1, 0.96], ["r", 0.45, 0.96], ["r", 0.6, 1.5, "salida"], ["r", 0.8, 0.96], ["r", 1, 0.96]]
+        },
+        "pDx": {
+          "k": [["g", 1, -0.53], ["r", 0.15, -0.53], ["r", 0.3, -0.1, "salida"], ["r", 0.45, -0.5], ["r", 1, -0.53]]
+        },
+        "rodD": {
+          "k": [["g", 1, 0.9], ["r", 0.15, 0.9], ["r", 0.3, 1.3, "salida"], ["r", 0.45, 0.9], ["r", 1, 0.72, "asentar"]]
+        }
+      }
+    },
+    "medio_fuerte": {
+      "reloj": "fases",
+      "nota": "Se dobla a fondo (pecho 0,85) con los brazos al hígado y la rodilla de atrás casi al suelo; aguanta y se levanta en la recuperación.",
+      "canales": {
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, 0.85, "salida"], ["r", 0.45, 0.85], ["r", 0.8, 0.4, "suave"], ["r", 1, 0.12, "asentar"]]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0.12, "salida"], ["r", 0.5, 0.1], ["r", 1, 0, "suave"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, 0.4, "salida"], ["r", 0.5, 0.4], ["r", 1, -0.1, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 1, -1.6, "salida"], ["r", 0.5, -1.5], ["r", 1, -0.9, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 1, -1.6, "salida"], ["r", 0.5, -1.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.2, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.2, "salida"], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.5, "salida"], ["r", 0.5, 0.5], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.4, "salida"], ["r", 0.5, -0.4], ["r", 1, -0.5, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.53], ["g", 1, -0.9, "salida"], ["r", 0.5, -0.9], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 1, 1.5, "salida"], ["r", 0.5, 1.5], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 1, 0.35, "salida"], ["r", 0.5, 0.35], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 1, 2.2, "salida"], ["r", 0.5, 2.2], ["r", 1, 0.96, "asentar"]]
+        }
+      }
+    },
+    "bajo_leve": {
+      "reloj": "fases",
+      "nota": "Hecha para un golpe en la pierna izquierda: esa rodilla cede (rodI 1,9), el cuerpo se ladea hacia ese lado y se recupera con un paso del pie derecho.",
+      "canales": {
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 1, 1.9, "salida"], ["r", 0.5, 1.5], ["r", 1, 0.96, "suave"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 1, -0.3, "salida"], ["r", 1, -0.11, "asentar"]]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0.2, "salida"], ["r", 1, 0, "asentar"]]
+        },
+        "rz": {
+          "k": [["g", 0, 0], ["g", 1, 0.08, "salida"], ["r", 1, 0, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, 0.35, "salida"], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, 0.1, "salida"], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.5, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.53], ["r", 0.3, -0.53], ["r", 0.5, -0.2, "salida"], ["r", 0.8, -0.55], ["r", 1, -0.53]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["r", 0.3, 0.72], ["r", 0.5, 1.2, "salida"], ["r", 0.8, 0.72], ["r", 1, 0.72]]
+        }
+      }
+    },
+    "derribo": {
+      "reloj": "fases",
+      "nota": "Pierde los pies (las piernas adelante, el pecho atrás), flota con los brazos abiertos, la espalda toca el suelo con un rebote de 0,1 (inc -0,6 a -0,5) y queda tendido. Ojo: el tope de inc en poses.json → limites es -0,6; con -1,5 quedaría más plano.",
+      "canales": {
+        "inc": {
+          "k": [["a", 0, 0], ["a", 1, -0.25, "entrada"], ["g", 0.4, -0.5, "suave"], ["g", 1, -0.6, "entrada"], ["r", 0.1, -0.6], ["r", 0.12, -0.5, "suave"], ["r", 0.2, -0.6, "suave"], ["r", 1, -0.6]]
+        },
+        "y": {
+          "k": [["a", 0, 0], ["a", 1, 0.05], ["g", 0.5, 0.3, "salida"], ["g", 1, 0.05, "entrada"], ["r", 0.1, 0.03], ["r", 1, 0.03]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, -0.2, "salida"], ["g", 1, -0.35, "salida"], ["r", 1, -0.35]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.3], ["g", 1, -0.6, "salida"], ["r", 0.1, -0.9, "latigo"], ["r", 0.3, -0.4, "suave"], ["r", 1, -0.3]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 1, -1.1, "salida"], ["g", 1, -1.4, "salida"], ["r", 0.1, -1.3], ["r", 1, -1.3]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, -1, "salida"], ["g", 1, -1.2, "salida"], ["r", 0.1, -1.1], ["r", 1, -1.1]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 1, 0.3, "salida"], ["g", 1, 0.2], ["r", 1, 0.2]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 0.3, "salida"], ["g", 1, 0.3], ["r", 1, 0.3]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -1.6, "salida"], ["g", 1, -2, "salida"], ["r", 0.15, -1.4], ["r", 0.4, -0.5, "suave"], ["r", 1, 0.1]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -1.8, "salida"], ["g", 1, -2.2, "salida"], ["r", 0.15, -1.5], ["r", 0.4, -0.6, "suave"], ["r", 1, 0.1]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, -0.2], ["g", 1, -0.6, "salida"], ["r", 0.3, -0.5], ["r", 1, 0.1]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, 0.2], ["g", 1, 0.6, "salida"], ["r", 0.3, 0.5], ["r", 1, -0.1]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.4], ["r", 0.3, -0.2], ["r", 1, -0.1]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.4], ["r", 0.3, -0.2], ["r", 1, -0.1]]
+        }
+      }
+    },
+    "levantarse": {
+      "reloj": "fases",
+      "nota": "Desde tendido: en el activo se da la vuelta y queda a cuatro apoyos (cuerpo adelante, mano en el suelo, una rodilla abajo); en la recuperación se para a la guardia con asentar.",
+      "canales": {
+        "inc": {
+          "k": [["g", 0, -0.6], ["g", 0.5, -0.3, "suave"], ["g", 1, 0.9, "suave"], ["r", 0.5, 0.4, "suave"], ["r", 1, 0, "asentar"]]
+        },
+        "y": {
+          "k": [["g", 0, 0.03], ["g", 1, 0, "suave"], ["r", 1, 0]]
+        },
+        "ry": {
+          "k": [["g", 0, 0], ["g", 0.5, 0.6, "suave"], ["g", 1, 0.3, "suave"], ["r", 1, 0.15, "suave"]]
+        },
+        "pX": {
+          "k": [["g", 0, -0.35], ["g", 1, 0.5, "suave"], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.3], ["g", 1, -0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -1.3], ["g", 1, -1, "suave"], ["r", 0.5, -0.7], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -1.1], ["g", 1, 0.3, "suave"], ["r", 0.5, 0], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.2], ["g", 1, 1.6, "suave"], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.3], ["g", 1, 2, "suave"], ["r", 1, 0.96, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, 0.1], ["g", 0.6, -0.3, "suave"], ["g", 1, -0.2], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.1], ["g", 1, -0.2], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.1], ["g", 1, 0.3], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, 0.1], ["g", 1, 0.1], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.1], ["g", 1, -0.3], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.1], ["g", 1, -0.2], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "pared": {
+      "reloj": "fases",
+      "nota": "Se arquea al chocar de espalda (cabeza atrás, brazos abiertos), rebota hacia adelante con el pecho cayendo y queda unos cuadros aturdido: brazos abajo, cabeza ladeada.",
+      "canales": {
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 0.4, -0.35, "salida"], ["g", 1, -0.2], ["r", 0.2, 0.5, "salida"], ["r", 0.5, 0.35], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.4, -0.5, "salida"], ["g", 1, -0.3], ["r", 0.2, 0.4], ["r", 0.6, 0.35], ["r", 1, -0.1, "asentar"]]
+        },
+        "cz": {
+          "k": [["g", 1, 0], ["r", 0.3, 0.2], ["r", 0.7, 0.2], ["r", 1, 0, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 0.4, -0.1, "salida"], ["r", 0.3, 0.1], ["r", 0.7, 0.1], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 0.4, -0.1, "salida"], ["r", 0.3, 0.1], ["r", 0.7, 0.1], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 0.4, -0.5, "salida"], ["r", 0.3, 0.1], ["r", 0.7, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 0.4, 0.5, "salida"], ["r", 0.3, -0.1], ["r", 0.7, -0.1], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 0.4, -0.1, "salida"], ["r", 0.3, -0.1], ["r", 0.7, -0.1], ["r", 1, -0.9, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 0.4, -0.1, "salida"], ["r", 0.3, -0.1], ["r", 0.7, -0.1], ["r", 1, -0.8, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.75], ["g", 0.4, 0.2], ["r", 0.3, 0.1], ["r", 0.7, 0.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "inc": {
+          "k": [["g", 0, 0], ["g", 0.4, -0.2, "salida"], ["r", 0.2, 0.1], ["r", 1, 0, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 1, 0.5], ["r", 0.3, 1], ["r", 0.7, 0.9], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 1, 0.7], ["r", 0.3, 1.2], ["r", 0.7, 1.1], ["r", 1, 0.96, "asentar"]]
+        }
+      }
+    },
+    "aturdido": {
+      "reloj": "fases",
+      "nota": "El pecho dibuja un círculo lento (pX y pZ ±0,15 a 0,8 Hz, osciladores en seg), la cabeza cuelga y los pies dan pasitos para no caerse.",
+      "canales": {
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, 0.3, "salida"], ["r", 0.85, 0.3], ["r", 1, 0.12, "asentar"]],
+          "osc": [
+            { "forma": "sin", "amp": 0.15, "frec": 0.8 }
+          ]
+        },
+        "pZ": {
+          "k": [["g", 0, 0], ["g", 1, 0], ["r", 1, 0]],
+          "osc": [
+            { "forma": "sin", "amp": 0.15, "frec": 0.8, "fase": 1.5708 }
+          ]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, 0.3, "salida"], ["r", 0.85, 0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "cz": {
+          "k": [["g", 0, 0], ["g", 1, 0.15, "salida"], ["r", 0.85, 0.15], ["r", 1, 0, "asentar"]],
+          "osc": [
+            { "forma": "sin", "amp": 0.08, "frec": 0.8, "fase": 3.1416 }
+          ]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.3, "salida"], ["r", 0.85, -0.3], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.3, "salida"], ["r", 0.85, -0.3], ["r", 1, -0.95, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, 0.15, "salida"], ["r", 0.85, 0.15], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.15, "salida"], ["r", 0.85, -0.15], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.9], ["g", 1, -0.3, "salida"], ["r", 0.85, -0.3], ["r", 1, -0.9, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.3, "salida"], ["r", 0.85, -0.3], ["r", 1, -0.8, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.75], ["g", 1, 1.1, "salida"], ["r", 0.85, 1.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.53], ["g", 1, -0.4, "salida"], ["r", 0.85, -0.4], ["r", 1, -0.53, "asentar"]],
+          "osc": [
+            { "forma": "sin", "amp": 0.12, "frec": 1.6 }
+          ]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 1, -0.2, "salida"], ["r", 0.85, -0.2], ["r", 1, -0.11, "asentar"]],
+          "osc": [
+            { "forma": "sin", "amp": 0.12, "frec": 1.6, "fase": 3.1416 }
+          ]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.72], ["g", 1, 0.6], ["r", 0.85, 0.6], ["r", 1, 0.72, "asentar"]],
+          "osc": [
+            { "forma": "sin", "amp": 0.2, "frec": 1.6, "fase": 1.5 }
+          ]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 1, 0.7], ["r", 0.85, 0.7], ["r", 1, 0.96, "asentar"]],
+          "osc": [
+            { "forma": "sin", "amp": 0.2, "frec": 1.6, "fase": 4.6 }
+          ]
+        }
+      }
+    },
+    "desviado_largo": {
+      "reloj": "fases",
+      "nota": "El arma sale muy atrás y arriba, el pecho se abre del todo; paso 1 en el activo (pie de atrás) y paso 2 en la recuperación (pie de adelante) y se recompone despacio.",
+      "canales": {
+        "bDx": {
+          "k": [["g", 0, -0.9], ["g", 1, -2.6, "salida"], ["r", 0.5, -2], ["r", 1, -0.8, "suave"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.8], ["g", 1, -0.4, "salida"], ["r", 0.5, -0.5], ["r", 1, -0.9, "suave"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 0.7], ["g", 1, 1.4, "salida"], ["r", 0.5, 1.2], ["r", 1, 0.75, "suave"]]
+        },
+        "bDz": {
+          "k": [["g", 0, 0.35], ["g", 1, -0.4, "salida"], ["r", 1, 0.35]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.95], ["g", 1, -0.4, "salida"], ["r", 0.5, -0.4], ["r", 1, -0.95, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 1, -0.35, "salida"], ["r", 0.5, -0.25], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 1, -0.3, "salida"], ["r", 1, -0.1, "suave"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.5, 0.3, "salida"], ["g", 1, -0.05], ["r", 1, -0.11, "suave"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.96], ["g", 0.5, 1.5, "salida"], ["g", 1, 0.96], ["r", 1, 0.96]]
+        },
+        "pDx": {
+          "k": [["g", 1, -0.53], ["r", 0.2, -0.53], ["r", 0.4, -0.1, "salida"], ["r", 0.65, -0.5], ["r", 1, -0.53]]
+        },
+        "rodD": {
+          "k": [["g", 1, 0.72], ["r", 0.2, 0.72], ["r", 0.4, 1.3, "salida"], ["r", 0.65, 0.72], ["r", 1, 0.72]]
+        }
+      }
+    },
+    "rematado": {
+      "reloj": "fases",
+      "nota": "La misma caída de espalda que derribo (6 + 8 c), impacto con polvo y rebote, y luego tendido inmóvil el resto. Inc topado a -0,6 como derribo.",
+      "canales": {
+        "inc": {
+          "k": [["a", 0, 0], ["a", 1, -0.25, "entrada"], ["g", 0.4, -0.5, "suave"], ["g", 1, -0.6, "entrada"], ["r", 0.1, -0.6], ["r", 0.12, -0.5, "suave"], ["r", 0.2, -0.6, "suave"], ["r", 1, -0.6]]
+        },
+        "y": {
+          "k": [["a", 0, 0], ["a", 1, 0.05], ["g", 0.5, 0.3, "salida"], ["g", 1, 0.05, "entrada"], ["r", 0.1, 0.03], ["r", 1, 0.03]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, -0.2, "salida"], ["g", 1, -0.35, "salida"], ["r", 1, -0.35]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.3], ["g", 1, -0.6, "salida"], ["r", 0.1, -0.9, "latigo"], ["r", 0.3, -0.4, "suave"], ["r", 1, -0.3]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 1, -1.1, "salida"], ["g", 1, -1.4, "salida"], ["r", 0.1, -1.3], ["r", 1, -1.3]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, -1, "salida"], ["g", 1, -1.2, "salida"], ["r", 0.1, -1.1], ["r", 1, -1.1]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 1, 0.3, "salida"], ["g", 1, 0.2], ["r", 1, 0.2]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 0.3, "salida"], ["g", 1, 0.3], ["r", 1, 0.3]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -1.6, "salida"], ["g", 1, -2, "salida"], ["r", 0.15, -1.4], ["r", 0.4, -0.5, "suave"], ["r", 1, 0.1]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -1.8, "salida"], ["g", 1, -2.2, "salida"], ["r", 0.15, -1.5], ["r", 0.4, -0.6, "suave"], ["r", 1, 0.1]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, -0.2], ["g", 1, -0.6, "salida"], ["r", 0.3, -0.5], ["r", 1, 0.1]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, 0.2], ["g", 1, 0.6, "salida"], ["r", 0.3, 0.5], ["r", 1, -0.1]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.4], ["r", 0.3, -0.2], ["r", 1, -0.1]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.4], ["r", 0.3, -0.2], ["r", 1, -0.1]]
+        }
+      }
+    },
+    "cojera": {
+      "reloj": "fases",
+      "nota": "Ciclo de 40 c: la pierna D (rota) se balancea tiesa (rod 0,1), la I dobla normal; al apoyar la rota el cuerpo cae y el pecho se ladea hacia ella.",
+      "canales": {
+        "pDx": {
+          "k": [["g", 0, -0.45], ["g", 0.5, 0.3, "suave"], ["g", 1, -0.45, "suave"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 0.1], ["g", 1, 0.1]]
+        },
+        "pIx": {
+          "k": [["g", 0, 0.3], ["g", 0.5, -0.45, "suave"], ["g", 1, 0.3, "suave"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 0.4], ["g", 0.25, 1.2, "suave"], ["g", 0.5, 0.4, "suave"], ["g", 0.75, 0.5], ["g", 1, 0.4]]
+        },
+        "pZ": {
+          "k": [["g", 0, -0.12], ["g", 0.25, -0.18, "suave"], ["g", 0.5, 0.05, "suave"], ["g", 0.75, -0.05], ["g", 1, -0.12, "suave"]]
+        },
+        "rz": {
+          "k": [["g", 0, -0.05], ["g", 0.25, -0.08, "suave"], ["g", 0.5, 0.02, "suave"], ["g", 1, -0.05, "suave"]]
+        },
+        "y": {
+          "k": [["g", 0, -0.02], ["g", 0.25, -0.07, "suave"], ["g", 0.5, 0, "suave"], ["g", 0.75, -0.03], ["g", 1, -0.02]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.12], ["g", 0.25, 0.2, "suave"], ["g", 0.5, 0.1, "suave"], ["g", 1, 0.12, "suave"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.8], ["g", 0.5, -0.55, "suave"], ["g", 1, -0.8, "suave"]]
+        },
+        "bIx": {
+          "k": [["g", 0, -0.7], ["g", 0.5, -0.95, "suave"], ["g", 1, -0.7, "suave"]]
+        },
+        "cx": {
+          "k": [["g", 0, 0.05], ["g", 0.25, 0.15, "suave"], ["g", 1, 0.05, "suave"]]
         }
       }
     }
