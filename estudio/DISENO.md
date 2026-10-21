@@ -1070,6 +1070,8 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **No editable aún (7i)**: la tolerancia de altura para «estar contigo» (3 bloques) y para volver al rastro (1,5), y el margen de 4 bloques en que siempre lo ves.
 - **No editable aún (rutinas)**: qué cuenta como «no puede salir» (escena, ronda del iglú, minijuego, jefe: `libre` en `main.js`) y que no se visita a quien no está en su sitio.
 - **No editable aún**: qué bloques cuentan como sólidos o líquidos (salen de `TIPO` de `texturas.js`) y la animación de caminar (`caminar()` de `cuerpo.js`, salvo el balanceo).
+- **7g-1, actividades compartidas (2026-10-21)**: tercer archivo de la pestaña, `mundo/datos/actividades.json` (esquema `actividades.schema.json`, en vivo con el mensaje `datos`: `window.__venjy.datosActividades` y `ajustarPoses`). Cuatro grupos cerrados al abrir: «Fogata: cupo, radios y tiempos» (`FOGATA_BASE` de `supervivencia/fogata.js`), «Fogata: asientos» (dx/dz desde el fuego y tipo tronco/suelo/cuclillas; agregar, quitar, volver a los del código), «Fogata: frases y textos» (hasta 4 frases con clave y ES/EN, avisos y botones) y «Poses al sentarse» (`POSES_BASE` de `pose-jugador.js`: suelo, tronco, cuclillas y calentarse; las ven igual los demás jugadores). Guardar escribe los tres archivos.
+- **No editable aún (7g-1)**: la pausa mínima entre frases de un jugador (1,5 s) y cuántas guarda cada actividad (12) son parámetros de `crearActividades` en `main.js`.
 
 ## 26. Combate: núcleo en datos (bloque 8 · N3, 2026-10-15)
 

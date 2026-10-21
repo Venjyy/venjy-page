@@ -16,14 +16,18 @@
 // =========================================================
 
 // Bits de `f` en el mensaje `p` (1 y 2 ya existían). SENTADO: sentado en el suelo (duelo de cartas en el piso o el tronco)
-export const F = { AGACHADO: 1, MUERTO: 2, CORRE: 4, GOLPE: 8, COME: 16, TENSA: 32, BLOQUEA: 64, SENTADO: 128 };
+// 7g-1 (actividades compartidas): con SENTADO, TRONCO = sentado en un tronco o banco (piernas colgando) y CUCLILLAS =
+// en cuclillas; CALIENTA = las manos al frente (calentarse en la fogata). Los ve igual quien mira desde afuera.
+export const F = { AGACHADO: 1, MUERTO: 2, CORRE: 4, GOLPE: 8, COME: 16, TENSA: 32, BLOQUEA: 64, SENTADO: 128, TRONCO: 256, CUCLILLAS: 512, CALIENTA: 1024 };
 
 export function codificarF(e) {
     return (e.agachado ? F.AGACHADO : 0) | (e.muerto ? F.MUERTO : 0) | (e.corre ? F.CORRE : 0) | (e.golpe ? F.GOLPE : 0) |
-        (e.comiendo ? F.COME : 0) | (e.tensando ? F.TENSA : 0) | (e.bloqueando ? F.BLOQUEA : 0) | (e.sentado ? F.SENTADO : 0);
+        (e.comiendo ? F.COME : 0) | (e.tensando ? F.TENSA : 0) | (e.bloqueando ? F.BLOQUEA : 0) | (e.sentado ? F.SENTADO : 0) |
+        (e.tronco ? F.TRONCO : 0) | (e.cuclillas ? F.CUCLILLAS : 0) | (e.calentando ? F.CALIENTA : 0);
 }
 export function decodificarF(f = 0) {
-    return { agachado: !!(f & F.AGACHADO), muerto: !!(f & F.MUERTO), corre: !!(f & F.CORRE), golpe: !!(f & F.GOLPE), comiendo: !!(f & F.COME), tensando: !!(f & F.TENSA), bloqueando: !!(f & F.BLOQUEA), sentado: !!(f & F.SENTADO) };
+    return { agachado: !!(f & F.AGACHADO), muerto: !!(f & F.MUERTO), corre: !!(f & F.CORRE), golpe: !!(f & F.GOLPE), comiendo: !!(f & F.COME), tensando: !!(f & F.TENSA), bloqueando: !!(f & F.BLOQUEA), sentado: !!(f & F.SENTADO),
+        tronco: !!(f & F.TRONCO), cuclillas: !!(f & F.CUCLILLAS), calentando: !!(f & F.CALIENTA) };
 }
 
 // Duraciones y valores (Minecraft: el golpe dura 6 ticks = 0,3 s)
@@ -47,11 +51,27 @@ export const POSES = {
     // Escudo: el brazo del escudo al frente y hacia el centro (bz: cuánto cruza al pecho)
     escudo: { bx: -0.94, bz: 0.52 },
     // Sentado en el suelo (atlas de rig.md); lo usa 7g
-    sentado: { y: -0.62, pDx: -1.45, pIx: -1.45, inc: 0.15, bDx: -1.0, bIx: -1.0 }
+    sentado: { y: -0.62, pDx: -1.45, pIx: -1.45, inc: 0.15, bDx: -1.0, bIx: -1.0 },
+    // 7g-1: sentado en un tronco (como los amigos del campamento: cuerpo arriba, piernas colgando) y en cuclillas
+    tronco: { y: 0.25, pDx: -0.75, pIx: -0.75, inc: 0.05, bDx: -0.35, bIx: -0.35 },
+    cuclillas: { y: -0.45, pDx: -1.25, pIx: -1.25, inc: 0.35, bDx: -0.6, bIx: -0.6 },
+    // Calentarse las manos: los dos brazos al frente, un poco hacia el centro, con un vaivén lento
+    calentar: { bx: -1.2, bz: 0.22, vaiven: 0.08, f: 1.6 }
 };
+// Ajustes del dueño (mundo/datos/actividades.json → poses): solo las poses de sentarse y calentar; lo que falte queda
+// como en el código. Se guarda el valor base para volver a él si el dueño borra un número en el Estudio.
+const POSES_AJUSTABLES = ['sentado', 'tronco', 'cuclillas', 'calentar'];
+const POSES_BASE = JSON.parse(JSON.stringify(Object.fromEntries(POSES_AJUSTABLES.map(k => [k, POSES[k]]))));
+export function ajustarPoses(o) {
+    for (const k of POSES_AJUSTABLES) {
+        const d = o && typeof o[k] === 'object' ? o[k] : {};
+        for (const c of Object.keys(POSES_BASE[k])) POSES[k][c] = Number.isFinite(d[c]) ? d[c] : POSES_BASE[k][c];
+    }
+}
+export { POSES_BASE };
 
 export function crearEstado() {
-    return { fase: 0, amp: 0, correr: 0, golpe: -1, comer: 0, tensar: 0, bloquear: 0, sentado: 0, t: 0 };
+    return { fase: 0, amp: 0, correr: 0, golpe: -1, comer: 0, tensar: 0, bloquear: 0, sentado: 0, tronco: 0, cuclillas: 0, calentar: 0, t: 0 };
 }
 
 // Avanza lo suavizado. entrada.golpe = true empieza (o reinicia en su segunda mitad) un golpe.
@@ -70,6 +90,9 @@ export function avanzar(e, ent, dt) {
     e.tensar = suavizar(e.tensar, ent.tensando ? 1 : 0, dt, 10);
     e.bloquear = suavizar(e.bloquear, ent.bloqueando ? 1 : 0, dt, 12);
     e.sentado = suavizar(e.sentado, ent.sentado ? 1 : 0, dt, 6);
+    e.tronco = suavizar(e.tronco || 0, ent.sentado && ent.tronco ? 1 : 0, dt, 6);
+    e.cuclillas = suavizar(e.cuclillas || 0, ent.sentado && ent.cuclillas && !ent.tronco ? 1 : 0, dt, 6);
+    e.calentar = suavizar(e.calentar || 0, ent.calentando ? 1 : 0, dt, 4);
     return e;
 }
 
@@ -121,11 +144,19 @@ export function angulos(e, ent, escudo = 0) {
     }
     // Sentado
     if (e.sentado > 0.001) {
-        const s = POSES.sentado;
+        // En el suelo, en un tronco o en cuclillas (7g-1): se mezclan según lo suavizado de cada uno
+        const s = {}, tr = e.tronco || 0, cu = e.cuclillas || 0;
+        for (const k of Object.keys(POSES.sentado)) s[k] = mezcla(mezcla(POSES.sentado[k], POSES.tronco[k], tr), POSES.cuclillas[k], cu);
         a.y = mezcla(a.y, s.y, e.sentado);
         a.pDx = mezcla(a.pDx, s.pDx, e.sentado); a.pIx = mezcla(a.pIx, s.pIx, e.sentado);
         a.inc = mezcla(a.inc, s.inc, e.sentado);
         if (e.golpe < 0 && e.comer < 0.5) { a.bDx = mezcla(a.bDx, s.bDx, e.sentado); a.bIx = mezcla(a.bIx, s.bIx, e.sentado); }
+    }
+    // Calentarse las manos (7g-1): encima del sentado, salvo que esté golpeando o comiendo
+    if (e.calentar > 0.001 && e.golpe < 0 && e.comer < 0.5) {
+        const c = POSES.calentar, v = Math.sin(e.t * c.f) * c.vaiven;
+        a.bDx = mezcla(a.bDx, c.bx + v, e.calentar); a.bIx = mezcla(a.bIx, c.bx - v, e.calentar);
+        a.bDz = mezcla(a.bDz, c.bz, e.calentar); a.bIz = mezcla(a.bIz, -c.bz, e.calentar);
     }
     // Gesto de la ruleta (7c-2): las metas del gesto (nombres de rig.md) con su peso; cy y salto se suman
     if (ent.gesto && ent.gesto.w > 0.001) {

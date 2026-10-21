@@ -116,6 +116,12 @@
       "fase": 14,
       "que": "Rutinas y visitas de los amigos (6d etapa 2): quién visita a quién o a qué lugar, de qué hora a qué hora, qué gesto y frase hacen al llegar y al recibir; horarios y nombres de lugar del panel de cada amigo y sus líneas «Está de visita donde…»; main.js lo pide al crear el mundo; se edita en la pestaña Vida (sección Rutinas) y se aplica en vivo con supervivencia.html?estudio"
     },
+    "actividades": {
+      "esquema": "actividades",
+      "lee": "mundo/supervivencia/fogata.js",
+      "fase": 14,
+      "que": "Actividades compartidas entre jugadores (7g-1): la fogata del campamento (asientos, radios, tiempos, frases cortas que leen los que están cerca y textos) y las poses de sentarse y calentarse de pose-jugador.js; main.js lo pide con la sala o sin ella; se edita en la pestaña Vida y se aplica en vivo con supervivencia.html?estudio"
+    },
     "combate": {
       "esquema": "combate",
       "lee": "mundo/supervivencia/combate/datos.js",

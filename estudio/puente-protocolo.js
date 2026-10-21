@@ -8,7 +8,7 @@ export const CANAL = 'venjy-estudio';
 export const VERSION = 1;
 // Archivos de mundo/datos/ que el juego aplica sin recargar (fase 4: posiciones; fase 5: escenas; fase 6: poses;
 // pestaña Píxeles: iconos y cartas-arte). borradores.json no: el juego lo ignora.
-export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera', 'arena', 'salonas', 'musica', 'navegacion', 'rutinas'];
+export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'escenas', 'poses', 'cartas-mesa', 'objetos-mano', 'iconos', 'cartas-arte', 'formas', 'carrera', 'arena', 'salonas', 'musica', 'navegacion', 'rutinas', 'actividades'];
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 // Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json

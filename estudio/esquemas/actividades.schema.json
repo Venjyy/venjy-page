@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "actividades.schema.json",
+  "title": "Actividades compartidas entre jugadores (mundo/datos/actividades.json)",
+  "description": "Bases de las actividades donde participan varios jugadores y los demás miran desde afuera (7g-1, mundo/supervivencia/actividades-red.js). `fogata` ajusta FOGATA_BASE de mundo/supervivencia/fogata.js (asientos, radios, tiempos, frases y textos); `poses` ajusta las poses de sentarse y calentarse de mundo/supervivencia/pose-jugador.js. Lo que falte usa el código. Se edita en /estudio/ → pestaña Vida y se aplica en vivo.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "fogata": {
+      "description": "Sentarse en la fogata del campamento (fogata.js).",
+      "type": "object",
+      "properties": {
+        "cupo": { "description": "Jugadores sentados a la vez (no más que asientos).", "type": "integer", "minimum": 1, "maximum": 16 },
+        "radioSentarse": { "description": "A menos de esto (bloques) de un asiento libre, G te sienta.", "type": "number", "minimum": 0.5, "maximum": 4 },
+        "radioOir": { "description": "A menos de esto (bloques) del fuego se leen las frases, participes o no.", "type": "number", "minimum": 2, "maximum": 64 },
+        "duracionFrase": { "description": "Segundos que se ve una frase.", "type": "number", "minimum": 1, "maximum": 15 },
+        "calentarCada": { "description": "Sentado: se calienta las manos cada… (s).", "type": "number", "minimum": 0, "maximum": 60 },
+        "calentarDura": { "description": "… durante (s). 0 = nunca.", "type": "number", "minimum": 0, "maximum": 30 },
+        "asientos": {
+          "description": "Anillo de asientos: dx y dz desde el centro del fuego (bloques); el giro mira al fuego solo.",
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "properties": {
+              "dx": { "type": "number", "minimum": -8, "maximum": 8 },
+              "dz": { "type": "number", "minimum": -8, "maximum": 8 },
+              "tipo": { "enum": ["tronco", "suelo", "cuclillas"] }
+            },
+            "required": ["dx", "dz", "tipo"],
+            "additionalProperties": false
+          }
+        },
+        "frases": {
+          "description": "Frases cortas que dice quien está sentado (máximo 4: teclas 1-4). La clave viaja por la red; cada equipo muestra su idioma.",
+          "type": "object",
+          "maxProperties": 4,
+          "propertyNames": { "pattern": "^[a-z][a-zA-Z0-9]{0,30}$" },
+          "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+        },
+        "textos": {
+          "description": "Avisos y botones.",
+          "type": "object",
+          "properties": {
+            "sentarse": { "$ref": "comun.schema.json#/$defs/texto" },
+            "sentado": { "$ref": "comun.schema.json#/$defs/texto" },
+            "ocupado": { "$ref": "comun.schema.json#/$defs/texto" },
+            "llena": { "$ref": "comun.schema.json#/$defs/texto" },
+            "botonSentarse": { "$ref": "comun.schema.json#/$defs/texto" },
+            "botonPararse": { "$ref": "comun.schema.json#/$defs/texto" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "poses": {
+      "description": "Poses del cuerpo del jugador al sentarse (radianes y alturas, nombres de rig.md). Las ven igual los demás jugadores.",
+      "type": "object",
+      "properties": {
+        "sentado": { "$ref": "#/$defs/pose" },
+        "tronco": { "$ref": "#/$defs/pose" },
+        "cuclillas": { "$ref": "#/$defs/pose" },
+        "calentar": {
+          "description": "Calentarse las manos: bx (brazos al frente), bz (hacia el centro), vaiven y f (rapidez del vaivén).",
+          "type": "object",
+          "properties": {
+            "bx": { "$ref": "comun.schema.json#/$defs/radianes" },
+            "bz": { "$ref": "comun.schema.json#/$defs/radianes" },
+            "vaiven": { "type": "number", "minimum": 0, "maximum": 1 },
+            "f": { "type": "number", "minimum": 0, "maximum": 10 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "pose": {
+      "type": "object",
+      "properties": {
+        "y": { "description": "Altura del cuerpo (bloques; negativo = más abajo).", "type": "number", "minimum": -1, "maximum": 1 },
+        "pDx": { "$ref": "comun.schema.json#/$defs/radianes" },
+        "pIx": { "$ref": "comun.schema.json#/$defs/radianes" },
+        "inc": { "$ref": "comun.schema.json#/$defs/radianes" },
+        "bDx": { "$ref": "comun.schema.json#/$defs/radianes" },
+        "bIx": { "$ref": "comun.schema.json#/$defs/radianes" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
