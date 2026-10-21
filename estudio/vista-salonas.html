@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vista Salonas · Estudio</title>
+    <!-- Botones táctiles de Salonas (Pausa y Modo Primus) con el CSS real de mundo/supervivencia/salonas.js, sin el mundo.
+         La carga el editor de layout (pestaña Layout, página Salonas) en un iframe. Los 4 trastes no se editan: siguen la línea 3D. -->
+    <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; }
+        body { background: linear-gradient(#1a1020 0 55%, #120c18 55% 100%); font-family: 'PixelCraft', monospace; }
+        /* Zona segura simulada (el editor manda { tipo: 'seguro' }) */
+        .sl-capa { inset: var(--sim-t, 0px) var(--sim-r, 0px) var(--sim-b, 0px) var(--sim-l, 0px); }
+    </style>
+</head>
+<body class="con-tactil">
+    <script type="module">
+        import { CSS_SALONAS, TXT_SALONAS } from '../mundo/supervivencia/salonas.js';
+        import { aplicarLayout } from '../mundo/supervivencia/layout-datos.js';
+        import { cargarDatos } from '../mundo/datos/cargador.js';
+
+        const idioma = new URLSearchParams(location.search).get('idioma') === 'en' ? 'en' : 'es';
+        document.documentElement.lang = idioma;
+        await cargarDatos('ui-layout');
+        const estilo = document.createElement('style'); estilo.textContent = CSS_SALONAS; document.head.appendChild(estilo);
+        const capa = document.createElement('div'); capa.className = 'sl sl-capa visible'; document.body.appendChild(capa);
+        for (const [cls, texto] of [['sl-pausaT', TXT_SALONAS.pausa], ['sl-primusT', TXT_SALONAS.primusToque]]) {
+            const caja = document.createElement('div'); caja.className = cls + ' visible'; capa.appendChild(caja);
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'boton'; b.textContent = texto[idioma]; caja.appendChild(b);
+        }
+
+        window.addEventListener('message', e => {
+            if (e.origin !== location.origin) return;
+            const m = e.data;
+            if (!m || typeof m !== 'object') return;
+            if (m.tipo === 'layout') {
+                aplicarLayout(m.datos || {}, 'salonas');
+            } else if (m.tipo === 'seguro') {
+                const r = capa.style;
+                r.setProperty('--sim-t', (m.t || 0) + 'px');
+                r.setProperty('--sim-r', (m.r || 0) + 'px');
+                r.setProperty('--sim-b', (m.b || 0) + 'px');
+                r.setProperty('--sim-l', (m.l || 0) + 'px');
+            }
+            parent.postMessage({ tipo: 'aplicado' }, location.origin);
+        });
+        parent.postMessage({ tipo: 'listo' }, location.origin);
+    </script>
+</body></html>

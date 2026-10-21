@@ -22,6 +22,7 @@
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
             <button class="pestana" type="button" data-pestana="arena" data-seccion="juego" data-es="Arena" data-en="Arena">Arena</button>
+            <button class="pestana" type="button" data-pestana="salonas" data-seccion="juego" data-es="Salonas" data-en="Salonas">Salonas</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
             <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
@@ -49,6 +50,7 @@
                     <select id="pagina-layout">
                         <option value="supervivencia" data-es="Supervivencia" data-en="Survival">Supervivencia</option>
                         <option value="arena" data-es="Arena (combate)" data-en="Arena (combat)">Arena (combate)</option>
+                        <option value="salonas" data-es="Salonas (La Gira)" data-en="Salonas (The Tour)">Salonas (La Gira)</option>
                     </select>
                 </label>
                 <label class="campo corto" id="campo-w" hidden>
@@ -409,6 +411,20 @@
                         <button id="ar-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="ar-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-salonas" hidden>
+                <section class="panel">
+                    <h2 data-es="Salonas · La Gira" data-en="Salonas · The Tour">Salonas · La Gira</h2>
+                    <p class="mensaje" data-es="Ajustes del juego de ritmo (canciones, carriles, cámara, audio, energía, Primus), reglas de la partitura y todos los textos en español e inglés. Todo va en vivo en el juego. Los botones táctiles Pausa y Primus se mueven en la pestaña Layout, página «Salonas». Guardar escribe mundo/datos/salonas.json." data-en="Rhythm game settings (songs, lanes, camera, audio, energy, Primus), chart rules and every text in Spanish and English. Everything is live in the game. The Pause and Primus touch buttons are moved in the Layout tab, page «Salonas». Save writes mundo/datos/salonas.json.">Ajustes del juego de ritmo (canciones, carriles, cámara, audio, energía, Primus), reglas de la partitura y todos los textos en español e inglés. Todo va en vivo en el juego. Los botones táctiles Pausa y Primus se mueven en la pestaña Layout, página «Salonas». Guardar escribe mundo/datos/salonas.json.</p>
+                </section>
+                <div id="sa-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="sa-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="sa-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="sa-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-escenas" hidden>
