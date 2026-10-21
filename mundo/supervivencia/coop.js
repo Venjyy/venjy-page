@@ -377,7 +377,11 @@ export function crearCoop(cx, ctx) {
         if (np) m.npc = np;
         const u = ultimaPos;
         const npIgual = !np ? !(u && u.npc) : !!(u && u.npc && u.npc[0] === np[0] && np.slice(1).every((v, k) => Math.abs(v - u.npc[k + 1]) < 0.02));
-        const igual = npIgual && u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02 && Math.abs(u.a - m.a) < 0.02 && Math.abs(u.b - m.b) < 0.02 && u.f === m.f;
+        // 7g-1: el progreso de tu actividad compartida viaja aquí (`ax`, actividades-red.js); si cambió, el mensaje sale
+        const ax = ctx.progresoPropio ? ctx.progresoPropio() : null;
+        if (ax) m.ax = ax;
+        const axIgual = JSON.stringify(ax) === JSON.stringify(u ? u.ax || null : null);
+        const igual = npIgual && axIgual && u && Math.abs(u.x - m.x) < 0.02 && Math.abs(u.y - m.y) < 0.02 && Math.abs(u.z - m.z) < 0.02 && Math.abs(u.a - m.a) < 0.02 && Math.abs(u.b - m.b) < 0.02 && u.f === m.f;
         const mobs = mobsDelTick(t);
         if (igual && !mobs && !repetirManos && !(f & 8) && t - ultimoPos < 1000) return; // un golpe siempre sale (minar quieto)
         golpePend = false;
@@ -639,6 +643,7 @@ export function crearCoop(cx, ctx) {
             if (!r) return;
             r.bufer.agregar(m.t, { x: m.x, y: m.y, z: m.z, yaw: m.a, pit: m.b, f: m.f });
             r.vivo = !(m.f & 2);
+            if (ctx.alProgreso) ctx.alProgreso(m.de, m.ax || null); // 7g-1: progreso de su actividad (actividades-red.js)
             if (m.i !== undefined) r.objeto = m.i;
             if (m.i2 !== undefined) r.objeto2 = m.i2;
             if (m.f & 8) { r.golpes.push(m.t); if (r.golpes.length > 8) r.golpes.shift(); }
@@ -794,6 +799,7 @@ export function crearCoop(cx, ctx) {
             const eg = entradaGesto(r.gesto);
             posar(c, r.pose, {
                 mov, pitch: pit, agachado, golpe, corre: !!(b.f & 4), comiendo: !!(b.f & 16), tensando: !!(b.f & 32), bloqueando: !!(b.f & 64), sentado: !!(b.f & 128),
+                tronco: !!(b.f & 256), cuclillas: !!(b.f & 512), calentando: !!(b.f & 1024), // 7g-1: cómo se sentó y si se calienta
                 objeto: eg ? 0 : r.objeto, objeto2: eg ? 0 : r.objeto2, ...eg
             }, dt, fabrica, r.objeto === O.ESCUDO ? 1 : 0);
             ctx.iluminar(r.luz, x, y, z);

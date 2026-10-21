@@ -650,6 +650,11 @@ body.con-tactil .mision-activa { top: 270px; }
 .ronda-botones .boton { display: none; width: auto; margin: 0; padding: 8px 14px; font-size: 0.9rem; pointer-events: auto; }
 body.en-iglu .ronda-sentar, body.en-ronda .ronda-pararse, body.en-ronda .ronda-cam { display: block; }
 body.en-ronda-fp #hud { visibility: hidden; }
+/* Fogata (7g-1, fogata.js): SENTARSE cerca de un asiento libre; sentado, PARARSE y las frases */
+.fogata-botones { position: fixed; bottom: calc(11vh + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 56; display: none; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: min(92vw, 640px); pointer-events: none; }
+body.cerca-fogata .fogata-botones, body.en-fogata .fogata-botones { display: flex; }
+.fogata-botones .boton { width: auto; margin: 0; padding: 8px 12px; font-size: 0.85rem; pointer-events: auto; }
+.fogata-botones .boton[hidden] { display: none; }
 
 /* Aviso tras cerrar una ventana con Esc: un clic en cualquier parte vuelve al juego */
 .clic-seguir { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; cursor: pointer; background: rgb(0 0 0 / 0.25); font-family: 'PixelCraft', monospace; color: #fff; font-size: 1.1rem; text-shadow: 2px 2px 0 #3f3f3f; }

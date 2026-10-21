@@ -905,6 +905,7 @@ async function arrancar(guardado, cx = null) {
     // Lo que hace el jugador, para la pose del cuerpo (pose-jugador.js, 7c-1): tercera persona y red.
     // Con un gesto de la ruleta (7c-2) se suma el gesto, sin objetos y con el giro congelado.
     let ruleta = null;
+    let fogata = null; // sentarse en la fogata (7g-1, fogata.js): se crea con las actividades compartidas
     const entradaPose = () => {
         const id = inventario.idEnMano();
         return {
@@ -912,6 +913,7 @@ async function arrancar(guardado, cx = null) {
             tensando: combate.tensando > 0, bloqueando: combate.bloqueando,
             objeto: id, objeto2: inventario.mano2 ? inventario.mano2.id : 0, escudo: id === O.ESCUDO ? 1 : 0,
             sentado: !!(mesaCartas && mesaCartas.sentado), // duelo de cartas en el piso o el tronco
+            ...(fogata && fogata.entrada()), // en la fogata: tronco, suelo o cuclillas y calentarse las manos
             ...(ruleta && ruleta.entrada())
         };
     };
@@ -1304,6 +1306,9 @@ async function arrancar(guardado, cx = null) {
             amanecerLocal, iluminar: iluminarCaja,
             alCambiarJugadores: () => pintarCoop(),
             alActividad: m => recibirActividad(m),
+            // 7g-1: el progreso de tu actividad compartida va a cuestas de tu `p` (`ax`) y el de los demás llega igual
+            progresoPropio: () => (actividades ? actividades.progresoPropio : null),
+            alProgreso: (id, ax) => { if (actividades) actividades.progresoRemoto(id, ax); },
             alSalirJugador: id => { salioDeActividades(id); acompanante.salio(id); },
             alEntrarJugador: id => { entroAActividades(id); if (coop.esAnfitrion) { coop.rutina({ l: rutinas.foto() }, id); acompanante.entro(); } },
             alRutina: m => rutinas.recibir(m),
@@ -1428,13 +1433,29 @@ async function arrancar(guardado, cx = null) {
     let actividades = null, duelo = null, cargandoDuelo = null;
     const colaAct = [];
     if (coop) import('./actividades-red.js').then(m => {
-        actividades = m.crearActividades({ yo: coop.yoId, esAnfitrion: coop.esAnfitrion, anfitrion: coop.idAnfitrion, enviar: x => coop.actividad(x) });
+        actividades = m.crearActividades({ yo: coop.yoId, esAnfitrion: coop.esAnfitrion, anfitrion: coop.idAnfitrion, enviar: x => coop.actividad(x), reloj: () => coop.relojAnfitrion() });
         // Antes de cargar el duelo: una invitación lo carga
         // (y un duelo con los dos dentro también: alguien cerca puede mirarlo)
         actividades.escuchar('duelo', { invitacion: inv => cargarDuelo().then(d => { if (d) avisoReto(inv); }), estado: act => { if (act && act.jug.length === 2) cargarDuelo(); } });
         for (const x of colaAct.splice(0)) actividades.recibir(x);
     }).catch(err => console.error('No se pudieron cargar las actividades compartidas', err));
     function recibirActividad(m) { if (actividades) actividades.recibir(m); else colaAct.push(m); }
+    // Fogata (7g-1, fogata.js): sentarse con G junto al fuego del campamento; con sala, un asiento por jugador y frases
+    // que leen todos los que están cerca. Se carga sin esperar (import()); sus valores y las poses de sentarse vienen de
+    // mundo/datos/actividades.json (pestaña Vida del Estudio; en vivo, window.__venjy.datosActividades).
+    Promise.all([import('./fogata.js'), import('./pose-jugador.js'), cargarDatos('actividades')]).then(([m, pj, json]) => {
+        const datos = () => window.__venjy?.datosActividades || json;
+        if (json && json.poses) pj.ajustarPoses(json.poses);
+        fogata = m.crearFogata({
+            jugador, hud, idioma: () => idioma,
+            fuego: () => (amigos.campamento ? amigos.campamento.fuego : null),
+            sueloY: () => (amigos.campamento ? amigos.campamento.fuego.y - 0.7 + DY : null),
+            acts: () => actividades, yo: () => (coop ? coop.yoId : 'yo'),
+            nombreDe: id => (coop && id !== coop.yoId ? coop.nombreDe(id) : (idioma === 'en' ? 'You' : 'Tú')),
+            datos: () => (datos() || {}).fogata,
+            puede: () => jugador.activo && !uiAbierta && !vida.muerto && !jefes.enCurso && !ronda.activa && !minijuegos.activo
+        });
+    }).catch(err => console.error('No se pudo cargar la fogata', err));
     // Carrera de gatas (7h-1, «Gran Premio del Living»: carrera.js y su escena propia): se carga al abrirla desde el panel
     // de Lona; mientras corres, su escena se dibuja en lugar del mundo (el mundo sigue andando: sala, cooperativo)
     let carrera = null, cargandoCarrera = null;
@@ -2010,7 +2031,7 @@ async function arrancar(guardado, cx = null) {
             e.preventDefault();
         }
         // G reparte según el contexto: acariciar a una gata si está cerca; si no, sentarse en el iglú
-        if (e.code === 'KeyG' && !e.repeat && (caricias.intentar() || ronda.intentar())) e.preventDefault();
+        if (e.code === 'KeyG' && !e.repeat && (caricias.intentar() || ronda.intentar() || (fogata && fogata.intentar()))) e.preventDefault();
         // L cambia el idioma jugando o en la pausa (no mientras se escribe en un campo)
         if (e.code === 'KeyL' && !e.repeat && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '') && !(consola && consola.abierta) && $('inicio').hidden) { e.preventDefault(); idiomaConL(); }
         if ((e.code === 'KeyT' || e.code === 'Slash') && !e.repeat && jugador.activo && !vida.muerto) { e.preventDefault(); consola.abrir(e.code === 'Slash' ? '/' : ''); }
@@ -2181,7 +2202,7 @@ async function arrancar(guardado, cx = null) {
         // Mesa del duelo (7h-2b): abrirMesa('facil'|'medio'|'tutorial') sin pedir el mazo; mesaCartas, para pruebas y el Estudio
         get mesaCartas() { return mesaCartas; }, abrirMesa: n => abrirMesaCartas(n),
         // Actividades compartidas (7g-1) y duelo entre jugadores: lista de actividades, controlador del duelo
-        get actividades() { return actividades; }, get duelo() { return duelo; },
+        get actividades() { return actividades; }, get duelo() { return duelo; }, get fogata() { return fogata; },
         // Carrera de gatas (7h-1): cargarCarrera().then(k => k.elegir('mila', 'normal')); carrera.saltarIntro(), carrera.saltarA(3)
         get carrera() { return carrera; }, cargarCarrera: () => cargarCarrera(),
         get salonas() { return salonas; }, cargarSalonas: () => cargarSalonas(),
@@ -2265,6 +2286,7 @@ async function arrancar(guardado, cx = null) {
             if (Math.abs(camara.fov - fov) > 0.01) { camara.fov = fov; camara.updateProjectionMatrix(); }
         }
         ronda.actualizar(corre ? dt : 0); // después de la cámara: pone la vista de la ronda y el cuerpo sentado
+        if (fogata) fogata.actualizar(corre ? dt : 0);
         {
             const l = mundo.nivelLuz(jugador.pos.x, jugador.pos.y + 1.6, jugador.pos.z);
             const cueva = jugador.pos.y < DY + 8 && l >= 0 && (l >> 4) < 6;

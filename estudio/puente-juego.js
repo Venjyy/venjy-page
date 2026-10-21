@@ -76,6 +76,13 @@ async function aplicar(nombre, datos) {
         // 6d etapa 2: navegacion.js y paseos.js leen sus ajustes en cada paso (la próxima búsqueda ya usa los nuevos)
         const m = await import('../mundo/supervivencia/paseos-datos.js');
         m.fijarPaseo(datos);
+    } else if (nombre === 'actividades') {
+        // 7g-1: fogata.js lee sus datos en cada cuadro; las poses de sentarse se aplican al tiro (también a los demás jugadores que ves)
+        const v = window.__venjy;
+        if (!v) throw new Error('el juego todavía no está listo');
+        v.datosActividades = datos;
+        const m = await import('../mundo/supervivencia/pose-jugador.js');
+        m.ajustarPoses(datos.poses || {});
     } else if (nombre === 'rutinas') {
         // 6d etapa 2: rutinas.js mira las visitas cada `revisar` s (la próxima decisión ya usa lo nuevo)
         const v = window.__venjy;

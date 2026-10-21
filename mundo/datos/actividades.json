@@ -1,0 +1,7 @@
+{
+  "$schema": "../../estudio/esquemas/actividades.schema.json",
+  "version": 1,
+  "nota": "Actividades compartidas entre jugadores (7g-1). Vacío = todo como en el código (FOGATA_BASE de mundo/supervivencia/fogata.js y POSES de pose-jugador.js). Se edita en /estudio/ → pestaña Vida.",
+  "fogata": {},
+  "poses": {}
+}

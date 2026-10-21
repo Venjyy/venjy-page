@@ -9,6 +9,8 @@
 // «Probar ahora» hace esa visita en el juego sin mirar la hora (mensaje `rutina`). Guardar escribe los dos archivos.
 // Acompañantes (7i): `seguir` de navegacion.json (cómo te sigue: distancia, rastro, esperar, aparecer; mundo/seguir.js),
 // `ajustes.nivelAcompanar` y `acompanar` de rutinas.json (botones y frases); «Que me acompañe» / «Soltarlo» lo prueban.
+// Actividades compartidas (7g-1): mundo/datos/actividades.json → `fogata` (asientos, radios, tiempos, frases y textos de
+// fogata.js) y `poses` (sentarse en el suelo, en un tronco, en cuclillas y calentarse, pose-jugador.js). En vivo.
 // =========================================================
 import { NAV_BASE } from '../mundo/navegacion.js';
 import { PASEO_BASE } from '../mundo/supervivencia/paseos-datos.js';
@@ -17,6 +19,8 @@ import { PELEA_BASE } from '../mundo/supervivencia/acompanante-pelea.js';
 import { RUTINA_BASE, AUSENTE_BASE, INCLUIR_BASE, ACOMPANAR_BASE } from '../mundo/supervivencia/rutinas-datos.js';
 import { TEXTOS_RUTINA, horasDeViaje } from '../mundo/supervivencia/rutinas.js';
 import { HORARIOS, LUGARES } from '../mundo/supervivencia/horarios-datos.js';
+import { FOGATA_BASE } from '../mundo/supervivencia/fogata.js';
+import { POSES_BASE } from '../mundo/supervivencia/pose-jugador.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 // [es, en, min, max, paso] de cada campo (los textos largos están en el esquema)
@@ -137,6 +141,16 @@ const FRASES_ACOMPANAR = [['boton', 'botón para invitarlo', 'button to invite']
 const TEXTOS_PANEL = { yendo: ['yendo a ver a alguien', 'going to see someone'], yendoLugar: ['yendo a un lugar', 'going to a place'], visitando: ['de visita donde alguien', 'visiting someone'], visitandoLugar: ['de visita en un lugar', 'visiting a place'], volviendo: ['volviendo', 'heading back'], acompanando: ['acompañándote', 'keeping you company'], acompanandoOtro: ['acompañando a otro jugador ({quien})', 'with another player ({quien})'] };
 const hhmm = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 // Destinos fijos de la prueba (además de las personas y los lugares de posiciones.json)
+const FOGATA = {
+    cupo: ['jugadores sentados a la vez', 'players seated at once', 1, 16, 1],
+    radioSentarse: ['G te sienta a menos de (bloques) de un asiento libre', 'G seats you within (blocks) of a free seat', 0.5, 4, 0.1],
+    radioOir: ['las frases se leen a menos de (bloques) del fuego', 'lines are read within (blocks) of the fire', 2, 64, 1],
+    duracionFrase: ['cada frase se ve (s)', 'each line shows for (s)', 1, 15, 0.5],
+    calentarCada: ['sentado: se calienta las manos cada (s)', 'seated: warms hands every (s)', 0, 60, 0.5],
+    calentarDura: ['… durante (s) (0 = nunca)', '… for (s) (0 = never)', 0, 30, 0.5]
+};
+const TIPOS_ASIENTO = [['tronco', 'en un tronco', 'on a log'], ['suelo', 'en el suelo', 'on the ground'], ['cuclillas', 'en cuclillas', 'squatting']];
+const TEXTOS_FOGATA = { sentarse: ['aviso: puedes sentarte', 'hint: you can sit'], sentado: ['aviso: sentado', 'hint: seated'], ocupado: ['asiento ocupado', 'seat taken'], llena: ['fogata llena', 'campfire full'], botonSentarse: ['botón sentarse', 'sit button'], botonPararse: ['botón pararse', 'stand button'] };
 const DESTINOS = [['aqui', 'junto a mí', 'next to me'], ['sitio', 'su sitio (vuelve)', 'their spot (go back)']];
 const LUGARES_EXTRA = ['molino', 'portal']; // lugares del mapa sin nadie (posiciones.json no los nombra)
 
@@ -147,7 +161,7 @@ export async function montarVida(ctx) {
     const selPersona = $('vi-persona'), selDestino = $('vi-destino');
     let personas = [], lugares = [], gestos = [];
     // Los dos archivos de la pestaña: navegacion.json (caminar y paseo) y rutinas.json (visitas por horario)
-    const A = { navegacion: { etag: null, original: null, datos: null }, rutinas: { etag: null, original: null, datos: null } };
+    const A = { navegacion: { etag: null, original: null, datos: null }, rutinas: { etag: null, original: null, datos: null }, actividades: { etag: null, original: null, datos: null } };
     async function leer(nombre) {
         const r = await fetch(`../mundo/datos/${nombre}.json`, { cache: 'no-cache' });
         if (!r.ok) throw new Error(String(r.status));
@@ -155,12 +169,13 @@ export async function montarVida(ctx) {
     }
     // Partes vacías que la pantalla espera (también en la copia original, para no marcar cambios que no hay)
     function normalizar(nombre, o) {
-        const partes = nombre === 'navegacion' ? ['caminar', 'paseo', 'seguir'] : ['ajustes', 'visitas', 'horarios', 'lugares', 'textos'];
+        const partes = nombre === 'navegacion' ? ['caminar', 'paseo', 'seguir'] : nombre === 'actividades' ? ['fogata', 'poses'] : ['ajustes', 'visitas', 'horarios', 'lugares', 'textos'];
         for (const k of partes) o[k] = o[k] || {};
         return o;
     }
     try { await leer('navegacion'); } catch (e) { caja.textContent = 'No se pudo leer mundo/datos/navegacion.json'; return; }
     try { await leer('rutinas'); } catch (e) { A.rutinas.original = normalizar('rutinas', { version: 1 }); A.rutinas.datos = clonar(A.rutinas.original); }
+    try { await leer('actividades'); } catch (e) { A.actividades.original = normalizar('actividades', { version: 1 }); A.actividades.datos = clonar(A.actividades.original); }
     try {
         const pos = await (await fetch('../mundo/datos/posiciones.json', { cache: 'no-cache' })).json();
         personas = Object.keys(pos.personas || {});
@@ -168,7 +183,7 @@ export async function montarVida(ctx) {
     } catch (e) { /* sin posiciones: la prueba queda sin lista */ }
     const nav = () => A.navegacion.datos, rut = () => A.rutinas.datos;
     const sucioDe = n => JSON.stringify(A[n].datos) !== JSON.stringify(A[n].original);
-    const sucio = () => sucioDe('navegacion') || sucioDe('rutinas');
+    const sucio = () => sucioDe('navegacion') || sucioDe('rutinas') || sucioDe('actividades');
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
     const cambio = (nombre = 'navegacion') => {
         ctx.puente.enviarDatos(nombre, A[nombre].datos);
@@ -378,6 +393,59 @@ export async function montarVida(ctx) {
         }
     }
 
+    // ---- Actividades compartidas (7g-1): la fogata y las poses de sentarse ----
+    function pintarActividades() {
+        const act = A.actividades.datos;
+        const fog = () => act.fogata;
+        grupo(t('Fogata: cupo, radios y tiempos', 'Campfire: capacity, radii and timing'), 'actividades', 'fogata', FOGATA, FOGATA_BASE, false);
+        // Asientos: dx y dz desde el fuego y cómo se sienta; editar uno copia la lista del código al JSON
+        const secA = seccion(t('Fogata: asientos (desde el centro del fuego)', 'Campfire: seats (from the fire centre)'), false);
+        const lista = () => (Array.isArray(fog().asientos) ? fog().asientos : clonar(FOGATA_BASE.asientos));
+        const fijarLista = l => { fog().asientos = l; cambio('actividades'); };
+        lista().forEach((a, i) => {
+            const fila = document.createElement('div'); fila.className = 'panel';
+            const etq = document.createElement('strong'); etq.textContent = t(`Asiento ${i + 1}`, `Seat ${i + 1}`); fila.appendChild(etq);
+            fila.appendChild(numero('dx', a.dx, -8, 8, 0.05, v => { const l = lista(); l[i].dx = v; fijarLista(l); }));
+            fila.appendChild(numero('dz', a.dz, -8, 8, 0.05, v => { const l = lista(); l[i].dz = v; fijarLista(l); }));
+            fila.appendChild(selector(t('cómo se sienta', 'how they sit'), a.tipo, TIPOS_ASIENTO.map(([c, es, en]) => [c, t(es, en)]), v => { const l = lista(); l[i].tipo = v; fijarLista(l); }));
+            fila.appendChild(boton('Quitar', 'Remove', () => { const l = lista(); l.splice(i, 1); fijarLista(l); pintar(); }));
+            secA.appendChild(fila);
+        });
+        secA.appendChild(boton('Agregar asiento', 'Add seat', () => { const l = lista(); if (l.length < 16) l.push({ dx: 0, dz: -2, tipo: 'suelo' }); fijarLista(l); pintar(); }));
+        secA.appendChild(boton('Asientos del código', 'Code seats', () => { delete fog().asientos; cambio('actividades'); pintar(); }));
+        // Frases cortas (máximo 4, teclas 1-4) y textos
+        const secF = seccion(t('Fogata: frases (las leen los que están cerca) y textos', 'Campfire: lines (read by those nearby) and texts'), false);
+        const frases = () => (fog().frases && Object.keys(fog().frases).length ? fog().frases : clonar(FOGATA_BASE.frases));
+        Object.entries(frases()).forEach(([k, o], i) => {
+            secF.appendChild(frase(`${i + 1}. ${k}`, o, x => { const fr = frases(); if (x) fr[k] = x; else delete fr[k]; fog().frases = fr; cambio('actividades'); }));
+        });
+        if (Object.keys(frases()).length < 4) secF.appendChild(textoCampo(t('nueva frase (clave)', 'new line (key)'), '', v => {
+            if (!/^[a-z][a-zA-Z0-9]{0,30}$/.test(v)) return;
+            const fr = frases(); fr[v] = { es: v, en: v }; fog().frases = fr; cambio('actividades'); pintar();
+        }, { placeholder: 'saludo' }));
+        for (const [k, [es, en]] of Object.entries(TEXTOS_FOGATA)) {
+            const tx = fog().textos || {};
+            secF.appendChild(frase(t(es, en), tx[k] || FOGATA_BASE.textos[k], x => {
+                const nt = { ...(fog().textos || {}) };
+                if (x) nt[k] = x; else delete nt[k];
+                if (Object.keys(nt).length) fog().textos = nt; else delete fog().textos;
+                cambio('actividades');
+            }));
+        }
+        // Poses (radianes de rig.md): sentado en el suelo, en un tronco, en cuclillas y calentarse
+        const secP = seccion(t('Poses al sentarse (las ven igual los demás jugadores)', 'Sitting poses (others see them the same)'), false);
+        const NOMBRES = { sentado: ['en el suelo', 'on the ground'], tronco: ['en un tronco', 'on a log'], cuclillas: ['en cuclillas', 'squatting'], calentar: ['calentarse las manos', 'warming hands'] };
+        for (const [p, [es, en]] of Object.entries(NOMBRES)) {
+            const tit = document.createElement('strong'); tit.textContent = t(es, en); secP.appendChild(tit);
+            for (const [c, base] of Object.entries(POSES_BASE[p])) {
+                const d = act.poses[p] || {};
+                const v = Number.isFinite(d[c]) ? d[c] : base;
+                const [min, max, paso] = c === 'f' ? [0, 10, 0.1] : c === 'vaiven' ? [0, 1, 0.01] : c === 'y' ? [-1, 1, 0.01] : [-3.2, 3.2, 0.01];
+                secP.appendChild(numero(c + (c in d ? ' *' : ''), v, min, max, paso, x => { act.poses[p] = { ...(act.poses[p] || {}), [c]: x }; cambio('actividades'); }));
+            }
+        }
+        secP.appendChild(boton('Volver a las poses del código', 'Back to the code poses', () => { act.poses = {}; cambio('actividades'); pintar(); }));
+    }
     function pintar() {
         caja.textContent = '';
         llenarPrueba();
@@ -386,6 +454,7 @@ export async function montarVida(ctx) {
         grupo(t('Paseos de los amigos', 'Friends’ walks'), 'navegacion', 'paseo', PASEO, PASEO_BASE);
         grupo(t('Te acompaña: cómo te sigue', 'Comes with you: how they follow'), 'navegacion', 'seguir', SEGUIR, SEGUIR_BASE, false);
         grupo(t('Te acompaña: cómo pelea', 'Comes with you: how they fight'), 'navegacion', 'pelea', PELEA, PELEA_BASE, false);
+        pintarActividades();
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
     }
     const ESTADOS = {
