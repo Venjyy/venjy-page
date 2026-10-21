@@ -13,7 +13,9 @@
 // reproductores con el mismo mapa: la banda y el bajo por separado, para poder apagar solo el bajo).
 // No editable aún: AJUSTES_SALONAS y REGLAS_BASE (pasan a mundo/datos/salonas.json en S9), los textos (TXT_SALONAS)
 // y los colores del HUD (CSS). Locales, público, menú de la gira, récords y Modo Primus vienen en S5 y S8.
-// Depuración: __venjy.salonas (abrir(), tocar(dificultad), estado, pausar(), calibrar()).
+// Depuración: __venjy.salonas (abrir(), tocar(dificultad), estado, pausar(), calibrar(), local('sala'|'bar'|'festival')).
+// S5: el local (sala de ensayo, bar o festival), la banda tocando al pulso y el público, en salonas-escena.js;
+// la cámara empieza en el plano de intro del local y en el solo se corre hacia Salonas.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { audioMundo, cuandoHayaAudio } from '../criaturas/cuerpo.js';
@@ -23,6 +25,7 @@ import { tocarBajo, vozDe } from './musica-bajo.js';
 import { cargarMusica, cancionMusica, instrumentosPropios } from './musica-datos.js';
 import * as P from './salonas-partitura.js';
 import * as Z from './salonas-reloj.js';
+import { crearEscenaSalonas } from './salonas-escena.js';
 
 const t = (es, en) => ({ es, en });
 export const TXT_SALONAS = {
@@ -53,7 +56,9 @@ export const TXT_SALONAS = {
 };
 
 const CSS = `
-body.en-salonas #hud, body.en-salonas .mira, body.en-salonas .tactil { display: none !important; }
+body.en-salonas #hud, body.en-salonas .mira, body.en-salonas .tactil, body.en-salonas .clic-seguir { display: none !important; }
+.sl-capa.sl-intro .sl-letra, .sl-capa.sl-intro .sl-trastes { opacity: 0; }
+.sl-letra, .sl-trastes { transition: opacity .4s; }
 .sl { font-family: 'PixelCraft', monospace; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; }
 .sl-capa { position: fixed; inset: 0; z-index: 60; pointer-events: none; display: none; }
 .sl-capa.visible { display: block; }
@@ -180,16 +185,27 @@ export function crearSalonas(ctx) {
 
     // ---------- Escena 3D ----------
     let esc = null;
+    // El local, la banda y el público (salonas-escena.js): viven en la escena de la autopista
+    const local = crearEscenaSalonas({ personasMundo: ctx.personasMundo || (() => null), skin: ctx.skin || null });
+    let localForzado = null; // depuración: __venjy.salonas.local('bar') toca cualquier canción en ese local
+    const localDe = (A, clave) => localForzado || (A.localDe && A.localDe[clave]) || A.local;
+    function ponerLocal(A, clave) {
+        const L = local.poner(localDe(A, clave), A).L;
+        esc.scene.background.set(L.cielo || A.escena.cielo);
+        esc.scene.fog.color.set(L.cielo || A.escena.cielo);
+        [esc.scene.fog.near, esc.scene.fog.far] = L.niebla || A.escena.niebla;
+    }
     const cam = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
     const v3 = new THREE.Vector3();
     function prepararEscena(A) {
         if (esc && esc.firma === JSON.stringify([A.carriles, A.escena])) return;
-        if (esc) esc.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+        if (esc) { esc.scene.remove(local.raiz); esc.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
         const C = A.carriles, W = C.ancho, N = 4, ancho = N * W, scene = new THREE.Scene();
         scene.background = new THREE.Color(A.escena.cielo);
         scene.fog = new THREE.Fog(A.escena.cielo, A.escena.niebla[0], A.escena.niebla[1]);
         scene.add(new THREE.AmbientLight(0xffffff, 0.75));
         const sol = new THREE.DirectionalLight(0xffffff, 0.7); sol.position.set(2, 8, 4); scene.add(sol);
+        scene.add(local.raiz);
         const caja = (w, h, d, color, basica = false) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), basica ? new THREE.MeshBasicMaterial({ color }) : new THREE.MeshLambertMaterial({ color }));
         const xDe = k => (k - (N - 1) / 2) * W;
         // Autopista: tablero, bordes, carriles con su tinte y separadores (el fondo va hacia −z)
@@ -259,7 +275,8 @@ export function crearSalonas(ctx) {
         dificultad = dificultad || A.dificultad;
         if (!A.canciones.includes(cancionElegida)) cancionElegida = A.canciones.includes(A.cancion) ? A.cancion : A.canciones[0] || A.cancion;
         calibracion = Z.leerCalibracion(almacen(), A.calibracion.rango);
-        c = { fase: 'menu', A, R: reglas(), tactil: !!(ctx.tactil && ctx.tactil()) };
+        c = { fase: 'menu', A, R: reglas(), tactil: !!(ctx.tactil && ctx.tactil()), animo: A.publico.reposo, carril: 1.5, carrilObj: 1.5, slapT: -1e9, falloT: -1e9, solo: 0 };
+        ponerLocal(A, cancionElegida);
         ctx.bloquear();
         if (document.pointerLockElement) document.exitPointerLock();
         document.body.classList.add('en-salonas');
@@ -360,21 +377,25 @@ export function crearSalonas(ctx) {
         const A = ajustes(), R = reglas(), cancion = cancionDe(cancionElegida);
         if (!cancion) { pintarMenu(tx(TXT_SALONAS.sinCancion)); return; }
         prepararEscena(A);
+        ponerLocal(A, cancionElegida);
         if (c.rep) { c.rep.parar(); c.repBajo.parar(); }
+        // Plano de intro del local: la canción espera a que la cámara llegue detrás de los carriles
+        const intro = local.intro(), retraso = Math.max(A.audio.retraso, intro ? intro.seg : 0);
         const x = au.ctx;
         if (x.state !== 'running') x.resume();
         const part = P.partitura(cancion, dificultad, R);
         // La banda sin el bajo y el bajo solo: dos reproductores con el mismo mapa y la misma hora de inicio
         const mudo = conBajo => ({ ...cancion, capas: (cancion.capas || []).map(p => (!!p.bajo === conBajo ? p : { ...p, mudo: true })) });
         const rep = crearReproductorCancion(), repBajo = crearReproductorCancion();
-        const mapa = rep.empezar(x, mudo(false), { retraso: A.audio.retraso });
+        const mapa = rep.empezar(x, mudo(false), { retraso });
         repBajo.empezar(x, mudo(true), { mapa, retraso: rep.inicio - x.currentTime });
         const vol = cancion.vol || 1, t0 = x.currentTime;
         au.banda.gain.cancelScheduledValues(t0); au.banda.gain.setValueAtTime(vol * A.audio.volBanda, t0);
         au.bajo.gain.cancelScheduledValues(t0); au.bajo.gain.setValueAtTime(vol * A.audio.volBajo, t0);
         c = { fase: 'juega', A, R, tactil: c.tactil, cancion, part, mapa, rep, repBajo, volBajo: vol * A.audio.volBajo,
             hechas: new Set(), falladas: new Set(), soltadas: new Set(), mantiene: new Map(), pend: [], pts: P.puntajeInicial(),
-            maximo: P.puntajeMaximo(part, R), primera: 0, aviso: 0, ultimaNota: null, tJ: -A.audio.retraso };
+            maximo: P.puntajeMaximo(part, R), primera: 0, aviso: 0, ultimaNota: null, tJ: -retraso, tVis: -retraso,
+            intro: intro ? { ...intro, desde0: performance.now() } : null, animo: A.publico.reposo, carril: 1.5, carrilObj: 1.5, slapT: -1e9, falloT: -1e9, solo: 0 };
         apretadas.clear();
         panel(null);
         hud(true);
@@ -415,6 +436,8 @@ export function crearSalonas(ctx) {
         c.hechas.add(r.idx); c.ultimaNota = n.nota;
         c.pts = P.sumar(c.pts, { juicio: r.juicio, marcada: n.marcada }, c.R);
         if (n.dur > 0) c.mantiene.set(r.idx, n.t);
+        c.slapT = performance.now(); c.carrilObj = n.carriles.reduce((a, k) => a + k, 0) / n.carriles.length;
+        c.animo = Math.min(1, c.animo + c.A.publico.subida);
         avisar(r.juicio);
     }
     function fallo(idx) {
@@ -422,6 +445,7 @@ export function crearSalonas(ctx) {
         if (n) { c.hechas.add(idx); c.falladas.add(idx); }
         c.pts = P.sumar(c.pts, { juicio: 'fallo' }, c.R);
         apagarBajo();
+        c.falloT = performance.now(); c.animo = Math.max(-1, c.animo - c.A.publico.bajada);
         cuerdaMuerta(n ? n.nota : c.ultimaNota);
         avisar('fallo');
     }
@@ -468,7 +492,9 @@ export function crearSalonas(ctx) {
         const p = c.pts, notas = c.part.notas.length, aciertos = p.conteo.perfecto + p.conteo.bien + p.conteo.ok;
         finalEl.textContent = '';
         el('', finalEl, 'h2').textContent = tx(TXT_SALONAS.resultados);
-        pintarEstrellas(el('sl-estrellas', finalEl, 'canvas'), P.estrellas(p.puntos, c.maximo, c.R));
+        const nEstrellas = P.estrellas(p.puntos, c.maximo, c.R);
+        pintarEstrellas(el('sl-estrellas', finalEl, 'canvas'), nEstrellas);
+        if (nEstrellas >= 3) { local.celebrar(); c.celebraHasta = performance.now() + c.A.publico.celebrarSeg * 1000; }
         const linea = (a, b) => { const e = el('', finalEl, 'p'); e.textContent = `${a}: ${b}`; };
         linea(tx(TXT_SALONAS.puntos), p.puntos);
         linea(tx(TXT_SALONAS.precision), `${notas ? Math.round(100 * aciertos / notas) : 0} %`);
@@ -508,7 +534,11 @@ export function crearSalonas(ctx) {
             if (resta <= 0) { cuentaEl.classList.remove('visible'); c.fase = 'juega'; au.ctx.resume(); }
             else cuentaEl.textContent = String(Math.ceil(resta / A.pausa.paso));
         }
-        if (!['juega', 'cuenta', 'pausa'].includes(c.fase)) return;
+        if (!['juega', 'cuenta', 'pausa'].includes(c.fase)) {
+            // Menú y resultados: sin notas; la banda sigue tocando a su pulso de reposo
+            if (c.fase === 'menu' || c.fase === 'final') { esc.esconder(); camara(c.A, pintarLocal(ahora, 0), ahora); }
+            return;
+        }
         if (c.fase === 'juega') {
             if (au.ctx.state === 'running') {
                 const salida = { I, ctx: au.ctx, propios: instrumentosPropios(), adelanto: A.audio.adelanto };
@@ -568,9 +598,45 @@ export function crearSalonas(ctx) {
             tr.tapa.material.color.copy(tr.color).multiplyScalar(on ? 1 : 0.45);
             tr.tapa.scale.set(on ? 1.12 : 1, on ? 1.6 : 1, on ? 1.12 : 1);
         });
-        // Cámara fija detrás de los carriles; se mece al pulso
-        const K = A.camara, ip = pasoEnTiempo(c.mapa, tVis), p = pasos[Math.max(0, ip)];
-        const fase = ip < 0 ? 1 : ((p.i % 4) + Math.min(1, (tVis - p.t) / p.s)) / 4;
+        camara(A, pintarLocal(ahora, tVis), ahora);
+    }
+
+    // ---------- Banda, público y luces del local ----------
+    // El pulso de la banda: el del mapa de tiempo mientras suena la canción; antes de la 1.ª nota sigue el pulso
+    // de la primera sección, y en el menú y los resultados, el de reposo (banda.reposoBpm)
+    function ritmoDe(tVis, ahora) {
+        const A = c.A, m = ['juega', 'cuenta', 'pausa'].includes(c.fase) ? c.mapa : null;
+        const ip = m ? pasoEnTiempo(m, tVis) : -1;
+        let x, seccion = 'reposo';
+        if (ip >= 0) { const p = m.pasos[ip]; x = (ip + Math.min(1, (tVis - p.t) / p.s)) / 4; seccion = m.secciones[p.n].seccion || 'verso'; }
+        else if (m && m.pasos.length) { x = 1000 + (tVis - m.pasos[0].t) / (m.pasos[0].s * 4); seccion = 'intro'; }
+        else x = ahora / 1000 * A.banda.reposoBpm / 60;
+        const pulso = Math.floor(x), fase = x - pulso;
+        return {
+            pulso, fase, seccion, golpe: Math.pow(1 - fase, 3),
+            salto: seccion === 'coro' && pulso % A.banda.saltoCada === 0 ? fase : 0,
+            energia: Math.max(0, Math.min(1, (c.animo + 1) / 2))
+        };
+    }
+    let ultimoCuadro = 0;
+    function pintarLocal(ahora, tVis) {
+        const A = c.A, B = A.banda, U = A.publico;
+        const dt = ultimoCuadro ? Math.min(0.05, (ahora - ultimoCuadro) / 1000) : 0; ultimoCuadro = ahora; c.dt = dt;
+        c.animo += (U.reposo - c.animo) * Math.min(1, U.vuelta * dt);
+        c.carril += (c.carrilObj - c.carril) * Math.min(1, B.carrilK * dt);
+        const ritmo = ritmoDe(tVis, ahora);
+        const env = (t0, seg) => { const u = (ahora - t0) / (seg * 1000); return u >= 0 && u < 1 ? Math.sin(Math.PI * u) : 0; };
+        const celebra = c.celebraHasta && ahora < c.celebraHasta ? 1 : 0;
+        local.cuadro({ ritmo, toca: { carril: c.carril, slap: env(c.slapT, B.slapSeg), fallo: env(c.falloT, B.falloSeg) }, animo: c.animo, t: ahora / 1000, dt, celebra, P: A });
+        return ritmo;
+    }
+
+    // ---------- Cámara ----------
+    // Fija detrás de los carriles y se mece al pulso; se corre hacia Salonas en su solo y empieza en el plano de
+    // intro del local (locales.<local>.intro), del que llega a su sitio en intro.seg
+    const mira = new THREE.Vector3(), desde = new THREE.Vector3(), miraIntro = new THREE.Vector3();
+    function camara(A, ritmo, ahora) {
+        const C = A.carriles, K = A.camara, S = A.camaraSolo;
         // Si la pantalla es angosta (celular en vertical), se aleja hasta que entren los 4 carriles en la línea de golpe
         const w = innerWidth, h = innerHeight; cam.aspect = w / h;
         const medio = 2 * C.ancho + K.margen, dist = Math.hypot(K.altura, K.distancia);
@@ -581,7 +647,22 @@ export function crearSalonas(ctx) {
         c.trastesPx = esc.trastes.map(tr => { v3.set(tr.tapa.position.x, 0, 0).project(cam); return (v3.x + 1) / 2 * w; });
         c.letraPx = (1 - (v3.set(0, 0, 0.6).project(cam).y + 1) / 2) * h;
         // Vaivén suave al pulso (vuelve a 0 al final de cada pulso, sin saltos), igual en cualquier pantalla
-        cam.position.y -= K.mecer * Math.pow(Math.sin(Math.PI * fase), 2); cam.lookAt(0, 0, K.mira);
+        cam.position.y -= K.mecer * Math.pow(Math.sin(Math.PI * ritmo.fase), 2);
+        mira.set(0, 0, K.mira);
+        if (S) {
+            c.solo += ((S.secciones.includes(ritmo.seccion) ? 1 : 0) - c.solo) * Math.min(1, S.k * (c.dt || 0));
+            if (c.solo > 1e-3) { cam.position.x += S.pos[0] * c.solo; cam.position.y += S.pos[1] * c.solo; cam.position.z += S.pos[2] * c.solo; mira.x += S.mira[0] * c.solo; mira.y += S.mira[1] * c.solo; mira.z += S.mira[2] * c.solo; }
+        }
+        if (c.intro) {
+            const u = (ahora - c.intro.desde0) / (c.intro.seg * 1000);
+            if (u >= 1) c.intro = null;
+            else {
+                const e = u * u * (3 - 2 * u);
+                cam.position.lerpVectors(desde.set(...c.intro.desde), cam.position, e);
+                mira.lerpVectors(miraIntro.set(...c.intro.mira), mira, e);
+            }
+        }
+        cam.lookAt(mira);
     }
     function dibuja(renderer) {
         if (!c || !esc) return false;
@@ -589,6 +670,7 @@ export function crearSalonas(ctx) {
         if (Math.abs(cam.aspect - w / h) > 1e-3) cam.aspect = w / h;
         cam.updateProjectionMatrix();
         renderer.render(esc.scene, cam);
+        capa.classList.toggle('sl-intro', !!c.intro); // durante el plano de intro no se ven las letras ni los trastes
         // Letras (PC) y trastes táctiles bajo los trastes 3D (medidos en pintarCarriles con la cámara quieta)
         if (c.trastesPx) {
             const xs = c.trastesPx, paso = xs.length > 1 ? xs[1] - xs[0] : w / 4;
@@ -608,6 +690,7 @@ export function crearSalonas(ctx) {
         // Depuración
         tocar(dif) { if (!c && !abrir()) return false; if (dif && P.DIFICULTADES.includes(dif)) dificultad = dif; tocar(); return true; },
         pausar: () => pausar(),
+        local(clave) { localForzado = clave && c && c.A.locales[clave] ? clave : null; if (c) ponerLocal(c.A, cancionElegida); return local.local; },
         calibrar: () => calibrar(),
         get calibracion() { return calibracion; }
     };
