@@ -126,7 +126,64 @@
           },
           "additionalProperties": false
         },
-        "bloqueoDano": { "description": "Fracción del daño que deja pasar el bloqueo (si falta, arena.json → golpe.bloqueoDano).", "type": "number", "minimum": 0, "maximum": 1 }
+        "bloqueoDano": { "description": "Fracción del daño que deja pasar el bloqueo (si falta, arena.json → golpe.bloqueoDano).", "type": "number", "minimum": 0, "maximum": 1 },
+        "peligro": {
+          "description": "Ataques peligrosos (§16.4, L3; lo lee combate/peligro.js): aviso = cuadros desde que empieza la anticipación hasta que sale el rombo rojo (dura hasta el activo); destello = cuadros del destello rojo del arma; respuestas = qué defensa sirve contra cada peligro (ventana: cuadros que se suman a la del desvío).",
+          "type": "object",
+          "properties": {
+            "aviso": { "type": "integer", "minimum": 0, "maximum": 60 },
+            "destello": { "type": "integer", "minimum": 0, "maximum": 30 },
+            "respuestas": {
+              "type": "object",
+              "propertyNames": { "enum": ["barrido", "estocada", "agarre", "imparable"] },
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "desvio": { "type": "boolean" },
+                  "guardia": { "type": "boolean" },
+                  "salto": { "type": "boolean" },
+                  "esquiva": { "type": "boolean" },
+                  "ventana": { "type": "integer", "minimum": -20, "maximum": 20 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
+        "mikiri": {
+          "description": "Mikiri (S12): esquivar hacia el rival (mover adelante ≥ umbral) desde el aviso de su estocada hasta activo + hasta cuadros empieza la acción `accion`.",
+          "type": "object",
+          "properties": {
+            "accion": { "$ref": "combate.schema.json#/$defs/clave" },
+            "hasta": { "type": "integer", "minimum": 0, "maximum": 20 },
+            "umbral": { "type": "number", "minimum": 0, "maximum": 1 },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
+        "remate": {
+          "description": "Golpe final (S13): atacar al rival desequilibrado a menos de `alcance` bloques empieza la acción `accion`.",
+          "type": "object",
+          "properties": {
+            "accion": { "$ref": "combate.schema.json#/$defs/clave" },
+            "alcance": { "type": "number", "minimum": 0, "maximum": 10 },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
+        "espiritu": {
+          "description": "Espíritu del arte de combate (§16.1): segmentos; el desvío perfecto llena `perfecto` y el normal `desvio`.",
+          "type": "object",
+          "properties": {
+            "segmentos": { "type": "integer", "minimum": 1, "maximum": 10 },
+            "perfecto": { "type": "number", "minimum": 0, "maximum": 10 },
+            "desvio": { "type": "number", "minimum": 0, "maximum": 10 },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },
@@ -191,6 +248,16 @@
         "peligro": { "anyOf": [{ "type": "null" }, { "enum": ["barrido", "estocada", "agarre", "imparable"] }] },
         "dano": { "type": "number", "minimum": 0 },
         "postura": { "type": "number", "minimum": 0 },
+        "posturaFija": { "description": "Postura que recibe el rival aunque lo bloquee (pisotón, arte de combate; L3). Reemplaza a la de la tabla.", "type": "number", "minimum": 0, "maximum": 200 },
+        "posturaPropia": { "description": "Postura que se suma (o se resta, si es negativa) al que ataca cuando el golpe conecta (el arte baja 15 la tuya).", "type": "number", "minimum": -200, "maximum": 200 },
+        "rompeGuardia": { "description": "La guardia mantenida no lo para (la patada, el pisotón); el desvío sí.", "type": "boolean" },
+        "costo": {
+          "description": "Lo que cuesta empezarlo: espiritu = segmentos (el arte de combate). Sin espíritu no sale.",
+          "type": "object",
+          "properties": { "espiritu": { "type": "number", "minimum": 0, "maximum": 10 } },
+          "additionalProperties": false
+        },
+        "alConectar": { "description": "Acción que empieza el que ataca cuando el golpe entra (el agarre sigue con su lanzamiento).", "$ref": "combate.schema.json#/$defs/clave" },
         "zona": {
           "type": "object",
           "propertyNames": { "enum": ["cabeza", "cuerpo", "piernas"] },

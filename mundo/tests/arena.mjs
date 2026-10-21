@@ -234,6 +234,27 @@ for (const aspecto of [16 / 9, 4 / 3, 2.2]) {
 }
 
 // ---------- 7. Salida (arena.js) ----------
+// ---------- Golpe final (L3): el plano de cine encuadra a los dos y gira lo que dice camara.remate ----------
+{
+    const K = R.camara.remate;
+    ok(K && K.duracion > 0 && K.fov > 0, 'arena.json → camara.remate tiene duración y fov (base en el código)');
+    for (const de of [0, 1]) for (const sep of [0.9, 1.6, 2.6]) {
+        const P = nueva();
+        P.f[0].x = -sep / 2; P.f[1].x = sep / 2; P.f[0].z = P.f[1].z = 0.4;
+        let peor = 0, dentro = true;
+        for (let k = 0; k <= 10; k++) {
+            const cam = M.camaraRemate(R, P, de, 1 - de, k / 10);
+            const q = M.encuadre(cam, [...M.puntosCuerpo(P.f[0], R), ...M.puntosCuerpo(P.f[1], R)], 16 / 9);
+            dentro = dentro && q.dentro; peor = Math.max(peor, q.peor);
+        }
+        ok(dentro, `remata f[${de}] a ${sep} bloques: los dos quedan en el plano todo el giro (peor ${peor.toFixed(2)})`);
+        const a0 = M.camaraRemate(R, P, de, 1 - de, 0), a1 = M.camaraRemate(R, P, de, 1 - de, 1);
+        const ang = v => Math.atan2(v.pos[0] - v.mira[0], v.pos[2] - v.mira[2]);
+        const giro = Math.abs(angulo(ang(a1) - ang(a0))) * 180 / Math.PI;
+        ok(Math.abs(giro - Math.abs(K.giro)) < 1.5, `gira ${K.giro}° (${giro.toFixed(1)})`);
+    }
+}
+
 const salida = await imp('mundo/tests/arena-salida.mjs').catch(e => ({ probar: null, error: e }));
 if (salida.probar) { const r = await salida.probar({ ok, R, estilos, leer }); if (r) pruebas += 0; }
 else ok(false, 'falta mundo/tests/arena-salida.mjs: ' + (salida.error && salida.error.message));

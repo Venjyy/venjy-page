@@ -459,7 +459,7 @@
       "type": "object",
       "properties": {
         "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
-        "estado": { "enum": ["esquiva", "desvio", "contra", "carga", "agarre", "agarrado", "reaccion", "aturdido", "derribado", "levantarse", "remate", "rematado"] },
+        "estado": { "enum": ["esquiva", "desvio", "contra", "carga", "agarre", "agarrado", "reaccion", "aturdido", "derribado", "levantarse", "remate", "rematado", "salto"] },
         "fases": { "$ref": "#/$defs/fases" },
         "anim": { "$ref": "#/$defs/clave" },
         "siguiente": { "$ref": "#/$defs/clave" },
@@ -474,6 +474,21 @@
         "velocidadMax": { "description": "Rad por cuadro que se permiten en sus cuadros activos (hasta motor.velocidadMax).", "type": "number", "minimum": 0.05, "maximum": 2 },
         "sinMirada": { "type": "boolean" },
         "ininterrumpible": { "type": "boolean" },
+        "pareja": {
+          "description": "Animación de pareja (L3: mikiri, golpe final). rival: la reacción que juega el otro, al empezar (cuando: inicio) o en el activo; en el activo el rival recibe postura y dano, los dos se congelan hitstop cuadros y sale un golpe con el peso de nivel (combate.json → peso), con su resultado y material.",
+          "type": "object",
+          "properties": {
+            "rival": { "$ref": "#/$defs/clave" },
+            "cuando": { "enum": ["inicio", "activo"] },
+            "postura": { "type": "number", "minimum": 0, "maximum": 200 },
+            "dano": { "type": "number", "minimum": 0, "maximum": 999 },
+            "hitstop": { "type": "integer", "minimum": 0, "maximum": 60 },
+            "nivel": { "$ref": "#/$defs/clave" },
+            "resultado": { "type": "string" },
+            "material": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
         "espejo": { "description": "La animación está hecha para un golpe que llega por la izquierda del que recibe; si llega por la derecha (el ataque trae lado: derecha) va en espejo (N5).", "type": "boolean" },
         "efectos": {
           "description": "Efectos de la reacción (N5): sobre dibuja estrellas sobre la cabeza o la marca roja en el pecho mientras dura; polvo levanta polvo del suelo en esas marcas (al caer); sacudida suma ese trauma a la cámara en la primera marca de polvo.",
@@ -482,6 +497,7 @@
             "sobre": { "enum": ["estrellas", "marcaRoja"] },
             "polvo": { "type": "array", "items": { "$ref": "#/$defs/marca" }, "maxItems": 8 },
             "sacudida": { "type": "number", "minimum": 0, "maximum": 1 },
+            "envainar": { "description": "Marca en que la katana entra a la vaina (golpe final, L3): la escena esconde la hoja de la mano.", "$ref": "#/$defs/marca" },
             "nota": { "$ref": "comun.schema.json#/$defs/nota" }
           },
           "additionalProperties": false

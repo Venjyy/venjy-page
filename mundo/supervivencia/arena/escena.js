@@ -340,6 +340,8 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
         _hp.set(0, sori * Math.min(1, hasta) ** 2, z0 + L * hasta); a.local.localToWorld(_hp);
         return { base: _hb, punta: _hp };
     }
+    // Golpe final (L3): la hoja entra a la vaina (se esconde la de la mano); false la vuelve a sacar
+    function envainar(clave, si = true) { const a = armas.get(clave); if (a && a.g) a.g.visible = !si; }
     // El Estudio cambió el agarre (pestaña Objetos): se vuelve a armar
     function revisarArmas() {
         const v = versionObjetosMano();
@@ -488,5 +490,5 @@ export function crearEscenaArena({ R, personasMundo, idioma = 'es' }) {
     for (const c of Object.keys(R.peleadores || {})) peleador(c);
     const efectos = crearEfectos(THREE, scene, R);
 
-    return { scene, peleador, armar, hoja, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
+    return { scene, peleador, armar, hoja, envainar, efectos, dibujar, celebrar, primerPlano, retrato, aplicar, destruir };
 }

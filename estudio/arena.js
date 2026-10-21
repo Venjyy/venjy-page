@@ -52,7 +52,8 @@ const GRUPOS = [
     ['practica', 'Práctica (rival de prueba)', 'Practice (test rival)', {
         alcance: ['alcance del ataque', 'attack reach', 0.5, 5, 0.1],
         acercarse: ['fracción de la velocidad con que camina hacia ti', 'fraction of speed walking toward you', 0, 1, 0.05],
-        desviaCada: ['desvía uno de cada N ataques tuyos (0 = nunca)', 'deflects one of every N of your attacks (0 = never)', 0, 20, 1]
+        desviaCada: ['desvía uno de cada N ataques tuyos (0 = nunca)', 'deflects one of every N of your attacks (0 = never)', 0, 20, 1],
+        peligroCada: ['tira un ataque peligroso cada N pasos (0 = nunca)', 'throws a perilous attack every N steps (0 = never)', 0, 20, 1]
     }],
     ['golpe', 'Golpe', 'Hit', {
         bloqueoDano: ['fracción del daño que pasa al bloquear', 'damage fraction through a block', 0, 1, 0.05]
@@ -110,14 +111,31 @@ const PESO_NUM = [
     [['pantalla', 'vineta', 'dur'], 'viñeta: segundos', 'vignette: seconds', 0, 3, 0.05],
     [['pantalla', 'vineta', 'fuerza'], 'viñeta: fuerza', 'vignette: strength', 0, 1, 0.05],
     [['pantalla', 'numeros', 'dur'], 'números de daño: segundos', 'damage numbers: seconds', 0.1, 3, 0.05],
-    [['pantalla', 'numeros', 'sube'], 'números de daño: cuánto saltan', 'damage numbers: jump height', 0, 100, 1]
+    [['pantalla', 'numeros', 'sube'], 'números de daño: cuánto saltan', 'damage numbers: jump height', 0, 100, 1],
+    [['peligro', 'opacidad'], 'peligro: opacidad del destello del arma', 'peril: weapon flash opacity', 0, 1, 0.05],
+    [['peligro', 'grueso'], 'peligro: grosor del destello del arma', 'peril: weapon flash thickness', 0.01, 0.5, 0.01],
+    [['pantalla', 'aviso', 'tamano'], 'aviso de peligro: tamaño del rombo (px)', 'peril warning: diamond size (px)', 4, 40, 1],
+    [['pantalla', 'aviso', 'alto'], 'aviso de peligro: altura sobre los pies', 'peril warning: height above the feet', 0.5, 4, 0.05],
+    [['pantalla', 'aviso', 'parpadeo'], 'aviso de peligro: parpadeos por segundo (0 = fijo)', 'peril warning: blinks per second (0 = steady)', 0, 20, 0.5]
 ];
 const PESO_COLOR = [[['impacto', 'color'], 'destello del impacto', 'impact flash'], [['aro', 'color'], 'aro', 'ring'], [['estrellas', 'color'], 'estrellas', 'stars'], [['marca', 'color'], 'marca roja', 'red mark'],
     [['pantalla', 'lineas', 'color'], 'líneas de velocidad', 'speed lines'], [['pantalla', 'flash', 'color'], 'flash', 'flash'], [['pantalla', 'vineta', 'color'], 'viñeta', 'vignette'],
-    [['pantalla', 'numeros', 'color'], 'números', 'numbers'], [['pantalla', 'numeros', 'critico'], 'números de golpe fuerte', 'heavy-hit numbers']];
+    [['pantalla', 'numeros', 'color'], 'números', 'numbers'], [['pantalla', 'numeros', 'critico'], 'números de golpe fuerte', 'heavy-hit numbers'],
+    [['peligro', 'color'], 'destello rojo del arma (peligro)', 'red weapon flash (peril)'], [['pantalla', 'aviso', 'color'], 'rombo del peligro', 'peril diamond'],
+    [['pantalla', 'aviso', 'borde'], 'borde del rombo', 'diamond border'], [['pantalla', 'aviso', 'signo'], 'signo del rombo', 'diamond sign']];
 const NIVELES_PESO = [['ligero', 'ligero', 'light'], ['medio', 'medio', 'medium'], ['fuerte', 'fuerte', 'heavy'], ['desvio', 'desvío', 'deflect'], ['perfecto', 'perfecto', 'perfect'], ['remate', 'remate', 'finisher']];
 const COLORES_HUD = [['vida', 'vida', 'life'], ['vidaFondo', 'fondo de la vida', 'life background'], ['vidaPerdida', 'vida perdida', 'lost life'], ['reloj', 'reloj', 'clock'], ['ronda', 'texto de ronda', 'round text'],
-    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background']];
+    ['postura', 'postura', 'posture'], ['posturaAlta', 'postura cansada (sobre el cansancio del estilo)', 'tired posture'], ['posturaFondo', 'fondo de la postura', 'posture background'], ['espiritu', 'espíritu (arte de combate)', 'spirit (combat art)'], ['espirituFondo', 'fondo del espíritu', 'spirit background']];
+// Plano de cine del golpe final (L3): camara.remate
+const CAMARA_REMATE = {
+    duracion: ['golpe final: segundos del plano de cine', 'final strike: cinematic shot seconds', 0.2, 6, 0.1],
+    distancia: ['golpe final: distancia de la cámara', 'final strike: camera distance', 1, 12, 0.1],
+    altura: ['golpe final: altura de la cámara', 'final strike: camera height', 0.1, 6, 0.05],
+    mira: ['golpe final: altura del punto al que mira', 'final strike: look-at height', 0, 3, 0.05],
+    desde: ['golpe final: grados de partida (hacia el que remata)', 'final strike: start degrees (toward the striker)', -180, 180, 1],
+    giro: ['golpe final: grados que gira', 'final strike: degrees it turns', -360, 360, 1],
+    fov: ['golpe final: ángulo de visión', 'final strike: field of view', 15, 100, 1]
+};
 const DIFICULTADES = [['facil', 'Fácil', 'Easy'], ['normal', 'Normal', 'Normal'], ['dificil', 'Difícil', 'Hard'], ['maestro', 'En serio', 'For real']];
 const LUZ_NUM = {
     ambiente: ['luz ambiente', 'ambient light', 0, 3, 0.05], fogataFuerza: ['fuerza de las fogatas', 'campfire strength', 0, 6, 0.1],
@@ -297,8 +315,14 @@ export async function montarArena(ctx) {
                 sel.addEventListener('change', () => poner(['vs', 'retrato'], sel.value));
                 sec.appendChild(campo(t('retrato', 'portrait'), sel));
             }
+            if (g === 'camara') for (const [k, def] of Object.entries(CAMARA_REMATE)) sec.appendChild(num(['camara', 'remate', k], def));
             if (g === 'practica') {
                 lugarDelRango(sec);
+                // Peligrosos que intercala (L3): claves de ataques de su estilo, separadas por coma
+                const pel = document.createElement('input'); pel.type = 'text'; pel.style.width = '16em';
+                pel.value = leer(['practica', 'peligros'], []).join(', ');
+                pel.addEventListener('change', () => poner(['practica', 'peligros'], pel.value.split(',').map(x => x.trim()).filter(Boolean)));
+                sec.appendChild(campo(t('ataques peligrosos que intercala (estocada, barrido, agarre)', 'perilous attacks it mixes in (estocada, barrido, agarre)'), pel));
                 // Patrón fijo: cada paso, tajos seguidos del combo o cuadros que mantiene la carga del golpe fuerte
                 const h = document.createElement('strong'); h.textContent = t('Patrón (se repite)', 'Pattern (repeats)'); sec.appendChild(h);
                 const Pt = leer(['practica', 'patron'], []);
@@ -340,10 +364,10 @@ export async function montarArena(ctx) {
         nota.textContent = t('Cuántas chispas salen: combate.json → peso (particulas). La estela de cada tajo (largo, ancho, color, desvanecer) va en estilo-sekiro.json → ataques.<tajo>.efectos.estela.', 'How many sparks: combate.json → peso (particulas). Each slash trail (length, width, color, fade) is in estilo-sekiro.json → ataques.<slash>.efectos.estela.');
         sf.appendChild(nota);
         // Peso de los golpes (N5): impacto, polvo, aro, estrellas, marca roja y capa de pantalla
-        const sp = seccion(t('Peso de los golpes', 'Hit weight'));
-        for (const [ruta, es2, en2, a, b, p] of PESO_NUM) sp.appendChild(num(['efectos', ...ruta], [es2, en2, a, b, p]));
-        for (const [ruta, es2, en2] of PESO_COLOR) sp.appendChild(color(t(es2, en2), ['efectos', ...ruta]));
-        sp.appendChild(interruptor(t('números de daño', 'damage numbers'), ['efectos', 'pantalla', 'numeros', 'activo'], false));
+        const spPeso = seccion(t('Peso de los golpes', 'Hit weight'));
+        for (const [ruta, es2, en2, a, b, p] of PESO_NUM) spPeso.appendChild(num(['efectos', ...ruta], [es2, en2, a, b, p]));
+        for (const [ruta, es2, en2] of PESO_COLOR) spPeso.appendChild(color(t(es2, en2), ['efectos', ...ruta]));
+        spPeso.appendChild(interruptor(t('números de daño', 'damage numbers'), ['efectos', 'pantalla', 'numeros', 'activo'], false));
         // En qué niveles salen el aro, las líneas de velocidad y la viñeta; flash por nivel [segundos, fuerza]
         for (const [ruta, es2, en2] of [[['aro', 'niveles'], 'aro en', 'ring on'], [['pantalla', 'lineas', 'niveles'], 'líneas de velocidad en', 'speed lines on'], [['pantalla', 'vineta', 'niveles'], 'viñeta en', 'vignette on']]) {
             const f = document.createElement('div'); f.className = 'campo';
@@ -358,22 +382,22 @@ export async function montarArena(ctx) {
                 });
                 l.append(c, ' ' + t(e3, n3)); f.appendChild(l);
             }
-            sp.appendChild(f);
+            spPeso.appendChild(f);
         }
         for (const [k, e3, n3] of NIVELES_PESO) {
             const ruta = ['efectos', 'pantalla', 'flash', k], fl = () => { const v = leer(ruta, null); return Array.isArray(v) ? v : [0, 1]; };
-            sp.appendChild(numero(t(`flash en ${e3}: segundos (0 = no)`, `flash on ${n3}: seconds (0 = none)`), fl()[0], 0, 2, 0.01, v => poner(ruta, [v, fl()[1]])));
-            sp.appendChild(numero(t(`flash en ${e3}: fuerza`, `flash on ${n3}: strength`), fl()[1], 0, 1, 0.05, v => poner(ruta, [fl()[0], v])));
+            spPeso.appendChild(numero(t(`flash en ${e3}: segundos (0 = no)`, `flash on ${n3}: seconds (0 = none)`), fl()[0], 0, 2, 0.01, v => poner(ruta, [v, fl()[1]])));
+            spPeso.appendChild(numero(t(`flash en ${e3}: fuerza`, `flash on ${n3}: strength`), fl()[1], 0, 1, 0.05, v => poner(ruta, [fl()[0], v])));
         }
         const sel = document.createElement('select');
         for (const [v, e3, n3] of [['nieve', 'nieve', 'snow'], ['hielo', 'hielo', 'ice'], ['tierra', 'tierra', 'dirt']]) sel.appendChild(new Option(t(e3, n3), v));
         sel.value = leer(['escenario', 'superficie'], 'nieve');
         sel.addEventListener('change', () => poner(['escenario', 'superficie'], sel.value));
-        sp.appendChild(campo(t('superficie del suelo (color del polvo)', 'floor surface (dust color)'), sel));
-        sp.appendChild(num(['muneco', 'recupera'], ['muñeco: segundos para recuperar la vida', 'dummy: seconds to recover life', 0, 30, 0.5]));
+        spPeso.appendChild(campo(t('superficie del suelo (color del polvo)', 'floor surface (dust color)'), sel));
+        spPeso.appendChild(num(['muneco', 'recupera'], ['muñeco: segundos para recuperar la vida', 'dummy: seconds to recover life', 0, 30, 0.5]));
         const np = document.createElement('p'); np.className = 'nota';
         np.textContent = t('Hitstop, temblor, sacudida de la cámara, cámara lenta, qué reacción toca y sonido por capas: combate.json → peso, impacto, elegir y sonidos (pestaña Combate, N6). Colores del polvo por superficie: arena.json → efectos.polvo.colores.', 'Hitstop, shake, camera trauma, slow motion, which reaction plays and layered sound: combate.json → peso, impacto, elegir and sonidos (Combat tab, N6). Dust colors per surface: arena.json → efectos.polvo.colores.');
-        sp.appendChild(np);
+        spPeso.appendChild(np);
         // Escenario
         const se = seccion(t('Escenario', 'Scenery'));
         se.appendChild(parTexto(t('nombre del escenario', 'scenery name'), ['escenario', 'nombre']));

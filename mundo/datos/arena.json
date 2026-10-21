@@ -123,7 +123,9 @@
       { "golpes": 3 }
     ],
     "desviaCada": 3,
-    "nota": "Rival de práctica (L2): repite el patrón (golpes = tajos seguidos del combo; fuerte = cuadros que mantiene la carga) con ataqueCada s entre pasos, y desvía uno de cada desviaCada ataques tuyos (0 = nunca)."
+    "nota": "Rival de práctica (L2): repite el patrón (golpes = tajos seguidos del combo; fuerte = cuadros que mantiene la carga) con ataqueCada s entre pasos, y desvía uno de cada desviaCada ataques tuyos (0 = nunca).",
+    "peligros": ["estocada", "barrido", "agarre"],
+    "peligroCada": 2
   },
   "muneco": {
     "recupera": 2,
@@ -201,6 +203,10 @@
       "es": "R: siguiente reacción (Mayús + R: en espejo)",
       "en": "R: next reaction (Shift + R: mirrored)"
     },
-    "espejo": { "es": "espejo", "en": "mirrored" }
+    "espejo": { "es": "espejo", "en": "mirrored" },
+    "golpeFinal": { "es": "¡Golpe final!", "en": "Final strike!" },
+    "mikiri": { "es": "¡Mikiri!", "en": "Mikiri!" },
+    "botonPatada": { "es": "PATADA", "en": "KICK" },
+    "botonArte": { "es": "ARTE", "en": "ART" }
   }
 }

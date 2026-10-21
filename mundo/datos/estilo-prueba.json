@@ -48,6 +48,62 @@
       "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
       "anim": "tajo",
       "velocidadMax": 0.6
+    },
+    "barrido": {
+      "nombre": { "es": "Barrido", "en": "Sweep" },
+      "nota": "S14 · peligro barrido (§16.4): corte giratorio a la altura de las canillas. No se desvía ni se bloquea: se salta (y se pisa) o se esquiva.",
+      "fases": { "anticipacion": 24, "activo": 6, "recuperacion": 26 },
+      "altura": "bajo",
+      "peligro": "barrido",
+      "dano": 10,
+      "postura": 22,
+      "alcance": 2.4,
+      "arco": [-90, 90],
+      "empuje": 0.3,
+      "hitstop": "fuerte",
+      "reaccion": "derribo",
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "barrido",
+      "velocidadMax": 0.6
+    },
+    "estocada": {
+      "nombre": { "es": "Estocada", "en": "Thrust" },
+      "nota": "S14 · peligro estocada (§16.4): la hoja recogida en la cadera sale adelante con un avance largo. Se desvía con la ventana 2 c más corta; la guardia no sirve; la respuesta buena es el mikiri.",
+      "fases": { "anticipacion": 24, "activo": 5, "recuperacion": 22 },
+      "altura": "medio",
+      "peligro": "estocada",
+      "dano": 12,
+      "postura": 25,
+      "alcance": 3.2,
+      "arco": [-25, 25],
+      "empuje": 0.6,
+      "hitstop": "fuerte",
+      "reaccion": "medio_fuerte",
+      "avance": [
+        { "fase": "anticipacion", "hasta": 0.3, "curva": "entrada" },
+        { "fase": "activo", "hasta": 1.3, "curva": "salida" }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "estocada",
+      "velocidadMax": 0.6
+    },
+    "agarre": {
+      "nombre": { "es": "Agarre", "en": "Grab" },
+      "nota": "S14 · peligro agarre (§16.4): la mano izquierda suelta el mango y se estira. Ni desvío ni guardia: se esquiva o se salta. Si entra, lo voltea sobre la cadera (lanzamiento + agarrado).",
+      "fases": { "anticipacion": 24, "activo": 6, "recuperacion": 30 },
+      "altura": "alto",
+      "peligro": "agarre",
+      "dano": 18,
+      "postura": 20,
+      "alcance": 1.8,
+      "arco": [-40, 40],
+      "empuje": 0,
+      "hitstop": "medio",
+      "reaccion": "agarrado",
+      "alConectar": "lanzamiento",
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "anim": "agarre",
+      "velocidadMax": 0.6
     }
   },
   "acciones": {
@@ -78,6 +134,14 @@
         }
       ],
       "anim": "desvio"
+    },
+    "lanzamiento": {
+      "estado": "agarre",
+      "nombre": { "es": "Lanzamiento", "en": "Throw" },
+      "ininterrumpible": true,
+      "nota": "S14 · el agarre que entra: lo toma del hombro, lo voltea sobre la cadera y lo tira al suelo (el rival juega «agarrado» a la vez).",
+      "fases": { "anticipacion": 0, "activo": 24, "recuperacion": 16 },
+      "anim": "lanzamiento"
     }
   },
   "anim": {
@@ -259,6 +323,192 @@
         },
         "codoI": {
           "k": [["a", 0.05, -0.8], ["a", 0.8, -1.3], ["g", 1, -0.5], ["r", 0.5, -1.1], ["r", 1, -0.8]]
+        }
+      }
+    },
+    "barrido": {
+      "reloj": "fases",
+      "nota": "S14 barrido: 24 c agachándose (rodilla de atrás casi al suelo, rodI 1,85), la hoja horizontal y baja a la derecha con el pecho girado lejos; golpe: media vuelta sobre el pie de adelante (ry y pY de -0,7/-0,8 a 0,9/0,8 con látigo) con la hoja a la altura de las canillas; se para en 26 c con asentar.",
+      "canales": {
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 0.6, 1.8, "suave"], ["a", 1, 1.85], ["g", 1, 1.5, "salida"], ["r", 0.3, 1.3], ["r", 1, 0.96, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 0.6, 0.4, "suave"], ["a", 1, 0.45], ["g", 1, 0.2], ["r", 0.3, 0.1], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.6, 1.3, "suave"], ["a", 1, 1.3], ["g", 1, 1.1], ["r", 0.3, 1], ["r", 1, 0.72, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.6, -0.8, "suave"], ["a", 1, -0.8], ["g", 1, -0.6], ["r", 0.3, -0.6], ["r", 1, -0.53, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 0.6, 0.4, "suave"], ["a", 1, 0.4], ["g", 1, 0.45], ["r", 0.3, 0.4], ["r", 1, 0.12, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 1, -0.7, "suave"], ["g", 1, 0.9, "latigo"], ["r", 0.3, 0.9], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.8, "suave"], ["g", 1, 0.8, "latigo"], ["r", 0.3, 0.8], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -0.5, "suave"], ["a", 1, -0.5], ["g", 1, -0.7, "salida"], ["r", 0.3, -0.7], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.6, -0.3, "suave"], ["a", 1, -0.3], ["g", 1, -0.1, "salida"], ["r", 0.3, -0.1], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.2], ["g", 1, 0.1], ["r", 0.3, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.6, 0.4, "suave"], ["a", 1, 0.4], ["g", 1, 0.4], ["r", 0.3, 0.4], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["a", 0.6, 1.4, "suave"], ["g", 1, 1.4], ["r", 0.3, 1.4], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.6, -0.6, "suave"], ["a", 1, -0.6], ["g", 1, -0.8, "salida"], ["r", 0.3, -0.8], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -0.3, "suave"], ["a", 1, -0.3], ["g", 1, -0.15, "salida"], ["r", 0.3, -0.15], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "estocada": {
+      "reloj": "fases",
+      "nota": "S14 estocada: 24 c recogiendo la hoja a la cadera con la punta adelante (antebrazo horizontal, pecho enroscado a -0,6, pie de adelante levantado); golpe: los brazos se estiran al frente (bDx -1,5, codos 0), el pecho se abre con látigo y el pie queda en el aire durante el avance; recupera retirando la hoja con asentar.",
+      "canales": {
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 0.7, -0.6, "suave"], ["a", 1, -0.6], ["g", 1, 0.4, "latigo"], ["r", 0.3, 0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.2, "suave"], ["g", 1, 0.4, "salida"], ["r", 0.3, 0.35], ["r", 1, 0.12, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.5, -0.95, "salida"], ["a", 1, -0.85], ["g", 1, -1], ["r", 0.35, -0.9], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.5, 1.3, "salida"], ["a", 1, 1.2], ["g", 0.5, 0.6, "salida"], ["g", 1, 0.5], ["r", 0.35, 0.8], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.3, "suave"], ["g", 1, 0.45, "salida"], ["r", 0.35, 0.3], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1], ["g", 1, 0.5, "salida"], ["r", 0.35, 0.7], ["r", 1, 0.96, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -0.3, "suave"], ["a", 1, -0.3], ["g", 1, -1.5, "latigo"], ["r", 0.3, -1.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.6, -1.35, "suave"], ["a", 1, -1.4], ["g", 1, 0, "latigo"], ["r", 0.3, 0], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.6, 1.5, "suave"], ["a", 1, 1.55], ["g", 1, 1.1, "salida"], ["r", 0.3, 1.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.2], ["g", 1, 0.1], ["r", 0.3, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.6, -0.5, "suave"], ["a", 1, -0.5], ["g", 1, -1.45, "latigo"], ["r", 0.3, -1.45], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -1.3, "suave"], ["a", 1, -1.3], ["g", 1, -0.05, "latigo"], ["r", 0.3, -0.05], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, -0.4], ["g", 1, -0.35], ["r", 0.3, -0.35], ["r", 1, -0.5, "asentar"]]
+        }
+      }
+    },
+    "agarre": {
+      "reloj": "fases",
+      "nota": "S14 agarre: 24 c agachándose, la mano izquierda suelta el mango y se estira al frente (bIx -1,4, codoI -0,3, bIz 0,2) mientras la katana queda abajo y atrás en la derecha; golpe: el cuerpo se lanza adelante con el brazo izquierdo a la altura del hombro del rival (bIx -1,65); recupera con asentar. Si conecta, sigue lanzamiento.",
+      "canales": {
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.7, 1.1, "suave"], ["a", 1, 1.15], ["g", 1, 1], ["r", 0.3, 1], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 0.7, 1.3, "suave"], ["a", 1, 1.35], ["g", 1, 1.1], ["r", 0.3, 1.1], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 1, -0.7, "suave"], ["g", 1, -0.8, "salida"], ["r", 0.3, -0.8], ["r", 1, -0.53, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.4, "suave"], ["g", 1, 0.5, "salida"], ["r", 0.3, 0.45], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.5, "suave"], ["g", 1, 0.1, "salida"], ["r", 0.3, 0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.5, -1.2], ["a", 1, -1.4, "suave"], ["g", 1, -1.65, "salida"], ["r", 0.3, -1.65], ["r", 0.6, -1.2], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3, "suave"], ["g", 1, -0.05, "salida"], ["r", 0.3, -0.05], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, 0.2, "suave"], ["g", 1, 0.25], ["r", 0.3, 0.25], ["r", 1, -0.5, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3, "suave"], ["g", 1, -0.2], ["r", 0.3, -0.2], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.6, "suave"], ["g", 1, -0.5], ["r", 0.3, -0.5], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, -0.1, "suave"], ["g", 1, -0.15], ["r", 0.3, -0.15], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 1.2, "suave"], ["g", 1, 1.2], ["r", 0.3, 1.2], ["r", 1, 0.75, "asentar"]]
+        }
+      }
+    },
+    "lanzamiento": {
+      "reloj": "fases",
+      "nota": "S14 lanzamiento (pareja con «agarrado»): parte de la mano izquierda estirada del agarre; la sube (c0-7), tira hacia abajo con todo el cuerpo (caderas giran de 0,6 a -0,2 y el pecho se inclina a 0,9: el hombro del rival pasa sobre la cadera) y queda inclinado (c7-17); se incorpora en 16 c con asentar.",
+      "canales": {
+        "bIx": {
+          "k": [["g", 0, -1.65], ["g", 0.3, -1.9, "suave"], ["g", 0.7, -0.5, "entrada"], ["g", 1, -0.3], ["r", 0.3, -0.3], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.05], ["g", 0.3, -0.2], ["g", 0.7, -0.5], ["g", 1, -0.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, 0.25], ["g", 0.3, 0.1], ["g", 0.7, -0.3], ["g", 1, -0.3], ["r", 1, -0.5, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.5], ["g", 0.3, 0.3, "suave"], ["g", 0.7, 0.9, "entrada"], ["g", 1, 0.9], ["r", 0.4, 0.8], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["g", 0, 0.1], ["g", 0.3, 0.5, "suave"], ["g", 0.7, -0.3, "entrada"], ["g", 1, -0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "ry": {
+          "k": [["g", 0, 0.15], ["g", 0.3, 0.6, "suave"], ["g", 0.7, -0.2, "entrada"], ["g", 1, -0.2], ["r", 0.4, -0.1], ["r", 1, 0.15, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 1], ["g", 0.3, 1.4, "suave"], ["g", 0.7, 0.9, "entrada"], ["g", 1, 0.9], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 1.1], ["g", 0.3, 1.5, "suave"], ["g", 0.7, 0.8, "entrada"], ["g", 1, 0.8], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.8], ["g", 0.3, -0.7], ["g", 1, -0.6], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.3, 0], ["g", 1, -0.2], ["r", 1, -0.11, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.2], ["g", 1, -0.4], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.6], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, -0.15], ["g", 1, -0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 1.2], ["g", 1, 1.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.7, 0.2, "suave"], ["r", 1, -0.1, "asentar"]]
         }
       }
     }

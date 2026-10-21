@@ -215,7 +215,9 @@ const TABLA = {
         lista(P, Math.round((R.muneco.recupera + 0.2) * 60));
         ok(P.f[1].vida === P.f[1].vidaMax, 'el muñeco recupera la vida');
         const todas = M.reaccionesMuneco(P);
-        ok(todas.length === 16, 'el muñeco puede jugar las 16: ' + todas.length);
+        // Las 16 de §18 y las de pareja de L3 (pisado, agarrado): todas las de combate.json
+        const n = Object.keys(COMB.reacciones).length;
+        ok(n >= 16 && todas.length === n, `el muñeco puede jugar las ${n}: ${todas.length}`);
         for (const k of todas) {
             ok(M.probarReaccion(P, 1, k), 'probarReaccion ' + k);
             ok(P.f[1].p.clave === k, 'juega ' + k);

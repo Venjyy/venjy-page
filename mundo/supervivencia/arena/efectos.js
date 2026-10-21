@@ -11,6 +11,7 @@
 //   polvo(x, z, motivo, superficie, escala)    (N5) polvo o nieve del suelo al caer, al chocar con la pared, al esquivar
 //   aro(pos, camara, escala)                   (N5) onda pixel que se abre (desvío perfecto, golpes medios y fuertes)
 //   sobre(clave, tipo, x, z, yaw, t)           (N5) estrellas del mareo o marca roja del pecho; tipo null = nada
+//   peligro(clave, base, punta, k)             (L3) destello rojo del arma al avisar un ataque peligroso (k 0..1)
 //   dibujar(dt) / aplicar(R) / destruir()
 // Los tamaños, colores, vidas y velocidades de chispas y destellos van en arena.json → efectos (Estudio → Arena).
 // =========================================================
@@ -34,6 +35,8 @@ export const EFECTOS = {
     aro: { vida: 0.22, radio: 0.7, cubos: 14, tamano: 0.05, color: '#ffffff', niveles: ['medio', 'fuerte', 'perfecto', 'remate'] },
     estrellas: { color: '#ffff55', cuantas: 3, radio: 0.28, alto: 0.32, vueltas: 0.8, tamano: 0.07 },
     marca: { color: '#e81c1c', tamano: 0.16, alto: 1.25, frente: 0.2, parpadeo: 4 },
+    // L3 · destello rojo del arma cuando avisa un peligroso (dura reglas.peligro.destello cuadros del estilo)
+    peligro: { color: '#ff2a2a', opacidad: 0.95, grueso: 0.1 },
     topeCuadro: 40,
     // Capa de pantalla (arena/pantalla.js, un canvas de `resolucion` px de ancho escalado sin suavizar): líneas de
     // velocidad en los bordes, flash y viñeta (s y fuerza 0..1 por nivel del golpe) y números de daño (opcionales)
@@ -42,7 +45,10 @@ export const EFECTOS = {
         lineas: { niveles: ['fuerte', 'remate'], dur: 0.3, cuantas: 22, largo: 0.22, color: '#ffffff' },
         flash: { perfecto: [0.08, 0.75], remate: [0.12, 0.6], fuerte: [0.04, 0.2], color: '#ffffff' },
         vineta: { niveles: ['fuerte', 'remate'], dur: 0.5, fuerza: 0.45, color: '#000000' },
-        numeros: { activo: false, dur: 0.7, sube: 26, color: '#ffff55', critico: '#ff5555' }
+        numeros: { activo: false, dur: 0.7, sube: 26, color: '#ffff55', critico: '#ff5555' },
+        // L3 · aviso del peligroso: rombo rojo con un signo pixel sobre la cabeza (tamano en px del canvas; alto en
+        // bloques desde los pies; parpadeo por s, 0 = fijo)
+        aviso: { color: '#d81c1c', borde: '#2a0000', signo: '#ffffff', tamano: 13, alto: 2.35, parpadeo: 0 }
     }
 };
 const MAX_CHISPAS = 96, MAX_POLVO = 160;
@@ -266,6 +272,24 @@ export function crearEfectos(THREE, scene, R) {
         s.mat.opacity = E.carga.opacidad * esc;
     }
 
+    // ---------- Destello rojo del peligro (L3) ----------
+    const peligros = new Map();
+    function peligro(clave, base, punta, k) {
+        let s = peligros.get(clave);
+        if (!s) {
+            const mat = new THREE.MeshBasicMaterial({ color: color(E.peligro.color), transparent: true, depthWrite: false, opacity: 0 });
+            const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat); recursos.push(mat, m.geometry); m.renderOrder = 6; scene.add(m);
+            s = { m, mat }; peligros.set(clave, s);
+        }
+        if (!base || !(k > 0)) { s.m.visible = false; return; }
+        s.m.visible = true;
+        s.m.position.copy(base).lerp(punta, 0.5);
+        s.m.lookAt(punta);
+        const g = E.peligro.grueso;
+        s.m.scale.set(g, g, base.distanceTo(punta) * 1.05);
+        s.mat.opacity = E.peligro.opacidad * (k > 0.5 ? 1 : 0.6);
+    }
+
     function dibujar(dt) {
         nuevas = 0;
         for (const s of polvoV) {
@@ -309,6 +333,7 @@ export function crearEfectos(THREE, scene, R) {
         chispasV.forEach((s, i) => { s.m.material = mats[i % mats.length]; });
         matDestello.color.set(E.perfecto.color);
         for (const s of cargas.values()) s.mat.color.set(E.carga.color);
+        for (const s of peligros.values()) s.mat.color.set(E.peligro.color);
         matImpacto.color.set(E.impacto.color);
         for (const s of sobres.values()) { s.matE.color.set(E.estrellas.color); s.matM.color.set(E.marca.color); }
     }
@@ -319,11 +344,12 @@ export function crearEfectos(THREE, scene, R) {
         scene.remove(golpeD); sobres.clear();
         for (const s of estelas.values()) scene.remove(s.m);
         for (const s of cargas.values()) scene.remove(s.m);
+        for (const s of peligros.values()) scene.remove(s.m);
         scene.remove(destello);
         for (const r of recursos) if (r && r.dispose) r.dispose();
-        estelas.clear(); cargas.clear();
+        estelas.clear(); cargas.clear(); peligros.clear();
     }
-    return { estela, chispas, carga, impacto, polvo, aro, sobre, dibujar, aplicar, destruir };
+    return { estela, chispas, carga, impacto, polvo, aro, sobre, peligro, dibujar, aplicar, destruir };
 }
 
 const objeto = v => v && typeof v === 'object' && !Array.isArray(v);

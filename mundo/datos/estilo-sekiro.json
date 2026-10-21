@@ -8,7 +8,10 @@
     "fuerte": "fuerte",
     "defensa": "desvio",
     "defensaMantenida": "bloqueo",
-    "esquivar": "esquiva"
+    "esquivar": "esquiva",
+    "saltar": "salto",
+    "agarre": "patada",
+    "especial": "arte"
   },
   "guardia": { "anim": "guardia", "respiracion": "respira" },
   "paso": { "anim": "paso", "velocidad": 1.2, "umbral": 0.12, "cuadros": 9, "altura": 0.06, "adelanto": 0.5 },
@@ -48,7 +51,35 @@
       "choque": "desvio_choque",
       "choquePerfecto": "desvio_perfecto"
     },
-    "bloqueoDano": 0
+    "bloqueoDano": 0,
+    "peligro": {
+      "nota": "§16.4. aviso: cuadros desde que empieza la anticipación hasta que sale el rombo rojo (dura hasta el activo); destello: cuadros del destello rojo del arma. respuestas: qué defensa sirve contra cada peligro (ventana: cuadros que se suman a la del desvío).",
+      "aviso": 4,
+      "destello": 2,
+      "respuestas": {
+        "barrido": { "desvio": false, "guardia": false, "salto": true, "esquiva": true },
+        "estocada": { "desvio": true, "guardia": false, "salto": false, "esquiva": true, "ventana": -2 },
+        "agarre": { "desvio": false, "guardia": false, "salto": true, "esquiva": true },
+        "imparable": { "desvio": false, "guardia": false, "salto": false, "esquiva": true }
+      }
+    },
+    "mikiri": {
+      "nota": "S12. Esquivar hacia el rival (mover adelante ≥ umbral) desde el aviso de su estocada hasta activo + hasta cuadros.",
+      "accion": "mikiri",
+      "hasta": 2,
+      "umbral": 0.5
+    },
+    "remate": {
+      "nota": "S13. Atacar al rival desequilibrado a menos de `alcance` bloques da el golpe final.",
+      "accion": "remate",
+      "alcance": 2.8
+    },
+    "espiritu": {
+      "nota": "§16.1. Segmentos del arte de combate: el desvío perfecto llena `perfecto` y el normal `desvio`.",
+      "segmentos": 3,
+      "perfecto": 1,
+      "desvio": 0.34
+    }
   },
   "ataques": {
     "tajo1": {
@@ -254,6 +285,146 @@
           "desvanecer": 8
         }
       }
+    },
+    "barrido": {
+      "nombre": { "es": "Barrido", "en": "Sweep" },
+      "nota": "S14 · peligro barrido (§16.4): corte giratorio a la altura de las canillas. No se desvía ni se bloquea: se salta (y se pisa) o se esquiva.",
+      "fases": { "anticipacion": 24, "activo": 6, "recuperacion": 26 },
+      "altura": "bajo",
+      "peligro": "barrido",
+      "dano": 10,
+      "postura": 22,
+      "alcance": 2.4,
+      "arco": [-90, 90],
+      "empuje": 0.3,
+      "hitstop": "fuerte",
+      "reaccion": "derribo",
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "barrido",
+      "velocidadMax": 0.6
+    },
+    "estocada": {
+      "nombre": { "es": "Estocada", "en": "Thrust" },
+      "nota": "S14 · peligro estocada (§16.4): la hoja recogida en la cadera sale adelante con un avance largo. Se desvía con la ventana 2 c más corta; la guardia no sirve; la respuesta buena es el mikiri.",
+      "fases": { "anticipacion": 24, "activo": 5, "recuperacion": 22 },
+      "altura": "medio",
+      "peligro": "estocada",
+      "dano": 12,
+      "postura": 25,
+      "alcance": 3.2,
+      "arco": [-25, 25],
+      "empuje": 0.6,
+      "hitstop": "fuerte",
+      "reaccion": "medio_fuerte",
+      "avance": [
+        { "fase": "anticipacion", "hasta": 0.3, "curva": "entrada" },
+        { "fase": "activo", "hasta": 1.3, "curva": "salida" }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "estocada",
+      "velocidadMax": 0.6
+    },
+    "agarre": {
+      "nombre": { "es": "Agarre", "en": "Grab" },
+      "nota": "S14 · peligro agarre (§16.4): la mano izquierda suelta el mango y se estira. Ni desvío ni guardia: se esquiva o se salta. Si entra, lo voltea sobre la cadera (lanzamiento + agarrado).",
+      "fases": { "anticipacion": 24, "activo": 6, "recuperacion": 30 },
+      "altura": "alto",
+      "peligro": "agarre",
+      "dano": 18,
+      "postura": 20,
+      "alcance": 1.8,
+      "arco": [-40, 40],
+      "empuje": 0,
+      "hitstop": "medio",
+      "reaccion": "agarrado",
+      "alConectar": "lanzamiento",
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "anim": "agarre",
+      "velocidadMax": 0.6
+    },
+    "pisoton": {
+      "nombre": { "es": "Pisotón", "en": "Stomp" },
+      "intencion": "saltar",
+      "nota": "S11: en el aire, saltar otra vez estira la pierna derecha hacia abajo sobre el rival: +25 de postura aunque se tape, reacción alto_fuerte, y rebota hacia atrás.",
+      "fases": { "anticipacion": 2, "activo": 6, "recuperacion": 18 },
+      "altura": "alto",
+      "dano": 4,
+      "postura": 0,
+      "posturaFija": 25,
+      "rompeGuardia": true,
+      "alcance": 1.7,
+      "arco": [-70, 70],
+      "empuje": 0.2,
+      "hitstop": "medio",
+      "reaccion": "alto_fuerte",
+      "avance": { "fase": "recuperacion", "hasta": -0.6, "curva": "salida" },
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "anim": "pisoton",
+      "velocidadMax": 0.6
+    },
+    "patada": {
+      "nombre": { "es": "Patada frontal", "en": "Front kick" },
+      "intencion": "agarre",
+      "nota": "§16.1: el «agarre» de Sekiro. Patada frontal telegrafiada (16 c) que atraviesa la guardia mantenida; sí se puede desviar.",
+      "fases": { "anticipacion": 16, "activo": 4, "recuperacion": 18 },
+      "altura": "medio",
+      "dano": 5,
+      "postura": 14,
+      "rompeGuardia": true,
+      "alcance": 1.9,
+      "arco": [-40, 40],
+      "empuje": 0.6,
+      "hitstop": "medio",
+      "reaccion": "medio_empuje",
+      "cancelar": [
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+6"
+        }
+      ],
+      "avance": { "fase": "anticipacion", "hasta": 0.25, "curva": "entrada" },
+      "sonido": { "aire": "golpe", "impacto": "carne" },
+      "anim": "patada",
+      "velocidadMax": 0.6
+    },
+    "arte": {
+      "nombre": { "es": "Trazo único", "en": "Single stroke" },
+      "intencion": "especial",
+      "nota": "§16.1 · arte de combate: tajo vertical con paso largo; suma 40 de postura aunque se lo bloqueen y te baja 15 de la tuya. Cuesta 1 segmento de espíritu.",
+      "fases": { "anticipacion": 14, "activo": 5, "recuperacion": 24 },
+      "altura": "alto",
+      "dano": 12,
+      "postura": 0,
+      "posturaFija": 40,
+      "posturaPropia": -15,
+      "costo": { "espiritu": 1 },
+      "alcance": 2.8,
+      "arco": [-45, 45],
+      "empuje": 0.5,
+      "hitstop": "fuerte",
+      "reaccion": "alto_fuerte",
+      "avance": { "fase": "anticipacion", "hasta": 0.8, "curva": "salida" },
+      "cancelar": [
+        {
+          "a": ["desvio", "esquiva"],
+          "desde": "recuperacion+10"
+        }
+      ],
+      "sonido": { "aire": "tajo", "impacto": "carne", "desvio": "metal" },
+      "anim": "arte",
+      "velocidadMax": 0.6,
+      "efectos": {
+        "estela": {
+          "cuadros": 8,
+          "ancho": 1.3,
+          "desde": 0.2,
+          "hasta": 1,
+          "color": "#ffffff",
+          "borde": "aura",
+          "opacidad": 1,
+          "desvanecer": 10
+        }
+      }
     }
   },
   "acciones": {
@@ -320,6 +491,60 @@
         }
       ],
       "anim": "desvio_perfecto"
+    },
+    "salto": {
+      "estado": "salto",
+      "nombre": { "es": "Salto", "en": "Jump" },
+      "nota": "S11: 28 c en el aire con las piernas recogidas y la katana atrás. Pasa por encima del barrido y del agarre; saltar otra vez sobre el rival es el pisotón.",
+      "fases": { "anticipacion": 3, "activo": 28, "recuperacion": 6 },
+      "cancelar": [
+        {
+          "a": ["pisoton"],
+          "desde": "activo+4",
+          "hasta": "activo+22"
+        }
+      ],
+      "anim": "salto"
+    },
+    "lanzamiento": {
+      "estado": "agarre",
+      "nombre": { "es": "Lanzamiento", "en": "Throw" },
+      "ininterrumpible": true,
+      "nota": "S14 · el agarre que entra: lo toma del hombro, lo voltea sobre la cadera y lo tira al suelo (el rival juega «agarrado» a la vez).",
+      "fases": { "anticipacion": 0, "activo": 24, "recuperacion": 16 },
+      "anim": "lanzamiento"
+    },
+    "mikiri": {
+      "estado": "contra",
+      "nombre": { "es": "Mikiri", "en": "Mikiri" },
+      "nota": "S12: sale hacia el rival en diagonal, esquiva la punta y le pisa la hoja contra el suelo (c6-12, hitstop 8); después queda alto y retrocede con un salto corto. El rival juega «pisado» y queda en desviado_largo.",
+      "fases": { "anticipacion": 6, "activo": 6, "recuperacion": 22 },
+      "iframes": [["anticipacion+0", "fin"]],
+      "avance": [
+        { "fase": "anticipacion", "hasta": 0.5, "curva": "salida" },
+        { "fase": "recuperacion", "hasta": -0.7, "curva": "suave" }
+      ],
+      "pareja": {
+        "rival": "pisado",
+        "cuando": "inicio",
+        "postura": 35,
+        "hitstop": 8,
+        "nivel": "perfecto",
+        "resultado": "mikiri",
+        "material": "metal"
+      },
+      "anim": "mikiri"
+    },
+    "remate": {
+      "estado": "remate",
+      "nombre": { "es": "Golpe final", "en": "Final strike" },
+      "nota": "S13: paso rápido (c0-8), tajo ascendente que lo levanta (c8-20, el rival pasa a «rematado»), rodilla en el suelo (c20-40), chiburi y envainar en la cadera izquierda (c40-60). Gana la ronda.",
+      "fases": { "anticipacion": 8, "activo": 12, "recuperacion": 40 },
+      "avance": { "fase": "anticipacion", "hasta": 0.6, "curva": "salida" },
+      "pareja": { "rival": "rematado", "cuando": "activo", "dano": 999, "hitstop": 10, "nivel": "remate" },
+      "efectos": { "envainar": "recuperacion+30" },
+      "anim": "remate",
+      "sinMirada": true
     }
   },
   "anim": {
@@ -856,6 +1081,474 @@
         },
         "cx": {
           "k": [["g", 0, -0.1], ["g", 0.6, -0.1, "salida"], ["g", 1, -0.1], ["r", 0.3, -0.1], ["r", 1, -0.1, "asentar"]]
+        }
+      }
+    },
+    "salto": {
+      "reloj": "fases",
+      "nota": "S11: 28 c en el aire. Se agacha (3 c), salta con las dos piernas recogidas (rodillas 1,7-1,9, muslos adelante) y la katana atrás y abajo en la derecha, el brazo izquierdo abierto para el equilibrio; cae con las rodillas flexionadas y se asienta en la guardia. La altura es el canal salto (0,9 bloques de pico en la mitad del activo).",
+      "canales": {
+        "salto": {
+          "k": [["a", 0, 0], ["a", 1, 0], ["g", 0.5, 0.9, "salida"], ["g", 1, 0, "entrada"], ["r", 1, 0]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 1, 1.15, "suave"], ["g", 0.15, 1.7, "salida"], ["g", 0.85, 1.65], ["g", 1, 1.05, "entrada"], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.3, "suave"], ["g", 0.15, 1.9, "salida"], ["g", 0.85, 1.8], ["g", 1, 1.2, "entrada"], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 1, -0.65], ["g", 0.15, -1, "salida"], ["g", 0.85, -0.95], ["g", 1, -0.65, "entrada"], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, -0.05], ["g", 0.15, -0.6, "salida"], ["g", 0.85, -0.55], ["g", 1, -0.2, "entrada"], ["r", 1, -0.11, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.3, "suave"], ["g", 0.15, 0.25], ["g", 0.85, 0.25], ["g", 1, 0.3], ["r", 1, 0.12, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.2, "suave"], ["g", 0.15, 0.2, "salida"], ["g", 0.85, 0.2], ["g", 1, -0.3, "entrada"], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.5, "suave"], ["g", 0.15, -0.3, "salida"], ["g", 0.85, -0.3], ["g", 1, -0.6, "entrada"], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.1, "suave"], ["g", 0.15, -0.15, "salida"], ["g", 0.85, -0.15], ["g", 1, 0.2, "entrada"], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 1.2, "suave"], ["g", 0.15, 1.6, "salida"], ["g", 0.85, 1.6], ["g", 1, 1.2, "entrada"], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -0.5, "suave"], ["g", 0.15, -0.5], ["g", 0.85, -0.5], ["g", 1, -0.8, "entrada"], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, 0, "suave"], ["g", 0.15, 0.5, "salida"], ["g", 0.85, 0.5], ["g", 1, 0, "entrada"], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3, "suave"], ["g", 0.15, -0.2], ["g", 0.85, -0.2], ["g", 1, -0.4, "entrada"], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "pisoton": {
+      "reloj": "fases",
+      "nota": "S11 pisotón: arranca en el aire (con las piernas recogidas del salto), la pierna derecha se estira hacia abajo (rodD 0, pDx -0,2) sobre la cabeza del rival; después rebota atrás (pecho a -0,05, brazos atrás) y cae en la guardia con asentar.",
+      "canales": {
+        "salto": {
+          "k": [["a", 0, 0.6], ["g", 0, 0.6], ["g", 1, 0.45, "salida"], ["r", 0.35, 0, "entrada"], ["r", 1, 0]]
+        },
+        "rodD": {
+          "k": [["a", 0, 1.65], ["a", 1, 0.9, "salida"], ["g", 0.3, 0, "salida"], ["g", 1, 0.05], ["r", 0.3, 0.1], ["r", 0.6, 0.9, "suave"], ["r", 1, 0.72, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.95], ["a", 1, -0.5, "salida"], ["g", 0.3, -0.2, "salida"], ["g", 1, -0.2], ["r", 0.35, -0.3], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 1.8], ["a", 1, 1.7], ["g", 1, 1.6], ["r", 0.4, 1.2], ["r", 1, 0.96, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.55], ["a", 1, -0.7], ["g", 1, -0.7], ["r", 0.4, -0.2], ["r", 1, -0.11, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.25], ["a", 1, 0.4, "suave"], ["g", 1, 0.5], ["r", 0.3, -0.05, "salida"], ["r", 1, 0.12, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, 0.2], ["a", 1, -0.4], ["g", 1, -0.5], ["r", 0.3, 0.1, "salida"], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.3], ["g", 1, -0.5], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, -0.15], ["g", 1, -0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 1.6], ["g", 1, 1.3], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.5], ["g", 1, -0.6], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, 0.5], ["g", 1, 0.4], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.2], ["g", 1, -0.3], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "patada": {
+      "reloj": "fases",
+      "nota": "§16.1 patada frontal telegrafiada. 16 c de anticipación: el peso pasa a la pierna de atrás, la rodilla derecha sube (rodD 1,7) y la katana queda atrás en la mano derecha con el brazo izquierdo abierto; golpe: la pierna se estira al frente (rodD 0,1, pDx -1,4) y el pecho se echa atrás; recupera con asentar.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.55, -0.9, "salida"], ["a", 1, -1.15, "suave"], ["g", 0.5, -1.4, "latigo"], ["g", 1, -1.35], ["r", 0.35, -1.1], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.55, 1.4, "salida"], ["a", 1, 1.7, "suave"], ["g", 0.5, 0.1, "latigo"], ["g", 1, 0.1], ["r", 0.35, 0.9, "suave"], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.05, "suave"], ["g", 1, 0.05], ["r", 0.5, 0.05], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 0.75, "suave"], ["g", 1, 0.8], ["r", 0.5, 0.8], ["r", 1, 0.96, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, -0.1, "suave"], ["g", 0.5, 0.1, "salida"], ["g", 1, 0.1], ["r", 1, 0.12, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 1, -0.05, "suave"], ["g", 1, 0], ["r", 1, 0.15, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, 0.1, "suave"], ["g", 1, -0.1], ["r", 0.3, -0.1], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.4, "suave"], ["g", 1, -0.5], ["r", 0.3, -0.5], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, -0.1, "suave"], ["g", 1, -0.1], ["r", 0.3, -0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 1.5, "suave"], ["g", 1, 1.5], ["r", 0.3, 1.5], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -0.6, "suave"], ["g", 1, -0.5], ["r", 0.3, -0.5], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, 0.5, "suave"], ["g", 1, 0.55], ["r", 0.3, 0.55], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.2, "suave"], ["g", 1, -0.2], ["r", 0.3, -0.2], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "arte": {
+      "reloj": "fases",
+      "nota": "«Trazo único» (S6/S7 más amplio): paso largo con la hoja sobre la cabeza (bDx -2,8, pecho arqueado atrás), corte vertical al centro con el pecho a 0,55 y las rodillas cediendo (el cuerpo baja), la hoja queda abajo 6 c y después sube a la guardia con asentar. Parte de la guardia.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.55, -1, "salida"], ["a", 1, -0.72, "entrada"], ["g", 1, -0.72], ["r", 0.3, -0.72], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.55, 1.4, "salida"], ["a", 1, 1.05, "entrada"], ["g", 1, 1.15], ["r", 0.3, 1.15], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.2, "salida"], ["g", 1, 0.2], ["r", 0.3, 0.2], ["r", 0.55, -0.25, "salida"], ["r", 0.8, -0.11, "entrada"], ["r", 1, -0.11]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.2, "suave"], ["g", 1, 1.35], ["r", 0.3, 1.35], ["r", 0.55, 1.45, "salida"], ["r", 0.8, 0.96, "entrada"], ["r", 1, 0.96]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 0.55, 0.25, "suave"], ["g", 0.45, 0.05, "entrada"], ["r", 0.25, 0.05], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, 0, "suave"], ["r", 0.25, 0], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 0.6, -0.2, "suave"], ["a", 1, -0.22], ["g", 0.55, 0.55, "entrada"], ["r", 0.25, 0.55], ["r", 1, 0.12, "asentar"]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.1], ["g", 0.6, 0.1, "entrada"], ["r", 0.25, 0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.55, -2.8, "suave"], ["a", 1, -2.85], ["g", 0.47, -1, "entrada"], ["g", 1, -0.95, "suave"], ["r", 0.25, -0.95], ["r", 1, -0.8, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 0.55, 0.05, "suave"], ["g", 0.6, 0.1, "entrada"], ["r", 0.25, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.58, -0.4, "suave"], ["g", 0.7, -0.2, "entrada"], ["r", 0.25, -0.2], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.6, 1.35, "suave"], ["g", 0.67, 1.45, "entrada"], ["r", 0.25, 1.45], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.55, -2.8, "suave"], ["a", 1, -2.85], ["g", 0.62, -1, "entrada"], ["r", 0.25, -1], ["r", 1, -0.95, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 0.55, -0.4, "suave"], ["g", 0.62, -0.45, "entrada"], ["r", 0.25, -0.45], ["r", 1, -0.5, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.58, -0.4, "suave"], ["g", 0.65, -0.4, "entrada"], ["r", 0.25, -0.4], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "barrido": {
+      "reloj": "fases",
+      "nota": "S14 barrido: 24 c agachándose (rodilla de atrás casi al suelo, rodI 1,85), la hoja horizontal y baja a la derecha con el pecho girado lejos; golpe: media vuelta sobre el pie de adelante (ry y pY de -0,7/-0,8 a 0,9/0,8 con látigo) con la hoja a la altura de las canillas; se para en 26 c con asentar.",
+      "canales": {
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 0.6, 1.8, "suave"], ["a", 1, 1.85], ["g", 1, 1.5, "salida"], ["r", 0.3, 1.3], ["r", 1, 0.96, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 0.6, 0.4, "suave"], ["a", 1, 0.45], ["g", 1, 0.2], ["r", 0.3, 0.1], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.6, 1.3, "suave"], ["a", 1, 1.3], ["g", 1, 1.1], ["r", 0.3, 1], ["r", 1, 0.72, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.6, -0.8, "suave"], ["a", 1, -0.8], ["g", 1, -0.6], ["r", 0.3, -0.6], ["r", 1, -0.53, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 0.6, 0.4, "suave"], ["a", 1, 0.4], ["g", 1, 0.45], ["r", 0.3, 0.4], ["r", 1, 0.12, "asentar"]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 1, -0.7, "suave"], ["g", 1, 0.9, "latigo"], ["r", 0.3, 0.9], ["r", 1, 0.15, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.8, "suave"], ["g", 1, 0.8, "latigo"], ["r", 0.3, 0.8], ["r", 1, -0.1, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -0.5, "suave"], ["a", 1, -0.5], ["g", 1, -0.7, "salida"], ["r", 0.3, -0.7], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.6, -0.3, "suave"], ["a", 1, -0.3], ["g", 1, -0.1, "salida"], ["r", 0.3, -0.1], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.2], ["g", 1, 0.1], ["r", 0.3, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.6, 0.4, "suave"], ["a", 1, 0.4], ["g", 1, 0.4], ["r", 0.3, 0.4], ["r", 1, 0.75, "asentar"]]
+        },
+        "armaZ": {
+          "k": [["a", 0, 0], ["a", 0.6, 1.4, "suave"], ["g", 1, 1.4], ["r", 0.3, 1.4], ["r", 1, 0, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.6, -0.6, "suave"], ["a", 1, -0.6], ["g", 1, -0.8, "salida"], ["r", 0.3, -0.8], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -0.3, "suave"], ["a", 1, -0.3], ["g", 1, -0.15, "salida"], ["r", 0.3, -0.15], ["r", 1, -0.8, "asentar"]]
+        }
+      }
+    },
+    "estocada": {
+      "reloj": "fases",
+      "nota": "S14 estocada: 24 c recogiendo la hoja a la cadera con la punta adelante (antebrazo horizontal, pecho enroscado a -0,6, pie de adelante levantado); golpe: los brazos se estiran al frente (bDx -1,5, codos 0), el pecho se abre con látigo y el pie queda en el aire durante el avance; recupera retirando la hoja con asentar.",
+      "canales": {
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 0.7, -0.6, "suave"], ["a", 1, -0.6], ["g", 1, 0.4, "latigo"], ["r", 0.3, 0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.2, "suave"], ["g", 1, 0.4, "salida"], ["r", 0.3, 0.35], ["r", 1, 0.12, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.5, -0.95, "salida"], ["a", 1, -0.85], ["g", 1, -1], ["r", 0.35, -0.9], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.5, 1.3, "salida"], ["a", 1, 1.2], ["g", 0.5, 0.6, "salida"], ["g", 1, 0.5], ["r", 0.35, 0.8], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.3, "suave"], ["g", 1, 0.45, "salida"], ["r", 0.35, 0.3], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1], ["g", 1, 0.5, "salida"], ["r", 0.35, 0.7], ["r", 1, 0.96, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -0.3, "suave"], ["a", 1, -0.3], ["g", 1, -1.5, "latigo"], ["r", 0.3, -1.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 0.6, -1.35, "suave"], ["a", 1, -1.4], ["g", 1, 0, "latigo"], ["r", 0.3, 0], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 0.6, 1.5, "suave"], ["a", 1, 1.55], ["g", 1, 1.1, "salida"], ["r", 0.3, 1.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.2], ["g", 1, 0.1], ["r", 0.3, 0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.6, -0.5, "suave"], ["a", 1, -0.5], ["g", 1, -1.45, "latigo"], ["r", 0.3, -1.45], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 0.6, -1.3, "suave"], ["a", 1, -1.3], ["g", 1, -0.05, "latigo"], ["r", 0.3, -0.05], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, -0.4], ["g", 1, -0.35], ["r", 0.3, -0.35], ["r", 1, -0.5, "asentar"]]
+        }
+      }
+    },
+    "agarre": {
+      "reloj": "fases",
+      "nota": "S14 agarre: 24 c agachándose, la mano izquierda suelta el mango y se estira al frente (bIx -1,4, codoI -0,3, bIz 0,2) mientras la katana queda abajo y atrás en la derecha; golpe: el cuerpo se lanza adelante con el brazo izquierdo a la altura del hombro del rival (bIx -1,65); recupera con asentar. Si conecta, sigue lanzamiento.",
+      "canales": {
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.7, 1.1, "suave"], ["a", 1, 1.15], ["g", 1, 1], ["r", 0.3, 1], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 0.7, 1.3, "suave"], ["a", 1, 1.35], ["g", 1, 1.1], ["r", 0.3, 1.1], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 1, -0.7, "suave"], ["g", 1, -0.8, "salida"], ["r", 0.3, -0.8], ["r", 1, -0.53, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.4, "suave"], ["g", 1, 0.5, "salida"], ["r", 0.3, 0.45], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.5, "suave"], ["g", 1, 0.1, "salida"], ["r", 0.3, 0.1], ["r", 1, -0.1, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 0.5, -1.2], ["a", 1, -1.4, "suave"], ["g", 1, -1.65, "salida"], ["r", 0.3, -1.65], ["r", 0.6, -1.2], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3, "suave"], ["g", 1, -0.05, "salida"], ["r", 0.3, -0.05], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, 0.2, "suave"], ["g", 1, 0.25], ["r", 0.3, 0.25], ["r", 1, -0.5, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3, "suave"], ["g", 1, -0.2], ["r", 0.3, -0.2], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.6, "suave"], ["g", 1, -0.5], ["r", 0.3, -0.5], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, -0.1, "suave"], ["g", 1, -0.15], ["r", 0.3, -0.15], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 1.2, "suave"], ["g", 1, 1.2], ["r", 0.3, 1.2], ["r", 1, 0.75, "asentar"]]
+        }
+      }
+    },
+    "lanzamiento": {
+      "reloj": "fases",
+      "nota": "S14 lanzamiento (pareja con «agarrado»): parte de la mano izquierda estirada del agarre; la sube (c0-7), tira hacia abajo con todo el cuerpo (caderas giran de 0,6 a -0,2 y el pecho se inclina a 0,9: el hombro del rival pasa sobre la cadera) y queda inclinado (c7-17); se incorpora en 16 c con asentar.",
+      "canales": {
+        "bIx": {
+          "k": [["g", 0, -1.65], ["g", 0.3, -1.9, "suave"], ["g", 0.7, -0.5, "entrada"], ["g", 1, -0.3], ["r", 0.3, -0.3], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["g", 0, -0.05], ["g", 0.3, -0.2], ["g", 0.7, -0.5], ["g", 1, -0.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["g", 0, 0.25], ["g", 0.3, 0.1], ["g", 0.7, -0.3], ["g", 1, -0.3], ["r", 1, -0.5, "asentar"]]
+        },
+        "pX": {
+          "k": [["g", 0, 0.5], ["g", 0.3, 0.3, "suave"], ["g", 0.7, 0.9, "entrada"], ["g", 1, 0.9], ["r", 0.4, 0.8], ["r", 1, 0.12, "asentar"]]
+        },
+        "pY": {
+          "k": [["g", 0, 0.1], ["g", 0.3, 0.5, "suave"], ["g", 0.7, -0.3, "entrada"], ["g", 1, -0.3], ["r", 1, -0.1, "asentar"]]
+        },
+        "ry": {
+          "k": [["g", 0, 0.15], ["g", 0.3, 0.6, "suave"], ["g", 0.7, -0.2, "entrada"], ["g", 1, -0.2], ["r", 0.4, -0.1], ["r", 1, 0.15, "asentar"]]
+        },
+        "rodD": {
+          "k": [["g", 0, 1], ["g", 0.3, 1.4, "suave"], ["g", 0.7, 0.9, "entrada"], ["g", 1, 0.9], ["r", 1, 0.72, "asentar"]]
+        },
+        "rodI": {
+          "k": [["g", 0, 1.1], ["g", 0.3, 1.5, "suave"], ["g", 0.7, 0.8, "entrada"], ["g", 1, 0.8], ["r", 1, 0.96, "asentar"]]
+        },
+        "pDx": {
+          "k": [["g", 0, -0.8], ["g", 0.3, -0.7], ["g", 1, -0.6], ["r", 1, -0.53, "asentar"]]
+        },
+        "pIx": {
+          "k": [["g", 0, -0.11], ["g", 0.3, 0], ["g", 1, -0.2], ["r", 1, -0.11, "asentar"]]
+        },
+        "bDx": {
+          "k": [["g", 0, -0.2], ["g", 1, -0.4], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["g", 0, -0.5], ["g", 1, -0.6], ["r", 1, -0.9, "asentar"]]
+        },
+        "bDz": {
+          "k": [["g", 0, -0.15], ["g", 1, -0.1], ["r", 1, 0.35, "asentar"]]
+        },
+        "armaX": {
+          "k": [["g", 0, 1.2], ["g", 1, 1.1], ["r", 1, 0.75, "asentar"]]
+        },
+        "cx": {
+          "k": [["g", 0, -0.1], ["g", 0.7, 0.2, "suave"], ["r", 1, -0.1, "asentar"]]
+        }
+      }
+    },
+    "mikiri": {
+      "reloj": "fases",
+      "nota": "S12 mikiri (pareja con «pisado»): sale en diagonal bajo y con el pecho girado (pY 0,5) llevando la hoja arriba (c0-6); el pie derecho pisa la hoja del rival con la rodilla estirada (c6-12, rodD 0,05, pDx -0,4); queda alto sobre el pie con la katana en guardia alta y retrocede con un salto corto (c20-30) hasta la guardia con asentar.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 1, -0.8, "salida"], ["g", 0.5, -0.4, "salida"], ["g", 1, -0.4], ["r", 0.2, -0.4], ["r", 0.45, -0.8, "salida"], ["r", 0.8, -0.6, "entrada"], ["r", 1, -0.53, "asentar"]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 1, 1, "suave"], ["g", 0.5, 0.05, "salida"], ["g", 1, 0.05], ["r", 0.2, 0.2], ["r", 0.45, 1.3, "salida"], ["r", 0.8, 0.9, "entrada"], ["r", 1, 0.72, "asentar"]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.15, "suave"], ["g", 1, 0.2], ["r", 0.2, 0.1], ["r", 0.45, -0.6, "salida"], ["r", 0.8, -0.2, "entrada"], ["r", 1, -0.11, "asentar"]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.2, "suave"], ["g", 1, 1.4], ["r", 0.2, 0.9], ["r", 0.45, 1.7, "salida"], ["r", 0.8, 1.1, "entrada"], ["r", 1, 0.96, "asentar"]]
+        },
+        "salto": {
+          "k": [["a", 0, 0], ["r", 0.2, 0], ["r", 0.45, 0.3, "salida"], ["r", 0.8, 0, "entrada"], ["r", 1, 0]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, 0.5, "salida"], ["g", 1, 0.45], ["r", 0.25, 0.2, "suave"], ["r", 0.7, -0.1, "suave"], ["r", 1, -0.1, "asentar"]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.35, "salida"], ["g", 1, 0.45], ["r", 0.2, 0, "suave"], ["r", 1, 0.12, "asentar"]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -1.45, "suave"], ["g", 1, -1.5], ["r", 0.2, -1.55], ["r", 0.8, -1.45], ["r", 1, -0.8, "asentar"]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.5, "suave"], ["r", 0.8, -0.5], ["r", 1, -0.9, "asentar"]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 0.9, "suave"], ["g", 1, 0.9], ["r", 0.8, 0.9], ["r", 1, 0.75, "asentar"]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -1.5, "suave"], ["g", 1, -1.55], ["r", 0.2, -1.6], ["r", 0.8, -1.5], ["r", 1, -0.95, "asentar"]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.5, "suave"], ["r", 0.8, -0.5], ["r", 1, -0.8, "asentar"]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, -0.4], ["r", 0.8, -0.4], ["r", 1, -0.5, "asentar"]]
+        }
+      }
+    },
+    "remate": {
+      "reloj": "fases",
+      "nota": "S13 remate (pareja con «rematado»): paso rápido bajo con la hoja abajo a la derecha (c0-8), tajo ascendente de abajo a la derecha hacia arriba a la izquierda que levanta al rival (c8-20, pecho de -0,5 a 0,6), rodilla derecha al suelo con la katana abajo (c20-40, rodD 2,0, rodI 1,5), chiburi con un arco corto de armaX (c40-50) y las dos manos a la cadera izquierda para envainar (c50-60). Se queda arrodillado hasta el final.",
+      "canales": {
+        "pDx": {
+          "k": [["a", 0, -0.53], ["a", 0.5, -1, "salida"], ["a", 1, -0.8, "entrada"], ["g", 0.5, -0.7, "salida"], ["g", 1, -0.3, "suave"], ["r", 0.25, 0.15, "suave"], ["r", 1, 0.15]]
+        },
+        "rodD": {
+          "k": [["a", 0, 0.72], ["a", 0.5, 1.3, "salida"], ["a", 1, 1, "entrada"], ["g", 1, 0.6, "suave"], ["r", 0.25, 2, "suave"], ["r", 1, 2]]
+        },
+        "pIx": {
+          "k": [["a", 0, -0.11], ["a", 1, 0.2, "salida"], ["g", 1, 0, "suave"], ["r", 0.25, -1.4, "suave"], ["r", 1, -1.4]]
+        },
+        "rodI": {
+          "k": [["a", 0, 0.96], ["a", 1, 1.2, "suave"], ["g", 1, 0.7, "suave"], ["r", 0.25, 1.5, "suave"], ["r", 1, 1.5]]
+        },
+        "pY": {
+          "k": [["a", 0, -0.1], ["a", 1, -0.5, "suave"], ["g", 1, 0.6, "latigo"], ["r", 0.25, 0.3, "suave"], ["r", 1, 0.3]]
+        },
+        "pX": {
+          "k": [["a", 0, 0.12], ["a", 1, 0.3, "suave"], ["g", 1, 0, "suave"], ["r", 0.25, 0.35, "suave"], ["r", 1, 0.35]]
+        },
+        "ry": {
+          "k": [["a", 0, 0.15], ["a", 1, 0.05, "suave"], ["g", 1, 0.3, "suave"], ["r", 1, 0.3]]
+        },
+        "cx": {
+          "k": [["a", 0, -0.1], ["g", 1, -0.1], ["r", 0.3, 0.15, "suave"], ["r", 1, 0.15]]
+        },
+        "bDx": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.3, "suave"], ["g", 1, -2, "latigo"], ["r", 0.15, -1.9], ["r", 0.3, -0.4, "suave"], ["r", 0.75, -0.4], ["r", 0.95, -0.7, "suave"], ["r", 1, -0.7]]
+        },
+        "bDz": {
+          "k": [["a", 0, 0.35], ["a", 1, 0.1, "suave"], ["g", 1, 0.55, "latigo"], ["r", 0.3, 0.2, "suave"], ["r", 0.75, 0.2], ["r", 0.95, 1.25, "suave"], ["r", 1, 1.25]]
+        },
+        "codoD": {
+          "k": [["a", 0, -0.9], ["a", 1, -0.6, "suave"], ["g", 1, -0.3], ["r", 0.75, -0.3], ["r", 0.95, -0.8, "suave"], ["r", 1, -0.8]]
+        },
+        "armaX": {
+          "k": [["a", 0, 0.75], ["a", 1, 0.3, "suave"], ["g", 1, 1, "latigo"], ["r", 0.3, 1.25, "suave"], ["r", 0.5, 1.25], ["r", 0.58, 1.55, "salida"], ["r", 0.66, 0.7, "suave"], ["r", 0.74, 1.2, "suave"], ["r", 1, 1.2]]
+        },
+        "bIx": {
+          "k": [["a", 0, -0.95], ["a", 1, -0.4, "suave"], ["g", 1, -1.9, "latigo"], ["r", 0.3, -0.5, "suave"], ["r", 0.75, -0.5], ["r", 0.95, -0.25, "suave"], ["r", 1, -0.25]]
+        },
+        "bIz": {
+          "k": [["a", 0, -0.5], ["a", 1, -0.3], ["g", 1, -0.6, "latigo"], ["r", 0.3, -0.1, "suave"], ["r", 1, 0]]
+        },
+        "codoI": {
+          "k": [["a", 0, -0.8], ["a", 1, -0.6], ["g", 1, -0.4], ["r", 0.3, -0.6, "suave"], ["r", 1, -0.5]]
         }
       }
     }
