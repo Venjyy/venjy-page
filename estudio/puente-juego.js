@@ -62,6 +62,19 @@ async function aplicar(nombre, datos) {
         if (!v) throw new Error('el juego todavía no está listo');
         v.datosArena = datos;
         if (v.arena && v.arena.aplicarDatos) v.arena.aplicarDatos(datos);
+    } else if (nombre === 'combate') {
+        // N6: el motor lee COMBATE en cada paso (fijarCombate lo rehace en el lugar; el próximo cuadro ya usa lo nuevo)
+        const m = await import('../mundo/supervivencia/combate/datos.js');
+        m.fijarCombate(datos);
+    } else if (nombre.startsWith('estilo-')) {
+        // N6: el estilo se cambia en el lugar (la pelea en curso y la próxima ya lo usan); carga la arena si no estaba
+        const v = window.__venjy;
+        if (!v || !v.cargarArena) throw new Error('el juego todavía no está listo');
+        if (!v.estilosArena) await v.cargarArena();
+        const e = v.estilosArena && v.estilosArena[nombre.slice(7)];
+        if (!e) throw new Error(`la arena no usa «${nombre}»`);
+        for (const k of Object.keys(e)) delete e[k];
+        Object.assign(e, JSON.parse(JSON.stringify(datos)));
     } else if (nombre === 'salonas') {
         // S9: salonas.js lee estos datos en cada cuadro y al abrir (ajustes, reglas y textos)
         const v = window.__venjy;

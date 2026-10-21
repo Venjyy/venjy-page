@@ -22,6 +22,7 @@
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
             <button class="pestana" type="button" data-pestana="arena" data-seccion="juego" data-es="Arena" data-en="Arena">Arena</button>
+            <button class="pestana" type="button" data-pestana="combate" data-seccion="juego" data-es="Combate" data-en="Combat">Combate</button>
             <button class="pestana" type="button" data-pestana="salonas" data-seccion="juego" data-es="Salonas" data-en="Salonas">Salonas</button>
             <button class="pestana" type="button" data-pestana="ritmo" data-seccion="juego" data-es="Ritmo" data-en="Rhythm">Ritmo</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
@@ -123,6 +124,13 @@
             </div>
             <div class="marco marco-juego">
                 <iframe id="juego" title="Juego" allow="fullscreen; autoplay"></iframe>
+            </div>
+            <div id="co-zona" hidden>
+                <div class="fila-botones">
+                    <label><span data-es="Zoom" data-en="Zoom">Zoom</span> <input id="co-zoom" type="range" min="4" max="30" step="1" value="12" aria-label="Zoom"></label>
+                </div>
+                <div id="co-linea"></div>
+                <p class="mensaje" data-es="Arrastra el borde derecho de una fase para estirarla: las ventanas y la animación la siguen. Verde = cancelación, celeste = invulnerable, naranja = armadura, gris = avance." data-en="Drag a phase's right edge to stretch it: windows and animation follow. Green = cancel, light blue = invulnerable, orange = armor, grey = forward step.">Arrastra el borde derecho de una fase para estirarla: las ventanas y la animación la siguen. Verde = cancelación, celeste = invulnerable, naranja = armadura, gris = avance.</p>
             </div>
             <div id="ri-zona" hidden>
                 <div class="fila-botones ri-barra">
@@ -431,6 +439,22 @@
                         <button id="ar-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="ar-mensaje" class="mensaje" role="status"></p>
+                </section>
+            </div>
+            <div id="panel-combate" hidden>
+                <section class="panel">
+                    <h2 data-es="Combate" data-en="Combat">Combate</h2>
+                    <p class="mensaje" data-es="Ataques, movimientos y reacciones de cada estilo de pelea. Elige un estilo y una acción; la línea de tiempo de abajo muestra sus fases y ventanas. Todo va en vivo en la arena. Guardar escribe mundo/datos/estilo-*.json y combate.json." data-en="Attacks, moves and reactions of each fighting style. Pick a style and an action; the timeline below shows its phases and windows. Everything is live in the arena. Save writes mundo/datos/estilo-*.json and combate.json.">Ataques, movimientos y reacciones de cada estilo de pelea. Elige un estilo y una acción; la línea de tiempo de abajo muestra sus fases y ventanas. Todo va en vivo en la arena. Guardar escribe mundo/datos/estilo-*.json y combate.json.</p>
+                    <label class="campo"><span data-es="Estilo" data-en="Style">Estilo</span> <select id="co-estilo" aria-label="Estilo"></select></label>
+                    <label class="campo"><span data-es="Acción" data-en="Action">Acción</span> <select id="co-accion" aria-label="Acción"></select></label>
+                </section>
+                <div id="co-campos"></div>
+                <section class="panel acciones">
+                    <div class="fila-botones">
+                        <button id="co-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="co-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    </div>
+                    <p id="co-mensaje" class="mensaje" role="status"></p>
                 </section>
             </div>
             <div id="panel-salonas" hidden>
