@@ -8,6 +8,7 @@
 //   · llega a lo más `ventana` c después → desvío con contraataque (la acción de `contra` según la altura)
 //   · llega otra altura dentro de la ventana → entra con el daño × `errada` (leíste mal), salvo que la esquiva
 //     neutra lo deje pasar por arriba (sus i-frames sirven contra alto y medio normales: `iframesAlturas`)
+//     (erradaEn: 'vida' multiplica el daño; 'zona', lo que suma a las zonas de combate/zonas.js, L6a)
 //   · fuera de la ventana mandan los i-frames de la acción (la esquiva neutra o el paso lateral)
 //   reglasAltura(estilo)                 reglas.altura fundidas sobre ALTURA_BASE (null si el estilo no las trae)
 //   clasificar(A, p, golpe, r)           para estados.recibir (reglas.alRecibir): lo que dijo el motor pasa a
@@ -15,7 +16,7 @@
 //   accionDefensa(A, resultado, altura)  la acción que juega el que desvió (contraataque por altura o reversión)
 // =========================================================
 export const ALTURA_BASE = {
-    ventana: 8, reversion: 3, tactil: 2, errada: 1.3,
+    ventana: 8, reversion: 3, tactil: 2, errada: 1.3, erradaEn: 'vida',
     contra: { alto: null, medio: null, bajo: null }, reversionAccion: null,
     imparable: ['imparable'], sinPostura: false
 };

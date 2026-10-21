@@ -167,7 +167,8 @@ export function paso(p, intencion = {}) {
         else {
             const n = Math.hypot(p.mover[0], p.mover[1]);
             p.estado = n > COMBATE.motor.paso.umbral ? 'paso' : 'guardia';
-            const v = ((p.estilo.paso && p.estilo.paso.velocidad) || 0) / COMBATE.motor.hz;
+            // p.ritmo: lo pone la arena (las piernas en crítico de Urban Reign, combate/zonas.js); 1 si no
+            const v = ((p.estilo.paso && p.estilo.paso.velocidad) || 0) * (p.ritmo ?? 1) / COMBATE.motor.hz;
             if (p.estado === 'paso') p.mov = [p.mover[0] * v, p.mover[1] * v];
         }
     }

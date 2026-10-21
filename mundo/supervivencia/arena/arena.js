@@ -32,6 +32,12 @@ import { fraccion, cansado } from '../combate/postura.js';
 import { crearIntenciones } from '../combate/intenciones.js';
 import { crearEscenaArena } from './escena.js';
 import * as M from './modelo.js';
+import * as Z from '../combate/zonas.js';
+// Silueta de las zonas (L6a): canvas de 12 × 24 px; [x, y, ancho, alto] de cada parte (con 1 px de borde alrededor)
+const SIL = {
+    ancho: 12, alto: 24,
+    partes: { cabeza: [[4, 1, 4, 4]], torso: [[3, 6, 6, 7], [1, 6, 1, 6], [10, 6, 1, 6]], piernas: [[3, 14, 2, 9], [7, 14, 2, 9]] }
+};
 
 const CSS = `
 body.en-arena #hud, body.en-arena .mira, body.en-arena .tactil { display: none !important; }
@@ -44,6 +50,7 @@ body.en-arena #hud, body.en-arena .mira, body.en-arena .tactil { display: none !
 .ar-lado { display: flex; gap: 8px; align-items: flex-start; }
 .ar-lado.der { flex-direction: row-reverse; text-align: right; }
 .ar-lado canvas { border: 3px solid #000; image-rendering: pixelated; background: #222; }
+.ar-lado canvas.ar-silueta { border: 0; background: none; align-self: center; }
 .ar-barra { position: relative; height: 22px; border: 3px solid #000; box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.5); }
 .ar-barra i { position: absolute; top: 0; bottom: 0; left: 0; }
 .ar-lado.der .ar-barra i { left: auto; right: 0; }
@@ -136,13 +143,15 @@ export function crearArena(ctx) {
         if (i === 1) relojEl = el('ar-caja ar-reloj', hud); // vida · reloj · vida
         const lado = el('ar-lado' + (i ? ' der' : ''), hud);
         const ret = el('', lado, 'canvas'); ret.width = ret.height = 64;
+        // Silueta de las zonas (L6a): cabeza, torso y piernas por color; solo para los estilos con zonas
+        const sil = el('ar-silueta', lado, 'canvas'); sil.width = SIL.ancho; sil.height = SIL.alto; sil.style.display = 'none';
         const col = el('', lado), barra = el('ar-barra', col), perdida = el('', barra, 'i'), vida = el('', barra, 'i');
         // Postura (L2): crece desde el centro, como en Sekiro; se pone roja sobre el cansancio y parpadea rota
         const post = el('ar-postura', col), postI = el('', post, 'i');
         // Espíritu (L3): segmentos del arte de combate, solo si el estilo tiene arte
         const esp = el('ar-espiritu', col);
         const nom = el('ar-nombre', col), txt = el('', nom, 'span'), pips = el('', nom, 'span');
-        return { lado, ret, barra, perdida, vida, txt, pips, post, postI, esp, espI: [], vista: 1 };
+        return { lado, ret, sil, silClave: '', barra, perdida, vida, txt, pips, post, postI, esp, espI: [], vista: 1 };
     });
     const avisoEl = el('ar-aviso', capa), tituloEl = el('ar-caja ar-titulo', capa), ayudaEl = el('ar-caja ar-ayuda', capa);
     const menuEl = el('ar-caja ar-menu', capa), pausaEl = el('ar-caja ar-pausa', capa), finalEl = el('ar-caja ar-final', capa);
@@ -499,6 +508,7 @@ export function crearArena(ctx) {
         dibujarPeleadores(alfa);
     }
     function dibujarPeleadores(alfa) {
+        if (esc.estadoBarriles && c.P) esc.estadoBarriles(c.P.barriles);
         for (const F of c.P.f) {
             const pe = esc.peleador(F.clave);
             if (!pe) continue;
@@ -623,6 +633,13 @@ export function crearArena(ctx) {
             if (esc.efectos) esc.efectos.polvo(F.x, F.z, 'pared', R.escenario.superficie);
             sonar('capas', 'fuerte', { material: 'madera', resultado: 'bloqueado' });
         } else if (e.tipo === 'postura') { aviso(tx('postura'), 1, true); sonar('postura'); esc.celebrar(0.6); }
+        // L6a: zona en crítico (mareo, torso, cojera) y barril roto
+        else if (e.tipo === 'critico') { aviso(tx('critico' + e.zona[0].toUpperCase() + e.zona.slice(1)), 1, true); sonar('postura'); esc.celebrar(0.6); }
+        else if (e.tipo === 'barril') {
+            if (esc.romperBarril) esc.romperBarril(e.n);
+            if (esc.efectos) esc.efectos.polvo(e.x, e.z, 'barril', 'madera', 1.4);
+            sonar('capas', 'fuerte', { material: 'madera', resultado: 'golpeado' });
+        }
         else if (e.tipo === 'ko') { aviso(tx('ko'), R.rondas.finRonda, true); sonar('ko'); c.lentaHasta = c.tc + R.rondas.lentaKo; c.escalaLenta = R.rondas.escalaLenta; esc.celebrar(1); }
         else if (e.tipo === 'tiempo') aviso(tx('tiempo'), R.rondas.finRonda, true);
         // L3: aviso del peligroso (sonido, destello rojo del arma y vibración si va contra ti), mikiri, golpe final
@@ -728,6 +745,7 @@ export function crearArena(ctx) {
             l.postI.style.background = cansado(F.post) ? H.posturaAlta : H.postura;
             l.post.classList.toggle('rota', !!F.post.roto);
             pintarEspiritu(l, F, todo);
+            pintarSilueta(l, F, todo);
             l.perdida.style.width = (l.vista * 100).toFixed(1) + '%';
             const pips = Math.ceil(R.rondas.mejorDe / 2);
             if (todo || l.pipsN !== P.victorias[i]) {
@@ -738,6 +756,22 @@ export function crearArena(ctx) {
         if (relojEl) { relojEl.textContent = String(Math.ceil(P.reloj)); relojEl.style.color = H.reloj; }
     }
 
+    // La silueta pixel de las zonas: cada parte con el color de su nivel; la que está en crítico parpadea
+    function pintarSilueta(l, F, todo) {
+        const H = R.hud, z = F.zonas, sil = l.sil;
+        if (!z || !F.zon) { if (sil.style.display !== 'none') sil.style.display = 'none'; return; }
+        const parpadeo = Math.floor(performance.now() / 250) % 2 === 0;
+        const col = k => (z.criticos[k] && parpadeo ? H.zonaCritica : H[{ verde: 'zonaVerde', amarillo: 'zonaAmarilla', rojo: 'zonaRoja' }[Z.nivel(F.zon, z[k])]]);
+        const clave = Z.REGIONES.map(col).join();
+        if (!todo && clave === l.silClave) return;
+        l.silClave = clave;
+        if (todo || sil.style.display === 'none') { sil.style.display = ''; sil.style.height = `${H.silueta}px`; sil.style.width = `${Math.round(H.silueta * SIL.ancho / SIL.alto)}px`; }
+        const g = sil.getContext && sil.getContext('2d');
+        if (!g) return;
+        g.clearRect(0, 0, SIL.ancho, SIL.alto);
+        for (const k of Z.REGIONES) for (const [x, y, w, h] of SIL.partes[k]) { g.fillStyle = H.zonaBorde; g.fillRect(x - 1, y - 1, w + 2, h + 2); }
+        for (const k of Z.REGIONES) { g.fillStyle = col(k); for (const [x, y, w, h] of SIL.partes[k]) g.fillRect(x, y, w, h); }
+    }
     function pintarEspiritu(l, F, todo) {
         const H = R.hud, arte = F.estilo && F.estilo.controles && F.estilo.controles.especial, n = arte && F.esp ? F.esp.tope : 0;
         if (todo || l.espI.length !== n) {

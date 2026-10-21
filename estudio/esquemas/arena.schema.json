@@ -56,6 +56,7 @@
         "pared": { "type": "object", "properties": { "alto": { "type": "number", "minimum": 0.5, "maximum": 4 }, "grosor": { "type": "number", "minimum": 0.5, "maximum": 3 } }, "additionalProperties": false },
         "fogatas": { "type": "array", "items": { "$ref": "#/$defs/xz" }, "maxItems": 12 },
         "barriles": { "type": "array", "items": { "$ref": "#/$defs/xz" }, "maxItems": 12 },
+        "barril": { "description": "Choque de los barriles (L6a, §17.8): son sólidos; quien rebota contra uno lo rompe (si rompe) y recibe dano. Vuelven en la ronda siguiente.", "type": "object", "properties": { "radio": { "type": "number", "minimum": 0.1, "maximum": 1 }, "rompe": { "type": "boolean" }, "dano": { "type": "number", "minimum": 0, "maximum": 50 } }, "additionalProperties": false },
         "nieve": {
           "type": "object",
           "properties": {
@@ -100,6 +101,16 @@
     "marcas": {
       "type": "object",
       "properties": { "separacion": { "type": "number", "minimum": 1, "maximum": 10 }, "x": { "type": "number", "minimum": -10, "maximum": 10 }, "z": { "type": "number", "minimum": -10, "maximum": 10 } },
+      "additionalProperties": false
+    },
+    "rebote": {
+      "description": "Rebote en la pared (L6a, §17.8): un golpe de estas alturas que entra con el rival a menos de distancia bloques de una pared o un barril detrás de él lo lleva hasta ahí (extra bloques de más) y rebota (reacción pared de combate.json).",
+      "type": "object",
+      "properties": {
+        "distancia": { "type": "number", "minimum": 0, "maximum": 4 },
+        "alturas": { "type": "array", "items": { "enum": ["alto", "medio", "bajo"] }, "uniqueItems": true },
+        "extra": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
       "additionalProperties": false
     },
     "movimiento": {
@@ -223,7 +234,9 @@
         "retrato": { "description": "Lado del retrato chico en px.", "type": "number", "minimum": 16, "maximum": 128 },
         "postura": { "$ref": "#/$defs/color" }, "posturaAlta": { "description": "Color de la barra de postura sobre el cansancio del estilo.", "$ref": "#/$defs/color" }, "posturaFondo": { "$ref": "#/$defs/color" },
         "anchoPostura": { "description": "Ancho de la barra de postura (crece desde el centro) en % de la pantalla.", "type": "number", "minimum": 5, "maximum": 48 },
-        "espiritu": { "description": "Color de los segmentos de espíritu del arte de combate (L3).", "$ref": "#/$defs/color" }, "espirituFondo": { "$ref": "#/$defs/color" }
+        "espiritu": { "description": "Color de los segmentos de espíritu del arte de combate (L3).", "$ref": "#/$defs/color" }, "espirituFondo": { "$ref": "#/$defs/color" },
+        "silueta": { "description": "Alto de la silueta de zonas en px (L6a; solo para los estilos con zonas).", "type": "number", "minimum": 16, "maximum": 128 },
+        "zonaVerde": { "$ref": "#/$defs/color" }, "zonaAmarilla": { "$ref": "#/$defs/color" }, "zonaRoja": { "$ref": "#/$defs/color" }, "zonaCritica": { "description": "Color con que parpadea la zona en crítico.", "$ref": "#/$defs/color" }, "zonaBorde": { "$ref": "#/$defs/color" }
       },
       "additionalProperties": false
     },
@@ -302,7 +315,8 @@
               "impacto": { "type": "integer", "minimum": 0, "maximum": 60 },
               "caida": { "type": "integer", "minimum": 0, "maximum": 60 },
               "esquiva": { "type": "integer", "minimum": 0, "maximum": 60 },
-              "pared": { "type": "integer", "minimum": 0, "maximum": 60 }
+              "pared": { "type": "integer", "minimum": 0, "maximum": 60 },
+              "barril": { "description": "Astillas al romper un barril (L6a).", "type": "integer", "minimum": 0, "maximum": 60 }
             },
             "additionalProperties": false
           },
@@ -311,7 +325,8 @@
             "properties": {
               "nieve": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 },
               "hielo": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 },
-              "tierra": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 }
+              "tierra": { "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 },
+              "madera": { "description": "Astillas de los barriles (L6a).", "type": "array", "items": { "$ref": "#/$defs/color" }, "minItems": 1, "maxItems": 8 }
             },
             "additionalProperties": false
           }

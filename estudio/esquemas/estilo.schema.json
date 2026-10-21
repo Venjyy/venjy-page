@@ -43,7 +43,34 @@
         "umbral": { "type": "number", "minimum": 0.02, "maximum": 1 },
         "cuadros": { "type": "integer", "minimum": 2, "maximum": 60 },
         "altura": { "type": "number", "minimum": 0, "maximum": 0.5 },
-        "adelanto": { "type": "number", "minimum": 0, "maximum": 2 }
+        "adelanto": { "type": "number", "minimum": 0, "maximum": 2 },
+        "modo": { "description": "libre: cada pie da su paso cuando se aleja (el más lejano primero). arrastre (L6a, boxeo): sale primero el pie del lado hacia donde va el cuerpo (adelante el de adelante, atrás el de atrás, de lado el de ese lado) y el otro lo sigue a ras del suelo; los pies no se cruzan.", "enum": ["libre", "arrastre"] },
+        "arrastre": {
+          "description": "Paso de boxeo (modo arrastre). umbral: cuánto se aleja el pie que guía antes de salir; cuadros, altura y adelanto: [el que guía, el que arrastra]; espera: qué fracción del paso del que guía tiene que ir antes de que salga el otro.",
+          "type": "object",
+          "properties": {
+            "umbral": { "type": "number", "minimum": 0.02, "maximum": 1 },
+            "cuadros": { "type": "array", "items": { "type": "integer", "minimum": 2, "maximum": 60 }, "minItems": 2, "maxItems": 2 },
+            "altura": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 0.5 }, "minItems": 2, "maxItems": 2 },
+            "adelanto": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 3 }, "minItems": 2, "maxItems": 2 },
+            "espera": { "type": "number", "minimum": 0, "maximum": 1 },
+            "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        },
+        "cojera": {
+          "description": "Caminata con las piernas en crítico (L6a, zonas): accion = la reacción de combate.json cuya animación reemplaza a la del paso (un ciclo cada largo bloques); la pierna rota (D o I) da su paso lento veces más largo y la levanta alzar × la altura.",
+          "type": "object",
+          "properties": {
+            "accion": { "$ref": "combate.schema.json#/$defs/clave" },
+            "largo": { "type": "number", "minimum": 0.05, "maximum": 5 },
+            "pierna": { "enum": ["D", "I"] },
+            "lento": { "type": "number", "minimum": 1, "maximum": 4 },
+            "alzar": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
       },
       "additionalProperties": false
     },
@@ -181,6 +208,7 @@
             "reversion": { "type": "integer", "minimum": 0, "maximum": 30 },
             "tactil": { "type": "integer", "minimum": 0, "maximum": 10 },
             "errada": { "type": "number", "minimum": 1, "maximum": 3 },
+            "erradaEn": { "description": "Dónde pega el × errada (L6a): vida (el daño) o zona (lo que suma a las zonas; sin zonas, vuelve a la vida).", "enum": ["vida", "zona"] },
             "contra": { "type": "object", "properties": { "alto": { "$ref": "combate.schema.json#/$defs/clave" }, "medio": { "$ref": "combate.schema.json#/$defs/clave" }, "bajo": { "$ref": "combate.schema.json#/$defs/clave" } }, "additionalProperties": false },
             "reversionAccion": { "$ref": "combate.schema.json#/$defs/clave" },
             "imparable": { "type": "array", "items": { "type": "string" } },
@@ -197,6 +225,28 @@
             "perfecto": { "type": "number", "minimum": 0, "maximum": 10 },
             "desvio": { "type": "number", "minimum": 0, "maximum": 10 },
             "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "zonas": {
+      "description": "Zonas del cuerpo de Urban Reign (L6a, §17.6; combate/zonas.js → ZONAS_BASE). Cabeza, torso y piernas van de 0 a tope; cada golpe recibido suma a la de su altura (porAltura; daño × porDano si el ataque no trae zona) y la vida pierde daño × el multiplicador del nivel de esa zona (verde bajo amarillo, amarillo bajo rojo, rojo). Al tope, una vez por ronda: cabeza = reacción de mareo (el primer golpe que lo saca × remate); torso = todo el daño × dano durante cuadros; piernas = paso × velocidad hasta el final de la ronda. Vuelven a 0 en cada ronda.",
+      "type": "object",
+      "properties": {
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "tope": { "type": "number", "minimum": 10, "maximum": 1000 },
+        "porAltura": { "type": "object", "properties": { "alto": { "$ref": "#/$defs/region" }, "medio": { "$ref": "#/$defs/region" }, "bajo": { "$ref": "#/$defs/region" } }, "additionalProperties": false },
+        "porDano": { "type": "number", "minimum": 0, "maximum": 20 },
+        "niveles": { "type": "object", "properties": { "amarillo": { "type": "number", "minimum": 0, "maximum": 1000 }, "rojo": { "type": "number", "minimum": 0, "maximum": 1000 } }, "additionalProperties": false },
+        "multiplicador": { "type": "object", "properties": { "verde": { "type": "number", "minimum": 0, "maximum": 5 }, "amarillo": { "type": "number", "minimum": 0, "maximum": 5 }, "rojo": { "type": "number", "minimum": 0, "maximum": 5 } }, "additionalProperties": false },
+        "critico": {
+          "type": "object",
+          "properties": {
+            "cabeza": { "type": "object", "properties": { "reaccion": { "$ref": "combate.schema.json#/$defs/clave" }, "remate": { "type": "number", "minimum": 1, "maximum": 5 } }, "additionalProperties": false },
+            "torso": { "type": "object", "properties": { "dano": { "type": "number", "minimum": 1, "maximum": 5 }, "cuadros": { "type": "integer", "minimum": 0, "maximum": 3600 } }, "additionalProperties": false },
+            "piernas": { "type": "object", "properties": { "velocidad": { "type": "number", "minimum": 0.1, "maximum": 1 } }, "additionalProperties": false }
           },
           "additionalProperties": false
         }
@@ -294,6 +344,7 @@
         }
       ]
     },
+    "region": { "enum": ["cabeza", "torso", "piernas"] },
     "ataque": {
       "description": "Un ataque (§15.3). fases en cuadros; cancelar, iframes y armadura con marcas respecto de una fase; altura (alto, medio, bajo) en todos los estilos; peligro para las reglas de defensa; dano (vida), postura (Sekiro) y zona (Urban Reign) en cada ataque; alcance en bloques y arco en grados; hitstop: un nivel de combate.json → peso; reaccion: la que provoca en quien recibe; intencion: con qué intención sale en un combo (por defecto atacar).",
       "type": "object",
@@ -303,6 +354,7 @@
         "altura": { "enum": ["alto", "medio", "bajo"] },
         "peligro": { "anyOf": [{ "type": "null" }, { "enum": ["barrido", "estocada", "agarre", "imparable"] }] },
         "dano": { "type": "number", "minimum": 0 },
+        "zona": { "description": "Lo que suma a las zonas del que recibe, si su estilo trae zonas (L6a, §17.6): un número (a la zona de su altura) o { cabeza, torso, piernas }. Sin esto suma daño × zonas.porDano a la zona de su altura.", "anyOf": [{ "type": "number", "minimum": 0, "maximum": 100 }, { "type": "object", "properties": { "cabeza": { "type": "number", "minimum": 0, "maximum": 100 }, "torso": { "type": "number", "minimum": 0, "maximum": 100 }, "piernas": { "type": "number", "minimum": 0, "maximum": 100 } }, "additionalProperties": false }] },
         "postura": { "type": "number", "minimum": 0 },
         "posturaFija": { "description": "Postura que recibe el rival aunque lo bloquee (pisotón, arte de combate; L3). Reemplaza a la de la tabla.", "type": "number", "minimum": 0, "maximum": 200 },
         "posturaPropia": { "description": "Postura que se suma (o se resta, si es negativa) al que ataca cuando el golpe conecta (el arte baja 15 la tuya).", "type": "number", "minimum": -200, "maximum": 200 },

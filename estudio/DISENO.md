@@ -1132,3 +1132,12 @@ Pedido del dueño: hacer él mismo la música del juego con sintetizadores y pat
 - **CPU (`estilo-*.json → cpu`):** `cadenas` (alturas con peso; la cadena sigue solo si conecta), `acierto` por dificultad (leer bien la altura) y `castigoBajo`.
 - **No editable aún en el Estudio:** todo lo nuevo de `estilo-urbano.json` (pestaña Combate, N6).
 
+
+## 34. Urban Reign II-a: zonas, pared, barriles y paso de boxeo (bloque 8 · L6a, 2026-10-21)
+
+- **Zonas (`combate/zonas.js`, `estilo-*.json → zonas`):** `tope`, `porAltura` (alto → cabeza, medio → torso, bajo → piernas), `porDano` (zona por punto de daño si el ataque no trae `zona`), `niveles` (amarillo, rojo), `multiplicador` (verde, amarillo, rojo) y `critico` (`cabeza.reaccion` y `remate`, `torso.dano` y `cuadros`, `piernas.velocidad`). Un ataque o una pareja puede traer `zona`: un número (a la zona de su altura) o `{ cabeza, torso, piernas }`. Un estilo sin `zonas` no las usa (Sekiro sufre por postura).
+- **Altura errada:** `reglas.altura.erradaEn` = `vida` (el valor base: × errada al daño) o `zona` (× errada a lo que suma la zona; Urban Reign).
+- **Cojera:** `paso.cojera` = `{ accion, largo, pierna, lento, alzar }`: con las piernas en crítico la caminata es la animación de esa reacción (un ciclo cada `largo` bloques) y la pierna rota da su paso `lento` veces más largo. `p.ritmo` (estados.js) multiplica la velocidad del paso.
+- **Paso de boxeo:** `paso.modo` = `libre` (el de siempre) o `arrastre`, con `paso.arrastre` = `{ umbral, cuadros: [guía, arrastre], altura: [...], adelanto: [...], espera }`. Guía el pie que la guardia pone más lejos en la dirección del movimiento; el otro sale cuando el primero va en `espera`. Regla para cualquier guardia: las rodillas deben quedar lejos de `combate.json → motor.pies.rodillaMin` (0,4) y el rebote (`respiracion`) debe bajar el cuerpo, no subirlo; si no, la pierna se da por estirada y los pies dan pasos sin parar.
+- **Arena (`arena.json`):** `rebote` (`distancia`, `alturas`, `extra`), `escenario.barril` (`radio`, `rompe`, `dano`), `hud.silueta` y los colores `zonaVerde`, `zonaAmarilla`, `zonaRoja`, `zonaCritica`, `zonaBorde`; `efectos.polvo.cuantos.barril` y `colores.madera`; textos `criticoCabeza`, `criticoTorso`, `criticoPiernas`. Eventos nuevos del modelo: `critico` (`i`, `zona`) y `barril` (`n`, `x`, `z`, `i`); `golpe` trae `zonas` (lo que sumó).
+- **Editable en el Estudio (pestaña Arena):** silueta (alto y colores), rebote y barril. **No editable aún:** `estilo-urbano.json → zonas`, `paso.arrastre`, `paso.cojera` (pestaña Combate, N6).

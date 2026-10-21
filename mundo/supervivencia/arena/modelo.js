@@ -32,6 +32,13 @@
 // 'reversion': la acción de pareja lanza al atacante) si acierta la altura dentro de la ventana; si erra, el golpe
 // entra con el daño × errada (golpe.errada). Los ataques con soloSi solo pegan al rival en esas reacciones (los
 // remates aéreos al lanzado). Un estilo con sinPostura no suma postura (sufre por vida).
+// Zonas, pared y barriles (L6a, combate/zonas.js con estilo-*.json → zonas; arena.json → rebote y escenario.barril):
+// quien recibe con zonas suma a la de la altura del golpe y pierde vida × el multiplicador de esa zona; al tope, una vez
+// por ronda, entra en crítico (evento 'critico' con { i, zona }: mareo, torso que recibe más o cojera). Un golpe de
+// las alturas de rebote.alturas a menos de rebote.distancia de una pared o un barril lo lleva hasta ahí y rebota
+// (reacción `pared`); el barril se rompe (evento 'barril' con { n, x, z }) y vuelve en la ronda siguiente.
+//   sinAnimar: nuevaPelea(R, { sinAnimar: true }) no arma poses (las simulaciones de balance; la lógica no las lee)
+//   distanciaObstaculo(P, x, z, ux, uz)  bloques libres detrás de (x, z) hasta la pared o un barril entero
 //   crearCamara(R) / pasoCamara(C, P, dt, aspecto)   cámara de lado al eje del duelo (§19.4): { pos, mira, fov }
 //   encuadre(cam, puntos, aspecto)       ¿todos los puntos caen dentro de la imagen? (las pruebas y el Estudio)
 //   puntosCuerpo(F)                      pies y cabeza de un peleador, para medir el encuadre
@@ -46,6 +53,7 @@ import * as S from '../combate/postura.js';
 import * as W from '../combate/peso.js';
 import * as I from '../combate/ia.js';
 import * as U from '../combate/urbano.js';
+import * as Z from '../combate/zonas.js';
 import { EFECTOS } from './efectos.js';
 import { COMBATE, faseEn, inicioFase, accionDe, marca } from '../combate/datos.js';
 
@@ -61,6 +69,7 @@ export const ARENA = {
     escenario: {
         tipo: 'lago', superficie: 'nieve', nombre: t('Lago congelado', 'Frozen Lake'), largo: 14, ancho: 8, pared: { alto: 1.5, grosor: 1 },
         fogatas: [[-6.2, -3.2], [6.2, -3.2], [-6.2, 3.2], [6.2, 3.2]], barriles: [],
+        barril: { radio: 0.32, rompe: true, dano: 3 }, // (L6a) choque de los barriles: radio en bloques; daño al que lo rompe
         nieve: { cantidad: 500, viento: [0.6, 0.15], caida: 1.1, radio: 14 },
         luz: { cielo: '#9ab4d8', suelo: '#3a4a66', ambiente: 0.55, fogata: '#ff9a40', fogataFuerza: 1.6, parpadeo: 0.25, niebla: '#b8c8e0', nieblaCerca: 16, nieblaLejos: 46 },
         hielo: { color: '#a8d4f0', grietas: 18, brillo: 0.35 }
@@ -68,6 +77,9 @@ export const ARENA = {
     publico: { personas: [], distancia: 1.6, gestos: [] },
     marcas: { separacion: 3.2, x: 0, z: 0 },
     movimiento: { radio: 0.35, distanciaMin: 0.7, duro: 0.45, empuje: 0.35, reorientar: 6, giroEje: 75 },
+    // Rebote en la pared (L6a, §17.8): un golpe de estas alturas que entra con el rival a menos de `distancia` de una
+    // pared o un barril (detrás de él) lo lleva hasta ahí (`extra` bloques de más) y rebota
+    rebote: { distancia: 1.2, alturas: ['medio'], extra: 0.1 },
     camara: {
         fov: 50, altura: 1.45, mira: 1.0, inclinacion: 8, distanciaMin: 3.5, distanciaMax: 8, margen: 1.1, resorte: 0.25, giroMax: 90, adelanto: 0.25, separacionMin: 3,
         // Golpe final (L3, S13): plano de cine bajo que gira alrededor de los dos (s; bloques; grados; fov)
@@ -81,7 +93,9 @@ export const ARENA = {
     golpe: { hitstop: 'ligero', bloqueoDano: 0.15 },
     hud: {
         vida: '#d83a2a', vidaFondo: '#3a0c0c', vidaPerdida: '#ffd040', reloj: '#ffff55', ronda: '#ffff55', anchoVida: 38, retrato: 44, postura: '#ffb030', posturaAlta: '#ff4a20', posturaFondo: '#2a1a08', anchoPostura: 22,
-        espiritu: '#7ad8ff', espirituFondo: '#10222a' // segmentos del arte de combate (L3)
+        espiritu: '#7ad8ff', espirituFondo: '#10222a', // segmentos del arte de combate (L3)
+        // Silueta de las zonas (L6a): alto en px y colores por nivel (el crítico parpadea)
+        silueta: 40, zonaVerde: '#4ac83a', zonaAmarilla: '#f0d030', zonaRoja: '#e0301e', zonaCritica: '#ffffff', zonaBorde: '#000000'
     },
     premios: { amistad: true, primeraVictoria: {} },
     efectos: EFECTOS, // chispas, destello del perfecto, brillo de la carga y escalones de la estela (arena/efectos.js)
@@ -118,9 +132,9 @@ export function azar(semilla) {
 // ---------- Pelea ----------
 // opciones: { estilos: { lalo: estilo, … } (estilo-*.json ya leído), yo: clave del tuyo, rival: clave, dificultad,
 //             tactil, semilla, aspecto }
-export function nuevaPelea(R, { estilos, yo = 'lalo', rival = 'moises', dificultad = 'normal', tactil = false, semilla = 1, aspecto = 16 / 9, muneco = false } = {}) {
+export function nuevaPelea(R, { estilos, yo = 'lalo', rival = 'moises', dificultad = 'normal', tactil = false, semilla = 1, aspecto = 16 / 9, muneco = false, sinAnimar = false } = {}) {
     const P = {
-        R, dificultad, tactil, rnd: azar(semilla), aspecto, muneco,
+        R, dificultad, tactil, rnd: azar(semilla), aspecto, muneco, sinAnimar, barriles: [],
         f: [crearF(R, estilos, yo, 0, tactil), crearF(R, estilos, rival, 1, tactil)],
         fase: 'entrada', c: 0, ronda: 0, rondasJugadas: 0, victorias: [0, 0], reloj: R.rondas.segundos,
         ganadorRonda: null, ganador: undefined, eventos: [], cola: [], cuadros: 0, practica: nuevaPractica(), cpu: [null, null], semilla
@@ -136,7 +150,7 @@ function crearF(R, estilos, clave, i, tactil) {
         p: E.crearPeleador(estilo, { tactil: i === 0 && tactil }), an: A.crearAnimador(estilo),
         x: 0, z: 0, yaw: 0, vx: 0, vz: 0, vida: d.vida || 100, vidaMax: d.vida || 100,
         empuje: 0, enActivo: false, pego: false, marca: 0, post: S.crearPostura(S.reglasPostura(estilo), d.postura || 100),
-        pel: G.reglasPeligro(estilo), alt: U.reglasAltura(estilo), esp: null,
+        pel: G.reglasPeligro(estilo), alt: U.reglasAltura(estilo), esp: null, zon: Z.reglasZonas(estilo), zonas: null, aPared: false,
         acc: W.crearAcumulador(), tiembla: null, temblor: [0, 0], calma: 0,
         pose: {}, poseAnt: {}
     };
@@ -153,9 +167,12 @@ function colocar(P, entrada) {
         F.vx = F.vz = 0; F.empuje = 0; F.enActivo = F.pego = false; F.tiembla = null; F.temblor = [0, 0]; W.soltarAcumulador(F.acc);
         F.vida = F.vidaMax; F.p = E.crearPeleador(F.estilo, { tactil: F.p.tactil }); F.an = A.crearAnimador(F.estilo);
         F.post = S.crearPostura(F.post.R, F.post.tope); conEspiritu(F);
+        F.zonas = F.zon ? Z.crearZonas(F.zon) : null; F.aPared = false; // las zonas vuelven a 0 en cada ronda
         limitar(P, F);
         animarF(P, F, null); animarF(P, F, null);
     });
+    // Los barriles rotos vuelven en cada ronda
+    P.barriles = (R.escenario.barriles || []).map(([x, z]) => ({ x, z, roto: false }));
 }
 const velocidadPaso = F => (F.estilo && F.estilo.paso && F.estilo.paso.velocidad) || 1.2;
 
@@ -193,11 +210,15 @@ export function pasoPelea(P, intenciones = []) {
     }
     girarEje(P, eje0);
     separar(P);
-    for (const F of P.f) pared(P, F, limitar(P, F));
-    if (libre) for (let i = 0; i < 2; i++) golpes(P, P.f[i], P.f[1 - i]);
+    for (const F of P.f) {
+        const b = chocarBarril(P, F), muro = limitar(P, F);
+        if (pared(P, F, muro || b >= 0) && b >= 0 && !muro) romperBarril(P, F, b);
+    }
+    // Quién golpea primero en un cuadro se alterna (L6a): si los dos conectan a la vez, ninguno tiene ventaja por su lado
+    if (libre) for (let j = 0; j < 2; j++) { const i = (j + P.cuadros) % 2; golpes(P, P.f[i], P.f[1 - i]); }
     for (const F of P.f) temblar(F);
     if (P.muneco && libre) munecoPaso(P, P.f[1]);
-    if (libre) for (const F of P.f) postura(F);
+    if (libre) for (const F of P.f) { postura(F); if (F.zonas) Z.pasoZonas(F.zonas); }
     for (const F of P.f) animarF(P, F, P.f[1 - F.i]);
     // Reloj y rondas
     P.c++;
@@ -233,6 +254,7 @@ function terminarRonda(P, como, ganador) {
 }
 
 // ---------- Movimiento en el eje (§19.5) ----------
+const REPARTO = 0.3; // fracción del empuje que se recorre en cada cuadro
 // p.mov = [adelante, lado] en bloques; lado + = hacia el fondo de la pantalla, que para los dos es su izquierda
 // (los dos se miran y la cámara está del lado de f[0]), así que no depende de quién es quién.
 function mover(P, F, O) {
@@ -240,7 +262,7 @@ function mover(P, F, O) {
     let dx = a * s + l * c, dz = a * c - l * s;
     // Empuje de un golpe recibido: se reparte en unos cuadros, hacia atrás en el eje
     if (Math.abs(F.empuje) > 1e-4) {
-        const k = F.empuje * 0.3; F.empuje -= k; // (negativo = rebote de la pared, hacia el rival)
+        const k = F.empuje * REPARTO; F.empuje -= k; // (negativo = rebote de la pared, hacia el rival)
         const ux = F.x - O.x, uz = F.z - O.z, d = Math.hypot(ux, uz) || 1;
         dx += ux / d * k; dz += uz / d * k;
     }
@@ -291,13 +313,54 @@ function limitar(P, F) {
 // Empujado contra la pared con fuerza (combate.json → elegir.pared): choca de espalda, hitstop extra y rebota
 function pared(P, F, choco) {
     const Q = (COMBATE.elegir || {}).pared || {};
-    if (!choco || !(F.empuje >= (Q.empuje ?? Infinity)) || !F.p.def || F.p.def.tipo !== 'reaccion') return;
+    if (!(F.empuje > 1e-3)) F.aPared = false;
+    if (!choco || !(F.empuje >= (Q.empuje ?? Infinity) || F.aPared) || !F.p.def || F.p.def.tipo !== 'reaccion') return false;
     const k = Q.reaccion || 'pared';
-    if (F.p.clave === k || !accionDe(F.p.estilo, k)) return;
+    if (F.p.clave === k || !accionDe(F.p.estilo, k)) return false;
     E.reaccionar(F.p, k);
     if (Q.hitstop) E.congelar(F.p, Q.hitstop);
-    F.empuje = -(Q.rebote || 0);
+    F.empuje = -(Q.rebote || 0); F.aPared = false;
     P.eventos.push({ tipo: 'pared', i: F.i, trauma: W.pesoDe('fuerte').trauma || 0 });
+    return true;
+}
+// Barriles (L6a): son sólidos (el peleador no los atraviesa); devuelve el que tocó (o -1)
+function chocarBarril(P, F) {
+    const B = P.R.escenario.barril || {}, r = (B.radio || 0) + P.R.movimiento.radio;
+    let toco = -1;
+    P.barriles.forEach((b, n) => {
+        if (b.roto) return;
+        const dx = F.x - b.x, dz = F.z - b.z, d = Math.hypot(dx, dz);
+        if (d >= r) return;
+        const ux = d > 1e-6 ? dx / d : 1, uz = d > 1e-6 ? dz / d : 0;
+        F.x = b.x + ux * r; F.z = b.z + uz * r; toco = n;
+    });
+    return toco;
+}
+// Rebotó contra un barril: se rompe (si escenario.barril.rompe) y le hace su daño
+function romperBarril(P, F, n) {
+    const B = P.R.escenario.barril || {}, b = P.barriles[n];
+    if (!b || !B.rompe) return;
+    b.roto = true;
+    F.vida = Math.max(P.muneco && F.i === 1 ? 1 : 0, F.vida - (B.dano || 0));
+    P.eventos.push({ tipo: 'barril', n, x: b.x, z: b.z, i: F.i });
+}
+// Bloques libres detrás de (x, z) en la dirección (ux, uz) hasta la pared o un barril entero (Infinity si nada)
+export function distanciaObstaculo(P, x, z, ux, uz) {
+    const e = P.R.escenario, r = P.R.movimiento.radio, mx = e.largo / 2 - r, mz = e.ancho / 2 - r;
+    let t = Infinity;
+    if (ux > 1e-6) t = Math.min(t, (mx - x) / ux); else if (ux < -1e-6) t = Math.min(t, (-mx - x) / ux);
+    if (uz > 1e-6) t = Math.min(t, (mz - z) / uz); else if (uz < -1e-6) t = Math.min(t, (-mz - z) / uz);
+    const rb = ((e.barril && e.barril.radio) || 0) + r;
+    for (const b of P.barriles) {
+        if (b.roto) continue;
+        // Rayo contra el círculo del barril
+        const bx = b.x - x, bz = b.z - z, proy = bx * ux + bz * uz;
+        if (proy <= 0) continue;
+        const h2 = bx * bx + bz * bz - proy * proy;
+        if (h2 > rb * rb) continue;
+        t = Math.min(t, proy - Math.sqrt(rb * rb - h2));
+    }
+    return Math.max(0, t);
 }
 // Temblor del hitstop: mientras está congelado el que recibió el golpe, ±amplitud en el eje del golpe
 function temblar(F) {
@@ -364,8 +427,12 @@ function pareja(P, F, O, d, tipo) {
     if (!O || E.TERMINALES.has(O.p.estado)) return;
     if ((q.cuando || 'activo') === tipo && q.rival && accionDe(O.p.estilo, q.rival)) { E.iniciar(O.p, q.rival); O.p.espejo = false; }
     if (tipo !== 'activo') return;
-    const dano = q.dano || 0;
+    let dano = q.dano || 0;
+    // Con zonas (L6a): la pareja suma a la zona de su altura (o a las de q.zona) y el daño lleva su multiplicador
+    const reparto = O.zon && dano > 0 ? Z.repartir(O.zon, { altura: d.altura, dano, zona: q.zona }) : null;
+    if (reparto) dano *= Z.multiplicador(O.zon, O.zonas, reparto);
     O.vida = Math.max(P.muneco && O.i === 1 ? 1 : 0, O.vida - dano);
+    if (reparto) for (const k of Z.sumar(O.zon, O.zonas, reparto)) critico(P, O, k);
     if (q.postura) subir(P, O, q.postura);
     if (q.hitstop) { E.congelar(F.p, q.hitstop); E.congelar(O.p, q.hitstop); }
     W.soltarAcumulador(O.acc); O.calma = 0; O.post.calma = 0;
@@ -395,6 +462,8 @@ function golpes(P, F, O) {
     if (!accionDe(O.p.estilo, reaccion)) reaccion = def.reaccion && accionDe(O.p.estilo, def.reaccion) ? def.reaccion : 'alto_leve';
     const espejo = W.ladoDe(def) < 0;
     const golpe = { reaccion, altura: def.altura, peligro: def.peligro, rompeGuardia: !!def.rompeGuardia };
+    // Mareado (la cabeza en crítico): el primer golpe que lo saca hace × remate
+    const mareado = !!(O.zon && O.p.clave === O.zon.critico.cabeza.reaccion);
     // El desvío se mide con la ventana del toque (con el ajuste del peligro) y después manda la tabla de §16.4; en
     // Urban Reign, con la altura (combate/urbano.js)
     const alRecibir = O.alt ? defensaAltura(O) : (q, g, r) => G.responder(O.pel, q, g, S.clasificar(O.post, q, r, G.ajusteVentana(O.pel, g)));
@@ -403,10 +472,16 @@ function golpes(P, F, O) {
     else if (resultado !== 'armadura') W.soltarAcumulador(O.acc);
     const peso = COMBATE.peso || {}, pg = peso[def.hitstop] || peso[P.R.golpe.hitstop] || {};
     const carga = 1 + (def.carga ? (def.carga.extra || 0) * E.cargaDe(p) : 0);
-    let dano = 0, hit = pg.hitstop || 0;
+    let dano = 0, hit = pg.hitstop || 0, reparto = null;
     if (resultado === 'golpeado' || resultado === 'armadura') {
-        dano = (def.dano || 0) * carga * (golpe.errada ? O.alt.errada : 1); E.conecto(p);
-        if (resultado === 'golpeado') O.empuje += def.empuje != null ? def.empuje : pg.empuje || 0;
+        // La altura errada multiplica el daño, o (erradaEn: 'zona', si tiene zonas) lo que suma a la zona
+        const enZona = !!(golpe.errada && O.zon && O.alt.erradaEn === 'zona');
+        dano = (def.dano || 0) * carga * (golpe.errada && !enZona ? O.alt.errada : 1); E.conecto(p);
+        if (O.zon) {
+            reparto = Z.repartir(O.zon, def, carga * (enZona ? O.alt.errada : 1));
+            dano *= Z.multiplicador(O.zon, O.zonas, reparto) * (mareado && resultado === 'golpeado' ? O.zon.critico.cabeza.remate : 1);
+        }
+        if (resultado === 'golpeado') { O.empuje += def.empuje != null ? def.empuje : pg.empuje || 0; reboteHacia(P, F, O, def); }
     } else if (resultado === 'bloqueado') {
         dano = (def.dano || 0) * (RO.bloqueoDano ?? P.R.golpe.bloqueoDano);
         E.reaccionar(p, 'bloqueado'); O.empuje += (pg.empuje || 0) * 0.5;
@@ -433,6 +508,7 @@ function golpes(P, F, O) {
         O.tiembla = { c: 0, eje: [ux / dd, uz / dd] };
     }
     O.vida = Math.max(0, O.vida - dano);
+    const criticos = reparto ? Z.sumar(O.zon, O.zonas, reparto) : [];
     // Postura: lo que dice la tabla del que recibe para este resultado (la armadura del desequilibrado no suma).
     // posturaFija (pisotón, arte) se suma al rival aunque la bloquee; posturaPropia se suma (o resta) al que ataca.
     const T = RO.tabla[resultado], base = (def.postura || 0) * carga, conecta = resultado !== 'esquivado' && resultado !== 'sinEfecto';
@@ -450,8 +526,28 @@ function golpes(P, F, O) {
     const material = resultado === 'golpeado' || resultado === 'armadura' ? 'carne' : def.material || 'metal';
     P.eventos.push({
         tipo: 'golpe', de: F.i, a: O.i, resultado: golpe.urbano === 'reversion' ? 'reversion' : resultado, dano, clave: p.clave, altura: def.altura, carga: E.cargaDe(p), fuerza: dano / Math.max(1, O.vidaMax),
-        nivel: W.nivelDe(def, resultado), reaccion: resultado === 'golpeado' ? O.p.clave : null, material, eje: O.tiembla ? O.tiembla.eje : null, errada: !!golpe.errada
+        nivel: W.nivelDe(def, resultado), reaccion: resultado === 'golpeado' ? O.p.clave : null, material, eje: O.tiembla ? O.tiembla.eje : null, errada: !!golpe.errada,
+        zonas: reparto
     });
+    for (const k of criticos) critico(P, O, k);
+}
+// Zona en crítico (§17.6): la cabeza marea, el torso recibe más (lo cuenta zonas.js) y las piernas cojean
+function critico(P, O, k) {
+    const C = O.zon.critico;
+    if (k === 'cabeza' && O.vida > 0 && accionDe(O.p.estilo, C.cabeza.reaccion)) { E.reaccionar(O.p, C.cabeza.reaccion); O.empuje = 0; O.aPared = false; }
+    if (k === 'piernas') O.p.ritmo = Z.velocidad(O.zon, O.zonas);
+    P.eventos.push({ tipo: 'critico', i: O.i, zona: k });
+}
+// Rebote en la pared (§17.8): con el rival a menos de rebote.distancia de la pared (o de un barril) detrás de él, el
+// golpe lo lleva hasta ahí; pared() lo hace rebotar al tocarla aunque le quede poco empuje
+function reboteHacia(P, F, O, def) {
+    const Rb = P.R.rebote;
+    if (!Rb || !(Rb.alturas || []).includes(def.altura || 'medio')) return;
+    const ux = O.x - F.x, uz = O.z - F.z, d = Math.hypot(ux, uz) || 1;
+    const t = distanciaObstaculo(P, O.x, O.z, ux / d, uz / d);
+    if (t > Rb.distancia) return;
+    // (el empuje se recorre de a REPARTO por cuadro: así llega en unos 5 cuadros; lo que sobra lo frena la pared)
+    O.empuje = Math.max(O.empuje, (t + (Rb.extra || 0)) / (1 - (1 - REPARTO) ** 5)); O.aPared = true;
 }
 // reglas.alRecibir de Urban Reign: la altura decide (urbano.clasificar) y la tabla de §16.4 del que recibe dice si ese
 // peligro se puede desviar. Marca en el golpe golpe.urbano (desviado o reversion) y golpe.errada.
@@ -482,6 +578,7 @@ function postura(F) {
 
 // ---------- Animación ----------
 function animarF(P, F, O) {
+    if (P.sinAnimar) return;
     const mirada = O ? angulo(Math.atan2(O.x - F.x, O.z - F.z) - F.yaw) : 0;
     const o = A.animar(F.an, F.p, { t: P.cuadros / HZ(), raiz: { x: F.x, z: F.z, yaw: F.yaw }, mirada });
     const ant = F.poseAnt; F.poseAnt = F.pose; F.pose = ant;

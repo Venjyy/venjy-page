@@ -255,6 +255,9 @@
     "golpeFinal": { "es": "¡Golpe final!", "en": "Final strike!" },
     "mikiri": { "es": "¡Mikiri!", "en": "Mikiri!" },
     "botonPatada": { "es": "PATADA", "en": "KICK" },
-    "botonArte": { "es": "ARTE", "en": "ART" }
+    "botonArte": { "es": "ARTE", "en": "ART" },
+    "criticoCabeza": { "es": "¡Mareado!", "en": "Dazed!" },
+    "criticoTorso": { "es": "¡Costillas rotas!", "en": "Cracked ribs!" },
+    "criticoPiernas": { "es": "¡Cojea!", "en": "Limping!" }
   }
 }

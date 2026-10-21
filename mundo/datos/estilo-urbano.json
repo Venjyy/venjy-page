@@ -9,6 +9,19 @@
     "esquivar": { "medio": "esquiva_neutra", "alto": "paso_lateral_alto", "bajo": "paso_lateral_bajo" },
     "saltar": "salto"
   },
+  "zonas": {
+    "nota": "L6a (§17.6): cabeza, torso y piernas de 0 a 100. Cada golpe suma a la zona de su altura (daño × porDano si el ataque no trae zona; × errada si leíste mal la altura) y la vida pierde daño × 1 / 1,25 / 1,5 según el color de esa zona. Al tope, una vez por ronda: cabeza = mareo de 120 c (aturdido; el primer golpe que lo saca × remate), torso = todo el daño × 1,75 durante 300 c, piernas = paso × 0,6 y cojera hasta el final de la ronda. Vuelven a 0 en cada ronda.",
+    "tope": 100,
+    "porAltura": { "alto": "cabeza", "medio": "torso", "bajo": "piernas" },
+    "porDano": 2,
+    "niveles": { "amarillo": 40, "rojo": 75 },
+    "multiplicador": { "verde": 1, "amarillo": 1.25, "rojo": 1.5 },
+    "critico": {
+      "cabeza": { "reaccion": "aturdido", "remate": 1.5 },
+      "torso": { "dano": 1.75, "cuadros": 300 },
+      "piernas": { "velocidad": 0.6 }
+    }
+  },
   "avisos": {
     "nota": "§17.3: cada golpe muestra su altura en la anticipación con una marca en la mano o el pie que golpea (ataques.<x>.golpea): blanca el alto, amarilla el medio y azul el bajo. activo: false la apaga (para expertos).",
     "altura": {
@@ -19,7 +32,24 @@
     }
   },
   "guardia": { "anim": "guardia", "respiracion": "respira" },
-  "paso": { "anim": "paso", "velocidad": 1.5, "umbral": 0.1, "cuadros": 7, "altura": 0.05, "adelanto": 0.5 },
+  "paso": {
+    "anim": "paso",
+    "velocidad": 1.5,
+    "umbral": 0.1,
+    "cuadros": 7,
+    "altura": 0.05,
+    "adelanto": 0.5,
+    "nota": "L6a: paso de boxeo (modo arrastre). Al caminar guía el pie del lado hacia donde va (W el de adelante, S el de atrás, de lado el de ese lado) y el otro lo sigue a ras del suelo; los dos vuelven a su lugar de la guardia, así la base no cambia y no se cruzan. arrastre: [el que guía, el que arrastra]. cojera: la caminata con las piernas en crítico (combate.json → cojera; un ciclo cada largo bloques; la pierna rota da su paso lento veces más largo).",
+    "modo": "arrastre",
+    "arrastre": {
+      "umbral": 0.12,
+      "cuadros": [8, 7],
+      "altura": [0.035, 0.008],
+      "adelanto": [0.6, 0.2],
+      "espera": 0.3
+    },
+    "cojera": { "accion": "cojera", "largo": 0.7, "pierna": "D", "lento": 1.6, "alzar": 0.3 }
+  },
   "reglas": {
     "nota": "Urban Reign no bloquea ni tiene postura (sinPostura): sufre por vida (las zonas llegan en L6). altura: ventanas del desvío por altura (cuadros desde que empieza la defensa; +tactil en el celular), daño × errada si la altura no era, contraataque por altura y reversión. tabla: la postura que suma el atacante (Sekiro) cuando lo desvían. peligro: Urban Reign desvía el barrido (bajo) y la estocada (media); el agarre se esquiva o se salta (el escape por altura llega en L6) y el arte especial no se desvía.",
     "altura": {
@@ -28,6 +58,7 @@
       "reversion": 3,
       "tactil": 2,
       "errada": 1.3,
+      "erradaEn": "zona",
       "contra": { "alto": "contra_alto", "medio": "contra_medio", "bajo": "contra_bajo" },
       "reversionAccion": "reversion",
       "imparable": ["imparable"],
@@ -522,12 +553,12 @@
   "anim": {
     "guardia": {
       "reloj": "t",
-      "nota": "U1 · guardia callejera: puño derecho junto al mentón, izquierdo adelante a la altura de la cara; hombro izquierdo adelante, pecho encorvado, mentón abajo, rodillas sueltas y pies abiertos. El rebote está en respira.",
+      "nota": "U1 · guardia callejera: puño derecho junto al mentón, izquierdo adelante a la altura de la cara; hombro izquierdo adelante, pecho encorvado, mentón abajo, rodillas sueltas y pies abiertos. El rebote está en respira. L6a: rodillas a 0,8 (adelante) y 1,0 (atrás) (antes 0,4-0,5, justo en motor.pies.rodillaMin: la pierna se daba por estirada y los pies daban pasos sin parar estando quieto); pie izquierdo adelante, los dos a la misma altura.",
       "canales": {
-        "pDx": 0.15,
-        "rodD": 0.5,
-        "pIx": -0.3,
-        "rodI": 0.4,
+        "pDx": -0.2,
+        "rodD": 1,
+        "pIx": -0.45,
+        "rodI": 0.8,
         "pDz": 0.12,
         "pIz": 0.12,
         "ry": -0.35,
@@ -546,50 +577,51 @@
     },
     "respira": {
       "reloj": "t",
-      "nota": "U1 · rebote de boxeo (2,2 por segundo): sube y baja sobre la punta de los pies, el pecho se balancea desfasado y los puños dibujan círculos chicos.",
+      "nota": "U1 · rebote de boxeo (1,4 por segundo; era 2,2 y se veía apurado): sube y baja sobre la punta de los pies, el pecho se balancea desfasado y los puños dibujan círculos chicos. L6a: el rebote baja desde la guardia (base −amp) y vuelve; si sube, estira las piernas.",
       "canales": {
         "y": {
           "osc": [
-            { "forma": "abs", "amp": 0.03, "frec": 6.91 }
-          ]
+            { "forma": "abs", "amp": 0.03, "frec": 4.4 }
+          ],
+          "base": -0.03
         },
         "pZ": {
           "osc": [
-            { "forma": "sin", "amp": 0.04, "frec": 3.45, "fase": 1.2 }
+            { "forma": "sin", "amp": 0.04, "frec": 2.2, "fase": 1.2 }
           ]
         },
         "bDx": {
           "osc": [
-            { "forma": "sin", "amp": 0.05, "frec": 6.91, "fase": 0.5 }
+            { "forma": "sin", "amp": 0.05, "frec": 4.4, "fase": 0.5 }
           ]
         },
         "bIx": {
           "osc": [
-            { "forma": "sin", "amp": 0.05, "frec": 6.91, "fase": 2.1 }
+            { "forma": "sin", "amp": 0.05, "frec": 4.4, "fase": 2.1 }
           ]
         }
       }
     },
     "paso": {
       "reloj": "t",
-      "nota": "U2 · desplazamiento de boxeo: pasos cortos que no dejan de rebotar; los puños se quedan en guardia. t = bloques recorridos (frec en rad por bloque).",
+      "nota": "U2 · desplazamiento de boxeo: pasos de boxeo (arrastre) con un rebote por cada paso; los puños se quedan en guardia. t = bloques recorridos (frec en rad por bloque).",
       "canales": {
         "ry": {
           "base": -0.35,
           "osc": [
-            { "forma": "sin", "amp": 0.04, "frec": 15.7 }
+            { "forma": "sin", "amp": 0.04, "frec": 6.5 }
           ]
         },
         "pX": {
           "base": 0.27,
           "osc": [
-            { "forma": "abs", "amp": 0.02, "frec": 15.7 }
+            { "forma": "abs", "amp": 0.02, "frec": 6.5 }
           ]
         },
         "y": {
-          "base": -0.02,
+          "base": -0.08,
           "osc": [
-            { "forma": "abs", "amp": 0.04, "frec": 15.7 }
+            { "forma": "abs", "amp": 0.04, "frec": 6.5 }
           ]
         }
       }

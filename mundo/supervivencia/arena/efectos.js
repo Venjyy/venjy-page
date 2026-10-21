@@ -30,8 +30,8 @@ export const EFECTOS = {
     impacto: { destello: 0.05, tamano: 0.3, color: '#ffffff' },
     polvo: {
         vida: 0.55, velocidad: 1.3, gravedad: 2.2, tamano: 0.07,
-        cuantos: { impacto: 8, caida: 16, esquiva: 6, pared: 10 },
-        colores: { nieve: ['#ffffff', '#e8f0fa', '#c8d8ec'], hielo: ['#d8eefa', '#a8d4f0', '#ffffff'], tierra: ['#8a6a48', '#6a4e34', '#a88a64'] }
+        cuantos: { impacto: 8, caida: 16, esquiva: 6, pared: 10, barril: 14 },
+        colores: { nieve: ['#ffffff', '#e8f0fa', '#c8d8ec'], hielo: ['#d8eefa', '#a8d4f0', '#ffffff'], tierra: ['#8a6a48', '#6a4e34', '#a88a64'], madera: ['#9a6a3a', '#6e4824', '#c08a50', '#3a3a3a'] }
     },
     aro: { vida: 0.22, radio: 0.7, cubos: 14, tamano: 0.05, color: '#ffffff', niveles: ['medio', 'fuerte', 'perfecto', 'remate'] },
     estrellas: { color: '#ffff55', cuantas: 3, radio: 0.28, alto: 0.32, vueltas: 0.8, tamano: 0.07 },
