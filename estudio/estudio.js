@@ -4,7 +4,7 @@
 // Fase 5: Escenas. Fase 6: Poses. Píxeles: íconos, arte de cartas y borradores (§20). Inicio: menú de la supervivencia (§21).
 // Formas: cajas de losas, escalones, vallas… (§22).
 // Carrera: la carrera de gatas de la Gatera (7h-1). Música: temas y sintetizadores de musica.json (§24).
-// Salonas: ajustes, reglas y textos de La Gira, salonas.json (S9).
+// Salonas: ajustes, reglas y textos de La Gira, salonas.json (S9). Ritmo: su partitura en línea de tiempo y ajustes a mano (S10a).
 // Vida: cómo caminan los amigos al dejar su sitio y sus visitas por horario, navegacion.json y rutinas.json (6d etapa 2, §25).
 // =========================================================
 import { montarLayout } from './layout.js';
@@ -21,6 +21,7 @@ import { montarFormas } from './formas.js';
 import { montarCarrera } from './carrera.js';
 import { montarArena } from './arena.js';
 import { montarSalonas } from './salonas.js';
+import { montarRitmo } from './ritmo.js';
 import { montarMusica } from './musica.js';
 import { montarVida } from './vida.js';
 import { crearCliente } from './puente-cliente.js';
@@ -90,6 +91,7 @@ await montarFormas(ctx);
 await montarCarrera(ctx);
 await montarArena(ctx);
 await montarSalonas(ctx);
+await montarRitmo(ctx);
 await montarMusica(ctx);
 await montarVida(ctx);
 
@@ -110,6 +112,9 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         document.getElementById('panel-carrera').hidden = ctx.pestana !== 'carrera';
         document.getElementById('panel-arena').hidden = ctx.pestana !== 'arena';
         document.getElementById('panel-salonas').hidden = ctx.pestana !== 'salonas';
+        document.getElementById('panel-ritmo').hidden = ctx.pestana !== 'ritmo';
+        document.getElementById('ri-zona').hidden = ctx.pestana !== 'ritmo';
+        document.getElementById('seccion-juego').classList.toggle('modo-ritmo', ctx.pestana === 'ritmo');
         document.getElementById('ca-zona').hidden = ctx.pestana !== 'carrera';
         document.getElementById('seccion-juego').classList.toggle('modo-carrera', ctx.pestana === 'carrera');
         document.getElementById('panel-escenas').hidden = ctx.pestana !== 'escenas';

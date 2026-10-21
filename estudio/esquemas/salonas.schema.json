@@ -10,11 +10,24 @@
     "nota": { "$ref": "comun.schema.json#/$defs/nota" },
     "juego": { "$ref": "#/$defs/ajustes" },
     "reglas": { "$ref": "#/$defs/ajustes" },
-    "textos": { "$ref": "#/$defs/textos" }
+    "textos": { "$ref": "#/$defs/textos" },
+    "ajustes": { "$ref": "#/$defs/ajustesMano" }
   },
   "required": ["version", "juego", "reglas", "textos"],
   "additionalProperties": false,
   "$defs": {
+    "ajustesMano": {
+      "description": "Ajustes a mano de la partitura (pestaña Ritmo): canción → dificultad → «compás:paso» → carril (0 a 3) o null para quitar la nota. Nunca cambian cuándo suena una nota.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[0-9]+:[0-9]+$" },
+          "additionalProperties": { "type": ["integer", "null"], "minimum": 0, "maximum": 3 }
+        }
+      }
+    },
     "ajustes": { "type": "object", "additionalProperties": { "$ref": "#/$defs/valor" } },
     "valor": {
       "anyOf": [
