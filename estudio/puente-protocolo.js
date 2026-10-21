@@ -12,7 +12,8 @@ export const DATOS_VIVOS = ['ui-layout', 'textos', 'dialogos', 'posiciones', 'es
 export const MODOS_GIZMO = ['mover', 'girar'];
 export const ACCIONES_ESCENA = ['jugar', 'pausa', 'ir', 'parar', 'puntero'];
 // Canales de una pose (fase 6b: mensaje `pose`); los mismos del esquema de poses.json
-export const CANALES_POSE = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'salto', 'pz'];
+export const CANALES_POSE = ['cx', 'cy', 'cz', 'bDx', 'bDz', 'bIx', 'bIz', 'pDx', 'pIx', 'inc', 'rz', 'y', 'salto', 'pz',
+    'bDy', 'bIy', 'ry', 'codoD', 'codoI', 'rodD', 'rodI', 'pX', 'pY', 'pZ', 'pDz', 'pIz', 'armaX', 'armaZ'];
 
 const MAX_GLOBO = 400;
 const NOMBRE_DESTINO = /^[a-z0-9áéíóúüñ][a-z0-9áéíóúüñ _-]{0,40}$/i;

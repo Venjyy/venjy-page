@@ -909,7 +909,7 @@ puro y su prueba.
 - **Pestaña Poses** en `/estudio/` (comparte el iframe de Juego, como Posiciones y Escenas): lista de poses y gestos de
   `poses.json` más los de `GESTOS` / `GESTOS_AMISTAD` que no están («en código», como Escenas: editar uno lo copia al JSON solo
   si cabe en el esquema; los que no caben —composiciones, condiciones— se muestran sin editar).
-- **Sliders por canal** con los rangos de `rig.md` (los 14 canales del esquema), **curva por canal** con claves que se arrastran
+- **Sliders por canal** con los rangos de `rig.md` (los 14 canales del esquema; desde N2, 28: suman codos, rodillas, pecho, apertura de piernas, giro del brazo y muñeca del arma, con su límite duro de `limites.js` como rango; casilla de suelo automático y medida de pie en la vista), **curva por canal** con claves que se arrastran
   (reloj, `interp`) y **osciladores** (forma, amplitud, frecuencia, fase, `env`); variantes `sentado` y `jugador` en pestañas.
 - **Vista**: frente, 3/4 y lado con una persona de cajas en un canvas propio (como `posar.html`), sin esperar al juego; y en el
   juego, el mensaje nuevo `pose { clave, canales }` (pone esos canales en una persona, quieta) y `datos` → `poses` + `escena`
