@@ -28,6 +28,7 @@ const t = (es, en) => ({ es, en });
 export const TXT_SALONAS = {
     titulo: t('Ensayo con Salonas', 'Rehearsal with Salonas'),
     dificultad: t('Dificultad', 'Difficulty'),
+    cancion: t('Canción', 'Song'),
     niveles: { facil: t('Fácil', 'Easy'), normal: t('Normal', 'Normal'), dificil: t('Difícil', 'Hard'), experto: t('Experto', 'Expert') },
     tocar: t('¡A tocar! (Enter)', 'Play! (Enter)'),
     salir: t('Salir (Esc)', 'Leave (Esc)'),
@@ -37,7 +38,7 @@ export const TXT_SALONAS = {
     calCuenta: t('Toques: {x} de {n}', 'Taps: {x} of {n}'),
     calLista: t('Listo: {x} ms', 'Done: {x} ms'),
     calFalta: t('Faltaron toques. Prueba otra vez.', 'Not enough taps. Try again.'),
-    sinCancion: t('La canción de prueba no está lista.', 'The test song is not ready.'),
+    sinCancion: t('Esa canción no está lista.', 'That song is not ready.'),
     ayuda: t('D F J K tocan los trastes · mantén la tecla en las notas largas · los acordes van juntos · Esc pausa', 'D F J K play the frets · hold the key on long notes · chords go together · Esc pauses'),
     ayudaTactil: t('Toca los trastes de abajo · mantén en las notas largas · los acordes van juntos', 'Tap the frets below · hold on long notes · chords go together'),
     pausa: t('Pausa', 'Paused'),
@@ -147,7 +148,7 @@ export function crearSalonas(ctx) {
     // ---------- Estado ----------
     // c = { fase: 'menu'|'calibra'|'juega'|'pausa'|'cuenta'|'final', A, R, dif, cancion, part, hechas, falladas,
     //       mantiene: Map(idx → último segundo sumado), soltadas, pend: [{ k, hasta }], pts, rep, repBajo, ... }
-    let c = null, dificultad = null, calibracion = 0;
+    let c = null, dificultad = null, cancionElegida = null, calibracion = 0;
     const almacen = () => { try { return window.localStorage; } catch (e) { return null; } };
     const apretadas = new Set(), brillo = [0, 0, 0, 0];
 
@@ -231,6 +232,7 @@ export function crearSalonas(ctx) {
             else if (e.code === 'Escape') { e.preventDefault(); cerrar(); }
             else if (e.code === 'KeyC') { e.preventDefault(); calibrar(); }
             else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); moverDif(e.code === 'ArrowRight' ? 1 : -1); }
+            else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { e.preventDefault(); moverCancion(e.code === 'ArrowDown' ? 1 : -1); }
             if (e.target && e.target.tagName === 'INPUT') return;
             e.stopPropagation(); return;
         }
@@ -255,6 +257,7 @@ export function crearSalonas(ctx) {
         const A = ajustes();
         prepararEscena(A);
         dificultad = dificultad || A.dificultad;
+        if (!A.canciones.includes(cancionElegida)) cancionElegida = A.canciones.includes(A.cancion) ? A.cancion : A.canciones[0] || A.cancion;
         calibracion = Z.leerCalibracion(almacen(), A.calibracion.rango);
         c = { fase: 'menu', A, R: reglas(), tactil: !!(ctx.tactil && ctx.tactil()) };
         ctx.bloquear();
@@ -274,12 +277,21 @@ export function crearSalonas(ctx) {
         for (const e of letrasEl) mostrar(e, v && c && !c.tactil);
     }
     function moverDif(d) { const i = P.DIFICULTADES.indexOf(dificultad); dificultad = P.DIFICULTADES[(i + d + P.DIFICULTADES.length) % P.DIFICULTADES.length]; pintarMenu(); }
+    function moverCancion(d) {
+        const l = c.A.canciones, i = l.indexOf(cancionElegida);
+        if (l.length) { cancionElegida = l[(i + d + l.length) % l.length]; pintarMenu(); }
+    }
     function pintarMenu(nota = '') {
         panel(menuEl);
         menuEl.textContent = '';
-        const cancion = cancionDe(c.A.cancion);
+        const cancion = cancionDe(cancionElegida);
         el('', menuEl, 'h2').textContent = tx(TXT_SALONAS.titulo);
-        if (cancion) el('', menuEl, 'p').textContent = tx(cancion.nombre) || c.A.cancion;
+        el('', menuEl, 'p').textContent = tx(TXT_SALONAS.cancion);
+        const filaC = el('sl-fila', menuEl);
+        for (const k of c.A.canciones) {
+            const x = cancionDe(k);
+            if (x) boton(filaC, tx(x.nombre) || k, () => { cancionElegida = k; pintarMenu(); }, k === cancionElegida ? 'boton elegido' : 'boton');
+        }
         el('', menuEl, 'p').textContent = tx(TXT_SALONAS.dificultad);
         const fila = el('sl-fila', menuEl);
         for (const d of P.DIFICULTADES) boton(fila, tx(TXT_SALONAS.niveles[d]), () => { dificultad = d; pintarMenu(); }, d === dificultad ? 'boton elegido' : 'boton');
@@ -345,7 +357,7 @@ export function crearSalonas(ctx) {
     // ---------- Canción ----------
     function tocar() {
         if (!c || !au) return;
-        const A = ajustes(), R = reglas(), cancion = cancionDe(A.cancion);
+        const A = ajustes(), R = reglas(), cancion = cancionDe(cancionElegida);
         if (!cancion) { pintarMenu(tx(TXT_SALONAS.sinCancion)); return; }
         prepararEscena(A);
         if (c.rep) { c.rep.parar(); c.repBajo.parar(); }

@@ -263,7 +263,39 @@ bloque('reloj', () => {
     const a = Z.ajustesDe({ carriles: { velocidad: 12 }, teclas: ['KeyA'] });
     ok(a.carriles.velocidad === 12 && a.carriles.ancho === Z.AJUSTES_SALONAS.carriles.ancho && a.teclas.length === 1 && Z.AJUSTES_SALONAS.teclas.length === 4, 'ajustesDe mezcla sin cambiar la base');
     ok(Z.AJUSTES_SALONAS.teclas.length === 4 && Z.AJUSTES_SALONAS.carriles.colores.length === 4, '4 teclas y 4 colores');
-    ok(MUSICA.canciones && MUSICA.canciones[Z.AJUSTES_SALONAS.cancion], 'la canción de prueba existe en musica.json');
+    ok(MUSICA.canciones && MUSICA.canciones[Z.AJUSTES_SALONAS.cancion], 'la canción marcada existe en musica.json');
+    ok(Z.AJUSTES_SALONAS.canciones.length >= 2 && Z.AJUSTES_SALONAS.canciones.every(k => MUSICA.canciones[k]), 'el menú ofrece canciones que existen');
+});
+
+// S4: canciones 1 y 2 de la sala de ensayo (SALONAS.md §2 y §3b)
+bloque('canciones de la sala de ensayo (S4)', () => {
+    const tempo = { 'sala-ska': [80, 100], 'sala-garage': [110, 130] };
+    for (const [clave, [min, max]] of Object.entries(tempo)) {
+        const c = MUSICA.canciones[clave];
+        ok(c && !c.borrador, `${clave}: existe y no es borrador`);
+        if (!c) continue;
+        ok(c.bpm >= min && c.bpm <= max, `${clave}: ${c.bpm} bpm (entre ${min} y ${max})`);
+        ok(c.nombre && c.nombre.es && c.nombre.en, `${clave}: nombre ES/EN`);
+        const secciones = c.estructura.map(s => s.nivel || s.seccion);
+        ok(['verso', 'precoro', 'coro'].every(s => secciones.includes(s)), `${clave}: verso, precoro y coro`);
+        const avisos = S.revisarPartitura(c);
+        ok(!avisos.length, `${clave}: revisarPartitura sin avisos (${JSON.stringify(avisos)})`);
+        const m = mapaTiempo(c);
+        ok(m.duracion > 90 && m.duracion < 180, `${clave}: dura ${m.duracion.toFixed(0)} s`);
+        // el coro, con más intensidad rítmica que el verso (notas por segundo) desde Normal
+        for (const d of ['normal', 'dificil', 'experto']) {
+            const p = S.partitura(c, d);
+            const ritmo = nivel => { const ss = p.secciones.filter(s => s.nivel === nivel); return p.notas.filter(x => ss.some(s => s.n === x.n)).length / ss.reduce((a, s) => a + s.t1 - s.t0, 0); };
+            ok(ritmo('coro') > ritmo('verso') * 1.15, `${clave} ${d}: coro más intenso que el verso`);
+        }
+        const n = S.DIFICULTADES.map(d => S.partitura(c, d).notas.length);
+        ok(n[0] < n[1] && n[1] < n[2] && n[2] <= n[3], `${clave}: más notas a más dificultad (${n})`);
+        ok([0, 1, 2, 3].every(k => S.partitura(c, 'dificil').notas.some(x => x.carril === k)), `${clave}: Difícil usa los 4 carriles`);
+    }
+    const garage = S.partitura(MUSICA.canciones['sala-garage'], 'experto');
+    ok(garage.notas.filter(x => x.dur > 0).length >= 20, 'rock garage: notas largas en Experto');
+    const ska = S.partitura(MUSICA.canciones['sala-ska'], 'normal');
+    ok(ska.notas.some(x => [2, 6, 10, 14].includes(+x.clave.split(':')[1])), 'ska: notas en el contratiempo desde Normal');
 });
 
 console.log(fallos ? `\n${fallos} fallos` : 'salonas: todo bien');

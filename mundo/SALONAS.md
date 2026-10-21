@@ -74,6 +74,8 @@ En una canción, `prob` es un error de `revisarCancion` y el swing ya viene en e
 `mapaTiempo(c).pasos[x]` = `{ t, n, k, i, s }`, y la nota del bajo del paso es la de la capa `bajo` del nivel de la sección
 en el índice `(k % compases) * pasos + i`.
 
+**Hecho en S4** (2026-10-21): `canciones.sala-ska` (1) y `canciones.sala-garage` (2). Convención para las que siguen: la nota normal del bajo es `t` con su sonido en `vozBajo.tecnicas.t` de la canción; `s` y `p` quedan para los acentos (salen marcadas en la partitura). Una canción admite 24 capas como mucho.
+
 ### 3b. Visión musical del dueño (2026-10-21; guía para S4, S6 y S7)
 
 Banda sonora variada pero coherente: mucho ritmo, grooves llamativos y contraste emocional entre los temas.
