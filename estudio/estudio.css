@@ -593,3 +593,23 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .co-barra.co-ventana { background: #6a4a8a; }
 .co-barra.co-avance, .co-barra.fija { background: #555; cursor: default; }
 .co-barra .txt { cursor: grab; pointer-events: auto; }
+/* Combate (N6b): visor, hoja de cuadros, cabezal y claves de canal */
+#co-curva-zona[hidden] { display: none; }
+.co-vista { cursor: pointer; }
+.co-cuadro { margin: 0; color: var(--amarillo); }
+.co-vistas-rotulos { display: grid; grid-template-columns: repeat(3, 1fr); font-size: 0.7rem; color: var(--gris); text-align: center; margin-top: -6px; }
+.co-hoja { display: flex; gap: 2px; margin: 4px 0; }
+.co-hoja button { flex: 1; min-width: 0; padding: 2px; font: inherit; font-size: 0.7rem; color: var(--blanco); background: #3a2a1c; border: 2px solid #000; cursor: pointer; }
+.co-hoja button.co-anticipacion { border-bottom-color: #8a7a2e; }
+.co-hoja button.co-activo { border-bottom-color: #c84a4a; }
+.co-hoja button.co-recuperacion { border-bottom-color: #3a5a8a; }
+.co-hoja button.actual { background: #6a5a2a; }
+.co-cabezal { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--amarillo); z-index: 4; pointer-events: none; }
+.co-cabezal[hidden] { display: none; }
+.co-fila-clave .es-rotulo { cursor: pointer; padding: 1px 6px; }
+.co-fila-clave.elegida .es-rotulo { color: var(--amarillo); }
+.co-clave { position: absolute; top: 4px; width: 9px; height: 9px; margin-left: -5px; background: #fff; border: 2px solid #000; cursor: ew-resize; touch-action: none; z-index: 2; }
+.co-clave.g { background: #ff8a8a; }
+.co-clave.r { background: #9ab8ff; }
+.co-clave.a { background: #e8d870; }
+.co-clave.elegida { outline: 2px solid var(--amarillo); }

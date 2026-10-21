@@ -126,10 +126,36 @@
                 <iframe id="juego" title="Juego" allow="fullscreen; autoplay"></iframe>
             </div>
             <div id="co-zona" hidden>
+                <div class="fila-botones co-visor-barra">
+                    <button id="co-play" class="boton chico" type="button" data-es="Pausa" data-en="Pause">Pausa</button>
+                    <label><span data-es="Velocidad" data-en="Speed">Velocidad</span>
+                        <select id="co-vel" aria-label="Velocidad">
+                            <option value="1">×1</option><option value="0.5">×0,5</option><option value="0.25">×0,25</option><option value="0.1">×0,1</option>
+                        </select></label>
+                    <span id="co-cuadro" class="mensaje co-cuadro" role="status"></span>
+                </div>
+                <canvas id="co-vista" class="po-vista co-vista" width="960" height="420"></canvas>
+                <div class="co-vistas-rotulos">
+                    <span data-es="Frente (solo el que hace la acción)" data-en="Front (only the one acting)">Frente (solo el que hace la acción)</span>
+                    <span data-es="3/4 (los dos)" data-en="3/4 (both)">3/4 (los dos)</span>
+                    <span data-es="Lado (los dos)" data-en="Side (both)">Lado (los dos)</span>
+                </div>
+                <div id="co-hoja" class="co-hoja" aria-label="Hoja de cuadros"></div>
+                <p class="mensaje" data-es="Arriba, la acción en bucle con el motor del juego; el muñeco de enfrente reacciona como en la pelea. Rojo = punta del arma (o mano o pie que golpea), amarillo = su camino. Abajo, la hoja de cuadros: clic en uno para ir a ese cuadro." data-en="Above, the action looping with the game's engine; the other dummy reacts as in a fight. Red = weapon tip (or hitting hand or foot), yellow = its path. Below, the frame sheet: click one to jump to that frame.">Arriba, la acción en bucle con el motor del juego; el muñeco de enfrente reacciona como en la pelea. Rojo = punta del arma (o mano o pie que golpea), amarillo = su camino. Abajo, la hoja de cuadros: clic en uno para ir a ese cuadro.</p>
                 <div class="fila-botones">
                     <label><span data-es="Zoom" data-en="Zoom">Zoom</span> <input id="co-zoom" type="range" min="4" max="30" step="1" value="12" aria-label="Zoom"></label>
+                    <label class="casilla-marca"><input id="co-ver-claves" type="checkbox"> <span data-es="Claves de la animación (avanzado)" data-en="Animation keys (advanced)">Claves de la animación (avanzado)</span></label>
                 </div>
                 <div id="co-linea"></div>
+                <div id="co-curva-zona" hidden>
+                    <p id="co-curva-titulo" class="mensaje"></p>
+                    <canvas id="co-curva" class="po-curva" width="960" height="180" tabindex="0" aria-label="Curva del canal"></canvas>
+                    <div class="fila-botones">
+                        <label><span data-es="Valor de la clave" data-en="Key value">Valor de la clave</span> <input id="co-valor" type="number" step="0.01" style="width: 6em"></label>
+                        <label><span data-es="Llega con" data-en="Arrives with">Llega con</span> <select id="co-llega" aria-label="Curva de llegada"></select></label>
+                    </div>
+                    <p class="mensaje" data-es="Arrastra un punto (a los lados = cuándo, arriba y abajo = cuánto); queda pegado a su fase. Doble clic agrega una clave, Supr la borra, clic en el fondo mueve el cabezal." data-en="Drag a point (sideways = when, up and down = how much); it stays anchored to its phase. Double-click adds a key, Delete removes it, click the background to move the playhead.">Arrastra un punto (a los lados = cuándo, arriba y abajo = cuánto); queda pegado a su fase. Doble clic agrega una clave, Supr la borra, clic en el fondo mueve el cabezal.</p>
+                </div>
                 <p class="mensaje" data-es="Arrastra el borde derecho de una fase para estirarla: las ventanas y la animación la siguen. Verde = cancelación, celeste = invulnerable, naranja = armadura, gris = avance." data-en="Drag a phase's right edge to stretch it: windows and animation follow. Green = cancel, light blue = invulnerable, orange = armor, grey = forward step.">Arrastra el borde derecho de una fase para estirarla: las ventanas y la animación la siguen. Verde = cancelación, celeste = invulnerable, naranja = armadura, gris = avance.</p>
             </div>
             <div id="ri-zona" hidden>
