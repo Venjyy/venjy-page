@@ -1449,6 +1449,11 @@ Dos etapas; un chat por punto; dentro de cada etapa, de arriba a abajo. **Regla 
 - **Fin de la etapa A: el portafolio queda terminado como juego.** (Cerrada el 2026-10-21 con 7g-1.)
 
 **Etapa B · todo editable en el Estudio** (al final, con todo el contenido ya hecho; el juego no cambia) · **SIGUE** (desde 2026-10-21)
+0b. **Estudio simple** (pedido del dueño, 2026-10-21; va dentro de la Etapa B y se aplica a cada pestaña que se toque): el Estudio funciona, pero tiene demasiadas opciones para alguien sin conocimientos. Cada pestaña gana una **vista simple** por defecto con «Avanzado» para lo fino. Ideas anotadas:
+   - **Música:** elegir un estilo (cumbia, rock, disco, chiptune…) y partir de una **base** lista (ritmo, bajo, acordes, melodía de ejemplo); sliders de «más rápido / más triste / más fuerte» que mueven varios valores a la vez; tonalidad y compás solos.
+   - **Animación (Poses/Escenas/Combate):** personaje **reactivo**: el objeto de la mano sigue a la mano solo (hoy el arma de Sekiro se anima aparte; debe colgar de `munecaD`/`antebrazoD` y moverse con ella); pies que se apoyan solos (suelo automático ya existe desde N2; encenderlo por defecto en la vista simple); brazos y piernas que siguen al tronco; **bases** de pose y de gesto (saludo, golpe, abrazo) para partir y retocar; «copiar al otro lado» (espejo) y «suavizar» en un clic.
+   - **General:** nombres en lenguaje común (no `pDx`, sino «pierna derecha: adelante/atrás»), valores por defecto buenos, deshacer en todo, vista previa siempre visible, plantillas para crear cosas nuevas y avisos que expliquen qué hacer.
+   - Primer paso: B0 · inventario de qué pestañas están más cargadas y qué se puede deducir solo; después una vista simple por pestaña, empezando por Música y Poses.
 0. ~~**N2 · Poses con codo, rodilla y pecho + suelo automático**~~ (hecho 2026-10-21) y **N6 · Pestaña Combate del Estudio** (del bloque 8, decidido 2026-10-21).
 1. Inventario con el CLI: qué sigue en JS, qué cabe en los esquemas y qué no (hoy solo `punos` y `pareja` están en `escenas.json`, y `tienda.json` tiene `lee: null`).
 2. Pasar las escenas y gestos que ya caben (Haiku, con Opus revisando la paridad).
