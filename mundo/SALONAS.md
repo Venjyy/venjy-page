@@ -74,6 +74,31 @@ En una canción, `prob` es un error de `revisarCancion` y el swing ya viene en e
 `mapaTiempo(c).pasos[x]` = `{ t, n, k, i, s }`, y la nota del bajo del paso es la de la capa `bajo` del nivel de la sección
 en el índice `(k % compases) * pasos + i`.
 
+### 3b. Visión musical del dueño (2026-10-21; guía para S4, S6 y S7)
+
+Banda sonora variada pero coherente: mucho ritmo, grooves llamativos y contraste emocional entre los temas.
+Mezcla dos mundos: **funk rock y metal alternativo llevados por el bajo** con **bolero, vals y melancolía
+latinoamericana acústica**.
+
+- **«John The Fisherman» (Primus)**: bajo percusivo, rítmico y dominante (slap, pop y síncopa). Avanza con
+  fuerza y mantiene la tensión entre verso y coro. De su riff principal (4/4, ~115 bpm), tomar la *forma*:
+  dobles cuerdas que suben por semitonos en corcheas, una nota muteada o grave entre los grupos y un remate que
+  sube al final de cada frase de 2 compases. Es la inspiración de los temas de acción.
+- **«Los Continentales» (Macha y El Bloque Depresivo)**: vals melancólico en 6/8, frases que fluyen una en otra,
+  bajo caminante y suave (fundamental y quinta, bajando por grados), nostálgico pero bailable. La progresión de
+  referencia es D — F#m — Em — A/G.
+- **«Jerry Was a Race Car Driver» (Primus)**: el tempo que acelera y la polirritmia del bajo, para los
+  momentos de máxima acción (el tema jefe).
+
+Reglas de composición:
+- Melodías y riffs **100 % originales**: las referencias son de estilo, nunca se copian notas ni frases.
+- El bajo se escucha claro **sin tapar la batería** ni a los otros instrumentos (cuidar `vozBajo.vol`, la
+  octava y el lugar del bombo frente a las notas graves).
+- Cada canción tiene la estructura completa (verso, precoro y coro) y el coro con una **intensidad rítmica**
+  claramente mayor.
+- Pendiente de decidir con el dueño en S4: cómo entran el vals en 6/8 y el bolero en los 6 estilos de §1
+  (por ejemplo, la cumbia o una de las canciones del bar pasa a ser vals melancólico).
+
 ## 4. La partitura sale del bajo (por qué el dueño no puede romperla)
 
 `partitura(cancion, dificultad)` es puro y determinista. Lee la capa `bajo` y arma las notas del juego:
