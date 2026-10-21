@@ -88,5 +88,44 @@ ok(/ctx\.puente\.enviar\('salonas'/.test(ritmoJs) && /accion: 'probar'/.test(rit
 ok(/async salonas\(/.test(leer('estudio', 'puente-juego.js')) && /case 'salonas'/.test(leer('estudio', 'puente-protocolo.js')), 'el puente conoce el mensaje salonas');
 ok(html.includes('id="ri-probar"') && html.includes('id="ri-seccion"') && html.includes('id="ri-parar"'), 'botones de probar en index.html');
 
+// ---------- estructura de la canción (S10c-1) ----------
+{
+    const est = MUSICA.canciones[K].estructura, copia = JSON.stringify(est);
+    ok(iguales(M.nivelesUsados(MUSICA.canciones[K]), [...new Set(est.map(M.nivelDe))]), 'nivelesUsados');
+    const mas = M.agregarSeccion(est, 0, 'puente', 3);
+    ok(mas && mas.length === est.length + 1 && mas[1].seccion === 'puente' && mas[1].compases === 3, 'agregarSeccion inserta tras el índice');
+    ok(M.agregarSeccion(est, 0, 'Puente!') === null, 'agregarSeccion rechaza un nombre inválido');
+    ok(M.quitarSeccion(est, 1).length === est.length - 1 && M.quitarSeccion([{ seccion: 'a', compases: 1 }], 0) === null, 'quitarSeccion nunca deja la canción sin secciones');
+    const mov = M.moverSeccion(est, 0, 1);
+    ok(mov[0].seccion === est[1].seccion && mov[1].seccion === est[0].seccion && M.moverSeccion(est, 0, -1) === null, 'moverSeccion y bordes');
+    ok(M.duplicarSeccion(est, 1)[2].seccion === est[1].seccion, 'duplicarSeccion');
+    ok(M.cambiarSeccion(est, 1, 'compases', '6')[1].compases === 6 && M.cambiarSeccion(est, 1, 'compases', '0') === null && M.cambiarSeccion(est, 1, 'compases', '2.5') === null, 'compases entero entre 1 y 64');
+    ok(M.cambiarSeccion(est, 1, 'bpm', '120')[1].bpm === 120 && !('bpm' in M.cambiarSeccion(M.cambiarSeccion(est, 1, 'bpm', '120'), 1, 'bpm', '')[1]) && M.cambiarSeccion(est, 1, 'bpm', '999') === null, 'bpm de sección: poner, quitar y rango');
+    ok(M.cambiarSeccion(est, 1, 'nivel', 'coro')[1].nivel === 'coro' && !('nivel' in M.cambiarSeccion(est, 1, 'nivel', est[1].seccion)[1]) && M.cambiarSeccion(est, 1, 'nivel', 'No!') === null, 'nivel: poner, volver al nombre y validar');
+    ok(M.cambiarSeccion(est, 99, 'compases', 2) === null && M.cambiarSeccion(est, 1, 'inexistente', 2) === null, 'índice y campo desconocidos');
+    ok(JSON.stringify(est) === copia, 'las funciones de estructura no tocan la original');
+    // la partitura se regenera con la estructura nueva: más compases = más duración
+    const larga = { ...C, estructura: M.cambiarSeccion(est, 1, 'compases', est[1].compases + 4) };
+    ok(M.armar(K, larga, D, R, null).duracion > base.duracion, 'más compases alargan la partitura');
+    const sin = { ...C, estructura: M.quitarSeccion(est, 1) };
+    ok(M.armar(K, sin, D, R, null).secciones.length === est.length - 1, 'quitar una sección quita sus notas');
+    // progresiones
+    const niv = M.nivelDe(est[1]);
+    ok(M.progATexto(M.progDe(C, niv)) === (C.progs[niv] || C.prog).join(' '), 'progDe / progATexto');
+    const r = M.ponerProg(C, niv, 'Am, D  F');
+    ok(r.malo === null && iguales(r.progs[niv], ['Am', 'D', 'F']), 'ponerProg separa por espacios y comas');
+    ok(M.ponerProg(C, niv, 'Am Zz9').malo === 'Zz9', 'ponerProg avisa el acorde desconocido');
+    ok(!(niv in M.ponerProg(C, niv, '').progs), 'ponerProg con texto vacío quita la progresión del nivel');
+}
+
+// ---------- cableado S10c-1 ----------
+{
+    const musicaJs = leer('estudio', 'musica.js');
+    ok(/ctx\.musica\s*=/.test(musicaJs) && /alRehacer/.test(musicaJs) && /revisarCancion/.test(musicaJs), 'musica.js comparte sus datos con Ritmo y revisa las canciones al guardar');
+    const est = leer('estudio', 'estudio.js');
+    ok(est.indexOf('montarMusica(ctx)') < est.indexOf('montarRitmo(ctx)'), 'Música se monta antes que Ritmo');
+    ok(/ctx.musica/.test(ritmoJs) && /pintarEstructura/.test(ritmoJs) && html.includes('id="ri-estructura"') && html.includes('id="ri-deshacer"'), 'Ritmo edita la estructura vía ctx.musica');
+}
+
 console.log(fallos ? `${fallos} fallas` : 'ritmo: todo bien');
 process.exit(fallos ? 1 : 0);

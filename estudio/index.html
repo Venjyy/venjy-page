@@ -448,6 +448,11 @@
                     <p class="mensaje" data-es="La partitura sale sola del bajo de cada canción. Aquí la ves por dificultad, revisas si se puede tocar y, si hace falta, mueves una nota de carril o la quitas (nunca cambia cuándo suena). Va en vivo en el juego. Guardar escribe mundo/datos/salonas.json." data-en="The chart comes straight from each song's bass line. Here you see it per difficulty, check it is playable and, if needed, move a note to another lane or remove it (it never changes when it sounds). It is live in the game. Save writes mundo/datos/salonas.json.">La partitura sale sola del bajo de cada canción. Aquí la ves por dificultad, revisas si se puede tocar y, si hace falta, mueves una nota de carril o la quitas (nunca cambia cuándo suena). Va en vivo en el juego. Guardar escribe mundo/datos/salonas.json.</p>
                 </section>
                 <section class="panel">
+                    <h2 data-es="Canción · estructura" data-en="Song · structure">Canción · estructura</h2>
+                    <p class="mensaje" data-es="Las secciones en orden: agrégalas, muévelas o cámbiales los compases y la progresión de acordes, y la partitura se regenera sola. Cambiar secciones corre los compases, así que los ajustes a mano de más abajo en la canción pueden quedar huérfanos (Revisar partitura los avisa). Guardar escribe también mundo/datos/musica.json." data-en="The sections in order: add them, move them, or change their bars and chord progression, and the chart regenerates by itself. Changing sections shifts the bars, so hand tweaks further down the song may be left orphaned (Review chart warns about them). Save also writes mundo/datos/musica.json.">Las secciones en orden: agrégalas, muévelas o cámbiales los compases y la progresión de acordes, y la partitura se regenera sola. Cambiar secciones corre los compases, así que los ajustes a mano de más abajo en la canción pueden quedar huérfanos (Revisar partitura los avisa). Guardar escribe también mundo/datos/musica.json.</p>
+                    <div id="ri-estructura"></div>
+                </section>
+                <section class="panel">
                     <h2 data-es="Revisión" data-en="Review">Revisión</h2>
                     <ul id="ri-avisos" class="ri-avisos"></ul>
                 </section>
@@ -458,6 +463,7 @@
                 <section class="panel acciones">
                     <div class="fila-botones">
                         <button id="ri-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                        <button id="ri-deshacer" class="boton secundario" type="button" disabled data-es="Deshacer" data-en="Undo">Deshacer</button>
                         <button id="ri-descartar" class="boton secundario" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
                     </div>
                     <p id="ri-mensaje" class="mensaje" role="status"></p>

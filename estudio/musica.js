@@ -8,7 +8,7 @@
 // Lo puro está en musica-modelo.mjs. Guardar escribe con If-Match, como Inicio.
 // =========================================================
 import { I } from '../mundo/supervivencia/musica-instrumentos.js';
-import { crearSecuenciador, tocarSinte, revisarTema, acordeDe, acordeEn, INSTRUMENTOS, BATERIA, TIPOS_CAPA, ONDAS, FILTROS, USOS } from '../mundo/supervivencia/musica-motor.js';
+import { crearSecuenciador, tocarSinte, revisarTema, revisarCancion, acordeDe, acordeEn, INSTRUMENTOS, BATERIA, TIPOS_CAPA, ONDAS, FILTROS, USOS } from '../mundo/supervivencia/musica-motor.js';
 import * as MM from './musica-modelo.mjs';
 
 const { clonar } = MM;
@@ -48,6 +48,7 @@ export async function montarMusica(ctx) {
     const vista = new WeakMap(); // capa → { compas, base } (compás que se ve y nota de abajo del piano roll)
     const solos = new Set(); // índices de capas en solo
     const deshacer = [];
+    const alRehacer = []; // f() cuando se deshace o se descartan los cambios: la pestaña Ritmo vuelve a leer las canciones
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
@@ -551,6 +552,10 @@ export async function montarMusica(ctx) {
             const p = revisarTema(T, datos.instrumentos);
             if (p.length) { rotular(`El tema «${k}» tiene problemas: ${p.slice(0, 2).join(' · ')}`, `Song «${k}» has problems: ${p.slice(0, 2).join(' · ')}`, 'error'); return; }
         }
+        for (const [k, C] of Object.entries(datos.canciones || {})) {
+            const p = revisarCancion(C, datos.instrumentos);
+            if (p.length) { rotular(`La canción «${k}» tiene problemas: ${p.slice(0, 2).join(' · ')}`, `Song «${k}» has problems: ${p.slice(0, 2).join(' · ')}`, 'error'); return; }
+        }
         rotular('Guardando…', 'Saving…');
         try {
             const resp = await fetch('../api/datos/musica', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Estudio': '1', 'If-Match': etag || '*' }, body: JSON.stringify(datos) });
@@ -602,9 +607,9 @@ export async function montarMusica(ctx) {
         if (!deshacer.length) return;
         datos = JSON.parse(deshacer.pop());
         if (!tema() && !(MM.usoDeClave(clave))) clave = Object.keys(datos.temas)[0] || 'living';
-        cambio();
+        cambio(); alRehacer.forEach(f => f());
     });
-    $('mu-descartar').addEventListener('click', () => { deshacer.push(JSON.stringify(datos)); datos = clonar(original); if (!tema() && !MM.usoDeClave(clave)) clave = Object.keys(datos.temas)[0] || 'living'; cambio(); });
+    $('mu-descartar').addEventListener('click', () => { deshacer.push(JSON.stringify(datos)); datos = clonar(original); if (!tema() && !MM.usoDeClave(clave)) clave = Object.keys(datos.temas)[0] || 'living'; cambio(); alRehacer.forEach(f => f()); });
     btnGuardar.addEventListener('click', guardar);
     window.addEventListener('keydown', e => {
         if (ctx.pestana !== 'musica') return;
@@ -616,6 +621,13 @@ export async function montarMusica(ctx) {
     window.addEventListener('resize', () => { if (ctx.pestana === 'musica') for (const L of lienzos) dibujarRejilla(L, null); });
     ctx.alPestana.push(p => { if (p === 'musica') pintar(); else if (sonandoAqui()) parar(); });
     ctx.alIdioma.push(() => { pintar(); pintarTeclado(); pintarBotonJuego(); $('mu-tocar').textContent = sonandoAqui() ? t('Parar', 'Stop') : t('Reproducir', 'Play'); });
+    // La pestaña Ritmo (S10c) edita `canciones` dentro de este mismo JSON: comparte datos, deshacer, envío en vivo y Guardar.
+    ctx.musica = {
+        datos: () => datos, sucio, guardar, alRehacer, mensaje: () => msg.textContent, puedeDeshacer: () => deshacer.length > 0,
+        editar(f) { deshacer.push(JSON.stringify(datos)); if (deshacer.length > 80) deshacer.shift(); f(datos); ctx.puente.enviarDatos('musica', datos); cambio({ pintarTodo: ctx.pestana === 'musica' }); },
+        deshacer() { $('mu-deshacer').click(); },
+        descartar() { $('mu-descartar').click(); }
+    };
     // Para las pruebas de navegador y la depuración
     window.__estudioMusica = { get datos() { return datos; }, get clave() { return clave; }, elegir(k) { clave = k; pintar(); }, tocar, parar, pasoEn: () => audio && sec.pasoEn(audio.ctx.currentTime) };
     pintarTeclado(); pintarBotonJuego(); pintar();
