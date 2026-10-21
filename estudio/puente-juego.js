@@ -62,6 +62,11 @@ async function aplicar(nombre, datos) {
         if (!v) throw new Error('el juego todavía no está listo');
         v.datosArena = datos;
         if (v.arena && v.arena.aplicarDatos) v.arena.aplicarDatos(datos);
+    } else if (nombre === 'salonas') {
+        // S9: salonas.js lee estos datos en cada cuadro y al abrir (ajustes, reglas y textos)
+        const v = window.__venjy;
+        if (!v) throw new Error('el juego todavía no está listo');
+        v.datosSalonas = datos;
     } else if (nombre === 'cartas-arte') {
         const m = await import('../mundo/supervivencia/cartas-arte.js');
         m.aplicarArte(datos);
@@ -80,7 +85,10 @@ async function aplicar(nombre, datos) {
         // musica-datos.js: musica.js y carrera-musica.js lo consultan en cada paso (el próximo paso ya suena con lo nuevo)
         const m = await import('../mundo/supervivencia/musica-datos.js');
         m.aplicarMusica(datos);
-    } else aplicarDatosVivos(nombre, datos);
+    } else {
+        if (nombre === 'ui-layout' && window.__venjy) window.__venjy.datosUiLayout = datos; // salonas.js aplica su página al abrir
+        aplicarDatosVivos(nombre, datos);
+    }
 }
 const canal = new BroadcastChannel(CANAL);
 const decir = m => canal.postMessage({ de: 'juego', ...m });

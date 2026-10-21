@@ -34,10 +34,6 @@ export const SELECTORES_ARENA = {
     'ar-especial': '.tactil-arena .ar-especial'
 };
 export const SELECTORES_SALONAS = {
-    'traste-0': '.sl-trastes button:nth-child(1)',
-    'traste-1': '.sl-trastes button:nth-child(2)',
-    'traste-2': '.sl-trastes button:nth-child(3)',
-    'traste-3': '.sl-trastes button:nth-child(4)',
     pausa: '.sl-pausaT',
     primus: '.sl-primusT'
 };

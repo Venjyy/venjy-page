@@ -16,7 +16,7 @@
   "additionalProperties": false,
   "$defs": {
     "pantallaSalonas": {
-      "description": "Botones táctiles de Salonas (4 trastes, pausa y Modo Primus). Los trastes siguen la posición 3D y sus medidas se ajustan durante el juego.",
+      "description": "Botones táctiles de Salonas (pausa y Modo Primus). Los 4 trastes siguen la línea 3D y no se ajustan aquí.",
       "type": "object",
       "properties": {
         "normal": { "$ref": "#/$defs/perfilSalonas" },
@@ -31,8 +31,6 @@
         "botones": {
           "type": "object",
           "properties": {
-            "traste-0": { "$ref": "#/$defs/boton" }, "traste-1": { "$ref": "#/$defs/boton" },
-            "traste-2": { "$ref": "#/$defs/boton" }, "traste-3": { "$ref": "#/$defs/boton" },
             "pausa": { "$ref": "#/$defs/boton" }, "primus": { "$ref": "#/$defs/boton" }
           },
           "additionalProperties": false
