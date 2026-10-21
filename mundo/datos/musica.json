@@ -51,6 +51,106 @@
       "voces": 3,
       "desafino": 16,
       "filtro": { "tipo": "lowpass", "frec": 2300, "q": 1.6 }
+    },
+    "acordeon": {
+      "nombre": { "es": "Acordeón", "en": "Accordion" },
+      "nota": "Acordeón de la cumbia chilena: dos lengüetas un poco desafinadas (musette) y un vibrato suave.",
+      "onda": "sawtooth",
+      "ataque": 0.03,
+      "caida": 0.1,
+      "largo": 0.9,
+      "vol": 0.28,
+      "voces": 2,
+      "desafino": 12,
+      "filtro": { "tipo": "lowpass", "frec": 2200, "q": 0.9 },
+      "vibrato": { "frec": 6, "cents": 9 }
+    },
+    "guiro": {
+      "nombre": { "es": "Güiro", "en": "Guiro" },
+      "nota": "El raspado de la cumbia (ruido agudo y corto).",
+      "onda": "ruido",
+      "ataque": 0.004,
+      "caida": 0.045,
+      "largo": 0,
+      "vol": 0.5,
+      "filtro": { "tipo": "highpass", "frec": 3800, "q": 0.8 }
+    },
+    "cencerro": {
+      "nombre": { "es": "Cencerro", "en": "Cowbell" },
+      "nota": "Cencerro de la cumbia: dos tonos metálicos cortos.",
+      "onda": "square",
+      "ataque": 0.001,
+      "caida": 0.07,
+      "largo": 0,
+      "vol": 0.35,
+      "golpe": 73,
+      "filtro": { "tipo": "bandpass", "frec": 900, "q": 2.5 },
+      "armonicos": [
+        { "onda": "square", "ratio": 1.5, "vol": 0.6 }
+      ]
+    },
+    "conga": {
+      "nombre": { "es": "Conga", "en": "Conga" },
+      "nota": "Tumbao de conga (golpe de cuero grave).",
+      "onda": "sine",
+      "ataque": 0.002,
+      "caida": 0.16,
+      "largo": 0,
+      "vol": 0.7,
+      "golpe": 55,
+      "armonicos": [
+        { "onda": "sine", "ratio": 1.6, "vol": 0.2 }
+      ]
+    },
+    "guitarraFunk": {
+      "nombre": { "es": "Guitarra funk", "en": "Funk guitar" },
+      "nota": "Rasguido corto y apagado del funk (casi un clavinet).",
+      "onda": "square",
+      "ataque": 0.002,
+      "caida": 0.05,
+      "largo": 0.08,
+      "vol": 0.4,
+      "voces": 2,
+      "desafino": 7,
+      "filtro": { "tipo": "bandpass", "frec": 2300, "q": 1.6 }
+    },
+    "cuerdas": {
+      "nombre": { "es": "Cuerdas disco", "en": "Disco strings" },
+      "nota": "Colchón de violines del disco (entra lento y queda).",
+      "onda": "sawtooth",
+      "ataque": 0.18,
+      "caida": 0.3,
+      "largo": 1,
+      "vol": 0.2,
+      "voces": 3,
+      "desafino": 18,
+      "filtro": { "tipo": "lowpass", "frec": 3200, "q": 0.7 },
+      "vibrato": { "frec": 5, "cents": 8 }
+    },
+    "guitarraSolo": {
+      "nombre": { "es": "Guitarra solista", "en": "Lead guitar" },
+      "nota": "La guitarra de Salonas para los solos: saturada, con vibrato.",
+      "onda": "sawtooth",
+      "ataque": 0.004,
+      "caida": 0.2,
+      "largo": 0.85,
+      "vol": 0.3,
+      "voces": 2,
+      "desafino": 6,
+      "filtro": { "tipo": "lowpass", "frec": 3400, "q": 2 },
+      "vibrato": { "frec": 6.5, "cents": 18 }
+    },
+    "guitarraMetal": {
+      "nombre": { "es": "Guitarra metal", "en": "Metal guitar" },
+      "nota": "Quintas apagadas del thrash (palm mute).",
+      "onda": "sawtooth",
+      "ataque": 0.002,
+      "caida": 0.09,
+      "largo": 0.4,
+      "vol": 0.32,
+      "voces": 3,
+      "desafino": 14,
+      "filtro": { "tipo": "lowpass", "frec": 1500, "q": 2.4 }
     }
   },
   "temas": {
@@ -678,6 +778,859 @@
           "dur": 16,
           "vol": 0.3,
           "niveles": ["puente"]
+        }
+      ]
+    },
+    "bar-cumbia": {
+      "nombre": { "es": "Cumbia del bar (provisorio)", "en": "Bar cumbia (provisional)" },
+      "nota": "Canción 3 de la gira (bar): cumbia chilena. Enseña el patrón tónica-quinta y la síncopa. Nombre provisorio: lo elige el dueño.",
+      "bpm": 100,
+      "pasos": 16,
+      "vol": 0.1,
+      "swing": 0.04,
+      "prog": ["Am", "E"],
+      "progs": {
+        "intro": ["Am", "E"],
+        "verso": ["Am", "Dm", "E", "Am"],
+        "precoro": ["F", "G", "E", "E"],
+        "coro": ["Am", "G", "F", "E"],
+        "final": ["Am"]
+      },
+      "vozBajo": {
+        "vol": 0.6,
+        "saturacion": 1.2,
+        "nasal": { "frec": 650, "q": 1.1, "ganancia": 3 },
+        "tecnicas": {
+          "t": { "onda": "triangle", "brillo": 850, "q": 2, "ataque": 0.004, "vol": 0.62, "cola": 0.14 }
+        }
+      },
+      "estructura": [
+        { "seccion": "intro", "compases": 2 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "final", "compases": 2 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo (intro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["intro"],
+          "bajo": [[0, "t", 33, 6], [8, "t", 40, 6], [16, "t", 40, 6], [24, "t", 47, 4], [28, "t", 44, 2], [30, "t", 40, 2]]
+        },
+        {
+          "nombre": "bajo (verso)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["verso"],
+          "bajo": [[0, "t", 33, 4], [6, "t", 40, 2], [8, "t", 33, 4], [14, "t", 40, 2], [16, "t", 38, 4], [22, "t", 45, 2], [24, "t", 38, 4], [30, "t", 45, 2], [32, "t", 40, 4], [38, "t", 47, 2], [40, "t", 40, 4], [46, "t", 44, 2], [48, "t", 33, 4], [54, "t", 40, 2], [56, "t", 45, 2], [58, "t", 43, 2], [60, "t", 40, 2], [62, "g", 40, 1]]
+        },
+        {
+          "nombre": "bajo (precoro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["precoro"],
+          "bajo": [[0, "t", 41, 3], [4, "t", 48, 3], [8, "t", 41, 3], [12, "t", 48, 3], [16, "t", 43, 3], [20, "t", 50, 3], [24, "t", 43, 3], [28, "t", 50, 3], [32, "t", 40, 6], [38, "t", 47, 2], [40, "t", 40, 6], [46, "t", 47, 2], [48, "t", 40, 2], [50, "t", 40, 2], [52, "t", 44, 2], [54, "t", 44, 2], [56, "t", 47, 2], [58, "t", 47, 2], [60, "s", 40, 1], [62, "p", 52, 1]]
+        },
+        {
+          "nombre": "bajo (coro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["coro"],
+          "bajo": [[0, "t", 33, 3], [3, "t", 33, 1], [6, "t", 40, 2], [8, "t", 33, 2], [10, "t", 45, 2], [12, "t", 40, 2], [14, "t", 33, 2], [16, "t", 31, 3], [19, "t", 31, 1], [22, "t", 38, 2], [24, "t", 31, 2], [26, "t", 43, 2], [28, "t", 38, 2], [30, "t", 31, 2], [32, "t", 41, 3], [35, "t", 41, 1], [38, "t", 48, 2], [40, "t", 41, 2], [42, "t", 53, 2], [44, "t", 48, 2], [46, "t", 41, 2], [48, "t", 40, 3], [51, "t", 40, 1], [54, "t", 47, 2], [56, "t", 44, 2], [58, "t", 47, 2], [60, "s", 40, 2], [62, "p", 52, 1]]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "t", 33, 4],
+            [6, "t", 40, 2],
+            [8, "t", 33, 4],
+            [14, "t", 40, 2],
+            [16, "r", 33, 8, [33, 40, 45, 48]]
+          ]
+        },
+        {
+          "nombre": "güiro",
+          "inst": "guiro",
+          "ritmo": "x.xxx.xxx.xxx.xx",
+          "vol": 0.22,
+          "niveles": ["intro", "verso", "precoro", "coro"]
+        },
+        {
+          "nombre": "bombo",
+          "inst": "kick",
+          "ritmo": "x.......x.......",
+          "vol": 0.7,
+          "niveles": ["intro", "verso", "precoro", "coro", "final"]
+        },
+        {
+          "nombre": "timbal (verso)",
+          "inst": "madera",
+          "ritmo": "....x.......x...",
+          "vol": 0.35,
+          "niveles": ["verso"]
+        },
+        {
+          "nombre": "caja (coro)",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.32,
+          "niveles": ["precoro", "coro"]
+        },
+        {
+          "nombre": "charles",
+          "inst": "hat",
+          "ritmo": "..x...x...x...x.",
+          "vol": 0.16,
+          "niveles": ["verso", "precoro", "coro"]
+        },
+        {
+          "nombre": "cencerro (coro)",
+          "inst": "cencerro",
+          "ritmo": "x.o.x.o.x.o.x.o.",
+          "vol": 0.16,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "conga",
+          "inst": "conga",
+          "ritmo": "......x.x.....x.",
+          "vol": 0.3,
+          "niveles": ["verso", "coro"]
+        },
+        {
+          "nombre": "platillo",
+          "inst": "platillo",
+          "ritmo": "x...............................................................",
+          "vol": 0.26,
+          "niveles": ["coro", "final"]
+        },
+        {
+          "nombre": "guitarra (contratiempo)",
+          "inst": "guitarraSkank",
+          "acorde": true,
+          "pasos": [2, 6, 10, 14],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.36,
+          "niveles": ["verso", "precoro", "coro"]
+        },
+        {
+          "nombre": "órgano",
+          "inst": "rhodes",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 14,
+          "vol": 0.1,
+          "niveles": ["precoro"]
+        },
+        {
+          "nombre": "acordeón (intro)",
+          "inst": "acordeon",
+          "vol": 0.5,
+          "niveles": ["intro"],
+          "notas": [69, 0, 72, 0, 76, 0, 0, 0, 74, 0, 72, 0, 71, 0, 0, 0, 68, 0, 71, 0, 74, 0, 0, 0, 71, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "acordeón (coro)",
+          "inst": "acordeon",
+          "vol": 0.5,
+          "niveles": ["coro"],
+          "notas": [76, 0, 0, 74, 72, 0, 71, 0, 72, 0, 0, 0, 69, 0, 0, 0, 71, 0, 0, 72, 74, 0, 72, 0, 71, 0, 0, 0, 67, 0, 0, 0, 69, 0, 0, 71, 72, 0, 74, 0, 72, 0, 71, 0, 69, 0, 0, 0, 68, 0, 0, 69, 71, 0, 0, 0, 68, 0, 64, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "acorde final",
+          "inst": "acordeon",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 16,
+          "vol": 0.3,
+          "niveles": ["final"]
+        }
+      ]
+    },
+    "bar-funk": {
+      "nombre": { "es": "Funk de la bola (provisorio)", "en": "Disco ball funk (provisional)" },
+      "nota": "Canción 4 de la gira (bar): funk disco. Enseña el slap y el pop, y las octavas. Nombre provisorio: lo elige el dueño.",
+      "bpm": 112,
+      "pasos": 16,
+      "vol": 0.1,
+      "swing": 0.03,
+      "prog": ["Em", "A7"],
+      "progs": {
+        "intro": ["Em", "A7"],
+        "verso": ["Em", "A7"],
+        "precoro": ["Am", "Bm", "C", "D"],
+        "coro": ["C", "D", "Em", "Em"],
+        "final": ["Em"]
+      },
+      "vozBajo": {
+        "vol": 0.6,
+        "saturacion": 1.6,
+        "tecnicas": {
+          "t": { "onda": "triangle", "brillo": 1800, "q": 4, "ataque": 0.004, "vol": 0.5, "cola": 0.1 }
+        }
+      },
+      "estructura": [
+        { "seccion": "intro", "compases": 4 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "final", "compases": 2 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo (intro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["intro"],
+          "bajo": [[0, "s", 28, 4], [6, "p", 40, 1], [8, "t", 38, 2], [10, "t", 40, 2], [16, "s", 33, 4], [22, "p", 45, 1], [24, "t", 43, 2], [26, "t", 45, 2], [32, "s", 28, 3], [35, "p", 40, 1], [38, "t", 38, 1], [39, "t", 40, 2], [42, "s", 28, 2], [46, "t", 43, 2], [48, "s", 33, 3], [51, "p", 45, 1], [54, "t", 43, 1], [55, "t", 45, 1], [58, "t", 40, 2], [60, "t", 42, 2], [62, "t", 43, 2]]
+        },
+        {
+          "nombre": "bajo (verso)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["verso"],
+          "bajo": [[0, "s", 28, 3], [3, "p", 40, 1], [6, "t", 38, 1], [7, "t", 40, 2], [10, "s", 28, 2], [14, "t", 43, 2], [16, "s", 33, 3], [19, "p", 45, 1], [22, "t", 43, 1], [23, "t", 45, 2], [26, "s", 33, 2], [30, "t", 43, 1], [31, "t", 42, 1], [32, "s", 28, 3], [35, "p", 40, 1], [38, "t", 38, 1], [39, "t", 40, 2], [42, "s", 28, 2], [44, "g", 28, 1], [46, "t", 43, 2], [48, "s", 33, 3], [51, "p", 45, 1], [54, "t", 43, 1], [55, "t", 45, 1], [58, "s", 33, 2], [60, "t", 35, 1], [61, "t", 37, 1], [62, "t", 38, 2]]
+        },
+        {
+          "nombre": "bajo (precoro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["precoro"],
+          "bajo": [[0, "t", 33, 3], [4, "t", 45, 3], [8, "t", 33, 3], [12, "t", 45, 3], [16, "t", 35, 3], [20, "t", 47, 3], [24, "t", 35, 3], [28, "t", 47, 3], [32, "t", 36, 6], [38, "t", 48, 2], [40, "t", 36, 6], [46, "t", 48, 2], [48, "s", 38, 2], [50, "p", 50, 1], [52, "s", 38, 2], [54, "p", 50, 1], [56, "t", 38, 2], [58, "t", 40, 2], [60, "t", 42, 2], [62, "t", 43, 2]]
+        },
+        {
+          "nombre": "bajo (coro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["coro"],
+          "bajo": [[0, "s", 36, 2], [2, "p", 48, 1], [4, "s", 36, 2], [6, "p", 48, 1], [7, "t", 48, 1], [8, "s", 36, 2], [10, "p", 48, 1], [12, "s", 36, 2], [14, "p", 48, 1], [15, "t", 47, 1], [16, "s", 38, 2], [18, "p", 50, 1], [20, "s", 38, 2], [22, "p", 50, 1], [23, "t", 50, 1], [24, "s", 38, 2], [26, "p", 50, 1], [28, "s", 38, 2], [30, "p", 50, 1], [31, "t", 47, 1], [32, "s", 28, 2], [34, "p", 40, 1], [36, "s", 28, 2], [38, "p", 40, 1], [39, "t", 40, 1], [40, "s", 28, 2], [42, "p", 40, 1], [44, "s", 28, 2], [46, "p", 40, 1], [47, "t", 38, 1], [48, "s", 28, 2], [50, "p", 40, 1], [52, "s", 28, 2], [54, "p", 40, 1], [56, "t", 43, 1], [57, "t", 45, 1], [58, "t", 47, 2], [60, "p", 52, 2], [62, "t", 47, 2]]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "s", 28, 2],
+            [2, "p", 40, 1],
+            [4, "s", 28, 2],
+            [6, "p", 40, 1],
+            [8, "s", 28, 4],
+            [16, "r", 28, 8, [28, 35, 40, 43]]
+          ]
+        },
+        {
+          "nombre": "bombo (verso)",
+          "inst": "kick",
+          "ritmo": "x.....x...x.....",
+          "vol": 0.72,
+          "niveles": ["intro", "verso"]
+        },
+        {
+          "nombre": "bombo (disco)",
+          "inst": "kick",
+          "ritmo": "x...x...x...x...",
+          "vol": 0.75,
+          "niveles": ["precoro", "coro", "final"]
+        },
+        {
+          "nombre": "caja",
+          "inst": "caja",
+          "ritmo": "....x.......x..x",
+          "vol": 0.34,
+          "niveles": ["verso", "precoro"]
+        },
+        {
+          "nombre": "caja (coro)",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.38,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "charles",
+          "inst": "hat",
+          "ritmo": "xoxoxoxoxoxoxoxo",
+          "vol": 0.12,
+          "niveles": ["intro", "verso", "precoro", "coro"]
+        },
+        {
+          "nombre": "charles abierto (coro)",
+          "inst": "hat",
+          "ritmo": "..x...x...x...x.",
+          "vol": 0.26,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "platillo",
+          "inst": "platillo",
+          "ritmo": "x...............................................................",
+          "vol": 0.26,
+          "niveles": ["coro", "final"]
+        },
+        {
+          "nombre": "guitarra (funk)",
+          "inst": "guitarraFunk",
+          "acorde": true,
+          "pasos": [2, 5, 10, 13],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.4,
+          "niveles": ["verso", "precoro"]
+        },
+        {
+          "nombre": "guitarra (coro)",
+          "inst": "guitarraFunk",
+          "acorde": true,
+          "pasos": [2, 6, 10, 14],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.36,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "rhodes (verso)",
+          "inst": "rhodes",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 12,
+          "vol": 0.1,
+          "niveles": ["intro", "verso"]
+        },
+        {
+          "nombre": "cuerdas",
+          "inst": "cuerdas",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 16,
+          "vol": 0.32,
+          "niveles": ["precoro", "coro"]
+        },
+        {
+          "nombre": "metales (coro)",
+          "inst": "metales",
+          "vol": 0.45,
+          "niveles": ["coro"],
+          "notas": [72, 0, 0, 0, 0, 0, 71, 0, 72, 0, 74, 0, 0, 0, 0, 0, 74, 0, 0, 0, 0, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 76, 0, 0, 0, 79, 0, 0, 0, 76, 0, 74, 0, 71, 0, 0, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "acorde final",
+          "inst": "cuerdas",
+          "acorde": true,
+          "pasos": [0],
+          "octava": 12,
+          "dur": 16,
+          "vol": 0.32,
+          "niveles": ["final"]
+        }
+      ]
+    },
+    "festival-metal": {
+      "nombre": { "es": "Galope de fierro (provisorio)", "en": "Iron gallop (provisional)" },
+      "nota": "Canción 5 de la gira (festival): metal / thrash en Mi menor. Enseña velocidad y el galope. Nombre provisorio: lo elige el dueño.",
+      "bpm": 150,
+      "pasos": 16,
+      "vol": 0.1,
+      "prog": ["Em"],
+      "progs": {
+        "intro": ["Em", "Em", "C", "D"],
+        "verso": ["Em", "Em", "C", "D"],
+        "precoro": ["Am", "Am", "B", "B"],
+        "coro": ["Em", "C", "G", "D"],
+        "puente": ["C", "D", "Em", "Em"],
+        "final": ["Em"]
+      },
+      "vozBajo": {
+        "vol": 0.6,
+        "saturacion": 3,
+        "nasal": { "frec": 900, "q": 1.4, "ganancia": 6 },
+        "tecnicas": {
+          "t": { "onda": "sawtooth", "brillo": 1600, "q": 5, "ataque": 0.002, "vol": 0.5, "cola": 0.06 }
+        }
+      },
+      "estructura": [
+        { "seccion": "intro", "compases": 4 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "precoro", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "puente", "compases": 4 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "final", "compases": 2 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo (intro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["intro"],
+          "bajo": [[0, "t", 28, 8], [8, "t", 28, 8], [16, "t", 28, 8], [24, "t", 28, 4], [28, "t", 31, 2], [30, "t", 33, 2], [32, "t", 36, 8], [40, "t", 36, 4], [44, "t", 35, 4], [48, "t", 38, 4], [52, "t", 38, 4], [56, "t", 38, 2], [58, "t", 40, 2], [60, "t", 42, 2], [62, "t", 43, 2]]
+        },
+        {
+          "nombre": "bajo (verso)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["verso"],
+          "bajo": [[0, "t", 28, 2], [3, "t", 28, 1], [4, "t", 28, 2], [8, "t", 28, 2], [11, "t", 28, 1], [12, "t", 28, 2], [14, "t", 40, 2], [16, "t", 28, 2], [19, "t", 28, 1], [20, "t", 28, 2], [24, "t", 28, 2], [27, "t", 28, 1], [28, "t", 28, 2], [30, "t", 38, 2], [32, "t", 36, 2], [35, "t", 36, 1], [36, "t", 36, 2], [40, "t", 36, 2], [43, "t", 36, 1], [44, "t", 36, 2], [46, "t", 48, 2], [48, "t", 38, 2], [51, "t", 38, 1], [52, "t", 38, 2], [56, "t", 38, 2], [59, "t", 38, 1], [60, "t", 38, 2], [62, "t", 50, 2]]
+        },
+        {
+          "nombre": "bajo (precoro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["precoro"],
+          "bajo": [[0, "t", 33, 8], [8, "t", 33, 4], [12, "t", 36, 4], [16, "t", 33, 8], [24, "t", 40, 4], [28, "t", 38, 4], [32, "t", 35, 8], [40, "t", 35, 4], [44, "t", 39, 4], [48, "t", 35, 2], [50, "t", 35, 2], [52, "t", 39, 2], [54, "t", 39, 2], [56, "t", 42, 2], [58, "t", 42, 2], [60, "t", 47, 2], [62, "t", 47, 2]]
+        },
+        {
+          "nombre": "bajo (coro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["coro"],
+          "bajo": [[0, "t", 28, 2], [2, "t", 28, 1], [3, "t", 28, 1], [4, "t", 28, 2], [6, "t", 28, 1], [7, "t", 28, 1], [8, "t", 28, 2], [10, "t", 28, 1], [11, "t", 28, 1], [12, "t", 40, 2], [14, "t", 38, 1], [15, "t", 38, 1], [16, "t", 36, 2], [18, "t", 36, 1], [19, "t", 36, 1], [20, "t", 36, 2], [22, "t", 36, 1], [23, "t", 36, 1], [24, "t", 36, 2], [26, "t", 36, 1], [27, "t", 36, 1], [28, "t", 48, 2], [30, "t", 35, 1], [31, "t", 35, 1], [32, "t", 31, 2], [34, "t", 31, 1], [35, "t", 31, 1], [36, "t", 31, 2], [38, "t", 31, 1], [39, "t", 31, 1], [40, "t", 31, 2], [42, "t", 31, 1], [43, "t", 31, 1], [44, "t", 43, 2], [46, "t", 33, 1], [47, "t", 33, 1], [48, "t", 38, 2], [50, "t", 38, 1], [51, "t", 38, 1], [52, "t", 38, 2], [54, "t", 38, 1], [55, "t", 38, 1], [56, "t", 38, 2], [58, "t", 38, 1], [59, "t", 38, 1], [60, "t", 50, 2], [62, "t", 42, 1], [63, "t", 42, 1]]
+        },
+        {
+          "nombre": "bajo (puente)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["puente"],
+          "bajo": [[0, "t", 36, 8], [8, "t", 43, 8], [16, "t", 38, 8], [24, "t", 45, 8], [32, "t", 40, 12], [44, "t", 43, 4], [48, "t", 47, 8], [56, "t", 45, 4], [60, "t", 43, 2], [62, "t", 42, 2]]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "t", 28, 2],
+            [2, "t", 28, 1],
+            [3, "t", 28, 1],
+            [4, "t", 28, 2],
+            [6, "t", 28, 1],
+            [7, "t", 28, 1],
+            [8, "t", 28, 2],
+            [10, "t", 28, 1],
+            [11, "t", 28, 1],
+            [16, "r", 28, 8, [28, 35, 40, 47]]
+          ]
+        },
+        {
+          "nombre": "bombo (verso)",
+          "inst": "kick",
+          "ritmo": "x..xx...x..xx.x.",
+          "vol": 0.7,
+          "niveles": ["intro", "verso", "precoro"]
+        },
+        {
+          "nombre": "bombo (galope)",
+          "inst": "kick",
+          "ritmo": "x.xxx.xxx.xxx.xx",
+          "vol": 0.62,
+          "niveles": ["coro", "final"]
+        },
+        {
+          "nombre": "bombo (puente)",
+          "inst": "kick",
+          "ritmo": "x.......x.......",
+          "vol": 0.75,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "caja",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.4,
+          "niveles": ["verso", "precoro", "coro"]
+        },
+        {
+          "nombre": "caja (puente)",
+          "inst": "caja",
+          "ritmo": "........x.......",
+          "vol": 0.45,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "redoble (intro)",
+          "inst": "caja",
+          "ritmo": "................................................x.x.x.x.xxxxxxxx",
+          "vol": 0.32,
+          "niveles": ["intro"]
+        },
+        {
+          "nombre": "charles",
+          "inst": "hat",
+          "ritmo": "x.x.x.x.x.x.x.x.",
+          "vol": 0.18,
+          "niveles": ["verso", "precoro"]
+        },
+        {
+          "nombre": "platillo ride (coro)",
+          "inst": "platillo",
+          "ritmo": "x...x...x...x...",
+          "vol": 0.14,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "platillo",
+          "inst": "platillo",
+          "ritmo": "x...............................................................",
+          "vol": 0.3,
+          "niveles": ["intro", "verso", "coro", "puente", "final"]
+        },
+        {
+          "nombre": "guitarra (verso)",
+          "inst": "guitarraMetal",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 3, 4, 8, 11, 12, 14],
+          "octava": 0,
+          "dur": 1,
+          "vol": 0.32,
+          "niveles": ["verso"]
+        },
+        {
+          "nombre": "guitarra (galope)",
+          "inst": "guitarraMetal",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15],
+          "octava": 0,
+          "dur": 1,
+          "vol": 0.3,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "guitarra (larga)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 8],
+          "octava": 0,
+          "dur": 8,
+          "vol": 0.3,
+          "niveles": ["intro", "precoro", "puente", "final"]
+        },
+        {
+          "nombre": "guitarra solista (coro)",
+          "inst": "guitarraSolo",
+          "vol": 0.4,
+          "niveles": ["coro"],
+          "notas": [76, 0, 0, 0, 74, 0, 76, 0, 79, 0, 0, 0, 78, 0, 76, 0, 72, 0, 0, 0, 71, 0, 72, 0, 76, 0, 0, 0, 74, 0, 72, 0, 74, 0, 0, 0, 71, 0, 74, 0, 79, 0, 0, 0, 78, 0, 74, 0, 78, 0, 0, 0, 76, 0, 74, 0, 78, 0, 0, 0, 81, 0, 0, 0]
+        },
+        {
+          "nombre": "guitarra solista (puente)",
+          "inst": "guitarraSolo",
+          "vol": 0.38,
+          "niveles": ["puente"],
+          "notas": [79, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 78, 0, 0, 0, 0, 0, 0, 0, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 78, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 74, 0, 0, 0]
+        }
+      ]
+    },
+    "festival-jefe": {
+      "nombre": { "es": "El gallo cósmico (provisorio)", "en": "The cosmic rooster (provisional)" },
+      "nota": "Canción 6 de la gira (festival), el tema jefe: rock progresivo estilo Primus en 7/8 (el coro es el «Gallo cósmico» que Salonas toca en la aldea), un puente en 4/4 y el duelo de solos: Salonas toca una frase y tú la repites. Nombre provisorio: lo elige el dueño.",
+      "bpm": 150,
+      "pasos": 14,
+      "vol": 0.1,
+      "acordes": {
+        "Ecosmico": [40, 43, 44, 47]
+      },
+      "prog": ["Ecosmico"],
+      "progs": {
+        "intro": ["Ecosmico"],
+        "verso": ["Ecosmico"],
+        "coro": ["Ecosmico"],
+        "puente": ["C", "D", "Em", "Em"],
+        "solo": ["Ecosmico"],
+        "solo2": ["Ecosmico"],
+        "final": ["Ecosmico"]
+      },
+      "vozBajo": { "vol": 0.62, "saturacion": 2.4 },
+      "estructura": [
+        { "seccion": "intro", "compases": 4, "pasos": 16 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "verso", "compases": 8 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "puente", "compases": 4, "pasos": 16 },
+        { "seccion": "solo", "compases": 8 },
+        { "seccion": "solo", "nivel": "solo2", "compases": 8 },
+        { "seccion": "coro", "compases": 8 },
+        { "seccion": "final", "compases": 2, "pasos": 16 }
+      ],
+      "capas": [
+        {
+          "nombre": "bajo (intro)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["intro"],
+          "bajo": [
+            [0, "a", 52, 8],
+            [8, "a", 59, 8],
+            [16, "a", 55, 8],
+            [24, "a", 52, 8],
+            [32, "s", 28, 4],
+            [36, "p", 40, 2],
+            [38, "g", 28, 2],
+            [40, "s", 28, 4],
+            [44, "p", 40, 2],
+            [46, "g", 28, 2],
+            [48, "s", 28, 2],
+            [50, "p", 40, 2],
+            [52, "s", 31, 2],
+            [54, "s", 32, 2],
+            [56, "s", 33, 2],
+            [58, "p", 45, 2],
+            [60, "r", 28, 4, [28, 35, 40, 43]]
+          ]
+        },
+        {
+          "nombre": "bajo (verso 7/8)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["verso"],
+          "bajo": [[0, "s", 28, 3], [3, "p", 40, 1], [6, "t", 31, 2], [8, "s", 33, 3], [11, "p", 45, 1], [14, "s", 28, 3], [17, "p", 40, 1], [20, "t", 31, 2], [22, "s", 33, 3], [25, "p", 45, 1], [28, "s", 28, 3], [31, "p", 40, 1], [34, "t", 31, 2], [36, "s", 33, 3], [39, "p", 45, 1], [42, "s", 28, 3], [45, "p", 40, 1], [48, "t", 31, 2], [50, "s", 33, 2], [52, "t", 35, 2], [54, "p", 44, 2]]
+        },
+        {
+          "nombre": "bajo (gallo cósmico)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["coro"],
+          "bajo": [
+            [0, "s", 28, 2],
+            [2, "g", 28, 1],
+            [3, "p", 40, 1],
+            [4, "s", 31, 2],
+            [6, "s", 32, 1],
+            [7, "p", 44, 1],
+            [8, "s", 33, 2],
+            [10, "g", 33, 1],
+            [11, "d", 33, 2, 36],
+            [13, "p", 38, 1],
+            [14, "s", 28, 2],
+            [16, "g", 28, 1],
+            [17, "p", 40, 1],
+            [18, "s", 31, 2],
+            [20, "s", 32, 1],
+            [21, "p", 44, 1],
+            [22, "s", 33, 2],
+            [24, "g", 33, 1],
+            [25, "d", 33, 2, 36],
+            [27, "p", 38, 1],
+            [28, "s", 28, 2],
+            [30, "g", 28, 1],
+            [31, "p", 40, 1],
+            [32, "s", 31, 2],
+            [34, "s", 32, 1],
+            [35, "p", 44, 1],
+            [36, "s", 33, 2],
+            [38, "g", 33, 1],
+            [39, "d", 33, 2, 36],
+            [41, "p", 38, 1],
+            [42, "s", 28, 2],
+            [44, "g", 28, 1],
+            [45, "p", 40, 1],
+            [46, "s", 31, 2],
+            [48, "s", 32, 1],
+            [49, "p", 44, 1],
+            [50, "s", 33, 1],
+            [51, "p", 45, 1],
+            [52, "r", 28, 3, [28, 35, 40, 43]],
+            [55, "g", 28, 1]
+          ]
+        },
+        {
+          "nombre": "bajo (puente 4/4)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["puente"],
+          "bajo": [[0, "t", 36, 6], [6, "p", 48, 2], [8, "t", 36, 4], [12, "t", 43, 4], [16, "t", 38, 6], [22, "p", 50, 2], [24, "t", 38, 4], [28, "t", 45, 4], [32, "s", 28, 2], [34, "p", 40, 2], [36, "s", 28, 2], [38, "p", 40, 2], [40, "s", 31, 2], [42, "p", 43, 2], [44, "s", 33, 2], [46, "p", 45, 2], [48, "s", 35, 2], [50, "p", 47, 2], [52, "s", 36, 2], [54, "p", 48, 2], [56, "s", 38, 2], [58, "p", 50, 2], [60, "s", 40, 2], [62, "p", 52, 2]]
+        },
+        {
+          "nombre": "bajo (duelo, frase A)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["solo"],
+          "bajo": [[28, "t", 40, 2], [30, "t", 43, 2], [32, "t", 45, 1], [33, "t", 47, 1], [34, "t", 45, 2], [36, "t", 43, 2], [38, "t", 40, 4], [42, "t", 38, 2], [44, "t", 40, 2], [46, "t", 43, 1], [47, "t", 44, 1], [48, "t", 45, 4], [52, "t", 43, 2], [54, "t", 40, 2]]
+        },
+        {
+          "nombre": "bajo (duelo, frase B)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 4,
+          "niveles": ["solo2"],
+          "bajo": [[28, "t", 47, 1], [29, "t", 45, 1], [30, "t", 43, 2], [32, "t", 45, 1], [33, "t", 47, 1], [34, "t", 50, 2], [36, "t", 47, 2], [38, "t", 45, 2], [40, "t", 43, 2], [42, "t", 44, 2], [44, "t", 45, 2], [46, "t", 47, 1], [47, "t", 50, 1], [48, "t", 52, 4], [52, "t", 47, 2], [54, "t", 40, 2]]
+        },
+        {
+          "nombre": "bajo (final)",
+          "inst": "bajoSlap",
+          "vol": 1,
+          "compases": 2,
+          "niveles": ["final"],
+          "bajo": [
+            [0, "s", 28, 2],
+            [2, "g", 28, 1],
+            [3, "p", 40, 1],
+            [4, "s", 31, 2],
+            [6, "s", 32, 1],
+            [7, "p", 44, 1],
+            [8, "s", 33, 2],
+            [16, "r", 28, 8, [28, 35, 40, 43]]
+          ]
+        },
+        {
+          "nombre": "bombo (7/8)",
+          "inst": "kick",
+          "ritmo": "x.....x.x.....",
+          "vol": 0.72,
+          "niveles": ["verso", "coro", "solo", "solo2"]
+        },
+        {
+          "nombre": "caja (7/8)",
+          "inst": "caja",
+          "ritmo": "....x......x..",
+          "vol": 0.38,
+          "niveles": ["verso", "coro", "solo", "solo2"]
+        },
+        {
+          "nombre": "charles (7/8)",
+          "inst": "hat",
+          "ritmo": "x.x.x.x.x.x.x.",
+          "vol": 0.2,
+          "niveles": ["verso", "coro", "solo", "solo2"]
+        },
+        {
+          "nombre": "madera (verso)",
+          "inst": "madera",
+          "ritmo": "..x....x..x...",
+          "vol": 0.25,
+          "niveles": ["verso"]
+        },
+        {
+          "nombre": "platillo (7/8)",
+          "inst": "platillo",
+          "ritmo": "x.......................................................",
+          "vol": 0.28,
+          "niveles": ["coro", "solo", "solo2"]
+        },
+        {
+          "nombre": "bombo (4/4)",
+          "inst": "kick",
+          "ritmo": "x...x...x...x...",
+          "vol": 0.72,
+          "niveles": ["intro", "puente", "final"]
+        },
+        {
+          "nombre": "caja (4/4)",
+          "inst": "caja",
+          "ritmo": "....x.......x...",
+          "vol": 0.36,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "redoble (intro)",
+          "inst": "caja",
+          "ritmo": "................................................x.x.x.x.xxxxxxxx",
+          "vol": 0.3,
+          "niveles": ["intro"]
+        },
+        {
+          "nombre": "platillo (4/4)",
+          "inst": "platillo",
+          "ritmo": "x...............................................................",
+          "vol": 0.3,
+          "niveles": ["puente", "final"]
+        },
+        {
+          "nombre": "guitarra (coro)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 6, 12],
+          "pasos": [0, 4, 8, 11],
+          "octava": 12,
+          "dur": 1,
+          "vol": 0.26,
+          "niveles": ["coro"]
+        },
+        {
+          "nombre": "guitarra (puente)",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0, 6, 8, 12],
+          "octava": 12,
+          "dur": 2,
+          "vol": 0.28,
+          "niveles": ["puente"]
+        },
+        {
+          "nombre": "guitarra (intro)",
+          "inst": "guitarraSolo",
+          "vol": 0.32,
+          "niveles": ["intro"],
+          "notas": [76, 0, 0, 0, 0, 0, 0, 0, 83, 0, 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "Salonas (duelo, frase A)",
+          "inst": "guitarraSolo",
+          "vol": 0.5,
+          "niveles": ["solo"],
+          "notas": [64, 0, 67, 0, 69, 71, 69, 0, 67, 0, 64, 0, 0, 0, 62, 0, 64, 0, 67, 68, 69, 0, 0, 0, 67, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "Salonas (duelo, frase B)",
+          "inst": "guitarraSolo",
+          "vol": 0.5,
+          "niveles": ["solo2"],
+          "notas": [71, 69, 67, 0, 69, 71, 74, 0, 71, 0, 69, 0, 67, 0, 68, 0, 69, 0, 71, 74, 76, 0, 0, 0, 71, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        },
+        {
+          "nombre": "acorde final",
+          "inst": "guitarraSucia",
+          "acorde": true,
+          "intervalos": [0, 7, 12],
+          "pasos": [0],
+          "octava": 12,
+          "dur": 16,
+          "vol": 0.3,
+          "niveles": ["final"]
         }
       ]
     }
