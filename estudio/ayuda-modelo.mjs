@@ -37,7 +37,7 @@ export const AYUDA = {
     },
     objetos: {
         que: ['Cómo se agarra cada cosa en la mano.', 'How each thing is held in the hand.'],
-        empezar: ['Elige un objeto, toca «Ponerlo en mi mano» y ajústalo con el tamaño y los botones de mover y girar; «Igual que el tipo» lo deja como los demás.', 'Pick an object, press «Put it in my hand» and adjust it with the size and the move and rotate buttons; «Same as the type» makes it like the rest.']
+        empezar: ['Elige un objeto, toca «Ponerlo en mi mano» y ajústalo con el tamaño y arrastrando en el cuadro (botones «Mover» o «Girar»); «Igual que el tipo» lo deja como los demás.', 'Pick an object, press «Put it in my hand» and adjust it with the size and by dragging in the box («Move» or «Rotate» buttons); «Same as the type» makes it like the rest.']
     },
     formas: {
         que: ['La forma de los bloques que no son un cubo (losas, escalones, vallas…).', 'The shape of blocks that are not a cube (slabs, stairs, fences…).'],

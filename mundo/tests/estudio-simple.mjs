@@ -161,6 +161,12 @@ for (const [, , , eje, signo] of OS.GIRAR) {
     ok(JSON.stringify(OS.girar(g, eje, -signo)) === JSON.stringify(ag), `objetos: girar ${eje}/${signo} de ida y vuelta`);
 }
 ok(OS.girar(ag, 0, 1).rot[0] === -175, 'objetos: 170 + 15 = -175');
+// Arrastre: 10 px a la derecha y 10 hacia arriba suben y corren; ida y vuelta queda igual; girar no mueve y queda en rango
+const ar = OS.arrastrar(ag, 'mover', 10, -10, 1);
+ok(Math.abs(ar.pos[0] - ag.pos[0] - 0.02) < 1e-9 && Math.abs(ar.pos[1] - ag.pos[1] - 0.02) < 1e-9 && Math.abs(ar.pos[2] - ag.pos[2] - 0.02) < 1e-9 && ar.escala === ag.escala, 'objetos: arrastrar mueve a la derecha, arriba y hacia ti');
+ok(JSON.stringify(OS.arrastrar(ar, 'mover', -10, 10, -1)) === JSON.stringify(ag), 'objetos: arrastrar de ida y vuelta');
+const ag2 = OS.arrastrar(ag, 'girar', 40, 400, 3);
+ok(JSON.stringify(ag2.pos) === JSON.stringify(ag.pos) && ag2.rot.every(g => g > -180 && g <= 180), 'objetos: girar arrastrando no mueve y queda entre −180 y 180');
 for (const [f] of OS.TAMANOS) ok(OS.tamanoDe(OS.conTamano(ag, ag, f), ag) === f, `objetos: tamaño ${f} se lee igual`);
 ok(OS.tamanoDe({ ...ag, escala: 0.777 }, ag) === null, 'objetos: un tamaño a mano = null');
 ok(OS.mover(ag, 1, 1) !== ag && ag.pos[1] === -0.2, 'objetos: mover no cambia el agarre de entrada');

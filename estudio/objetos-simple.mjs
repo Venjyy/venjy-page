@@ -52,3 +52,24 @@ export function conTamano(v, base, f) {
     n.escala = Math.min(3, Math.max(0.1, redondo(base.escala * f)));
     return n;
 }
+
+// Arrastre (panel «Arrastra aquí» de objetos.js): el objeto se ve moverse en vivo en el juego. dx, dy en px de pantalla
+// (dy positivo = hacia abajo) y rueda en «muescas» (positivo = hacia ti). Mover: derecha, arriba y lejos/cerca;
+// girar: arrastrar de lado gira, de arriba abajo inclina y la rueda ladea.
+export const PX_MOVER = 0.002; // bloques por px
+export const PX_GIRO = 0.5; // grados por px
+export const RUEDA_MOVER = 0.02; // bloques por muesca
+export const RUEDA_GIRO = 5; // grados por muesca
+export function arrastrar(v, modo, dx, dy, rueda = 0) {
+    let n = clonar(v);
+    if (modo === 'girar') {
+        if (dx) n = girar(n, 1, 1, dx * PX_GIRO);
+        if (dy) n = girar(n, 0, 1, dy * PX_GIRO);
+        if (rueda) n = girar(n, 2, 1, rueda * RUEDA_GIRO);
+    } else {
+        if (dx) n = mover(n, 0, 1, dx * PX_MOVER);
+        if (dy) n = mover(n, 1, -1, dy * PX_MOVER);
+        if (rueda) n = mover(n, 2, 1, rueda * RUEDA_MOVER);
+    }
+    return n;
+}
