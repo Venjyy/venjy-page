@@ -85,7 +85,7 @@ export const AYUDA = {
     },
     musica: {
         que: ['La música del juego: temas con capas (batería, bajo, acordes, melodía).', 'The game music: songs made of layers (drums, bass, chords, melody).'],
-        empezar: ['Elige un tema, toca Reproducir y prende o apaga casillas de la rejilla; «Duplicar» para partir de uno.', 'Pick a song, press Play and switch grid cells on or off; «Duplicate» to start from one.']
+        empezar: ['En «Empezar con un estilo» elige uno (cumbia, rock…), toca Reproducir y muévelo con las perillas (rapidez, fuerza, ánimo, tono); la batería se cambia con clic en su rejilla.', 'In «Start from a style» pick one (cumbia, rock…), press Play and shape it with the knobs (speed, loudness, mood, key); click the drum grid to change the beat.']
     },
     inicio: {
         que: ['El menú del principio: logo, frases amarillas, pantalla de carga y fondo de cine.', 'The start menu: logo, yellow splashes, loading screen and cinematic background.'],

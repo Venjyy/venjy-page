@@ -5,11 +5,14 @@
 // (musica-instrumentos.js, musica-motor.js); «Reproducir en el juego» manda el tema por el puente (mensaje `musica`).
 // Un tema del código (los de la carrera) se ve tal cual y al primer cambio se copia al JSON como borrador; los del mundo
 // son funciones en musica.js: «Crear versión con capas» parte con su tempo. Borrador = el juego no lo usa (DISENO §24).
+// Vista simple (B0-M, DISENO §39): «Empezar con un estilo» y perillas (musica-simple.mjs); con la vista Simple de la barra
+// se esconden (clase solo-avanzado) piano roll, campos finos de las capas, agregar capas y sintes; la rejilla de batería queda.
 // Lo puro está en musica-modelo.mjs. Guardar escribe con If-Match, como Inicio.
 // =========================================================
 import { I } from '../mundo/supervivencia/musica-instrumentos.js';
 import { crearSecuenciador, crearReproductorCancion, tocarSinte, revisarTema, revisarCancion, acordeDe, acordeEn, INSTRUMENTOS, BATERIA, TIPOS_CAPA, ONDAS, FILTROS, USOS } from '../mundo/supervivencia/musica-motor.js';
 import * as MM from './musica-modelo.mjs';
+import * as MS from './musica-simple.mjs';
 
 const { clonar } = MM;
 const NOMBRE_INST = {
@@ -343,39 +346,40 @@ export async function montarMusica(ctx) {
         const ed = f => editar(X => f(X.capas[n], X));
         const cab = document.createElement('div'); cab.className = 'mu-capa-cab';
         cab.appendChild(campoTexto(t('Nombre', 'Name'), capa.nombre, v => ed(c => { if (v) c.nombre = v.slice(0, 40); else delete c.nombre; })));
-        cab.appendChild(campoSelect(t('Tipo', 'Type'), tipo, TIPOS_CAPA.map(x => [x, tt(NOMBRE_TIPO[x])]), v => editar(X => { X.capas[n] = MM.cambiarTipo(X.capas[n], v, P()); })));
+        const avz = el => { el.classList.add('solo-avanzado'); return el; };
+        cab.appendChild(avz(campoSelect(t('Tipo', 'Type'), tipo, TIPOS_CAPA.map(x => [x, tt(NOMBRE_TIPO[x])]), v => editar(X => { X.capas[n] = MM.cambiarTipo(X.capas[n], v, P()); }))));
         const ops = opcionesInst(tipo);
         if (!ops.some(o => o[0] === capa.inst)) ops.unshift([capa.inst, capa.inst + ' (?)']);
         cab.appendChild(campoSelect(t('Instrumento', 'Instrument'), capa.inst, ops, v => ed(c => { c.inst = v; })));
         cab.appendChild(campoNumero(t('Volumen', 'Volume'), capa.vol, 0, 2, 0.01, v => ed(c => { c.vol = v; })));
-        if (tipo !== 'ritmo') cab.appendChild(campoNumero(t('Octava (semitonos)', 'Octave (semitones)'), capa.octava || 0, -48, 48, 1, v => ed(c => { if (v) c.octava = v; else delete c.octava; })));
-        if (tipo !== 'ritmo') cab.appendChild(campoNumero(tipo === 'notas' ? t('Duración (vacío: hasta la siguiente)', 'Length (empty: until next)') : t('Duración (pasos)', 'Length (steps)'), capa.dur, 0.05, 64, 0.1, v => ed(c => { if (v === undefined) delete c.dur; else c.dur = v; }), true));
-        cab.appendChild(campoNumero(t('Probabilidad', 'Chance'), capa.prob === undefined ? 1 : capa.prob, 0, 1, 0.05, v => ed(c => { if (v >= 1) delete c.prob; else c.prob = v; })));
+        if (tipo !== 'ritmo') cab.appendChild(avz(campoNumero(t('Octava (semitonos)', 'Octave (semitones)'), capa.octava || 0, -48, 48, 1, v => ed(c => { if (v) c.octava = v; else delete c.octava; }))));
+        if (tipo !== 'ritmo') cab.appendChild(avz(campoNumero(tipo === 'notas' ? t('Duración (vacío: hasta la siguiente)', 'Length (empty: until next)') : t('Duración (pasos)', 'Length (steps)'), capa.dur, 0.05, 64, 0.1, v => ed(c => { if (v === undefined) delete c.dur; else c.dur = v; }), true)));
+        cab.appendChild(avz(campoNumero(t('Probabilidad', 'Chance'), capa.prob === undefined ? 1 : capa.prob, 0, 1, 0.05, v => ed(c => { if (v >= 1) delete c.prob; else c.prob = v; }))));
         if (['ritmo', 'rel', 'notas'].includes(tipo)) {
-            cab.appendChild(campoSelect(t('Largo', 'Length'), String(MM.compasesDe(capa, P())), [['1', t('1 compás', '1 bar')], ['4', t('4 compases', '4 bars')]], v => ed(c => MM.ponerCompases(c, Number(v), P()))));
+            cab.appendChild(avz(campoSelect(t('Largo', 'Length'), String(MM.compasesDe(capa, P())), [['1', t('1 compás', '1 bar')], ['4', t('4 compases', '4 bars')]], v => ed(c => MM.ponerCompases(c, Number(v), P())))));
         }
-        if (tipo === 'arpegio') cab.appendChild(campoNumero(t('Pasos del arpegio', 'Arpeggio steps'), capa.arpegio.length, 1, 32, 1, v => ed(c => MM.largoArpegio(c, v))));
-        if (tipo === 'acorde') cab.appendChild(campoTexto(t('Intervalos (vacío: el acorde)', 'Intervals (empty: the chord)'), (capa.intervalos || []).join(', '), v => ed(c => {
+        if (tipo === 'arpegio') cab.appendChild(avz(campoNumero(t('Pasos del arpegio', 'Arpeggio steps'), capa.arpegio.length, 1, 32, 1, v => ed(c => MM.largoArpegio(c, v)))));
+        if (tipo === 'acorde') cab.appendChild(avz(campoTexto(t('Intervalos (vacío: el acorde)', 'Intervals (empty: the chord)'), (capa.intervalos || []).join(', '), v => ed(c => {
             const l = v.split(/[ ,;]+/).map(Number).filter(x => Number.isInteger(x) && x >= -24 && x <= 48).slice(0, 8);
             if (l.length) c.intervalos = l; else delete c.intervalos;
-        })));
+        }))));
         caja.appendChild(cab);
 
         const marcas = document.createElement('div'); marcas.className = 'mu-capa-marcas';
         const niveles = MM.nivelesDe(T, clave).filter(x => x !== 'todo');
-        for (const nv of niveles) marcas.appendChild(marca(nv, !capa.niveles || capa.niveles.includes(nv), v => ed(c => {
+        for (const nv of niveles) marcas.appendChild(avz(marca(nv, !capa.niveles || capa.niveles.includes(nv), v => ed(c => {
             const s = new Set(c.niveles || niveles); if (v) s.add(nv); else s.delete(nv);
             const l = niveles.filter(x => s.has(x));
             if (l.length === niveles.length) delete c.niveles; else c.niveles = l;
-        })));
-        marcas.appendChild(marca(t('Solo en la 2.ª vuelta', 'Only on 2nd pass'), capa.segunda, v => ed(c => { if (v) c.segunda = true; else delete c.segunda; })));
+        }))));
+        marcas.appendChild(avz(marca(t('Solo en la 2.ª vuelta', 'Only on 2nd pass'), capa.segunda, v => ed(c => { if (v) c.segunda = true; else delete c.segunda; }))));
         marcas.appendChild(marca(t('Muda', 'Muted'), capa.mudo, v => ed(c => { if (v) c.mudo = true; else delete c.mudo; })));
         const bSolo = boton('Solo', 'Solo', () => { if (solos.has(n)) solos.delete(n); else solos.add(n); pintarCapas(); if (enJuego) reenviarJuego(); }, 'boton chico' + (solos.has(n) ? ' activo' : ''));
         marcas.appendChild(bSolo);
-        if (n > 0) marcas.appendChild(boton('Subir', 'Up', () => editar(X => { const c = X.capas; [c[n - 1], c[n]] = [c[n], c[n - 1]]; solos.clear(); })));
-        if (n < T.capas.length - 1) marcas.appendChild(boton('Bajar', 'Down', () => editar(X => { const c = X.capas; [c[n + 1], c[n]] = [c[n], c[n + 1]]; solos.clear(); })));
-        marcas.appendChild(boton('Duplicar', 'Duplicate', () => editar(X => { if (X.capas.length < 24) X.capas.splice(n + 1, 0, clonar(X.capas[n])); solos.clear(); })));
-        marcas.appendChild(boton('Quitar', 'Remove', () => editar(X => { X.capas.splice(n, 1); solos.clear(); }), 'boton chico secundario'));
+        if (n > 0) marcas.appendChild(avz(boton('Subir', 'Up', () => editar(X => { const c = X.capas; [c[n - 1], c[n]] = [c[n], c[n - 1]]; solos.clear(); }))));
+        if (n < T.capas.length - 1) marcas.appendChild(avz(boton('Bajar', 'Down', () => editar(X => { const c = X.capas; [c[n + 1], c[n]] = [c[n], c[n + 1]]; solos.clear(); }))));
+        marcas.appendChild(avz(boton('Duplicar', 'Duplicate', () => editar(X => { if (X.capas.length < 24) X.capas.splice(n + 1, 0, clonar(X.capas[n])); solos.clear(); }))));
+        marcas.appendChild(avz(boton('Quitar', 'Remove', () => editar(X => { X.capas.splice(n, 1); solos.clear(); }), 'boton chico secundario')));
         caja.appendChild(marcas);
 
         // Compás que se ve (patrones de 4 compases) y octava del piano roll
@@ -394,9 +398,9 @@ export async function montarMusica(ctx) {
             nav.appendChild(boton('Más agudo', 'Higher', () => { v.base += 12; pintarCapas(); }));
             nav.appendChild(boton('Más grave', 'Lower', () => { v.base -= 12; pintarCapas(); }));
         }
-        if (nav.children.length) caja.appendChild(nav);
+        if (nav.children.length) caja.appendChild(avz(nav));
 
-        const cv = document.createElement('canvas'); cv.className = 'mu-rejilla';
+        const cv = document.createElement('canvas'); cv.className = 'mu-rejilla' + (tipo === 'ritmo' ? '' : ' solo-avanzado');
         caja.appendChild(cv);
         lienzos.push({ cv, capa, n, tipo, v });
         cv.addEventListener('pointerdown', e => alClicRejilla(e, cv, n, tipo, v));
@@ -496,6 +500,7 @@ export async function montarMusica(ctx) {
     // Panel del tema
     function pintarTema() {
         const caja = $('mu-tema-campos'); caja.textContent = '';
+        const avz = el => { el.classList.add('solo-avanzado'); return el; };
         const T = datos.temas[clave];
         if (!T) { caja.appendChild(Object.assign(document.createElement('p'), { className: 'ayuda', textContent: t('Edita algo (o crea la versión con capas) para tener este tema en tu JSON.', 'Edit something (or create the layered version) to have this song in your JSON.') })); return; }
         const fClave = campoTexto(t('Clave (decide a quién reemplaza)', 'Key (decides what it replaces)'), clave, v => {
@@ -503,7 +508,7 @@ export async function montarMusica(ctx) {
             try { deshacer.push(JSON.stringify(datos)); MM.renombrar(datos, clave, v); clave = v; cambio(); }
             catch (e) { deshacer.pop(); rotular(e.message, e.message, 'error'); pintarTema(); }
         });
-        fClave.classList.add('ancho');
+        fClave.classList.add('ancho', 'solo-avanzado');
         const dl = document.createElement('datalist'); dl.id = 'mu-claves';
         for (const k of [...USOS.carrera.temas, ...Object.keys(USOS.mundo.temas)]) dl.appendChild(opcion(k, k));
         fClave.querySelector('input').setAttribute('list', 'mu-claves'); fClave.appendChild(dl);
@@ -512,11 +517,11 @@ export async function montarMusica(ctx) {
             X.nombre = X.nombre || { es: '', en: '' }; X.nombre[L] = v;
             if (!X.nombre.es && !X.nombre.en) delete X.nombre; else { X.nombre.es = X.nombre.es || X.nombre.en; X.nombre.en = X.nombre.en || X.nombre.es; }
         })));
-        caja.appendChild(campoSelect(t('Uso', 'Use'), T.uso || 'libre', Object.entries(NOMBRE_USO).map(([k, v]) => [k, tt(v)]), v => editar(X => { X.uso = v; })));
-        caja.appendChild(campoSelect(t('Pasos por compás', 'Steps per bar'), String(T.pasos || 16), [8, 12, 16, 24, 32].map(x => [String(x), x === 12 ? '12 (3/4)' : x === 16 ? '16 (4/4)' : String(x)]), v => editar(X => MM.cambiarPasos(X, Number(v)))));
-        for (const [k, es, en, min, max, paso] of CAMPOS_TEMA) caja.appendChild(campoNumero(t(es, en), T[k] === undefined ? (k === 'acordePor' ? 1 : k === 'swing' ? 0 : '') : T[k], min, max, paso, v => editar(X => {
+        caja.appendChild(avz(campoSelect(t('Uso', 'Use'), T.uso || 'libre', Object.entries(NOMBRE_USO).map(([k, v]) => [k, tt(v)]), v => editar(X => { X.uso = v; }))));
+        caja.appendChild(avz(campoSelect(t('Pasos por compás', 'Steps per bar'), String(T.pasos || 16), [8, 12, 16, 24, 32].map(x => [String(x), x === 12 ? '12 (3/4)' : x === 16 ? '16 (4/4)' : String(x)]), v => editar(X => MM.cambiarPasos(X, Number(v))))));
+        for (const [k, es, en, min, max, paso] of CAMPOS_TEMA) caja.appendChild(avz(campoNumero(t(es, en), T[k] === undefined ? (k === 'acordePor' ? 1 : k === 'swing' ? 0 : '') : T[k], min, max, paso, v => editar(X => {
             if ((k === 'swing' && !v) || (k === 'acordePor' && v === 1)) delete X[k]; else X[k] = v;
-        })));
+        }))));
         const b = marca(t('Borrador (el juego no lo usa)', 'Draft (the game ignores it)'), T.borrador, v => editar(X => { if (v) X.borrador = true; else delete X.borrador; }));
         b.classList.add('ancho'); caja.appendChild(b);
     }
@@ -571,6 +576,40 @@ export async function montarMusica(ctx) {
         });
         if ((S.armonicos || []).length < 4) caja.appendChild(boton('Agregar armónico', 'Add harmonic', () => edS(X => { X.armonicos = X.armonicos || []; X.armonicos.push({ onda: 'sine', ratio: 2, vol: 0.3 }); })));
     }
+    // Vista simple: partir de un estilo y perillas que mueven varios valores (musica-simple.mjs)
+    function pintarSimple() {
+        const caja = $('mu-simple'), T = tema(); caja.textContent = '';
+        const fila = document.createElement('div'); fila.className = 'fila-botones mu-barra';
+        fila.appendChild(Object.assign(document.createElement('span'), { className: 'etiqueta-perfil', textContent: t('Empezar con un estilo:', 'Start from a style:') }));
+        for (const [k, E] of Object.entries(MS.ESTILOS)) fila.appendChild(boton(E.nombre[0], E.nombre[1], () => {
+            deshacer.push(JSON.stringify(datos)); const c = MM.claveLibre(datos, k); datos.temas[c] = MS.temaDeEstilo(k); clave = c; solos.clear(); cambio();
+            rotular(`Tema «${c}» con la base de ${E.nombre[0]}. Ajusta las perillas o la batería; el juego no lo usa hasta que lo apliques.`, `Song «${c}» with the ${E.nombre[1]} base. Adjust the knobs or the drums; the game ignores it until you apply it.`);
+        }));
+        caja.appendChild(fila);
+        if (!T) return;
+        const per = document.createElement('div'); per.className = 'mu-perillas';
+        const perilla = (rotulo, palabra, min, max, paso, valor, al) => {
+            const l = document.createElement('label'); l.className = 'campo mu-perilla';
+            const s = document.createElement('span'); s.textContent = `${rotulo}: ${palabra}`;
+            const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = paso; i.value = valor;
+            i.addEventListener('change', () => al(Number(i.value)));
+            l.append(s, i); return l;
+        };
+        per.appendChild(perilla(t('Rapidez', 'Speed'), `${tt(MS.palabraRapidez(T.bpm))} (${T.bpm} bpm)`, MS.BPM_MIN, MS.BPM_MAX, 1, T.bpm, v => editar(X => MS.ponerRapidez(X, v))));
+        const f = MS.fuerzaDe(T);
+        per.appendChild(perilla(t('Fuerza', 'Loudness'), f < 0.34 ? t('suave', 'soft') : f < 0.67 ? t('normal', 'normal') : t('fuerte', 'loud'), 0, 1, 0.05, f, v => editar(X => MS.ponerFuerza(X, v))));
+        const animo = MS.animoDe(T.prog), fa = document.createElement('div'); fa.className = 'fila-botones';
+        fa.appendChild(Object.assign(document.createElement('span'), { textContent: t('Ánimo:', 'Mood:') }));
+        fa.appendChild(boton('Alegre', 'Happy', () => editar(X => MS.ponerAnimo(X, 'alegre')), 'boton chico' + (animo === 'alegre' ? ' activo' : '')));
+        fa.appendChild(boton('Triste', 'Sad', () => editar(X => MS.ponerAnimo(X, 'triste')), 'boton chico' + (animo === 'triste' ? ' activo' : '')));
+        per.appendChild(fa);
+        const ft = document.createElement('div'); ft.className = 'fila-botones';
+        ft.appendChild(Object.assign(document.createElement('span'), { textContent: `${t('Tono', 'Key')}: ${tt(MS.tonalidadDe(T))} · ${t('compás', 'time')} ${tt(MS.compasDe(T))}` }));
+        ft.appendChild(boton('Más grave', 'Lower', () => editar(X => MS.transponer(X, -1))));
+        ft.appendChild(boton('Más agudo', 'Higher', () => editar(X => MS.transponer(X, 1))));
+        per.appendChild(ft);
+        caja.appendChild(per);
+    }
     function pintarTeclado() {
         const caja = $('mu-teclado'); caja.textContent = '';
         for (let m = 60; m <= 72; m++) {
@@ -580,7 +619,7 @@ export async function montarMusica(ctx) {
     }
 
     function pintar() {
-        pintarSelector(); pintarEstado(); pintarNiveles(); pintarProgresion(); pintarCapas(); pintarTema(); pintarSintes();
+        pintarSelector(); pintarEstado(); pintarSimple(); pintarNiveles(); pintarProgresion(); pintarCapas(); pintarTema(); pintarSintes();
         if (sonandoAqui() && !cuadro) cuadro = requestAnimationFrame(animar);
     }
 
@@ -658,6 +697,7 @@ export async function montarMusica(ctx) {
     });
     window.addEventListener('resize', () => { if (ctx.pestana === 'musica') for (const L of lienzos) dibujarRejilla(L, null); });
     ctx.alPestana.push(p => { if (p === 'musica') pintar(); else if (sonandoAqui()) parar(); if (p !== 'ritmo') pararEscucha(); });
+    ctx.alVista.push(() => { if (ctx.pestana === 'musica') pintarCapas(); }); // la rejilla que estaba escondida se vuelve a medir
     ctx.alIdioma.push(() => { pintar(); pintarTeclado(); pintarBotonJuego(); $('mu-tocar').textContent = sonandoAqui() ? t('Parar', 'Stop') : t('Reproducir', 'Play'); });
     // La pestaña Ritmo (S10c) edita `canciones` dentro de este mismo JSON: comparte datos, deshacer, envío en vivo y Guardar.
     ctx.musica = {
