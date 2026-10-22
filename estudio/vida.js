@@ -22,6 +22,7 @@ import { TEXTOS_RUTINA, horasDeViaje } from '../mundo/supervivencia/rutinas.js';
 import { HORARIOS, LUGARES } from '../mundo/supervivencia/horarios-datos.js';
 import { FOGATA_BASE } from '../mundo/supervivencia/fogata.js';
 import { POSES_BASE } from '../mundo/supervivencia/pose-jugador.js';
+import { horaTexto, horaDeTexto, fraseVisita, BASES_VISITA, visitaDeBase, duplicarVisita, PERILLAS, leerPerilla, ponerPerilla } from './vida-simple.mjs';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 // [es, en, min, max, paso] de cada campo (los textos largos están en el esquema)
@@ -230,6 +231,15 @@ export async function montarVida(ctx) {
         fila.append(s, d);
         return fila;
     }
+    // Hora del reloj como 13:30 (el JSON guarda 13.5)
+    function hora(etiqueta, valor, poner) {
+        const fila = document.createElement('label'); fila.className = 'campo';
+        const s = document.createElement('span'); s.textContent = etiqueta;
+        const i = document.createElement('input'); i.type = 'time'; i.step = 900; i.value = horaTexto(valor);
+        i.addEventListener('change', () => { const h = horaDeTexto(i.value); if (h !== null) poner(h); });
+        fila.append(s, i);
+        return fila;
+    }
     function textoCampo(etiqueta, valor, poner, opciones = {}) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
@@ -249,8 +259,9 @@ export async function montarVida(ctx) {
         fila.append(s, sel);
         return fila;
     }
-    const seccion = (titulo, abierta = true, dentro = caja) => {
-        const sec = document.createElement('details'); sec.className = 'panel'; sec.open = abierta;
+    // `avanzada`: la sección solo se ve en la vista Avanzado (B0-V)
+    const seccion = (titulo, abierta = true, dentro = caja, avanzada = false) => {
+        const sec = document.createElement('details'); sec.className = 'panel' + (avanzada ? ' solo-avanzado' : ''); sec.open = abierta;
         const h = document.createElement('summary'); h.textContent = titulo;
         sec.appendChild(h);
         dentro.appendChild(sec);
@@ -261,8 +272,9 @@ export async function montarVida(ctx) {
         b.addEventListener('click', f);
         return b;
     };
+    // Los grupos de números son lo fino: solo en Avanzado (en Simple los mueven las perillas de «Lo básico»)
     function grupo(titulo, archivo, parte, campos, base, abierta = true) {
-        const sec = seccion(titulo, abierta);
+        const sec = seccion(titulo, abierta, caja, true);
         const d = () => A[archivo].datos[parte];
         for (const [k, [es, en, min, max, paso]] of Object.entries(campos)) {
             const v = Number.isFinite(d()[k]) ? d()[k] : base[k];
@@ -303,7 +315,8 @@ export async function montarVida(ctx) {
     function accion(sec, titulo, v, parte) {
         const o = v[parte] || {};
         const poner = (k, x) => { v[parte] = { ...(v[parte] || {}) }; if (x === null || x === '') delete v[parte][k]; else v[parte][k] = x; if (!Object.keys(v[parte]).length) delete v[parte]; cambio('rutinas'); };
-        sec.appendChild(textoCampo(t(`${titulo}: gesto`, `${titulo}: gesture`), o.gesto, x => poner('gesto', x), { lista: 'vi-gestos', placeholder: t('saluda, asiente, risa…', 'saluda, asiente, risa…') }));
+        const g = textoCampo(t(`${titulo}: gesto`, `${titulo}: gesture`), o.gesto, x => poner('gesto', x), { lista: 'vi-gestos', placeholder: t('saluda, asiente, risa…', 'saluda, asiente, risa…') });
+        g.classList.add('solo-avanzado'); sec.appendChild(g);
         sec.appendChild(frase(t(`${titulo}: frase`, `${titulo}: line`), o.texto, x => poner('texto', x)));
     }
     async function rutina(accionR, visita) {
@@ -316,8 +329,8 @@ export async function montarVida(ctx) {
     }
     function tarjetaVisita(dentro, clave) {
         const v = rut().visitas[clave];
-        const destino = v.visita ? `→ ${v.visita}` : v.lugar ? `→ ${v.lugar}` : '';
-        const sec = seccion(`${clave} · ${v.quien} ${destino} · ${hhmm(v.de)}-${hhmm(v.a)}${v.activa === false ? t(' (apagada)', ' (off)') : ''}`, false, dentro);
+        const sec = seccion(fraseVisita(v, ctx.idioma), false, dentro);
+        sec.title = clave;
         const poner = (k, x) => { if (x === null || x === '' || x === undefined) delete v[k]; else v[k] = x; cambio('rutinas'); };
         const gente = personas.map(c => [c, c]);
         sec.appendChild(selector(t('quién sale', 'who leaves'), v.quien, gente, x => { poner('quien', x); pintar(); }));
@@ -330,8 +343,8 @@ export async function montarVida(ctx) {
             horas.textContent = t(`Está allá de ${hhmm(v.de)} a ${hhmm(v.a)}; sale antes según la distancia (~${hhmm(h100)} h de camino por cada 100 bloques).`,
                 `There from ${hhmm(v.de)} to ${hhmm(v.a)}; leaves early by distance (~${hhmm(h100)} h of walking per 100 blocks).`);
         };
-        sec.appendChild(numero(t('llega a las (hora, 13.5 = 13:30)', 'arrives at (hour, 13.5 = 13:30)'), v.de, 0, 24, 0.25, x => { v.de = x; cambio('rutinas'); pintarHoras(); }));
-        sec.appendChild(numero(t('se va a las', 'leaves at'), v.a, 0, 24, 0.25, x => { v.a = x; cambio('rutinas'); pintarHoras(); }));
+        sec.appendChild(hora(t('llega a las', 'arrives at'), v.de, x => { v.de = x; cambio('rutinas'); pintarHoras(); }));
+        sec.appendChild(hora(t('se va a las', 'leaves at'), v.a, x => { v.a = x; cambio('rutinas'); pintarHoras(); }));
         sec.appendChild(horas); pintarHoras();
         const act = document.createElement('label'); act.className = 'campo';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = v.activa !== false;
@@ -340,12 +353,14 @@ export async function montarVida(ctx) {
         act.append(cb, sp); sec.appendChild(act);
         accion(sec, t('Al llegar', 'On arrival'), v, 'llegada');
         if (v.visita) accion(sec, t('Quien recibe', 'The host'), v, 'respuesta');
-        if (v.visita) accion(sec, t('Si no está (vacío = lo general)', 'If not there (empty = general)'), v, 'ausente');
-        sec.appendChild(textoCampo(t('nota', 'note'), v.nota, x => poner('nota', x || null)));
+        const fino = document.createElement('div'); fino.className = 'solo-avanzado'; sec.appendChild(fino);
+        if (v.visita) accion(fino, t('Si no está (vacío = lo general)', 'If not there (empty = general)'), v, 'ausente');
+        fino.appendChild(textoCampo(t('nota', 'note'), v.nota, x => poner('nota', x || null)));
         const f = document.createElement('div'); f.className = 'fila-botones';
         f.append(
             boton('Probar ahora en el juego', 'Try it now in the game', () => rutina('probar', clave)),
             boton('Cortar y volver', 'Stop and go back', () => rutina('cortar', clave)),
+            boton('Copiar para hacer otra parecida', 'Copy to make a similar one', () => { const n = duplicarVisita(clave, rut().visitas); rut().visitas[n.clave] = n.visita; cambio('rutinas'); pintar(); rotular(`Copia «${n.clave}» (apagada): ábrela, cámbiala y préndela.`, `Copy "${n.clave}" (off): open it, change it and turn it on.`, 'ok'); }),
             boton('Quitar esta visita', 'Remove this visit', () => { if (confirm(t(`¿Quitar la visita «${clave}»?`, `Remove the visit "${clave}"?`))) { delete rut().visitas[clave]; cambio('rutinas'); pintar(); } })
         );
         sec.appendChild(f);
@@ -360,6 +375,37 @@ export async function montarVida(ctx) {
         cambio('rutinas'); pintar();
         rotular(`Nueva visita «${clave}»: ábrela abajo para elegir a quién y cuándo.`, `New visit "${clave}": open it below to choose who and when.`, 'ok');
     }
+    // Visita nueva desde una base (almuerzo, tarde, noche, paseo): la persona elegida arriba y la siguiente de la lista
+    function nuevaDesdeBase() {
+        const f = document.createElement('div'); f.className = 'fila-botones';
+        const lab = document.createElement('span'); lab.textContent = t('Partir de una base:', 'Start from a base:');
+        const sel = document.createElement('select');
+        for (const b of BASES_VISITA) sel.appendChild(new Option(t(b.es, b.en), b.clave));
+        f.append(lab, sel, boton('Crear visita', 'Create visit', () => {
+            const quien = selPersona.value || personas[0];
+            if (!quien) return;
+            const base = BASES_VISITA.find(b => b.clave === sel.value);
+            const { clave, visita } = visitaDeBase(base, quien, personas.find(c => c !== quien) || null, lugares[0] || null, rut().visitas);
+            rut().visitas[clave] = visita; cambio('rutinas'); pintar();
+            rotular(`Nueva: ${fraseVisita(visita, 'es')}. Ábrela abajo para cambiar a quién y la hora.`, `New: ${fraseVisita(visita, 'en')}. Open it below to change who and when.`, 'ok');
+        }));
+        return f;
+    }
+    // «Lo básico»: perillas con nombres comunes que mueven uno o varios números (vida-simple.mjs)
+    const BASES_PERILLA = { navegacion: { caminar: NAV_BASE, seguir: SEGUIR_BASE, pelea: PELEA_BASE }, rutinas: { ajustes: RUTINA_BASE }, actividades: { fogata: FOGATA_BASE } };
+    const datosPerilla = () => ({ navegacion: nav(), rutinas: rut(), actividades: A.actividades.datos });
+    function pintarBasico() {
+        const sec = seccion(t('Lo básico', 'The basics'));
+        for (const p of PERILLAS) {
+            const v = leerPerilla(p, datosPerilla(), BASES_PERILLA);
+            const ops = p.opciones.map(([x, es, en]) => [String(x), t(es, en)]);
+            if (v === null) ops.unshift(['', t('a mano (en Avanzado)', 'custom (in Advanced)')]);
+            sec.appendChild(selector(t(p.es, p.en), v === null ? '' : String(v), ops, x => {
+                if (x === '') return;
+                ponerPerilla(p, datosPerilla(), Number(x), BASES_PERILLA); cambio(p.archivo); pintar();
+            }));
+        }
+    }
     function pintarRutinas() {
         const sec = seccion(t('Rutinas: visitas por horario', 'Routines: scheduled visits'));
         const p = document.createElement('p'); p.className = 'mensaje';
@@ -367,28 +413,31 @@ export async function montarVida(ctx) {
             'With the world clock, who leaves walks to see someone (or a place), greets on arrival, stays until leaving time and goes back. Leaves early by distance. If the host is not home, waits. «Try it now» does it right away regardless of the time.');
         sec.appendChild(p);
         for (const clave of Object.keys(rut().visitas)) tarjetaVisita(sec, clave);
-        sec.appendChild(boton('Nueva visita (de la persona elegida arriba)', 'New visit (for the person chosen above)', nuevaVisita));
+        sec.appendChild(nuevaDesdeBase());
+        const nv = boton('Nueva visita (de la persona elegida arriba)', 'New visit (for the person chosen above)', nuevaVisita);
+        nv.classList.add('solo-avanzado'); sec.appendChild(nv);
+        pintarBasico();
         grupo(t('Rutinas: ajustes', 'Routines: settings'), 'rutinas', 'ajustes', RUTINA, RUTINA_BASE, false);
         // Lo que hacen si no encuentran a quien venían a ver (todas las visitas; cada una puede tener lo suyo)
-        const sa = seccion(t('Rutinas: si no encuentra a quien visita ({quien})', 'Routines: if the host is not there ({quien})'), false);
+        const sa = seccion(t('Rutinas: si no encuentra a quien visita ({quien})', 'Routines: if the host is not there ({quien})'), false, caja, true);
         const gen = { ausente: rut().ausente || {} };
         const fijarGen = () => { if (Object.keys(gen.ausente || {}).length) rut().ausente = gen.ausente; else delete rut().ausente; cambio('rutinas'); };
         sa.appendChild(textoCampo(t('gesto', 'gesture'), (rut().ausente || {}).gesto || '', x => { gen.ausente = { ...(rut().ausente || {}) }; if (x) gen.ausente.gesto = x; else delete gen.ausente.gesto; fijarGen(); }, { lista: 'vi-gestos', placeholder: AUSENTE_BASE.gesto }));
         sa.appendChild(frase(t('frase', 'line'), (rut().ausente || {}).texto || AUSENTE_BASE.texto, x => { gen.ausente = { ...(rut().ausente || {}) }; if (x) gen.ausente.texto = x; else delete gen.ausente.texto; fijarGen(); }));
         // Te incluyen: lo que dice al pasar junto al jugador con amistad alta (nivel, radio y espera en los ajustes)
-        const si = seccion(t('Rutinas: te saludan al pasar ({quien})', 'Routines: they greet you in passing ({quien})'), false);
+        const si = seccion(t('Rutinas: te saludan al pasar ({quien})', 'Routines: they greet you in passing ({quien})'), false, caja, true);
         const fijarInc = (k, x) => { const o = { ...(rut().incluir || {}) }; if (x) o[k] = x; else delete o[k]; if (Object.keys(o).length) rut().incluir = o; else delete rut().incluir; cambio('rutinas'); };
         si.appendChild(textoCampo(t('gesto', 'gesture'), (rut().incluir || {}).gesto || '', x => fijarInc('gesto', x), { lista: 'vi-gestos', placeholder: INCLUIR_BASE.gesto }));
         for (const [k, es, en] of [['yendo', 'yendo a ver a alguien', 'going to see someone'], ['visitando', 'de visita', 'visiting'], ['volviendo', 'de vuelta', 'heading back'], ['paseo', 'visita a un lugar', 'visiting a place']])
             si.appendChild(frase(t(es, en), (rut().incluir || {})[k] || INCLUIR_BASE[k], x => fijarInc(k, x)));
         // Acompañantes (7i): botones de «Hablar» y lo que dice (nivel en los ajustes; cómo te sigue, abajo en «Te acompaña»)
-        const sc = seccion(t('Rutinas: te acompaña (botones y frases)', 'Routines: comes with you (buttons and lines)'), false);
+        const sc = seccion(t('Rutinas: te acompaña (botones y frases)', 'Routines: comes with you (buttons and lines)'), false, caja, true);
         const fijarAc = (k, x) => { const o = { ...(rut().acompanar || {}) }; if (x) o[k] = x; else delete o[k]; if (Object.keys(o).length) rut().acompanar = o; else delete rut().acompanar; cambio('rutinas'); };
         for (const [k, es, en] of FRASES_ACOMPANAR) sc.appendChild(frase(t(es, en), (rut().acompanar || {})[k] || ACOMPANAR_BASE[k], x => fijarAc(k, x)));
         for (const [k, es, en] of [['gestoAcepta', 'gesto al aceptar', 'gesture on accepting'], ['gestoDespide', 'gesto al despedirse', 'gesture on goodbye']])
             sc.appendChild(textoCampo(t(es, en), (rut().acompanar || {})[k] || '', x => fijarAc(k, x), { lista: 'vi-gestos', placeholder: ACOMPANAR_BASE[k] }));
         // Horarios y nombres de lugar del panel de cada amigo
-        const sh = seccion(t('Rutinas: horario de cada amigo (su panel)', 'Routines: each friend’s schedule (their panel)'), false);
+        const sh = seccion(t('Rutinas: horario de cada amigo (su panel)', 'Routines: each friend’s schedule (their panel)'), false, caja, true);
         for (const c of personas) {
             const h = rut().horarios[c] || {}, b = HORARIOS[c] || { de: 8, a: 18 };
             const pon = (k, x) => { rut().horarios[c] = { ...(rut().horarios[c] || {}), [k]: x }; cambio('rutinas'); };
@@ -398,11 +447,11 @@ export async function montarVida(ctx) {
             f.append(lab, mk('de', b.de), document.createTextNode('–'), mk('a', b.a));
             sh.appendChild(f);
         }
-        const sl = seccion(t('Rutinas: nombres de lugar del panel', 'Routines: place names in the panel'), false);
+        const sl = seccion(t('Rutinas: nombres de lugar del panel', 'Routines: place names in the panel'), false, caja, true);
         for (const l of [...new Set([...Object.keys(LUGARES), ...Object.keys(rut().lugares)])]) {
             sl.appendChild(frase(l, rut().lugares[l] || LUGARES[l], x => { if (x) rut().lugares[l] = x; else delete rut().lugares[l]; cambio('rutinas'); }));
         }
-        const st = seccion(t('Rutinas: líneas del panel ({quien}, {lugar})', 'Routines: panel lines ({quien}, {lugar})'), false);
+        const st = seccion(t('Rutinas: líneas del panel ({quien}, {lugar})', 'Routines: panel lines ({quien}, {lugar})'), false, caja, true);
         for (const [k, [es, en]] of Object.entries(TEXTOS_PANEL)) {
             st.appendChild(frase(t(es, en), rut().textos[k] || TEXTOS_RUTINA[k], x => { if (x) rut().textos[k] = x; else delete rut().textos[k]; cambio('rutinas'); }));
         }
@@ -414,7 +463,7 @@ export async function montarVida(ctx) {
         const fog = () => act.fogata;
         grupo(t('Fogata: cupo, radios y tiempos', 'Campfire: capacity, radii and timing'), 'actividades', 'fogata', FOGATA, FOGATA_BASE, false);
         // Asientos: dx y dz desde el fuego y cómo se sienta; editar uno copia la lista del código al JSON
-        const secA = seccion(t('Fogata: asientos (desde el centro del fuego)', 'Campfire: seats (from the fire centre)'), false);
+        const secA = seccion(t('Fogata: asientos (desde el centro del fuego)', 'Campfire: seats (from the fire centre)'), false, caja, true);
         const lista = () => (Array.isArray(fog().asientos) ? fog().asientos : clonar(FOGATA_BASE.asientos));
         const fijarLista = l => { fog().asientos = l; cambio('actividades'); };
         lista().forEach((a, i) => {
@@ -429,7 +478,7 @@ export async function montarVida(ctx) {
         secA.appendChild(boton('Agregar asiento', 'Add seat', () => { const l = lista(); if (l.length < 16) l.push({ dx: 0, dz: -2, tipo: 'suelo' }); fijarLista(l); pintar(); }));
         secA.appendChild(boton('Asientos del código', 'Code seats', () => { delete fog().asientos; cambio('actividades'); pintar(); }));
         // Frases cortas (máximo 4, teclas 1-4) y textos
-        const secF = seccion(t('Fogata: frases (las leen los que están cerca) y textos', 'Campfire: lines (read by those nearby) and texts'), false);
+        const secF = seccion(t('Fogata: frases (las leen los que están cerca) y textos', 'Campfire: lines (read by those nearby) and texts'), false, caja, true);
         const frases = () => (fog().frases && Object.keys(fog().frases).length ? fog().frases : clonar(FOGATA_BASE.frases));
         Object.entries(frases()).forEach(([k, o], i) => {
             secF.appendChild(frase(`${i + 1}. ${k}`, o, x => { const fr = frases(); if (x) fr[k] = x; else delete fr[k]; fog().frases = fr; cambio('actividades'); }));
@@ -448,7 +497,7 @@ export async function montarVida(ctx) {
             }));
         }
         // Poses (radianes de rig.md): sentado en el suelo, en un tronco, en cuclillas y calentarse
-        const secP = seccion(t('Poses al sentarse (las ven igual los demás jugadores)', 'Sitting poses (others see them the same)'), false);
+        const secP = seccion(t('Poses al sentarse (las ven igual los demás jugadores)', 'Sitting poses (others see them the same)'), false, caja, true);
         const NOMBRES = { sentado: ['en el suelo', 'on the ground'], tronco: ['en un tronco', 'on a log'], cuclillas: ['en cuclillas', 'squatting'], calentar: ['calentarse las manos', 'warming hands'] };
         for (const [p, [es, en]] of Object.entries(NOMBRES)) {
             const tit = document.createElement('strong'); tit.textContent = t(es, en); secP.appendChild(tit);
