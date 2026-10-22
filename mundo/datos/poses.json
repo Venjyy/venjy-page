@@ -279,6 +279,181 @@
         }
       },
       "nota": "Bloque 8 · L1 (reto del duelo): Moisés junta las manos al pecho (bDz 0.5 / bIz -0.5), las estira al frente con un tirón (los hombros acompañan con inc) y rueda el cuello a un lado. Reloj u; pensado para ~1.8 s."
+    },
+    "lalo-frotaM": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -1,
+          "osc": [
+            { "forma": "sin", "amp": 0.06, "frec": 14 }
+          ]
+        },
+        "bDz": 0.6,
+        "bIx": {
+          "base": -1,
+          "osc": [
+            { "forma": "sin", "amp": -0.06, "frec": 14 }
+          ]
+        },
+        "bIz": -0.6,
+        "cx": 0.2
+      }
+    },
+    "lalo-sopla": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -1.8,
+        "bDz": 0.5,
+        "bIx": -1.8,
+        "bIz": -0.5,
+        "cx": {
+          "base": 0.25,
+          "osc": [
+            { "forma": "sin", "amp": 0.03, "frec": 6 }
+          ]
+        }
+      }
+    },
+    "lalo-salta": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -0.15,
+        "bDz": 0.1,
+        "bIx": -0.15,
+        "bIz": -0.1,
+        "salto": {
+          "base": 0,
+          "osc": [
+            { "forma": "abs", "amp": 0.28, "frec": 4.1887902047863905 }
+          ]
+        }
+      }
+    },
+    "lalo-botas": {
+      "reloj": "u",
+      "canales": {
+        "pDx": {
+          "k": [[0, 0], [0.3, -1.3], [0.47, -1], [0.6, -1], [1, 0]]
+        },
+        "bDx": -0.3,
+        "bDz": 0.2,
+        "bIx": -0.3,
+        "bIz": -0.2,
+        "rz": {
+          "k": [[0, 0], [0.3, -0.08], [0.6, -0.08], [1, 0]]
+        },
+        "cx": 0.05
+      }
+    },
+    "andy-baileMal": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -2.2,
+          "osc": [
+            { "forma": "sin", "amp": 0.5, "frec": 7 }
+          ]
+        },
+        "bDz": 0.2,
+        "bIx": {
+          "base": -1.4,
+          "osc": [
+            { "forma": "sin", "amp": 0.6, "frec": 5.3, "fase": 1 }
+          ]
+        },
+        "bIz": -0.3,
+        "rz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.12, "frec": 3 }
+          ]
+        },
+        "cx": -0.1,
+        "cy": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.2, "frec": 2.1 }
+          ]
+        }
+      }
+    },
+    "braulio-toma": {
+      "reloj": "t",
+      "canales": { "bDx": -1.05, "bDz": 0.5, "cx": 0.05 }
+    },
+    "braulio-cuenta": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -1.05,
+        "bDz": 0.5,
+        "bIx": {
+          "base": -1.6,
+          "osc": [
+            { "forma": "sin", "amp": 0.1, "frec": 9 }
+          ]
+        },
+        "bIz": 0.3,
+        "cx": 0.05
+      }
+    },
+    "braulio-asombra": {
+      "reloj": "t",
+      "canales": { "bDx": -1.05, "bDz": 0.5, "bIx": -2.4, "bIz": 0.3, "cx": -0.35 }
+    },
+    "braulio-palma": {
+      "reloj": "u",
+      "canales": {
+        "bDx": {
+          "k": [[0, -1.05], [0.3, -1.55], [0.47, -1.05], [0.6, -1.05], [1, -0.3]]
+        },
+        "bDz": {
+          "k": [[0, 0.5], [0.3, 0.4], [0.47, 0.5], [0.6, 0.5], [1, 0.2]]
+        },
+        "cx": 0.05
+      }
+    },
+    "moises-tiembla": {
+      "reloj": "t",
+      "canales": {
+        "cz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 23 }
+          ]
+        },
+        "rz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.03, "frec": 31 }
+          ]
+        },
+        "cx": 0.15,
+        "bDz": 0.05,
+        "bIz": -0.05
+      }
+    },
+    "moises-frotaJ": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -1.5,
+          "osc": [
+            { "forma": "sin", "amp": 0.09, "frec": 12 }
+          ]
+        },
+        "bDz": 0.3,
+        "bIx": {
+          "base": -1.5,
+          "osc": [
+            { "forma": "sin", "amp": -0.09, "frec": 12 }
+          ]
+        },
+        "bIz": -0.3,
+        "cx": 0.1,
+        "inc": 0.08,
+        "pz": 0.4
+      }
     }
   }
 }

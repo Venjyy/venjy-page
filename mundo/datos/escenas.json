@@ -1452,6 +1452,303 @@
       "actores": {
         "c": { "clave": "j", "radio": 9 }
       }
+    },
+    "bienvenida-lalo": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "lalo" },
+      "T": 27.9,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Lalo! ¿Y el Moisés? Pensé que no salías sin él.",
+            "en": "Lalo! Where's Moisés? I thought you never went out without him."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.55,
+          "texto": {
+            "es": "Ahya, el Moisés cuida el iglú. Yo vine a verte, hermano.",
+            "en": "Ahya, Moisés is minding the igloo. I came to see you, bro."
+          }
+        },
+        {
+          "q": "n",
+          "a": 6.8,
+          "texto": {
+            "es": "Como en Coyhaique: saltitos para el frío y choque de botas.",
+            "en": "Like in Coyhaique: little hops for the cold and a boot bump."
+          }
+        },
+        {
+          "q": "j",
+          "a": 10.15,
+          "texto": { "es": "Ahya, nadie más entiende este saludo.", "en": "Ahya, nobody else gets this greeting." }
+        },
+        {
+          "q": "n",
+          "a": 17.15,
+          "texto": {
+            "es": "Nieve hasta las rodillas, y nosotros felices.",
+            "en": "Snow up to our knees, and we were happy."
+          }
+        },
+        {
+          "q": "j",
+          "a": 20.1,
+          "texto": {
+            "es": "Éramos cabros chicos y creíamos que el frío no existía.",
+            "en": "We were just kids and thought cold didn't exist."
+          }
+        },
+        {
+          "q": "n",
+          "a": 23.35,
+          "texto": {
+            "es": "Gracias por venir, hermano. En el iglú te espera otro Lalo, con sombrero y todo.",
+            "en": "Thanks for coming, bro. Another Lalo is waiting in the igloo, hat and all."
+          }
+        }
+      ],
+      "pista": {
+        "n": [
+          ["lalo-frotaM", 0.3, 2.6],
+          ["lalo-sopla", 2.6, 4.4],
+          [
+            "lalo-salta",
+            6.9,
+            8.4,
+            { "reloj": 6.9 }
+          ],
+          ["lalo-botas", 8.4, 10.1],
+          [
+            "secreto",
+            10.45,
+            15.05,
+            { "reloj": 10.05 }
+          ],
+          [
+            "abrazo",
+            15.15,
+            19.65,
+            {
+              "reloj": 14.75,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 19.65, 20.05],
+          ["asiente", 20.05, 23.2],
+          ["habla", 23.35, 26.95]
+        ],
+        "j": [
+          ["lalo-frotaM", 0.3, 2.6],
+          ["lalo-sopla", 2.6, 4.4],
+          [
+            "lalo-salta",
+            6.9,
+            8.4,
+            { "reloj": 6.9 }
+          ],
+          ["lalo-botas", 8.4, 10.1],
+          [
+            "secreto",
+            10.45,
+            15.05,
+            { "reloj": 10.05 }
+          ],
+          [
+            "abrazo",
+            15.15,
+            19.65,
+            {
+              "reloj": 14.75,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["habla", 20.1, 23.2]
+        ]
+      },
+      "golpes": [11.25, 12.25, 13.15, 14.05],
+      "sonidos": [[9.2, "golpe"]]
+    },
+    "bienvenida-andy": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "andy" },
+      "T": 18,
+      "r": 1.5,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Andy! Bienvenido. Mira, practiqué tu baile.",
+            "en": "Andy! Welcome. Look, I practiced your dance."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.45,
+          "texto": { "es": "Eso no es mi baile. Eso es un calambre.", "en": "That's not my dance. That's a cramp." }
+        },
+        {
+          "q": "n",
+          "a": 6.2,
+          "texto": { "es": "Ya, enséñame bien.", "en": "Okay, teach me properly." }
+        },
+        {
+          "q": "j",
+          "a": 8.65,
+          "texto": { "es": "Brazo, brazo, y la cadera. ¡Eso!", "en": "Arm, arm, and the hips. That's it!" }
+        },
+        {
+          "q": "n",
+          "a": 11.2,
+          "texto": {
+            "es": "Gracias por pasarte. Con tu skin hay cosas que yo ni he probado.",
+            "en": "Thanks for dropping by. With your skin there are things I haven't even tried."
+          }
+        },
+        {
+          "q": "j",
+          "a": 14.65,
+          "texto": { "es": "Entonces aquí también voy a ganar.", "en": "Then I'm going to win here too." }
+        }
+      ],
+      "pista": {
+        "n": [["andy-baileMal", 0.3, 3.4], ["rasca", 3.45, 6.15], ["asiente", 6.25, 9.05], ["baile", 9.15, 14.55], ["brazosArriba", 14.65, 17.8]],
+        "j": [["risa", 3.45, 6.05], ["tu", 6.15, 8.55], ["baile", 8.65, 14.55], ["brazosArriba", 14.65, 17.8]]
+      },
+      "sonidos": [[9.15, "bajo"]]
+    },
+    "bienvenida-braulio": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "braulio" },
+      "T": 18.4,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Braulio! A ver esa mano... uno, dos, tres...",
+            "en": "Braulio! Let's see that hand... one, two, three..."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.55,
+          "texto": { "es": "Sigue contando, que viene lo bueno.", "en": "Keep counting, the good part is coming." }
+        },
+        {
+          "q": "n",
+          "a": 6.2,
+          "texto": {
+            "es": "¡El dedo doble! Nunca me acostumbro.",
+            "en": "The double finger! I'll never get used to it."
+          }
+        },
+        {
+          "q": "j",
+          "a": 8.85,
+          "texto": { "es": "Choca esos cinco. Bueno, esos seis.", "en": "High five. Well, high six." }
+        },
+        {
+          "q": "n",
+          "a": 11.5,
+          "texto": {
+            "es": "Gracias por venir. ¿Y de verdad eres de Arica, tan blanquito?",
+            "en": "Thanks for coming. And you're really from Arica, that pale?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 14.85,
+          "texto": {
+            "es": "El sol de Arica me respeta, no me quema.",
+            "en": "The Arica sun respects me, it doesn't burn me."
+          }
+        }
+      ],
+      "pista": {
+        "n": [["braulio-cuenta", 0.3, 6.2], ["braulio-asombra", 6.2, 7.3], ["braulio-toma", 7.3, 8.45], ["braulio-palma", 8.45, 10.15], ["habla", 11.5, 14.7]],
+        "j": [["braulio-toma", 0.3, 8.45], ["braulio-palma", 8.45, 10.15], ["habla", 14.85, 17.45]]
+      },
+      "golpes": [9.25, 9.55]
+    },
+    "bienvenida-moises": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "moises" },
+      "T": 18.6,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Moisés! ¿Sentiste ese viento? Me acordé de Coyhaique.",
+            "en": "Moisés! Did you feel that wind? It reminded me of Coyhaique."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.75,
+          "texto": {
+            "es": "Esto no es frío, hermano. Frío era a los trece.",
+            "en": "This isn't cold, bro. Cold was when we were thirteen."
+          }
+        },
+        {
+          "q": "n",
+          "a": 6.7,
+          "texto": { "es": "Tienes razón. Igual frótame un poco.", "en": "You're right. Rub my arms a bit anyway." }
+        },
+        {
+          "q": "j",
+          "a": 9.35,
+          "texto": { "es": "Ya, ya, sobreviviste.", "en": "There, there, you survived." }
+        },
+        {
+          "q": "n",
+          "a": 11.8,
+          "texto": {
+            "es": "Gracias por venir. Pásate por el iglú: hay un Moisés igualito a ti.",
+            "en": "Thanks for coming. Drop by the igloo: there's a Moisés just like you."
+          }
+        },
+        {
+          "q": "j",
+          "a": 15.35,
+          "texto": { "es": "¿Otro yo? Eso tengo que verlo.", "en": "Another me? I have to see that." }
+        }
+      ],
+      "pista": {
+        "n": [
+          ["tirita", 0.3, 6.7],
+          ["moises-tiembla", 6.7, 10.95],
+          [
+            "puno",
+            10.95,
+            12.9,
+            { "reloj": 10.5 }
+          ],
+          ["habla", 12.9, 15.2]
+        ],
+        "j": [
+          ["habla", 3.75, 6.55],
+          ["moises-frotaJ", 7.1, 10.95],
+          [
+            "puno",
+            10.95,
+            12.9,
+            { "reloj": 10.5 }
+          ],
+          ["habla", 15.35, 17.65]
+        ]
+      },
+      "golpes": [11.95]
     }
   }
 }
