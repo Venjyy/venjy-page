@@ -113,7 +113,7 @@
         "T": { "description": "Duración total (s).", "type": "number", "minimum": 1, "maximum": 120 },
         "r": { "description": "Distancia entre el jugador y el amigo (bloques).", "type": "number", "minimum": 0.5, "maximum": 4 },
         "actores": {
-          "description": "Actores extra (además de 'n' y 'j'): q -> clave del personaje, o { clave, radio } si es opcional (solo actúa si está a menos de radio bloques).",
+          "description": "Actores extra (además de 'n' y 'j'): q -> clave del personaje, o { clave, radio } si es opcional (solo actúa si está a menos de radio bloques). La clave 'j' es tu clon (el NPC con tu skin).",
           "type": "object",
           "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
           "additionalProperties": {

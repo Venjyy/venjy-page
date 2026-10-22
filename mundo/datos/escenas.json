@@ -111,6 +111,1347 @@
         "n": [["tronarDedos", 1.9, 3.7], ["habla", 3.8, 6.4]]
       },
       "nota": "Bloque 8 · L1: el mismo reto cuando hablas con Moisés (n = Moisés, Lalo de actor extra)."
+    },
+    "reencuentro-pony-salonas": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["pony", "salonas"]
+      },
+      "T": 13.1,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "salonas",
+          "a": 0.5,
+          "texto": { "es": "¡Llegó el waton klo!", "en": "Here comes the big goof!" }
+        },
+        {
+          "q": "pony",
+          "a": 3.6,
+          "texto": {
+            "es": "¿Waton klo yo? Waton klo tú, compadre.",
+            "en": "Me, a big goof? You're the big goof, mate."
+          }
+        },
+        {
+          "q": "salonas",
+          "a": 6.25,
+          "texto": { "es": "Ya, tregua. Puño y seguimos.", "en": "Okay, truce. Fist bump and we move on." }
+        },
+        {
+          "q": "pony",
+          "a": 8.7,
+          "texto": { "es": "Tregua hasta la próxima, waton klo.", "en": "Truce until next time, big goof." }
+        }
+      ],
+      "pista": {
+        "pony": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.3,
+            4.25,
+            { "reloj": 1.85 }
+          ],
+          ["habla", 4.25, 6.1],
+          ["empujon", 8.7, 12.1]
+        ],
+        "salonas": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.3,
+            4.25,
+            { "reloj": 1.85 }
+          ],
+          ["habla", 6.25, 8.55]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 10.1, 11.9]]
+      },
+      "golpes": [3.3],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-pony-hadad": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["pony", "hadad"]
+      },
+      "T": 13.6,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "hadad",
+          "a": 0.5,
+          "texto": {
+            "es": "¡Pony! ¿Quieres papas fritas? Son de la marca que promociono.",
+            "en": "Pony! Want some chips? They're the brand I promote."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 4.5,
+          "texto": {
+            "es": "Esa imagen con IA te va a perseguir toda la vida.",
+            "en": "That AI picture is going to follow you forever."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 7.55,
+          "texto": {
+            "es": "Me persigue y me paga. Bueno, no me paga.",
+            "en": "It follows me and pays me. Well, it doesn't pay me."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 10.3,
+          "texto": { "es": "Comparte igual, famoso.", "en": "Share anyway, celebrity." }
+        }
+      ],
+      "pista": {
+        "pony": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            3.2,
+            5.15,
+            { "reloj": 2.75 }
+          ],
+          ["habla", 5.15, 7.4],
+          ["risa", 7.55, 11.05],
+          ["habla", 11.05, 12.6]
+        ],
+        "hadad": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            3.2,
+            5.15,
+            { "reloj": 2.75 }
+          ],
+          ["risa", 7.55, 11.05]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 10.6, 12.4]]
+      },
+      "golpes": [4.2],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-pony-nacho": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["pony", "nacho"]
+      },
+      "T": 13.7,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "nacho",
+          "a": 0.5,
+          "texto": {
+            "es": "Jajaja, ¡Pony! ¿Pescaste algo o vienes por carne?",
+            "en": "Haha, Pony! Did you catch anything or are you here for meat?"
+          }
+        },
+        {
+          "q": "pony",
+          "a": 4.2,
+          "texto": {
+            "es": "Las dos cosas. El pescado me lo comí en el camino.",
+            "en": "Both. I ate the fish on the way."
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 7.25,
+          "texto": {
+            "es": "Jajaja, te guardo una chuleta. Chiquita, a tu medida.",
+            "en": "Haha, I'll save you a chop. A little one, your size."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 10.4,
+          "texto": { "es": "¿Tú también, Nacho? Hasta tú.", "en": "You too, Nacho? Even you." }
+        }
+      ],
+      "pista": {
+        "pony": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.9,
+            4.85,
+            { "reloj": 2.45 }
+          ],
+          ["habla", 4.85, 7.1],
+          ["habla", 10.4, 12.7]
+        ],
+        "nacho": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.9,
+            4.85,
+            { "reloj": 2.45 }
+          ],
+          ["mide", 7.25, 11.15]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 10.7, 12.5]]
+      },
+      "golpes": [3.9],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-pony-braulio": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["pony", "braulio"]
+      },
+      "T": 12.8,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "braulio",
+          "a": 0.5,
+          "texto": {
+            "es": "Pony, ponte aquí. A ver quién es más bajo.",
+            "en": "Pony, stand here. Let's see who's shorter."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 4,
+          "texto": {
+            "es": "Obvio que tú. Mira, te gano por un pelo.",
+            "en": "You, obviously. Look, I beat you by a hair."
+          }
+        },
+        {
+          "q": "braulio",
+          "a": 6.75,
+          "texto": { "es": "Ese pelo está parado, no cuenta.", "en": "That hair is sticking up, it doesn't count." }
+        },
+        {
+          "q": "pony",
+          "a": 9.3,
+          "texto": { "es": "Quedamos iguales y nadie se entera.", "en": "We call it even and nobody finds out." }
+        }
+      ],
+      "pista": {
+        "pony": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.7,
+            4.65,
+            { "reloj": 2.25 }
+          ],
+          ["mide", 4.65, 7.5],
+          ["habla", 9.3, 11.8]
+        ],
+        "braulio": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.7,
+            4.65,
+            { "reloj": 2.25 }
+          ],
+          ["mide", 4.65, 7.5],
+          ["habla", 7.5, 9.15]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 9.8, 11.6]]
+      },
+      "golpes": [3.7],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-pony-conejeros": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["pony", "conejeros"]
+      },
+      "T": 14.4,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "conejeros",
+          "a": 0.5,
+          "texto": { "es": "Ah, llegó mi enemigo favorito.", "en": "Oh, my favorite enemy is here." }
+        },
+        {
+          "q": "pony",
+          "a": 3.6,
+          "texto": { "es": "Enemigo y todo, igual te vine a saludar.", "en": "Enemy or not, I still came to say hi." }
+        },
+        {
+          "q": "conejeros",
+          "a": 6.35,
+          "texto": {
+            "es": "Te dibujé en mi cuaderno, con una caña más grande que tú.",
+            "en": "I drew you in my notebook, with a rod bigger than you."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 9.6,
+          "texto": {
+            "es": "Eso es difamación... pero el dibujo te quedó bueno.",
+            "en": "That's slander... but the drawing turned out good."
+          }
+        }
+      ],
+      "pista": {
+        "pony": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.3,
+            4.25,
+            { "reloj": 1.85 }
+          ],
+          ["habla", 4.25, 6.2],
+          ["empujon", 9.6, 13.4]
+        ],
+        "conejeros": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.3,
+            4.25,
+            { "reloj": 1.85 }
+          ],
+          ["habla", 6.35, 9.45]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 11.4, 13.2]]
+      },
+      "golpes": [3.3],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-salonas-andy": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["salonas", "andy"]
+      },
+      "T": 13,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "andy",
+          "a": 0.5,
+          "texto": { "es": "¡Salonas! ¿Cómo va ese bajo?", "en": "Salonas! How's that bass going?" }
+        },
+        {
+          "q": "salonas",
+          "a": 3.6,
+          "texto": { "es": "Afinado y sonando. ¿Y el Fortnite?", "en": "Tuned and playing. And Fortnite?" }
+        },
+        {
+          "q": "andy",
+          "a": 6.15,
+          "texto": {
+            "es": "Ganando, a veces. Cuando el Nacho no se tira solo.",
+            "en": "Winning, sometimes. When Nacho doesn't drop in alone."
+          }
+        },
+        {
+          "q": "salonas",
+          "a": 9.2,
+          "texto": {
+            "es": "Pásate al escenario un día y te dedico un tema.",
+            "en": "Come by the stage someday and I'll dedicate a song to you."
+          }
+        }
+      ],
+      "pista": {
+        "salonas": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.3,
+            4.25,
+            { "reloj": 1.85 }
+          ],
+          ["habla", 4.25, 6],
+          ["risa", 6.15, 9.95],
+          ["habla", 9.95, 12]
+        ],
+        "andy": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.3,
+            4.25,
+            { "reloj": 1.85 }
+          ],
+          ["risa", 6.15, 9.95]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 10, 11.8]]
+      },
+      "golpes": [3.3],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-salonas-braulio": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["salonas", "braulio"]
+      },
+      "T": 13,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "braulio",
+          "a": 0.5,
+          "texto": {
+            "es": "Salonas, te escuché tocar desde la playa.",
+            "en": "Salonas, I heard you playing from the beach."
+          }
+        },
+        {
+          "q": "salonas",
+          "a": 3.9,
+          "texto": { "es": "¿Tan fuerte? Entonces está bien ecualizado.", "en": "That loud? Then it's well mixed." }
+        },
+        {
+          "q": "braulio",
+          "a": 6.75,
+          "texto": { "es": "Hasta los peces cabeceaban, te lo juro.", "en": "Even the fish were headbanging, I swear." }
+        },
+        {
+          "q": "salonas",
+          "a": 9.5,
+          "texto": { "es": "Ese es mi público objetivo, compadre.", "en": "That's my target audience, mate." }
+        }
+      ],
+      "pista": {
+        "salonas": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.6,
+            4.55,
+            { "reloj": 2.15 }
+          ],
+          ["habla", 4.55, 6.6],
+          ["risa", 6.75, 10.25],
+          ["habla", 10.25, 12]
+        ],
+        "braulio": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.6,
+            4.55,
+            { "reloj": 2.15 }
+          ],
+          ["risa", 6.75, 10.25]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 10, 11.8]]
+      },
+      "golpes": [3.6],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-andy-braulio": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["andy", "braulio"]
+      },
+      "T": 14.4,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "andy",
+          "a": 0.5,
+          "texto": {
+            "es": "¡Braulio! ¿Encontraste algo en la orilla?",
+            "en": "Braulio! Did you find anything on the shore?"
+          }
+        },
+        {
+          "q": "braulio",
+          "a": 3.9,
+          "texto": {
+            "es": "Una concha, una chala y un cangrejo enojado.",
+            "en": "A shell, a flip-flop and an angry crab."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 6.75,
+          "texto": {
+            "es": "Con ese botín ya te alcanza para el pase de batalla.",
+            "en": "With that loot you can afford the battle pass."
+          }
+        },
+        {
+          "q": "braulio",
+          "a": 9.9,
+          "texto": {
+            "es": "Y el cangrejo viene como skin exclusiva.",
+            "en": "And the crab comes as an exclusive skin."
+          }
+        }
+      ],
+      "pista": {
+        "andy": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            2.6,
+            4.55,
+            { "reloj": 2.15 }
+          ],
+          ["habla", 6.75, 9.75],
+          ["rasca", 9.9, 13.4]
+        ],
+        "braulio": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            2.6,
+            4.55,
+            { "reloj": 2.15 }
+          ],
+          ["habla", 4.55, 6.6],
+          ["habla", 9.9, 12.5]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 11.4, 13.2]]
+      },
+      "golpes": [3.6],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-braulio-conejeros": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["braulio", "conejeros"]
+      },
+      "T": 14.3,
+      "r": 1.25,
+      "lineas": [
+        {
+          "q": "conejeros",
+          "a": 0.5,
+          "texto": {
+            "es": "¡Braulio! Te iba a saludar, pero se me colgó el cerebro.",
+            "en": "Braulio! I was going to say hi, but my brain froze."
+          }
+        },
+        {
+          "q": "braulio",
+          "a": 4.4,
+          "texto": { "es": "Tranquilo: Control, Alt, Suprimir y listo.", "en": "Relax: Control, Alt, Delete and done." }
+        },
+        {
+          "q": "conejeros",
+          "a": 7.25,
+          "texto": { "es": "Ya, volví. ¿Me perdí de algo?", "en": "Okay, I'm back. Did I miss anything?" }
+        },
+        {
+          "q": "braulio",
+          "a": 9.7,
+          "texto": {
+            "es": "Por eso yo me quedé en la versión estable.",
+            "en": "That's why I stayed on the stable version."
+          }
+        }
+      ],
+      "pista": {
+        "braulio": [
+          ["saluda", 0.3, 1.8],
+          [
+            "puno",
+            3.1,
+            5.05,
+            { "reloj": 2.65 }
+          ],
+          ["habla", 5.05, 7.1],
+          ["risa", 9.7, 13.3]
+        ],
+        "conejeros": [
+          ["sorpresa", 0.05, 0.9],
+          ["saluda", 0.9, 1.9],
+          [
+            "puno",
+            3.1,
+            5.05,
+            { "reloj": 2.65 }
+          ],
+          ["habla", 7.25, 9.55],
+          ["risa", 9.7, 13.3]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 11.3, 13.1]]
+      },
+      "golpes": [4.1],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-pony-andy": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["pony", "andy"]
+      },
+      "T": 22.85,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "andy",
+          "a": 0.4,
+          "texto": {
+            "es": "¡Pony! ¿Vienes a hacer un trabajo conmigo? Mentira, ya no caigo.",
+            "en": "Pony! Here to do an assignment with me? Just kidding, I won't fall for it."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 4.2,
+          "texto": {
+            "es": "Oye, yo era un aporte. Un aporte de risas, pero aporte.",
+            "en": "Hey, I contributed. Laughs, but still a contribution."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 7.45,
+          "texto": {
+            "es": "Ven, abrazo. Te perdono todas las entregas a última hora.",
+            "en": "Come here, hug. I forgive you for every last-minute submission."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 11.95,
+          "texto": {
+            "es": "¿Te acuerdas cuando hacíamos los trabajos juntos? Nos reíamos tanto.",
+            "en": "Remember when we did assignments together? We laughed so much."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 15.5,
+          "texto": {
+            "es": "Por eso ahora los hago con el Nacho. Pero contigo era más divertido.",
+            "en": "That's why I do them with Nacho now. But it was more fun with you."
+          }
+        },
+        {
+          "q": "pony",
+          "a": 19.05,
+          "texto": {
+            "es": "El próximo lo hacemos juntos, palabra de Pony.",
+            "en": "We'll do the next one together, Pony's word."
+          }
+        }
+      ],
+      "pista": {
+        "pony": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.9,
+            8.5,
+            { "reloj": 3.5 }
+          ],
+          [
+            "abrazo",
+            9.95,
+            14.45,
+            {
+              "reloj": 9.55,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 14.45, 15.65],
+          ["risa", 15.8, 18.9],
+          ["habla", 19.05, 21.85]
+        ],
+        "andy": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 3.7],
+          [
+            "secreto",
+            3.9,
+            8.5,
+            { "reloj": 3.5 }
+          ],
+          [
+            "abrazo",
+            9.95,
+            14.45,
+            {
+              "reloj": 9.55,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 15.8, 18.9],
+          ["asiente", 19.45, 21.85]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 19.85, 21.65]]
+      },
+      "golpes": [4.7, 5.7, 6.6, 7.5],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-boris-lucho": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["boris", "lucho"]
+      },
+      "T": 20.85,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "lucho",
+          "a": 0.4,
+          "texto": { "es": "¡Negro! ¿Soltaste el hacha un rato?", "en": "Negro! Did you put the axe down for a bit?" }
+        },
+        {
+          "q": "boris",
+          "a": 3.4,
+          "texto": {
+            "es": "Por ti, sí. Pero rápido, que la leña no se corta sola.",
+            "en": "For you, yes. But quick, the firewood won't chop itself."
+          }
+        },
+        {
+          "q": "lucho",
+          "a": 6.55,
+          "texto": {
+            "es": "Ven, negro. Desde la media que nos aguantamos.",
+            "en": "Come here, negro. We've put up with each other since high school."
+          }
+        },
+        {
+          "q": "boris",
+          "a": 10.75,
+          "texto": {
+            "es": "¿Te acuerdas de la media? Tú con el LoL y yo diciéndote que te acostaras.",
+            "en": "Remember high school? You with LoL and me telling you to go to bed."
+          }
+        },
+        {
+          "q": "lucho",
+          "a": 14.5,
+          "texto": { "es": "Algunas cosas no cambian, negro.", "en": "Some things never change, negro." }
+        },
+        {
+          "q": "boris",
+          "a": 17.05,
+          "texto": {
+            "es": "Así me gusta. Vamos, que el tronco no espera.",
+            "en": "That's how I like it. Come on, the log won't wait."
+          }
+        }
+      ],
+      "pista": {
+        "boris": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.1,
+            7.7,
+            { "reloj": 2.7 }
+          ],
+          [
+            "abrazo",
+            8.75,
+            13.25,
+            {
+              "reloj": 8.35,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 13.25, 14.65],
+          ["risa", 14.8, 16.9],
+          ["habla", 17.05, 19.85]
+        ],
+        "lucho": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 2.9],
+          [
+            "secreto",
+            3.1,
+            7.7,
+            { "reloj": 2.7 }
+          ],
+          [
+            "abrazo",
+            8.75,
+            13.25,
+            {
+              "reloj": 8.35,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 14.8, 16.9],
+          ["asiente", 17.45, 19.85]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 17.85, 19.65]]
+      },
+      "golpes": [3.9, 4.9, 5.8, 6.7],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-moises-lalo": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["moises", "lalo"]
+      },
+      "T": 21.35,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "lalo",
+          "a": 0.4,
+          "texto": {
+            "es": "Ahya, ¡Moisés! Vivimos juntos y igual te extraño.",
+            "en": "Ahya, Moisés! We live together and I still miss you."
+          }
+        },
+        {
+          "q": "moises",
+          "a": 3.8,
+          "texto": {
+            "es": "Te fuiste a buscar leña hace cinco minutos, hermano.",
+            "en": "You went for firewood five minutes ago, bro."
+          }
+        },
+        {
+          "q": "lalo",
+          "a": 6.95,
+          "texto": { "es": "Cinco minutos es harto. Ven, abrazo.", "en": "Five minutes is a lot. Come here, hug." }
+        },
+        {
+          "q": "moises",
+          "a": 10.85,
+          "texto": {
+            "es": "¿Te acuerdas de Coyhaique? Éramos cabros chicos y ya éramos inseparables.",
+            "en": "Remember Coyhaique? We were little kids and already inseparable."
+          }
+        },
+        {
+          "q": "lalo",
+          "a": 14.6,
+          "texto": {
+            "es": "Y seguimos igual, solo que ahora pagamos cuentas.",
+            "en": "And we still are, except now we pay bills."
+          }
+        },
+        {
+          "q": "moises",
+          "a": 17.65,
+          "texto": {
+            "es": "Vamos al iglú, que sin ti se siente vacío.",
+            "en": "Let's go to the igloo, it feels empty without you."
+          }
+        }
+      ],
+      "pista": {
+        "moises": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.5,
+            8.1,
+            { "reloj": 3.1 }
+          ],
+          [
+            "abrazo",
+            8.85,
+            13.35,
+            {
+              "reloj": 8.45,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 13.35, 14.75],
+          ["risa", 14.9, 17.5],
+          ["habla", 17.65, 20.35]
+        ],
+        "lalo": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 3.3],
+          [
+            "secreto",
+            3.5,
+            8.1,
+            { "reloj": 3.1 }
+          ],
+          [
+            "abrazo",
+            8.85,
+            13.35,
+            {
+              "reloj": 8.45,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 14.9, 17.5],
+          ["asiente", 18.05, 20.35]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 18.35, 20.15]]
+      },
+      "golpes": [4.3, 5.3, 6.2, 7.1],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-salonas-conejeros": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["salonas", "conejeros"]
+      },
+      "T": 21.3,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "conejeros",
+          "a": 0.4,
+          "texto": {
+            "es": "¡Salonas! Te hice un dibujo. Eres tú, pero con alas.",
+            "en": "Salonas! I made you a drawing. It's you, but with wings."
+          }
+        },
+        {
+          "q": "salonas",
+          "a": 3.9,
+          "texto": {
+            "es": "¿Por qué tengo alas y un bajo de tres cuerdas?",
+            "en": "Why do I have wings and a three-string bass?"
+          }
+        },
+        {
+          "q": "conejeros",
+          "a": 7,
+          "texto": {
+            "es": "Porque el arte no se explica, compadre. Ven, abrazo.",
+            "en": "Because art can't be explained, mate. Come here, hug."
+          }
+        },
+        {
+          "q": "salonas",
+          "a": 11.4,
+          "texto": {
+            "es": "¿Te acuerdas del primer monito que dibujamos juntos? Era horrible.",
+            "en": "Remember the first doodle we drew together? It was awful."
+          }
+        },
+        {
+          "q": "conejeros",
+          "a": 14.95,
+          "texto": {
+            "es": "Horrible y perfecto. Todavía lo tengo guardado.",
+            "en": "Awful and perfect. I still have it saved."
+          }
+        },
+        {
+          "q": "salonas",
+          "a": 17.9,
+          "texto": { "es": "Hagamos el segundo. Con más alas.", "en": "Let's make the second one. With more wings." }
+        }
+      ],
+      "pista": {
+        "salonas": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.6,
+            8.2,
+            { "reloj": 3.2 }
+          ],
+          [
+            "abrazo",
+            9.4,
+            13.9,
+            {
+              "reloj": 9,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 13.9, 15.1],
+          ["risa", 15.25, 17.75],
+          ["habla", 17.9, 20.3]
+        ],
+        "conejeros": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 3.4],
+          [
+            "secreto",
+            3.6,
+            8.2,
+            { "reloj": 3.2 }
+          ],
+          [
+            "abrazo",
+            9.4,
+            13.9,
+            {
+              "reloj": 9,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 15.25, 17.75],
+          ["asiente", 18.3, 20.3]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 18.3, 20.1]]
+      },
+      "golpes": [4.4, 5.4, 6.3, 7.2],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-hadad-andy": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["hadad", "andy"]
+      },
+      "T": 21.45,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "hadad",
+          "a": 0.4,
+          "texto": {
+            "es": "¡Andy! ¿Saliste del Discord? Pensé que vivías ahí.",
+            "en": "Andy! You left Discord? I thought you lived there."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 3.8,
+          "texto": {
+            "es": "Salí a tomar aire. Cinco minutos y vuelvo, como siempre.",
+            "en": "I came out for some air. Five minutes and I'm back, as always."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 7.05,
+          "texto": {
+            "es": "Abrazo de escuadrón. Falta el Nacho, pero cuenta igual.",
+            "en": "Squad hug. Nacho's missing, but it still counts."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 11.55,
+          "texto": {
+            "es": "¿Te acuerdas de esa partida que ganamos sin construir nada?",
+            "en": "Remember that match we won without building anything?"
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 14.9,
+          "texto": {
+            "es": "Ni yo me lo creo. Y tú bailando antes de que terminara.",
+            "en": "I still can't believe it. And you dancing before it was over."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 18.15,
+          "texto": { "es": "Era seguro. Bueno, casi seguro.", "en": "It was a sure thing. Well, almost sure." }
+        }
+      ],
+      "pista": {
+        "hadad": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 3.3],
+          [
+            "secreto",
+            3.5,
+            8.1,
+            { "reloj": 3.1 }
+          ],
+          [
+            "abrazo",
+            9.55,
+            14.05,
+            {
+              "reloj": 9.15,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 15.2, 18],
+          ["asiente", 18.55, 20.45]
+        ],
+        "andy": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.5,
+            8.1,
+            { "reloj": 3.1 }
+          ],
+          [
+            "abrazo",
+            9.55,
+            14.05,
+            {
+              "reloj": 9.15,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 14.05, 15.05],
+          ["risa", 15.2, 18],
+          ["habla", 18.15, 20.45]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 18.45, 20.25]]
+      },
+      "golpes": [4.3, 5.3, 6.2, 7.1],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-hadad-nacho": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["hadad", "nacho"]
+      },
+      "T": 21.35,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "nacho",
+          "a": 0.4,
+          "texto": {
+            "es": "Jajaja, ¡Hadad! ¿Me vienes a cobrar las papas fritas?",
+            "en": "Haha, Hadad! Here to charge me for the chips?"
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 3.9,
+          "texto": {
+            "es": "Vengo a buscarte para el Fortnite. Las papas, después.",
+            "en": "I came to get you for Fortnite. Chips later."
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 7.05,
+          "texto": {
+            "es": "Jajaja, ven, abrazo. Tantas horas de Discord no se olvidan.",
+            "en": "Haha, come here, hug. All those Discord hours don't get forgotten."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 11.65,
+          "texto": {
+            "es": "¿Te acuerdas cuando caíste en Tilted y duraste diez segundos?",
+            "en": "Remember when you dropped into Tilted and lasted ten seconds?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 15,
+          "texto": { "es": "Jajaja, nueve. Esa vez fueron nueve.", "en": "Haha, nine. That time it was nine." }
+        },
+        {
+          "q": "hadad",
+          "a": 17.65,
+          "texto": {
+            "es": "Esta noche, dúo. Y caemos lejos de Tilted.",
+            "en": "Tonight, duos. And we land far from Tilted."
+          }
+        }
+      ],
+      "pista": {
+        "hadad": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.6,
+            8.2,
+            { "reloj": 3.2 }
+          ],
+          [
+            "abrazo",
+            9.65,
+            14.15,
+            {
+              "reloj": 9.25,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 14.15, 15.15],
+          ["risa", 15.3, 17.5],
+          ["habla", 17.65, 20.35]
+        ],
+        "nacho": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 3.4],
+          [
+            "secreto",
+            3.6,
+            8.2,
+            { "reloj": 3.2 }
+          ],
+          [
+            "abrazo",
+            9.65,
+            14.15,
+            {
+              "reloj": 9.25,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 15.3, 17.5],
+          ["asiente", 18.05, 20.35]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 18.35, 20.15]]
+      },
+      "golpes": [4.4, 5.4, 6.3, 7.2],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
+    },
+    "reencuentro-andy-nacho": {
+      "tipo": "guion",
+      "dispara": {
+        "tipo": "reencuentro",
+        "personas": ["andy", "nacho"]
+      },
+      "T": 21.55,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "nacho",
+          "a": 0.4,
+          "texto": {
+            "es": "Jajaja, ¡Andy! ¿Ya entregamos el trabajo?",
+            "en": "Haha, Andy! Did we hand in the assignment yet?"
+          }
+        },
+        {
+          "q": "andy",
+          "a": 3.5,
+          "texto": {
+            "es": "Anoche a las tres, en el Discord, entre partida y partida.",
+            "en": "Last night at three, on Discord, between matches."
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 6.75,
+          "texto": {
+            "es": "Jajaja, el mejor equipo de la U. Ven, abrazo.",
+            "en": "Haha, the best team at uni. Come here, hug."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 10.95,
+          "texto": {
+            "es": "¿Te acuerdas del primer trabajo juntos? No sabíamos ni por dónde empezar.",
+            "en": "Remember our first assignment together? We didn't even know where to start."
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 14.7,
+          "texto": {
+            "es": "Y lo sacamos adelante igual. Jajaja, todavía no sé cómo.",
+            "en": "And we pulled it off anyway. Haha, I still don't know how."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 17.95,
+          "texto": { "es": "Así somos: tarde, pero siempre llegamos.", "en": "That's us: late, but we always make it." }
+        }
+      ],
+      "pista": {
+        "andy": [
+          ["brazosArriba", 0.1, 1.5],
+          [
+            "secreto",
+            3.2,
+            7.8,
+            { "reloj": 2.8 }
+          ],
+          [
+            "abrazo",
+            8.95,
+            13.45,
+            {
+              "reloj": 8.55,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 13.45, 14.85],
+          ["risa", 15, 17.8],
+          ["habla", 17.95, 20.55]
+        ],
+        "nacho": [
+          ["brazosArriba", 0.1, 1.5],
+          ["habla", 1.5, 3],
+          [
+            "secreto",
+            3.2,
+            7.8,
+            { "reloj": 2.8 }
+          ],
+          [
+            "abrazo",
+            8.95,
+            13.45,
+            {
+              "reloj": 8.55,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["risa", 15, 17.8],
+          ["asiente", 18.35, 20.55]
+        ],
+        "c": [["doble", 0.2, 1.8], ["risa", 18.55, 20.35]]
+      },
+      "golpes": [4, 5, 5.9, 6.8],
+      "actores": {
+        "c": { "clave": "j", "radio": 9 }
+      }
     }
   }
 }
