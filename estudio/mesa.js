@@ -8,7 +8,8 @@
 // y la tienda de cartas de Lucho (grupos «Tienda de cartas», «Precio de cada carta suelta» y «Sobres: peso de cada carta»).
 // Duelo entre jugadores donde están: grupos «retar», «sobre un tronco», «en el piso» y «Cámara que mira al otro jugador».
 // =========================================================
-import { instalarDeshacer, botonJuego } from './campo-comun.js';
+import { instalarDeshacer, botonJuego, filaPerilla } from './campo-comun.js';
+import { perillasDisponibles, leerPerilla, ponerPerilla, CAMARAS, baseDeCamara, camaraDeBase, GRUPOS_SIMPLES } from './mesa-simple.mjs';
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
 const GRUPOS = [
@@ -89,7 +90,8 @@ export async function montarMesa(ctx) {
     function numero(obj, k, etiqueta, grupo, ref) {
         const ausente = !(k in obj), v0 = ausente ? ref[k] : obj[k];
         const fila = document.createElement('label'); fila.className = 'campo' + (ausente ? ' ausente' : '');
-        const s = document.createElement('span'); s.textContent = etiqueta ? `${k} · ${etiqueta}` : k;
+        // En la vista simple, solo el nombre en palabras (la clave del JSON, en Avanzado)
+        const s = document.createElement('span'); s.textContent = etiqueta ? (ctx.vista === 'simple' ? etiqueta : `${k} · ${etiqueta}`) : k;
         const [min, max, paso] = rangoGrupo(grupo, k, v0);
         const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = v0;
         const n = document.createElement('input'); n.type = 'number'; n.step = paso; n.value = v0; n.style.width = '6em';
@@ -127,21 +129,55 @@ export async function montarMesa(ctx) {
         sec.append(h, ...hijos, ...extra);
         return sec;
     }
+    // «Lo básico» (vista simple): perillas con palabras comunes sobre el archivo tal como llegó (mesa-simple.mjs)
+    function pintarBasico() {
+        const sec = bloque(t('Lo básico', 'The basics'), perillasDisponibles(inicial).map(p => filaPerilla(ctx, p, leerPerilla(p, datos, inicial), x => { ponerPerilla(p, datos, x, inicial); cambio(); pintar(); })));
+        sec.open = true;
+        caja.appendChild(sec);
+    }
     function pintar() {
         caja.textContent = '';
-        for (const [clave, es, en, nombres] of GRUPOS) if (datos[clave]) caja.appendChild(bloque(t(es, en), camara(datos[clave], nombres, clave)));
-        // 3.ª persona: lista de cámaras (se agregan y se quitan)
+        pintarBasico();
+        // Los grupos de números son lo fino (Avanzado), salvo las listas por carta (colección inicial, precios, pesos)
+        for (const [clave, es, en, nombres] of GRUPOS) if (datos[clave]) {
+            const b = bloque(t(es, en), camara(datos[clave], nombres, clave));
+            if (!GRUPOS_SIMPLES.includes(clave)) b.classList.add('solo-avanzado');
+            caja.appendChild(b);
+        }
+        // 3.ª persona: lista de cámaras (se agregan y se quitan). En Simple, cada una es una base («cerca», «de lado»…)
         const lista = datos.terceras || (datos.terceras = []);
+        const simple = bloque(t('Cámaras de 3.ª persona (Cambiar vista)', '3rd-person cameras (Change view)'), lista.map((c, i) => {
+            const base = baseDeCamara(c);
+            const p = { es: `Cámara ${i + 1}`, en: `Camera ${i + 1}`, opciones: CAMARAS.map(x => [x.clave, x.es, x.en]) };
+            const fila = filaPerilla(ctx, p, base, x => { lista[i] = camaraDeBase(x); cambio(); pintar(); });
+            const quitar = document.createElement('button'); quitar.type = 'button'; quitar.className = 'boton chico secundario';
+            quitar.textContent = t('Quitar', 'Remove'); quitar.disabled = lista.length <= 1;
+            quitar.addEventListener('click', () => { lista.splice(i, 1); cambio(); pintar(); });
+            fila.appendChild(quitar);
+            return fila;
+        }));
+        simple.open = true;
+        caja.appendChild(simple);
         lista.forEach((c, i) => {
             const quitar = document.createElement('button'); quitar.type = 'button'; quitar.className = 'boton chico secundario';
             quitar.textContent = t('Quitar esta cámara', 'Remove this camera'); quitar.disabled = lista.length <= 1;
             quitar.addEventListener('click', () => { lista.splice(i, 1); cambio(); pintar(); });
-            caja.appendChild(bloque(t(`Cámara 3.ª persona ${i + 1}`, `3rd-person camera ${i + 1}`), camara(c, { alto: 'altura', atras: 'más atrás', lado: 'a tu derecha (−: izquierda)' }), [quitar]));
+            const b = bloque(t(`Cámara 3.ª persona ${i + 1}`, `3rd-person camera ${i + 1}`), camara(c, { alto: 'altura', atras: 'más atrás', lado: 'a tu derecha (−: izquierda)' }), [quitar]);
+            b.classList.add('solo-avanzado');
+            caja.appendChild(b);
         });
-        const sumar = document.createElement('button'); sumar.type = 'button'; sumar.className = 'boton chico';
-        sumar.textContent = t('Agregar cámara de 3.ª persona', 'Add 3rd-person camera');
-        sumar.addEventListener('click', () => { lista.push(clonar(lista[lista.length - 1] || { alto: 2.5, atras: 2.4, lado: 1.9, mira: [0, 0.3, -0.4] })); cambio(); pintar(); });
-        caja.appendChild(sumar);
+        // Agregar: desde una base (Simple) o copia de la última (Avanzado)
+        const fs = document.createElement('div'); fs.className = 'fila-botones';
+        const selBase = document.createElement('select');
+        for (const x of CAMARAS) selBase.appendChild(new Option(t(x.es, x.en), x.clave));
+        const sumarBase = document.createElement('button'); sumarBase.type = 'button'; sumarBase.className = 'boton chico';
+        sumarBase.textContent = t('Agregar cámara', 'Add camera');
+        sumarBase.addEventListener('click', () => { lista.push(camaraDeBase(selBase.value)); cambio(); pintar(); });
+        const sumar = document.createElement('button'); sumar.type = 'button'; sumar.className = 'boton chico secundario solo-avanzado';
+        sumar.textContent = t('Copiar la última cámara', 'Copy the last camera');
+        sumar.addEventListener('click', () => { lista.push(clonar(lista[lista.length - 1] || camaraDeBase('lado'))); cambio(); pintar(); });
+        fs.append(selBase, sumarBase, sumar);
+        simple.appendChild(fs);
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
     }
     async function guardar() {
@@ -172,5 +208,6 @@ export async function montarMesa(ctx) {
     });
     window.addEventListener('beforeunload', e => { if (sucio()) { e.preventDefault(); e.returnValue = ''; } });
     ctx.alIdioma.push(pintar);
+    ctx.alVista.push(pintar); // los rótulos cambian (con o sin la clave del JSON)
     pintar();
 }

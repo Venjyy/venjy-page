@@ -57,7 +57,7 @@ export const AYUDA = {
     },
     mesa: {
         que: ['La mesa del Duelo de Cartas: dónde queda, las cámaras, el mazo y la tienda de cartas.', 'The Card Duel table: where it is, the cameras, the deck and the card shop.'],
-        empezar: ['Toca «Abrir la mesa» y ajusta los números del grupo que quieras cambiar.', 'Press «Open the table» and adjust the numbers of the group you want to change.']
+        empezar: ['Toca «Abrir la mesa» y cambia «Lo básico» (animaciones, sonido, mazo, tienda) con palabras; con «Agregar cámara» sumas una vista cerca, de lado o desde arriba.', 'Press «Open the table» and change «The basics» (animations, sound, deck, shop) in plain words; «Add camera» adds a close, side or top view.']
     },
     carrera: {
         que: ['La carrera de gatas: pistas, gatas, objetos y dificultad.', 'The cat race: tracks, cats, items and difficulty.'],
@@ -73,7 +73,7 @@ export const AYUDA = {
     },
     salonas: {
         que: ['La Gira de Salonas (juego de ritmo): canciones, energía, puntaje y textos.', 'Salonas\' Tour (rhythm game): songs, energy, score and texts.'],
-        empezar: ['Busca el grupo que quieres cambiar (canciones, reglas o textos) y edita el valor; se ve al tiro en el juego.', 'Find the group you want to change (songs, rules or texts) and edit the value; it shows right away in the game.']
+        empezar: ['En «Lo básico» elige la canción y la dificultad con que parte y qué tan exacto hay que tocar; abajo cambias los textos. Se ve al tiro en el juego.', 'In «The basics» pick the starting song and difficulty and how precise you must play; below you change the texts. It shows right away in the game.']
     },
     ritmo: {
         que: ['Las notas que tocas en La Gira, canción por canción, y el bajo que las genera.', 'The notes you play on the Tour, song by song, and the bass that makes them.'],

@@ -7,6 +7,9 @@
 // `factor` multiplica el valor del juego (base) de cada campo; `valor` pone ese número tal cual. Si el resultado es
 // igual al del juego, la clave se borra (queda el valor del código). Un número puesto a mano que no calza con
 // ninguna opción se lee como null («a mano»).
+// Mesa y Salonas no conocen los valores del código: su base es el archivo tal como llegó y pasan
+// `{ borrarIgual: false }` (la opción igual a la base se escribe, no se borra). `disponible` dice si la base trae
+// todos los campos (si no, la perilla no se muestra).
 // =========================================================
 const redondo = x => Math.round(x * 1000) / 1000;
 const en = (o, ruta) => ruta.reduce((a, k) => (a && typeof a === 'object' ? a[k] : undefined), o);
@@ -17,6 +20,10 @@ export function valorOpcion(p, campo, base, x) {
     if (l) v = Math.min(l[1], Math.max(l[0], v));
     return v;
 }
+export function disponible(p, bases) {
+    const b = en(bases, p.ruta);
+    return !!b && p.campos.every(c => (p.tipo === 'factor' ? Number.isFinite(b[c]) : b[c] !== undefined));
+}
 // `datos` y `bases` con la misma forma; la perilla vive en `ruta` de los dos
 export function leerPerilla(p, datos, bases) {
     const d = en(datos, p.ruta) || {}, b = en(bases, p.ruta);
@@ -26,14 +33,14 @@ export function leerPerilla(p, datos, bases) {
 }
 // Pone la opción. `limpiar` (por defecto sí): si un objeto de la ruta queda vacío, se borra (la pestaña Vida lo
 // apaga porque sus partes vacías se quedan como {}).
-export function ponerPerilla(p, datos, valor, bases, { limpiar = true } = {}) {
+export function ponerPerilla(p, datos, valor, bases, { limpiar = true, borrarIgual = true } = {}) {
     const b = en(bases, p.ruta);
     let d = datos;
     const camino = [datos];
     for (const k of p.ruta) { d[k] = d[k] && typeof d[k] === 'object' ? d[k] : {}; d = d[k]; camino.push(d); }
     for (const c of p.campos) {
         const x = valorOpcion(p, c, b, valor);
-        if (x === b[c]) delete d[c]; else d[c] = x;
+        if (x === b[c] && borrarIgual) delete d[c]; else d[c] = x;
     }
     if (limpiar) for (let i = p.ruta.length - 1; i >= 0; i--) {
         if (Object.keys(camino[i + 1]).length) break;

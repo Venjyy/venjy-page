@@ -1,12 +1,17 @@
 // Prueba de las vistas simples de B0-V (estudio/perillas.mjs, vida-simple.mjs, carrera-simple.mjs).
 // Vida: horas 13:30 de ida y vuelta, cada visita en una frase, las bases y las copias cumplen el esquema de rutinas.json.
 // Vida y Carrera: las perillas ponen y leen sus opciones, cumplen los esquemas, en «normal» no dejan claves (en Carrera
-// tampoco objetos vacíos) y un número a mano se lee como «a mano». Uso: node mundo/tests/estudio-simple.mjs
+// tampoco objetos vacíos) y un número a mano se lee como «a mano».
+// Mesa y Salonas: sus perillas (base = el archivo como está) están todas disponibles, se leen igual, cumplen el
+// esquema y la opción igual al archivo no borra claves; las cámaras base de la Mesa se reconocen y cumplen el esquema.
+// Uso: node mundo/tests/estudio-simple.mjs
 import fs from 'node:fs';
 import { validar } from '../../estudio/validar.mjs';
 import * as VS from '../../estudio/vida-simple.mjs';
 import * as CS from '../../estudio/carrera-simple.mjs';
 import { CARRERA } from '../supervivencia/carrera-modelo.js';
+import * as MS from '../../estudio/mesa-simple.mjs';
+import * as SS from '../../estudio/salonas-simple.mjs';
 import { NAV_BASE } from '../navegacion.js';
 import { SEGUIR_BASE } from '../seguir.js';
 import { PELEA_BASE } from '../supervivencia/acompanante-pelea.js';
@@ -88,6 +93,31 @@ for (const p of CS.PERILLAS) {
     ok(CS.leerPerilla(p, m, CARRERA) === null, `carrera ${p.clave}: un valor a mano = null`);
     ok(en(car0, p.ruta) === undefined || typeof en(car0, p.ruta) === 'object', `carrera ${p.clave}: ruta válida`);
 }
+
+// Mesa y Salonas: base = el archivo tal como está (no conocen los valores del código)
+for (const [nombre, M] of [['cartas-mesa', MS], ['salonas', SS]]) {
+    const ini = leer(nombre);
+    ok(M.perillasDisponibles(ini).length === M.PERILLAS.length, `${nombre}: todas las perillas tienen su valor en el archivo`);
+    for (const p of M.PERILLAS) {
+        for (const [x] of p.opciones) {
+            const d = clonar(ini);
+            M.ponerPerilla(p, d, x, ini);
+            ok(M.leerPerilla(p, d, ini) === x, `${nombre} ${p.clave}: ${x} se lee igual`);
+            const err = validar(d, nombre);
+            ok(!err.length, `${nombre} ${p.clave} = ${x} cumple el esquema: ${err.slice(0, 2).join(' · ')}`);
+        }
+        const d = clonar(ini), v = M.leerPerilla(p, ini, ini);
+        if (v !== null) { M.ponerPerilla(p, d, v, ini); ok(JSON.stringify(d) === JSON.stringify(ini), `${nombre} ${p.clave}: la opción del archivo lo deja igual (no borra claves)`); }
+    }
+}
+const mesa = leer('cartas-mesa');
+for (const c of MS.CAMARAS) {
+    ok(MS.baseDeCamara(MS.camaraDeBase(c.clave)) === c.clave, `cámara ${c.clave}: se reconoce`);
+    const err = validar({ ...mesa, terceras: [...mesa.terceras, MS.camaraDeBase(c.clave)] }, 'cartas-mesa');
+    ok(!err.length, `cámara ${c.clave} cumple el esquema: ${err.slice(0, 2).join(' · ')}`);
+}
+ok(MS.baseDeCamara({ alto: 9, atras: 1, lado: 0, mira: [0, 0, 0] }) === null, 'una cámara a mano = null');
+ok(MS.GRUPOS_SIMPLES.every(g => g in mesa), 'los grupos simples de la Mesa existen en el archivo');
 
 console.log(`estudio-simple: ${bien}/${bien + mal} bien`);
 if (mal) process.exit(1);
