@@ -11,6 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatear } from '../../estudio/formato.mjs';
 import { validar } from '../../estudio/validar.mjs';
+import { PERSONAJES } from '../supervivencia/amistad.js';
 import { ANIMACIONES, GESTOS_AMISTAD, PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from '../supervivencia/escena-amistad-datos.js';
 import { fusionar } from '../datos/cargador.js';
 import { animacionDeDatos, guionDeDatos, reglasEscenas, planosDe, opcionesCamara, tiempoDeAncla, personasUsadas } from '../datos/escenas.js';
@@ -108,7 +109,7 @@ ok(difMax === 0, 'diferencia máxima 0 (fue ' + difMax + ')');
 const nombres = { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES), ...Object.keys(poses.gestos || {}), ...Object.keys(poses.poses || {})]), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
 {
     // Los textos nuevos quedan «sin revisar» hasta que el dueño los marca: es un aviso esperado, no un error
-    const r = reglasEscenas(datos, nombres).filter(x => !/sin revisar/.test(x.texto));
+    const r = reglasEscenas(datos, { ...nombres, personas: new Set(PERSONAJES) }).filter(x => !/sin revisar/.test(x.texto));
     ok(r.length === 0, 'escenas.json sin errores ni avisos: ' + r.map(x => x.texto).join(' | '));
     // Cada regla da error (o aviso) cuando toca
     const con = (cambio, tipo, parte) => {

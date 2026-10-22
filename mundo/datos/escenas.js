@@ -361,9 +361,11 @@ export function amigoDeEscena(def, dp, skin, miembros = []) {
 }
 
 // Las personas usadas como `q` pasan a su papel: el amigo a 'n', tu skin a 'j' y el resto queda con su clave como actor
-// extra (se declara solo si la escena no lo declaró). Sin personas, nada cambia.
+// extra (se declara solo si la escena no lo declaró). Un actor con clave 'j' pasa a tu skin. Sin personas, nada cambia.
 export function repartoDe(personas, amigo, skin, actores = {}) {
-    const reparto = {}, extra = { ...actores };
+    // Un actor cuya clave es 'j' es tu clon (el NPC con tu skin): así el reencuentro sirve en las dos direcciones
+    const extra = Object.fromEntries(Object.entries(actores).map(([q, a]) => [q, a === 'j' ? skin : a && a.clave === 'j' ? { ...a, clave: skin } : a]));
+    const reparto = {};
     for (const p of personas || []) {
         if (p === amigo) reparto[p] = 'n';
         else if (p === skin) reparto[p] = 'j';
