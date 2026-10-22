@@ -2,6 +2,7 @@
 // Vida: horas 13:30 de ida y vuelta, cada visita en una frase, las bases y las copias cumplen el esquema de rutinas.json.
 // Vida y Carrera: las perillas ponen y leen sus opciones, cumplen los esquemas, en «normal» no dejan claves (en Carrera
 // tampoco objetos vacíos) y un número a mano se lee como «a mano».
+// Arena (base = ARENA, cámaras en «conjunto»), Objetos (mover, girar, tamaño) y Formas (medidas, subir, paso), al final.
 // Mesa y Salonas: sus perillas (base = el archivo como está) están todas disponibles, se leen igual, cumplen el
 // esquema y la opción igual al archivo no borra claves; las cámaras base de la Mesa se reconocen y cumplen el esquema.
 // Uso: node mundo/tests/estudio-simple.mjs
@@ -17,6 +18,11 @@ import { SEGUIR_BASE } from '../seguir.js';
 import { PELEA_BASE } from '../supervivencia/acompanante-pelea.js';
 import { RUTINA_BASE } from '../supervivencia/rutinas-datos.js';
 import { FOGATA_BASE } from '../supervivencia/fogata.js';
+import * as AS from '../../estudio/arena-simple.mjs';
+import { ARENA } from '../supervivencia/arena/modelo.js';
+import * as OS from '../../estudio/objetos-simple.mjs';
+import * as FS from '../../estudio/formas-simple.mjs';
+import { AJUSTES_BASE, FORMAS_BASE } from '../formas.js';
 
 let bien = 0, mal = 0;
 const ok = (c, m) => { if (c) bien++; else { mal++; console.error('MAL:', m); } };
@@ -118,6 +124,68 @@ for (const c of MS.CAMARAS) {
 }
 ok(MS.baseDeCamara({ alto: 9, atras: 1, lado: 0, mira: [0, 0, 0] }) === null, 'una cámara a mano = null');
 ok(MS.GRUPOS_SIMPLES.every(g => g in mesa), 'los grupos simples de la Mesa existen en el archivo');
+
+// Arena: perillas sobre ARENA (la opción del juego borra la clave); bases de cámara (tipo «conjunto») y vida de cada uno
+const are0 = leer('arena');
+const perArena = [...AS.PERILLAS, ...Object.keys(ARENA.peleadores).map(k => AS.perillaVida(k, k))];
+for (const p of perArena) {
+    for (const [x] of p.opciones) {
+        const d = clonar(are0);
+        AS.ponerPerilla(p, d, x, ARENA);
+        ok(AS.leerPerilla(p, d, ARENA) === x, `arena ${p.clave}: ${x} se lee igual`);
+        const err = validar(d, 'arena');
+        ok(!err.length, `arena ${p.clave} = ${x} cumple el esquema: ${err.slice(0, 2).join(' · ')}`);
+    }
+    const delJuego = AS.leerPerilla(p, {}, ARENA);
+    ok(delJuego !== null, `arena ${p.clave}: sin JSON se lee una opción (la del juego)`);
+    const d = {};
+    AS.ponerPerilla(p, d, delJuego, ARENA);
+    ok(!Object.keys(d).length, `arena ${p.clave}: la opción del juego no deja claves ni objetos vacíos`);
+    const m = clonar(are0); let o = m; for (const k of p.ruta) o = (o[k] = o[k] || {});
+    o[p.campos[0]] = 0.123;
+    ok(AS.leerPerilla(p, m, ARENA) === null, `arena ${p.clave}: un valor a mano = null`);
+}
+const cam = AS.PERILLAS.find(p => p.clave === 'camara'), cd = {};
+AS.ponerPerilla(cam, cd, 'cerca', ARENA);
+ok(cd.camara.altura === 1.3 && cd.camara.distanciaMax === 6 && !('remate' in cd.camara), 'arena: la base «cerca» pone sus números y no toca el golpe final');
+AS.ponerPerilla(cam, cd, 'normal', ARENA);
+ok(!('camara' in cd), 'arena: volver a «normal» borra la cámara del archivo');
+
+// Objetos: mover y girar de ida y vuelta, el giro queda entre -180 y 180, el tamaño se lee sobre la base
+const ag = { pos: [0.1, -0.2, 0.3], rot: [170, 0, -175], escala: 0.5 };
+for (const [, , , eje, signo] of OS.MOVER) ok(JSON.stringify(OS.mover(OS.mover(ag, eje, signo), eje, -signo)) === JSON.stringify(ag), `objetos: mover ${eje}/${signo} de ida y vuelta`);
+for (const [, , , eje, signo] of OS.GIRAR) {
+    const g = OS.girar(ag, eje, signo);
+    ok(g.rot[eje] > -180 && g.rot[eje] <= 180, `objetos: girar ${eje}/${signo} queda en rango`);
+    ok(JSON.stringify(OS.girar(g, eje, -signo)) === JSON.stringify(ag), `objetos: girar ${eje}/${signo} de ida y vuelta`);
+}
+ok(OS.girar(ag, 0, 1).rot[0] === -175, 'objetos: 170 + 15 = -175');
+for (const [f] of OS.TAMANOS) ok(OS.tamanoDe(OS.conTamano(ag, ag, f), ag) === f, `objetos: tamaño ${f} se lee igual`);
+ok(OS.tamanoDe({ ...ag, escala: 0.777 }, ag) === null, 'objetos: un tamaño a mano = null');
+ok(OS.mover(ag, 1, 1) !== ag && ag.pos[1] === -0.2, 'objetos: mover no cambia el agarre de entrada');
+const om = leer('objetos-mano'), om2 = clonar(om);
+om2.objetos.manzana = { mano1: OS.conTamano(OS.girar(OS.mover(ag, 2, -1), 1, 1), ag, 1.5) };
+const eo = validar(om2, 'objetos-mano');
+ok(!eo.length, 'objetos: un agarre de la vista simple cumple el esquema: ' + eo.slice(0, 2).join(' · '));
+
+// Formas: medidas dentro del bloque, desde el centro (x, z) o la base (y); subir y bajar sin salir
+for (const [k, f] of Object.entries(FORMAS_BASE)) for (const c of f.cajas) for (const [, , , j] of FS.MEDIDAS) for (const n of [1, 5, 8, 16]) {
+    const r = FS.conMedida(c, j, n);
+    ok(FS.medida(r, j) === n && r.a[j] >= 0 && r.b[j] <= 16, `formas ${k}: ${j} = ${n} dentro del bloque`);
+    ok([0, 1, 2].every(e => e === j || (r.a[e] === c.a[e] && r.b[e] === c.b[e])), `formas ${k}: cambiar ${j} no toca los otros ejes`);
+}
+const losa = FORMAS_BASE.losa.cajas[0];
+ok(FS.conMedida(losa, 1, 4).a[1] === losa.a[1], 'formas: el alto crece desde la base');
+ok(FS.subir(losa, 99).b[1] === 16 && FS.subir(losa, -99).a[1] === 0, 'formas: subir y bajar se quedan en el bloque');
+const fo = leer('formas');
+for (const p of FS.PERILLAS) for (const [x] of p.opciones) {
+    const d = clonar(fo);
+    FS.ponerPerilla(p, d, x, AJUSTES_BASE);
+    ok(FS.leerPerilla(p, d, AJUSTES_BASE) === x, `formas ${p.clave}: ${x} se lee igual`);
+    ok(!validar(d, 'formas').length, `formas ${p.clave} = ${x} cumple el esquema`);
+}
+const fo2 = clonar(fo); fo2.formas.losa = { cajas: [FS.subir(FS.conMedida(losa, 0, 10), 2)] };
+ok(!validar(fo2, 'formas').length, 'formas: una caja de la vista simple cumple el esquema');
 
 console.log(`estudio-simple: ${bien}/${bien + mal} bien`);
 if (mal) process.exit(1);

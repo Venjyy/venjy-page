@@ -12,7 +12,8 @@
 import { agarre, fijarDatosObjetosMano, TIPOS } from '../mundo/supervivencia/objetos-mano-datos.js';
 import { OBJETOS } from '../mundo/supervivencia/objetos.js';
 import { ARMAS } from '../mundo/supervivencia/modelos-mano.js';
-import { instalarDeshacer } from './campo-comun.js';
+import { instalarDeshacer, filaPerilla } from './campo-comun.js';
+import { MOVER, GIRAR, TAMANOS, mover, girar, tamanoDe, conTamano } from './objetos-simple.mjs';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const RAD = 180 / Math.PI;
@@ -81,6 +82,22 @@ export async function montarObjetos(ctx) {
         return { pos: v.pos.map(x => redondo(x)), rot: v.rot.map(x => redondo(x * RAD, 1)), escala: redondo(v.escala) };
     };
 
+    // Agarre sin el ajuste propio de esta vista: el del tipo (si es un objeto) o el del código (B0-V, «Tamaño»)
+    const valoresBase = (vista, a) => {
+        const propio = a.destino[a.k] && a.destino[a.k][vista];
+        if (!propio) return valores(vista, a);
+        delete a.destino[a.k][vista];
+        fijarDatosObjetosMano(datos);
+        const v = valores(vista, a);
+        a.destino[a.k][vista] = propio;
+        fijarDatosObjetosMano(datos);
+        return v;
+    };
+    const boton = (es, en, f, clase = 'boton chico secundario') => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = clase; b.textContent = t(es, en);
+        b.addEventListener('click', f); return b;
+    };
+
     function numero(etiqueta, valor, min, max, paso, poner) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
@@ -108,12 +125,26 @@ export async function montarObjetos(ctx) {
                 dest[vista] = { pos: v.pos.slice(), rot: v.rot.slice(), escala: v.escala };
                 cambio();
             };
-            ['x', 'y', 'z'].forEach((e, i) => sec.appendChild(numero(`pos ${e} (bloques)`, v.pos[i], -1.5, 1.5, 0.01, x => { v.pos[i] = x; guardarVista(); })));
-            ['x', 'y', 'z'].forEach((e, i) => sec.appendChild(numero(`rot ${e} (grados)`, v.rot[i], -180, 180, 1, x => { v.rot[i] = x; guardarVista(); })));
-            sec.appendChild(numero(t('escala', 'scale'), v.escala, 0.1, 3, 0.01, x => { v.escala = x; guardarVista(); }));
+            // Vista simple: tamaño con palabras y botones para mover y girar un poco (los números, en Avanzado)
+            const poner = n => { v.pos = n.pos; v.rot = n.rot; v.escala = n.escala; guardarVista(); pintar(); };
+            const base = valoresBase(vista, a);
+            const opciones = TAMANOS.map(([f, es2, en2]) => (f === 1 && sel.modo !== 'objeto' ? [f, 'normal (del juego)', 'normal (game value)'] : [f, es2, en2]));
+            sec.appendChild(filaPerilla(ctx, { es: 'Tamaño', en: 'Size', opciones }, tamanoDe(v, base), f => poner(conTamano(v, base, f))));
+            for (const [lista_, es2, en2, hacer] of [[MOVER, 'Mover', 'Move', mover], [GIRAR, 'Girar', 'Rotate', girar]]) {
+                const f = document.createElement('div'); f.className = 'campo';
+                const s = document.createElement('span'); s.textContent = t(es2, en2); f.appendChild(s);
+                const fb = document.createElement('div'); fb.className = 'fila-botones';
+                for (const [, es3, en3, eje, signo] of lista_) fb.appendChild(boton(es3, en3, () => poner(hacer(v, eje, signo))));
+                f.appendChild(fb); sec.appendChild(f);
+            }
+            const fino = document.createElement('div'); fino.className = 'solo-avanzado';
+            sec.appendChild(fino);
+            ['x', 'y', 'z'].forEach((e, i) => fino.appendChild(numero(`pos ${e} (bloques)`, v.pos[i], -1.5, 1.5, 0.01, x => { v.pos[i] = x; guardarVista(); })));
+            ['x', 'y', 'z'].forEach((e, i) => fino.appendChild(numero(`rot ${e} (grados)`, v.rot[i], -180, 180, 1, x => { v.rot[i] = x; guardarVista(); })));
+            fino.appendChild(numero(t('escala', 'scale'), v.escala, 0.1, 3, 0.01, x => { v.escala = x; guardarVista(); }));
             if (a.destino[a.k] && a.destino[a.k][vista]) {
                 const volver = document.createElement('button'); volver.type = 'button'; volver.className = 'boton chico secundario';
-                volver.textContent = t('Volver al valor del código', 'Back to the code value');
+                volver.textContent = sel.modo === 'objeto' ? t('Igual que el tipo', 'Same as the type') : t('Volver al valor del código', 'Back to the code value');
                 volver.addEventListener('click', () => {
                     delete a.destino[a.k][vista];
                     if (!Object.keys(a.destino[a.k]).length) delete a.destino[a.k];

@@ -4,7 +4,9 @@
 // números del JSON a la vez.
 //   { clave, es, en, ruta: ['gata'], campos: ['vel', 'acel'], tipo: 'factor' | 'valor', opciones: [[x, es, en], …],
 //     limites?: { campo: [min, max] } }
-// `factor` multiplica el valor del juego (base) de cada campo; `valor` pone ese número tal cual. Si el resultado es
+// `factor` multiplica el valor del juego (base) de cada campo; `valor` pone ese número tal cual; `conjunto` trae en cada
+// opción sus propios números (`[clave, es, en, { campo: número }]`; `null` = los del juego), así una «base» de cámara
+// mueve varios campos a valores distintos. Si el resultado es
 // igual al del juego, la clave se borra (queda el valor del código). Un número puesto a mano que no calza con
 // ninguna opción se lee como null («a mano»).
 // Mesa y Salonas no conocen los valores del código: su base es el archivo tal como llegó y pasan
@@ -15,7 +17,9 @@ const redondo = x => Math.round(x * 1000) / 1000;
 const en = (o, ruta) => ruta.reduce((a, k) => (a && typeof a === 'object' ? a[k] : undefined), o);
 
 export function valorOpcion(p, campo, base, x) {
-    let v = p.tipo === 'valor' ? x : redondo(base[campo] * x);
+    let v;
+    if (p.tipo === 'conjunto') { const op = p.opciones.find(o => o[0] === x); v = op && op[3] ? op[3][campo] : base[campo]; }
+    else v = p.tipo === 'valor' ? x : redondo(base[campo] * x);
     const l = p.limites && p.limites[campo];
     if (l) v = Math.min(l[1], Math.max(l[0], v));
     return v;

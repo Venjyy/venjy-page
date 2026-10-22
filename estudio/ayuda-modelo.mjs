@@ -37,11 +37,11 @@ export const AYUDA = {
     },
     objetos: {
         que: ['Cómo se agarra cada cosa en la mano.', 'How each thing is held in the hand.'],
-        empezar: ['Elige un objeto, toca «Ponerlo en mi mano» y mueve los números hasta que se vea bien.', 'Pick an object, press «Put it in my hand» and move the numbers until it looks right.']
+        empezar: ['Elige un objeto, toca «Ponerlo en mi mano» y ajústalo con el tamaño y los botones de mover y girar; «Igual que el tipo» lo deja como los demás.', 'Pick an object, press «Put it in my hand» and adjust it with the size and the move and rotate buttons; «Same as the type» makes it like the rest.']
     },
     formas: {
         que: ['La forma de los bloques que no son un cubo (losas, escalones, vallas…).', 'The shape of blocks that are not a cube (slabs, stairs, fences…).'],
-        empezar: ['Elige una forma, toca «Darme el bloque» y ponlo en el juego para verlo.', 'Pick a shape, press «Give me the block» and place it in the game to see it.']
+        empezar: ['Elige una forma, toca «Darme el bloque» y ponlo en el juego; cambia el ancho, el alto y el largo de cada caja, o muévela con «Subir» y «Bajar».', 'Pick a shape, press «Give me the block» and place it in the game; change each box width, height and length, or move it with «Up» and «Down».']
     },
     textos: {
         que: ['Lo que dicen los amigos al hablarles, en español e inglés.', 'What friends say when you talk to them, in Spanish and English.'],
@@ -65,7 +65,7 @@ export const AYUDA = {
     },
     arena: {
         que: ['El duelo en el lago congelado: rondas, vida, dificultad y cámara.', 'The frozen lake duel: rounds, health, difficulty and camera.'],
-        empezar: ['Abre la arena con su botón y cambia rondas o dificultad; se nota en la próxima pelea.', 'Open the arena with its button and change rounds or difficulty; it shows in the next fight.']
+        empezar: ['Toca «Abrir la arena» y cambia «Lo básico» con palabras: rondas, largo de cada ronda, vida de cada uno, nieve y la cámara (cerca, lejos o desde arriba); se nota en la próxima pelea.', 'Press «Open the arena» and change «The basics» in plain words: rounds, round length, the life of each fighter, snow and the camera (close, far or from above); it shows in the next fight.']
     },
     combate: {
         que: ['Cómo pega cada estilo de pelea: rapidez, daño, peso del golpe, reacciones, controles y la CPU.', 'How each fighting style hits: speed, damage, hit weight, reactions, controls and the CPU.'],
@@ -89,7 +89,7 @@ export const AYUDA = {
     },
     inicio: {
         que: ['El menú del principio: logo, frases amarillas, pantalla de carga y fondo de cine.', 'The start menu: logo, yellow splashes, loading screen and cinematic background.'],
-        empezar: ['Escribe una frase nueva en la lista o cambia un color; la vista previa lo muestra al lado.', 'Write a new splash in the list or change a color; the preview next to it shows it.']
+        empezar: ['Escribe una frase nueva en la lista («Agregar frase») o cambia un color; la vista previa lo muestra al lado. Tiempos, tamaños y posiciones del fondo están en Avanzado.', 'Write a new splash in the list («Add splash») or change a color; the preview next to it shows it. Times, sizes and background positions are in Advanced.']
     }
 };
 

@@ -5,7 +5,8 @@
 // tocarlo. Cada cambio va en vivo (mensaje `datos` 'arena'); los botones mandan el mensaje `arena` ({ accion }).
 // Guardar escribe con If-Match, como Carrera y Vida, y conserva las claves que la pestaña no muestra (planos, marcas…).
 // =========================================================
-import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta } from './campo-comun.js';
+import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta, filaPerilla } from './campo-comun.js';
+import { PERILLAS, perillaVida, leerPerilla, ponerPerilla } from './arena-simple.mjs';
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v && typeof v === 'object' && !Array.isArray(v);
 // [es, en, min, max, paso] de cada número (mínimos y máximos, del esquema)
@@ -315,32 +316,41 @@ export async function montarArena(ctx) {
         sec.appendChild(f);
     };
 
+    const avanzado = el => { el.classList.add('solo-avanzado'); return el; };
+    // Vista simple (B0-V, arena-simple.mjs): perillas en palabras, la cámara desde una base y la vida de cada peleador
+    function pintarBasico(claves_) {
+        const sb = seccion(t('Lo básico', 'The basics'), true);
+        const nombre = k => { const n = leer(['peleadores', k, 'nombre'], null); return (n && (n[ctx.idioma] || n.es)) || k; };
+        for (const p of [...PERILLAS, ...claves_.map(k => perillaVida(k, nombre(k)))])
+            sb.appendChild(filaPerilla(ctx, p, leerPerilla(p, datos, base), x => { ponerPerilla(p, datos, x, base); cambio(); pintar(); }));
+    }
     function pintar() {
         caja.textContent = '';
-        // Peleadores
+        const claves_ = [...new Set([...Object.keys(base.peleadores || {}), ...Object.keys(datos.peleadores || {})])];
+        pintarBasico(claves_);
+        // Peleadores (en Simple: nombre, título, aura y frases; estilo, vida, postura y carta, en Avanzado)
         const sp = seccion(t('Peleadores', 'Fighters'), true);
         sp.appendChild(num(['nivelDuelo'], ['nivel de amistad desde el que aparece «¡Un duelo en el lago!»', 'friendship level from which «A duel on the lake!» shows', 0, 5, 1]));
-        const claves_ = [...new Set([...Object.keys(base.peleadores || {}), ...Object.keys(datos.peleadores || {})])];
         for (const k of claves_) {
             const P = ['peleadores', k], f = document.createElement('div'); f.className = 'panel';
             const h = document.createElement('strong'); h.textContent = k; f.appendChild(h);
             f.appendChild(parTexto(t('nombre', 'name'), [...P, 'nombre']));
             f.appendChild(parTexto(t('título', 'title'), [...P, 'titulo']));
-            f.appendChild(texto(t('estilo de combate (estilo-<clave>.json)', 'fighting style (estilo-<key>.json)'), [...P, 'estilo'], '10em', 24));
-            f.appendChild(num([...P, 'vida'], ['vida', 'life', 1, 1000, 1]));
-            f.appendChild(num([...P, 'postura'], ['postura', 'posture', 1, 1000, 1]));
+            f.appendChild(avanzado(texto(t('estilo de combate (estilo-<clave>.json)', 'fighting style (estilo-<key>.json)'), [...P, 'estilo'], '10em', 24)));
+            f.appendChild(avanzado(num([...P, 'vida'], ['vida', 'life', 1, 1000, 1])));
+            f.appendChild(avanzado(num([...P, 'postura'], ['postura', 'posture', 1, 1000, 1])));
             f.appendChild(color(t('color del aura', 'aura color'), [...P, 'aura']));
             const cartaAct = leer([...P, 'carta'], null);
             const ci = document.createElement('input'); ci.type = 'text'; ci.value = cartaAct || ''; ci.maxLength = 24; ci.placeholder = t('sin carta (primer plano 3D)', 'no card (3D close-up)');
             ci.addEventListener('change', () => { const v = ci.value.trim().toLowerCase(); poner([...P, 'carta'], v || null); });
-            f.appendChild(campo(t('carta del Duelo con el retrato', 'Duel card with the portrait'), ci));
+            f.appendChild(avanzado(campo(t('carta del Duelo con el retrato', 'Duel card with the portrait'), ci)));
             f.appendChild(parTexto(t('frase al ganar', 'win line'), [...P, 'frases', 'victoria'], true));
             f.appendChild(parTexto(t('frase al perder', 'loss line'), [...P, 'frases', 'derrota'], true));
             sp.appendChild(f);
         }
-        // Números por grupo
+        // Números por grupo, efectos, peso, escenario, público y premios: lo fino (Avanzado)
         for (const [g, es, en, campos] of GRUPOS) {
-            const sec = seccion(t(es, en));
+            const sec = avanzado(seccion(t(es, en)));
             for (const [k, def] of Object.entries(campos)) sec.appendChild(num([g, k], def));
             if (g === 'vs') {
                 sec.appendChild(interruptor(t('tambor en la pantalla VS', 'drum on the VS screen'), ['vs', 'tambor'], true));
@@ -404,7 +414,7 @@ export async function montarArena(ctx) {
             if (g === 'hud') for (const [k, es2, en2] of COLORES_HUD) sec.appendChild(color(t(es2, en2), ['hud', k]));
         }
         // Efectos de los golpes (L2)
-        const sf = seccion(t('Efectos de los golpes', 'Hit effects'));
+        const sf = avanzado(seccion(t('Efectos de los golpes', 'Hit effects')));
         for (const [g, k, es2, en2, a, b, p] of EFECTOS_NUM) sf.appendChild(num(['efectos', g, k], [es2, en2, a, b, p]));
         sf.appendChild(color(t('destello del perfecto', 'perfect flash'), ['efectos', 'perfecto', 'color']));
         sf.appendChild(color(t('brillo de la carga', 'charge glow'), ['efectos', 'carga', 'color']));
@@ -412,7 +422,7 @@ export async function montarArena(ctx) {
         nota.textContent = t('Cuántas chispas salen: combate.json → peso (particulas). La estela de cada tajo (largo, ancho, color, desvanecer) va en estilo-sekiro.json → ataques.<tajo>.efectos.estela.', 'How many sparks: combate.json → peso (particulas). Each slash trail (length, width, color, fade) is in estilo-sekiro.json → ataques.<slash>.efectos.estela.');
         sf.appendChild(nota);
         // Peso de los golpes (N5): impacto, polvo, aro, estrellas, marca roja y capa de pantalla
-        const spPeso = seccion(t('Peso de los golpes', 'Hit weight'));
+        const spPeso = avanzado(seccion(t('Peso de los golpes', 'Hit weight')));
         for (const [ruta, es2, en2, a, b, p] of PESO_NUM) spPeso.appendChild(num(['efectos', ...ruta], [es2, en2, a, b, p]));
         for (const [ruta, es2, en2] of PESO_COLOR) spPeso.appendChild(color(t(es2, en2), ['efectos', ...ruta]));
         spPeso.appendChild(interruptor(t('números de daño', 'damage numbers'), ['efectos', 'pantalla', 'numeros', 'activo'], false));
@@ -447,7 +457,7 @@ export async function montarArena(ctx) {
         np.textContent = t('Hitstop, temblor, sacudida de la cámara, cámara lenta, qué reacción toca y sonido por capas: combate.json → peso, impacto, elegir y sonidos (pestaña Combate, N6). Colores del polvo por superficie: arena.json → efectos.polvo.colores.', 'Hitstop, shake, camera trauma, slow motion, which reaction plays and layered sound: combate.json → peso, impacto, elegir and sonidos (Combat tab, N6). Dust colors per surface: arena.json → efectos.polvo.colores.');
         spPeso.appendChild(np);
         // Escenario
-        const se = seccion(t('Escenario', 'Scenery'));
+        const se = avanzado(seccion(t('Escenario', 'Scenery')));
         se.appendChild(parTexto(t('nombre del escenario', 'scenery name'), ['escenario', 'nombre']));
         se.appendChild(num(['escenario', 'largo'], ['largo (X, de pared a pared)', 'length (X, wall to wall)', 6, 40, 0.5]));
         se.appendChild(num(['escenario', 'ancho'], ['ancho (Z, de pared a pared)', 'width (Z, wall to wall)', 4, 30, 0.5]));
@@ -468,12 +478,12 @@ export async function montarArena(ctx) {
         se.appendChild(num(['escenario', 'hielo', 'grietas'], ['hielo: grietas', 'ice: cracks', 0, 80, 1]));
         se.appendChild(num(['escenario', 'hielo', 'brillo'], ['hielo: brillo', 'ice: shine', 0, 1, 0.05]));
         // Público
-        const pu = seccion(t('Público', 'Crowd'));
+        const pu = avanzado(seccion(t('Público', 'Crowd')));
         claves(pu, t('Quién mira (claves de PERSONAS)', 'Who watches (PERSONAS keys)'), ['publico', 'personas'], 12, 'boris');
         pu.appendChild(num(['publico', 'distancia'], ['bloques detrás de la pared', 'blocks behind the wall', 0.5, 6, 0.1]));
         claves(pu, t('Gestos con que celebran', 'Cheering gestures'), ['publico', 'gestos'], 8, 'saluda');
         // Premios
-        const pr = seccion(t('Premios', 'Prizes'));
+        const pr = avanzado(seccion(t('Premios', 'Prizes')));
         pr.appendChild(interruptor(t('la victoria sube la amistad', 'winning raises friendship'), ['premios', 'amistad'], true));
         for (const [d, es2, en2] of DIFICULTADES) {
             const R = ['premios', 'primeraVictoria', d], f = document.createElement('div'); f.className = 'panel';
@@ -491,7 +501,7 @@ export async function montarArena(ctx) {
         caja.appendChild(boton('Volver a los valores del código', 'Back to code values', () => {
             for (const k of Object.keys(datos)) if (!['$schema', 'version', 'nota'].includes(k)) delete datos[k];
             cambio(); pintar();
-        }));
+        }, 'boton chico secundario solo-avanzado'));
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
     }
     async function guardar() {
