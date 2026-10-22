@@ -5,7 +5,7 @@
 import { B } from '../texturas.js';
 import { O, nombreDe } from '../supervivencia/objetos.js';
 import { RECETAS, FUNDICION, ingredientes } from '../supervivencia/recetas.js';
-import { TIENDAS } from '../supervivencia/tienda-datos.js';
+import { TIENDAS, fijarTienda } from '../supervivencia/tienda-datos.js';
 import { MISIONES, NOMBRES_AMIGO } from '../supervivencia/misiones-datos.js';
 import { REQ_MINIJUEGOS } from '../supervivencia/minijuegos-datos.js';
 
@@ -71,6 +71,15 @@ for (const [clave, def] of Object.entries(TIENDAS)) {
         ok(nombreDe(id) !== '?' && n > 0 && v.esm > 0, `${clave}: compra inválida`);
         ok(v.esm * VAL_ESMERALDA <= n * valor(id), `${clave}: paga de más por ${nombreDe(id)} (${v.esm * VAL_ESMERALDA} > ${(n * valor(id)).toFixed(1)})`);
     }
+}
+// mundo/datos/tienda.json: suma al final, ignora lo desconocido y se puede deshacer
+{
+    const antes = TIENDAS.pony.ofertas.length, cAntes = TIENDAS.pony.compra.length;
+    fijarTienda({ tiendas: { pony: { ofertas: [{ da: [['manzana', 2]], pide: [['esmeralda', 1]] }, { da: [['no_existe', 1]], pide: [['esmeralda', 1]], req: 'x' }], compra: [{ da: ['pan', 3], esm: 1 }] }, nadie: { ofertas: [] } } });
+    ok(TIENDAS.pony.ofertas.length === antes + 1 && TIENDAS.pony.ofertas[antes].da[0][0] === O.MANZANA, 'fijarTienda: suma la oferta válida al final');
+    ok(TIENDAS.pony.compra.length === cAntes + 1 && !TIENDAS.nadie, 'fijarTienda: suma la compra e ignora al amigo sin tienda');
+    fijarTienda(null);
+    ok(TIENDAS.pony.ofertas.length === antes && TIENDAS.pony.compra.length === cAntes, 'fijarTienda(null) vuelve al código');
 }
 ok(Object.keys(TIENDAS).length === 13, 'deben ser 13 tiendas');
 console.log(`${Object.keys(TIENDAS).length} tiendas · ${ofertas} ofertas · ${fallos ? fallos + ' fallas' : 'tienda OK'}`);

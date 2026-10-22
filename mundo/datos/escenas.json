@@ -15,6 +15,29 @@
         "j": [["puno", 0.45, 2.4], ["asiente", 2.6, 4.4]]
       }
     },
+    "abrazo": {
+      "tipo": "amistad",
+      "nivel": 3,
+      "T": 6.8,
+      "r": 0.95,
+      "linea": [1.6, 3.4],
+      "pista": {
+        "n": [["abrazo", 0.4, 4.9], ["habla", 5, 6.4]],
+        "j": [["abrazo", 0.4, 4.9]]
+      }
+    },
+    "secreto": {
+      "tipo": "amistad",
+      "nivel": 4,
+      "T": 9,
+      "r": 1.3,
+      "linea": [5.4, 3.4],
+      "golpes": [1.2, 2.2, 3.1, 4],
+      "pista": {
+        "n": [["secreto", 0.4, 5], ["habla", 5.3, 8.6]],
+        "j": [["secreto", 0.4, 5], ["asiente", 5.6, 7.6]]
+      }
+    },
     "pareja": {
       "tipo": "amistad",
       "nivel": 4,
