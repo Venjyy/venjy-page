@@ -9,6 +9,7 @@
 // =========================================================
 import { INICIO, ORDEN_CARGA, datosInicio, avanceCarga } from '../mundo/supervivencia/inicio-datos.js';
 import { decodificar, DIGITOS } from '../mundo/datos/pixeles.js';
+import { instalarDeshacer, botonJuego } from './campo-comun.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const TEXTOS = [['logo', 'Logo', 'Logo'], ['sub', 'Subtítulo', 'Subtitle'], ['pie', 'Pie', 'Footer']];
@@ -35,7 +36,13 @@ export async function montarInicio(ctx) {
     datos = clonar(original);
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
-    const cambio = () => { vista(); vistaCarga(); vistaPresentacion(); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
+    const cambio = () => { vista(); vistaCarga(); vistaPresentacion(); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; hist.anotar(); };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C)
+    const hist = instalarDeshacer(ctx, { pestana: 'inicio', idBoton: 'in-descartar', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); pintar(); cambio(); } });
+    ctx.sucios.inicio = sucio;
+    // Aquí se edita sobre lo real (código + JSON): «volver al valor del juego» pone el valor que trae el código en esa ruta
+    const BASE = completar({});
+    const enRuta = (o, ruta) => ruta.reduce((x, k) => (x == null ? x : x[k]), o);
 
     function vista() {
         const T = datos.titulo, L = ctx.idioma;
@@ -64,12 +71,15 @@ export async function montarInicio(ctx) {
         const c = C.consejos[indiceConsejo % Math.max(1, C.consejos.length)];
         $('in-c-consejo').textContent = c ? `${T(C.rotuloConsejo)}: ${T(c)}` : '';
     }
-    function campoNumero(rotulo, valor, min, max, paso, al) {
+    function campoNumero(rotulo, valor, min, max, paso, al, ruta) {
         const l = document.createElement('label'); l.className = 'campo';
         const s = document.createElement('span'); s.textContent = rotulo;
         const i = document.createElement('input'); i.type = 'number'; i.min = min; i.max = max; i.step = paso; i.value = valor;
         i.addEventListener('input', () => { const n = Number(i.value); if (i.value !== '' && Number.isFinite(n)) al(Math.min(max, Math.max(min, n))); });
-        l.append(s, i); return l;
+        l.append(s, i);
+        const base = ruta ? enRuta(BASE, ruta) : undefined;
+        if (typeof base === 'number') l.append(botonJuego(ctx, { tiene: () => enRuta(datos, ruta) !== base, quitar: () => { enRuta(datos, ruta.slice(0, -1))[ruta[ruta.length - 1]] = base; cambio(); }, repintar: pintar }));
+        return l;
     }
     function campoColor(rotulo, valor, al) {
         const l = document.createElement('label'); l.className = 'campo';
@@ -86,7 +96,7 @@ export async function montarInicio(ctx) {
         for (const k of ORDEN_CARGA) {
             const e = C.etapas[k];
             for (const L of ['es', 'en']) caja.appendChild(campoTexto(`${t('Etapa', 'Stage')} ${k} ${L.toUpperCase()}`, e.nombre[L], v => { e.nombre[L] = v || INICIO.carga.etapas[k].nombre[L]; etapaVista = k; cambio(); }));
-            caja.appendChild(campoNumero(`${t('Peso en la barra', 'Bar weight')} · ${k}`, e.peso, 0.1, 100, 0.5, n => { e.peso = n; etapaVista = k; cambio(); }));
+            caja.appendChild(campoNumero(`${t('Peso en la barra', 'Bar weight')} · ${k}`, e.peso, 0.1, 100, 0.5, n => { e.peso = n; etapaVista = k; cambio(); }, ['carga', 'etapas', k, 'peso']));
         }
         const sel = $('in-c-sel'); sel.textContent = '';
         for (const k of ORDEN_CARGA) { const o = document.createElement('option'); o.value = k; o.textContent = k; o.selected = k === etapaVista; sel.appendChild(o); }
@@ -94,9 +104,9 @@ export async function montarInicio(ctx) {
         const a = C.aspecto;
         for (const [k, es, en] of [['fondo', 'Tierra (tono 1)', 'Dirt (tone 1)'], ['fondo2', 'Tierra (tono 2)', 'Dirt (tone 2)'], ['barra', 'Barra', 'Bar'], ['barraFondo', 'Fondo de la barra', 'Bar background'], ['texto', 'Texto', 'Text']])
             ac.appendChild(campoColor(t(es, en), a[k], v => { a[k] = v; cambio(); }));
-        ac.appendChild(campoNumero(t('Tamaño del cuadro de tierra (px)', 'Dirt tile size (px)'), a.cuadro, 8, 256, 1, n => { a.cuadro = n; cambio(); }));
-        ac.appendChild(campoNumero(t('Tiempo mínimo visible (s)', 'Minimum time shown (s)'), C.tiempos.minimo, 0, 10, 0.1, n => { C.tiempos.minimo = n; cambio(); }));
-        ac.appendChild(campoNumero(t('Desvanecido (s)', 'Fade out (s)'), C.tiempos.salida, 0, 3, 0.05, n => { C.tiempos.salida = n; cambio(); }));
+        ac.appendChild(campoNumero(t('Tamaño del cuadro de tierra (px)', 'Dirt tile size (px)'), a.cuadro, 8, 256, 1, n => { a.cuadro = n; cambio(); }, ['carga', 'aspecto', 'cuadro']));
+        ac.appendChild(campoNumero(t('Tiempo mínimo visible (s)', 'Minimum time shown (s)'), C.tiempos.minimo, 0, 10, 0.1, n => { C.tiempos.minimo = n; cambio(); }, ['carga', 'tiempos', 'minimo']));
+        ac.appendChild(campoNumero(t('Desvanecido (s)', 'Fade out (s)'), C.tiempos.salida, 0, 3, 0.05, n => { C.tiempos.salida = n; cambio(); }, ['carga', 'tiempos', 'salida']));
         const lc = $('in-consejos'); lc.textContent = '';
         C.consejos.forEach((f, n) => {
             const fila = document.createElement('div'); fila.className = 'fila-texto in-fila';
@@ -218,10 +228,10 @@ export async function montarInicio(ctx) {
         const a = P.aspecto;
         for (const [k, es, en] of [['fondo', 'Fondo', 'Background'], ['texto', 'Nombre', 'Name'], ['sombra', 'Sombra del nombre', 'Name shadow'], ['lema', 'Lema', 'Tagline']])
             caja.appendChild(campoColor(t(es, en), a[k], v => { a[k] = v; cambio(); }));
-        caja.appendChild(campoNumero(t('Tamaño de cada píxel del logo (px)', 'Logo pixel size (px)'), a.pixel, 1, 24, 1, n => { a.pixel = n; cambio(); }));
+        caja.appendChild(campoNumero(t('Tamaño de cada píxel del logo (px)', 'Logo pixel size (px)'), a.pixel, 1, 24, 1, n => { a.pixel = n; cambio(); }, ['presentacion', 'aspecto', 'pixel']));
         const T = P.tiempos;
         for (const [k, es, en, min, max] of [['minimo', 'Mínimo visible (s)', 'Minimum shown (s)', 0, 15], ['maximo', 'Máximo (s)', 'Maximum (s)', 0.5, 30], ['entrada', 'Aparición (s)', 'Appear (s)', 0, 3], ['salida', 'Desvanecido (s)', 'Fade out (s)', 0, 3]])
-            caja.appendChild(campoNumero(t(es, en), T[k], min, max, 0.1, n => { T[k] = n; cambio(); }));
+            caja.appendChild(campoNumero(t(es, en), T[k], min, max, 0.1, n => { T[k] = n; cambio(); }, ['presentacion', 'tiempos', k]));
         pintarPaleta();
         vistaPresentacion();
     }
@@ -237,7 +247,7 @@ export async function montarInicio(ctx) {
             ['fps', 'Tope de cuadros/s', 'Max frames/s', 10, 60, 1], ['hora', 'Hora (0-1; 0,5 mediodía)', 'Time (0-1; 0.5 noon)', 0, 1, 0.01],
             ['fov', 'Campo de visión (°)', 'Field of view (°)', 20, 110, 1], ['oscurecer', 'Velo bajo el menú (0-1)', 'Veil under the menu (0-1)', 0, 1, 0.05],
             ['fundido', 'Fundido a negro (s)', 'Fade to black (s)', 0, 5, 0.1], ['esperaMax', 'Espera máx. en negro (s)', 'Max wait in black (s)', 0, 20, 0.5]
-        ]) caja.appendChild(campoNumero(t(es, en), F[k], min, max, paso, n => { F[k] = paso === 1 && max <= 12 ? Math.round(n) : n; cambio(); }));
+        ]) caja.appendChild(campoNumero(t(es, en), F[k], min, max, paso, n => { F[k] = paso === 1 && max <= 12 ? Math.round(n) : n; cambio(); }, ['fondo', k]));
         const l = document.createElement('label'); l.className = 'campo';
         const s = document.createElement('span'); s.textContent = t('Orden de los planos', 'Shot order');
         const sel = document.createElement('select');

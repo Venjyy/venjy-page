@@ -54,6 +54,7 @@ export async function montarMusica(ctx) {
     const alRehacer = []; // f() cuando se deshace o se descartan los cambios: la pestaña Ritmo vuelve a leer las canciones
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
+    ctx.sucios.musica = sucio; // punto en la pestaña (campo-comun.js, B0-C)
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
     const enJson = () => !!datos.temas[clave];
     // El tema que se ve: el del JSON o, si no hay, el de la carrera tal cual (los del mundo no tienen datos)

@@ -40,6 +40,7 @@ const ctx = {
     alPestana: [], // f(clave) al cambiar de pestaña (posiciones pone y quita el gizmo)
     vista: 'simple', // 'simple' | 'avanzado' (botones de la barra; se recuerda en este navegador)
     alVista: [], // f(vista) al cambiarla
+    sucios: {}, // clave de pestaña -> f() que dice si tiene cambios sin guardar (cada montarX se registra; ver campo-comun.js)
     puente: crearCliente(), // canal con el juego (fase 2); layout.js manda cada cambio por aquí
     juego: null
 };
@@ -164,3 +165,17 @@ for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
         window.dispatchEvent(new Event('resize')); // el editor de layout mide la vista al volver
     });
 }
+
+// Punto en el botón de la pestaña con cambios sin guardar (B0-C). Se revisa al editar y cada segundo (guardar es asíncrono).
+function pintarPuntos() {
+    for (const b of document.querySelectorAll('.pestana[data-pestana]')) {
+        const f = ctx.sucios[b.dataset.pestana];
+        let sucia = false;
+        try { sucia = !!(f && f()); } catch (e) { /* una pestaña a medio montar */ }
+        b.classList.toggle('sucia', sucia);
+        b.title = sucia ? (ctx.idioma === 'en' ? 'Unsaved changes' : 'Cambios sin guardar') : '';
+    }
+}
+for (const ev of ['input', 'change', 'click', 'keyup']) document.addEventListener(ev, () => setTimeout(pintarPuntos, 0));
+setInterval(pintarPuntos, 1000);
+pintarPuntos();

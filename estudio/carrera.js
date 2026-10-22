@@ -13,6 +13,7 @@
 // =========================================================
 import { reglasCarrera, OBJETOS, ESCENARIOS, ESCENARIO_BASE, TEMAS_MUSICA } from '../mundo/supervivencia/carrera-modelo.js';
 import { montarEditorPista } from './carrera-pista.js';
+import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta } from './campo-comun.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos de números: [clave (o null = raíz), título ES, título EN, { campo: [ES, EN, min, max, paso] }]
@@ -119,7 +120,10 @@ export async function montarCarrera(ctx) {
     } catch (e) { caja.textContent = 'No se pudo leer mundo/datos/carrera.json'; return; }
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
-    const cambio = (enviar = true) => { if (enviar) ctx.puente.enviarDatos('carrera', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
+    const cambio = (enviar = true) => { if (enviar) ctx.puente.enviarDatos('carrera', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; hist.anotar(); };
+    // Deshacer (botón y Ctrl+Z; también el del editor de pista) y punto en la pestaña (campo-comun.js, B0-C)
+    const hist = instalarDeshacer(ctx, { pestana: 'carrera', idBoton: 'ca-descartar', adopta: 'ca-deshacer', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); cambio(); pintar(); editor.pintar(); } });
+    ctx.sucios.carrera = sucio;
     // La pista que se edita: el living va en la raíz del JSON; las demás, en pistas.<clave> (se crea al primer cambio)
     let pistaEd = 'living';
     const pistaDatos = () => { if (pistaEd === 'living') return datos; datos.pistas = datos.pistas || {}; return (datos.pistas[pistaEd] = datos.pistas[pistaEd] || {}); };
@@ -139,7 +143,8 @@ export async function montarCarrera(ctx) {
         accion('ver'); // en el juego, la sala de esa pista
     });
 
-    function numero(etiqueta, valor, min, max, paso, poner) {
+    // `ruta` (opcional): dónde vive el ajuste en el JSON; con ella el campo lleva «Del juego» (volver al valor del juego)
+    function numero(etiqueta, valor, min, max, paso, poner, ruta) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
         const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = valor;
@@ -149,6 +154,7 @@ export async function montarCarrera(ctx) {
         rg.addEventListener('change', () => editor.pintar());
         n.addEventListener('change', () => { fijar(Number(n.value)); editor.pintar(); });
         const d = document.createElement('div'); d.className = 'fila-botones'; d.append(rg, n);
+        if (ruta) d.append(botonJuego(ctx, { tiene: () => tieneRuta(datos, ruta), quitar: () => { quitarRuta(datos, ruta); cambio(); }, repintar: () => { pintar(); editor.pintar(); } }));
         fila.append(s, d);
         return fila;
     }
@@ -179,7 +185,7 @@ export async function montarCarrera(ctx) {
             for (const [k, [ces, cen, min, max, paso]] of Object.entries(campos)) {
                 const valor = g ? R[g][k] : R[k];
                 const dueno = () => (DE_PISTA.includes(g) ? pistaDatos() : datos);
-                sec.appendChild(numero(t(ces, cen), valor, min, max, paso, v => { if (g) { const d = dueno(); d[g] = d[g] || {}; d[g][k] = v; } else datos[k] = v; cambio(); }));
+                sec.appendChild(numero(t(ces, cen), valor, min, max, paso, v => { if (g) { const d = dueno(); d[g] = d[g] || {}; d[g][k] = v; } else datos[k] = v; cambio(); }, [...(DE_PISTA.includes(g) && pistaEd !== 'living' ? ['pistas', pistaEd] : []), ...(g ? [g, k] : [k])]));
             }
             if (g === 'gata') {
                 // Los 3 niveles del derrape (azul, naranja, morado): segundos de carga y de turbo

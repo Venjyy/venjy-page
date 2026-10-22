@@ -9,6 +9,7 @@
 // =========================================================
 import { FORMAS_BASE, AJUSTES_BASE, NOMBRES_FORMA, fijarFormas, forma, ajustesFormas } from '../mundo/formas.js';
 import { B } from '../mundo/texturas.js';
+import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta } from './campo-comun.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const NOMBRE = {
@@ -47,7 +48,11 @@ export async function montarFormas(ctx) {
         fijarFormas(datos);
         ctx.puente.enviarDatos('formas', datos);
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
+        hist.anotar();
     };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C)
+    const hist = instalarDeshacer(ctx, { pestana: 'formas', idBoton: 'fo-descartar', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); cambio(); pintar(); } });
+    ctx.sucios.formas = sucio;
     let sel = 'losa';
     function llenarLista() {
         lista.textContent = '';
@@ -56,7 +61,8 @@ export async function montarFormas(ctx) {
         lista.value = sel;
     }
 
-    function numero(etiqueta, valor, min, max, paso, poner) {
+    // `ruta` (opcional): dónde vive el ajuste en el JSON; con ella el campo lleva «Del juego» (volver al valor del juego)
+    function numero(etiqueta, valor, min, max, paso, poner, ruta) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
         const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = valor;
@@ -65,6 +71,7 @@ export async function montarFormas(ctx) {
         rg.addEventListener('input', () => fijar(Number(rg.value)));
         n.addEventListener('change', () => fijar(Number(n.value)));
         const d = document.createElement('div'); d.className = 'fila-botones'; d.append(rg, n);
+        if (ruta) d.append(botonJuego(ctx, { tiene: () => tieneRuta(datos, ruta), quitar: () => { quitarRuta(datos, ruta); cambio(); }, repintar: pintar }));
         fila.append(s, d);
         return fila;
     }
@@ -84,8 +91,8 @@ export async function montarFormas(ctx) {
     function pintarGeneral() {
         const a = ajustesFormas();
         const s1 = seccion(t('Jugador', 'Player'));
-        s1.appendChild(numero(t('paso: sube solo (bloques; 0 = saltar)', 'step: climbs by itself (blocks; 0 = jump)'), a.paso, 0, 1, 0.05, v => { datos.paso = v; cambio(); }));
-        s1.appendChild(numero(t('suavizado de la cámara al subir (más = más rápido; 0 = de golpe)', 'camera smoothing when stepping up (higher = faster; 0 = instant)'), a.suavizado, 0, 60, 1, v => { datos.suavizado = v; cambio(); }));
+        s1.appendChild(numero(t('paso: sube solo (bloques; 0 = saltar)', 'step: climbs by itself (blocks; 0 = jump)'), a.paso, 0, 1, 0.05, v => { datos.paso = v; cambio(); }, ['paso']));
+        s1.appendChild(numero(t('suavizado de la cámara al subir (más = más rápido; 0 = de golpe)', 'camera smoothing when stepping up (higher = faster; 0 = instant)'), a.suavizado, 0, 60, 1, v => { datos.suavizado = v; cambio(); }, ['suavizado']));
         const s2 = seccion(t('Contorno del bloque apuntado', 'Outline of the targeted block'));
         const fila = document.createElement('label'); fila.className = 'campo';
         const sp = document.createElement('span'); sp.textContent = 'color';
@@ -93,9 +100,9 @@ export async function montarFormas(ctx) {
         col.addEventListener('input', () => { datos.contorno = { ...a.contorno, ...(datos.contorno || {}), color: col.value }; cambio(); });
         fila.append(sp, col);
         s2.appendChild(fila);
-        s2.appendChild(numero(t('opacidad', 'opacity'), a.contorno.opacidad, 0, 1, 0.05, v => { datos.contorno = { ...a.contorno, ...(datos.contorno || {}), opacidad: v }; cambio(); }));
+        s2.appendChild(numero(t('opacidad', 'opacity'), a.contorno.opacidad, 0, 1, 0.05, v => { datos.contorno = { ...a.contorno, ...(datos.contorno || {}), opacidad: v }; cambio(); }, ['contorno', 'opacidad']));
         const s3 = seccion(t('Grietas al romper', 'Cracks while breaking'));
-        s3.appendChild(numero(t('opacidad', 'opacity'), a.grietas.opacidad, 0, 1, 0.05, v => { datos.grietas = { ...(datos.grietas || {}), opacidad: v }; cambio(); }));
+        s3.appendChild(numero(t('opacidad', 'opacity'), a.grietas.opacidad, 0, 1, 0.05, v => { datos.grietas = { ...(datos.grietas || {}), opacidad: v }; cambio(); }, ['grietas', 'opacidad']));
         const volver = boton('Volver a los valores del código', 'Back to the code values', () => {
             datos.paso = AJUSTES_BASE.paso; datos.suavizado = AJUSTES_BASE.suavizado; datos.contorno = clonar(AJUSTES_BASE.contorno); datos.grietas = clonar(AJUSTES_BASE.grietas);
             cambio(); pintar();

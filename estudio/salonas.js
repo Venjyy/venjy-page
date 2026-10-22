@@ -7,6 +7,7 @@
 // salonas.js lo lee en cada cuadro); Guardar escribe con PUT /api/datos/salonas y If-Match.
 // Los botones táctiles (Pausa, Primus) se ubican en la pestaña Layout → página «Salonas».
 // =========================================================
+import { instalarDeshacer, botonJuego } from './campo-comun.js';
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v && typeof v === 'object' && !Array.isArray(v);
 const esPar = v => esObj(v) && typeof v.es === 'string' && typeof v.en === 'string' && Object.keys(v).length === 2;
@@ -25,18 +26,26 @@ export async function montarSalonas(ctx) {
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
-    const cambio = () => { ctx.puente.enviarDatos('salonas', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
+    const inicial = clonar(original); // cómo llegó el archivo: los números que se quitan («valor del juego») siguen a la vista, apagados
+    const cambio = () => { ctx.puente.enviarDatos('salonas', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; hist.anotar(); };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C); Ritmo comparte estos datos
+    const hist = instalarDeshacer(ctx, { pestana: 'salonas', idBoton: 'sa-descartar', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); cambio(); pintar(); alRehacer.forEach(f => f()); } });
+    ctx.sucios.salonas = sucio;
     const el = (tag, cls, texto) => { const e = document.createElement(tag); if (cls) e.className = cls; if (texto != null) e.textContent = texto; return e; };
     const campo = (etiqueta, ...hijos) => { const l = el('label', 'campo'); l.appendChild(el('span', '', etiqueta)); hijos.forEach(h => l.appendChild(h)); return l; };
     const poner = (padre, k, v) => { padre[k] = v; cambio(); };
 
     // Un campo por valor, según su tipo. `padre[k]` es el valor; se escribe ahí mismo.
-    function campoDe(padre, k) {
-        const v = padre[k];
+    // `ref` = el mismo objeto tal como llegó el archivo: un número quitado (↺) sigue a la vista, apagado, hasta recargar
+    function campoDe(padre, k, ref) {
+        const ausente = !(k in padre), v = ausente ? ref[k] : padre[k];
         if (typeof v === 'number') {
             const i = el('input'); i.type = 'number'; i.step = Number.isInteger(v) ? '1' : 'any'; i.value = v; i.style.width = '7em';
-            i.addEventListener('change', () => { if (i.value !== '' && Number.isFinite(Number(i.value))) poner(padre, k, Number(i.value)); else i.value = padre[k]; });
-            return campo(k, i);
+            const f = campo(k, i); if (ausente) f.classList.add('ausente');
+            const volver = botonJuego(ctx, { tiene: () => k in padre, quitar: () => { delete padre[k]; f.classList.add('ausente'); cambio(); } });
+            i.addEventListener('change', () => { if (i.value !== '' && Number.isFinite(Number(i.value))) { poner(padre, k, Number(i.value)); f.classList.remove('ausente'); volver.disabled = false; } else i.value = k in padre ? padre[k] : v; });
+            f.appendChild(volver);
+            return f;
         }
         if (typeof v === 'boolean') {
             const i = el('input'); i.type = 'checkbox'; i.checked = v;
@@ -83,17 +92,18 @@ export async function montarSalonas(ctx) {
     }
 
     // Llena `dentro` con los campos de `obj`; los sub-objetos van en grupos plegables
-    function llenar(dentro, obj, textos) {
-        for (const k of Object.keys(obj)) {
+    function llenar(dentro, obj, textos, ref = {}) {
+        for (const k of new Set([...Object.keys(obj), ...Object.keys(ref).filter(x => typeof ref[x] === 'number')])) {
+            if (!(k in obj)) { dentro.appendChild(campoDe(obj, k, ref)); continue; }
             const v = obj[k];
             if (textos && esPar(v)) dentro.appendChild(parTexto(obj, k));
             else if (esObj(v)) {
                 const d = el('details', 'grupo-ajustes');
                 d.appendChild(el('summary', '', k));
                 const sub = el('div', 'grupo-cuerpo'); d.appendChild(sub);
-                llenar(sub, v, textos);
+                llenar(sub, v, textos, esObj(ref[k]) ? ref[k] : {});
                 dentro.appendChild(d);
-            } else dentro.appendChild(campoDe(obj, k));
+            } else dentro.appendChild(campoDe(obj, k, ref));
         }
     }
 
@@ -102,7 +112,7 @@ export async function montarSalonas(ctx) {
         for (const [clave, es, en, textos] of [['juego', 'Juego', 'Game', false], ['reglas', 'Reglas', 'Rules', false], ['textos', 'Textos (ES / EN)', 'Texts (ES / EN)', true]]) {
             const sec = el('section', 'panel'); sec.appendChild(el('h2', '', t(es, en)));
             const cuerpo = el('div', 'grupo-cuerpo');
-            llenar(cuerpo, datos[clave] || {}, textos);
+            llenar(cuerpo, datos[clave] || {}, textos, inicial[clave] || {});
             sec.appendChild(cuerpo); caja.appendChild(sec);
         }
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;

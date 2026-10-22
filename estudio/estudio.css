@@ -54,6 +54,9 @@ body {
 }
 .pestana.activa { background: var(--boton-hover); color: var(--amarillo); }
 .pestana:disabled { opacity: 0.45; cursor: default; }
+.pestana.sucia::after { content: ''; display: inline-block; width: 8px; height: 8px; margin-left: 6px; background: var(--amarillo); border: 2px solid #000; vertical-align: middle; }
+.campo.ausente { opacity: 0.55; } /* ajuste quitado: manda el valor del juego */
+.volver-juego { padding: 0 6px; min-width: 0; }
 .estado { font-size: 0.85rem; color: var(--gris); }
 .estado.ok { color: var(--verde); }
 .estado.solo-lectura { color: var(--amarillo); }

@@ -41,19 +41,10 @@ export function montarEditorPista(ctx, api) {
     const kp = plano.getContext('2d'), kf = perfil.getContext('2d');
     let vista = null, sel = null; // sel = { tipo: 'punto' | 'mueble', i }
     let arrastre = null, espacio = false;
-    const historia = [];
 
     // ---- Datos: copias propias de pista y muebles al primer cambio ----
     function pistaPropia() { const d = api.datos(); if (!d.pista) d.pista = {}; const R = api.real(); for (const k of ['puntos', 'huecos', 'turbos', 'tuneles', 'cajas', 'piezas']) if (!d.pista[k]) d.pista[k] = clonar(R.pista[k] || []); return d.pista; }
     function mueblesPropios() { const d = api.datos(); if (!d.muebles) d.muebles = clonar(api.real().muebles || []); return d.muebles; }
-    function guardarHistoria() { const d = api.datos(); historia.push(clonar({ pista: d.pista || null, muebles: d.muebles || null })); if (historia.length > 60) historia.shift(); }
-    function deshacer() {
-        const h = historia.pop(); if (!h) return;
-        const d = api.datos();
-        if (h.pista) d.pista = h.pista; else delete d.pista;
-        if (h.muebles) d.muebles = h.muebles; else delete d.muebles;
-        sel = null; api.cambio(); pintar();
-    }
 
     // ---- Vista ----
     function ajustarTamano() {
@@ -214,7 +205,7 @@ export function montarEditorPista(ctx, api) {
         const l = document.createElement('label'); l.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
         const n = document.createElement('input'); n.type = 'number'; n.step = paso; n.value = valor; n.min = min; n.max = max;
-        n.addEventListener('change', () => { const v = Number(n.value); if (Number.isFinite(v)) { guardarHistoria(); poner(Math.min(max, Math.max(min, v))); api.cambio(); pintar(); } });
+        n.addEventListener('change', () => { const v = Number(n.value); if (Number.isFinite(v)) { poner(Math.min(max, Math.max(min, v))); api.cambio(); pintar(); } });
         l.append(s, n); padre.appendChild(l); return n;
     }
     const botonI = (padre, es, en, f, cls = 'boton chico secundario') => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = t(es, en); b.addEventListener('click', f); padre.appendChild(b); return b; };
@@ -239,8 +230,8 @@ export function montarEditorPista(ctx, api) {
             const fh = document.createElement('div'); fh.className = 'fila-botones'; insp.appendChild(fh);
             if (hueco) {
                 campo(fh, t('hueco: largo (bloques)', 'gap: length (blocks)'), hueco.largo || 4, 0.5, v => { pistaPropia().huecos.find(x => x.punto === i).largo = v; }, 1, 30);
-                botonI(fh, 'Quitar el hueco', 'Remove gap', () => { guardarHistoria(); const pp = pistaPropia(); pp.huecos = pp.huecos.filter(x => x.punto !== i); api.cambio(); pintar(); });
-            } else botonI(fh, 'Hueco desde aquí (salto)', 'Gap from here (jump)', () => { guardarHistoria(); pistaPropia().huecos.push({ punto: i, largo: 6 }); api.cambio(); pintar(); });
+                botonI(fh, 'Quitar el hueco', 'Remove gap', () => { const pp = pistaPropia(); pp.huecos = pp.huecos.filter(x => x.punto !== i); api.cambio(); pintar(); });
+            } else botonI(fh, 'Hueco desde aquí (salto)', 'Gap from here (jump)', () => { pistaPropia().huecos.push({ punto: i, largo: 6 }); api.cambio(); pintar(); });
             // Turbos desde este punto
             (pista.turbos || []).forEach((tb, j) => {
                 if (tb.punto !== i) return;
@@ -249,7 +240,7 @@ export function montarEditorPista(ctx, api) {
                 campo(ft, t('turbo: bloques después', 'boost: blocks after'), tb.avance || 0, 0.5, v => { tt().avance = v; }, 0, 60);
                 campo(ft, t('lado (-1 izq., 1 der.)', 'side (-1 left, 1 right)'), tb.lado || 0, 0.1, v => { tt().lado = v; }, -1, 1);
                 campo(ft, t('largo', 'length'), tb.largo || 4, 0.5, v => { tt().largo = v; }, 1, 20);
-                botonI(ft, 'Quitar turbo', 'Remove boost', () => { guardarHistoria(); pistaPropia().turbos.splice(j, 1); api.cambio(); pintar(); });
+                botonI(ft, 'Quitar turbo', 'Remove boost', () => { pistaPropia().turbos.splice(j, 1); api.cambio(); pintar(); });
             });
             // Filas de cajas de objetos desde este punto
             (pista.cajas || []).forEach((cj, j) => {
@@ -258,16 +249,16 @@ export function montarEditorPista(ctx, api) {
                 const cc = () => pistaPropia().cajas[j];
                 campo(fc, t('cajas: bloques después', 'item boxes: blocks after'), cj.avance || 0, 0.5, v => { cc().avance = v; }, 0, 60);
                 campo(fc, t('cuántas a lo ancho', 'how many across'), cj.cuantas || R.objetos.cuantas, 1, v => { cc().cuantas = Math.round(v); }, 1, 8);
-                botonI(fc, 'Quitar las cajas', 'Remove item boxes', () => { guardarHistoria(); pistaPropia().cajas.splice(j, 1); api.cambio(); pintar(); });
+                botonI(fc, 'Quitar las cajas', 'Remove item boxes', () => { pistaPropia().cajas.splice(j, 1); api.cambio(); pintar(); });
             });
             const fb = document.createElement('div'); fb.className = 'fila-botones'; insp.appendChild(fb);
-            botonI(fb, 'Cajas de objetos aquí', 'Item boxes here', () => { guardarHistoria(); pistaPropia().cajas.push({ punto: i, avance: 1 }); api.cambio(); pintar(); });
-            botonI(fb, 'Agregar turbo aquí', 'Add boost here', () => { guardarHistoria(); pistaPropia().turbos.push({ punto: i, avance: 1, lado: 0, largo: 4 }); api.cambio(); pintar(); });
+            botonI(fb, 'Cajas de objetos aquí', 'Item boxes here', () => { pistaPropia().cajas.push({ punto: i, avance: 1 }); api.cambio(); pintar(); });
+            botonI(fb, 'Agregar turbo aquí', 'Add boost here', () => { pistaPropia().turbos.push({ punto: i, avance: 1, lado: 0, largo: 4 }); api.cambio(); pintar(); });
             const tunel = (pista.tuneles || []).find(x => x.desde === i);
-            if (tunel) botonI(fb, 'Quitar el túnel', 'Remove tunnel', () => { guardarHistoria(); const pp = pistaPropia(); pp.tuneles = pp.tuneles.filter(x => x.desde !== i); api.cambio(); pintar(); });
-            else botonI(fb, 'Túnel hasta el siguiente', 'Tunnel to the next one', () => { guardarHistoria(); pistaPropia().tuneles.push({ desde: i, hasta: (i + 1) % R.pista.puntos.length }); api.cambio(); pintar(); });
+            if (tunel) botonI(fb, 'Quitar el túnel', 'Remove tunnel', () => { const pp = pistaPropia(); pp.tuneles = pp.tuneles.filter(x => x.desde !== i); api.cambio(); pintar(); });
+            else botonI(fb, 'Túnel hasta el siguiente', 'Tunnel to the next one', () => { pistaPropia().tuneles.push({ desde: i, hasta: (i + 1) % R.pista.puntos.length }); api.cambio(); pintar(); });
             botonI(fb, 'Agregar un punto después', 'Add a point after', () => {
-                guardarHistoria();
+                
                 const pts = pistaPropia().puntos, a = pts[i], b = pts[(i + 1) % pts.length];
                 api.datos().pista = insertarPunto(pistaPropia(), i + 1, [encajar((a[0] + b[0]) / 2), Math.round(a[1] + b[1]) / 2, encajar((a[2] + b[2]) / 2)]);
                 sel = { tipo: 'punto', i: i + 1 }; api.cambio(); pintar();
@@ -281,25 +272,25 @@ export function montarEditorPista(ctx, api) {
             const tipo = document.createElement('select');
             for (const k of tiposDe(R)) tipo.appendChild(new Option(k, k));
             tipo.value = m.tipo;
-            tipo.addEventListener('change', () => { guardarHistoria(); mm().tipo = tipo.value; api.cambio(); pintar(); });
+            tipo.addEventListener('change', () => { mm().tipo = tipo.value; api.cambio(); pintar(); });
             g.appendChild(tipo);
             for (const [k, es, en, paso, min, max] of [['x', 'x', 'x', 0.5, -250, 250], ['z', 'z', 'z', 0.5, -250, 250], ['a', 'ancho (x)', 'width (x)', 0.5, 0.5, 160], ['f', 'fondo (z)', 'depth (z)', 0.5, 0.5, 160], ['h', 'alto', 'height', 0.1, 0.02, 60], ['g', 'giro (grados)', 'turn (degrees)', 5, -180, 180]])
                 campo(g, t(es, en), m[k] ?? 0, paso, v => { mm()[k] = v; }, min, max);
             if (CON_COLOR.includes(m.tipo)) {
                 const l = document.createElement('label'); l.className = 'campo'; const s = document.createElement('span'); s.textContent = 'color';
                 const c = document.createElement('input'); c.type = 'color'; c.value = m.color || '#888888';
-                c.addEventListener('change', () => { guardarHistoria(); mm().color = c.value; api.cambio(); pintar(); });
+                c.addEventListener('change', () => { mm().color = c.value; api.cambio(); pintar(); });
                 l.append(s, c); g.appendChild(l);
             }
             if (![...M.MUEBLES_ENCIMA, ...M.MUEBLES_TUNEL, ...M.MUEBLES_PLANOS, 'podio'].includes(m.tipo)) {
                 const l = document.createElement('label'); l.className = 'campo'; const s = document.createElement('span');
                 s.textContent = t('La pista sube encima (rampa sola)', 'Track climbs over it (automatic ramp)');
                 const c = document.createElement('input'); c.type = 'checkbox'; c.checked = M.subeEncima(m);
-                c.addEventListener('change', () => { guardarHistoria(); mm().sube = c.checked; api.cambio(); pintar(); });
+                c.addEventListener('change', () => { mm().sube = c.checked; api.cambio(); pintar(); });
                 l.append(s, c); g.appendChild(l);
             }
             const fb = document.createElement('div'); fb.className = 'fila-botones'; insp.appendChild(fb);
-            botonI(fb, 'Quitar el mueble', 'Remove furniture', () => { guardarHistoria(); mueblesPropios().splice(i, 1); sel = null; api.cambio(); pintar(); });
+            botonI(fb, 'Quitar el mueble', 'Remove furniture', () => { mueblesPropios().splice(i, 1); sel = null; api.cambio(); pintar(); });
         }
     }
     // Una pieza plantilla: sus medidas, su giro, soltarla o quitarla (cada cambio la rehace desde su entrada)
@@ -315,11 +306,11 @@ export function montarEditorPista(ctx, api) {
         for (const [k, es, en, min, max, paso] of MEDIDAS[def.gen] || []) campo(g, t(es, en), med[k], paso, v => rehacer({ [k]: v }), min, max);
         campo(g, t('giro (grados; hacia dónde mira la entrada)', 'turn (degrees; where the entry faces)'), z.giro || 0, 15, v => rehacer({ giro: v }), -360, 360);
         const fb = document.createElement('div'); fb.className = 'fila-botones'; insp.appendChild(fb);
-        const girar = d => () => { guardarHistoria(); rehacer({ giro: ((z.giro || 0) + d + 540) % 360 - 180 }); api.cambio(); pintar(); };
+        const girar = d => () => { rehacer({ giro: ((z.giro || 0) + d + 540) % 360 - 180 }); api.cambio(); pintar(); };
         botonI(fb, 'Girar a la izquierda (15°)', 'Turn left (15°)', girar(15));
         botonI(fb, 'Girar a la derecha (15°)', 'Turn right (15°)', girar(-15));
-        botonI(fb, 'Soltar la pieza (puntos sueltos)', 'Release piece (loose points)', () => { guardarHistoria(); pistaPropia().piezas.splice(iz, 1); api.cambio(); pintar(); });
-        botonI(fb, 'Quitar la pieza', 'Remove piece', () => { guardarHistoria(); api.datos().pista = quitarPieza(pistaPropia(), iz); sel = null; api.cambio(); pintar(); });
+        botonI(fb, 'Soltar la pieza (puntos sueltos)', 'Release piece (loose points)', () => { pistaPropia().piezas.splice(iz, 1); api.cambio(); pintar(); });
+        botonI(fb, 'Quitar la pieza', 'Remove piece', () => { api.datos().pista = quitarPieza(pistaPropia(), iz); sel = null; api.cambio(); pintar(); });
     }
     function pintarAvisos() {
         avisosEl.textContent = '';
@@ -332,7 +323,7 @@ export function montarEditorPista(ctx, api) {
 
     function quitar(i) {
         if (R.pista.puntos.length <= 4) return;
-        guardarHistoria();
+        
         const d = api.datos(); d.pista = quitarPunto(pistaPropia(), i);
         sel = null; api.cambio(); pintar();
     }
@@ -361,7 +352,7 @@ export function montarEditorPista(ctx, api) {
         if (e.button === 2 || e.button === 1 || espacio) { arrastre = { tipo: 'vista', px, py, cx: vista.cx, cz: vista.cz }; return; }
         const ip = puntoEn(px, py);
         if (ip >= 0) {
-            sel = { tipo: 'punto', i: ip }; guardarHistoria();
+            sel = { tipo: 'punto', i: ip }; 
             // Shift: arrastra la pista entera (todos los puntos juntos)
             // Un punto de una pieza: arrastra la pieza entera
             const iz = piezaDe(R.pista, ip), [x, z] = aMundo(px, py);
@@ -371,7 +362,7 @@ export function montarEditorPista(ctx, api) {
             pintar(); return;
         }
         const im = muebleEn(px, py);
-        if (im >= 0) { const [x, z] = aMundo(px, py); const m = R.muebles[im]; sel = { tipo: 'mueble', i: im }; guardarHistoria(); arrastre = { tipo: 'mueble', i: im, dx: m.x - x, dz: m.z - z, movio: false }; pintar(); return; }
+        if (im >= 0) { const [x, z] = aMundo(px, py); const m = R.muebles[im]; sel = { tipo: 'mueble', i: im }; arrastre = { tipo: 'mueble', i: im, dx: m.x - x, dz: m.z - z, movio: false }; pintar(); return; }
         sel = null; pintar();
     });
     plano.addEventListener('pointermove', e => {
@@ -390,7 +381,7 @@ export function montarEditorPista(ctx, api) {
     const soltar = () => {
         if (!arrastre) return;
         const a = arrastre; arrastre = null;
-        if (a.tipo !== 'vista') { if (a.movio) api.cambio(); else historia.pop(); pintar(); }
+        if (a.tipo !== 'vista') { if (a.movio) api.cambio(); pintar(); }
     };
     plano.addEventListener('pointerup', soltar);
     plano.addEventListener('pointercancel', soltar);
@@ -399,7 +390,7 @@ export function montarEditorPista(ctx, api) {
         const seg = segmentoCercano(R.pista.puntos, x, z);
         if (!seg || seg.d > R.pista.ancho) return;
         const a = R.pista.puntos[seg.i], b = R.pista.puntos[(seg.i + 1) % R.pista.puntos.length];
-        guardarHistoria();
+        
         const d = api.datos();
         d.pista = insertarPunto(pistaPropia(), seg.i + 1, [encajar(x), Math.round((a[1] + (b[1] - a[1]) * seg.u) * 2) / 2, encajar(z)]);
         sel = { tipo: 'punto', i: seg.i + 1 };
@@ -423,7 +414,7 @@ export function montarEditorPista(ctx, api) {
         if (mejor < 0) return;
         perfil.setPointerCapture(e.pointerId);
         const iz = piezaDe(R.pista, mejor), pz = iz >= 0 ? R.pista.piezas[iz] : null;
-        sel = { tipo: 'punto', i: mejor }; guardarHistoria(); arrPerfil = { i: mejor, E, movio: false, pieza: pz && { desde: pz.desde, hasta: pz.hasta, orig: clonar(pistaPropia().puntos) } };
+        sel = { tipo: 'punto', i: mejor }; arrPerfil = { i: mejor, E, movio: false, pieza: pz && { desde: pz.desde, hasta: pz.hasta, orig: clonar(pistaPropia().puntos) } };
         pintar();
     });
     perfil.addEventListener('pointermove', e => {
@@ -436,7 +427,7 @@ export function montarEditorPista(ctx, api) {
         arrPerfil.movio = true;
         api.cambio(false); redibujar();
     });
-    const soltarPerfil = () => { if (!arrPerfil) return; const a = arrPerfil; arrPerfil = null; if (a.movio) api.cambio(); else historia.pop(); pintar(); };
+    const soltarPerfil = () => { if (!arrPerfil) return; const a = arrPerfil; arrPerfil = null; if (a.movio) api.cambio(); pintar(); };
     perfil.addEventListener('pointerup', soltarPerfil);
     perfil.addEventListener('pointercancel', soltarPerfil);
 
@@ -445,13 +436,11 @@ export function montarEditorPista(ctx, api) {
         if (ctx.pestana !== 'carrera' || e.target.matches('input, select, textarea')) return;
         if (e.code === 'Space') espacio = true;
         if ((e.code === 'Delete' || e.code === 'Backspace') && sel && sel.tipo === 'punto') { e.preventDefault(); quitar(sel.i); }
-        else if ((e.code === 'Delete' || e.code === 'Backspace') && sel && sel.tipo === 'mueble') { e.preventDefault(); guardarHistoria(); mueblesPropios().splice(sel.i, 1); sel = null; api.cambio(); pintar(); }
-        else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); deshacer(); }
+        else if ((e.code === 'Delete' || e.code === 'Backspace') && sel && sel.tipo === 'mueble') { e.preventDefault(); mueblesPropios().splice(sel.i, 1); sel = null; api.cambio(); pintar(); }
         else if (sel && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
             // Flechas: mueven lo elegido medio bloque (con Shift, 2 bloques)
             e.preventDefault();
             const d = e.shiftKey ? 2 : 0.5, dx = e.code === 'ArrowLeft' ? -d : e.code === 'ArrowRight' ? d : 0, dz = e.code === 'ArrowUp' ? -d : e.code === 'ArrowDown' ? d : 0;
-            if (!e.repeat) guardarHistoria();
             const iz = sel.tipo === 'punto' ? piezaDe(R.pista, sel.i) : -1;
             if (iz >= 0) { const pz = R.pista.piezas[iz], pts = pistaPropia().puntos; for (let i = pz.desde; i <= pz.hasta; i++) { pts[i][0] += dx; pts[i][2] += dz; } }
             else if (sel.tipo === 'punto') { const p = pistaPropia().puntos[sel.i]; p[0] += dx; p[2] += dz; }
@@ -473,7 +462,7 @@ export function montarEditorPista(ctx, api) {
         for (const k of L) tipoNuevo.appendChild(new Option(k, k));
     }
     $('ca-agregar-mueble').addEventListener('click', () => {
-        guardarHistoria();
+        
         const k = tipoNuevo.value, ms = mueblesPropios();
         ms.push({ tipo: k, x: Math.round(vista.cx), z: Math.round(vista.cz), ...clonar(NUEVO[k] || { a: 6, f: 6, h: 4 }) });
         sel = { tipo: 'mueble', i: ms.length - 1 };
@@ -487,16 +476,15 @@ export function montarEditorPista(ctx, api) {
         let i = sel && sel.tipo === 'punto' ? sel.i : -1;
         if (i < 0) { let dm = 1e9; pts.forEach((p, j) => { const d = Math.hypot(p[0] - vista.cx, p[2] - vista.cz); if (d < dm) { dm = d; i = j; } }); }
         const iz = piezaDe(R.pista, i); if (iz >= 0) i = R.pista.piezas[iz].hasta; // nunca dentro de otra pieza
-        guardarHistoria();
+        
         api.datos().pista = ponerPieza(pistaPropia(), i, tipoPieza.value);
         sel = { tipo: 'punto', i: i + 1 }; api.cambio(); pintar();
     });
-    $('ca-deshacer').addEventListener('click', deshacer);
     $('ca-encuadrar').addEventListener('click', () => { encuadrar(); pintar(); });
     $('ca-ver-sala').addEventListener('click', () => { encuadrar(true); pintar(); });
     // Agrandar o achicar la pista entera (en el plano, alrededor de su centro; las alturas no cambian)
     const escalar = k => {
-        guardarHistoria();
+        
         const pts = pistaPropia().puntos;
         const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cz = pts.reduce((a, p) => a + p[2], 0) / pts.length;
         for (const p of pts) { p[0] = encajar(cx + (p[0] - cx) * k); p[2] = encajar(cz + (p[2] - cz) * k); }
@@ -505,7 +493,7 @@ export function montarEditorPista(ctx, api) {
     $('ca-agrandar').addEventListener('click', () => escalar(1.15));
     $('ca-achicar').addEventListener('click', () => escalar(1 / 1.15));
     $('ca-pista-codigo').addEventListener('click', () => {
-        guardarHistoria();
+        
         const d = api.datos();
         if (d.pista) { for (const k of ['puntos', 'huecos', 'turbos', 'tuneles', 'cajas', 'piezas']) delete d.pista[k]; if (!Object.keys(d.pista).length) delete d.pista; }
         delete d.muebles; sel = null; api.cambio(); pintar();
@@ -524,7 +512,7 @@ export function montarEditorPista(ctx, api) {
     });
 
     // Otra pista (selector de la pestaña): la vista se encuadra de nuevo y se olvida la selección y el deshacer
-    function otraPista() { sel = null; vista = null; historia.length = 0; pintar(); }
+    function otraPista() { sel = null; vista = null; pintar(); }
     llenarTipos();
     return { pintar, otraPista, get seleccion() { return sel; } };
 }

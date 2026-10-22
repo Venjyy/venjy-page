@@ -8,6 +8,7 @@
 // y la tienda de cartas de Lucho (grupos «Tienda de cartas», «Precio de cada carta suelta» y «Sobres: peso de cada carta»).
 // Duelo entre jugadores donde están: grupos «retar», «sobre un tronco», «en el piso» y «Cámara que mira al otro jugador».
 // =========================================================
+import { instalarDeshacer, botonJuego } from './campo-comun.js';
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
 const GRUPOS = [
@@ -76,20 +77,28 @@ export async function montarMesa(ctx) {
         const r = await fetch('../mundo/datos/cartas-mesa.json', { cache: 'no-cache' });
         etag = r.headers.get('ETag'); original = JSON.parse(await r.text()); datos = clonar(original);
     } catch (e) { caja.textContent = 'No se pudo leer mundo/datos/cartas-mesa.json'; return; }
+    const inicial = clonar(original); // cómo llegó el archivo: los ajustes que se quitan («valor del juego») siguen a la vista, apagados
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     function rotular(es, en, clase = '') { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); }
-    const cambio = () => { ctx.puente.enviarDatos('cartas-mesa', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
+    const cambio = () => { ctx.puente.enviarDatos('cartas-mesa', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; hist.anotar(); };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C)
+    const hist = instalarDeshacer(ctx, { pestana: 'mesa', idBoton: 'me-descartar', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); cambio(); pintar(); } });
+    ctx.sucios.mesa = sucio;
 
-    function numero(obj, k, etiqueta, grupo) {
-        const fila = document.createElement('label'); fila.className = 'campo';
+    // `ref` = el mismo grupo tal como llegó el archivo (`inicial`)
+    function numero(obj, k, etiqueta, grupo, ref) {
+        const ausente = !(k in obj), v0 = ausente ? ref[k] : obj[k];
+        const fila = document.createElement('label'); fila.className = 'campo' + (ausente ? ' ausente' : '');
         const s = document.createElement('span'); s.textContent = etiqueta ? `${k} · ${etiqueta}` : k;
-        const [min, max, paso] = rangoGrupo(grupo, k, obj[k]);
-        const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = obj[k];
-        const n = document.createElement('input'); n.type = 'number'; n.step = paso; n.value = obj[k]; n.style.width = '6em';
-        const poner = v => { if (!Number.isFinite(v)) return; obj[k] = Math.round(v * 1000) / 1000; rg.value = obj[k]; n.value = obj[k]; cambio(); };
+        const [min, max, paso] = rangoGrupo(grupo, k, v0);
+        const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = v0;
+        const n = document.createElement('input'); n.type = 'number'; n.step = paso; n.value = v0; n.style.width = '6em';
+        const poner = v => { if (!Number.isFinite(v)) return; obj[k] = Math.round(v * 1000) / 1000; rg.value = obj[k]; n.value = obj[k]; fila.classList.remove('ausente'); if (volver) volver.disabled = false; cambio(); };
         rg.addEventListener('input', () => poner(Number(rg.value)));
         n.addEventListener('change', () => poner(Number(n.value)));
         const d = document.createElement('div'); d.className = 'fila-botones'; d.append(rg, n);
+        const volver = ref ? botonJuego(ctx, { tiene: () => k in obj, quitar: () => { delete obj[k]; fila.classList.add('ausente'); cambio(); } }) : null;
+        if (volver) d.append(volver);
         fila.append(s, d);
         return fila;
     }
@@ -102,11 +111,12 @@ export async function montarMesa(ctx) {
         return fila;
     }
     function camara(obj, nombres = {}, grupo = null) {
-        const out = [];
-        for (const k of Object.keys(obj)) {
+        const out = [], ref = grupo ? inicial[grupo] : null;
+        for (const k of new Set([...Object.keys(obj), ...Object.keys(ref || {})])) {
             if (k === 'nota') continue;
+            if (!(k in obj)) { if (typeof ref[k] === 'number') out.push(numero(obj, k, nombres[k], grupo, ref)); continue; }
             if (k === 'mira') { obj.mira.forEach((_, i) => out.push(numero(obj.mira, i, ['mira: x (derecha)', 'mira: y (arriba)', 'mira: z (hacia ti)'][i]))); continue; }
-            if (typeof obj[k] === 'number') out.push(numero(obj, k, nombres[k], grupo));
+            if (typeof obj[k] === 'number') out.push(numero(obj, k, nombres[k], grupo, ref));
             else if (typeof obj[k] === 'string' && /^#[0-9a-f]{6}$/i.test(obj[k])) out.push(colorCampo(obj, k));
         }
         return out;
