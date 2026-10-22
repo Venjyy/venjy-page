@@ -8,6 +8,6 @@ process.stdin.on('end', () => {
     const m = /(^|[;&|\s])gh\s+pr\s+(create|merge)\b/.exec(cmd);
     if (!m) return;
     const que = m[2] === 'create' ? 'PR abierto' : 'PR fusionado';
-    const texto = `${que}: invoca AHORA la skill traspaso-chat (Skill tool) y entrega el prompt de traspaso al siguiente chat en un bloque de código para copiar y pegar, en español, máximo ~10 líneas, antes de terminar el turno. No lo escribas como lista dentro del resumen.`;
+    const texto = `${que}: invoca AHORA la skill traspaso-chat (Skill tool) y entrega el prompt de traspaso al siguiente chat en un bloque de código para copiar y pegar, en español, máximo ~10 líneas, antes de terminar el turno. No lo escribas como lista dentro del resumen. Es respaldo: por defecto se sigue en este chat con la parte siguiente en una rama apilada (skill traspaso-chat, «¿Seguir aquí o cortar?»).`;
     process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: texto } }));
 });
