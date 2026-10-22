@@ -41,7 +41,7 @@ export const AYUDA = {
     },
     formas: {
         que: ['La forma de los bloques que no son un cubo (losas, escalones, vallas…).', 'The shape of blocks that are not a cube (slabs, stairs, fences…).'],
-        empezar: ['Elige una forma, toca «Darme el bloque» y ponlo en el juego; cambia el ancho, el alto y el largo de cada caja, o muévela con «Subir» y «Bajar».', 'Pick a shape, press «Give me the block» and place it in the game; change each box width, height and length, or move it with «Up» and «Down».']
+        empezar: ['Elige una forma, toca «Darme el bloque» y ponlo en el juego; en «Arrastra las cajas» mueve una caja desde el medio o estírala desde un borde (también con «Subir» y «Bajar»).', 'Pick a shape, press «Give me the block» and place it in the game; in «Drag the boxes» move a box by the middle or stretch it by an edge (also with «Up» and «Down»).']
     },
     textos: {
         que: ['Lo que dicen los amigos al hablarles, en español e inglés.', 'What friends say when you talk to them, in Spanish and English.'],

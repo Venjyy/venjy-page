@@ -193,6 +193,17 @@ for (const p of FS.PERILLAS) for (const [x] of p.opciones) {
 }
 const fo2 = clonar(fo); fo2.formas.losa = { cajas: [FS.subir(FS.conMedida(losa, 0, 10), 2)] };
 ok(!validar(fo2, 'formas').length, 'formas: una caja de la vista simple cumple el esquema');
+// Vista previa: tomar del medio = mover, de un borde = estirar, fuera = nada; mover y estirar no salen del bloque
+const cj = { a: [4, 0, 4], b: [12, 8, 12] };
+ok(FS.tocar(cj, [0, 2], 8, 8).tipo === 'mover' && FS.tocar(cj, [0, 2], 1, 1) === null, 'formas: tocar el medio mueve y fuera no toma nada');
+const tb = FS.tocar(cj, [0, 1], 12.3, 4);
+ok(tb.tipo === 'borde' && tb.eje === 0 && tb.extremo === 'b' && FS.tocar(cj, [0, 1], 8, 7.6).extremo === 'b' && FS.tocar(cj, [0, 1], 8, 7.6).eje === 1, 'formas: tocar un borde lo estira');
+const mv = FS.moverCaja(cj, [0, 2], [20, -1]);
+ok(JSON.stringify(mv) === JSON.stringify({ a: [8, 0, 3], b: [16, 8, 11] }), 'formas: mover se queda dentro del bloque');
+ok(JSON.stringify(FS.moverCaja(cj, [0, 1], [0, -3]).a) === '[4,0,4]', 'formas: no baja del suelo del bloque');
+ok(FS.estirarCaja(cj, 1, 'b', 30).b[1] === 16 && FS.estirarCaja(cj, 1, 'b', -5).b[1] === 1 && FS.estirarCaja(cj, 0, 'a', 13).a[0] === 11, 'formas: estirar deja al menos 1/16 y dentro del bloque');
+const fo3 = clonar(fo); fo3.formas.losa = { cajas: [FS.estirarCaja(FS.moverCaja(losa, [0, 1], [2, 3]), 2, 'a', 5)] };
+ok(!validar(fo3, 'formas').length, 'formas: una caja arrastrada cumple el esquema');
 
 // Mesa: el gizmo (gizmo-mesa.js) da { giro, dist, lado } que marcoMesa vuelve a poner en el mismo centro
 const lucho = { x: 12.3, y: 70, z: -4.1 };

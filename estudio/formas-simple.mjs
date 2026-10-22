@@ -31,3 +31,34 @@ export const PERILLAS = [
     { clave: 'paso', es: 'Sube escalones solo', en: 'Climbs steps by itself', ruta: [], campos: ['paso'], tipo: 'valor',
         opciones: [[0, 'no: hay que saltar', 'no: you jump'], [0.5, 'una losa (medio bloque)', 'a slab (half a block)'], [0.6, 'normal (losas y escalones)', 'normal (slabs and stairs)'], [1, 'un bloque entero', 'a whole block']] }
 ];
+
+// Vista previa con arrastre (formas.js, pintarVista): dos dibujos de 16×16, «desde arriba» (x a la derecha, z hacia
+// abajo: el norte arriba) y «de frente» (x a la derecha, y hacia arriba). En cada uno se arrastra una caja entera
+// (mover) o uno de sus bordes (estirar), siempre de a 1/16 y dentro del bloque.
+export const VISTAS = [
+    { clave: 'arriba', es: 'Desde arriba (norte arriba)', en: 'From above (north up)', ejes: [0, 2] },
+    { clave: 'frente', es: 'De frente', en: 'From the front', ejes: [0, 1] }
+];
+export const BORDE = 0.8; // en 1/16: qué tan cerca de un borde hay que tomar para estirar
+
+// Qué se toma en (u, v) (en 1/16, en los ejes de la vista): { tipo: 'borde', eje, extremo } | { tipo: 'mover' } | null
+export function tocar(c, ejes, u, v) {
+    const p = [u, v], dentro = (k, m) => p[k] >= c.a[ejes[k]] - m && p[k] <= c.b[ejes[k]] + m;
+    if (!dentro(0, BORDE) || !dentro(1, BORDE)) return null;
+    for (let k = 0; k < 2; k++) for (const extremo of ['a', 'b']) {
+        if (Math.abs(p[k] - c[extremo][ejes[k]]) <= BORDE && dentro(1 - k, 0)) return { tipo: 'borde', eje: ejes[k], extremo };
+    }
+    return dentro(0, 0) && dentro(1, 0) ? { tipo: 'mover' } : null;
+}
+// Mueve la caja d[k] (enteros) en los ejes `ejes`, sin salir del bloque
+export function moverCaja(c, ejes, d) {
+    const a = c.a.slice(), b = c.b.slice();
+    ejes.forEach((e, k) => { const x = Math.max(-a[e], Math.min(16 - b[e], Math.round(d[k]))); a[e] += x; b[e] += x; });
+    return { ...c, a, b };
+}
+// Pone un borde en `valor` (entero), dejando al menos 1/16 de caja y dentro del bloque
+export function estirarCaja(c, eje, extremo, valor) {
+    const a = c.a.slice(), b = c.b.slice(), v = Math.round(valor);
+    if (extremo === 'a') a[eje] = Math.max(0, Math.min(b[eje] - 1, v)); else b[eje] = Math.min(16, Math.max(a[eje] + 1, v));
+    return { ...c, a, b };
+}
