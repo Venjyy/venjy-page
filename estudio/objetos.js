@@ -13,7 +13,7 @@ import { agarre, fijarDatosObjetosMano, TIPOS } from '../mundo/supervivencia/obj
 import { OBJETOS } from '../mundo/supervivencia/objetos.js';
 import { ARMAS } from '../mundo/supervivencia/modelos-mano.js';
 import { instalarDeshacer, filaPerilla } from './campo-comun.js';
-import { MOVER, GIRAR, TAMANOS, mover, girar, tamanoDe, conTamano } from './objetos-simple.mjs';
+import { MOVER, GIRAR, TAMANOS, mover, girar, tamanoDe, conTamano, arrastrar } from './objetos-simple.mjs';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const RAD = 180 / Math.PI;
@@ -110,6 +110,37 @@ export async function montarObjetos(ctx) {
         fila.append(s, d);
         return fila;
     }
+    // «Arrastra aquí» (vista simple): mover o girar con el mouse o el dedo, en vivo en el juego (objetos-simple.mjs, arrastrar).
+    // Mientras se arrastra no se repinta el panel (se perdería el puntero); al soltar, sí (los números al día)
+    const modoPad = { mano1: 'mover', mano3: 'mover' };
+    function panelArrastre(vista, v, guardarVista) {
+        const f = document.createElement('div'); f.className = 'campo';
+        const fb = document.createElement('div'); fb.className = 'fila-botones';
+        for (const [m, es, en] of [['mover', 'Mover', 'Move'], ['girar', 'Girar', 'Rotate']]) {
+            fb.appendChild(boton(es, en, () => { modoPad[vista] = m; pintar(); }, 'boton chico' + (modoPad[vista] === m ? '' : ' secundario')));
+        }
+        const pad = document.createElement('div'); pad.className = 'pad-arrastre';
+        pad.textContent = modoPad[vista] === 'girar'
+            ? t('Arrastra aquí: de lado gira, arriba y abajo inclina; la rueda lo ladea', 'Drag here: sideways turns, up and down tilts; the wheel rolls it')
+            : t('Arrastra aquí: de lado y arriba o abajo lo mueve; la rueda, más lejos o más cerca', 'Drag here: sideways and up or down moves it; the wheel, farther or closer');
+        const aplicar = (dx, dy, rueda) => { const n = arrastrar(v, modoPad[vista], dx, dy, rueda); v.pos = n.pos; v.rot = n.rot; guardarVista(); };
+        let ultimo = null;
+        pad.addEventListener('pointerdown', e => { ultimo = [e.clientX, e.clientY]; pad.setPointerCapture(e.pointerId); pad.classList.add('arrastrando'); });
+        pad.addEventListener('pointermove', e => {
+            if (!ultimo) return;
+            const dx = e.clientX - ultimo[0], dy = e.clientY - ultimo[1];
+            if (!dx && !dy) return;
+            ultimo = [e.clientX, e.clientY];
+            aplicar(dx, dy, 0);
+        });
+        const soltar = () => { if (!ultimo) return; ultimo = null; pad.classList.remove('arrastrando'); pintar(); };
+        pad.addEventListener('pointerup', soltar);
+        pad.addEventListener('pointercancel', soltar);
+        let reloj = 0;
+        pad.addEventListener('wheel', e => { e.preventDefault(); aplicar(0, 0, Math.sign(e.deltaY)); clearTimeout(reloj); reloj = setTimeout(pintar, 400); }, { passive: false });
+        f.append(fb, pad);
+        return f;
+    }
     function pintar() {
         caja.textContent = '';
         const a = actual();
@@ -130,6 +161,7 @@ export async function montarObjetos(ctx) {
             const base = valoresBase(vista, a);
             const opciones = TAMANOS.map(([f, es2, en2]) => (f === 1 && sel.modo !== 'objeto' ? [f, 'normal (del juego)', 'normal (game value)'] : [f, es2, en2]));
             sec.appendChild(filaPerilla(ctx, { es: 'Tamaño', en: 'Size', opciones }, tamanoDe(v, base), f => poner(conTamano(v, base, f))));
+            sec.appendChild(panelArrastre(vista, v, guardarVista));
             for (const [lista_, es2, en2, hacer] of [[MOVER, 'Mover', 'Move', mover], [GIRAR, 'Girar', 'Rotate', girar]]) {
                 const f = document.createElement('div'); f.className = 'campo';
                 const s = document.createElement('span'); s.textContent = t(es2, en2); f.appendChild(s);
