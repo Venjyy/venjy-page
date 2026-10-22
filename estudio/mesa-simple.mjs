@@ -43,3 +43,22 @@ export const camaraDeBase = clave => JSON.parse(JSON.stringify((CAMARAS.find(x =
 
 // Grupos de GRUPOS (mesa.js) que se ven en la vista simple: listas fáciles de leer (una carta, un número)
 export const GRUPOS_SIMPLES = ['coleccionInicial', 'preciosCartas', 'pesosSobre'];
+
+// Gizmo de la mesa (estudio/gizmo-mesa.js): la inversa de marcoMesa (cartas-mesa-modelo.js). Con el centro (x, z) donde
+// quedó la mesa y su ángulo (radianes), da { giro, dist, lado } respecto de Lucho (giro en grados, entre −180 y 180)
+export function mesaDesdeCentro(lucho, centro, angulo) {
+    let giro = Math.round(angulo * 180 / Math.PI) % 360;
+    if (giro > 180) giro -= 360; else if (giro <= -180) giro += 360;
+    const g = giro * Math.PI / 180, s = Math.sin(g), c = Math.cos(g);
+    const dx = centro.x - lucho.x, dz = centro.z - lucho.z, r2 = v => Math.round(v * 100) / 100 || 0;
+    return { giro, dist: r2(s * dx + c * dz), lado: r2(-c * dx + s * dz) };
+}
+// La posición en palabras para la vista simple: «a 0,75 bloques de Lucho, 0,2 a su derecha, mirando al sur»
+const RUMBOS = [['al sur', 'south'], ['al este', 'east'], ['al norte', 'north'], ['al oeste', 'west']];
+export function frasePosicion(mesa, idioma = 'es') {
+    const n = v => (idioma === 'en' ? String(v) : String(v).replace('.', ','));
+    const r = RUMBOS[((Math.round((mesa.giro || 0) / 90) % 4) + 4) % 4][idioma === 'en' ? 1 : 0];
+    const lado = mesa.lado || 0, l = Math.abs(lado);
+    if (idioma === 'en') return `${n(mesa.dist)} block${mesa.dist === 1 ? "" : "s"} from Lucho${lado ? `, ${n(l)} to the ${lado > 0 ? 'right' : 'left'}` : ''}, facing ${r}`;
+    return `a ${n(mesa.dist)} bloque${mesa.dist === 1 ? "" : "s"} de Lucho${lado ? `, ${n(l)} a su ${lado > 0 ? 'derecha' : 'izquierda'}` : ''}, mirando ${r}`;
+}

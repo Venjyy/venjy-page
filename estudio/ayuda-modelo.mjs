@@ -57,7 +57,7 @@ export const AYUDA = {
     },
     mesa: {
         que: ['La mesa del Duelo de Cartas: dónde queda, las cámaras, el mazo y la tienda de cartas.', 'The Card Duel table: where it is, the cameras, the deck and the card shop.'],
-        empezar: ['Toca «Abrir la mesa» y cambia «Lo básico» (animaciones, sonido, mazo, tienda) con palabras; con «Agregar cámara» sumas una vista cerca, de lado o desde arriba.', 'Press «Open the table» and change «The basics» (animations, sound, deck, shop) in plain words; «Add camera» adds a close, side or top view.']
+        empezar: ['Con «Mover la mesa» o «Girar la mesa» la arrastras en el juego junto a Lucho; toca «Abrir la mesa» y cambia «Lo básico» (animaciones, sonido, mazo, tienda) con palabras; con «Agregar cámara» sumas una vista cerca, de lado o desde arriba.', 'With «Move the table» or «Turn the table» you drag it in the game next to Lucho; press «Open the table» and change «The basics» (animations, sound, deck, shop) in plain words; «Add camera» adds a close, side or top view.']
     },
     carrera: {
         que: ['La carrera de gatas: pistas, gatas, objetos y dificultad.', 'The cat race: tracks, cats, items and difficulty.'],

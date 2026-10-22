@@ -12,6 +12,7 @@ import * as VS from '../../estudio/vida-simple.mjs';
 import * as CS from '../../estudio/carrera-simple.mjs';
 import { CARRERA } from '../supervivencia/carrera-modelo.js';
 import * as MS from '../../estudio/mesa-simple.mjs';
+import { MESA, marcoMesa } from '../supervivencia/cartas-mesa-modelo.js';
 import * as SS from '../../estudio/salonas-simple.mjs';
 import { NAV_BASE } from '../navegacion.js';
 import { SEGUIR_BASE } from '../seguir.js';
@@ -186,6 +187,19 @@ for (const p of FS.PERILLAS) for (const [x] of p.opciones) {
 }
 const fo2 = clonar(fo); fo2.formas.losa = { cajas: [FS.subir(FS.conMedida(losa, 0, 10), 2)] };
 ok(!validar(fo2, 'formas').length, 'formas: una caja de la vista simple cumple el esquema');
+
+// Mesa: el gizmo (gizmo-mesa.js) da { giro, dist, lado } que marcoMesa vuelve a poner en el mismo centro
+const lucho = { x: 12.3, y: 70, z: -4.1 };
+for (const [giro, dist, lado] of [[0, 0.75, 0], [90, 1.2, -0.4], [-135, 2, 0.5], [180, 0.5, 1]]) {
+    const L = { ...MESA, mesa: { ...MESA.mesa, giro, dist, lado } }, M = marcoMesa(L, lucho);
+    const r = MS.mesaDesdeCentro(lucho, M, M.g);
+    ok(r.giro === giro && Math.abs(r.dist - dist) < 0.006 && Math.abs(r.lado - lado) < 0.006, `mesa ${giro}°: el centro vuelve a ${giro}, ${dist}, ${lado}`);
+}
+ok(MS.mesaDesdeCentro(lucho, lucho, 3 * Math.PI).giro === 180 && MS.mesaDesdeCentro(lucho, lucho, -Math.PI / 2).giro === -90, 'mesa: el giro queda entre −180 y 180');
+const me2 = clonar(leer('cartas-mesa')); Object.assign(me2.mesa, MS.mesaDesdeCentro(lucho, { x: 13, z: -3 }, 0.7));
+ok(!validar(me2, 'cartas-mesa').length, 'mesa movida con el gizmo cumple el esquema');
+ok(MS.frasePosicion({ giro: 0, dist: 0.75, lado: 0 }) === 'a 0,75 bloques de Lucho, mirando al sur', 'frase de la mesa');
+ok(MS.frasePosicion({ giro: 90, dist: 1, lado: -0.2 }, 'en') === '1 block from Lucho, 0.2 to the left, facing east', 'frase de la mesa en inglés');
 
 console.log(`estudio-simple: ${bien}/${bien + mal} bien`);
 if (mal) process.exit(1);
