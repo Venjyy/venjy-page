@@ -33,7 +33,7 @@ export const AYUDA = {
     },
     vida: {
         que: ['Cómo caminan los amigos, a quién visitan y a qué hora, y la fogata.', 'How friends walk, whom they visit and when, and the campfire.'],
-        empezar: ['Toca «Probar» para mandar a alguien a caminar y mira cómo lo hace; cambia un número y vuelve a probar.', 'Press «Try» to send someone walking and watch; change a number and try again.']
+        empezar: ['Abre una visita para ver quién va a ver a quién y a qué hora, o elige una base y toca «Crear visita»; con «Caminar» mandas a alguien a caminar. «Lo básico» cambia la rapidez, la amistad y la fogata en palabras.', 'Open a visit to see who visits whom and when, or pick a base and press «Create visit»; «Walk» sends someone walking. «The basics» changes speed, friendship and the campfire in plain words.']
     },
     objetos: {
         que: ['Cómo se agarra cada cosa en la mano.', 'How each thing is held in the hand.'],
@@ -61,7 +61,7 @@ export const AYUDA = {
     },
     carrera: {
         que: ['La carrera de gatas: pistas, gatas, objetos y dificultad.', 'The cat race: tracks, cats, items and difficulty.'],
-        empezar: ['Elige una pista, arrastra la carretera o los muebles en el plano y toca «Ver la pista».', 'Pick a track, drag the road or the furniture on the map and press «View the track».']
+        empezar: ['Elige una pista, arrastra la carretera o los muebles en el plano y toca «Ver la pista». En «Lo básico» cambias las vueltas, la dificultad y la rapidez con palabras.', 'Pick a track, drag the road or the furniture on the map and press «View the track». «The basics» changes laps, difficulty and speed in plain words.']
     },
     arena: {
         que: ['El duelo en el lago congelado: rondas, vida, dificultad y cámara.', 'The frozen lake duel: rounds, health, difficulty and camera.'],

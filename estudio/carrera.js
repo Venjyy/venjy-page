@@ -11,7 +11,8 @@
 // a la raíz). «Ver la pista» abre la sala en el juego (cámara que la recorre);
 // «Correr con…» empieza una carrera. Cada cambio va en vivo (mensaje `datos`). Guardar escribe con If-Match.
 // =========================================================
-import { reglasCarrera, OBJETOS, ESCENARIOS, ESCENARIO_BASE, TEMAS_MUSICA } from '../mundo/supervivencia/carrera-modelo.js';
+import { reglasCarrera, CARRERA, OBJETOS, ESCENARIOS, ESCENARIO_BASE, TEMAS_MUSICA } from '../mundo/supervivencia/carrera-modelo.js';
+import { PERILLAS, leerPerilla, ponerPerilla } from './carrera-simple.mjs';
 import { montarEditorPista } from './carrera-pista.js';
 import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta } from './campo-comun.js';
 
@@ -169,19 +170,37 @@ export async function montarCarrera(ctx) {
         const b = document.createElement('button'); b.type = 'button'; b.className = clase; b.textContent = t(es, en);
         b.addEventListener('click', f); return b;
     };
-    const seccion = (titulo, abierta = false) => {
-        const sec = document.createElement('details'); sec.className = 'panel'; sec.open = abierta;
+    // `avanzada`: la sección solo se ve en la vista Avanzado (B0-V)
+    const seccion = (titulo, abierta = false, avanzada = false) => {
+        const sec = document.createElement('details'); sec.className = 'panel' + (avanzada ? ' solo-avanzado' : ''); sec.open = abierta;
         const h = document.createElement('summary'); h.textContent = titulo;
         sec.appendChild(h); caja.appendChild(sec); return sec;
     };
     // Una gata del JSON (se crea con su clave al primer cambio; el resto viene del código)
     const gataPropia = clave => { datos.gatas = datos.gatas || []; let g = datos.gatas.find(x => x.clave === clave); if (!g) { g = { clave }; datos.gatas.push(g); } return g; };
 
+    // «Lo básico» (vista simple): perillas con palabras comunes que mueven uno o varios números (carrera-simple.mjs)
+    function pintarBasico() {
+        const sec = seccion(t('Lo básico', 'The basics'), true);
+        for (const p of PERILLAS) {
+            const v = leerPerilla(p, datos, CARRERA);
+            const l = document.createElement('label'); l.className = 'campo';
+            const s = document.createElement('span'); s.textContent = t(p.es, p.en);
+            const sel = document.createElement('select');
+            if (v === null) sel.appendChild(new Option(t('a mano (en Avanzado)', 'custom (in Advanced)'), ''));
+            for (const [x, es, en] of p.opciones) sel.appendChild(new Option(t(es, en), String(x)));
+            sel.value = v === null ? '' : String(v);
+            sel.addEventListener('change', () => { if (sel.value === '') return; ponerPerilla(p, datos, Number(sel.value), CARRERA); cambio(); pintar(); editor.pintar(); });
+            l.append(s, sel); sec.appendChild(l);
+        }
+    }
     function pintar() {
         caja.textContent = '';
         const R = real();
+        pintarBasico();
+        // Los grupos de números son lo fino: solo en Avanzado
         GRUPOS.forEach(([g, es, en, campos], i) => {
-            const sec = seccion(t(es, en), i < 1);
+            const sec = seccion(t(es, en), i < 1, true);
             for (const [k, [ces, cen, min, max, paso]] of Object.entries(campos)) {
                 const valor = g ? R[g][k] : R[k];
                 const dueno = () => (DE_PISTA.includes(g) ? pistaDatos() : datos);
@@ -264,7 +283,7 @@ export async function montarCarrera(ctx) {
             n.addEventListener('change', () => { const v = n.value.trim(); if (v) { gataPropia(g.clave).nombre = v; cambio(); pintar(); } });
             f.appendChild(n);
             for (const [k, es, en] of [['vel', 'velocidad (×)', 'speed (×)'], ['acel', 'aceleración (×)', 'acceleration (×)'], ['giro', 'giro (×)', 'handling (×)']])
-                f.appendChild(numero(t(es, en), g[k] ?? 1, 0.8, 1.2, 0.01, v => { gataPropia(g.clave)[k] = v; cambio(); }));
+                f.appendChild(numero(t(es, en), g[k] ?? 1, 0.8, 1.2, 0.01, v => { gataPropia(g.clave)[k] = v; cambio(); })).classList.add('solo-avanzado');
             f.appendChild(color(t('pañuelo', 'scarf'), g.panuelo || { mila: '#e8742a', gala: '#e0a028', tigre: '#2a8ad8', pelusa: '#e04a8a', canela: '#4ab86a', sombra: '#8a5ad8' }[g.clave], v => { gataPropia(g.clave).panuelo = v; cambio(); }));
             if (g.pelaje) {
                 for (const [k, es, en] of [['base', 'pelo', 'fur'], ['mancha', 'manchas', 'markings'], ['panza', 'panza', 'belly'], ['ojos', 'ojos', 'eyes']])
@@ -300,7 +319,7 @@ export async function montarCarrera(ctx) {
         caja.appendChild(boton('Volver a todos los valores del código', 'Back to all code values', () => {
             for (const k of Object.keys(datos)) if (k !== '$schema' && k !== 'version' && k !== 'nota') delete datos[k];
             cambio(); pintar(); editor.pintar();
-        }));
+        }, 'boton chico secundario solo-avanzado'));
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
         llenarPistas();
     }
