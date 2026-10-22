@@ -4,7 +4,7 @@
 // La interfaz (rejilla, sonido, guardar) la prueba el dueño a mano: ver «qué mirar» en el PR.
 import { validar } from '../../estudio/validar.mjs';
 import * as MM from '../../estudio/musica-modelo.mjs';
-import { revisarTema, acordeDe, USOS, TIPOS_CAPA } from '../supervivencia/musica-motor.js';
+import { revisarTema, acordeDe, USOS, TIPOS_CAPA, INSTRUMENTOS } from '../supervivencia/musica-motor.js';
 
 let fallos = 0;
 const ok = (cond, msg) => { if (!cond) { fallos++; console.log('FALLA:', msg); } };
@@ -118,6 +118,52 @@ ok(MM.nivelesDe({ uso: 'libre', capas: [] }, 'mio').join() === 'todo', 'libre si
 }
 ok(MM.nombreNota(60) === 'C4' && MM.nombreNota(69) === 'A4' && MM.nombreNota(61) === 'C#4', 'nombres de nota');
 ok(validar({ version: 1, instrumentos: { s: MM.sinteNuevo() }, temas: {} }, 'musica').length === 0, 'sintetizador nuevo cumple');
+
+// ---------- Vista simple (B0-M): estilos con base y perillas ----------
+{
+    const S = await import('../../estudio/musica-simple.mjs');
+    const claves = Object.keys(S.ESTILOS);
+    ok(claves.length >= 5, 'hay al menos cinco estilos');
+    for (const k of claves) {
+        const T = S.temaDeEstilo(k), E = S.ESTILOS[k];
+        ok(cumple({ [k]: T }).length === 0, `estilo ${k} cumple el esquema y revisarTema: ${cumple({ [k]: T }).join(' · ')}`);
+        ok(T.borrador === true && T.uso === 'libre', `${k}: nace como borrador libre`);
+        ok(E.nombre[0] && E.nombre[1] && T.nombre.es && T.nombre.en, `${k}: nombre ES/EN`);
+        const tipos = new Set(T.capas.map(MM.tipoDe));
+        ok(tipos.has('ritmo') && tipos.has('rel') && (tipos.has('acorde') || tipos.has('arpegio')) && tipos.has('notas'), `${k}: base con ritmo, bajo, acordes y melodía`);
+        ok(T.capas.every(c => INSTRUMENTOS.includes(c.inst)), `${k}: solo instrumentos del código`);
+        T.capas[0].vol = 9; ok(S.ESTILOS[k].capas[0].vol !== 9, `${k}: el tema es una copia`);
+        // perillas: siguen cumpliendo
+        const U = S.temaDeEstilo(k);
+        S.ponerRapidez(U, 999); ok(U.bpm === S.BPM_MAX, `${k}: rapidez con tope`);
+        S.ponerAnimo(U, 'triste'); ok(S.animoDe(U.prog) === 'triste', `${k}: triste`);
+        S.ponerAnimo(U, 'alegre'); ok(S.animoDe(U.prog) === 'alegre', `${k}: alegre`);
+        S.ponerFuerza(U, 1); ok(Math.abs(S.fuerzaDe(U) - 1) < 0.01, `${k}: fuerza al máximo`);
+        S.ponerFuerza(U, 0);
+        S.transponer(U, 5); S.transponer(U, -17);
+        ok(cumple({ [k]: U }).length === 0, `${k}: tras las perillas sigue cumpliendo: ${cumple({ [k]: U }).join(' · ')}`);
+    }
+    // Ánimo: rotar la vuelta; sin acordes menores, los mayores pasan a menor y vuelven
+    const A = { prog: ['C', 'G', 'Am', 'F'] };
+    S.ponerAnimo(A, 'triste'); ok(A.prog.join() === 'Am,F,C,G', 'triste parte en el acorde menor (mismos acordes)');
+    S.ponerAnimo(A, 'alegre'); ok(A.prog.join() === 'F,C,G,Am', 'alegre parte en un acorde mayor');
+    const B = { prog: ['C', 'F', 'G7'] };
+    S.ponerAnimo(B, 'triste'); ok(B.prog.join() === 'Cm,Fm,Gm7', 'todo mayor → menor');
+    S.ponerAnimo(B, 'alegre'); ok(B.prog.join() === 'C,F,G7', 'y vuelve');
+    ok(S.esMenor('Am7') && S.esMenor('Bdim') && !S.esMenor('Cmaj7') && !S.esMenor('G7'), 'qué acorde es menor');
+    // Tono: acordes y melodía; los acordes propios del tema se quedan; ida y vuelta
+    const C = { prog: ['C', 'Am', 'Bb', 'raro'], progs: { dia: ['F#m7'] }, acordes: { raro: [60, 64] }, capas: [{ inst: 'chip', notas: [60, 0, 72], vol: 0.2 }] };
+    S.transponer(C, 2);
+    ok(C.prog.join() === 'D,Bm,C,raro' && C.progs.dia[0] === 'G#m7'.replace('G#', 'Ab') && C.capas[0].notas.join() === '62,0,74', 'transponer sube acordes, niveles y melodía: ' + C.prog + ' ' + C.progs.dia);
+    S.transponer(C, -2); ok(C.prog.join() === 'C,Am,Bb,raro' && C.capas[0].notas.join() === '60,0,72', 'y baja de vuelta');
+    ok(S.tonalidadDe({ prog: ['Am', 'F'] }).join() === 'La menor,A minor' && S.tonalidadDe({ prog: ['Bb'] })[0] === 'Sib mayor', 'tonalidad leída');
+    ok(S.compasDe({ pasos: 16 })[0] === '4/4' && S.compasDe({ pasos: 12 })[0] === '3/4', 'compás leído');
+    ok(S.palabraRapidez(70)[0] === 'lenta' && S.palabraRapidez(140)[0] === 'rápida', 'palabras de rapidez');
+    // Fuerza: la batería sube más que el tema y vuelve
+    const F = S.temaDeEstilo('rock'), kick0 = F.capas[0].vol, bajo0 = F.capas.find(c => c.rel).vol;
+    S.ponerFuerza(F, 1); ok(F.capas[0].vol > kick0 && F.capas.find(c => c.rel).vol === bajo0, 'fuerte: sube la batería, no el bajo');
+    S.ponerFuerza(F, S.fuerzaDe({ vol: 0.09 })); ok(Math.abs(F.capas[0].vol - kick0) < 0.01 && F.vol === 0.09, 'y vuelve al original');
+}
 
 if (fallos) { console.error(`\n${fallos} fallos`); process.exit(1); }
 console.log('estudio-musica: todo bien');

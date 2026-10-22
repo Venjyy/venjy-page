@@ -22,7 +22,8 @@ Sitio estático sin build: `index.html`, `style.css`, `script.js`. Español por 
 
 - **Si un pedido es grande, avisarlo y proponer hacerlo en un chat dedicado.**
 
-- **Al terminar cada chat de trabajo** (PR abierto o fusionado, o plan escrito): entregar el prompt de traspaso al siguiente chat (máximo ~10 líneas: rama, qué falta y qué leer con funciones o rangos de líneas concretos, no archivos enteros) con el modelo y el effort recomendados. Cómo, en la skill `.claude/skills/traspaso-chat/`.
+- **Seguir en el mismo chat por defecto** (dueño, 2026-10-21): un PR por tarea, pero no un chat por tarea. Al abrir un PR, si la parte siguiente es del mismo tema, el chat no se ha resumido y no viene de una tarea grande, seguir aquí en una **rama apilada** sobre la del PR abierto (al fusionarse, el PR siguiente queda solo con su diff). Cortar a un chat nuevo solo si cambia el tema, el chat ya se resumió o se cargó, o la parte siguiente pide otro modelo.
+- **Al abrir cada PR** (o al escribir un plan): entregar el prompt de traspaso (máximo ~10 líneas: rama, qué falta y qué leer con funciones o rangos de líneas concretos, no archivos enteros) con el modelo y el effort recomendados; es el respaldo si se corta. Cómo, en la skill `.claude/skills/traspaso-chat/`.
 
 - **Nunca** incluir enlaces de sesión (`claude.ai/code/session…`) ni la línea «Generated with Claude Code» en commits, PRs, comentarios o archivos del repo (ni la línea `Claude-Session:` en los commits).
 

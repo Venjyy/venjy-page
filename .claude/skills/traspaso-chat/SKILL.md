@@ -16,6 +16,16 @@ siguiente chat no parta de cero, el chat que termina deja un **prompt de traspas
 
 No se usa en preguntas rápidas ni en charla.
 
+## ¿Seguir aquí o cortar? (dueño, 2026-10-21)
+
+Por defecto **se sigue en el mismo chat**: el prompt queda como respaldo y la parte siguiente parte en una rama
+apilada sobre la del PR abierto (`git checkout -b <nueva>` desde esa rama; el PR apunta a `main` y, al fusionarse
+el anterior, queda solo con su diff). Se corta a un chat nuevo solo si:
+- la parte siguiente es de otro tema (por ejemplo, de Estudio a combate);
+- el chat ya se resumió o se cargó con lecturas grandes;
+- la parte siguiente pide otro modelo (Sonnet o Haiku salen más baratos).
+Al entregar el prompt, decir en una línea si se sigue aquí (y con qué) o por qué conviene cortar.
+
 ## Pasos
 
 1. **Ver dónde quedó el plan**: en `mundo/PENDIENTES.md`, el orden acordado de los bloques (por ejemplo

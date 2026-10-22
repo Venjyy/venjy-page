@@ -635,3 +635,6 @@ body[data-vista="simple"] .solo-avanzado { display: none !important; }
 .ayuda-pestana { margin: 0; padding: 6px 16px; background: #1c140c; border-bottom: 3px solid #000; color: var(--blanco); font-size: 0.85rem; }
 .ayuda-pestana[hidden] { display: none; }
 .ayuda-empezar { color: var(--amarillo); }
+.mu-simple { margin: 4px 0 8px; }
+.mu-perillas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 12px; padding: 8px; background: var(--fondo-panel); border: 3px solid #000; }
+.mu-perilla input[type="range"] { width: 100%; }
