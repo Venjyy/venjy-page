@@ -64,3 +64,18 @@ export function botonJuego(ctx, { tiene, quitar, repintar }) {
     b.addEventListener('click', () => { quitar(); if (repintar) repintar(); else b.disabled = true; });
     return b;
 }
+
+// Fila de una perilla de la vista simple (perillas.mjs): rótulo y selector con las opciones en palabras. `valor` = la
+// opción puesta (null = «a mano», un número que no calza con ninguna); `elegir(x)` la aplica (x del tipo de la opción).
+export function filaPerilla(ctx, p, valor, elegir) {
+    const t = (es, en) => (ctx.idioma === 'en' ? en : es);
+    const l = document.createElement('label'); l.className = 'campo';
+    const s = document.createElement('span'); s.textContent = t(p.es, p.en);
+    const sel = document.createElement('select');
+    if (valor === null) sel.appendChild(new Option(t('a mano (en Avanzado)', 'custom (in Advanced)'), ''));
+    p.opciones.forEach(([x, es, en], i) => sel.appendChild(new Option(t(es, en), String(i))));
+    sel.value = valor === null ? '' : String(p.opciones.findIndex(([x]) => x === valor));
+    sel.addEventListener('change', () => { if (sel.value !== '') elegir(p.opciones[Number(sel.value)][0]); });
+    l.append(s, sel);
+    return l;
+}

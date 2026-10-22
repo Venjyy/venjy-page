@@ -7,7 +7,8 @@
 // salonas.js lo lee en cada cuadro); Guardar escribe con PUT /api/datos/salonas y If-Match.
 // Los botones táctiles (Pausa, Primus) se ubican en la pestaña Layout → página «Salonas».
 // =========================================================
-import { instalarDeshacer, botonJuego } from './campo-comun.js';
+import { instalarDeshacer, botonJuego, filaPerilla } from './campo-comun.js';
+import { perillasDisponibles, leerPerilla, ponerPerilla } from './salonas-simple.mjs';
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v && typeof v === 'object' && !Array.isArray(v);
 const esPar = v => esObj(v) && typeof v.es === 'string' && typeof v.en === 'string' && Object.keys(v).length === 2;
@@ -107,10 +108,26 @@ export async function montarSalonas(ctx) {
         }
     }
 
+    // «Lo básico» (vista simple): la canción con que parte y perillas con palabras comunes (salonas-simple.mjs)
+    function pintarBasico() {
+        const sec = el('section', 'panel'); sec.appendChild(el('h2', '', t('Lo básico', 'The basics')));
+        const J = datos.juego || {};
+        if (Array.isArray(J.canciones) && J.canciones.length) {
+            const sel = el('select');
+            for (const c of J.canciones) sel.appendChild(new Option(c, c));
+            sel.value = J.cancion;
+            sel.addEventListener('change', () => poner(J, 'cancion', sel.value));
+            sec.appendChild(campo(t('Canción con que parte', 'Starting song'), sel));
+        }
+        for (const p of perillasDisponibles(inicial)) sec.appendChild(filaPerilla(ctx, p, leerPerilla(p, datos, inicial), x => { ponerPerilla(p, datos, x, inicial); cambio(); pintar(); }));
+        caja.appendChild(sec);
+    }
     function pintar() {
         caja.textContent = '';
+        pintarBasico();
+        // Juego y Reglas (juicio, partitura, cámara, audio…) son lo fino: solo en Avanzado; los textos, en las dos
         for (const [clave, es, en, textos] of [['juego', 'Juego', 'Game', false], ['reglas', 'Reglas', 'Rules', false], ['textos', 'Textos (ES / EN)', 'Texts (ES / EN)', true]]) {
-            const sec = el('section', 'panel'); sec.appendChild(el('h2', '', t(es, en)));
+            const sec = el('section', 'panel' + (textos ? '' : ' solo-avanzado')); sec.appendChild(el('h2', '', t(es, en)));
             const cuerpo = el('div', 'grupo-cuerpo');
             llenar(cuerpo, datos[clave] || {}, textos, inicial[clave] || {});
             sec.appendChild(cuerpo); caja.appendChild(sec);
