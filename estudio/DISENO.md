@@ -1196,3 +1196,47 @@ N6 se divide en tres PR, los tres hechos (abajo): **N6a**, **N6b** y **N6c** (pa
   - **Probar en el juego**: botón y dificultad junto al estilo y la acción. Mensaje `combate { accion: 'probar' | 'terminar', estilo (sin «estilo-»), ataque, reaccion, dificultad }` → `arena.probar` (nuevo; solo lo llama el Estudio): tú con el otro peleador, el rival con el estilo que se prueba (aunque ningún peleador lo use, como `estilo-prueba`), directo a la pelea. Un ataque o movimiento: el rival es el de práctica (`intencionPractica`) con `reglasProbar` (copia de R con `practica.patron = [{ accion }]`, sin peligros intercalados ni desvíos). Una reacción: el muñeco con solo esa (R la juega). Aviso `textos.probando`. «Cerrar la arena» manda `terminar`.
   - **Visor**: `simular(…, { estiloR, peso })`. El hitstop del nivel del golpe congela a los dos en el cuadro del golpe (pasos extra con `hs`; el rival tiembla con `temblor` de `peso.js`) y el empuje (el del ataque o el del nivel) lo corre como `mover` de la arena (30 % de lo que falta por cuadro, desde el cuadro siguiente al golpe, también en la pausa). `indiceDe` corre los cuadros de después del golpe. Selector **Rival** (otro estilo: su reacción, su animador y su arma) y casilla **Pausa del golpe y empuje**. Con «Claves de la animación», **+ Canal** (`canalesLibres`/`agregarCanal`): un canal que la animación no mueve, con dos claves (al empezar y al terminar) en el valor de hoy dentro de su límite; solo en animaciones de un JSON.
   - Pruebas: `estudio-combate.mjs` ampliada (hitstop y empuje en todos los ataques, rival de otro estilo, canal nuevo, rangos de cada control contra los JSON de hoy, «oír» por capa, teclas, probar en el modelo de la arena y el mensaje del puente) y `estudio-combate-navegador.mjs` (nueva: visor, paneles, capturar una tecla y probar en la arena). En la prueba de navegador los clics van con `dispatchEvent`: con el visor a 60 cuadros los clics por coordenada de Playwright fallan a veces.
+
+## 39. Estudio simple · B0: inventario de pestañas y lo que se deduce solo (Etapa B, 0b, 2026-10-21)
+
+Pedido del dueño: que el Estudio lo use alguien sin conocimientos. Este inventario mide qué tan cargada está cada pestaña, qué se puede deducir solo y qué va en la vista simple; de aquí salen las tareas B0-x de `mundo/PENDIENTES.md` (0b).
+
+**Medición** (2026-10-21; «campos» = números o textos que la pestaña muestra a la vez, contados en los `GRUPOS` y listas del módulo; «hojas» = valores del JSON que edita):
+
+| Pestaña | Carga | Qué edita | Ya simple | Deshacer |
+|---|---|---|---|---|
+| Vida | ~130 campos en 11 grupos | `navegacion.json`, `rutinas.json`, `actividades.json` | no | no |
+| Carrera | ~130 campos en 16 grupos + plano | `carrera.json` | el plano sí | solo el plano |
+| Mesa | ~118 campos en 34 grupos | `cartas-mesa.json` (327 hojas) | no | no |
+| Salonas | todo el JSON, campo por hoja (462 hojas) | `salonas.json` | no | no |
+| Poses | 28 sliders por canal + curva, osciladores y variantes | `poses.json` | no | sí |
+| Música | capas con rejilla o piano roll, sintes, progresión | `musica.json` (4769 hojas) | no | sí |
+| Arena | ~65 campos en 24 grupos | `arena.json` | no | no |
+| Escenas | línea de tiempo + ~37 campos del bloque | `escenas.json` | casi (bloques que se arrastran) | sí |
+| Combate | vista simple + Avanzado por panel (N6) | `combate.json`, `estilo-*.json` | **sí** | no |
+| Inicio | ~20 campos + vista previa | `inicio.json` | casi | no |
+| Formas | ~21 campos en 1/16 de bloque | `formas.json` | no | no |
+| Objetos | 12 números por objeto (mano1 y mano3) | `objetos-mano.json` | no | no |
+| Ritmo | partitura, «Revisar partitura», bajo | `salonas.json → ajustes`, `musica.json` | sí | sí |
+| Textos, Píxeles, Layout, Posiciones | tabla, pincel, arrastrar, gizmo | | **sí** | sí |
+
+Las más cargadas, en orden: **Vida, Carrera, Mesa y Salonas** (muros de números), luego **Poses y Música** (pocas opciones a la vista, pero piden saber de rig o de música), luego Arena.
+
+**Qué se deduce solo (y deja de pedirse en la vista simple):**
+- **Música:** la tonalidad sale de la progresión y el compás es 4/4; el estilo (cumbia, rock, disco, chiptune…) trae tempo, instrumentos y una base de ritmo, bajo, acordes y melodía de ejemplo. Tres perillas que mueven varios valores a la vez: «más rápido» (bpm), «más triste» (acordes a menor, tempo y brillo) y «más fuerte» (volumen y densidad de la batería). Rejilla, piano roll y sintes quedan en Avanzado.
+- **Poses:** suelo automático siempre prendido en la vista simple; el arma u objeto de la mano sigue a la mano (cuelga de `munecaD`, no se anima aparte); «copiar al otro lado» (espejo) y «suavizar» en un clic; partir de una pose base (saludo, golpe, abrazo, sentarse). Sliders agrupados por parte del cuerpo con nombres comunes («pierna derecha: adelante/atrás» en vez de `pDx`); en simple solo cabeza, tronco, brazos, codos, piernas y rodillas; `pX pY pZ`, `armaX armaZ`, osciladores y variantes, en Avanzado.
+- **Escenas:** el largo de un bloque de frase sale del largo del texto (velocidad de lectura); los planos de cámara ya tienen valor por defecto (sin `camara`).
+- **Vida:** la vista simple son las rutinas en frases («quién visita a quién, de qué hora a qué hora»); caminar, seguir y la fogata (radios, tiempos, rastro) van a Avanzado.
+- **Carrera:** una sola «dificultad» que mueve la IA y la física; los tres niveles de derrape, turbos y paredes a Avanzado. El plano ya es la vista simple de la pista.
+- **Mesa y Arena:** mover la mesa con el gizmo de Posiciones en vez de seis números; cámaras con bases («cerca», «de lado», «desde arriba»); los precios y pesos de sobres como una tabla aparte.
+- **Salonas:** simple = canciones, dificultad y textos; juicio, partitura, cámara y audio a Avanzado (el editor recorre el JSON, así que basta una lista de rutas «simples»).
+- **Objetos y Formas:** arrastrar en el juego (como el gizmo de Posiciones) en vez de escribir 12 números; «igual que el tipo» para volver al valor común.
+- **General:** cada número con «volver al valor del juego» (borra la clave del JSON y queda el del código).
+
+**Hecho en este PR (común a todas las pestañas, `estudio/ayuda-modelo.mjs` + `estudio.js`):**
+- **Pestañas en grupos** con rótulo: Pantalla y mundo · Historias · Minijuegos · Arte y sonido (`GRUPOS`; el orden de los botones de `index.html` lo sigue y la prueba lo revisa). La barra pasa a dos filas: título y botones arriba, pestañas abajo.
+- **Franja de ayuda** bajo la barra: qué edita la pestaña en palabras comunes y «Para empezar: …» con el primer paso, en ES/EN (`AYUDA`). Los botones que nombra entre «…» existen con ese nombre (lo revisa la prueba). Botón «Ayuda» la oculta o muestra (se recuerda en el navegador).
+- **Vista Simple / Avanzado global** en la barra (`ctx.vista`, `ctx.alVista`, `body[data-vista]`; se recuerda; por defecto Simple). En Simple se esconde todo lo que tenga la clase `solo-avanzado`. Cada pestaña que gane su vista simple solo marca lo fino con esa clase (y, si necesita más, escucha `ctx.alVista`). Ya marcado: los «Avanzado» del Combate y la casilla «Claves de la animación».
+- Prueba: `mundo/tests/estudio-ayuda.mjs`.
+
+**Orden propuesto** (cada uno su PR): B0-M Música → B0-P Poses → B0-C campo común (número con «volver al valor del juego», deshacer en las 9 pestañas que no lo tienen y punto en la pestaña con cambios sin guardar) → vista simple de Vida, Carrera, Mesa y Salonas → Arena, Objetos, Formas, Inicio.

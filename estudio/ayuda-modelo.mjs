@@ -1,0 +1,102 @@
+// =========================================================
+// VENJY · Estudio · ayuda de cada pestaña y grupos de la barra (Etapa B, 0b · B0, estudio/DISENO.md §39)
+// Puro (lo prueba Node: mundo/tests/estudio-ayuda.mjs). Por pestaña: qué edita, en palabras comunes, y por dónde
+// empezar. La barra agrupa las pestañas en GRUPOS (el orden de los botones en index.html sigue este orden).
+// Vista: 'simple' (por defecto) esconde lo marcado con la clase `solo-avanzado`; 'avanzado' lo muestra.
+// =========================================================
+
+export const VISTAS = ['simple', 'avanzado'];
+export const VISTA_BASE = 'simple';
+export const vistaValida = v => (VISTAS.includes(v) ? v : VISTA_BASE);
+
+// [clave, es, en, pestañas]
+export const GRUPOS = [
+    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'vida', 'objetos', 'formas']],
+    ['historias', 'Historias', 'Stories', ['textos', 'escenas', 'poses']],
+    ['minijuegos', 'Minijuegos', 'Minigames', ['mesa', 'carrera', 'arena', 'combate', 'salonas', 'ritmo']],
+    ['arte', 'Arte y sonido', 'Art and sound', ['pixeles', 'musica', 'inicio']]
+];
+
+// clave: { que: [es, en], empezar: [es, en] }
+export const AYUDA = {
+    layout: {
+        que: ['Dónde van los botones en la pantalla del celular.', 'Where the buttons go on the phone screen.'],
+        empezar: ['Elige un aparato arriba y arrastra un botón; Guardar lo deja así en el juego.', 'Pick a device above and drag a button; Save keeps it in the game.']
+    },
+    juego: {
+        que: ['El juego de verdad, conectado al Estudio: lo que cambies en otras pestañas se ve aquí al tiro.', 'The real game, linked to the Studio: what you change in other tabs shows here right away.'],
+        empezar: ['Juega normal. Las demás pestañas de «Pantalla y mundo», «Historias» y «Minijuegos» usan esta misma ventana.', 'Play as usual. The other tabs in «Screen and world», «Stories» and «Minigames» use this same window.']
+    },
+    posiciones: {
+        que: ['Dónde está parado cada amigo.', 'Where each friend stands.'],
+        empezar: ['Elige a alguien de la lista y arrástralo en el juego con las flechas de colores.', 'Pick someone from the list and drag them in the game with the colored arrows.']
+    },
+    vida: {
+        que: ['Cómo caminan los amigos, a quién visitan y a qué hora, y la fogata.', 'How friends walk, whom they visit and when, and the campfire.'],
+        empezar: ['Toca «Probar» para mandar a alguien a caminar y mira cómo lo hace; cambia un número y vuelve a probar.', 'Press «Try» to send someone walking and watch; change a number and try again.']
+    },
+    objetos: {
+        que: ['Cómo se agarra cada cosa en la mano.', 'How each thing is held in the hand.'],
+        empezar: ['Elige un objeto, toca «Ponerlo en mi mano» y mueve los números hasta que se vea bien.', 'Pick an object, press «Put it in my hand» and move the numbers until it looks right.']
+    },
+    formas: {
+        que: ['La forma de los bloques que no son un cubo (losas, escalones, vallas…).', 'The shape of blocks that are not a cube (slabs, stairs, fences…).'],
+        empezar: ['Elige una forma, toca «Darme el bloque» y ponlo en el juego para verlo.', 'Pick a shape, press «Give me the block» and place it in the game to see it.']
+    },
+    textos: {
+        que: ['Lo que dicen los amigos al hablarles, en español e inglés.', 'What friends say when you talk to them, in Spanish and English.'],
+        empezar: ['Filtra por persona, elige una frase y escríbela; «Ver globo ES» la muestra en un globo del juego.', 'Filter by person, pick a line and write it; «Show bubble ES» shows it in a game bubble.']
+    },
+    escenas: {
+        que: ['Escenas cortas con gestos y frases (abrazos, saludos, guiones).', 'Short scenes with gestures and lines (hugs, greetings, scripts).'],
+        empezar: ['Elige una escena parecida a la que quieres, toca Reproducir y arrastra los bloques de la línea de tiempo.', 'Pick a scene close to the one you want, press Play and drag the blocks on the timeline.']
+    },
+    poses: {
+        que: ['Las poses y los gestos de los personajes (saludar, sentarse, bailar…).', 'Character poses and gestures (wave, sit, dance…).'],
+        empezar: ['Elige una pose parecida y mueve las barras del cuerpo; la vista de abajo la muestra de frente y de lado.', 'Pick a similar pose and move the body sliders; the view below shows it from the front and side.']
+    },
+    mesa: {
+        que: ['La mesa del Duelo de Cartas: dónde queda, las cámaras, el mazo y la tienda de cartas.', 'The Card Duel table: where it is, the cameras, the deck and the card shop.'],
+        empezar: ['Toca «Abrir la mesa» y ajusta los números del grupo que quieras cambiar.', 'Press «Open the table» and adjust the numbers of the group you want to change.']
+    },
+    carrera: {
+        que: ['La carrera de gatas: pistas, gatas, objetos y dificultad.', 'The cat race: tracks, cats, items and difficulty.'],
+        empezar: ['Elige una pista, arrastra la carretera o los muebles en el plano y toca «Ver la pista».', 'Pick a track, drag the road or the furniture on the map and press «View the track».']
+    },
+    arena: {
+        que: ['El duelo en el lago congelado: rondas, vida, dificultad y cámara.', 'The frozen lake duel: rounds, health, difficulty and camera.'],
+        empezar: ['Abre la arena con su botón y cambia rondas o dificultad; se nota en la próxima pelea.', 'Open the arena with its button and change rounds or difficulty; it shows in the next fight.']
+    },
+    combate: {
+        que: ['Cómo pega cada estilo de pelea: rapidez, daño, peso del golpe, reacciones, controles y la CPU.', 'How each fighting style hits: speed, damage, hit weight, reactions, controls and the CPU.'],
+        empezar: ['Elige un estilo y un golpe, toca Reproducir y estira las fases; «Partir de este» lo copia para crear uno nuevo.', 'Pick a style and a move, press Play and stretch the phases; «Start from this one» copies it to make a new one.']
+    },
+    salonas: {
+        que: ['La Gira de Salonas (juego de ritmo): canciones, energía, puntaje y textos.', 'Salonas\' Tour (rhythm game): songs, energy, score and texts.'],
+        empezar: ['Busca el grupo que quieres cambiar (canciones, reglas o textos) y edita el valor; se ve al tiro en el juego.', 'Find the group you want to change (songs, rules or texts) and edit the value; it shows right away in the game.']
+    },
+    ritmo: {
+        que: ['Las notas que tocas en La Gira, canción por canción, y el bajo que las genera.', 'The notes you play on the Tour, song by song, and the bass that makes them.'],
+        empezar: ['Elige canción y dificultad, toca «Revisar partitura» y corrige lo que marque en rojo.', 'Pick a song and difficulty, press «Review chart» and fix what it marks in red.']
+    },
+    pixeles: {
+        que: ['Dibujar los íconos de los objetos y el arte de las cartas, cuadrito por cuadrito.', 'Draw item icons and card art, pixel by pixel.'],
+        empezar: ['Elige un ícono o una carta y pinta; «Crear nuevo» deja un borrador que después termina un agente.', 'Pick an icon or a card and paint; «Create new» leaves a draft that an agent finishes later.']
+    },
+    musica: {
+        que: ['La música del juego: temas con capas (batería, bajo, acordes, melodía).', 'The game music: songs made of layers (drums, bass, chords, melody).'],
+        empezar: ['Elige un tema, toca Reproducir y prende o apaga casillas de la rejilla; «Duplicar» para partir de uno.', 'Pick a song, press Play and switch grid cells on or off; «Duplicate» to start from one.']
+    },
+    inicio: {
+        que: ['El menú del principio: logo, frases amarillas, pantalla de carga y fondo de cine.', 'The start menu: logo, yellow splashes, loading screen and cinematic background.'],
+        empezar: ['Escribe una frase nueva en la lista o cambia un color; la vista previa lo muestra al lado.', 'Write a new splash in the list or change a color; the preview next to it shows it.']
+    }
+};
+
+// Texto de la franja: «qué · empezar» en el idioma pedido (null si la pestaña no tiene ayuda)
+export function textoAyuda(clave, idioma = 'es') {
+    const a = AYUDA[clave];
+    if (!a) return null;
+    const i = idioma === 'en' ? 1 : 0;
+    return { que: a.que[i], empezar: a.empezar[i] };
+}

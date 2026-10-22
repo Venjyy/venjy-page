@@ -11,31 +11,42 @@
     <header class="barra">
         <h1 data-es="Estudio" data-en="Studio">Estudio</h1>
         <nav class="pestanas" aria-label="Secciones">
+            <span class="grupo-pestanas" data-grupo="mundo" data-es="Pantalla y mundo" data-en="Screen and world">Pantalla y mundo</span>
             <button class="pestana activa" type="button" data-pestana="layout" data-es="Layout" data-en="Layout">Layout</button>
             <button class="pestana" type="button" data-pestana="juego" data-es="Juego" data-en="Game">Juego</button>
-            <button class="pestana" type="button" data-pestana="textos" data-es="Textos" data-en="Texts">Textos</button>
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
-            <button class="pestana" type="button" data-pestana="escenas" data-seccion="juego" data-es="Escenas" data-en="Scenes">Escenas</button>
-            <button class="pestana" type="button" data-pestana="mesa" data-seccion="juego" data-es="Mesa" data-en="Table">Mesa</button>
-            <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
+            <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
+            <span class="grupo-pestanas" data-grupo="historias" data-es="Historias" data-en="Stories">Historias</span>
+            <button class="pestana" type="button" data-pestana="textos" data-es="Textos" data-en="Texts">Textos</button>
+            <button class="pestana" type="button" data-pestana="escenas" data-seccion="juego" data-es="Escenas" data-en="Scenes">Escenas</button>
+            <button class="pestana" type="button" data-pestana="poses" data-seccion="juego" data-es="Poses" data-en="Poses">Poses</button>
+            <span class="grupo-pestanas" data-grupo="minijuegos" data-es="Minijuegos" data-en="Minigames">Minijuegos</span>
+            <button class="pestana" type="button" data-pestana="mesa" data-seccion="juego" data-es="Mesa" data-en="Table">Mesa</button>
             <button class="pestana" type="button" data-pestana="carrera" data-seccion="juego" data-es="Carrera" data-en="Race">Carrera</button>
             <button class="pestana" type="button" data-pestana="arena" data-seccion="juego" data-es="Arena" data-en="Arena">Arena</button>
             <button class="pestana" type="button" data-pestana="combate" data-seccion="juego" data-es="Combate" data-en="Combat">Combate</button>
             <button class="pestana" type="button" data-pestana="salonas" data-seccion="juego" data-es="Salonas" data-en="Salonas">Salonas</button>
             <button class="pestana" type="button" data-pestana="ritmo" data-seccion="juego" data-es="Ritmo" data-en="Rhythm">Ritmo</button>
-            <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
+            <span class="grupo-pestanas" data-grupo="arte" data-es="Arte y sonido" data-en="Art and sound">Arte y sonido</span>
             <button class="pestana" type="button" data-pestana="pixeles" data-es="Píxeles" data-en="Pixels">Píxeles</button>
-            <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
             <button class="pestana" type="button" data-pestana="musica" data-es="Música" data-en="Music">Música</button>
+            <button class="pestana" type="button" data-pestana="inicio" data-es="Inicio" data-en="Title">Inicio</button>
         </nav>
+        <div class="idiomas" role="group" aria-label="Vista">
+            <button class="boton chico" type="button" data-vista="simple" data-es="Simple" data-en="Simple">Simple</button>
+            <button class="boton chico" type="button" data-vista="avanzado" data-es="Avanzado" data-en="Advanced">Avanzado</button>
+            <button id="ayuda-alternar" class="boton chico secundario" type="button" data-es="Ayuda" data-en="Help">Ayuda</button>
+        </div>
         <span id="estado-servidor" class="estado" data-es="Buscando servidor…" data-en="Looking for server…">Buscando servidor…</span>
         <div class="idiomas" role="group" aria-label="Idioma">
             <button class="boton chico" type="button" data-idioma="es">ES</button>
             <button class="boton chico" type="button" data-idioma="en">EN</button>
         </div>
     </header>
+
+    <p id="ayuda-pestana" class="ayuda-pestana"><span id="ayuda-que"></span> <span id="ayuda-empezar" class="ayuda-empezar"></span></p>
 
     <p id="aviso-pantalla" class="aviso-pantalla" data-es="Abre el Estudio en el computador: el editor necesita una pantalla de al menos 900 px de ancho."
        data-en="Open the Studio on a computer: the editor needs a screen at least 900 px wide.">Abre el Estudio en el computador: el editor necesita una pantalla de al menos 900 px de ancho.</p>
@@ -146,7 +157,7 @@
                 <p class="mensaje" data-es="Arriba, la acción en bucle con el motor del juego; el muñeco de enfrente reacciona como en la pelea. Rojo = punta del arma (o mano o pie que golpea), amarillo = su camino. Abajo, la hoja de cuadros: clic en uno para ir a ese cuadro." data-en="Above, the action looping with the game's engine; the other dummy reacts as in a fight. Red = weapon tip (or hitting hand or foot), yellow = its path. Below, the frame sheet: click one to jump to that frame.">Arriba, la acción en bucle con el motor del juego; el muñeco de enfrente reacciona como en la pelea. Rojo = punta del arma (o mano o pie que golpea), amarillo = su camino. Abajo, la hoja de cuadros: clic en uno para ir a ese cuadro.</p>
                 <div class="fila-botones">
                     <label><span data-es="Zoom" data-en="Zoom">Zoom</span> <input id="co-zoom" type="range" min="4" max="30" step="1" value="12" aria-label="Zoom"></label>
-                    <label class="casilla-marca"><input id="co-ver-claves" type="checkbox"> <span data-es="Claves de la animación (avanzado)" data-en="Animation keys (advanced)">Claves de la animación (avanzado)</span></label>
+                    <label class="casilla-marca solo-avanzado"><input id="co-ver-claves" type="checkbox"> <span data-es="Claves de la animación (avanzado)" data-en="Animation keys (advanced)">Claves de la animación (avanzado)</span></label>
                     <span id="co-canal-nuevo" class="fila-botones" hidden></span>
                 </div>
                 <div id="co-linea"></div>
