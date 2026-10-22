@@ -18,7 +18,7 @@ import { validar } from './validar.mjs';
 import { FUENTES } from './fuentes.mjs';
 import { avisosDeTexto, esPar } from './avisos-textos.js';
 import { leerGlifos, tablaDeRangos } from './glifos.mjs';
-import { reglasEscenas } from '../mundo/datos/escenas.js';
+import { reglasEscenas, sonidosDeEscena } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
 import { USOS, mapaTiempo } from '../mundo/supervivencia/musica-motor.js';
@@ -518,14 +518,18 @@ async function nombresDeEscenasImport() {
     const { MOLDES, PIX, SONIDOS } = await import('../mundo/supervivencia/moldes.js');
     const { durLinea } = await import('../mundo/supervivencia/reencuentros.js');
     const { PERSONAJES, GRUPOS } = await import('../mundo/supervivencia/amistad.js');
+    const { CODIGO_ESCENAS } = await import('../mundo/supervivencia/codigo-escenas.js');
+    const { sonidos } = await import('../mundo/supervivencia/sonidos.js');
     let iconos = [];
     try { iconos = Object.keys(JSON.parse(fs.readFileSync(path.join(DATOS, 'iconos.json'), 'utf8')).iconos || {}); } catch (e) { /* sin iconos.json válido */ }
     let poses = [];
     try { poses = gestosDeDatos(JSON.parse(fs.readFileSync(path.join(DATOS, 'poses.json'), 'utf8'))).map(([k]) => k); } catch (e) { /* sin poses.json válido: solo el código */ }
     const codigo = new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD)]);
     return { gestos: new Set([...codigo, ...Object.keys(MOLDES), ...poses]), codigo, moldes: new Set(Object.keys(MOLDES)), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea,
-        // B3 (DISENO §40): catálogos de las claves nuevas de escenas.json. CODIGO_ESCENAS llega con B3b: hasta entonces ningún `codigo` vale
-        personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(iconos), pix: new Set(Object.keys(PIX)), sonidos: new Set(Object.keys(SONIDOS)), codigos: new Set() };
+        // B3 (DISENO §40): catálogos de las claves nuevas de escenas.json. Sonidos: los que suenan en una escena (SONIDOS y los del
+        // juego sin argumentos, como el motor); codigos: CODIGO_ESCENAS de codigo-escenas.js
+        personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(iconos), pix: new Set(Object.keys(PIX)),
+        sonidos: new Set(Object.keys(sonidosDeEscena(SONIDOS, sonidos))), codigos: new Set(Object.keys(CODIGO_ESCENAS)) };
 }
 
 // Reglas de contenido que el esquema no expresa

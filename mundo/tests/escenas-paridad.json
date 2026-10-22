@@ -1,0 +1,78 @@
+{
+  "nota": "B3b (estudio/DISENO.md §40): la bienvenida de Lalo y el momento de Lona escritos a mano con las claves nuevas. mundo/tests/escenas-motor.mjs comprueba que dan el mismo cuadro que bienvenidas/lalo.js y momentos/lona.js cada 1/120 s. No es contenido del juego: el juego sigue con los de JS hasta B4.",
+  "escenas": {
+    "version": 1,
+    "escenas": {
+      "lalo-bienvenida": {
+        "tipo": "guion",
+        "dispara": { "tipo": "bienvenida", "skin": "lalo" },
+        "T": 27.9,
+        "r": 1.3,
+        "lineas": [
+          { "q": "venjy", "a": 0.6, "texto": { "es": "¡Lalo! ¿Y el Moisés? Pensé que no salías sin él.", "en": "Lalo! Where's Moisés? I thought you never went out without him." } },
+          { "q": "lalo", "a": 3.55, "texto": { "es": "Ahya, el Moisés cuida el iglú. Yo vine a verte, hermano.", "en": "Ahya, Moisés is minding the igloo. I came to see you, bro." } },
+          { "q": "venjy", "a": 6.8, "texto": { "es": "Como en Coyhaique: saltitos para el frío y choque de botas.", "en": "Like in Coyhaique: little hops for the cold and a boot bump." } },
+          { "q": "lalo", "a": 10.15, "texto": { "es": "Ahya, nadie más entiende este saludo.", "en": "Ahya, nobody else gets this greeting." } },
+          { "q": "venjy", "a": 17.15, "texto": { "es": "Nieve hasta las rodillas, y nosotros felices.", "en": "Snow up to our knees, and we were happy." } },
+          { "q": "lalo", "a": 20.1, "texto": { "es": "Éramos cabros chicos y creíamos que el frío no existía.", "en": "We were just kids and thought cold didn't exist." } },
+          { "q": "venjy", "a": 23.35, "texto": { "es": "Gracias por venir, hermano. En el iglú te espera otro Lalo, con sombrero y todo.", "en": "Thanks for coming, bro. Another Lalo is waiting in the igloo, hat and all." } }
+        ],
+        "pista": {
+          "venjy": [
+            ["lalo-frotaM", 0.3, 2.6], ["lalo-sopla", 2.6, 4.4], ["lalo-salta", 6.9, 8.4, { "reloj": 6.9 }], ["lalo-botas", 8.4, 10.1],
+            ["secreto", 10.45, 15.05, { "reloj": 10.05 }], ["abrazo", 15.15, 19.65, { "reloj": 14.75, "escala": { "pz": 1.7 } }],
+            ["recuerda", 19.65, 20.05], ["asiente", 20.05, 23.2], ["habla", 23.35, 26.95]
+          ],
+          "lalo": [
+            ["lalo-frotaM", 0.3, 2.6], ["lalo-sopla", 2.6, 4.4], ["lalo-salta", 6.9, 8.4, { "reloj": 6.9 }], ["lalo-botas", 8.4, 10.1],
+            ["secreto", 10.45, 15.05, { "reloj": 10.05 }], ["abrazo", 15.15, 19.65, { "reloj": 14.75, "escala": { "pz": 1.7 } }],
+            ["habla", 20.1, 23.2]
+          ]
+        },
+        "golpes": [11.25, 12.25, 13.15, 14.05],
+        "sonidos": [[9.2, "golpe"]]
+      },
+      "lona-bufanda": {
+        "tipo": "guion",
+        "dispara": { "tipo": "momento", "persona": "lona" },
+        "T": 16,
+        "r": 1.2,
+        "lineas": [
+          { "q": "n", "a": 0.8, "d": 2.8, "texto": { "es": "Espera un poquito, que te estoy tejiendo algo hace días.", "en": "Wait a little, I've been knitting you something for days." } },
+          { "q": "n", "a": 4.0, "d": 2.8, "texto": { "es": "Mila se robó el ovillo dos veces, pero lo recuperé.", "en": "Mila stole the ball of yarn twice, but I got it back." } },
+          { "q": "j", "a": 7.6, "d": 2.8, "texto": { "es": "¡Está calentita! ¿La hiciste tú?", "en": "It's so warm! Did you make it?" } },
+          { "q": "n", "a": 10.6, "d": 3.0, "texto": { "es": "Sí. A Venjy le tejí una igual, porque es mi novio, pero la tuya tiene más color.", "en": "Yes. I knitted Venjy one just like it, because he is my boyfriend, but yours has more color." } }
+        ],
+        "pista": {
+          "n": [["lona-teje", 1.0, 7.0], ["asiente", 7.0, 10.4], ["habla", 10.4, 13.6], ["lona-abrazo", 13.8, 15.6]],
+          "j": [["lona-toca", 7.6, 10.4], ["lona-abrazo", 13.8, 15.6]]
+        },
+        "objetos": [
+          { "id": "tejida", "dibujo": { "caja": [0.16, 1, 0.06], "color": "#d8283c" }, "en": { "q": "n", "hueso": "brazoD", "mas": [0, -0.75, 0] }, "desde": 1.0, "hasta": 7.0, "crece": [[1.0, 0.01], [6.8, 0.6]] },
+          { "id": "agujaD", "dibujo": { "caja": [0.04, 0.5, 0.04], "color": "#c9c9c9" }, "en": { "q": "n", "hueso": "brazoD", "mas": [0, -0.7, 0.12] }, "desde": 1.0, "hasta": 7.0 },
+          { "id": "agujaI", "dibujo": { "caja": [0.04, 0.5, 0.04], "color": "#c9c9c9" }, "en": { "q": "n", "hueso": "brazoI", "mas": [0, -0.7, 0.12] }, "desde": 1.0, "hasta": 7.0 },
+          { "id": "anillo", "dibujo": { "caja": [0.56, 0.12, 0.32], "color": "#d8283c" }, "en": { "q": "j", "hueso": "cuerpo", "mas": [0, 1.45, 0] }, "desde": 7.0, "crece": [[7.0, 0.2], [7.5, 1]] },
+          { "id": "punta", "dibujo": { "caja": [0.16, 0.6, 0.05], "color": "#f4f4f4" }, "en": { "q": "j", "hueso": "cuerpo", "mas": [0.08, 1.12, 0.16] }, "desde": 7.0, "crece": [[7.0, 0.2], [7.5, 1]] }
+        ]
+      }
+    }
+  },
+  "poses": {
+    "version": 1,
+    "gestos": {
+      "lalo-frotaM": { "reloj": "t", "canales": { "bDx": { "base": -1.0, "osc": [{ "forma": "sin", "amp": 0.06, "frec": 14 }] }, "bDz": 0.6, "bIx": { "base": -1.0, "osc": [{ "forma": "sin", "amp": -0.06, "frec": 14 }] }, "bIz": -0.6, "cx": 0.2 } },
+      "lalo-sopla": { "reloj": "t", "canales": { "bDx": -1.8, "bDz": 0.5, "bIx": -1.8, "bIz": -0.5, "cx": { "base": 0.25, "osc": [{ "forma": "sin", "amp": 0.03, "frec": 6 }] } } },
+      "lalo-salta": { "reloj": "t", "canales": { "bDx": -0.15, "bDz": 0.1, "bIx": -0.15, "bIz": -0.1, "salto": { "base": 0, "osc": [{ "forma": "abs", "amp": 0.28, "frec": 4.1887902047863905 }] } } },
+      "lalo-botas": { "reloj": "u", "canales": { "pDx": { "k": [[0, 0], [0.3, -1.3], [0.47, -1.0], [0.6, -1.0], [1, 0]] }, "bDx": -0.3, "bDz": 0.2, "bIx": -0.3, "bIz": -0.2, "rz": { "k": [[0, 0], [0.3, -0.08], [0.6, -0.08], [1, 0]] }, "cx": 0.05 } },
+      "lona-teje": { "reloj": "t", "canales": { "cx": 0.35, "bDx": { "base": -1.1, "osc": [{ "forma": "sin", "amp": -0.08, "frec": 18 }] }, "bIx": { "base": -1.1, "osc": [{ "forma": "sin", "amp": 0.08, "frec": 18 }] }, "bDz": 0.4, "bIz": -0.4 } },
+      "lona-toca": { "reloj": "t", "canales": { "cx": 0.3, "bDx": { "base": -0.75, "osc": [{ "forma": "sin", "amp": 0.05, "frec": 6 }] }, "bIx": { "base": -0.75, "osc": [{ "forma": "sin", "amp": -0.05, "frec": 6 }] }, "bDz": 0.3, "bIz": -0.3 } },
+      "lona-abrazo": { "reloj": "u", "canales": {
+        "bDx": { "k": [[0, 0], [0.2, -1.45], [0.8, -1.45], [1, 0]] }, "bDz": { "k": [[0, 0], [0.2, 0.8], [0.8, 0.8], [1, 0]] },
+        "bIx": { "k": [[0, 0], [0.2, -1.45], [0.8, -1.45], [1, 0]] }, "bIz": { "k": [[0, 0], [0.2, -0.8], [0.8, -0.8], [1, 0]] },
+        "pz": { "k": [[0, 0], [0.2, 0.36], [0.8, 0.36], [1, 0]] },
+        "rz": { "k": [[0, 0], [0.1, 0.1], [0.9, 0.1], [1, 0]] }, "cy": { "k": [[0, 0], [0.1, -0.5], [0.9, -0.5], [1, 0]] },
+        "cz": { "k": [[0, 0], [0.1, 0.12], [0.9, 0.12], [1, 0]] }, "cx": { "k": [[0, 0], [0.1, 0.18], [0.9, 0.18], [1, 0]] }
+      } }
+    }
+  }
+}

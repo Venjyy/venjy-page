@@ -9,6 +9,8 @@
 //   personasUsadas(def, personajes)          claves de persona usadas como `q` (para el `reparto` automático, B3)
 //   planosDe(camara)               `camara` de una escena -> lista de planos (nombre de juego o lista propia), null si no hay
 //   opcionesCamara(camara)         lo mismo con las distancias de la familia, listo para camaras.iniciarCine
+//   B3b, piezas puras del motor (al final): escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo,
+//   claveEn, valorEn, caminoEn, objetoEn, eventosEn, sonidosDeEscena
 // =========================================================
 import { PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from '../supervivencia/escena-amistad-datos.js';
 
@@ -302,4 +304,171 @@ function reglasB3(clave, e, ctx) {
 
     const codigos = catalogo('codigos');
     if (e.codigo !== undefined && codigos && !codigos.has(e.codigo)) mal(`${donde}.codigo: «${e.codigo}» no está en CODIGO_ESCENAS`);
+}
+
+// ---------------------------------------------------------
+// B3b (DISENO §40): piezas puras del motor. escena-amistad.js las usa cada cuadro y mundo/tests/escenas-motor.mjs
+// comprueba con ellas la paridad entre una escena de JS y la misma escrita en escenas.json.
+//   escenaQueDispara(escenas, consulta)   clave de la escena «guion» con ese `dispara` (la más específica gana) o null
+//   amigoDeEscena(def, dp, skin, miembros)  quién es 'n' en una escena disparada
+//   repartoDe(personas, amigo, skin, actores)  { reparto, actores }: personas -> 'n', 'j' o actor extra
+//   repartirGuion(guion)                  frases, pistas, giros, caminos, objetos, efectos y lugar por su papel
+//   tramoEn(pista, t)                     tramo activo { g, u, w, op } (peso con rampas) o null
+//   metaTramo(tr, t, info, buscar)        metas del gesto con las opciones del tramo (reloj, escala, espejo)
+//   claveEn(claves, t)                    la última clave [t, v] que ya pasó (giros, cambia) o undefined
+//   valorEn(claves, t, porDefecto)        claves [t, v] interpoladas con suavizado (crece), como ruta()
+//   caminoEn(claves, t, punto)            dónde va un actor que camina { x, y, z, rumbo } o null
+//   objetoEn(o, t)                        { visible, escala, dibujo } de un objeto del catálogo
+//   eventosEn(lista, t0, t, hechos, pre)  índices de efectos o sonidos que tocan en este cuadro (una vez cada uno)
+//   sonidosDeEscena(...tablas)            nombre -> función, de las tablas de sonidos sin argumentos
+// ---------------------------------------------------------
+const suave = u => u * u * (3 - 2 * u);
+const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
+const tramoDe = (u, a, b) => limitar((u - a) / (b - a), 0, 1);
+const envolvente = (t, a, b, r) => suave(Math.min(tramoDe(t, a, a + r), 1 - tramoDe(t, b - r, b)));
+
+// consulta: { tipo, skin, persona (el amigo), grupo }. Nivel 1 = con skin (o la pareja exacta), 0 = sin skin; gana el mayor
+// y, empatados, la primera en el archivo (validar no deja dos iguales).
+export function escenaQueDispara(escenas, c) {
+    let mejor = null, nivel = -1;
+    for (const [k, d] of Object.entries(escenas || {})) {
+        const p = d && d.tipo === 'guion' && d.dispara;
+        if (!p || p.tipo !== c.tipo) continue;
+        let n = -1;
+        if (p.tipo === 'bienvenida') n = p.skin === c.skin ? 1 : -1;
+        else if (p.tipo === 'momento') n = p.persona !== c.persona ? -1 : p.skin === undefined ? 0 : p.skin === c.skin ? 1 : -1;
+        else if (p.tipo === 'reencuentro') n = [...p.personas].sort().join('+') === [c.skin, c.persona].sort().join('+') ? 1 : -1;
+        else if (p.tipo === 'grupo') n = p.grupo !== c.grupo ? -1 : p.skin === undefined ? 0 : p.skin === c.skin ? 1 : -1;
+        if (n > nivel) { mejor = k; nivel = n; }
+    }
+    return mejor;
+}
+
+// 'n' de una escena disparada: el Venjy del Inicio (bienvenida), la persona (momento), el otro de la pareja (reencuentro)
+// o, en un grupo, de quien parte el centro (`lugar.centro.desde`) o el primer miembro que sale en la escena y no es tu skin.
+export function amigoDeEscena(def, dp, skin, miembros = []) {
+    if (dp.tipo === 'bienvenida') return 'venjy';
+    if (dp.tipo === 'momento') return dp.persona;
+    if (dp.tipo === 'reencuentro') return dp.personas[0] === skin ? dp.personas[1] : dp.personas[0];
+    const desde = def.lugar && def.lugar.centro && def.lugar.centro.desde;
+    if (desde && desde !== skin && miembros.includes(desde)) return desde;
+    const usadas = personasUsadas(def, new Set(miembros));
+    return usadas.find(p => p !== skin) || miembros.find(p => p !== skin) || null;
+}
+
+// Las personas usadas como `q` pasan a su papel: el amigo a 'n', tu skin a 'j' y el resto queda con su clave como actor
+// extra (se declara solo si la escena no lo declaró). Sin personas, nada cambia.
+export function repartoDe(personas, amigo, skin, actores = {}) {
+    const reparto = {}, extra = { ...actores };
+    for (const p of personas || []) {
+        if (p === amigo) reparto[p] = 'n';
+        else if (p === skin) reparto[p] = 'j';
+        else if (!extra[p]) extra[p] = p;
+    }
+    return { reparto, actores: extra };
+}
+
+// guion.reparto ({ pony: 'j', andy: 'n' }) aplicado a todo lo que nombra a alguien. Sin reparto, el mismo guion.
+export function repartirGuion(guion) {
+    const rep = guion.reparto;
+    if (!rep || !Object.keys(rep).length) return guion;
+    const rol = q => (typeof q === 'string' && rep[q] !== undefined ? rep[q] : q);
+    const porRol = o => (o ? Object.fromEntries(Object.entries(o).map(([q, v]) => [rol(q), v])) : o);
+    const destino = a => (a && typeof a === 'object' ? { ...a, ...(a.hacia !== undefined ? { hacia: rol(a.hacia) } : {}), ...(a.desde !== undefined ? { desde: rol(a.desde) } : {}) } : a);
+    const sitio = s => (s ? { ...s, desde: rol(s.desde) } : s);
+    const salida = { ...guion, lineas: (guion.lineas || []).map(l => ({ ...l, q: rol(l.q) })), pista: porRol(guion.pista), yaw: porRol(guion.yaw) };
+    if (guion.giros) salida.giros = porRol(Object.fromEntries(Object.entries(guion.giros).map(([q, cs]) => [q, cs.map(([t, m]) => [t, rol(m)])])));
+    if (guion.caminos) salida.caminos = porRol(Object.fromEntries(Object.entries(guion.caminos).map(([q, cs]) => [q, cs.map(([t, a]) => [t, destino(a)])])));
+    if (guion.objetos) salida.objetos = guion.objetos.map(o => ({ ...o, en: o.en.hueso !== undefined ? { ...o.en, q: rol(o.en.q) } : sitio(o.en) }));
+    if (guion.efectos) salida.efectos = guion.efectos.map(([t, tipo, op]) => [t, tipo, op && op.en !== undefined ? { ...op, en: rol(op.en) } : op]);
+    if (guion.lugar) salida.lugar = { ...(guion.lugar.centro ? { centro: sitio(guion.lugar.centro) } : {}), ...(guion.lugar.jugador ? { jugador: sitio(guion.lugar.jugador) } : {}) };
+    return salida;
+}
+
+// El tramo [gesto, desde, hasta, opciones?] que corre en t: u = 0..1 dentro del tramo y w = peso con rampas de hasta 0.3 s
+export function tramoEn(pista, t) {
+    if (pista) for (const tr of pista) {
+        const desde = tr[1], hasta = tr[2];
+        if (t >= desde && t < hasta) return { g: tr[0], u: (t - desde) / (hasta - desde), w: envolvente(t, desde, hasta, Math.min(0.3, (hasta - desde) / 3)), op: tr[3] || null };
+    }
+    return null;
+}
+
+// Metas del gesto del tramo. buscar(nombre) -> función (u, t, info) o null. Opciones: reloj (el gesto lee t − reloj, lo que
+// hacía desplazar), escala (multiplica canales: pz × 1.7) y espejo (derecha por izquierda, como espejo() de moldes.js).
+export function metaTramo(tr, t, info, buscar) {
+    const f = buscar(tr.g);
+    if (!f) return {};
+    const op = tr.op;
+    if (!op) return f(tr.u, t, info);
+    let m = f(tr.u, op.reloj !== undefined ? t - op.reloj : t, info);
+    if (op.escala) { m = { ...m }; for (const k of Object.keys(op.escala)) if (m[k] !== undefined) m[k] *= op.escala[k]; }
+    if (op.espejo) m = espejar(m);
+    return m;
+}
+function espejar(m) {
+    const o = { ...m };
+    delete o.bDx; delete o.bDz; delete o.bIx; delete o.bIz;
+    if (m.bIx !== undefined) o.bDx = m.bIx;
+    if (m.bIz !== undefined) o.bDz = -m.bIz;
+    if (m.bDx !== undefined) o.bIx = m.bDx;
+    if (m.bDz !== undefined) o.bIz = -m.bDz;
+    for (const k of ['cy', 'cz', 'rz']) if (m[k] !== undefined) o[k] = -m[k];
+    return o;
+}
+
+export function claveEn(claves, t) {
+    let v;
+    if (claves) for (const c of claves) { if (c[0] <= t) v = c; else break; }
+    return v;
+}
+
+export function valorEn(claves, t, porDefecto = 1) {
+    if (!claves || !claves.length) return porDefecto;
+    if (t <= claves[0][0]) return claves[0][1];
+    for (let i = 1; i < claves.length; i++) {
+        const [t1, v1] = claves[i];
+        if (t <= t1) { const [t0, v0] = claves[i - 1]; return v0 + (v1 - v0) * suave((t - t0) / (t1 - t0)); }
+    }
+    return claves[claves.length - 1][1];
+}
+
+// Claves [t, a] de un camino: antes de la primera y después de la última, el punto del extremo; entre dos, en línea recta
+// con suavizado. punto(a) -> { x, y, z } (coordenadas del grupo) o null. rumbo: hacia dónde camina (como n.yaw) o null quieto.
+export function caminoEn(claves, t, punto) {
+    if (!claves || !claves.length) return null;
+    const quieto = a => { const p = punto(a); return p && { x: p.x, y: p.y, z: p.z, rumbo: null }; };
+    if (t <= claves[0][0]) return quieto(claves[0][1]);
+    for (let i = 1; i < claves.length; i++) {
+        const [t1, a1] = claves[i];
+        if (t > t1) continue;
+        const [t0, a0] = claves[i - 1];
+        const p = punto(a0), q = punto(a1);
+        if (!p || !q) return null;
+        const k = suave((t - t0) / (t1 - t0)), dx = q.x - p.x, dz = q.z - p.z;
+        return { x: p.x + dx * k, y: p.y + (q.y - p.y) * k, z: p.z + dz * k, rumbo: Math.hypot(dx, dz) > 1e-6 ? Math.atan2(dx, dz) : null };
+    }
+    return quieto(claves[claves.length - 1][1]);
+}
+
+// Un objeto ya completado por guionDeDatos (desde, hasta, crece, cambia)
+export function objetoEn(o, t) {
+    const c = claveEn(o.cambia, t);
+    return { visible: t >= o.desde && t < o.hasta, escala: valorEn(o.crece, t, 1), dibujo: c ? c[1] : o.dibujo };
+}
+
+// La regla de golpes y corazones: toca si ya llegó su instante y el cuadro anterior no lo pasó por más de 0.3 s; una vez
+// (irA hacia atrás vacía `hechos` y lo vuelve a permitir). lista: [[t, ...], ...]
+export function eventosEn(lista, t0, t, hechos, pre) {
+    const salen = [];
+    if (lista) lista.forEach((ev, i) => { const s = ev[0]; if (t >= s && t0 < s + 0.3 && !hechos.has(pre + i)) { hechos.add(pre + i); salen.push(i); } });
+    return salen;
+}
+
+// Las tablas de sonidos (SONIDOS de moldes.js y `sonidos` del juego): solo las funciones sin argumentos (golpeBloque(id) no
+// sirve en una escena). La primera tabla gana.
+export function sonidosDeEscena(...tablas) {
+    const salida = {};
+    for (const tabla of tablas) for (const [k, f] of Object.entries(tabla || {})) if (typeof f === 'function' && f.length === 0 && !(k in salida)) salida[k] = f;
+    return salida;
 }

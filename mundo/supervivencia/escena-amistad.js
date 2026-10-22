@@ -28,6 +28,11 @@
 //   api.mover(q, x, y, z) mueve a un actor (coordenadas del grupo) y al terminar o saltar vuelve a su sitio.
 // Estudio, fase 5: las animaciones genéricas salen de ANIMACIONES fusionadas con mundo/datos/escenas.json; jugarGuion(clave,
 //   persona) juega una escena de tipo «guion» del JSON (/amistad guion <clave> [persona]).
+// Etapa B3b (estudio/DISENO.md §40): momento, bienvenida, reencuentro y grupo buscan primero en escenas.json una escena con
+//   su `dispara` (la más específica gana) y, si no hay, cargan el JS de siempre. Las escenas del JSON traen reparto
+//   automático (personas como q), opciones del tramo (reloj, escala, espejo), `lugar`, `giros`, `caminos`, `objetos`,
+//   `efectos` y `sonidos` de un catálogo cerrado y, para lo único, `codigo` (CODIGO_ESCENAS de codigo-escenas.js). Las
+//   piezas puras están en datos/escenas.js; mundo/tests/escenas-motor.mjs prueba la paridad con Lalo y Lona.
 // Depuración: __venjy.amistadEscena (jugar(clave, tipo), jugarGuion(clave, persona), momento(clave), bienvenida(base), reencuentro(base, clave),
 //   pausar(v), irA(s), saltar(), escena).
 // Para revisarlas en el juego: /amistad (comandos-dev.js, con /gamemode devenjy).
@@ -41,7 +46,9 @@ import { NOMBRES_AMIGO } from './misiones-datos.js';
 import { sonidos } from './sonidos.js';
 import { PERSONAJES, relacion, GRUPOS } from './amistad.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
-import { animacionDeDatos, guionDeDatos, opcionesCamara } from '../datos/escenas.js';
+import { animacionDeDatos, guionDeDatos, opcionesCamara, escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo, claveEn, caminoEn, objetoEn,
+    eventosEn, sonidosDeEscena } from '../datos/escenas.js';
+import { CODIGO_ESCENAS } from './codigo-escenas.js';
 
 // Estudio, fase 5: mundo/datos/escenas.json (escenas «amistad» reemplazan a ANIMACIONES por clave; las de «guion» solo
 // se juegan con jugarGuion). Se pide al importar este módulo, que ya se carga solo al usarlo: la carga inicial no cambia.
@@ -98,8 +105,13 @@ export function crearEscenaAmistad(ctx) {
     // ---- Efectos: corazones (pareja) y chispas (choques) en sprites píxel ----
     const TEX = {
         corazon: texturaPixeles(['.kk...kk.', 'kaak.kaak', 'kaaaaaaak', 'kaaaaaaak', '.kaaaaak.', '..kaaak..', '...kak...', '....k....'], { k: '#3a0008', a: '#e82040' }),
-        chispa: texturaPixeles(['...a...', '...b...', '..aba..', 'abbbbba', '..aba..', '...b...', '...a...'], { a: '#ffd84a', b: '#fffbe0' })
+        chispa: texturaPixeles(['...a...', '...b...', '..aba..', 'abbbbba', '..aba..', '...b...', '...a...'], { a: '#ffd84a', b: '#fffbe0' }),
+        // B3b: humo (una nube gris que sube y crece) y nieve (un copo que cae), para los `efectos` de escenas.json
+        humo: texturaPixeles(['..aaa...', '.abbbaa.', 'abbbbbba', 'abbbbbba', '.abbbba.', '..aaaa..'], { a: '#8a8a8a', b: '#c8c8c8' }),
+        nieve: texturaPixeles(['.a.a.', 'a.b.a', '.bbb.', 'a.b.a', '.a.a.'], { a: '#dfeaf5', b: '#ffffff' })
     };
+    // Lo que no dice el guion, por tipo: tamaño, vida (s), velocidad hacia arriba y si crece
+    const EFECTO_BASE = { corazon: [0.32, 1.6, 0.45, false], chispa: [0.28, 0.45, 0, true], humo: [0.36, 1.4, 0.5, true], nieve: [0.14, 2.0, -0.35, false] };
     const efectos = [];
     // tipo: 'corazon', 'chispa' o un dibujo { filas, colores } (moldes.js, PIX); la textura se guarda para la próxima vez
     const texPix = new Map();
@@ -110,11 +122,12 @@ export function crearEscenaAmistad(ctx) {
     };
     function efecto(tipo, x, y, z, op = {}) {
         const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texDe(tipo), transparent: true, depthWrite: false }));
-        const tam = op.tam ?? (tipo === 'corazon' ? 0.32 : 0.28);
+        const [tam0, vida, vy, crece] = EFECTO_BASE[tipo] || [0.28, 0.45, 0, false]; // un dibujo de PIX: como antes
+        const tam = op.tam ?? tam0;
         s.scale.set(tam, tam, 1);
         s.position.set(x, y, z);
         grupo.add(s);
-        efectos.push({ s, t: 0, vida: op.vida ?? (tipo === 'corazon' ? 1.6 : 0.45), vy: op.vy ?? (tipo === 'corazon' ? 0.45 : 0), tam, crece: op.crece ?? tipo === 'chispa' });
+        efectos.push({ s, t: 0, vida: op.vida ?? vida, vy: op.vy ?? vy, tam, crece: op.crece ?? crece });
         return s;
     }
     function actualizarEfectos(dt) {
@@ -212,18 +225,9 @@ export function crearEscenaAmistad(ctx) {
         return { ...a, ...camara, tipo, lineas: [{ q: 'n', texto: f, a: a.linea[0], d: a.linea[1] }] };
     }
 
-    // Frases, pistas y giros por personaje: con guion.reparto ({ pony: 'j', andy: 'n' }) pasan a su papel en la escena
-    function repartir(guion) {
-        const rep = guion.reparto;
-        if (!rep) return guion;
-        const rol = q => rep[q] ?? q;
-        const porRol = o => (o ? Object.fromEntries(Object.entries(o).map(([q, v]) => [rol(q), v])) : o);
-        return { ...guion, lineas: (guion.lineas || []).map(l => ({ ...l, q: rol(l.q) })), pista: porRol(guion.pista), yaw: porRol(guion.yaw) };
-    }
-
     function iniciar(clave, guion) {
         if (e || !guion) return false;
-        guion = repartir(guion);
+        guion = repartirGuion(guion); // con guion.reparto ({ pony: 'j', andy: 'n' }) cada persona pasa a su papel (B3b: también giros, caminos, objetos, efectos y lugar)
         const n = personaDe(clave);
         if (!n || n.escena) return false; // otra escena (skin, minijuego) lo tiene
         bloquear();
@@ -231,7 +235,7 @@ export function crearEscenaAmistad(ctx) {
         // El jugador se para a la distancia del contacto: frente al amigo si estaba sentado (se levanta hacia adelante),
         // si no, por el lado donde ya estaba. Si el amigo da un paso al pararse, el jugador queda ese paso más allá.
         // Una escena de grupo (guion.colocar) elige ella el lugar del jugador, más abajo.
-        if (!guion.colocar) {
+        if (!guion.colocar && !(guion.lugar && guion.lugar.jugador)) {
             const r = guion.r + A.adelante;
             const ang0 = A.levanta ? n.yaw : Math.atan2(jugador.pos.x - n.x, jugador.pos.z - n.z);
             const l = lugarExacto(n, r, ang0, ctx.personas ? ctx.personas() : []);
@@ -262,6 +266,14 @@ export function crearEscenaAmistad(ctx) {
             if (l) jugador.colocar(l.x, (l.y ?? jugador.pos.y - dy) + dy, l.z);
             e.jugador0 = { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z };
         }
+        // B3b: `lugar` de escenas.json, relativo al sitio de alguien (sin coordenadas fijas del mapa)
+        if (guion.lugar && guion.lugar.centro) e.centro = sitioDe(guion.lugar.centro);
+        if (guion.lugar && guion.lugar.jugador) {
+            const l = sitioDe(guion.lugar.jugador);
+            if (l) jugador.colocar(l.x, l.y + dy, l.z);
+            e.jugador0 = { x: jugador.pos.x, y: jugador.pos.y, z: jugador.pos.z };
+        }
+        if (guion.objetos) crearObjetos();
         if (e.centro) jugador.yaw = Math.atan2(e.centro.x - jugador.pos.x, e.centro.z - jugador.pos.z) - Math.PI;
         // Quien esté cerca (Lucho junto a Boris, la fogata) cuenta en `visibles`: la cámara no lo deja tapando a los dos
         const cerca = (ctx.personas ? ctx.personas() : []).filter(o => o !== n && !extras.includes(o) && o.p && o.p.g.visible && Math.hypot(o.x - n.x, o.z - n.z) < 5);
@@ -318,11 +330,8 @@ export function crearEscenaAmistad(ctx) {
     function saltar() { if (e) terminar(); }
 
     // ---- Pose: neutral → gesto de la pista (peso con rampas) → suavizado → mezcla con la animación base ----
-    function gestoDe(a) {
-        const pista = (e.guion.pista && e.guion.pista[a.q]) || [];
-        for (const [g, desde, hasta] of pista) if (e.t >= desde && e.t < hasta) return { g, u: (e.t - desde) / (hasta - desde), w: envolvente(e.t, desde, hasta, Math.min(0.3, (hasta - desde) / 3)) };
-        return null;
-    }
+    // El tramo de la pista que corre ahora (tramoEn de datos/escenas.js: { g, u, w, op })
+    const gestoDe = a => tramoEn(e.guion.pista && e.guion.pista[a.q], e.t);
     // A quién mira cada uno: a quien habla (si es otro); si nadie habla, el amigo y el jugador se miran y los extras miran al amigo
     function miraA(a) {
         const ls = lineasAhora(), l = ls[ls.length - 1];
@@ -333,9 +342,17 @@ export function crearEscenaAmistad(ctx) {
     function metaDe(g, a) {
         const otro = a.jugador ? e.actores.n : e.actores.j;
         const info = { s: a.sentado, otroS: otro.sentado, j: !!a.jugador, esc: esc(e.actores.n.n) };
-        const f = (e.guion.gestos && e.guion.gestos[g.g]) || GESTOS_AMISTAD[g.g];
-        if (f) return f(g.u, e.t, info);
-        return GESTOS[g.g] ? GESTOS[g.g](g.u, e.t, a.sentado, !!a.jugador) : {};
+        // metaTramo aplica las opciones del tramo (B3b: reloj, escala, espejo); sin opciones, el gesto tal cual
+        return metaTramo(g, e.t, info, buscarGesto);
+    }
+    // Gestos del guion, luego GESTOS_AMISTAD y luego GESTOS (firma u, t, sentado, jugador; ahí llegan los nuevos de poses.json)
+    const deSkin = new Map();
+    function buscarGesto(nombre) {
+        const f = (e.guion.gestos && e.guion.gestos[nombre]) || GESTOS_AMISTAD[nombre];
+        if (f) return f;
+        if (!GESTOS[nombre]) return null;
+        if (!deSkin.has(nombre)) deSkin.set(nombre, (u, t, i) => GESTOS[nombre](u, t, i.s, i.j));
+        return deSkin.get(nombre);
     }
     const vMeta = {};
     function aplicar(a, dt) {
@@ -369,7 +386,9 @@ export function crearEscenaAmistad(ctx) {
         const r = base(0); // la animación normal queda congelada: la escena lo mueve
         const wS = aplicar(a, dt);
         // Mira al jugador (o, en grupo, al centro del grupo); un actor que camina o mira algo lejos lleva su giro fijo (api.girar)
-        if (a.yawMeta !== null) { a.n.yaw += angulo(a.yawMeta - a.n.yaw) * Math.min(1, dt * 8); return r; }
+        // api.girar manda; si no, los `giros` y `caminos` de escenas.json (yawDatos, B3b)
+        const fijo = a.yawMeta !== null ? a.yawMeta : a.yawDatos ?? null;
+        if (fijo !== null) { a.n.yaw += angulo(fijo - a.n.yaw) * Math.min(1, dt * 8); return r; }
         const J = e.centro ? { x: e.centro.x, z: e.centro.z } : jugador.pos, giro = e.guion.yaw && e.guion.yaw[a.q];
         a.n.yaw = a.yaw0 + (angulo(Math.atan2(J.x - a.n.x, J.z - a.n.z) - a.yaw0) * a.giro + (giro ? giro(e.t) : 0)) * wS;
         return r;
@@ -454,6 +473,102 @@ export function crearEscenaAmistad(ctx) {
             return { pos: vCam.set(m.pos[0], m.pos[1] + dy, m.pos[2]), mira: vMira.set(m.mira[0], m.mira[1] + dy, m.mira[2]) };
         } : null;
     }
+    // ---- B3b: lugar, caminos, giros, objetos y efectos de escenas.json (estudio/DISENO.md §40) ----
+    // Un punto { desde, mas } en coordenadas del grupo: desde = 'centro' o un actor (su sitio de partida)
+    function sitioDe(s) {
+        const b = s.desde === 'centro' ? e.centro : origen(s.desde);
+        if (!b) return null;
+        const m = s.mas || [0, 0, 0];
+        return { x: b.x + m[0], y: (b.y ?? (e.actores.n.n.y ?? 0)) + m[1], z: b.z + m[2] };
+    }
+    // Adónde va q en una clave de camino: 'sitio', { hacia, dist } (a dist bloques de alguien, del lado de donde viene q) o un punto
+    function destinoDe(q, a) {
+        if (a === 'sitio') return origen(q);
+        if (a && a.hacia !== undefined) {
+            const o = origen(q), t = posG(a.hacia);
+            if (!o || !t) return null;
+            const dx = o.x - t.x, dz = o.z - t.z, d = Math.hypot(dx, dz) || 1, dist = a.dist ?? 1;
+            return { x: t.x + (dx / d) * dist, y: o.y, z: t.z + (dz / d) * dist };
+        }
+        return a ? sitioDe(a) : null;
+    }
+    // mira de un giro -> yaw (como n.yaw): 'centro', un actor, grados del mundo o null (el motor decide)
+    function yawDe(a, mira) {
+        if (mira === null || mira === undefined) return null;
+        if (typeof mira === 'number') return (mira * Math.PI) / 180;
+        const yo = pos(a), b = mira === 'centro' ? e.centro : e.actores[mira] && pos(e.actores[mira]);
+        return b ? Math.atan2(b.x - yo.x, b.z - yo.z) : null;
+    }
+    // Cada cuadro: los que caminan van a su punto (mover los devuelve al terminar) y miran hacia donde caminan, salvo que un
+    // giro diga otra cosa. yawDatos lo leen animarAmigo y el giro del jugador.
+    function moverYGirar(x) {
+        for (const [q, claves] of Object.entries(x.guion.caminos || {})) {
+            const a = x.actores[q];
+            const p = a && caminoEn(claves, x.t, d => destinoDe(q, d));
+            if (!p) continue;
+            mover(q, p.x, p.y, p.z);
+            a.rumbo = p.rumbo;
+        }
+        for (const a of Object.values(x.actores)) {
+            const c = claveEn(x.guion.giros && x.guion.giros[a.q], x.t);
+            const y = c ? yawDe(a, c[1]) : null;
+            a.yawDatos = y !== null ? y : a.rumbo ?? null;
+        }
+    }
+    // Texturas de los dibujos del catálogo: PIX (moldes.js) o un ícono de iconos.json (16×16, los pinta el dueño en Píxeles)
+    const texDibujo = new Map();
+    function texturaDibujo(nombre) {
+        const cat = e.guion.catalogo || {};
+        const clave = (cat.iconos && cat.iconos[nombre] ? 'i:' : 'p:') + nombre;
+        if (texDibujo.has(clave)) return texDibujo.get(clave);
+        let t = null;
+        if (cat.iconos && cat.iconos[nombre]) {
+            const c = document.createElement('canvas'); c.width = c.height = 16;
+            const g = c.getContext('2d');
+            cat.iconos[nombre].forEach((px, i) => { if (px) { g.fillStyle = `rgb(${px[0]},${px[1]},${px[2]})`; g.fillRect(i % 16, Math.floor(i / 16), 1, 1); } });
+            t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+        } else if (cat.pix && cat.pix[nombre]) t = texturaPixeles(cat.pix[nombre].filas, cat.pix[nombre].colores);
+        texDibujo.set(clave, t);
+        return t;
+    }
+    // Un objeto por actor (q 'todos') o uno solo; pegado a su hueso (sigue a la mano solo) o al grupo del mapa
+    function crearObjetos() {
+        e.objetos = [];
+        for (const o of e.guion.objetos) {
+            const conHueso = o.en.hueso !== undefined;
+            const qs = conHueso ? (o.en.q === 'todos' ? Object.keys(e.actores) : [o.en.q]) : [null];
+            for (const q of qs) {
+                if (q && !e.actores[q]) continue; // un actor opcional que no vino
+                let m;
+                if (typeof o.dibujo === 'object') m = caja(...o.dibujo.caja.map(v => v * (o.tam ?? 1)), o.dibujo.color);
+                else {
+                    m = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaDibujo(o.dibujo), transparent: true, depthWrite: false }));
+                    e.props.push(m);
+                }
+                m.visible = false;
+                if (conHueso) pegar(m, q, o.en.hueso, o.en.mas); else pegar(m);
+                e.objetos.push({ o, q, m, dibujo: o.dibujo, sprite: m.isSprite });
+            }
+        }
+    }
+    function actualizarObjetos(x) {
+        for (const it of x.objetos) {
+            const s = objetoEn(it.o, x.t);
+            it.m.visible = s.visible;
+            if (!s.visible) continue;
+            if (it.sprite) { const k = (it.o.tam ?? 0.4) * s.escala; it.m.scale.set(k, k, 1); } else it.m.scale.setScalar(s.escala);
+            if (it.sprite && s.dibujo !== it.dibujo && typeof s.dibujo === 'string') { it.dibujo = s.dibujo; it.m.material.map = texturaDibujo(s.dibujo); it.m.material.needsUpdate = true; }
+            if (!it.q) { const p = sitioDe(it.o.en); if (p) it.m.position.set(p.x, p.y, p.z); }
+        }
+    }
+    // [t, tipo, { en, alto, tam, n }]: sobre alguien, en el centro o, sin `en`, entre el amigo y el jugador
+    function efectoDeDatos([, tipo, op = {}]) {
+        const b = op.en === 'centro' ? e.centro && { x: e.centro.x, y: e.centro.y ?? (e.actores.n.n.y ?? 0), z: e.centro.z }
+            : op.en !== undefined ? posG(op.en) : (() => { const A = posG('n'), J = posG('j'); return { x: (A.x + J.x) / 2, y: Math.max(A.y, J.y), z: (A.z + J.z) / 2 }; })();
+        if (!b) return;
+        const n = op.n ?? 1, y = b.y + (op.alto ?? 1.8);
+        for (let i = 0; i < n; i++) efecto(tipo, b.x + (i - (n - 1) / 2) * 0.3, y + i * 0.12, b.z, op.tam !== undefined ? { tam: op.tam } : {});
+    }
     // Cámara de grupo (camaras.js, opción centro): gira en torno al centro del grupo y mira hacia quien habla (miraG, suavizado)
     function centroCamara(c, objetivo) {
         if (!e || !e.centro) return;
@@ -533,10 +648,16 @@ export function crearEscenaAmistad(ctx) {
             // Golpes y corazones del guion (una vez cada uno; irA hacia atrás los vuelve a permitir)
             for (const s of x.guion.golpes || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('g' + s)) { x.hechos.add('g' + s); golpe(); }
             for (const s of x.guion.corazones || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('c' + s)) { x.hechos.add('c' + s); corazones(); }
+            // B3b: efectos y sonidos del catálogo (con la misma regla), caminos, giros y objetos de escenas.json
+            for (const i of eventosEn(x.guion.efectos, t0, x.t, x.hechos, 'e')) efectoDeDatos(x.guion.efectos[i]);
+            for (const i of eventosEn(x.guion.sonidos, t0, x.t, x.hechos, 's')) { const f = x.guion.catalogo && x.guion.catalogo.sonidos[x.guion.sonidos[i][1]]; if (f) f(); }
+            if (x.guion.caminos || x.guion.giros) moverYGirar(x);
+            if (x.objetos) actualizarObjetos(x);
             if (x.guion.extra && x.guion.extra.cuadro) x.guion.extra.cuadro(api(x), pausada ? 0 : dt);
             const giroJ = x.guion.yaw && x.guion.yaw.j, wS = suave(Math.min(tramo(x.t, 0, 0.5), 1 - tramo(x.t, x.T - 0.7, x.T)));
             const J = x.actores.j, mira = x.centro || x.actores.n.n;
-            if (J.yawMeta !== null) jugador.yaw += angulo(J.yawMeta - Math.PI - jugador.yaw) * Math.min(1, dt * 8);
+            const fijoJ = J.yawMeta !== null ? J.yawMeta : J.yawDatos ?? null;
+            if (fijoJ !== null) jugador.yaw += angulo(fijoJ - Math.PI - jugador.yaw) * Math.min(1, dt * 8);
             else jugador.yaw = Math.atan2(mira.x - jugador.pos.x, mira.z - jugador.pos.z) - Math.PI + (giroJ ? giroJ(x.t) * wS : 0);
             // Cámara de grupo: el punto de mira se corre con suavidad hacia quien habla
             if (x.centro) {
@@ -552,6 +673,35 @@ export function crearEscenaAmistad(ctx) {
         actualizarGlobos(dt);
     }
 
+    // ---- B3b: escenas de escenas.json para los cargadores ----
+    const disparada = consulta => escenaQueDispara(datosEscenas && datosEscenas.escenas, consulta);
+    // Íconos de iconos.json ya decodificados (se piden la primera vez que una escena usa uno)
+    let iconos = null;
+    async function iconosDeDatos() {
+        if (iconos) return iconos;
+        const [datos, { decodificar }] = await Promise.all([cargarDatos('iconos'), import('../datos/pixeles.js')]);
+        iconos = Object.fromEntries(Object.entries((datos && datos.iconos) || {}).map(([k, d]) => [k, decodificar(d, 16, 16)]));
+        return iconos;
+    }
+    // Guion de ejecución de una escena «guion»: gestos de MOLDES, `reparto` según quién es el amigo y cuál es tu skin
+    // (las personas que no son ninguno de los dos entran como actores extra), catálogo de dibujos y sonidos y su `codigo`
+    async function guionDeEscena(clave, amigo, skin) {
+        const def = defDatos(clave);
+        const [{ MOLDES, PIX, SONIDOS }, { durLinea }] = await Promise.all([import('./moldes.js'), import('./reencuentros.js')]);
+        const g = guionDeDatos(def, { durLinea, moldes: MOLDES, personajes: PERSONAJES });
+        const r = repartoDe(g.personas, amigo, skin, g.actores);
+        const dibujos = (g.objetos || []).flatMap(o => [o.dibujo, ...o.cambia.map(c => c[1])]).filter(d => typeof d === 'string');
+        const conIconos = dibujos.some(d => !PIX[d]) ? await iconosDeDatos() : null;
+        const salida = { ...g, reparto: r.reparto, actores: r.actores, datos: clave, catalogo: { pix: PIX, iconos: conIconos, sonidos: sonidosDeEscena(SONIDOS, sonidos) } };
+        if (def.codigo && CODIGO_ESCENAS[def.codigo]) { const m = await CODIGO_ESCENAS[def.codigo](); salida.extra = m.default(salida.marcas || {}); }
+        return salida;
+    }
+    function empezar(clave, guion, alTerminar) {
+        const ok = iniciar(clave, guion);
+        if (ok && alTerminar) e.alTerminar = alTerminar;
+        return ok;
+    }
+
     return {
         actualizar, saltar, iniciar,
         // Una animación genérica (punos, abrazo, secreto, pareja) con la frase del personaje
@@ -560,7 +710,7 @@ export function crearEscenaAmistad(ctx) {
             if (ok && alTerminar) e.alTerminar = alTerminar;
             return ok;
         },
-        // Escena «guion» de mundo/datos/escenas.json (Estudio, fase 5): nadie la dispara sola, solo /amistad guion y el Estudio.
+        // Escena «guion» de mundo/datos/escenas.json (Estudio, fase 5): sin `dispara`, solo /amistad guion y el Estudio.
         // Sin persona, la más cercana al jugador. Promesa con true si empezó (moldes.js y reencuentros.js se cargan al usarla).
         async jugarGuion(clave, persona, alTerminar) {
             const def = defDatos(clave);
@@ -573,57 +723,55 @@ export function crearEscenaAmistad(ctx) {
             }
             if (!quien) return false;
             try {
-                const [{ MOLDES }, { durLinea }] = await Promise.all([import('./moldes.js'), import('./reencuentros.js')]);
+                const g = await guionDeEscena(clave, quien, ctx.base ? ctx.base() : null);
                 if (e) return false; // otra escena empezó mientras cargaban los módulos
-                const ok = iniciar(quien, guionDeDatos(defDatos(clave) || def, { durLinea, moldes: MOLDES }));
-                if (ok && alTerminar) e.alTerminar = alTerminar;
-                return ok;
+                return empezar(quien, g, alTerminar);
             } catch (err) { console.error('No se pudo jugar la escena de guion', err); return false; }
         },
-        // Momento especial (6b-2): carga momentos/<clave>.js la primera vez y lo corre; devuelve una promesa con true si empezó
-        // op.base fuerza la base de la skin (el /amistad de desarrollo muestra la variante de pareja sin cambiar de skin)
+        // Los cuatro cargadores (B3b, DISENO §40 decisión 7): primero una escena de escenas.json con su `dispara` (la más
+        // específica gana) y, si no hay, el módulo de JS como siempre. Promesa con true si empezó.
+        // Momento especial (6b-2): momentos/<clave>.js. op.base fuerza la base de la skin (el /amistad de desarrollo muestra
+        // la variante de pareja sin cambiar de skin)
         momento(clave, alTerminar, op = {}) {
             if (e) return Promise.resolve(false);
-            return import(`./momentos/${clave}.js`).then(m => {
-                const base = op.base !== undefined ? op.base : ctx.base ? ctx.base() : null;
-                const ok = iniciar(clave, { ...m.momento({ base, idioma }), tipo: 'momento' });
-                if (ok && alTerminar) e.alTerminar = alTerminar;
-                return ok;
-            }).catch(err => { console.error('No se pudo cargar el momento especial', err); return false; });
+            const base = op.base !== undefined ? op.base : ctx.base ? ctx.base() : null;
+            const datos = disparada({ tipo: 'momento', persona: clave, skin: base });
+            const cargar = datos ? guionDeEscena(datos, clave, base) : import(`./momentos/${clave}.js`).then(m => m.momento({ base, idioma }));
+            return cargar.then(g => !e && empezar(clave, { ...g, tipo: 'momento' }, alTerminar))
+                .catch(err => { console.error('No se pudo cargar el momento especial', err); return false; });
         },
         // Bienvenida del Venjy del Inicio a tu skin (6c-1): bienvenidas/<base>.js
         bienvenida(base, alTerminar) {
             if (e || !base || base === 'venjy' || !PERSONAJES.includes(base)) return Promise.resolve(false);
-            return import(`./bienvenidas/${base}.js`).then(m => {
-                const ok = iniciar('venjy', { ...m.bienvenida({ idioma }), tipo: 'bienvenida', base });
-                if (ok && alTerminar) e.alTerminar = alTerminar;
-                return ok;
-            }).catch(err => { console.error('No se pudo cargar la bienvenida', err); return false; });
+            const datos = disparada({ tipo: 'bienvenida', skin: base });
+            const cargar = datos ? guionDeEscena(datos, 'venjy', base) : import(`./bienvenidas/${base}.js`).then(m => m.bienvenida({ idioma }));
+            return cargar.then(g => !e && empezar('venjy', { ...g, tipo: 'bienvenida', base }, alTerminar))
+                .catch(err => { console.error('No se pudo cargar la bienvenida', err); return false; });
         },
         // Reencuentro entre tu skin (base) y un amigo con relación 2 o 3 (6c-1): reencuentros.js
         reencuentro(base, clave, alTerminar) {
             if (e || base === 'venjy' || clave === 'venjy' || relacion(base, clave) < 2) return Promise.resolve(false);
-            return import('./reencuentros.js').then(m => {
-                const g = m.reencuentro(base, clave);
-                const ok = !!g && iniciar(clave, { ...g, tipo: 'reencuentro', base });
-                if (ok && alTerminar) e.alTerminar = alTerminar;
-                return ok;
-            }).catch(err => { console.error('No se pudo cargar el reencuentro', err); return false; });
+            const datos = disparada({ tipo: 'reencuentro', skin: base, persona: clave });
+            const cargar = datos ? guionDeEscena(datos, clave, base) : import('./reencuentros.js').then(m => m.reencuentro(base, clave));
+            return cargar.then(g => !!g && !e && empezar(clave, { ...g, tipo: 'reencuentro', base }, alTerminar))
+                .catch(err => { console.error('No se pudo cargar el reencuentro', err); return false; });
         },
-        // Escena de grupo (6c-2): grupos/<nombre>.js con la variante de tu skin (base); devuelve una promesa con true si empezó
+        // Escena de grupo (6c-2): grupos/<nombre>.js con la variante de tu skin (base). En el JSON, 'n' es de quien parte
+        // `lugar.centro` (o el primer miembro que sale y no es tu skin: amigoDeEscena)
         grupo(nombre, base, alTerminar) {
             if (e || !GRUPOS[nombre] || !GRUPOS[nombre].miembros.includes(base)) return Promise.resolve(false);
-            return import(`./grupos/${nombre}.js`).then(m => {
-                const g = m.grupo(base, { idioma });
-                const ok = !!g && iniciar(g.ancla, { ...g, tipo: 'grupo', base, grupo: nombre });
-                if (ok && alTerminar) e.alTerminar = alTerminar;
-                return ok;
-            }).catch(err => { console.error('No se pudo cargar la escena de grupo', err); return false; });
+            const datos = disparada({ tipo: 'grupo', grupo: nombre, skin: base });
+            const def = datos && defDatos(datos);
+            const amigo = def && amigoDeEscena(def, def.dispara, base, GRUPOS[nombre].miembros);
+            if (datos && !amigo) return Promise.resolve(false);
+            const cargar = datos ? guionDeEscena(datos, amigo, base).then(g => ({ ...g, ancla: amigo })) : import(`./grupos/${nombre}.js`).then(m => m.grupo(base, { idioma }));
+            return cargar.then(g => !!g && !e && empezar(g.ancla, { ...g, tipo: 'grupo', base, grupo: nombre }, alTerminar))
+                .catch(err => { console.error('No se pudo cargar la escena de grupo', err); return false; });
         },
         // Claves de las escenas de tipo «guion» de escenas.json (las que se juegan con jugarGuion)
         guiones() { return Object.entries((datosEscenas && datosEscenas.escenas) || {}).filter(([, d]) => d && d.tipo === 'guion').map(([k]) => k); },
         get activa() { return !!e; },
-        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, base: e.guion.base || null, grupo: e.guion.grupo || null, t: e.t, T: e.T }; },
+        get escena() { return e && { clave: e.clave, tipo: e.guion.tipo || null, base: e.guion.base || null, grupo: e.guion.grupo || null, datos: e.guion.datos || null, t: e.t, T: e.T }; },
         setIdioma(l) { idioma = l; boton.textContent = tx().saltar; for (const [q, g] of globos) if (q === 'j' || q === 'todos') g.etiqueta = { nombre: q === 'j' ? tx().tu : tx().todos, color: COLOR_GLOBO.j }; },
         // Depuración (capturas)
         pausar(v = true) { pausada = v; },
