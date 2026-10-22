@@ -49,7 +49,7 @@ export const AYUDA = {
     },
     escenas: {
         que: ['Escenas cortas con gestos y frases (abrazos, saludos, guiones).', 'Short scenes with gestures and lines (hugs, greetings, scripts).'],
-        empezar: ['Elige una escena parecida a la que quieres, toca Reproducir y arrastra los bloques de la línea de tiempo.', 'Pick a scene close to the one you want, press Play and drag the blocks on the timeline.']
+        empezar: ['«Nueva escena» pregunta qué es y parte de una parecida; escribe las frases, toca «Acomodar frases» y suma objetos, efectos y sonidos en esta frase. La línea de tiempo está en Avanzado.', '«New scene» asks what it is and starts from a similar one; write the lines, press «Tidy up lines» and add objects, effects and sounds on this line. The timeline is in Advanced.']
     },
     poses: {
         que: ['Las poses y los gestos de los personajes (saludar, sentarse, bailar…).', 'Character poses and gestures (wave, sit, dance…).'],

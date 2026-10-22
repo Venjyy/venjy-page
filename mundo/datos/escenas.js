@@ -31,7 +31,7 @@ export function animacionDeDatos(def) {
 // arme el `reparto` según quién es el amigo y cuál es tu skin.
 export function guionDeDatos(def, { durLinea, moldes, personajes } = {}) {
     const { tipo, camara, nota, lineas, base, ...resto } = def;
-    const { pista, objetos, efectos, marcas } = def;
+    const { pista, objetos, efectos, sonidos, marcas } = def;
     const salida = {
         ...resto,
         ...(camara ? { camara } : {}),
@@ -42,6 +42,7 @@ export function guionDeDatos(def, { durLinea, moldes, personajes } = {}) {
     if (pista) salida.pista = Object.fromEntries(Object.entries(pista).map(([q, tramos]) => [q, tramos.map(tramoDeDatos)]));
     if (objetos) salida.objetos = objetos.map(o => objetoDeDatos(o, def.T));
     if (efectos) salida.efectos = efectos.map(([t, tipoEfecto, op]) => [t, tipoEfecto, quitarAncla(op || {})]);
+    if (sonidos) salida.sonidos = sonidos.map(x => [x[0], x[1]]);
     if (marcas) salida.marcas = Object.fromEntries(Object.entries(marcas).map(([k, m]) => [k, typeof m === 'number' ? m : m.t]));
     if (personajes) {
         const p = personasUsadas(def, new Set(personajes));
@@ -294,7 +295,10 @@ function reglasB3(clave, e, ctx) {
     const sonidos = e.sonidos || [];
     enOrden(`${donde}.sonidos`, sonidos.map(x => x[0]), false);
     const catSonidos = catalogo('sonidos');
-    sonidos.forEach(([, nombre], i) => { if (catSonidos && !catSonidos.has(nombre)) mal(`${donde}.sonidos[${i}]: el sonido «${nombre}» no existe`); });
+    sonidos.forEach(([t, nombre, op], i) => {
+        if (catSonidos && !catSonidos.has(nombre)) mal(`${donde}.sonidos[${i}]: el sonido «${nombre}» no existe`);
+        if (op) ancla(`${donde}.sonidos[${i}]`, op.ancla, t);
+    });
 
     for (const [k, m] of Object.entries(e.marcas || {})) {
         const t = typeof m === 'number' ? m : m.t;

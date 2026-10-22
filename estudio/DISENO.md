@@ -1432,6 +1432,16 @@ El esquema, `guionDeDatos` y las reglas los escribió B3a (2026-10-21; el juego 
   sonidos: «en esta frase, suena…». Los números finos (`mas`, `tam`) en «Avanzado».
 - **Lugar** del grupo: botón «Mover el centro» (gizmo de Posiciones), no números.
 
+**B3c (2026-10-22): el editor.** Modelo puro en `estudio/escenas-b3.mjs` (prueba `mundo/tests/estudio-escenas-b3.mjs`), interfaz en `estudio/escenas.js`. Lo que fijó al programarlo:
+- **Anclas**: `sincronizar` tras cada edición (arrastre, campos, texto de una frase): si lo editado tiene ancla, su `mas` se ajusta a donde quedó; luego `normalizar` recalcula todo lo anclado (tramos conservan su duración; un objeto arrastra su `hasta`). Al abrir una escena se normaliza sin pasar por el historial. Borrar una frase suelta las anclas que apuntaban a ella (el número queda) y baja las siguientes. Un elemento anclado que choca con su vecino de fila queda superpuesto: lo marca `validar` (el editor no lo empuja).
+- **«Acomodar frases»**: cada `a` = fin de la anterior + 0,15 (la primera se queda), las `d` apuradas suben a `durLinea`, las frases pierden su ancla propia (la cadena manda) y T crece si la última pasa. No hay `antes` (pausa) en el esquema: no se usa.
+- **Sonidos con ancla**: el esquema admite un 3.er elemento `[t, nombre, { ancla }]` (solo clave nueva; `guionDeDatos` lo quita y el motor lo ignora) para que «en esta frase, suena…» siga a la frase.
+- **Reloj automático**: `relojAuto` pone `reloj = desde − 0,4` a `secreto`, `abrazo` y `pareja` al soltarlos y lo corre al moverlos; un reloj que el dueño fijó distinto se respeta.
+- **Variantes**: `variante(escenas, clave, skin)` copia la escena, cambia solo `dispara.skin`, guarda `base` y **quita `revisado`** de los textos (el dueño los revisa de nuevo); no hay variantes de reencuentros ni se repite un `dispara`.
+- **Nueva escena** (`escenaNueva`): tipo (suelta, bienvenida, momento, reencuentro, grupo), con quién y base: en blanco, `corto`/`largo` (plantillas propias con gestos que ya existen, textos de relleno) o cualquier escena de guion. `Cuándo corre` reusa el formulario para cambiar o quitar el `dispara`.
+- **Vista simple**: frases como lista (quién, ES, EN), objetos («¿en qué mano?», «¿desde qué frase hasta cuál?»), efectos y sonidos «en esta frase»; línea de tiempo, zoom, panel del bloque elegido (con su ancla), `tam`/`mas` de objetos y efectos y el lugar del grupo, en Avanzado. `hasta` de un objeto es el número del fin de esa frase (no se mueve solo si esa frase se mueve sin «Acomodar»).
+- **No editable aún**: `giros`, `caminos`, `marcas`, `codigo` y `cambia`/`crece` de objetos (siguen en el JSON); el gizmo «Mover el centro» (hoy `lugar` se edita con números en Avanzado); gestos con nombre común y miniatura en el selector.
+
 ### Plan (PR chicos)
 
 | PR | Qué | Modelo |

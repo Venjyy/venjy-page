@@ -381,11 +381,15 @@
       "maxItems": 3
     },
     "sonido": {
-      "description": "[t, nombre]: suena un sonido de SONIDOS (moldes.js) o de sonidos del juego.",
+      "description": "[t, nombre] o [t, nombre, { ancla }]: suena un sonido de SONIDOS (moldes.js) o de sonidos del juego. El 3.º elemento es solo del editor (B3c): el juego lo ignora.",
       "type": "array",
-      "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "$ref": "comun.schema.json#/$defs/clave" }],
+      "prefixItems": [
+        { "$ref": "#/$defs/segundo" },
+        { "$ref": "comun.schema.json#/$defs/clave" },
+        { "type": "object", "properties": { "ancla": { "$ref": "#/$defs/ancla" } }, "additionalProperties": false }
+      ],
       "minItems": 2,
-      "maxItems": 2
+      "maxItems": 3
     },
     "marcasNombradas": {
       "description": "Instantes con nombre que mueve el dueño en la línea de tiempo y lee `codigo` (decisión 11). Cada uno: un número o { t, ancla }.",

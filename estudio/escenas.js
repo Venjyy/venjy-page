@@ -9,7 +9,8 @@
 // =========================================================
 import { formatear } from './formato.mjs';
 import * as M from './escenas-modelo.mjs';
-import { reglasEscenas } from '../mundo/datos/escenas.js';
+import * as B from './escenas-b3.mjs';
+import { reglasEscenas, sonidosDeEscena, tiempoDeAncla } from '../mundo/datos/escenas.js';
 import { gestosDeDatos } from '../mundo/datos/gestos.js';
 import { ANIMACIONES, FRASES_AMISTAD, GESTOS_AMISTAD } from '../mundo/supervivencia/escena-amistad-datos.js';
 
@@ -90,6 +91,7 @@ export async function montarEscenas(ctx) {
         if (motor) return motor;
         const nombres = new Set(Object.keys(GESTOS_AMISTAD));
         let dur = null, completo = false;
+        const cat = await cargarCatalogos();
         try {
             const [{ GESTOS }, { MOLDES }, re, poses] = await Promise.all([
                 import('../mundo/supervivencia/escenas-skin.js'),
@@ -103,18 +105,55 @@ export async function montarEscenas(ctx) {
         } catch (e) {
             console.warn('[estudio] no se pudieron importar los gestos del juego; no se validan los nombres', e);
         }
-        motor = { gestos: completo ? nombres : null, durLinea: dur, nombres };
+        motor = { gestos: completo ? nombres : null, durLinea: dur, nombres, cat };
         return motor;
     }
 
+    // Catálogos de las claves de B3 (personas, grupos, dibujos, sonidos): los mismos de `validar`. Cada import por separado; si uno
+    // falla, el editor sigue con lo que tenga (los selects se llenan con menos opciones y las reglas de catálogo no se aplican).
+    async function cargarCatalogos() {
+        const cat = { personas: null, grupos: null, iconos: null, pix: null, sonidos: null, codigos: null };
+        const intentar = async (nombre, f) => { try { await f(); } catch (e) { console.warn(`[estudio] catálogo de escenas sin ${nombre}`, e); } };
+        await Promise.all([
+            intentar('personas', async () => { const m = await import('../mundo/supervivencia/amistad.js'); cat.personas = [...m.PERSONAJES]; cat.grupos = Object.keys(m.GRUPOS); }),
+            intentar('dibujos', async () => {
+                const { PIX, SONIDOS } = await import('../mundo/supervivencia/moldes.js');
+                cat.pix = Object.keys(PIX);
+                const { sonidos } = await import('../mundo/supervivencia/sonidos.js');
+                cat.sonidos = Object.keys(sonidosDeEscena(SONIDOS, sonidos));
+            }),
+            intentar('íconos', async () => {
+                const r = await fetch('../mundo/datos/iconos.json', { cache: 'no-cache' });
+                cat.iconos = r.ok ? Object.keys((await r.json()).iconos || {}) : null;
+            }),
+            intentar('código', async () => { const m = await import('../mundo/supervivencia/codigo-escenas.js'); cat.codigos = Object.keys(m.CODIGO_ESCENAS); })
+        ]);
+        return cat;
+    }
+    const catalogo = () => (motor && motor.cat) || {};
+    // Personas y grupos aunque el catálogo no haya cargado
+    const listaPersonas = () => catalogo().personas || ['venjy', ...personas.filter(p => p !== 'venjy')];
+    const listaGrupos = () => catalogo().grupos || ['tomatitos', 'atalaya', 'coyhaique'];
+
     // ---------- Cambios ----------
     function ponerDef(def) { datos.escenas = { ...datos.escenas, [actual]: def }; }
-    // Aplica un resultado del modelo: historial, datos, juego y pantalla
-    function aplicar(res) {
+    // Después de editar `el` (frase o tramo; null si nada): el reloj de secreto, abrazo y pareja, y lo que cuelga de una frase
+    // (tramos, objetos, efectos y sonidos anclados) se recalcula. `antes` es la escena como estaba.
+    function pulir(despues, antes, el) {
+        let d = despues;
+        if (d.tipo !== 'guion') return d;
+        if (el && el.k === 'tramo') { const r = B.relojAuto(antes, d, el.q, el.i); if (r.cambio) d = r.def; }
+        const anclable = el && (el.k === 'frase' || el.k === 'tramo') ? el : null;
+        const s = B.sincronizar(d, anclable, durLinea());
+        return s.cambio ? s.def : d;
+    }
+    // Aplica un resultado del modelo: historial, datos, juego y pantalla. `el`: lo que se editó (por defecto, lo elegido en la línea).
+    // `quieto`: un panel que no se repinta (el que se está escribiendo, para no perder el foco).
+    function aplicar(res, el = sel, quieto = '') {
         if (!res || !res.cambio) return false;
         historial.meter(datos);
-        ponerDef(res.def);
-        pintar();
+        ponerDef(pulir(res.def, defActual(), el));
+        pintar(quieto);
         enviarAlJuego();
         return true;
     }
@@ -138,8 +177,16 @@ export async function montarEscenas(ctx) {
             ul.appendChild(li);
         }
     }
+    // Las anclas se recalculan al abrir (alguien pudo tocar el JSON a mano): sin pasar por el historial
+    function reacomodar() {
+        const d = datos.escenas[actual];
+        if (!d || d.tipo !== 'guion') return;
+        const n = B.normalizar(d, durLinea());
+        if (n.cambio) { ponerDef(n.def); enviarAlJuego(); }
+    }
     function elegirEscena(clave) {
         actual = clave;
+        reacomodar();
         sel = null;
         activa = false; pausada = false; tCab = 0;
         pintar();
@@ -302,6 +349,7 @@ export async function montarEscenas(ctx) {
         const nota = $('es-frase-nota');
         cuerpo.hidden = !sel || !d;
         if (!sel || !d) { titulo.textContent = t('Elige un bloque', 'Pick a block'); return; }
+        pintarAncla(d);
         const mostrar = (id, v) => { $(id).hidden = !v; };
         let desde = 0, hasta = null;
         mostrar('es-campo-gesto', sel.k === 'tramo');
@@ -448,7 +496,9 @@ export async function montarEscenas(ctx) {
         return reglasEscenas({ escenas: { [clave]: def } }, {
             gestos: motor && motor.gestos ? motor.gestos : null,
             animaciones: Object.keys(ANIMACIONES),
-            durLinea: durLinea()
+            durLinea: durLinea(),
+            // catálogos de B3 (los que no se pudieron cargar quedan fuera: esas reglas no se aplican)
+            ...Object.fromEntries(Object.entries(catalogo()).filter(([, v]) => v).map(([k, v]) => [k, new Set(v)]))
         });
     }
     function pintarAvisos() {
@@ -481,8 +531,10 @@ export async function montarEscenas(ctx) {
         $('es-deshacer').disabled = !historial.largo;
         $('es-descartar').disabled = !sucio();
     }
-    function pintar() {
-        pintarLista(); pintarBarra(); pintarLinea(); pintarCampos(); pintarCamara(); pintarAvisos(); pintarResumen();
+    function pintar(quieto = '') {
+        pintarLista(); pintarBarra(); pintarLinea(); pintarCampos(); pintarCamara(); pintarCuando();
+        if (quieto !== 'frases') pintarFrases();
+        pintarExtras(); pintarAvisos(); pintarResumen();
     }
 
     // ---------- Selector de gesto (filtrable) ----------
@@ -588,8 +640,8 @@ export async function montarEscenas(ctx) {
         const res = operar(arrastre.base, arrastre.s, arrastre.modo, dx);
         if (!arrastre.movido && !res.cambio) return;
         if (!arrastre.movido) { arrastre.movido = true; historial.meter(arrastre.antes); }
-        ponerDef(res.cambio ? res.def : arrastre.base);
-        pintarLinea(); pintarCampos(); pintarAvisos(); pintarLista(); pintarResumen();
+        ponerDef(res.cambio ? pulir(res.def, arrastre.base, arrastre.s) : arrastre.base);
+        pintarLinea(); pintarCampos(); pintarFrases(); pintarExtras(); pintarAvisos(); pintarLista(); pintarResumen();
         enviarAlJuego();
     });
     const soltar = ev => {
@@ -634,9 +686,9 @@ export async function montarEscenas(ctx) {
         if (!sel || !d) return;
         let res = null;
         if (sel.k === 'tramo') res = M.borrarTramo(d, sel.q, sel.i);
-        else if (sel.k === 'frase') res = M.borrarFrase(d, sel.i);
+        else if (sel.k === 'frase') res = borrarFraseConAnclas(d, sel.i);
         else res = M.borrarMarca(d, sel.k, sel.i);
-        if (res && res.cambio) { sel = null; aplicar(res); }
+        if (res && res.cambio) { sel = null; aplicar(res, null); }
     }
 
     // ---------- Campos de la barra y del panel ----------
@@ -680,15 +732,461 @@ export async function montarEscenas(ctx) {
     $('es-zoom-mas').addEventListener('click', () => { zoom = Math.min(6, zoom * 1.25); pintarLinea(); });
     $('es-zoom-menos').addEventListener('click', () => { zoom = Math.max(0.4, zoom / 1.25); pintarLinea(); });
 
-    $('es-nueva').addEventListener('click', () => {
+    // =========================================================
+    // B3c (DISENO §40, «Estudio»): vista simple. «Cuándo corre» (dispara, variantes y lugar), las frases como lista con «Acomodar
+    // frases», y objetos, efectos y sonidos «en esta frase». La línea de tiempo queda en Avanzado.
+    // =========================================================
+    const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto !== undefined) e.textContent = texto; return e; };
+    function selectDe(opciones, valor, aria) {
+        const s = el('select');
+        const lista = opciones.some(([v]) => v === valor) || valor === undefined ? opciones : [...opciones, [valor, String(valor)]];
+        for (const [v, txt] of lista) { const o = el('option', '', txt); o.value = v; s.appendChild(o); }
+        if (valor !== undefined) s.value = valor;
+        if (aria) s.setAttribute('aria-label', aria);
+        return s;
+    }
+    function campoDe(etiqueta, control, avanzado) {
+        const l = el('label', 'campo' + (avanzado ? ' solo-avanzado' : ''));
+        l.append(el('span', '', etiqueta), control);
+        return l;
+    }
+    function numeroDe(valor, paso, min, max) {
+        const i = el('input');
+        i.type = 'number'; i.step = String(paso);
+        if (min !== undefined) i.min = String(min);
+        if (max !== undefined) i.max = String(max);
+        i.value = valor === undefined || valor === null ? '' : String(valor);
+        return i;
+    }
+    const recorte = (txt, n = 26) => (txt.length > n ? txt.slice(0, n - 1) + '…' : txt);
+    const guionActual = () => { const d = defActual(); return d && d.tipo === 'guion' ? d : null; };
+    // «1 · Hola, ¿cómo…»: las frases como opciones de un select. `vacio`: texto de la opción sin frase
+    function opcionesFrase(d, vacio) {
+        return [['', vacio], ...(d.lineas || []).map((l, i) => [String(i), `${i + 1} · ${recorte((l.texto[ctx.idioma] || l.texto.es) || '')}`])];
+    }
+    const opcionesActor = d => [...M.filasDe(d).map(q => [q, etiquetaFila(q, d)]), ['todos', t('Todos', 'Everyone')]];
+    const numONulo = v => (Number.isFinite(v) ? v : null);
+
+    // ---------- Cuándo corre ----------
+    function textoDispara(dp) {
+        if (!dp) return t('Sin «cuándo»: solo se juega con /amistad guion y desde aquí.', 'No trigger: it only plays with /amistad guion and from here.');
+        if (dp.tipo === 'bienvenida') return t(`Bienvenida cuando eres ${nombreDe(dp.skin)}.`, `Welcome when you are ${nombreDe(dp.skin)}.`);
+        if (dp.tipo === 'momento') return t(`Momento con ${nombreDe(dp.persona)}${dp.skin ? `, cuando eres ${nombreDe(dp.skin)}` : ''}.`, `Moment with ${nombreDe(dp.persona)}${dp.skin ? `, when you are ${nombreDe(dp.skin)}` : ''}.`);
+        if (dp.tipo === 'reencuentro') return t(`Reencuentro entre ${nombreDe(dp.personas[0])} y ${nombreDe(dp.personas[1])}.`, `Reunion between ${nombreDe(dp.personas[0])} and ${nombreDe(dp.personas[1])}.`);
+        return t(`Grupo ${dp.grupo}${dp.skin ? `, cuando eres ${nombreDe(dp.skin)}` : ''}.`, `Group ${dp.grupo}${dp.skin ? `, when you are ${nombreDe(dp.skin)}` : ''}.`);
+    }
+    function pintarCuando() {
+        const d = guionActual();
+        $('es-cuando').hidden = !d;
+        if (!d) return;
+        $('es-cuando-texto').textContent = textoDispara(d.dispara);
+        $('es-cuando-quitar').disabled = !d.dispara;
+        const puedeVariante = !!d.dispara && d.dispara.tipo !== 'reencuentro';
+        $('es-variante').hidden = !puedeVariante;
+        $('es-variante-nota').hidden = !puedeVariante;
+        if (puedeVariante) {
+            const s = $('es-variante-skin'), antes = s.value;
+            s.textContent = '';
+            for (const p of listaPersonas().filter(p => p !== d.dispara.skin)) { const o = el('option', '', nombreDe(p)); o.value = p; s.appendChild(o); }
+            if (antes && [...s.options].some(o => o.value === antes)) s.value = antes;
+        }
+        pintarLugar(d);
+    }
+    // Lugar del grupo (Avanzado): desde quién y cuánto se corre. El gizmo «Mover el centro» de Posiciones queda pendiente (PENDIENTES)
+    function pintarLugar(d) {
+        const cont = $('es-lugar');
+        cont.textContent = '';
+        cont.appendChild(el('h3', '', t('Lugar del grupo', 'Group place')));
+        for (const [parte, etq] of [['centro', t('Centro (lo que todos miran)', 'Center (what everyone looks at)')], ['jugador', t('Dónde te paras', 'Where you stand')]]) {
+            const v = (d.lugar && d.lugar[parte]) || null;
+            const fila = el('div', 'es-extra-fila');
+            fila.dataset.parte = parte;
+            const actores = [...M.filasDe(d), ...listaPersonas().filter(p => !M.filasDe(d).includes(p))].map(q => [q, M.filasDe(d).includes(q) ? etiquetaFila(q, d) : nombreDe(q)]);
+            const desde = selectDe([['', t('— sin lugar propio —', '— no place of its own —')], ...(parte === 'jugador' ? [['centro', t('el centro', 'the center')]] : []), ...actores], v ? v.desde : '', etq);
+            desde.dataset.campo = 'desde';
+            fila.appendChild(campoDe(etq, desde));
+            const campos = el('div', 'campos');
+            ['x', 'y', 'z'].forEach((c, k) => { const n = numeroDe(v && v.mas ? v.mas[k] : 0, 0.05, -64, 64); n.dataset.campo = `mas${k}`; campos.appendChild(campoDe(c, n)); });
+            fila.appendChild(campos);
+            cont.appendChild(fila);
+        }
+    }
+    $('es-lugar').addEventListener('change', ev => {
+        const d = guionActual();
+        const fila = ev.target.closest('[data-parte]');
+        if (!d || !fila) return;
+        const desde = fila.querySelector('[data-campo="desde"]').value;
+        const mas = [0, 1, 2].map(k => fila.querySelector(`[data-campo="mas${k}"]`).valueAsNumber || 0);
+        aplicar(B.ponerLugar(d, fila.dataset.parte, desde ? { desde, mas } : null), null);
+    });
+
+    // ---------- Escena nueva / cambiar el «cuándo» (mismo formulario) ----------
+    let formModo = null; // 'nueva' | 'cambiar'
+    const TIPOS_FORM = [['suelta', 'Suelta (solo desde el Estudio)', 'Loose (Studio only)'], ['bienvenida', 'Bienvenida', 'Welcome'], ['momento', 'Momento', 'Moment'], ['reencuentro', 'Reencuentro', 'Reunion'], ['grupo', 'Grupo', 'Group']];
+    function llenarSelect(id, opciones, valor) {
+        const s = $(id);
+        s.textContent = '';
+        for (const [v, txt] of opciones) { const o = el('option', '', txt); o.value = v; s.appendChild(o); }
+        if (valor !== undefined && [...s.options].some(o => o.value === valor)) s.value = valor;
+    }
+    const personasOpc = () => listaPersonas().map(p => [p, nombreDe(p)]);
+    function pintarForm() {
+        if (!formModo) return;
+        const tipo = $('es-n-tipo').value;
+        $('es-n-c-skin').hidden = !['bienvenida', 'momento', 'grupo'].includes(tipo);
+        $('es-n-r-skin').textContent = tipo === 'bienvenida' ? t('Cuando eres', 'When you are') : t('Cuando eres (vacío = cualquiera)', 'When you are (empty = anyone)');
+        $('es-n-c-persona').hidden = tipo !== 'momento';
+        $('es-n-c-a').hidden = $('es-n-c-b').hidden = tipo !== 'reencuentro';
+        $('es-n-c-grupo').hidden = tipo !== 'grupo';
+        $('es-n-c-base').hidden = formModo !== 'nueva';
+        $('es-n-crear').textContent = formModo === 'nueva' ? t('Crear', 'Create') : t('Aplicar', 'Apply');
+        $('es-n-titulo').textContent = formModo === 'nueva' ? t('¿Qué es?', 'What is it?') : t('Cuándo corre', 'When it plays');
+    }
+    function abrirForm(modo) {
+        formModo = modo;
+        const dp = modo === 'cambiar' && guionActual() ? guionActual().dispara : null;
+        llenarSelect('es-n-tipo', TIPOS_FORM.map(([v, es, en]) => [v, t(es, en)]), dp ? dp.tipo : 'suelta');
+        const conVacio = [['', t('Cualquiera', 'Anyone')], ...personasOpc()];
+        llenarSelect('es-n-skin', conVacio, dp ? dp.skin || '' : 'venjy');
+        llenarSelect('es-n-persona', personasOpc(), dp ? dp.persona : undefined);
+        llenarSelect('es-n-a', personasOpc(), dp && dp.personas ? dp.personas[0] : undefined);
+        llenarSelect('es-n-b', personasOpc(), dp && dp.personas ? dp.personas[1] : listaPersonas()[1]);
+        llenarSelect('es-n-grupo', listaGrupos().map(g => [g, g]), dp ? dp.grupo : undefined);
+        const guiones = Object.entries(datos.escenas).filter(([, e]) => e.tipo === 'guion').map(([k]) => [k, k]);
+        llenarSelect('es-n-base', [['blanco', t('En blanco', 'Blank')], ...Object.entries(B.BASES).map(([k, b]) => [k, t(b.es, b.en)]), ...guiones], 'blanco');
+        $('es-n-aviso').textContent = '';
+        $('es-nueva-form').hidden = false;
+        pintarForm();
+    }
+    function cerrarForm() { formModo = null; $('es-nueva-form').hidden = true; }
+    function disparaDelForm() {
+        const tipo = $('es-n-tipo').value, skin = $('es-n-skin').value;
+        if (tipo === 'suelta') return { dp: null };
+        if (tipo === 'bienvenida') return skin ? { dp: { tipo, skin } } : { error: t('Elige con qué skin se dispara.', 'Pick the skin it triggers with.') };
+        if (tipo === 'momento') return { dp: { tipo, persona: $('es-n-persona').value, ...(skin ? { skin } : {}) } };
+        if (tipo === 'reencuentro') {
+            const a = $('es-n-a').value, b = $('es-n-b').value;
+            return a === b ? { error: t('Elige dos personas distintas.', 'Pick two different people.') } : { dp: { tipo, personas: [a, b] } };
+        }
+        return { dp: { tipo, grupo: $('es-n-grupo').value, ...(skin ? { skin } : {}) } };
+    }
+    const avisoForm = (es, en) => { $('es-n-aviso').textContent = t(es, en); };
+    $('es-n-tipo').addEventListener('change', pintarForm);
+    $('es-n-cancelar').addEventListener('click', cerrarForm);
+    $('es-nueva').addEventListener('click', () => (formModo === 'nueva' ? cerrarForm() : abrirForm('nueva')));
+    $('es-cuando-cambiar').addEventListener('click', () => { if (guionActual()) abrirForm('cambiar'); });
+    $('es-cuando-quitar').addEventListener('click', () => { const r = B.ponerDispara(datos.escenas, actual, null); if (r) aplicar(r, null); });
+    $('es-n-crear').addEventListener('click', () => {
+        const { dp, error } = disparaDelForm();
+        if (error) { $('es-n-aviso').textContent = error; return; }
+        if (formModo === 'cambiar') {
+            const r = B.ponerDispara(datos.escenas, actual, dp);
+            if (!r) { avisoForm('Otra escena ya se dispara igual.', 'Another scene already triggers the same way.'); return; }
+            cerrarForm();
+            aplicar(r, null);
+            return;
+        }
+        const r = B.escenaNueva(datos.escenas, dp, $('es-n-base').value);
+        if (r.error) { avisoForm(`La escena «${r.con}» ya se dispara igual.`, `Scene “${r.con}” already triggers the same way.`); return; }
         historial.meter(datos);
-        const clave = M.claveLibre([...Object.keys(datos.escenas), ...Object.keys(ANIMACIONES)], 'escena');
-        datos.escenas = { ...datos.escenas, [clave]: M.escenaNueva() };
-        actual = clave;
-        sel = null;
+        datos.escenas = { ...datos.escenas, [r.clave]: r.def };
+        actual = r.clave; sel = null; activa = false; pausada = false; tCab = 0;
+        cerrarForm();
         pintar();
         enviarAlJuego();
     });
+    // Duplicar como variante: otra escena completa que cambia solo la skin del dispara
+    $('es-variante-crear').addEventListener('click', () => {
+        const r = B.variante(datos.escenas, actual, $('es-variante-skin').value);
+        if (r.error) {
+            const m = { 'repetido': [`La escena «${r.con}» ya se dispara con esa skin.`, `Scene “${r.con}” already triggers with that skin.`] }[r.error];
+            if (m) rotular(m[0], m[1], 'error');
+            return;
+        }
+        historial.meter(datos);
+        datos.escenas = { ...datos.escenas, [r.clave]: r.def };
+        actual = r.clave; sel = null; activa = false; pausada = false; tCab = 0;
+        pintar();
+        enviarAlJuego();
+        rotular(`Variante «${r.clave}» creada.`, `Variant “${r.clave}” created.`, 'ok');
+    });
+
+    // ---------- Frases como lista ----------
+    function borrarFraseConAnclas(d, i) {
+        const res = M.borrarFrase(d, i);
+        if (!res.cambio) return res;
+        const rep = B.repararAnclasTrasBorrar(res.def, i);
+        return rep.cambio ? { ...res, def: rep.def } : res;
+    }
+    function pintarFrases() {
+        const d = guionActual();
+        $('es-frases-panel').hidden = !d;
+        if (!d) return;
+        const ol = $('es-frases'), lineas = d.lineas || [];
+        const opciones = [...opcionesActor(d), ...listaPersonas().filter(p => !M.filasDe(d).includes(p)).map(p => [p, nombreDe(p)])];
+        const firma = JSON.stringify([lineas.length, opciones, ctx.idioma]);
+        if (ol.dataset.firma !== firma) {
+            ol.textContent = '';
+            lineas.forEach((_, i) => {
+                const li = el('li', 'es-frase-fila');
+                li.dataset.i = String(i);
+                const cab = el('div', 'es-frase-cab');
+                const num = el('span', 'num');
+                const quien = selectDe(opciones, lineas[i].q, t('Quién la dice', 'Who says it'));
+                quien.className = 'quien'; quien.dataset.campo = 'q';
+                const borrar = el('button', 'boton chico secundario', t('Borrar', 'Delete'));
+                borrar.type = 'button'; borrar.dataset.accion = 'borrar';
+                cab.append(num, quien, borrar);
+                const es = el('textarea'), en = el('textarea');
+                es.rows = en.rows = 2; es.maxLength = en.maxLength = 400;
+                es.dataset.campo = 'es'; en.dataset.campo = 'en';
+                es.setAttribute('aria-label', t('Texto en español', 'Spanish text')); en.setAttribute('aria-label', t('Texto en inglés', 'English text'));
+                li.append(cab, es, en, el('p', 'mensaje nota'));
+                ol.appendChild(li);
+            });
+            ol.dataset.firma = firma;
+        }
+        const frases = M.frasesDe(d, durLinea());
+        const minimo = durLinea();
+        lineas.forEach((l, i) => {
+            const li = ol.children[i], f = frases[i];
+            li.querySelector('.num').textContent = `${i + 1} · ${f.a}–${M.encajar(f.a + f.d)} s${l.ancla ? ' ⚓' : ''}`;
+            const q = li.querySelector('[data-campo="q"]');
+            if (q.value !== l.q) q.value = l.q;
+            for (const [c, v] of [['es', l.texto.es], ['en', l.texto.en]]) {
+                const ta = li.querySelector(`[data-campo="${c}"]`);
+                if (document.activeElement !== ta && ta.value !== v) ta.value = v;
+            }
+            const apurada = f.propia && f.d < minimo(l.texto) - 1e-9;
+            li.classList.toggle('apurada', apurada);
+            li.querySelector('.nota').textContent = apurada ? t(`Apurada: se necesitan ${minimo(l.texto)} s para leerla. «Acomodar frases» la alarga.`, `Hurried: reading it takes ${minimo(l.texto)} s. “Tidy up lines” lengthens it.`) : '';
+            li.querySelector('[data-accion="borrar"]').disabled = lineas.length <= 1;
+        });
+    }
+    $('es-frases').addEventListener('change', ev => {
+        const d = guionActual(), c = ev.target.closest('[data-campo]'), li = ev.target.closest('li');
+        if (!d || !c || !li) return;
+        const i = Number(li.dataset.i);
+        const campos = c.dataset.campo === 'q' ? { q: c.value } : { [c.dataset.campo]: c.value.trim() };
+        aplicar(M.cambiarFrase(d, i, campos), { k: 'frase', i }, 'frases');
+    });
+    $('es-frases').addEventListener('click', ev => {
+        const d = guionActual(), b = ev.target.closest('[data-accion="borrar"]'), li = ev.target.closest('li');
+        if (!d || !b || !li) return;
+        sel = null;
+        aplicar(borrarFraseConAnclas(d, Number(li.dataset.i)), null);
+    });
+    $('es-acomodar').addEventListener('click', () => {
+        const d = guionActual();
+        if (!d) return;
+        if (!aplicar(B.acomodarFrases(d, durLinea()), null)) rotular('Las frases ya están acomodadas.', 'The lines are already tidy.');
+        else rotular('Frases acomodadas.', 'Lines tidied up.', 'ok');
+    });
+    $('es-frase-nueva').addEventListener('click', () => {
+        const d = guionActual();
+        if (!d) return;
+        const frases = M.frasesDe(d, durLinea());
+        const fin = frases.reduce((m, f) => Math.max(m, f.a + f.d), 0);
+        const res = M.agregarFrase(d, 'n', Math.min(d.T - M.MIN_FRASE, fin + B.HUECO));
+        if (res) { sel = null; aplicar(res, { k: 'frase', i: res.i }); }
+    });
+
+    // ---------- Objetos, efectos y sonidos ----------
+    const NOMBRE_HUESO = { brazoD: ['Mano derecha', 'Right hand'], brazoI: ['Mano izquierda', 'Left hand'], cabeza: ['Cabeza', 'Head'], cuerpo: ['Cuerpo', 'Body'] };
+    const NOMBRE_EFECTO = { chispa: ['Chispa', 'Spark'], corazon: ['Corazón', 'Heart'], humo: ['Humo', 'Smoke'], nieve: ['Nieve', 'Snow'] };
+    const dibujosDisponibles = () => {
+        const c = catalogo();
+        const lista = [...new Set([...(c.iconos || []), ...(c.pix || [])])];
+        return lista.length ? lista : ['tomate', 'celular', 'concha'];
+    };
+    const sonidosDisponibles = () => catalogo().sonidos || ['golpe', 'nivel', 'mar'];
+    const filaExtra = (clase, i) => { const li = el('li', 'es-extra-fila ' + clase); li.dataset.i = String(i); return li; };
+    const botonBorrar = () => { const b = el('button', 'boton chico secundario', t('Borrar', 'Delete')); b.type = 'button'; b.dataset.accion = 'borrar'; return b; };
+    // Select de frase que refleja un ancla al inicio de una frase; si hay un número suelto, lo muestra como opción aparte
+    function selectFrase(d, ancla, vacio, tSuelto) {
+        const opc = opcionesFrase(d, vacio);
+        let valor = ancla && ancla.de === 'inicio' ? String(ancla.frase) : '';
+        if (!valor && tSuelto !== undefined) { valor = '__t'; opc.push(['__t', t(`en el segundo ${tSuelto}`, `at second ${tSuelto}`)]); }
+        return selectDe(opc, valor);
+    }
+
+    function pintarExtras() {
+        const d = guionActual();
+        $('es-extras').hidden = !d;
+        if (!d) return;
+        // Objetos
+        const ulo = $('es-objetos');
+        ulo.textContent = '';
+        const dib = dibujosDisponibles();
+        llenarSelect('es-objeto-dibujo', dib.map(k => [k, k]));
+        (d.objetos || []).forEach((o, i) => {
+            const li = filaExtra('objeto', i);
+            const dibujo = selectDe(dib.map(k => [k, k]), typeof o.dibujo === 'string' ? o.dibujo : '', t('Dibujo', 'Drawing'));
+            dibujo.dataset.campo = 'dibujo';
+            if (typeof o.dibujo !== 'string') dibujo.disabled = true;
+            li.appendChild(campoDe(`${i + 1} · ${t('Dibujo', 'Drawing')}`, dibujo));
+            if (o.en.hueso !== undefined) {
+                const cam = el('div', 'campos');
+                const q = selectDe(opcionesActor(d), o.en.q); q.dataset.campo = 'q';
+                const mano = selectDe(B.HUESOS.map(h => [h, t(...NOMBRE_HUESO[h])]), o.en.hueso); mano.dataset.campo = 'hueso';
+                cam.append(campoDe(t('¿De quién?', 'Whose?'), q), campoDe(t('¿En qué mano?', 'In which hand?'), mano));
+                li.appendChild(cam);
+            } else {
+                li.appendChild(el('p', 'mensaje', t('Puesto en el mundo (su lugar se edita en el JSON).', 'Placed in the world (its place is edited in the JSON).')));
+            }
+            const cam2 = el('div', 'campos');
+            const desde = selectFrase(d, o.ancla, t('Desde el principio', 'From the start'), o.ancla ? undefined : o.desde);
+            desde.dataset.campo = 'desde';
+            const fh = o.hasta !== undefined ? B.fraseQueTermina(d, o.hasta, durLinea()) : -1;
+            const hOpc = [['', t('Hasta el final', 'Until the end')], ...(d.lineas || []).map((l, k) => [String(k), `${k + 1} · ${recorte((l.texto[ctx.idioma] || l.texto.es) || '')}`])];
+            if (o.hasta !== undefined && fh < 0) hOpc.push(['__t', t(`hasta el segundo ${o.hasta}`, `until second ${o.hasta}`)]);
+            const hasta = selectDe(hOpc, o.hasta === undefined ? '' : fh >= 0 ? String(fh) : '__t'); hasta.dataset.campo = 'hasta';
+            cam2.append(campoDe(t('¿Desde qué frase?', 'From which line?'), desde), campoDe(t('¿Hasta qué frase (termina)?', 'Until which line (ends)?'), hasta));
+            li.appendChild(cam2);
+            const cam3 = el('div', 'campos solo-avanzado');
+            const tam = numeroDe(o.tam, 0.05, 0.05, 8); tam.dataset.campo = 'tam'; tam.placeholder = '0.4';
+            cam3.appendChild(campoDe(t('Tamaño', 'Size'), tam));
+            ['x', 'y', 'z'].forEach((c, k) => { const n = numeroDe(o.en.mas ? o.en.mas[k] : 0, 0.05, -64, 64); n.dataset.campo = `mas${k}`; cam3.appendChild(campoDe(c, n)); });
+            li.appendChild(cam3);
+            li.appendChild(botonBorrar());
+            ulo.appendChild(li);
+        });
+        // Efectos
+        const ule = $('es-efectos');
+        ule.textContent = '';
+        (d.efectos || []).forEach(([tt, tipo, op], i) => {
+            op = op || {};
+            const li = filaExtra('efecto', i);
+            const cam = el('div', 'campos');
+            const sTipo = selectDe(B.EFECTOS.map(k => [k, t(...NOMBRE_EFECTO[k])]), tipo); sTipo.dataset.campo = 'nombre';
+            const sFrase = selectFrase(d, op.ancla, t('En el segundo…', 'At second…'), undefined); sFrase.dataset.campo = 'frase';
+            const sT = numeroDe(tt, 0.05, 0, d.T); sT.dataset.campo = 't';
+            cam.append(campoDe(`${i + 1} · ${t('Efecto', 'Effect')}`, sTipo), campoDe(t('En esta frase', 'On this line'), sFrase), campoDe(t('Segundo', 'Second'), sT));
+            li.appendChild(cam);
+            const cam2 = el('div', 'campos solo-avanzado');
+            const en = selectDe([['', t('Entre los dos', 'Between both')], ['centro', t('El centro', 'The center')], ...M.filasDe(d).map(q => [q, etiquetaFila(q, d)])], op.en === undefined ? '' : op.en); en.dataset.campo = 'en';
+            const alto = numeroDe(op.alto, 0.1, 0, 8); alto.dataset.campo = 'alto'; alto.placeholder = '1.8';
+            const tam = numeroDe(op.tam, 0.05, 0.05, 8); tam.dataset.campo = 'tam';
+            const n = numeroDe(op.n, 1, 1, 64); n.dataset.campo = 'n'; n.placeholder = '1';
+            cam2.append(campoDe(t('Dónde', 'Where'), en), campoDe(t('Alto', 'Height'), alto), campoDe(t('Tamaño', 'Size'), tam), campoDe(t('Cuántos', 'How many'), n));
+            li.append(cam2, botonBorrar());
+            ule.appendChild(li);
+        });
+        // Sonidos
+        const uls = $('es-sonidos');
+        uls.textContent = '';
+        const sonidos = sonidosDisponibles();
+        (d.sonidos || []).forEach(([tt, nombre, op], i) => {
+            const li = filaExtra('sonido', i);
+            const cam = el('div', 'campos');
+            const sN = selectDe(sonidos.map(k => [k, k]), nombre); sN.dataset.campo = 'nombre';
+            const sFrase = selectFrase(d, op && op.ancla, t('En el segundo…', 'At second…'), undefined); sFrase.dataset.campo = 'frase';
+            const sT = numeroDe(tt, 0.05, 0, d.T); sT.dataset.campo = 't';
+            cam.append(campoDe(`${i + 1} · ${t('Suena', 'Plays')}`, sN), campoDe(t('En esta frase', 'On this line'), sFrase), campoDe(t('Segundo', 'Second'), sT));
+            li.append(cam, botonBorrar());
+            uls.appendChild(li);
+        });
+    }
+    // Un cambio de una fila de objetos, efectos o sonidos: se aplica y se repinta (sin tocar lo elegido en la línea)
+    function cambioExtra(ev, accion) {
+        const d = guionActual(), c = ev.target.closest('[data-campo]'), li = ev.target.closest('li');
+        if (!d || !c || !li) return;
+        accion(d, Number(li.dataset.i), c.dataset.campo, c, li);
+    }
+    $('es-objetos').addEventListener('change', ev => cambioExtra(ev, (d, i, campo, c, li) => {
+        const o = d.objetos[i];
+        if (campo === 'desde' || campo === 'hasta') {
+            if (c.value === '__t') return;
+            const fa = campo === 'desde' ? (c.value === '' ? null : Number(c.value)) : (o.ancla && o.ancla.de === 'inicio' ? o.ancla.frase : null);
+            const fhActual = o.hasta !== undefined ? B.fraseQueTermina(d, o.hasta, durLinea()) : -1;
+            const fb = campo === 'hasta' ? (c.value === '' ? null : Number(c.value)) : (fhActual >= 0 ? fhActual : null);
+            const res = B.objetoEntreFrases(d, i, fa, fb, durLinea());
+            if (!aplicar(res, null)) { rotular('«Hasta» tiene que terminar después de donde empieza.', '“Until” must end after where it starts.', 'error'); pintarExtras(); }
+            return;
+        }
+        let campos;
+        if (campo.startsWith('mas')) campos = { mas: [0, 1, 2].map(k => li.querySelector(`[data-campo="mas${k}"]`).valueAsNumber || 0) };
+        else if (campo === 'tam') campos = { tam: numONulo(c.valueAsNumber) };
+        else campos = { [campo]: c.value };
+        aplicar(B.cambiarObjeto(d, i, campos), null);
+    }));
+    $('es-efectos').addEventListener('change', ev => cambioExtra(ev, (d, i, campo, c) => {
+        let campos;
+        if (campo === 'frase') campos = { frase: c.value === '' || c.value === '__t' ? null : Number(c.value) };
+        else if (campo === 't') campos = { t: c.valueAsNumber };
+        else if (campo === 'nombre') campos = { nombre: c.value };
+        else if (campo === 'en') campos = { en: c.value || null };
+        else campos = { [campo]: numONulo(c.valueAsNumber) };
+        aplicar(B.cambiarEvento(d, 'efecto', i, campos, durLinea()), null);
+    }));
+    $('es-sonidos').addEventListener('change', ev => cambioExtra(ev, (d, i, campo, c) => {
+        let campos;
+        if (campo === 'frase') campos = { frase: c.value === '' || c.value === '__t' ? null : Number(c.value) };
+        else if (campo === 't') campos = { t: c.valueAsNumber };
+        else campos = { nombre: c.value };
+        aplicar(B.cambiarEvento(d, 'sonido', i, campos, durLinea()), null);
+    }));
+    for (const [id, k] of [['es-objetos', 'objeto'], ['es-efectos', 'efecto'], ['es-sonidos', 'sonido']]) {
+        $(id).addEventListener('click', ev => {
+            const d = guionActual(), b = ev.target.closest('[data-accion="borrar"]'), li = ev.target.closest('li');
+            if (!d || !b || !li) return;
+            const i = Number(li.dataset.i);
+            aplicar(k === 'objeto' ? B.borrarObjeto(d, i) : B.borrarEvento(d, k, i), null);
+        });
+    }
+    $('es-objeto-agregar').addEventListener('click', () => {
+        const d = guionActual();
+        if (d) aplicar(B.agregarObjeto(d, $('es-objeto-dibujo').value, 'n', 'brazoD'), null);
+    });
+    // Un efecto o sonido nuevo cae en el cabezal (o en el segundo 1 si está al principio)
+    const instanteNuevo = d => Math.max(0.05, Math.min(d.T - 0.05, tCab > 0 ? tCab : 1));
+    $('es-efecto-agregar').addEventListener('click', () => {
+        const d = guionActual();
+        if (d) aplicar(B.agregarEvento(d, 'efecto', 'chispa', instanteNuevo(d), {}, durLinea()), null);
+    });
+    $('es-sonido-agregar').addEventListener('click', () => {
+        const d = guionActual();
+        if (d) aplicar(B.agregarEvento(d, 'sonido', sonidosDisponibles().includes('golpe') ? 'golpe' : sonidosDisponibles()[0], instanteNuevo(d), {}, durLinea()), null);
+    });
+
+    // ---------- Ancla del elemento elegido (Avanzado) ----------
+    function pintarAncla(d) {
+        const campo = $('es-campo-ancla');
+        const puede = !!sel && (sel.k === 'frase' || sel.k === 'tramo') && d.tipo === 'guion';
+        campo.hidden = !puede;
+        if (!puede) return;
+        const a = B.acceso(d, sel);
+        const ancla = a && a.ancla;
+        const hasta = sel.k === 'frase' ? sel.i : (d.lineas || []).length; // una frase solo depende de una anterior
+        const opc = opcionesFrase(d, t('— sin ancla —', '— no anchor —')).filter(([v]) => v === '' || Number(v) < hasta);
+        const s = $('es-ancla-frase');
+        s.textContent = '';
+        for (const [v, txt] of opc) { const o = el('option', '', txt); o.value = v; s.appendChild(o); }
+        s.value = ancla ? String(ancla.frase) : '';
+        $('es-ancla-de').value = ancla ? ancla.de : 'fin';
+        $('es-ancla-mas').value = ancla ? String(ancla.mas || 0) : '';
+        $('es-ancla-de').disabled = $('es-ancla-mas').disabled = !ancla;
+    }
+    function cambiarAncla(ev) {
+        const d = guionActual();
+        if (!d || !sel || !(sel.k === 'frase' || sel.k === 'tramo')) return;
+        const frase = $('es-ancla-frase').value;
+        if (frase === '') { aplicar(B.quitarAncla(d, sel)); return; }
+        const de = $('es-ancla-de').value;
+        const fijada = B.fijarAncla(d, sel, Number(frase), de, durLinea());
+        if (!fijada) { rotular('No se puede anclar a esa frase.', 'Cannot anchor to that line.', 'error'); pintarCampos(); return; }
+        let def = fijada.cambio ? fijada.def : d;
+        const mas = $('es-ancla-mas').valueAsNumber;
+        if (ev.target.id === 'es-ancla-mas' && Number.isFinite(mas)) {
+            const base = tiempoDeAncla(def.lineas, { frase: Number(frase), de, mas: 0 }, durLinea());
+            const destino = Math.round((base + mas) * 100) / 100;
+            const mov = sel.k === 'tramo' ? M.moverTramo(def, sel.q, sel.i, destino) : M.moverFrase(def, sel.i, destino, durLinea());
+            if (mov.cambio) def = mov.def;
+            else rotular('No cabe ahí: el bloque vecino lo detiene.', 'It does not fit there: the neighbouring block stops it.', 'error');
+        }
+        aplicar({ def, cambio: JSON.stringify(def) !== JSON.stringify(d) });
+    }
+    for (const id of ['es-ancla-frase', 'es-ancla-de', 'es-ancla-mas']) $(id).addEventListener('change', cambiarAncla);
 
     // ---------- Juego: puntero libre, Reproducir, Pausa, Parar, Ir a ----------
     // Mientras la pestaña está abierta el mouse no puede quedar capturado por el juego (se comería los clics del editor)
@@ -820,6 +1318,7 @@ export async function montarEscenas(ctx) {
         if (clave !== 'escenas') { cerrarSelector(); punteroLibre(false); return; }
         punteroLibre(true);
         await cargarMotor();
+        reacomodar();
         if (!arrastre) pintar(); // con un arrastre en curso se repinta al soltar
     });
 

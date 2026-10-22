@@ -225,8 +225,8 @@
                         <button id="es-jugar" class="boton chico" type="button" data-es="Reproducir" data-en="Play">Reproducir</button>
                         <button id="es-pausa" class="boton chico secundario" type="button" data-es="Pausa" data-en="Pause">Pausa</button>
                         <button id="es-parar" class="boton chico secundario" type="button" data-es="Parar" data-en="Stop">Parar</button>
-                        <button id="es-zoom-menos" class="boton chico secundario" type="button" data-es="Zoom −" data-en="Zoom −">Zoom −</button>
-                        <button id="es-zoom-mas" class="boton chico secundario" type="button" data-es="Zoom +" data-en="Zoom +">Zoom +</button>
+                        <button id="es-zoom-menos" class="boton chico secundario solo-avanzado" type="button" data-es="Zoom −" data-en="Zoom −">Zoom −</button>
+                        <button id="es-zoom-mas" class="boton chico secundario solo-avanzado" type="button" data-es="Zoom +" data-en="Zoom +">Zoom +</button>
                     </div>
                     <span id="es-tiempo" class="etiqueta-perfil">t 0.00 / 0 s</span>
                 </div>
@@ -234,12 +234,12 @@
                     <input id="es-ir-junto" type="checkbox" checked>
                     <span data-es="Viajar junto a la persona al reproducir" data-en="Travel next to the person when playing">Viajar junto a la persona al reproducir</span>
                 </label>
-                <div id="es-linea" class="es-linea" tabindex="0"></div>
-                <div id="es-selector" class="es-selector" hidden>
+                <div id="es-linea" class="es-linea solo-avanzado" tabindex="0"></div>
+                <div id="es-selector" class="es-selector solo-avanzado" hidden>
                     <input id="es-selector-texto" type="text" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Buscar gesto…">
                     <ul id="es-selector-lista"></ul>
                 </div>
-                <p class="ayuda" data-es="Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace."
+                <p class="ayuda solo-avanzado" data-es="Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace."
                    data-en="Drag a block to move it and its edges to stretch it (snaps to 0.05 s and stops against its neighbour). Double-click an empty row to add; Del removes; click the ruler to jump to that moment. Ctrl+S saves, Ctrl+Z undoes.">Arrastra un bloque para moverlo y sus bordes para estirarlo (encaja a 0,05 s y se detiene contra el vecino). Doble clic en una fila vacía agrega; Supr borra; clic en la regla salta a ese instante. Ctrl+S guarda, Ctrl+Z deshace.</p>
             </div>
             <div id="po-zona" hidden>
@@ -557,8 +557,57 @@
                     <div class="fila-botones">
                         <button id="es-nueva" class="boton chico" type="button" data-es="Nueva escena" data-en="New scene">Nueva escena</button>
                     </div>
+                    <div id="es-nueva-form" class="es-form" hidden>
+                        <label class="campo"><span id="es-n-titulo" data-es="¿Qué es?" data-en="What is it?">¿Qué es?</span><select id="es-n-tipo"></select></label>
+                        <label class="campo" id="es-n-c-skin"><span id="es-n-r-skin" data-es="Con tu skin" data-en="With your skin">Con tu skin</span><select id="es-n-skin"></select></label>
+                        <label class="campo" id="es-n-c-persona"><span data-es="Con quién" data-en="With whom">Con quién</span><select id="es-n-persona"></select></label>
+                        <label class="campo" id="es-n-c-a"><span data-es="Primera persona" data-en="First person">Primera persona</span><select id="es-n-a"></select></label>
+                        <label class="campo" id="es-n-c-b"><span data-es="Segunda persona" data-en="Second person">Segunda persona</span><select id="es-n-b"></select></label>
+                        <label class="campo" id="es-n-c-grupo"><span data-es="Grupo" data-en="Group">Grupo</span><select id="es-n-grupo"></select></label>
+                        <label class="campo" id="es-n-c-base"><span data-es="Partir de" data-en="Start from">Partir de</span><select id="es-n-base"></select></label>
+                        <p id="es-n-aviso" class="mensaje" role="status"></p>
+                        <div class="fila-botones">
+                            <button id="es-n-crear" class="boton chico" type="button" data-es="Crear" data-en="Create">Crear</button>
+                            <button id="es-n-cancelar" class="boton chico secundario" type="button" data-es="Cancelar" data-en="Cancel">Cancelar</button>
+                        </div>
+                    </div>
                 </section>
-                <section class="panel">
+                <section class="panel" id="es-cuando">
+                    <h2 data-es="Cuándo corre" data-en="When it plays">Cuándo corre</h2>
+                    <p id="es-cuando-texto" class="mensaje"></p>
+                    <div class="fila-botones">
+                        <button id="es-cuando-cambiar" class="boton chico secundario" type="button" data-es="Cambiar" data-en="Change">Cambiar</button>
+                        <button id="es-cuando-quitar" class="boton chico secundario" type="button" data-es="Quitar" data-en="Remove">Quitar</button>
+                    </div>
+                    <div class="fila-botones" id="es-variante">
+                        <select id="es-variante-skin" aria-label="Skin"></select>
+                        <button id="es-variante-crear" class="boton chico" type="button" data-es="Duplicar como variante" data-en="Duplicate as variant">Duplicar como variante</button>
+                    </div>
+                    <p id="es-variante-nota" class="ayuda" data-es="Una variante es otra escena completa que cambia solo la skin con la que se dispara; sus textos quedan sin revisar." data-en="A variant is another full scene that changes only the skin it triggers with; its texts are left unreviewed.">Una variante es otra escena completa que cambia solo la skin con la que se dispara; sus textos quedan sin revisar.</p>
+                    <div id="es-lugar" class="solo-avanzado"></div>
+                </section>
+                <section class="panel" id="es-frases-panel">
+                    <h2 data-es="Frases" data-en="Lines">Frases</h2>
+                    <div class="fila-botones">
+                        <button id="es-acomodar" class="boton chico" type="button" data-es="Acomodar frases" data-en="Tidy up lines">Acomodar frases</button>
+                        <button id="es-frase-nueva" class="boton chico secundario" type="button" data-es="Agregar frase" data-en="Add line">Agregar frase</button>
+                    </div>
+                    <p class="ayuda" data-es="Acomodar pone cada frase 0,15 s después de la anterior, alarga las apuradas hasta lo que se alcanza a leer y mueve con ellas los objetos, efectos y sonidos que están en una frase." data-en="Tidy up puts each line 0.15 s after the previous one, lengthens hurried ones to what can be read, and moves objects, effects and sounds set on a line along with it.">Acomodar pone cada frase 0,15 s después de la anterior, alarga las apuradas hasta lo que se alcanza a leer y mueve con ellas los objetos, efectos y sonidos que están en una frase.</p>
+                    <ol id="es-frases" class="es-frases-lista"></ol>
+                </section>
+                <section class="panel" id="es-extras">
+                    <h2 data-es="Objetos, efectos y sonidos" data-en="Objects, effects and sounds">Objetos, efectos y sonidos</h2>
+                    <h3 data-es="Objetos" data-en="Objects">Objetos</h3>
+                    <ul id="es-objetos" class="es-extra-lista"></ul>
+                    <div class="fila-botones"><select id="es-objeto-dibujo" aria-label="Dibujo"></select><button id="es-objeto-agregar" class="boton chico" type="button" data-es="Agregar objeto" data-en="Add object">Agregar objeto</button></div>
+                    <h3 data-es="Efectos" data-en="Effects">Efectos</h3>
+                    <ul id="es-efectos" class="es-extra-lista"></ul>
+                    <div class="fila-botones"><button id="es-efecto-agregar" class="boton chico" type="button" data-es="Agregar efecto" data-en="Add effect">Agregar efecto</button></div>
+                    <h3 data-es="Sonidos" data-en="Sounds">Sonidos</h3>
+                    <ul id="es-sonidos" class="es-extra-lista"></ul>
+                    <div class="fila-botones"><button id="es-sonido-agregar" class="boton chico" type="button" data-es="Agregar sonido" data-en="Add sound">Agregar sonido</button></div>
+                </section>
+                <section class="panel solo-avanzado">
                     <h2 id="es-elegido-titulo" data-es="Elige un bloque" data-en="Pick a block">Elige un bloque</h2>
                     <div id="es-campos" hidden>
                         <div id="es-campo-gesto" class="campo">
@@ -581,6 +630,11 @@
                             <span data-es="Texto en inglés" data-en="English text">Texto en inglés</span>
                             <textarea id="es-texto-en" rows="3" maxlength="400"></textarea>
                         </label>
+                        <div id="es-campo-ancla" class="campos">
+                            <label class="campo"><span data-es="Depende de la frase" data-en="Depends on line">Depende de la frase</span><select id="es-ancla-frase"></select></label>
+                            <label class="campo"><span data-es="De" data-en="Of">De</span><select id="es-ancla-de"><option value="inicio" data-es="su inicio" data-en="its start">su inicio</option><option value="fin" data-es="su fin" data-en="its end">su fin</option></select></label>
+                            <label class="campo"><span data-es="Más (s)" data-en="Plus (s)">Más (s)</span><input id="es-ancla-mas" type="number" step="0.05" min="-30" max="30"></label>
+                        </div>
                         <p id="es-frase-nota" class="mensaje"></p>
                         <button id="es-borrar" class="boton chico secundario" type="button" data-es="Borrar (Supr)" data-en="Delete (Del)">Borrar (Supr)</button>
                     </div>

@@ -184,6 +184,20 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .es-plano .es-plano-nombre { width: 100%; padding: 4px 6px; font: inherit; font-size: 0.9rem; color: var(--blanco); background: #000; border: 2px solid #6a6a6a; box-sizing: border-box; }
 .es-plano .es-plano-nombre:focus { outline: none; border-color: var(--blanco); }
 .es-plano .fila-botones { flex-wrap: wrap; }
+/* B3c: formulario de escena nueva, frases como lista y objetos, efectos y sonidos */
+.es-form { border: 2px solid var(--borde, #555); padding: 8px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.es-form[hidden] { display: none; }
+.es-form .campo select { width: 100%; }
+.es-frases-lista, .es-extra-lista { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.es-frase-fila, .es-extra-fila { border: 2px solid var(--borde, #555); padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.es-frase-fila.apurada { border-color: #d8a020; }
+.es-frase-fila textarea, .es-extra-fila input[type="number"], .es-extra-fila select { width: 100%; box-sizing: border-box; }
+.es-frase-cab { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 0.85rem; }
+.es-frase-cab .quien { flex: 1; min-width: 0; }
+.es-extra-fila .campos { grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
+.es-extra-fila .fila-botones { flex-wrap: wrap; }
+#es-extras h3 { margin: 10px 0 6px; font-size: 1rem; }
+#es-lugar { margin-top: 8px; }
 .campos .campo.ancho { grid-column: 1 / -1; }
 .campos[hidden] { display: none; }
 
