@@ -260,5 +260,54 @@ ok((await enviar({ tipo: 'pose', clave: '', canales: {} })).tipo === 'error', 'c
 ok((await enviar({ tipo: 'pose', clave: 'andy', canales: [1] })).tipo === 'error', 'canales no objeto');
 ok((await crearManejador({ idioma: () => 'es', aplicarDatos() {} })({ de: 'estudio', tipo: 'pose', clave: 'andy', canales: {} })).tipo === 'error', 'juego sin pose: error');
 
+// ---------- Vista simple (B0-P): canales principales, bases, lados y suavizar ----------
+{
+    const S = await import('../../estudio/poses-simple.mjs');
+    const orden = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]));
+    ok(S.SIMPLES.length >= 12 && S.SIMPLES.length < M.NOMBRES_CANAL.length && S.SIMPLES.every(c => M.NOMBRES_CANAL.includes(c)), 'simples: canales del rig, menos que todos');
+    ok(new Set(S.SIMPLES).size === S.SIMPLES.length, 'simples sin repetir');
+    ok(!S.esSimple('armaX') && !S.esSimple('pZ') && S.esSimple('codoD'), 'el arma y el pecho van a Avanzado; el codo es simple');
+    for (const c of S.SIMPLES) { const n = S.nombreDe(c), e = S.nombreDe(c, 'en'); ok(n && n.parte && n.nombre && n.min && n.max && e && e.nombre !== undefined && e.min, 'nombre común de ' + c); }
+    ok(S.nombreDe('armaX') === null, 'canal avanzado sin nombre simple');
+    ok(S._canalesLados(), 'los canales de lados existen');
+    // Bases: cada una cumple esquema, reglas y límites; no toca lo que ya había
+    let d = JSON.parse(congelado);
+    for (const [k, B] of Object.entries(S.BASES)) {
+        ok(B.nombre[0] && B.nombre[1], 'nombre ES/EN de la base ' + k);
+        for (const [c, v] of Object.entries(B.canales)) ok(M.NOMBRES_CANAL.includes(c) && v >= M.RANGO[c][0] && v <= M.RANGO[c][1], `base ${k}: ${c} dentro del rango`);
+        const clave = M.claveLibre(d, 'base' + k[0].toUpperCase() + k.slice(1));
+        const res = S.poseDeBase(d, clave, k);
+        ok(res.cambio || k === 'dePie', 'base nueva ' + k);
+        if (res.cambio) { d = res.datos; ok(orden(d.poses[clave].canales) === orden(Object.fromEntries(Object.entries(B.canales).filter(([, v]) => v !== 0))), 'la pose copia la base ' + k); }
+    }
+    valido(d, 'con todas las bases');
+    for (const k of Object.keys(datos.poses || {})) ok(JSON.stringify(d.poses[k]) === JSON.stringify(datos.poses[k]), 'las bases no tocan la pose ' + k);
+    // Lados sobre una pose: copiar derecha → izquierda y espejo
+    let p = M.nuevaPose(JSON.parse(congelado), 'prueba', { ...M.NEUTRAL, bDx: -2, bDz: 0.4, codoD: -1, cy: 0.3, pDx: -0.5 }).datos;
+    const rt = { tipo: 'pose', clave: 'prueba' };
+    const cp = S.copiarLado(p, rt, 'D').datos.poses.prueba.canales;
+    ok(cp.bIx === -2 && cp.bIz === -0.4 && cp.codoI === -1 && cp.pIx === -0.5 && cp.bDx === -2 && cp.cy === 0.3, 'copiar D → I (abrir cambia de signo; el centro queda)');
+    const es = S.espejo(p, rt).datos.poses.prueba.canales;
+    ok(es.bIx === -2 && es.bDx === undefined && es.bIz === -0.4 && es.cy === -0.3 && es.pIx === -0.5 && es.pDx === undefined, 'espejo cambia de lado y da vuelta el giro');
+    const ida = S.espejo(S.espejo(p, rt).datos, rt).datos;
+    ok(orden(ida.poses.prueba.canales) === orden(p.poses.prueba.canales), 'espejo dos veces = igual');
+    valido(S.espejo(p, rt).datos, 'pose en espejo');
+    // Lados sobre un gesto con claves y oscilador; suavizar
+    let g = M.nuevoGesto(JSON.parse(congelado), 'gPrueba').datos;
+    const rg = { tipo: 'gesto', clave: 'gPrueba', variante: null };
+    g = M.agregarClave(g, rg, 'bDz', 0, 0.3).datos; g = M.agregarClave(g, rg, 'bDz', 0.5, 0.6).datos;
+    g = M.cambiarInterp(g, rg, 'bDz', 'lineal').datos;
+    g = M.agregarOsc(g, rg, 'cy', { forma: 'sin', amp: 0.2, frec: 3 }).datos;
+    const ge = S.espejo(g, rg).datos.gestos.gPrueba.canales;
+    ok(ge.bIz && ge.bIz.k.map(x => x[1]).join() === '-0.3,-0.6' && ge.bIz.interp === 'lineal' && ge.bDz === undefined, 'espejo de un gesto lleva las claves con su signo');
+    ok(ge.cy && ge.cy.osc[0].amp === -0.2, 'espejo da vuelta el oscilador del giro');
+    valido(S.espejo(g, rg).datos, 'gesto en espejo');
+    const gs = S.suavizar(g, rg);
+    ok(gs.cambio && gs.datos.gestos.gPrueba.canales.bDz.interp === undefined, 'suavizar deja las claves en suave');
+    ok(!S.suavizar(gs.datos, rg).cambio, 'suavizar dos veces no cambia nada');
+    ok(!S.copiarLado(g, { tipo: 'pose', clave: 'noExiste' }).cambio, 'sin ruta: sin cambio');
+    ok(JSON.stringify(datos) === congelado, 'los datos de entrada no se tocan');
+}
+
 console.log(fallos ? `estudio-poses-editor: ${fallos} falla(s)` : 'estudio-poses-editor: todo bien');
 process.exit(fallos ? 1 : 0);

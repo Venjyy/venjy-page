@@ -7,9 +7,12 @@
 // juego y mide la punta de las manos. En el juego, cada cambio va en vivo (`datos` → poses) y, si se pide, una persona
 // posa el instante t (mensaje `pose`). Guardar escribe con If-Match. Toda edición pasa por estudio/poses-modelo.mjs
 // (puro, lo prueba Node). Contrato: estudio/DISENO.md §16-17.
+// Vista simple (B0-P, §39; poses-simple.mjs): los canales principales con nombre común y qué hace cada punta del slider,
+// bases para partir, copiar un lado al otro, espejo y suavizar; suelo automático prendido. Lo demás lleva `solo-avanzado`.
 // =========================================================
 import { formatear } from './formato.mjs';
 import * as M from './poses-modelo.mjs';
+import * as PS from './poses-simple.mjs';
 import { reglasPoses } from '../mundo/datos/gestos.js';
 
 const PERSONAS = [['andy', 'Andy'], ['hadad', 'Hadad'], ['nacho', 'Nacho'], ['moises', 'Moisés'], ['lalo', 'Lalo'], ['boris', 'Boris'],
@@ -105,14 +108,18 @@ export async function montarPoses(ctx) {
         const rt = ruta(), ahora = canalesAhora();
         const editable = !!rt;
         const x = M.xActual(def(), tiempo, T);
-        for (const [c, , , es, en] of M.CANALES) {
+        const simple = ctx.vista !== 'avanzado';
+        const lista = simple ? [...PS.SIMPLES.map(k => M.CANALES.find(x => x[0] === k)), ...M.CANALES.filter(x => !PS.esSimple(x[0]))] : M.CANALES;
+        for (const [c, , , es, en] of lista) {
             const v = editable ? M.canalDe(datos, rt, c) : undefined;
             const tipo = editable ? M.tipoCanal(v) : 'codigo';
             const fila = document.createElement('div');
             fila.className = 'po-canal' + (c === canal ? ' elegido' : '') + (editable && tipo === 'ninguno' ? ' ausente' : '');
             fila.dataset.canal = c;
+            const comun = PS.nombreDe(c, ctx.idioma);
+            if (!comun) fila.classList.add('solo-avanzado');
             const nombre = document.createElement('b');
-            nombre.textContent = c;
+            nombre.textContent = simple && comun ? `${comun.parte} · ${comun.nombre}` : c;
             const [a, b] = M.rangoDe(c, v);
             const valor = !editable ? ahora[c] : tipo === 'claves' ? M.valorClaves(v, x) : tipo === 'ninguno' ? ahora[c] : M.valorSlider(v);
             const sl = document.createElement('input');
@@ -121,7 +128,7 @@ export async function montarPoses(ctx) {
             const num = document.createElement('input');
             num.type = 'number'; num.step = 0.01; num.value = f2(valor); num.disabled = !editable;
             num.setAttribute('aria-label', c);
-            const botones = document.createElement('span');
+            const botones = document.createElement('span'); botones.className = 'solo-avanzado';
             const boton = (texto, titulo, f) => {
                 const bt = document.createElement('button');
                 bt.type = 'button'; bt.textContent = texto; bt.title = titulo;
@@ -144,7 +151,7 @@ export async function montarPoses(ctx) {
             const nota = document.createElement('small');
             const etiqueta = { ninguno: t('neutral', 'neutral'), fijo: t('fijo', 'fixed'), base: t('base', 'base'), claves: t('claves', 'keys'), codigo: t('código', 'code') }[tipo];
             const osc = v && typeof v === 'object' && v.osc ? ` + ${v.osc.length} osc` : '';
-            nota.textContent = `${etiqueta}${osc} · ${ctx.idioma === 'en' ? en : es}`;
+            nota.textContent = simple && comun ? `${comun.min} … ${comun.max}` : `${etiqueta}${osc} · ${ctx.idioma === 'en' ? en : es}`;
             fila.append(nombre, sl, num, botones, nota);
             fila.addEventListener('click', e => { if (e.target === fila || e.target === nombre || e.target === nota) { canal = c; iClave = -1; pintarCanalesMarca(); pintarCurva(); } });
             sl.addEventListener('pointerdown', () => { if (canal !== c) { canal = c; iClave = -1; pintarCanalesMarca(); pintarCurva(); } });
@@ -175,8 +182,29 @@ export async function montarPoses(ctx) {
         ul.textContent = '';
         for (const a of avisos) { const li = document.createElement('li'); li.className = a.tipo; li.textContent = a.texto; ul.appendChild(li); }
     }
+    // Herramientas de un clic (copiar lados, espejo, suavizar) y bases para partir
+    function pintarHerramientas() {
+        const caja = $('po-herramientas'), rt = ruta(); caja.textContent = '';
+        const b = (es, en, f, activo = true) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'boton chico'; x.textContent = t(es, en); x.disabled = !activo; x.addEventListener('click', f); caja.appendChild(x); };
+        b('Copiar derecha a izquierda', 'Copy right to left', () => hacer(PS.copiarLado(datos, rt, 'D')), !!rt);
+        b('Copiar izquierda a derecha', 'Copy left to right', () => hacer(PS.copiarLado(datos, rt, 'I')), !!rt);
+        b('Espejo (cambiar de lado)', 'Mirror (swap sides)', () => hacer(PS.espejo(datos, rt)), !!rt);
+        if (rt && rt.tipo === 'gesto') b('Suavizar', 'Smooth', () => hacer(PS.suavizar(datos, rt)));
+        if (!rt) caja.appendChild(Object.assign(document.createElement('span'), { className: 'ayuda', textContent: t('Elige o crea una pose para editarla.', 'Pick or create a pose to edit it.') }));
+    }
+    function pintarBases() {
+        const caja = $('po-bases'); caja.textContent = '';
+        for (const [k, B] of Object.entries(PS.BASES)) {
+            const x = document.createElement('button'); x.type = 'button'; x.className = 'boton chico secundario'; x.textContent = t(...B.nombre);
+            x.addEventListener('click', () => {
+                const clave = M.claveLibre(datos, k, ocupados()), res = PS.poseDeBase(datos, clave, k);
+                hacer(res); if (res.cambio) elegir({ tipo: 'pose', clave });
+            });
+            caja.appendChild(x);
+        }
+    }
     function pintar() {
-        pintarLista(); pintarElegido(); pintarCanales(); pintarCurva(); pintarResumen(); dibujar();
+        pintarLista(); pintarElegido(); pintarHerramientas(); pintarBases(); pintarCanales(); pintarCurva(); pintarResumen(); dibujar();
     }
 
     // ---------- Cambios ----------
@@ -600,6 +628,7 @@ export async function montarPoses(ctx) {
         posarEnJuego(true);
     }
     const ocupados = () => new Set([...codigo.keys(), ...moldes]);
+    ctx.alVista.push(() => { if (ctx.pestana === 'poses') pintar(); });
     $('po-nueva-pose').addEventListener('click', () => {
         const clave = M.claveLibre(datos, elegido ? elegido.clave + 'Pose' : 'pose', ocupados());
         const res = M.nuevaPose(datos, clave, canalesAhora());

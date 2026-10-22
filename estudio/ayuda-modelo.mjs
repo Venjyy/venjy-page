@@ -53,7 +53,7 @@ export const AYUDA = {
     },
     poses: {
         que: ['Las poses y los gestos de los personajes (saludar, sentarse, bailar…).', 'Character poses and gestures (wave, sit, dance…).'],
-        empezar: ['Elige una pose parecida y mueve las barras del cuerpo; la vista de abajo la muestra de frente y de lado.', 'Pick a similar pose and move the body sliders; the view below shows it from the front and side.']
+        empezar: ['En «Partir de una base» elige una pose parecida y mueve las barras del cuerpo (o arrastra el muñeco); «Espejo (cambiar de lado)» la da vuelta y los pies se apoyan solos.', 'In «Start from a base» pick a similar pose and move the body sliders (or drag the figure); «Mirror (swap sides)» flips it and the feet land on their own.']
     },
     mesa: {
         que: ['La mesa del Duelo de Cartas: dónde queda, las cámaras, el mazo y la tienda de cartas.', 'The Card Duel table: where it is, the cameras, the deck and the card shop.'],

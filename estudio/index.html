@@ -244,13 +244,13 @@
             </div>
             <div id="po-zona" hidden>
                 <div class="fila-aparato po-barra">
-                    <div class="fila-botones po-botones" role="group" aria-label="Caso">
+                    <div class="fila-botones po-botones solo-avanzado" role="group" aria-label="Caso">
                         <button class="boton chico activo" type="button" data-po-caso="" data-es="De pie" data-en="Standing">De pie</button>
                         <button class="boton chico secundario" type="button" data-po-caso="sentado" data-es="Sentado" data-en="Seated">Sentado</button>
                         <button class="boton chico secundario" type="button" data-po-caso="jugador" data-es="Jugador" data-en="Player">Jugador</button>
                     </div>
                     <button id="po-cero" class="boton chico secundario" type="button" data-es="t = 0" data-en="t = 0">t = 0</button>
-                    <button id="po-grabar" class="boton chico" type="button" data-es="Grabar" data-en="Record">Grabar</button>
+                    <button id="po-grabar" class="boton chico solo-avanzado" type="button" data-es="Grabar" data-en="Record">Grabar</button>
                     <button id="po-jugar" class="boton chico" type="button" data-es="Reproducir" data-en="Play">Reproducir</button>
                     <label class="campo po-t"><span>t (s)</span><input id="po-t" type="range" min="0" max="3" step="0.01" value="0"></label>
                     <label class="campo corto"><span data-es="Duración (s)" data-en="Length (s)">Duración (s)</span><input id="po-T" type="number" step="0.1" min="0.2" max="20" value="3"></label>
@@ -260,17 +260,18 @@
                 <p class="ayuda po-como" data-es="Agarra con el mouse la cabeza, un brazo, una pierna o el tronco de un muñeco y arrástralo: gira en su articulación (de frente se mueve a los lados; de lado o 3/4, adelante y atrás; Mayús + cabeza la gira). Para animar: t = 0, Grabar, agarra una extremidad y muévela mientras corre el tiempo; suelta. Repite con otra extremidad y dale a Reproducir."
                    data-en="Grab a dummy's head, arm, leg or trunk with the mouse and drag: it turns at its joint (from the front it moves sideways; from the side or 3/4, back and forth; Shift + head turns it). To animate: t = 0, Record, grab a limb and move it while time runs; let go. Repeat with another limb and press Play.">Agarra con el mouse la cabeza, un brazo, una pierna o el tronco de un muñeco y arrástralo: gira en su articulación (de frente se mueve a los lados; de lado o 3/4, adelante y atrás; Mayús + cabeza la gira). Para animar: t = 0, Grabar, agarra una extremidad y muévela mientras corre el tiempo; suelta. Repite con otra extremidad y dale a Reproducir.</p>
                 <canvas id="po-vista" class="po-vista" width="960" height="330"></canvas>
-                <div class="fila-aparato po-barra">
+                <div class="fila-aparato po-barra solo-avanzado">
                     <label class="casilla-marca"><input id="po-medir" type="checkbox" checked><span data-es="Medir la punta de las manos" data-en="Measure the hand tips">Medir la punta de las manos</span></label>
                     <span id="po-medida" class="po-medida"></span>
                 </div>
                 <div class="fila-aparato po-barra">
-                    <label class="casilla-marca"><input id="po-suelo" type="checkbox"><span data-es="Suelo automático (el pie más bajo toca el suelo)" data-en="Auto ground (the lowest foot touches the ground)">Suelo automático (el pie más bajo toca el suelo)</span></label>
-                    <button id="po-patina" class="boton chico" type="button" data-es="¿Patina un pie?" data-en="Does a foot slide?">¿Patina un pie?</button>
-                    <span id="po-pies" class="po-medida"></span>
+                    <label class="casilla-marca"><input id="po-suelo" type="checkbox" checked><span data-es="Suelo automático (el pie más bajo toca el suelo)" data-en="Auto ground (the lowest foot touches the ground)">Suelo automático (el pie más bajo toca el suelo)</span></label>
+                    <button id="po-patina" class="boton chico solo-avanzado" type="button" data-es="¿Patina un pie?" data-en="Does a foot slide?">¿Patina un pie?</button>
+                    <span id="po-pies" class="po-medida solo-avanzado"></span>
                 </div>
+                <div id="po-herramientas" class="fila-botones po-barra"></div>
                 <div id="po-canales" class="po-canales"></div>
-                <div id="po-curva-zona" hidden>
+                <div id="po-curva-zona" class="solo-avanzado" hidden>
                     <div class="fila-aparato po-barra">
                         <strong id="po-curva-titulo" class="po-titulo"></strong>
                         <label class="campo corto" id="po-campo-interp"><span data-es="Interpolación" data-en="Interpolation">Interpolación</span>
@@ -281,7 +282,7 @@
                     <canvas id="po-curva" class="po-curva" width="960" height="180" tabindex="0"></canvas>
                     <ul id="po-osc" class="po-osc"></ul>
                 </div>
-                <p class="ayuda" data-es="Mueve un slider para cambiar el canal; en un canal con claves, el slider pone una clave en el instante t. En la curva: arrastra una clave (encaja y se detiene antes de su vecina), doble clic agrega una, Supr borra la elegida y un clic en el fondo mueve t. Ctrl+S guarda, Ctrl+Z deshace."
+                <p class="ayuda solo-avanzado" data-es="Mueve un slider para cambiar el canal; en un canal con claves, el slider pone una clave en el instante t. En la curva: arrastra una clave (encaja y se detiene antes de su vecina), doble clic agrega una, Supr borra la elegida y un clic en el fondo mueve t. Ctrl+S guarda, Ctrl+Z deshace."
                    data-en="Move a slider to change the channel; on a keyed channel the slider sets a key at time t. On the curve: drag a key (it snaps and stops before its neighbour), double-click adds one, Del removes the picked one and a click on the background moves t. Ctrl+S saves, Ctrl+Z undoes.">Mueve un slider para cambiar el canal; en un canal con claves, el slider pone una clave en el instante t. En la curva: arrastra una clave (encaja y se detiene antes de su vecina), doble clic agrega una, Supr borra la elegida y un clic en el fondo mueve t. Ctrl+S guarda, Ctrl+Z deshace.</p>
             </div>
             <p class="ayuda" data-es="El juego abre (o crea) el mundo «Estudio» en Pacífico. Click en el juego para jugar; Esc para volver. Lo que mueves en Layout se ve aquí al instante."
@@ -624,17 +625,19 @@
                         <button id="po-nuevo-gesto" class="boton chico secundario" type="button" data-es="Gesto nuevo" data-en="New gesture">Gesto nuevo</button>
                         <button id="po-borrar" class="boton chico secundario" type="button" data-es="Borrar" data-en="Delete">Borrar</button>
                     </div>
+                    <p class="ayuda" data-es="Partir de una base (crea una pose nueva):" data-en="Start from a base (creates a new pose):">Partir de una base (crea una pose nueva):</p>
+                    <div id="po-bases" class="fila-botones"></div>
                 </section>
                 <section class="panel">
                     <h2 id="po-elegido">…</h2>
                     <p id="po-codigo" class="ayuda" hidden></p>
-                    <div id="po-gesto-campos" class="campos" hidden>
+                    <div id="po-gesto-campos" class="campos solo-avanzado" hidden>
                         <label class="campo"><span data-es="Reloj de las claves" data-en="Key clock">Reloj de las claves</span>
                             <select id="po-reloj"><option value="u" data-es="u (0..1 del tramo)" data-en="u (0..1 of the span)">u (0..1 del tramo)</option><option value="t" data-es="t (s de la escena)" data-en="t (scene s)">t (s de la escena)</option><option value="local" data-es="local (s del tramo)" data-en="local (span s)">local (s del tramo)</option></select>
                         </label>
                         <label class="campo"><span data-es="Ciclo (s, vacío = sin)" data-en="Cycle (s, empty = none)">Ciclo (s, vacío = sin)</span><input id="po-ciclo" type="number" step="0.05" min="0.05"></label>
                     </div>
-                    <label class="campo" id="po-campo-nota"><span data-es="Nota" data-en="Note">Nota</span><input id="po-nota" type="text" maxlength="200" autocomplete="off"></label>
+                    <label class="campo solo-avanzado" id="po-campo-nota"><span data-es="Nota" data-en="Note">Nota</span><input id="po-nota" type="text" maxlength="200" autocomplete="off"></label>
                 </section>
                 <section class="panel">
                     <h2 data-es="En el juego" data-en="In the game">En el juego</h2>
@@ -653,7 +656,7 @@
                         <button id="po-guardar" class="boton" type="button" data-es="Guardar" data-en="Save">Guardar</button>
                         <button id="po-deshacer" class="boton chico secundario" type="button" data-es="Deshacer" data-en="Undo">Deshacer</button>
                         <button id="po-descartar" class="boton chico secundario" type="button" data-es="Descartar" data-en="Discard">Descartar</button>
-                        <button id="po-descargar" class="boton chico secundario" type="button" data-es="Descargar" data-en="Download">Descargar</button>
+                        <button id="po-descargar" class="boton chico secundario solo-avanzado" type="button" data-es="Descargar" data-en="Download">Descargar</button>
                     </div>
                     <p id="po-mensaje" class="mensaje" role="status"></p>
                 </section>
