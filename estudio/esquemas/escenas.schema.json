@@ -12,37 +12,28 @@
       "description": "Nombre de la escena -> definición. Con tipo «amistad» el nombre es el de ANIMACIONES (punos, abrazo, secreto, pareja) y el juego fusiona código ← JSON por clave.",
       "type": "object",
       "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
-      "additionalProperties": {
-        "anyOf": [
-          { "$ref": "#/$defs/amistad" },
-          { "$ref": "#/$defs/guion" }
-        ]
-      }
+      "additionalProperties": { "anyOf": [{ "$ref": "#/$defs/amistad" }, { "$ref": "#/$defs/guion" }] }
     }
   },
   "required": ["version"],
   "additionalProperties": false,
   "$defs": {
-    "segundo": {
-      "description": "Instante en el reloj de la escena (0 = empieza).",
-      "type": "number",
-      "minimum": 0,
-      "maximum": 120
-    },
+    "segundo": { "description": "Instante en el reloj de la escena (0 = empieza).", "type": "number", "minimum": 0, "maximum": 120 },
     "actor": {
       "description": "Quién: 'n' el amigo de la escena, 'j' el jugador o la clave de un actor extra declarado en `actores`.",
       "$ref": "comun.schema.json#/$defs/clave"
     },
     "tramo": {
-      "description": "[gesto, desde, hasta]: el gesto (por nombre) suena entre desde y hasta, con rampas de entrada y salida de min(0,3 s, un tercio del tramo). u = 0..1 dentro del tramo.",
+      "description": "[gesto, desde, hasta] o [gesto, desde, hasta, opciones]: el gesto (por nombre) suena entre desde y hasta, con rampas de entrada y salida de min(0,3 s, un tercio del tramo). u = 0..1 dentro del tramo. El 4.º elemento (B3, DISENO §40) reemplaza desplazar, con y espejo: reloj (el gesto lee t − reloj), escala (multiplica canales) y espejo.",
       "type": "array",
       "prefixItems": [
         { "$ref": "comun.schema.json#/$defs/clave" },
         { "$ref": "#/$defs/segundo" },
-        { "$ref": "#/$defs/segundo" }
+        { "$ref": "#/$defs/segundo" },
+        { "$ref": "#/$defs/opcionesTramo" }
       ],
       "minItems": 3,
-      "maxItems": 3
+      "maxItems": 4
     },
     "pista": {
       "description": "Una fila por actor: tramos en orden, sin superponerse (validar lo revisa). Si un actor no tiene fila, se queda en su pose neutral.",
@@ -50,11 +41,7 @@
       "propertyNames": { "$ref": "#/$defs/actor" },
       "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/tramo" } }
     },
-    "marcas": {
-      "description": "Instantes en orden creciente.",
-      "type": "array",
-      "items": { "$ref": "#/$defs/segundo" }
-    },
+    "marcas": { "description": "Instantes en orden creciente.", "type": "array", "items": { "$ref": "#/$defs/segundo" } },
     "camara": {
       "description": "Planos de cámara. Un nombre de juego de planos (los PLANOS_* de escena-amistad-datos.js) o una lista propia, que se recorre en orden y cambia con cada frase (como hoy). Sin camara, el juego usa los de dos personajes (o los del iglú bajo techo).",
       "type": "object",
@@ -89,9 +76,19 @@
       "type": "object",
       "properties": {
         "tipo": { "const": "amistad" },
-        "nivel": { "description": "Nivel de amistad que la desbloquea (2 Amigo, 3 Buen amigo, 4 Íntimo).", "type": "integer", "minimum": 1, "maximum": 4 },
+        "nivel": {
+          "description": "Nivel de amistad que la desbloquea (2 Amigo, 3 Buen amigo, 4 Íntimo).",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
         "T": { "description": "Duración total (s).", "type": "number", "minimum": 1, "maximum": 120 },
-        "r": { "description": "Distancia entre el jugador y el amigo (bloques) para que las manos se toquen.", "type": "number", "minimum": 0.5, "maximum": 4 },
+        "r": {
+          "description": "Distancia entre el jugador y el amigo (bloques) para que las manos se toquen.",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 4
+        },
         "linea": {
           "description": "[desde, dura] de la frase única del amigo.",
           "type": "array",
@@ -109,7 +106,7 @@
       "additionalProperties": false
     },
     "guion": {
-      "description": "Escena nueva y simple: frases propias, sin lógica. La lanza el comando /amistad o el Estudio; quién la dispara en el juego se decide aparte (en JS).",
+      "description": "Escena nueva con frases propias. En el juego la disparan `dispara` (bienvenida, momento, reencuentro o grupo) o el comando /amistad y el Estudio. Las claves de B3 (dispara, lugar, giros, caminos, objetos, efectos, sonidos, marcas, codigo) las lee el juego desde B3b: ver estudio/DISENO.md §40.",
       "type": "object",
       "properties": {
         "tipo": { "const": "guion" },
@@ -124,10 +121,7 @@
               { "$ref": "comun.schema.json#/$defs/clave" },
               {
                 "type": "object",
-                "properties": {
-                  "clave": { "$ref": "comun.schema.json#/$defs/clave" },
-                  "radio": { "type": "number", "minimum": 1, "maximum": 20 }
-                },
+                "properties": { "clave": { "$ref": "comun.schema.json#/$defs/clave" }, "radio": { "type": "number", "minimum": 1, "maximum": 20 } },
                 "required": ["clave"],
                 "additionalProperties": false
               }
@@ -144,7 +138,8 @@
               "q": { "$ref": "#/$defs/actor" },
               "a": { "$ref": "#/$defs/segundo" },
               "d": { "type": "number", "minimum": 0.5, "maximum": 10 },
-              "texto": { "$ref": "comun.schema.json#/$defs/texto" }
+              "texto": { "$ref": "comun.schema.json#/$defs/texto" },
+              "ancla": { "$ref": "#/$defs/ancla" }
             },
             "required": ["q", "a", "texto"],
             "additionalProperties": false
@@ -154,10 +149,259 @@
         "corazones": { "description": "Corazones que suben.", "$ref": "#/$defs/marcas" },
         "pista": { "$ref": "#/$defs/pista" },
         "camara": { "$ref": "#/$defs/camara" },
-        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "dispara": { "$ref": "#/$defs/dispara" },
+        "lugar": { "$ref": "#/$defs/lugar" },
+        "giros": { "$ref": "#/$defs/giros" },
+        "caminos": { "$ref": "#/$defs/caminos" },
+        "objetos": { "type": "array", "items": { "$ref": "#/$defs/objeto" } },
+        "efectos": { "type": "array", "items": { "$ref": "#/$defs/efecto" } },
+        "sonidos": { "type": "array", "items": { "$ref": "#/$defs/sonido" } },
+        "marcas": { "$ref": "#/$defs/marcasNombradas" },
+        "codigo": {
+          "description": "Nombre de una función del registro CODIGO_ESCENAS (JS) para lo que los datos no alcanzan; recibe `api` y las `marcas`.",
+          "$ref": "comun.schema.json#/$defs/clave"
+        },
+        "base": { "description": "Solo el editor: la escena de la que partió. El juego la ignora.", "$ref": "comun.schema.json#/$defs/clave" }
       },
       "required": ["tipo", "T", "r", "lineas", "pista"],
       "additionalProperties": false
+    },
+    "opcionesTramo": {
+      "description": "Opciones de un tramo. ancla: de qué frase depende `desde` (solo la usa el editor; el juego corre el número guardado).",
+      "type": "object",
+      "properties": {
+        "reloj": {
+          "description": "Instante desde el que el gesto cuenta su tiempo (los gestos de pareja leen t − reloj).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "escala": {
+          "description": "Canal -> factor que lo multiplica (abrazoB = abrazo con pz × 1,7).",
+          "type": "object",
+          "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+          "additionalProperties": { "type": "number", "minimum": -5, "maximum": 5 }
+        },
+        "espejo": { "description": "Cambia derecha por izquierda.", "type": "boolean" },
+        "ancla": { "$ref": "#/$defs/ancla" }
+      },
+      "additionalProperties": false
+    },
+    "ancla": {
+      "description": "Ancla opcional, solo para el editor: este tiempo depende de una frase de `lineas` (índice) y se mueve con ella. `de`: inicio o fin de esa frase; `mas`: segundos de más (puede ser negativo). El juego la ignora: corre el número guardado.",
+      "type": "object",
+      "properties": {
+        "frase": { "type": "integer", "minimum": 0 },
+        "de": { "enum": ["inicio", "fin"] },
+        "mas": { "type": "number", "minimum": -30, "maximum": 30 }
+      },
+      "required": ["frase", "de"],
+      "additionalProperties": false
+    },
+    "vector": {
+      "description": "[x, y, z] en bloques.",
+      "type": "array",
+      "items": { "type": "number", "minimum": -64, "maximum": 64 },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "dispara": {
+      "description": "Cuándo corre la escena en el juego (decisión 7). Los cargadores bienvenida, momento, reencuentro y grupo buscan primero una escena con este `dispara`; la más específica gana (con skin antes que sin ella). Sin `dispara`, solo se juega con /amistad guion y desde el Estudio.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": { "tipo": { "const": "bienvenida" }, "skin": { "$ref": "comun.schema.json#/$defs/clave" } },
+          "required": ["tipo", "skin"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tipo": { "const": "momento" },
+            "persona": { "$ref": "comun.schema.json#/$defs/clave" },
+            "skin": { "$ref": "comun.schema.json#/$defs/clave" }
+          },
+          "required": ["tipo", "persona"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tipo": { "const": "reencuentro" },
+            "personas": { "type": "array", "items": { "$ref": "comun.schema.json#/$defs/clave" }, "minItems": 2, "maxItems": 2 }
+          },
+          "required": ["tipo", "personas"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tipo": { "const": "grupo" },
+            "grupo": { "$ref": "comun.schema.json#/$defs/clave" },
+            "skin": { "$ref": "comun.schema.json#/$defs/clave" }
+          },
+          "required": ["tipo", "grupo"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "sitio": {
+      "description": "Un punto del grupo, relativo al sitio de alguien (decisión 8). desde: un actor (q), n o centro. mas: [x, y, z] de desplazamiento.",
+      "type": "object",
+      "properties": { "desde": { "$ref": "comun.schema.json#/$defs/clave" }, "mas": { "$ref": "#/$defs/vector" } },
+      "required": ["desde"],
+      "additionalProperties": false
+    },
+    "lugar": {
+      "description": "Dónde queda el grupo sin coordenadas fijas. centro: el punto que todos miran (no puede partir de `centro`); jugador: dónde se para el jugador (puede partir de `centro`).",
+      "type": "object",
+      "properties": { "centro": { "$ref": "#/$defs/sitio" }, "jugador": { "$ref": "#/$defs/sitio" } },
+      "additionalProperties": false
+    },
+    "giros": {
+      "description": "q -> claves [t, mira] en tiempo creciente. mira: \"centro\", un actor o persona, grados del mundo (número) o null (el motor decide). Entre dos claves, giro suave por el lado corto.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/actor" },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/segundo" },
+            {
+              "anyOf": [{ "$ref": "comun.schema.json#/$defs/clave" }, { "type": "number", "minimum": -360, "maximum": 360 }, { "type": "null" }]
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "destino": {
+      "description": "Adónde va un actor en una clave de camino: \"sitio\" (su lugar de siempre), { hacia, dist } (a dist bloques de alguien) o { desde, mas } (relativo a centro, n o un actor).",
+      "anyOf": [
+        { "const": "sitio" },
+        {
+          "type": "object",
+          "properties": { "hacia": { "$ref": "comun.schema.json#/$defs/clave" }, "dist": { "type": "number", "minimum": 0, "maximum": 20 } },
+          "required": ["hacia"],
+          "additionalProperties": false
+        },
+        { "$ref": "#/$defs/sitio" }
+      ]
+    },
+    "caminos": {
+      "description": "q -> claves [t, a] en tiempo creciente. El motor interpola, gira al actor hacia donde camina y al terminar o saltar lo devuelve a su sitio. La última clave de cada actor tiene que ser \"sitio\".",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/actor" },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "$ref": "#/$defs/destino" }], "minItems": 2, "maxItems": 2 }
+      }
+    },
+    "objeto": {
+      "description": "Un objeto de un catálogo cerrado (decisión 10). dibujo: ícono de iconos.json, entrada de PIX o { caja, color }. en: pegado a un hueso de un actor (sigue a la mano solo; q \"todos\" = uno por actor) o puesto en el mundo ({ desde, mas }). Se ve entre desde y hasta (por defecto toda la escena). crece: [[t, escala]]; cambia: [[t, dibujo]].",
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "comun.schema.json#/$defs/clave" },
+        "dibujo": {
+          "anyOf": [
+            { "$ref": "comun.schema.json#/$defs/clave" },
+            {
+              "type": "object",
+              "properties": { "caja": { "$ref": "#/$defs/vector" }, "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" } },
+              "required": ["caja", "color"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "tam": { "type": "number", "minimum": 0.05, "maximum": 8 },
+        "en": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "q": { "$ref": "#/$defs/actor" },
+                "hueso": { "enum": ["brazoD", "brazoI", "cabeza", "cuerpo"] },
+                "mas": { "$ref": "#/$defs/vector" }
+              },
+              "required": ["q", "hueso"],
+              "additionalProperties": false
+            },
+            { "$ref": "#/$defs/sitio" }
+          ]
+        },
+        "desde": { "$ref": "#/$defs/segundo" },
+        "hasta": { "$ref": "#/$defs/segundo" },
+        "crece": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "type": "number", "minimum": 0, "maximum": 8 }],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "cambia": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "$ref": "comun.schema.json#/$defs/clave" }],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "ancla": { "$ref": "#/$defs/ancla" }
+      },
+      "required": ["id", "dibujo", "en"],
+      "additionalProperties": false
+    },
+    "efecto": {
+      "description": "[t, tipo] o [t, tipo, opciones]: una chispa, un corazón, humo o nieve en un instante. en: un actor o \"centro\".",
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/segundo" },
+        { "enum": ["chispa", "corazon", "humo", "nieve"] },
+        {
+          "type": "object",
+          "properties": {
+            "en": { "$ref": "comun.schema.json#/$defs/clave" },
+            "alto": { "type": "number", "minimum": 0, "maximum": 8 },
+            "tam": { "type": "number", "minimum": 0.05, "maximum": 8 },
+            "n": { "type": "integer", "minimum": 1, "maximum": 64 },
+            "ancla": { "$ref": "#/$defs/ancla" }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 3
+    },
+    "sonido": {
+      "description": "[t, nombre]: suena un sonido de SONIDOS (moldes.js) o de sonidos del juego.",
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "$ref": "comun.schema.json#/$defs/clave" }],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "marcasNombradas": {
+      "description": "Instantes con nombre que mueve el dueño en la línea de tiempo y lee `codigo` (decisión 11). Cada uno: un número o { t, ancla }.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": {
+        "anyOf": [
+          { "$ref": "#/$defs/segundo" },
+          {
+            "type": "object",
+            "properties": { "t": { "$ref": "#/$defs/segundo" }, "ancla": { "$ref": "#/$defs/ancla" } },
+            "required": ["t"],
+            "additionalProperties": false
+          }
+        ]
+      }
     }
   }
 }

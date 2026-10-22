@@ -1396,7 +1396,7 @@ Lo de verdad único (el camino de la concha de Braulio, la nieve de Coyhaique, e
 ```
 
 En `lineas`, `pista`, `efectos`, `objetos` y `marcas`: `ancla` opcional (decisión 1). En `pista`, el 4.º elemento (decisión 5).
-El esquema no se toca en este PR: lo escribe B3a junto con el convertidor, para no aceptar claves que el juego todavía ignora.
+El esquema, `guionDeDatos` y las reglas los escribió B3a (2026-10-21; el juego las ignora hasta B3b). Detalles que B3a fijó: `marcas` acepta un número o `{ t, ancla }`; los efectos y sonidos pueden repetir instante, giros y caminos de un mismo actor no; `ancla.frase` de una frase solo apunta a una anterior; `guionDeDatos` devuelve `personas` (las claves de persona usadas como `q`) para armar el `reparto`.
 
 ### Reglas nuevas de `validar` (`reglasEscenas`)
 

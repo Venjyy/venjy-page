@@ -4,7 +4,8 @@
 // gestoDe de escena-amistad.js); las reglas que el esquema no expresa (estudio/DISENO.md §13, mundo/datos/escenas.js,
 // las mismas de `cli.mjs validar`); y el PR 5a: el motor real fusiona los datos (y sin ellos usa el código) y una
 // escena de guion se completa con durLinea y se juega con jugarGuion; y el PR 5c: planosDe, la cámara que llega a
-// iniciarCine (sin `camara`, igual que antes) y las operaciones de cámara del modelo.
+// iniciarCine (sin `camara`, igual que antes) y las operaciones de cámara del modelo; y B3a: las claves del motor genérico
+// (dispara, lugar, giros, caminos, objetos, efectos, sonidos, marcas, codigo, ancla, 4.º elemento del tramo).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +13,7 @@ import { formatear } from '../../estudio/formato.mjs';
 import { validar } from '../../estudio/validar.mjs';
 import { ANIMACIONES, GESTOS_AMISTAD, PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from '../supervivencia/escena-amistad-datos.js';
 import { fusionar } from '../datos/cargador.js';
-import { animacionDeDatos, guionDeDatos, reglasEscenas, planosDe, opcionesCamara } from '../datos/escenas.js';
+import { animacionDeDatos, guionDeDatos, reglasEscenas, planosDe, opcionesCamara, tiempoDeAncla, personasUsadas } from '../datos/escenas.js';
 import * as M from '../../estudio/escenas-modelo.mjs';
 import { crearManejador } from '../../estudio/puente-protocolo.js';
 // escenas-skin.js (GESTOS) trae cuerpo.js, que escucha eventos de `window`: basta un objeto mínimo (como amistad.mjs)
@@ -453,6 +454,169 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     u = M.quitarPlano(u.def, 0);
     ok(u.cambio && !('camara' in u.def), 'quitar el único plano elimina camara');
     ok(JSON.stringify(base) === copia, 'el modelo no toca la escena que recibe');
+}
+
+// ---------- B3a: claves del motor genérico (estudio/DISENO.md §40): esquema, guionDeDatos y reglas ----------
+{
+    const catalogos = { ...nombres, personas: ['venjy', 'pony', 'lalo', 'nacho', 'lona'], grupos: ['tomatitos', 'atalaya'], iconos: ['cana'], pix: ['celular', 'concha'], sonidos: ['mar', 'foto'], codigos: ['concha-braulio'] };
+    const lineasBase = [
+        { q: 'n', a: 0.6, d: 2.4, texto: { es: 'Mira esto', en: 'Look at this' } },
+        { q: 'j', a: 3.15, texto: { es: '¡Qué bueno!', en: 'Nice!' } },
+        { q: 'pony', a: 5.6, d: 2.4, texto: { es: 'Yo también', en: 'Me too' }, ancla: { frase: 1, de: 'fin', mas: 0.15 } }
+    ];
+    // La escena completa: usa todas las claves nuevas
+    const completa = () => ({
+        tipo: 'guion', T: 12, r: 1.4, actores: { b: 'nacho' }, base: 'otra',
+        dispara: { tipo: 'momento', persona: 'lona', skin: 'venjy' },
+        lugar: { centro: { desde: 'b', mas: [2.65, 0, -0.5] }, jugador: { desde: 'centro', mas: [0, 0, -2.15] } },
+        lineas: structuredClone(lineasBase),
+        pista: { n: [['puno', 0.45, 2.4, { reloj: 0.05, escala: { pz: 1.7 }, espejo: true, ancla: { frase: 0, de: 'inicio', mas: -0.15 } }], ['risa', 3, 4.5]], j: [['asiente', 2.6, 4.4, { ancla: { frase: 1, de: 'inicio', mas: -0.55 } }]] },
+        giros: { n: [[0, 'centro'], [4, 'j'], [8, 90], [10, null]] },
+        caminos: { b: [[1, { hacia: 'n', dist: 1 }], [5, { desde: 'centro', mas: [1, 0, 0] }], [9, 'sitio']] },
+        objetos: [
+            { id: 'celu', dibujo: 'celular', en: { q: 'todos', hueso: 'brazoD', mas: [0, -0.4, 0.1] }, desde: 1.6, hasta: 7, tam: 0.5, crece: [[2, 1.5]], cambia: [[4, 'concha']], ancla: { frase: 0, de: 'fin', mas: -1.4 } },
+            { id: 'caja', dibujo: { caja: [1, 1, 2], color: '#aa8855' }, en: { desde: 'centro', mas: [0, 0, 1] } }
+        ],
+        efectos: [[2.2, 'chispa', { en: 'n', alto: 1.2, n: 8, ancla: { frase: 0, de: 'fin', mas: -0.8 } }], [2.2, 'humo'], [6, 'corazon', { en: 'centro' }]],
+        sonidos: [[1, 'mar'], [3, 'foto']],
+        marcas: { llega: 3.2, vuelta: { t: 7.4, ancla: { frase: 2, de: 'inicio', mas: 1.8 } } }
+    });
+    const errores = (def, nom = catalogos, extra = {}) => reglasEscenas({ escenas: { nueva: def, ...extra } }, nom).filter(a => a.tipo === 'error').map(a => a.texto);
+    const avisos = (def, nom = catalogos) => reglasEscenas({ escenas: { nueva: def } }, nom).filter(a => a.tipo === 'aviso' && !/sin revisar/.test(a.texto)).map(a => a.texto);
+    const hay = (lista, trozo) => lista.some(t => t.includes(trozo));
+
+    // Esquema: la completa pasa; lo mal formado no
+    const enDatos = def => { const d = structuredClone(datos); d.escenas.nueva = def; return d; };
+    ok(validar(enDatos(completa()), 'escenas').length === 0, 'escena B3 completa cumple el esquema: ' + validar(enDatos(completa()), 'escenas').join(' | '));
+    const malo3 = (cambio, que) => { const e = completa(); cambio(e); ok(validar(enDatos(e), 'escenas').length > 0, 'debió fallar el esquema: ' + que); };
+    malo3(e => { e.dispara = { tipo: 'fiesta' }; }, 'dispara con tipo desconocido');
+    malo3(e => { e.dispara = { tipo: 'bienvenida' }; }, 'bienvenida sin skin');
+    malo3(e => { e.dispara = { tipo: 'reencuentro', personas: ['pony'] }; }, 'reencuentro con una sola persona');
+    malo3(e => { e.pista.n[0][3] = { reloj: 1, otra: 2 }; }, 'opción de tramo desconocida');
+    malo3(e => { e.pista.n[1] = ['risa', 3, 4.5, {}, 1]; }, 'tramo de 5 elementos');
+    malo3(e => { e.pista.n[1] = ['risa', 3, 4.5, { ancla: { frase: 0 } }]; }, 'ancla sin de');
+    malo3(e => { e.objetos[0].en.hueso = 'pie'; }, 'hueso que no existe');
+    malo3(e => { delete e.objetos[0].dibujo; }, 'objeto sin dibujo');
+    malo3(e => { e.objetos[1].dibujo = { caja: [1, 1], color: '#aa8855' }; }, 'caja de 2 medidas');
+    malo3(e => { e.efectos[1] = [2, 'rayo']; }, 'efecto fuera del catálogo');
+    malo3(e => { e.sonidos[0] = [1]; }, 'sonido sin nombre');
+    malo3(e => { e.caminos.b[0] = [1]; }, 'clave de camino sin destino');
+    malo3(e => { e.giros.n[0] = [0]; }, 'clave de giro sin mira');
+    malo3(e => { e.marcas.llega = -1; }, 'marca negativa');
+    malo3(e => { e.lugar.centro = { mas: [0, 0, 0] }; }, 'lugar sin desde');
+    malo3(e => { e.lugar.extra = {}; }, 'clave de más en lugar');
+    // En las de «amistad» las claves nuevas no existen
+    { const d = structuredClone(datos); d.escenas.punos.dispara = { tipo: 'bienvenida', skin: 'lalo' }; ok(validar(d, 'escenas').length > 0, 'debió fallar el esquema: dispara en una escena de amistad'); }
+
+    // La completa no tiene errores con los catálogos (y los avisos son solo los esperados: ninguno)
+    ok(errores(completa()).length === 0, 'la escena B3 completa no da errores: ' + errores(completa()).join(' | '));
+    ok(avisos(completa()).length === 0, 'la escena B3 completa no da avisos: ' + avisos(completa()).join(' | '));
+    // Sin catálogos (como en el editor sin juego) esas comprobaciones se saltan y no se rompe nada
+    ok(errores(completa(), nombres).every(x => x.includes('«pony»')), 'sin catálogos no hay errores falsos (solo «pony», que sin lista de personas no se conoce): ' + errores(completa(), nombres).join(' | '));
+
+    // dispara
+    { const e = completa(); e.dispara = { tipo: 'bienvenida', skin: 'zorro' }; ok(hay(errores(e), '«zorro» no es una persona'), 'dispara: skin inexistente'); }
+    { const e = completa(); e.dispara = { tipo: 'grupo', grupo: 'club' }; ok(hay(errores(e), '«club» no es un grupo'), 'dispara: grupo inexistente'); }
+    { const e = completa(); e.dispara = { tipo: 'reencuentro', personas: ['pony', 'pony'] }; ok(hay(errores(e), 'la misma'), 'dispara: reencuentro de uno consigo mismo'); }
+    { const e = completa(); e.dispara = { tipo: 'momento', persona: 'lona' }; ok(!hay(errores(e), 'dispara'), 'dispara: momento sin skin vale'); }
+    {
+        const e = completa();
+        const otra = completa(); otra.dispara = { tipo: 'momento', persona: 'lona', skin: 'venjy' };
+        ok(hay(errores(e, catalogos, { vieja: otra }), 'igual que el de la escena «nueva»'), 'dispara repetido es error');
+        const r1 = completa(); r1.dispara = { tipo: 'reencuentro', personas: ['pony', 'lalo'] };
+        const r2 = completa(); r2.dispara = { tipo: 'reencuentro', personas: ['lalo', 'pony'] };
+        ok(hay(errores(r2, catalogos, { primera: r1 }), 'igual que'), 'reencuentro: el orden de las personas no importa');
+        const s1 = completa(); s1.dispara = { tipo: 'momento', persona: 'lona', skin: 'pony' };
+        ok(!hay(errores(s1, catalogos, { primera: e }), 'igual que'), 'dispara: con otra skin es otra escena');
+    }
+
+    // q con clave de persona (decisión 6), solo si se sabe quiénes son
+    { const e = completa(); e.lineas.push({ q: 'zorro', a: 9, d: 2, texto: { es: 'Hola', en: 'Hi' } }); ok(hay(errores(e), '«zorro» no es un actor declarado'), 'frase de alguien que no existe'); }
+    { const e = completa(); e.pista.lalo = [['risa', 1, 2]]; ok(errores(e).length === 0, 'pista por clave de persona vale'); ok(hay(errores(e, { ...nombres }), 'pista.lalo: actor no declarado'), 'sin catálogo de personas, una clave suelta sigue siendo error'); }
+
+    // tiempos
+    { const e = completa(); e.giros.n[2] = [3, 90]; ok(hay(errores(e), 'giros.n[2]'), 'giros desordenados'); }
+    { const e = completa(); e.giros.n[3] = [12, null]; ok(hay(errores(e), 'giros.n[3]') && hay(errores(e), 'menor que T'), 'giro en T o después'); }
+    { const e = completa(); e.giros.n[1] = [4, 'zorro']; ok(hay(errores(e), '«zorro» no es centro ni un actor'), 'giro hacia quien no existe'); }
+    { const e = completa(); e.giros.zorro = [[1, null]]; ok(hay(errores(e), 'giros.zorro: actor no declarado'), 'giro de quien no existe'); }
+    { const e = completa(); e.caminos.b[1] = [0.5, 'sitio']; ok(hay(errores(e), 'caminos.b[1]'), 'camino desordenado'); }
+    { const e = completa(); e.caminos.b.pop(); ok(hay(errores(e), 'la última clave tiene que ser "sitio"'), 'camino que no vuelve al sitio'); }
+    { const e = completa(); e.caminos.b[0] = [1, { hacia: 'zorro' }]; ok(hay(errores(e), '.hacia: «zorro»'), 'camino hacia quien no existe'); }
+    { const e = completa(); e.caminos.b[1] = [5, { desde: 'zorro', mas: [0, 0, 0] }]; ok(hay(errores(e), '.desde: «zorro»'), 'camino desde algo que no existe'); }
+    { const e = completa(); e.efectos[2] = [1, 'corazon']; ok(hay(errores(e), 'efectos[2]'), 'efectos desordenados'); }
+    { const e = completa(); e.efectos.push([6, 'chispa']); ok(!hay(errores(e), 'efectos[3]'), 'dos efectos en el mismo instante valen'); }
+    { const e = completa(); e.sonidos.push([12, 'mar']); ok(hay(errores(e), 'sonidos[2]') && hay(errores(e), 'menor que T'), 'sonido en T'); }
+    { const e = completa(); e.sonidos[0] = [1, 'trueno']; ok(hay(errores(e), '«trueno» no existe'), 'sonido fuera del catálogo'); }
+    { const e = completa(); e.efectos[0][2].en = 'zorro'; ok(hay(errores(e), 'efectos[0].en'), 'efecto en quien no existe'); }
+    { const e = completa(); e.marcas.llega = 12; ok(hay(errores(e), 'marcas.llega'), 'marca en T'); }
+
+    // objetos
+    { const e = completa(); e.objetos[0].dibujo = 'cohete'; ok(hay(errores(e), '«cohete» no es un ícono'), 'dibujo fuera del catálogo'); }
+    { const e = completa(); e.objetos[0].cambia = [[4, 'cohete']]; ok(hay(errores(e), 'cambia[0]'), 'cambia a un dibujo que no existe'); }
+    { const e = completa(); e.objetos[1].id = 'celu'; ok(hay(errores(e), '«celu» repetido'), 'id de objeto repetido'); }
+    { const e = completa(); e.objetos[0].en.q = 'zorro'; ok(hay(errores(e), 'objetos[0].en.q'), 'objeto en la mano de quien no existe'); }
+    { const e = completa(); e.objetos[1].en.desde = 'zorro'; ok(hay(errores(e), 'objetos[1].en.desde'), 'objeto en el mundo desde algo que no existe'); }
+    { const e = completa(); e.objetos[0].hasta = 0.5; ok(hay(errores(e), 'tiene que ser menor que hasta'), 'objeto que se ve al revés'); }
+    { const e = completa(); e.objetos[0].hasta = 13; ok(hay(errores(e), 'pasa de T'), 'objeto que pasa de T'); }
+    { const e = completa(); e.objetos[0].crece = [[3, 2], [2, 1]]; ok(hay(errores(e), 'crece[1]'), 'crece desordenado'); }
+    { const e = completa(); e.lugar.centro.desde = 'centro'; ok(hay(errores(e), 'lugar.centro.desde'), 'el centro no parte de sí mismo'); }
+    { const e = completa(); e.lugar.jugador.desde = 'zorro'; ok(hay(errores(e), 'lugar.jugador.desde'), 'jugador desde alguien que no existe'); }
+    { const e = completa(); e.codigo = 'nada'; ok(hay(errores(e), '«nada» no está en CODIGO_ESCENAS'), 'codigo que no existe'); e.codigo = 'concha-braulio'; ok(errores(e).length === 0, 'codigo que existe'); }
+
+    // anclas
+    { const e = completa(); e.lineas[2].ancla.frase = 5; ok(hay(errores(e), 'no hay frase 5'), 'ancla a una frase que no existe'); }
+    { const e = completa(); e.lineas[1].ancla = { frase: 1, de: 'fin' }; ok(hay(errores(e), 'solo puede depender de una frase anterior'), 'una frase no se ancla a sí misma'); }
+    { const e = completa(); e.lineas[2].a = 6.5; ok(hay(avisos(e), 'lineas[2]: el número guardado (6.5)'), 'ancla que no coincide: aviso'); ok(errores(e).length === 0, 'el desajuste del ancla no es error'); }
+    { const e = completa(); e.objetos[0].desde = 2; ok(hay(avisos(e), 'objetos[0]'), 'ancla de objeto desajustada'); }
+    { const e = completa(); e.pista.n[0][3].ancla.mas = 1; ok(hay(avisos(e), 'pista.n[0]'), 'ancla de tramo desajustada'); }
+    { const e = completa(); e.efectos[0][1] = 'humo'; e.efectos[0][0] = 1; ok(hay(avisos(e), 'efectos[0]'), 'ancla de efecto desajustada'); }
+    { const e = completa(); e.marcas.vuelta.t = 5; ok(hay(avisos(e), 'marcas.vuelta'), 'ancla de marca desajustada'); }
+    { const e = completa(); e.lineas[0].d = undefined; delete e.lineas[0].d; const sin = { ...catalogos, durLinea: null }; ok(reglasEscenas({ escenas: { nueva: e } }, sin).every(a => !/ancla/.test(a.texto)), 'sin durLinea no se juzga un ancla al fin'); }
+
+    // tiempoDeAncla
+    {
+        const L = [{ a: 1, d: 2, texto: { es: 'x', en: 'x' } }, { a: 4, texto: { es: 'x', en: 'x' } }];
+        ok(tiempoDeAncla(L, { frase: 0, de: 'inicio' }) === 1 && tiempoDeAncla(L, { frase: 0, de: 'inicio', mas: -0.5 }) === 0.5, 'tiempoDeAncla: inicio');
+        ok(tiempoDeAncla(L, { frase: 0, de: 'fin', mas: 0.15 }) === 3.15, 'tiempoDeAncla: fin con d');
+        ok(tiempoDeAncla(L, { frase: 1, de: 'fin' }, () => 2.5) === 6.5 && tiempoDeAncla(L, { frase: 1, de: 'fin' }) === null, 'tiempoDeAncla: fin sin d usa durLinea o da null');
+        ok(tiempoDeAncla(L, { frase: 7, de: 'inicio' }) === null, 'tiempoDeAncla: frase inexistente');
+    }
+
+    // guionDeDatos: una escena sin claves nuevas sale como siempre (la forma de antes de B3)
+    {
+        const e = structuredClone(datos.escenas['duelo-reto']);
+        const { tipo, camara, nota, lineas, ...resto } = e;
+        const antes = { ...resto, ...(camara ? { camara } : {}), tipo: 'guion', lineas: lineas.map(l => ({ q: l.q, a: l.a, d: l.d !== undefined ? l.d : durLinea(l.texto), texto: l.texto })), gestos: MOLDES };
+        ok(igual(guionDeDatos(e, { durLinea, moldes: MOLDES }), antes), 'guionDeDatos: sin claves nuevas, igual que antes de B3');
+        ok(igual(guionDeDatos(e, { durLinea, moldes: MOLDES, personajes: catalogos.personas }), antes), 'guionDeDatos: con personajes pero sin personas usadas, igual que antes');
+    }
+    // guionDeDatos con todas las claves nuevas
+    {
+        const e = completa(), copia = JSON.stringify(e);
+        const g = guionDeDatos(e, { durLinea, moldes: MOLDES, personajes: catalogos.personas });
+        ok(JSON.stringify(e) === copia, 'guionDeDatos no toca la escena que recibe');
+        ok(g.tipo === 'guion' && g.gestos === MOLDES && !('base' in g) && !('nota' in g), 'guionDeDatos: tipo, gestos y sin base');
+        ok(g.lineas.length === 3 && g.lineas.every(l => !('ancla' in l)) && g.lineas[1].d === durLinea(e.lineas[1].texto) && g.lineas[2].d === 2.4, 'guionDeDatos: frases sin ancla y con d completado');
+        ok(g.lineas[2].a === 5.6, 'guionDeDatos: corre el número guardado, no el del ancla');
+        ok(igual(g.pista.n[0], ['puno', 0.45, 2.4, { reloj: 0.05, escala: { pz: 1.7 }, espejo: true }]), 'guionDeDatos: el 4.º elemento queda sin ancla');
+        ok(igual(g.pista.n[1], ['risa', 3, 4.5]) && igual(g.pista.j[0], ['asiente', 2.6, 4.4]), 'guionDeDatos: un tramo con solo ancla vuelve a 3 elementos');
+        ok(igual(g.giros, e.giros) && igual(g.caminos, e.caminos) && igual(g.lugar, e.lugar) && igual(g.dispara, e.dispara) && igual(g.sonidos, e.sonidos), 'guionDeDatos: giros, caminos, lugar, dispara y sonidos pasan tal cual');
+        ok(igual(g.objetos[0], { id: 'celu', dibujo: 'celular', en: { q: 'todos', hueso: 'brazoD', mas: [0, -0.4, 0.1] }, desde: 1.6, hasta: 7, tam: 0.5, crece: [[2, 1.5]], cambia: [[4, 'concha']] }), 'guionDeDatos: objeto sin ancla');
+        ok(igual(g.objetos[1], { id: 'caja', dibujo: { caja: [1, 1, 2], color: '#aa8855' }, en: { desde: 'centro', mas: [0, 0, 1] }, desde: 0, hasta: 12, crece: [], cambia: [] }), 'guionDeDatos: objeto con lo que falta completado (desde 0, hasta T)');
+        ok(igual(g.efectos, [[2.2, 'chispa', { en: 'n', alto: 1.2, n: 8 }], [2.2, 'humo', {}], [6, 'corazon', { en: 'centro' }]]), 'guionDeDatos: efectos con opciones siempre y sin ancla');
+        ok(igual(g.marcas, { llega: 3.2, vuelta: 7.4 }), 'guionDeDatos: marcas solo con su número');
+        ok(igual(g.personas, ['pony']), 'guionDeDatos: personas usadas como q (' + JSON.stringify(g.personas) + ')');
+        ok(JSON.stringify(g).includes('ancla') === false, 'guionDeDatos: ninguna ancla llega al motor');
+        // Un objeto en `todos` o por hueso no cuenta como persona; una escena sin `personajes` no trae `personas`
+        ok(!('personas' in guionDeDatos(e, { durLinea, moldes: MOLDES })), 'guionDeDatos: sin lista de personajes no hay personas');
+    }
+    // personasUsadas mira todas las q
+    {
+        const e = completa();
+        e.giros.n.push([11, 'lalo']); e.caminos.lona = [[1, { hacia: 'nacho' }], [3, 'sitio']]; e.objetos[0].en.q = 'lona'; e.efectos.push([8, 'humo', { en: 'venjy' }]);
+        ok(igual(personasUsadas(e, new Set(catalogos.personas)), ['lalo', 'lona', 'nacho', 'pony', 'venjy']), 'personasUsadas: frases, giros, caminos, objetos y efectos (' + JSON.stringify(personasUsadas(e, new Set(catalogos.personas))) + ')');
+        ok(igual(personasUsadas(e, new Set(['pony'])), ['pony']), 'personasUsadas: solo las que son personas');
+    }
 }
 
 console.log(`escenas: ${pilotos.length} pilotos, ${comparaciones} comparaciones, diferencia máxima ${difMax}`);
