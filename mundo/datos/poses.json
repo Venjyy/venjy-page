@@ -454,6 +454,292 @@
         "inc": 0.08,
         "pz": 0.4
       }
+    },
+    "boris-busca": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -2.35,
+        "bDz": 0.8,
+        "bIx": -0.1,
+        "cy": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.7, "frec": 1.6 }
+          ]
+        },
+        "cx": -0.2
+      }
+    },
+    "boris-manejaB": {
+      "reloj": "u",
+      "extiende": { "gesto": "maneja" },
+      "canales": {
+        "salto": {
+          "base": 0,
+          "osc": [
+            { "forma": "pos", "amp": 0.3, "frec": 3.141592653589793, "en": "u" }
+          ]
+        }
+      }
+    },
+    "boris-ventanaB": {
+      "reloj": "u",
+      "extiende": { "gesto": "ventana", "espejo": true },
+      "canales": {
+        "salto": {
+          "base": 0,
+          "osc": [
+            { "forma": "pos", "amp": 0.3, "frec": 3.141592653589793, "en": "u" }
+          ]
+        }
+      }
+    },
+    "conejeros-orejitasJ": {
+      "reloj": "u",
+      "extiende": { "gesto": "orejitas" },
+      "canales": {
+        "pz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.4, "frec": 3.141592653589793, "en": "u" }
+          ]
+        }
+      }
+    },
+    "hadad-recibe": {
+      "reloj": "t",
+      "canales": { "bIx": -1.35, "bIz": -0.1, "cx": 0.1 }
+    },
+    "hadad-pulgar": {
+      "reloj": "t",
+      "canales": {
+        "bIx": {
+          "base": -1.6,
+          "osc": [
+            { "forma": "sin", "amp": 0.04, "frec": 6 }
+          ]
+        },
+        "bIz": -0.2,
+        "bDx": -0.5,
+        "bDz": 0.35,
+        "cy": 0.2
+      }
+    },
+    "lona-ofrece": {
+      "reloj": "u",
+      "canales": {
+        "bDx": {
+          "k": [[0, -0.4], [1, -0.75]]
+        },
+        "bDz": 0.15,
+        "cx": 0.05
+      }
+    },
+    "lona-toma": {
+      "reloj": "u",
+      "canales": {
+        "bDx": {
+          "k": [[0, -0.4], [1, -0.75]]
+        },
+        "bDz": 0.15,
+        "cx": 0.05
+      }
+    },
+    "lona-mece": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -0.75,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 2.2 }
+          ]
+        },
+        "bDz": {
+          "base": 0.15,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 1.1 }
+          ]
+        },
+        "cx": 0.05,
+        "rz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 1.1 }
+          ]
+        }
+      }
+    },
+    "nacho-doblaRisa": {
+      "reloj": "t",
+      "apoya": true,
+      "canales": {
+        "inc": {
+          "base": 0.35,
+          "osc": [
+            { "forma": "sin", "amp": 0.04, "frec": 15 }
+          ]
+        },
+        "bDx": {
+          "base": -0.9,
+          "osc": [
+            { "forma": "sin", "amp": 0.1, "frec": 15 }
+          ]
+        },
+        "bDz": 0.3,
+        "bIx": {
+          "base": -0.9,
+          "osc": [
+            { "forma": "sin", "amp": -0.1, "frec": 15 }
+          ]
+        },
+        "bIz": -0.3,
+        "cx": 0.3
+      }
+    },
+    "nacho-seca": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -2.1,
+          "osc": [
+            { "forma": "sin", "amp": 0.08, "frec": 10 }
+          ]
+        },
+        "bDz": 0.45,
+        "bIx": -0.2,
+        "cx": 0.1
+      }
+    },
+    "pony-busca": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -2.35,
+        "bDz": 0.8,
+        "bIx": -0.1,
+        "cy": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.7, "frec": 1.6 }
+          ]
+        },
+        "cx": -0.2
+      }
+    },
+    "pony-miraAbajo": {
+      "reloj": "t",
+      "canales": {
+        "cx": 0.45,
+        "cy": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 2 }
+          ]
+        },
+        "bDx": -0.3,
+        "bDz": 0.2
+      }
+    },
+    "pony-punoBajo": {
+      "reloj": "t",
+      "apoya": true,
+      "extiende": {
+        "gesto": "puno",
+        "reloj": 5.95,
+        "por": {
+          "bDx": {
+            "k": [[5.6, 1], [6.2, 1.34], [8, 1.34], [8.4, 1]]
+          }
+        }
+      },
+      "canales": {
+        "inc": {
+          "k": [[5.6, 0], [6.2, 0.25], [8, 0.25], [8.4, 0]]
+        },
+        "cx": {
+          "k": [[5.6, 0.1], [6.2, 0.4], [8, 0.4], [8.4, 0.1]]
+        }
+      }
+    },
+    "pony-empujonLargo": {
+      "reloj": "u",
+      "canales": {
+        "bDx": {
+          "base": -0.4,
+          "osc": [
+            {
+              "forma": "sin",
+              "amp": -1.15,
+              "frec": 3.141592653589793,
+              "en": {
+                "k": [[0, 0], [0.2, 0], [0.55, 1], [1, 1]]
+              }
+            }
+          ]
+        },
+        "bDz": 0.2,
+        "inc": {
+          "base": 0,
+          "osc": [
+            {
+              "forma": "sin",
+              "amp": 0.14,
+              "frec": 3.141592653589793,
+              "en": {
+                "k": [[0, 0], [0.2, 0], [0.55, 1], [1, 1]]
+              }
+            }
+          ]
+        },
+        "pz": {
+          "base": 0,
+          "osc": [
+            {
+              "forma": "sin",
+              "amp": 0.5,
+              "frec": 3.141592653589793,
+              "en": {
+                "k": [[0, 0], [0.2, 0], [0.55, 1], [1, 1]]
+              }
+            }
+          ]
+        },
+        "cx": 0.05
+      }
+    },
+    "salonas-cabecea": {
+      "reloj": "t",
+      "canales": {
+        "cx": {
+          "base": 0.05,
+          "osc": [
+            { "forma": "abs", "amp": 0.4, "frec": 6.283185307179586, "pot": 3 }
+          ]
+        },
+        "bIx": -1.05,
+        "bIz": -0.55,
+        "bDx": {
+          "base": -0.6,
+          "osc": [
+            { "forma": "abs", "amp": -0.4, "frec": 6.283185307179586, "pot": 3 }
+          ]
+        },
+        "bDz": 0.3
+      }
+    },
+    "salonas-bajoJ": {
+      "reloj": "t",
+      "canales": {
+        "bIx": -0.25,
+        "bIz": 0.75,
+        "bDx": {
+          "base": -0.45,
+          "osc": [
+            { "forma": "sin", "amp": 0.12, "frec": 16 }
+          ]
+        },
+        "bDz": 0.1,
+        "cx": 0.1
+      }
     }
   }
 }

@@ -17,7 +17,7 @@ const aviso = console.warn;
 console.warn = (...m) => { if (!String(m[0]).startsWith('[datos]')) aviso(...m); };
 const { GESTOS } = await import('../supervivencia/escenas-skin.js');
 const { GESTOS_AMISTAD } = await import('../supervivencia/escena-amistad-datos.js');
-const { MOLDES, SONIDOS } = await import('../supervivencia/moldes.js');
+const { MOLDES, SONIDOS, PIX } = await import('../supervivencia/moldes.js');
 const { reencuentro, durLinea, REENCUENTROS } = await import('../supervivencia/reencuentros.js');
 const { PERSONAJES, GRUPOS } = await import('../supervivencia/amistad.js');
 const { CODIGO_ESCENAS } = await import('../supervivencia/codigo-escenas.js');
@@ -37,7 +37,7 @@ ok(validar(datos, 'escenas').length === 0, 'escenas.json cumple el esquema ' + J
 const cat = sonidosDeEscena(SONIDOS, sonidos);
 const poses = JSON.parse(fs.readFileSync(path.join(aqui, '..', 'datos', 'poses.json'), 'utf8'));
 const nombres = { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES), ...Object.keys(poses.gestos || {})]), animaciones: new Set(), durLinea,
-    personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(), pix: new Set(), sonidos: new Set(Object.keys(cat)), codigos: new Set(Object.keys(CODIGO_ESCENAS)) };
+    personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(), pix: new Set(Object.keys(PIX)), sonidos: new Set(Object.keys(cat)), codigos: new Set(Object.keys(CODIGO_ESCENAS)) };
 const errores = reglasEscenas(datos, nombres).filter(p => p.tipo === 'error');
 ok(errores.length === 0, 'escenas.json: sin errores de reglas ' + JSON.stringify(errores.slice(0, 3)));
 

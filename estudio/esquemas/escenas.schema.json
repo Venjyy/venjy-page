@@ -156,6 +156,12 @@
         "caminos": { "$ref": "#/$defs/caminos" },
         "objetos": { "type": "array", "items": { "$ref": "#/$defs/objeto" } },
         "efectos": { "type": "array", "items": { "$ref": "#/$defs/efecto" } },
+        "yaw": {
+          "description": "Giro relativo por actor (DISENO §40, decisión 16): un canal en el formato de poses.json (reloj = segundos de la escena), en radianes, que se suma al giro de siempre (mirarse). Distinto de giros, que fija hacia dónde mirar.",
+          "type": "object",
+          "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+          "additionalProperties": { "$ref": "poses.schema.json#/$defs/canal" }
+        },
         "sonidos": { "type": "array", "items": { "$ref": "#/$defs/sonido" } },
         "marcas": { "$ref": "#/$defs/marcasNombradas" },
         "codigo": {
@@ -315,6 +321,13 @@
               "properties": { "caja": { "$ref": "#/$defs/vector" }, "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" } },
               "required": ["caja", "color"],
               "additionalProperties": false
+            },
+            {
+              "description": "Caja con la textura de un dibujo de PIX (el celular, la bolsa de papas; decisión 18).",
+              "type": "object",
+              "properties": { "caja": { "$ref": "#/$defs/vector" }, "pix": { "$ref": "comun.schema.json#/$defs/clave" } },
+              "required": ["caja", "pix"],
+              "additionalProperties": false
             }
           ]
         },
@@ -360,17 +373,28 @@
       "additionalProperties": false
     },
     "efecto": {
-      "description": "[t, tipo] o [t, tipo, opciones]: una chispa, un corazón, humo o nieve en un instante. en: un actor o \"centro\".",
+      "description": "[t, tipo] o [t, tipo, opciones]: una chispa, un corazón, humo, nieve o un dibujo de PIX (visto, flash, gota, trazo...) en un instante. en: un actor, \"centro\" o { q, mano } (la punta de esa mano). mas: se suma al punto. vida y vy: segundos y subida. cada + hasta: se repite. encoge [a, b]: se achica hasta desaparecer (decisión 17).",
       "type": "array",
       "prefixItems": [
         { "$ref": "#/$defs/segundo" },
-        { "enum": ["chispa", "corazon", "humo", "nieve"] },
+        { "$ref": "comun.schema.json#/$defs/clave" },
         {
           "type": "object",
           "properties": {
-            "en": { "$ref": "comun.schema.json#/$defs/clave" },
-            "alto": { "type": "number", "minimum": 0, "maximum": 8 },
+            "en": {
+              "anyOf": [
+                { "$ref": "comun.schema.json#/$defs/clave" },
+                { "type": "object", "properties": { "q": { "$ref": "#/$defs/actor" }, "mano": { "enum": ["D", "I"] } }, "required": ["q", "mano"], "additionalProperties": false }
+              ]
+            },
+            "alto": { "type": "number", "minimum": -4, "maximum": 8 },
+            "mas": { "$ref": "#/$defs/vector" },
             "tam": { "type": "number", "minimum": 0.05, "maximum": 8 },
+            "vida": { "type": "number", "minimum": 0.05, "maximum": 120 },
+            "vy": { "type": "number", "minimum": -8, "maximum": 8 },
+            "cada": { "type": "number", "minimum": 0.05, "maximum": 60 },
+            "hasta": { "$ref": "#/$defs/segundo" },
+            "encoge": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/segundo" }, { "$ref": "#/$defs/segundo" }], "minItems": 2, "maxItems": 2 },
             "n": { "type": "integer", "minimum": 1, "maximum": 64 },
             "ancla": { "$ref": "#/$defs/ancla" }
           },
@@ -381,12 +405,12 @@
       "maxItems": 3
     },
     "sonido": {
-      "description": "[t, nombre] o [t, nombre, { ancla }]: suena un sonido de SONIDOS (moldes.js) o de sonidos del juego. El 3.º elemento es solo del editor (B3c): el juego lo ignora.",
+      "description": "[t, nombre] o [t, nombre, { ancla, nota }]: suena un sonido de SONIDOS (moldes.js) o de sonidos del juego. ancla es solo del editor (B3c); nota va al sonido (bajo(nota): las 4 cuerdas del bajo de aire; decisión 19).",
       "type": "array",
       "prefixItems": [
         { "$ref": "#/$defs/segundo" },
         { "$ref": "comun.schema.json#/$defs/clave" },
-        { "type": "object", "properties": { "ancla": { "$ref": "#/$defs/ancla" } }, "additionalProperties": false }
+        { "type": "object", "properties": { "ancla": { "$ref": "#/$defs/ancla" }, "nota": { "type": "integer", "minimum": 0, "maximum": 64 } }, "additionalProperties": false }
       ],
       "minItems": 2,
       "maxItems": 3

@@ -1058,13 +1058,20 @@ export async function montarEscenas(ctx) {
             op = op || {};
             const li = filaExtra('efecto', i);
             const cam = el('div', 'campos');
-            const sTipo = selectDe(B.EFECTOS.map(k => [k, t(...NOMBRE_EFECTO[k])]), tipo); sTipo.dataset.campo = 'nombre';
+            // B4b: el tipo también puede ser un dibujo de PIX (visto, flash, gota, trazo)
+            const pixEf = catalogo().pix || [];
+            const tipos = [...B.EFECTOS.map(k => [k, t(...NOMBRE_EFECTO[k])]), ...[...new Set([...pixEf, ...(B.EFECTOS.includes(tipo) ? [] : [tipo])])].map(k => [k, k])];
+            const sTipo = selectDe(tipos, tipo); sTipo.dataset.campo = 'nombre';
             const sFrase = selectFrase(d, op.ancla, t('En el segundo…', 'At second…'), undefined); sFrase.dataset.campo = 'frase';
             const sT = numeroDe(tt, 0.05, 0, d.T); sT.dataset.campo = 't';
             cam.append(campoDe(`${i + 1} · ${t('Efecto', 'Effect')}`, sTipo), campoDe(t('En esta frase', 'On this line'), sFrase), campoDe(t('Segundo', 'Second'), sT));
             li.appendChild(cam);
             const cam2 = el('div', 'campos solo-avanzado');
-            const en = selectDe([['', t('Entre los dos', 'Between both')], ['centro', t('El centro', 'The center')], ...M.filasDe(d).map(q => [q, etiquetaFila(q, d)])], op.en === undefined ? '' : op.en); en.dataset.campo = 'en';
+            // { q, mano } (la punta de una mano, B4b) se muestra pero se edita en el JSON
+            const enMano = op.en && typeof op.en === 'object';
+            const en = selectDe([['', t('Entre los dos', 'Between both')], ['centro', t('El centro', 'The center')], ...M.filasDe(d).map(q => [q, etiquetaFila(q, d)]),
+                ...(enMano ? [['__mano', t('En la punta de la mano (JSON)', 'At the fingertip (JSON)')]] : [])], op.en === undefined ? '' : enMano ? '__mano' : op.en); en.dataset.campo = 'en';
+            if (enMano) en.disabled = true;
             const alto = numeroDe(op.alto, 0.1, 0, 8); alto.dataset.campo = 'alto'; alto.placeholder = '1.8';
             const tam = numeroDe(op.tam, 0.05, 0.05, 8); tam.dataset.campo = 'tam';
             const n = numeroDe(op.n, 1, 1, 64); n.dataset.campo = 'n'; n.placeholder = '1';

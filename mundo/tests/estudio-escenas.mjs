@@ -499,7 +499,13 @@ for (const [clave, def] of Object.entries(datos.escenas).filter(([, e]) => e.tip
     malo3(e => { e.objetos[0].en.hueso = 'pie'; }, 'hueso que no existe');
     malo3(e => { delete e.objetos[0].dibujo; }, 'objeto sin dibujo');
     malo3(e => { e.objetos[1].dibujo = { caja: [1, 1], color: '#aa8855' }; }, 'caja de 2 medidas');
-    malo3(e => { e.efectos[1] = [2, 'rayo']; }, 'efecto fuera del catálogo');
+    // B4b: el tipo puede ser un dibujo de PIX, así que «rayo» ya no lo frena el esquema sino la regla
+    { const e = completa(); e.efectos[1] = [2, 'rayo']; ok(hay(errores(e), '«rayo» no es un efecto'), 'regla: efecto fuera del catálogo'); }
+    { const e = completa(); e.efectos[1] = [2.2, 'celular', { en: { q: 'n', mano: 'D' }, mas: [0.5, 0, 0], vida: 1, vy: 0.2, cada: 0.2, hasta: 3, encoge: [4, 5] }]; ok(validar(enDatos(e), 'escenas').length === 0 && errores(e).length === 0, 'efecto de PIX con mano, mas, cada y encoge: ' + errores(e).join(' | ')); }
+    { const e = completa(); e.efectos[1] = [2, 'celular', { cada: 0.2 }]; ok(hay(errores(e), 'cada y hasta van juntos'), 'regla: cada sin hasta'); }
+    { const e = completa(); e.objetos[1].dibujo = { caja: [1, 1, 1], pix: 'nada' }; ok(hay(errores(e), '«nada» no es un dibujo de PIX'), 'regla: caja con un PIX que no existe'); }
+    { const e = completa(); e.yaw = { n: { k: [[1, 0], [2, 0.3], [1.5, 0]] } }; ok(validar(enDatos(e), 'escenas').length === 0 && hay(errores(e), 'yaw.n.k'), 'yaw relativo: cumple el esquema y la regla pide claves en orden'); }
+    malo3(e => { e.sonidos[0] = [1, 'mar', { nota: 'do' }]; }, 'nota de sonido que no es número');
     malo3(e => { e.sonidos[0] = [1]; }, 'sonido sin nombre');
     malo3(e => { e.caminos.b[0] = [1]; }, 'clave de camino sin destino');
     malo3(e => { e.giros.n[0] = [0]; }, 'clave de giro sin mira');
