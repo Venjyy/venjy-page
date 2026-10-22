@@ -179,7 +179,7 @@ export function muestras(datos, ruta, c, n = 120, T = 3) {
 
 // ---------- Escritura ----------
 // Copia, asegura el contenedor de canales de la ruta y entrega (canales, def) a f. Limpia variantes vacías.
-function editar(datos, ruta, f) {
+export function editar(datos, ruta, f) {
     if (!defDe(datos, ruta)) return sinCambio(datos);
     const d = clonar(datos);
     const def = defDe(d, ruta);
