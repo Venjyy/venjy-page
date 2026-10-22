@@ -54,7 +54,7 @@ export function bienvenida() {
         lineas: LINEAS,
         pista: {
             n: [
-                ['busca', 0.3, a(1)], ['ventana', a(1), r2(B - 0.3)], ['ventanaB', r2(B - 0.3), r2(B + 0.9)], ['ventana', r2(B + 0.9), a(3)],
+                ['busca', 0.3, a(1)], ['copiloto', a(1), r2(B - 0.3)], ['ventanaB', r2(B - 0.3), r2(B + 0.9)], ['copiloto', r2(B + 0.9), a(3)],
                 ...sec.pista, ...ab.pista,
                 ['recuerda', r2(A0 + 4.5), r2(f(4) + 0.1)], ['asiente', r2(f(4) + 0.1), f(5)], ['habla', a(6), f(6)]
             ],
@@ -65,7 +65,8 @@ export function bienvenida() {
             ]
         },
         yaw: { n: t => -(Math.PI / 2) * enCoche(t), j: t => (Math.PI / 2) * enCoche(t) },
-        gestos: { ...MOLDES, ...sec.gestos, ...ab.gestos, busca, manejaB, ventanaB },
+        // copiloto: `ventana` en espejo todo el viaje (antes solo en el bache, y el brazo cambiaba de lado)
+        gestos: { ...MOLDES, ...sec.gestos, ...ab.gestos, busca, copiloto, manejaB, ventanaB },
         golpes: sec.golpes,
         extra: {
             // El bache: un golpe de sonido en el rebote

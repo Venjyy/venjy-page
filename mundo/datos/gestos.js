@@ -55,12 +55,15 @@ function claveFases(k, x, ini, largo, interp) {
 
 // Un canal: número fijo, o { base | k, interp, osc }. x = reloj de las claves; t = reloj de la escena (osciladores); u = 0..1
 // fa: { ini, largo } con el reloj «fases» (claves ancladas a una fase), o null
+// Oscilador (DISENO §40, decisión 14): `en` dice con qué avanza la onda: t (por defecto), u o { k, interp } en el reloj x;
+// `pot` eleva el resultado conservando el signo (abs con pot 3 = |sen|³).
 function canal(c, x, t, u, fa) {
     if (typeof c === 'number') return c;
     let v = c.k ? (fa ? claveFases(c.k, x, fa.ini, fa.largo, c.interp) : clave(c.k, x, c.interp)) : (c.base || 0);
     const osc = c.osc;
     if (osc) for (let i = 0; i < osc.length; i++) {
-        const o = osc[i], a = t * o.frec + (o.fase || 0);
+        const o = osc[i], en = o.en;
+        const a = (en === undefined || en === 't' ? t : en === 'u' ? u : clave(en.k, x, en.interp)) * o.frec + (o.fase || 0);
         let s;
         switch (FORMA[o.forma]) {
             case 1: s = Math.abs(sin(a)); break;
@@ -68,9 +71,62 @@ function canal(c, x, t, u, fa) {
             case 3: s = Math.min(0, sin(a)); break;
             default: s = sin(a);
         }
+        if (o.pot !== undefined) s = s < 0 ? -Math.pow(-s, o.pot) : Math.pow(s, o.pot);
         v += o.amp * s * (o.env ? tramo(u, o.env[0], o.env[1]) : 1);
     }
     return v;
+}
+
+// Valor de un canal suelto en el tiempo t (el `yaw` de las escenas, decisión 16): reloj t, sin tramo
+export const valorCanal = (c, t) => canal(c, t, t, 0, null);
+
+// El mismo movimiento con el otro brazo (y la cabeza y el torso hacia el otro lado), como espejo() de moldes.js
+export function espejar(m) {
+    const o = { ...m };
+    delete o.bDx; delete o.bDz; delete o.bIx; delete o.bIz;
+    if (m.bIx !== undefined) o.bDx = m.bIx;
+    if (m.bIz !== undefined) o.bDz = -m.bIz;
+    if (m.bDx !== undefined) o.bIx = m.bDx;
+    if (m.bDz !== undefined) o.bIz = -m.bDz;
+    for (const k of ['cy', 'cz', 'rz']) if (m[k] !== undefined) o[k] = -m[k];
+    return o;
+}
+
+// ---------------------------------------------------------
+// DISENO §40, decisiones 13 y 15: un gesto que parte de otro (`extiende`) y pies apoyados solos (`apoya`).
+// La base se busca por nombre como molde() de moldes.js: MOLDES (moldes.js los entrega con registrarMoldes), luego las
+// tablas con firma 'amistad' (GESTOS_AMISTAD) y luego las de 'skin' (GESTOS), ya con los de poses.json puestos.
+// ---------------------------------------------------------
+let moldesExtra = null;
+export function registrarMoldes(tabla) { moldesExtra = tabla; }
+const envueltos = new WeakMap();
+export function gestoBase(nombre) {
+    if (moldesExtra && moldesExtra[nombre]) return moldesExtra[nombre];
+    for (const firma of ['amistad', 'skin']) for (const r of tablas) {
+        const f = r.firma === firma && r.tabla[nombre];
+        if (!f) continue;
+        if (firma === 'amistad') return f;
+        if (!envueltos.has(f)) envueltos.set(f, (u, t, i) => f(u, t, !!(i && i.s), !!(i && i.j)));
+        return envueltos.get(f);
+    }
+    return null;
+}
+// Pierna de rig.md: con el cuerpo inclinado inc y las piernas rectas, la cadera baja LARGO_PIERNA · (1 − cos inc)
+const LARGO_PIERNA = 0.75;
+let hondo = 0; // un gesto que se extiende a sí mismo (validar lo marca) no cuelga el juego
+// Escribe en o la base de `extiende` (corrida, en espejo y multiplicada por `por`) antes de los canales propios
+function escribirBase(ex, x, u, t, info, o) {
+    const f = hondo < 8 && gestoBase(ex.gesto);
+    if (!f) return;
+    hondo++;
+    let m;
+    try { m = f(u, ex.reloj !== undefined ? t - ex.reloj : t, info || {}); } finally { hondo--; }
+    if (ex.espejo) m = espejar(m);
+    for (const k in m) o[k] = ex.por && ex.por[k] !== undefined ? m[k] * canal(ex.por[k], x, t, u, null) : m[k];
+}
+function apoyar(o) {
+    const i = o.inc || 0;
+    o.pDx = -i; o.pIx = -i; o.y = LARGO_PIERNA * (1 - Math.cos(i));
 }
 
 // Listas [nombre, canal] por caso (sentado, jugador): las variantes reemplazan canales. Se arman una vez por def.
@@ -83,7 +139,7 @@ function compilar(def) {
         const m = { ...base, ...(s ? va.sentado : null), ...(j ? va.jugador : null) };
         return Object.keys(m).map(k => [k, m[k]]);
     };
-    c = { casos: [lista(false, false), lista(true, false), lista(false, true), lista(true, true)], reloj: def.reloj || 't', ciclo: def.ciclo || 0 };
+    c = { casos: [lista(false, false), lista(true, false), lista(false, true), lista(true, true)], reloj: def.reloj || 't', ciclo: def.ciclo || 0, extiende: def.extiende || null, apoya: !!def.apoya };
     compilados.set(def, c);
     return c;
 }
@@ -115,7 +171,9 @@ export function evaluarGesto(def, u, t, info, salida = {}) {
     const c = compilar(def);
     const l = c.casos[caso(info)], x = relojDe(c, u, t, info);
     const fa = c.reloj === 'fases' ? fasesDe(info) : null;
+    if (c.extiende) escribirBase(c.extiende, x, u, t, info, salida);
     for (let i = 0; i < l.length; i++) salida[l[i][0]] = canal(l[i][1], x, t, u, fa);
+    if (c.apoya) apoyar(salida);
     return salida;
 }
 
@@ -127,7 +185,9 @@ export function funcionGesto(def, firma = 'skin') {
     const info = { s: false, j: false, d: 0 };
     const correr = (u, t, i) => {
         const n = caso(i), l = c.casos[n], o = salidas[n], x = relojDe(c, u, t, i);
+        if (c.extiende) escribirBase(c.extiende, x, u, t, i, o);
         for (let k = 0; k < l.length; k++) o[l[k][0]] = canal(l[k][1], x, t, u);
+        if (c.apoya) apoyar(o);
         return o;
     };
     if (firma === 'amistad') return (u, t, i) => correr(u, t, i);
@@ -207,6 +267,13 @@ export function reglasPoses(datos, { codigo, moldes } = {}) {
         for (const [n, cs] of Object.entries(g.variantes || {})) for (const [c, v] of Object.entries(cs || {})) revisarCanal(`${donde}.variantes.${n}.${c}`, v);
         if (g.reloj === 'local') aviso(`${donde}.reloj: «local» necesita la duración del tramo y los motores de hoy no la pasan; el juego usa t (mejor u o t)`);
         if (moldes && moldes.has(k)) aviso(`${donde}: MOLDES (moldes.js) tiene un molde con el mismo nombre; en las escenas «guion» gana el molde`);
+        // extiende (DISENO §40, decisión 13): la base existe y no vuelve a este gesto
+        if (g.extiende) {
+            const b = g.extiende.gesto, gs = datos.gestos;
+            if ((codigo || moldes) && !(gs[b] || (codigo && codigo.has(b)) || (moldes && moldes.has(b)))) mal(`${donde}.extiende.gesto: «${b}» no es un gesto`);
+            for (let n = b, i = 0; n && i < 9; n = gs[n] && gs[n].extiende && gs[n].extiende.gesto, i++) if (n === k) { mal(`${donde}.extiende: vuelve a sí mismo (${b})`); break; }
+            for (const [c, v] of Object.entries(g.extiende.por || {})) revisarCanal(`${donde}.extiende.por.${c}`, v);
+        }
     }
     for (const k of Object.keys((datos && datos.poses) || {})) {
         if (datos.gestos && Object.prototype.hasOwnProperty.call(datos.gestos, k)) aviso(`$.poses.${k}: hay un gesto con el mismo nombre; en las pistas vale el gesto`);

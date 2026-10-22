@@ -540,7 +540,11 @@ export function crearEscenaAmistad(ctx) {
             for (const q of qs) {
                 if (q && !e.actores[q]) continue; // un actor opcional que no vino
                 let m;
-                if (typeof o.dibujo === 'object') m = caja(...o.dibujo.caja.map(v => v * (o.tam ?? 1)), o.dibujo.color);
+                if (typeof o.dibujo === 'object') {
+                    // { caja, color } o { caja, pix }: caja lisa o con la textura de un dibujo de PIX (decisión 18)
+                    const px = o.dibujo.pix !== undefined && e.guion.catalogo && e.guion.catalogo.pix && e.guion.catalogo.pix[o.dibujo.pix];
+                    m = caja(...o.dibujo.caja.map(v => v * (o.tam ?? 1)), o.dibujo.color, px ? { filas: px.filas, colores: px.colores } : {});
+                }
                 else {
                     m = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaDibujo(o.dibujo), transparent: true, depthWrite: false }));
                     e.props.push(m);
@@ -561,13 +565,28 @@ export function crearEscenaAmistad(ctx) {
             if (!it.q) { const p = sitioDe(it.o.en); if (p) it.m.position.set(p.x, p.y, p.z); }
         }
     }
-    // [t, tipo, { en, alto, tam, n }]: sobre alguien, en el centro o, sin `en`, entre el amigo y el jugador
+    // [t, tipo, { en, alto, mas, tam, vida, vy, n, encoge }]: sobre alguien, en el centro, en la punta de una mano
+    // ({ q, mano }) o, sin `en`, entre el amigo y el jugador. tipo: chispa, corazon, humo, nieve o un dibujo de PIX (decisión 17).
+    // Con `encoge` [a, b] el efecto no se apaga solo: se achica hasta desaparecer entre a y b (el árbol que se borra).
     function efectoDeDatos([, tipo, op = {}]) {
-        const b = op.en === 'centro' ? e.centro && { x: e.centro.x, y: e.centro.y ?? (e.actores.n.n.y ?? 0), z: e.centro.z }
+        const mano = op.en && typeof op.en === 'object';
+        const b = mano ? (e.actores[op.en.q] ? punta(e.actores[op.en.q], op.en.mano === 'I' ? 'I' : 'D', new THREE.Vector3()) : null)
+            : op.en === 'centro' ? e.centro && { x: e.centro.x, y: e.centro.y ?? (e.actores.n.n.y ?? 0), z: e.centro.z }
             : op.en !== undefined ? posG(op.en) : (() => { const A = posG('n'), J = posG('j'); return { x: (A.x + J.x) / 2, y: Math.max(A.y, J.y), z: (A.z + J.z) / 2 }; })();
         if (!b) return;
-        const n = op.n ?? 1, y = b.y + (op.alto ?? 1.8);
-        for (let i = 0; i < n; i++) efecto(tipo, b.x + (i - (n - 1) / 2) * 0.3, y + i * 0.12, b.z, op.tam !== undefined ? { tam: op.tam } : {});
+        const cat = e.guion.catalogo && e.guion.catalogo.pix, dibujo = TEX[tipo] ? tipo : cat && cat[tipo];
+        if (!dibujo) return;
+        const mas = op.mas || [0, 0, 0], n = op.n ?? 1, y = b.y + (op.alto ?? (mano ? 0 : 1.8)) + mas[1];
+        const o = {};
+        for (const k of ['tam', 'vida', 'vy']) if (op[k] !== undefined) o[k] = op[k];
+        if (op.encoge) o.vida = Infinity;
+        for (let i = 0; i < n; i++) {
+            const s = efecto(dibujo, b.x + mas[0] + (i - (n - 1) / 2) * 0.3, y + i * 0.12, b.z + mas[2], o);
+            if (op.encoge) (e.encogen || (e.encogen = [])).push({ s, tam: s.scale.x, a: op.encoge[0], b: op.encoge[1] });
+        }
+    }
+    function encoger(x) {
+        for (const f of x.encogen) { const u = tramo(x.t, f.a, f.b); f.s.visible = u < 1; f.s.scale.set(f.tam * (1 - u), f.tam * (1 - u), 1); }
     }
     // Cámara de grupo (camaras.js, opción centro): gira en torno al centro del grupo y mira hacia quien habla (miraG, suavizado)
     function centroCamara(c, objetivo) {
@@ -650,7 +669,8 @@ export function crearEscenaAmistad(ctx) {
             for (const s of x.guion.corazones || []) if (x.t >= s && t0 < s + 0.3 && !x.hechos.has('c' + s)) { x.hechos.add('c' + s); corazones(); }
             // B3b: efectos y sonidos del catálogo (con la misma regla), caminos, giros y objetos de escenas.json
             for (const i of eventosEn(x.guion.efectos, t0, x.t, x.hechos, 'e')) efectoDeDatos(x.guion.efectos[i]);
-            for (const i of eventosEn(x.guion.sonidos, t0, x.t, x.hechos, 's')) { const f = x.guion.catalogo && x.guion.catalogo.sonidos[x.guion.sonidos[i][1]]; if (f) f(); }
+            for (const i of eventosEn(x.guion.sonidos, t0, x.t, x.hechos, 's')) { const [, nombre, nota] = x.guion.sonidos[i], f = x.guion.catalogo && x.guion.catalogo.sonidos[nombre]; if (f) f(nota); }
+            if (x.encogen) encoger(x);
             if (x.guion.caminos || x.guion.giros) moverYGirar(x);
             if (x.objetos) actualizarObjetos(x);
             if (x.guion.extra && x.guion.extra.cuadro) x.guion.extra.cuadro(api(x), pausada ? 0 : dt);

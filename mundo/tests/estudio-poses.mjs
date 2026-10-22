@@ -22,7 +22,7 @@ const aviso = console.warn;
 console.warn = (...m) => { if (!String(m[0]).startsWith('[datos]')) aviso(...m); };
 const { GESTOS } = await import('../supervivencia/escenas-skin.js');
 const { GESTOS_AMISTAD } = await import('../supervivencia/escena-amistad-datos.js');
-const { molde } = await import('../supervivencia/moldes.js');
+const { molde, MOLDES } = await import('../supervivencia/moldes.js');
 console.warn = aviso;
 const ORIG = { ...GESTOS }, ORIG_AM = { ...GESTOS_AMISTAD };
 
@@ -129,7 +129,17 @@ for (const [nombre, def] of Object.entries(datos.gestos)) for (const [u, t] of i
     const nombres = gestosDeDatos(datos).map(([k]) => k);
     ok(nombres.length === Object.keys(datos.gestos).length + Object.keys(datos.poses).length && nombres.includes('doblarse') && nombres.includes('puno'), `nombres: ${nombres.length}`);
     ok(gestosDeDatos(null).length === 0, 'sin datos, sin nombres');
-    ok(reglasPoses(datos, { codigo: new Set([...Object.keys(ORIG), ...Object.keys(ORIG_AM)]), moldes: new Set() }).length === 0, 'poses.json de hoy: sin reglas rotas');
+    ok(reglasPoses(datos, { codigo: new Set([...Object.keys(ORIG), ...Object.keys(ORIG_AM)]), moldes: new Set(Object.keys(MOLDES)) }).length === 0, 'poses.json de hoy: sin reglas rotas');
+    // B4b (DISENO §40, decisión 13): extiende apunta a un gesto que existe y no vuelve a sí mismo
+    const ctx = { codigo: new Set(Object.keys(ORIG)), moldes: new Set(Object.keys(MOLDES)) };
+    const conGestos = gestos => ({ version: 1, gestos });
+    ok(reglasPoses(conGestos({ a: { reloj: 't', extiende: { gesto: 'nada' }, canales: {} } }), ctx).some(r => r.texto.includes('«nada» no es un gesto')), 'extiende: gesto que no existe');
+    ok(reglasPoses(conGestos({ a: { reloj: 't', extiende: { gesto: 'b' }, canales: {} }, b: { reloj: 't', extiende: { gesto: 'a' }, canales: {} } }), ctx).some(r => r.texto.includes('vuelve a sí mismo')), 'extiende: ciclo');
+    // apoya: piernas rectas y cadera baja con el inc final; pot y en = 'u'
+    const ap = evaluarGesto({ reloj: 't', apoya: true, canales: { inc: 0.4 } }, 0, 0, null, {});
+    ok(ap.pDx === -0.4 && ap.pIx === -0.4 && Math.abs(ap.y - 0.75 * (1 - Math.cos(0.4))) < 1e-15, 'apoya: pies en el suelo');
+    const po = evaluarGesto({ reloj: 'u', canales: { cx: { base: 0, osc: [{ forma: 'sin', amp: 1, frec: Math.PI, en: 'u', pot: 3 }] } } }, 0.5, 99, null, {});
+    ok(Math.abs(po.cx - 1) < 1e-15, 'oscilador con en u y pot');
     const malo = { version: 1, poses: { habla: { canales: { cx: 0 } }, risa: { canales: {} } }, gestos: {
         a: { reloj: 'local', canales: { bDx: { k: [[0, 0], [0, 1]], base: 1 } } },
         b: { reloj: 't', canales: { cx: { osc: [{ forma: 'sin', amp: 1, frec: 1, env: [0.5, 0.2] }] } } },
