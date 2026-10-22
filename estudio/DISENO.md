@@ -1398,6 +1398,16 @@ Lo de verdad único (el camino de la concha de Braulio, la nieve de Coyhaique, e
 En `lineas`, `pista`, `efectos`, `objetos` y `marcas`: `ancla` opcional (decisión 1). En `pista`, el 4.º elemento (decisión 5).
 El esquema, `guionDeDatos` y las reglas los escribió B3a (2026-10-21; el juego las ignora hasta B3b). Detalles que B3a fijó: `marcas` acepta un número o `{ t, ancla }`; los efectos y sonidos pueden repetir instante, giros y caminos de un mismo actor no; `ancla.frase` de una frase solo apunta a una anterior; `guionDeDatos` devuelve `personas` (las claves de persona usadas como `q`) para armar el `reparto`.
 
+**B3b (2026-10-22): el juego las lee.** Lo que fijó al programarlo (piezas puras al final de `mundo/datos/escenas.js`, motor en `escena-amistad.js`):
+- **Quién es `n`**: bienvenida = `venjy` (el del Inicio); momento = la persona; reencuentro = el otro de la pareja; grupo = de quien parte `lugar.centro` o, si no, el primer miembro que sale en la escena y no es tu skin. Tu skin es `j`; cualquier otra persona usada como `q` entra sola como actor extra.
+- **Giros**: la clave vale desde su instante hasta la siguiente (el motor gira suave por el lado corto, como `api.girar`, que sigue mandando). Grados del mundo = el mismo `yaw` de las personas (0 mira a +z). Mientras alguien camina mira hacia donde va, salvo que un giro diga otra cosa.
+- **Caminos**: como `ruta()`: antes de la primera clave y después de la última, el punto del extremo; entre dos, línea recta con suavizado (sin A*). `{ hacia, dist }` queda a `dist` bloques (1 si falta) del otro, del lado de donde viene. Al terminar o saltar, todos vuelven (`mover`).
+- **Objetos**: un ícono o un PIX es un sprite de `tam` (0,4 si falta); una caja mide `caja × tam`. `crece` escala, `cambia` solo cambia el dibujo de un sprite.
+- **Efectos**: sin `en`, entre el amigo y el jugador; `alto` 1,8 si falta; `n` copias separadas 0,3. `humo` y `nieve` son nuevos.
+- **Sonidos**: `SONIDOS` de `moldes.js` y los de `sonidos.js` sin argumentos (`golpe`, `nivel`...); el CLI valida con la misma lista.
+- **`codigo`**: `CODIGO_ESCENAS` (`supervivencia/codigo-escenas.js`) = nombre → `() => import(módulo)`; el módulo exporta `(marcas) => ({ iniciar, cuadro, terminar })`, el mismo `extra` de los JS. Vacío hasta B4.
+- **Paridad**: `mundo/tests/escenas-motor.mjs` corre Lalo y Lona de JS y de `mundo/tests/escenas-paridad.json` con las mismas piezas cada 1/120 s (frases, tramo, u, peso, metas de cada canal, golpes, corazones, sonidos, objetos visibles). Los gestos propios van ahí en formato de `poses.json` (`lalo-frotaM`, `lona-teje`...); `salta` usa `reloj` del tramo para no depender de dónde empieza. Única diferencia: bordes de tramo a menos de 1e-9 s (el JS suma tiempos: 23.200000000000003).
+
 ### Reglas nuevas de `validar` (`reglasEscenas`)
 
 - `dispara`: personas, skins y grupos que existen (`PERSONAJES`, `GRUPOS`); **error** si dos escenas tienen el mismo
