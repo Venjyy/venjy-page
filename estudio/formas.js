@@ -10,7 +10,7 @@
 import { FORMAS_BASE, AJUSTES_BASE, NOMBRES_FORMA, fijarFormas, forma, ajustesFormas } from '../mundo/formas.js';
 import { B } from '../mundo/texturas.js';
 import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta, filaPerilla } from './campo-comun.js';
-import { MEDIDAS, medida, conMedida, subir, PERILLAS, leerPerilla, ponerPerilla } from './formas-simple.mjs';
+import { MEDIDAS, medida, conMedida, subir, PERILLAS, leerPerilla, ponerPerilla, VISTAS, tocar, moverCaja, estirarCaja } from './formas-simple.mjs';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const NOMBRE = {
@@ -115,11 +115,73 @@ export async function montarFormas(ctx) {
         caja.appendChild(volver);
     }
 
+    // Vista previa con arrastre (B0-V, formas-simple.mjs): desde arriba y de frente, en 1/16. Arrastrar una caja la mueve;
+    // tomarla de un borde la estira. Mientras se arrastra solo se redibuja (no se repinta el panel); al soltar, sí.
+    let elegida = 0;
+    const PX = 8; // px por 1/16
+    function pintarVista(k, real, propia) {
+        const sec = seccion(t('Arrastra las cajas', 'Drag the boxes'));
+        sec.open = true;
+        const ayuda = document.createElement('p'); ayuda.className = 'nota';
+        ayuda.textContent = t('Toma una caja del medio para moverla o de un borde para estirarla; se ve en vivo en el juego.', 'Grab a box by the middle to move it or by an edge to stretch it; it shows live in the game.');
+        const fila = document.createElement('div'); fila.className = 'fila-botones'; fila.style.flexWrap = 'wrap';
+        const cajasDe = () => (datos.formas[k] || real).cajas;
+        if (elegida >= cajasDe().length) elegida = 0;
+        const dibujos = VISTAS.map(vista => {
+            const f = document.createElement('div'); f.className = 'campo';
+            const s = document.createElement('span'); s.textContent = t(vista.es, vista.en);
+            const cv = document.createElement('canvas'); cv.width = cv.height = 16 * PX; cv.className = 'vista-forma';
+            f.append(s, cv); fila.appendChild(f);
+            // (u, v) en 1/16 desde el canvas: «de frente» tiene la y hacia arriba
+            const punto = e => { const r = cv.getBoundingClientRect(), u = (e.clientX - r.left) / r.width * 16, w = (e.clientY - r.top) / r.height * 16; return [u, vista.ejes[1] === 1 ? 16 - w : w]; };
+            let toma = null; // { i, que, desde: [u, v], caja }
+            cv.addEventListener('pointerdown', e => {
+                const p = punto(e), lista = cajasDe();
+                const orden = [elegida, ...lista.keys()].filter((x, j, l) => l.indexOf(x) === j); // la elegida primero
+                for (const i of orden) {
+                    const que = tocar(lista[i], vista.ejes, p[0], p[1]);
+                    if (que) { elegida = i; toma = { i, que, desde: p, caja: clonar(lista[i]) }; cv.setPointerCapture(e.pointerId); redibujar(); return; }
+                }
+            });
+            cv.addEventListener('pointermove', e => {
+                if (!toma) return;
+                const p = punto(e), { que, caja: c0 } = toma;
+                const n = que.tipo === 'mover' ? moverCaja(c0, vista.ejes, [p[0] - toma.desde[0], p[1] - toma.desde[1]])
+                    : estirarCaja(c0, que.eje, que.extremo, p[vista.ejes.indexOf(que.eje)]);
+                const actual = cajasDe()[toma.i];
+                if (JSON.stringify([n.a, n.b]) === JSON.stringify([actual.a, actual.b])) return;
+                const f2 = propia(); f2.cajas[toma.i] = { ...f2.cajas[toma.i], a: n.a, b: n.b };
+                cambio(); redibujar();
+            });
+            const soltar = () => { if (!toma) return; toma = null; pintar(); };
+            cv.addEventListener('pointerup', soltar);
+            cv.addEventListener('pointercancel', soltar);
+            return { cv, vista };
+        });
+        function redibujar() {
+            for (const { cv, vista } of dibujos) {
+                const g = cv.getContext('2d'), [eu, ev] = vista.ejes, abajo = ev === 1;
+                g.fillStyle = '#2a2a2a'; g.fillRect(0, 0, cv.width, cv.height);
+                g.strokeStyle = 'rgba(255,255,255,0.08)'; g.lineWidth = 1;
+                for (let x = 1; x < 16; x++) { g.beginPath(); g.moveTo(x * PX + 0.5, 0); g.lineTo(x * PX + 0.5, cv.height); g.moveTo(0, x * PX + 0.5); g.lineTo(cv.width, x * PX + 0.5); g.stroke(); }
+                cajasDe().forEach((c, i) => {
+                    const x = c.a[eu] * PX, w = (c.b[eu] - c.a[eu]) * PX, h = (c.b[ev] - c.a[ev]) * PX;
+                    const y = abajo ? cv.height - c.b[ev] * PX : c.a[ev] * PX;
+                    const sel = i === elegida;
+                    g.fillStyle = sel ? 'rgba(127,220,90,0.45)' : 'rgba(180,180,180,0.3)'; g.fillRect(x, y, w, h);
+                    g.strokeStyle = sel ? '#7fdc5a' : '#8b8b8b'; g.lineWidth = 2; g.strokeRect(x + 1, y + 1, w - 2, h - 2);
+                });
+            }
+        }
+        redibujar();
+        sec.append(ayuda, fila);
+    }
     function pintarForma(k) {
         const real = forma(k);
         // Cada cambio guarda la forma completa (todas sus cajas) para que no dependa del código
         const propia = () => datos.formas[k] || (datos.formas[k] = { cajas: clonar(real.cajas), ...(real.altoChoque ? { altoChoque: real.altoChoque } : {}) });
         const cajas = real.cajas;
+        pintarVista(k, real, propia);
         cajas.forEach((c, i) => {
             const sec = seccion(t(`Caja ${i + 1}`, `Box ${i + 1}`) + (c.lado ? ` (${c.lado})` : ''));
             // Vista simple (B0-V): ancho, alto y largo, y subir o bajar; «desde» y «hasta» por eje, en Avanzado

@@ -647,3 +647,6 @@ body[data-vista="simple"] .solo-avanzado { display: none !important; }
     background: repeating-linear-gradient(0deg, transparent 0 15px, rgba(255,255,255,0.06) 15px 16px), repeating-linear-gradient(90deg, transparent 0 15px, rgba(255,255,255,0.06) 15px 16px), #2a2a2a;
     box-shadow: inset 3px 3px 0 var(--borde-oscuro), inset -3px -3px 0 var(--borde-claro); }
 .pad-arrastre.arrastrando { cursor: grabbing; color: var(--verde); }
+/* Formas (B0-V): vista previa de las cajas, en 1/16 (8 px cada uno) */
+.vista-forma { width: 128px; height: 128px; cursor: grab; touch-action: none; image-rendering: pixelated;
+    box-shadow: 0 0 0 3px var(--borde-oscuro); }
