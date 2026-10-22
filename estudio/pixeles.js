@@ -49,6 +49,7 @@ export async function montarPixeles(ctx) {
     }
     const sucio = n => JSON.stringify(F[n].datos) !== JSON.stringify(F[n].original);
     const sucios = () => ARCHIVOS.filter(sucio);
+    ctx.sucios.pixeles = () => sucios().length > 0; // punto en la pestaña (campo-comun.js, B0-C)
     function rotular(es, en, clase = '') { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); }
     function estadoArchivos() {
         const s = sucios();

@@ -27,6 +27,7 @@ export async function montarRitmo(ctx) {
     const lienzo = $('ri-lienzo'), caja = $('ri-caja'), msg = $('ri-mensaje'), btnGuardar = $('ri-guardar');
     const selCancion = $('ri-cancion'), selDif = $('ri-dificultad'), zoom = $('ri-zoom'), selSec = $('ri-seccion');
     const sa = ctx.salonas;
+    ctx.sucios.ritmo = sa.sucio; // punto en la pestaña (campo-comun.js, B0-C); comparte el JSON con Salonas
     if (!sa) { msg.textContent = 'La pestaña Salonas no cargó: recarga el Estudio.'; return; }
     const mu = ctx.musica;
     if (!mu) { msg.textContent = 'La pestaña Música no cargó: recarga el Estudio.'; return; }

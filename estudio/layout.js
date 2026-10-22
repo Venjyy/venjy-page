@@ -112,6 +112,7 @@ export async function montarLayout(ctx) {
     const tam = () => (aparato.id === 'pers' ? { w: persW, h: persH } : { w: aparato.w, h: aparato.h });
     const perfil = () => (tam().h <= 460 ? 'baja' : 'normal');
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
+    ctx.sucios.layout = sucio; // punto en la pestaña (campo-comun.js, B0-C)
     const nombre = clave => NOMBRE[clave][ctx.idioma];
 
     // ---------- Datos ----------

@@ -41,6 +41,7 @@ export async function montarTextos(ctx) {
     ultimo = JSON.stringify(datos);
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
+    ctx.sucios.textos = sucio; // punto en la pestaña (campo-comun.js, B0-C)
 
     // ---------- Filas: un par ES/EN por fila, en el orden de DIALOGOS.md ----------
     function construir() {

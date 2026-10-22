@@ -1254,3 +1254,9 @@ Las más cargadas, en orden: **Vida, Carrera, Mesa y Salonas** (muros de número
 - **Suelo automático** prendido por defecto. **El arma sigue a la mano**: en Poses no hay arma a la vista; la del visor del Combate ya cuelga de la muñeca (N6b) y `armaX`/`armaZ` quedan en Avanzado.
 - En Simple se esconden: casos sentado/jugador, Grabar, medir manos, ¿patina?, la curva y sus osciladores, reloj y ciclo, nota y Descargar.
 - Pruebas: `estudio-poses-editor.mjs` (bases dentro del rango y válidas sin tocar lo que había; copiar y espejo en pose y gesto con claves y oscilador; espejo dos veces = igual; suavizar).
+
+**B0-C · Campo común** (rama apilada sobre B0-P): tres piezas compartidas en `estudio/campo-comun.js`.
+- **Deshacer**: `instalarDeshacer(ctx, { pestana, idBoton, leer, poner })` guarda instantáneas de texto del JSON tras cada `cambio()` (los cambios a menos de 0,4 s se juntan, así un slider es un solo paso; tope 100); pone el botón «Deshacer» junto a «Descartar cambios» y atiende Ctrl+Z (salvo dentro de un campo de texto). `poner(texto)` devuelve los datos y repinta. Carrera usa el botón `ca-deshacer` del editor de pista (`adopta`) y ya no tiene historial propio.
+- **Punto de «sin guardar»**: cada `montarX` registra `ctx.sucios[clave] = sucio`; `estudio.js` revisa al editar y cada segundo y pone la clase `sucia` al botón de la pestaña.
+- **Del juego** (`botonJuego`): en los números borra la clave del JSON (`quitarRuta` también limpia los objetos que queden vacíos) y el juego usa su valor. Pestañas con valor del código a la vista (Arena, Carrera, Combate, Vida, Formas general) repintan con ese valor; Mesa y Salonas (que solo conocen lo que trae el JSON) dejan el campo apagado con el valor que tenía. Inicio pone el valor del código. Objetos y Formas por forma ya tenían «Volver al valor del código».
+- Prueba: `mundo/tests/campo-comun.mjs`.

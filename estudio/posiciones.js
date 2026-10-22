@@ -37,6 +37,7 @@ export async function montarPosiciones(ctx) {
     const historial = [];
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
+    ctx.sucios.posiciones = sucio; // punto en la pestaña (campo-comun.js, B0-C)
     function rotular(es, en, clase = '') { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); }
     const enviarAlJuego = () => ctx.puente.enviarDatos('posiciones', datos);
     const listoElJuego = () => ctx.puente.estado.listo;

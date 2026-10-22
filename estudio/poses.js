@@ -37,6 +37,7 @@ export async function montarPoses(ctx) {
     let vista = null; // la escena de Three.js, también al abrir la pestaña
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
+    ctx.sucios.poses = sucio; // punto en la pestaña (campo-comun.js, B0-C)
     function rotular(es, en, clase = '') { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); }
     const ruta = () => (elegido && elegido.tipo !== 'codigo' ? { tipo: elegido.tipo, clave: elegido.clave, variante: elegido.tipo === 'gesto' ? caso || null : null } : null);
     const def = () => (elegido && elegido.tipo !== 'codigo' ? M.defDe(datos, ruta()) : null);

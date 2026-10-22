@@ -24,6 +24,7 @@ import { CANALES as CANALES_POSE } from './poses-modelo.mjs';
 import { nombresCurvas } from '../mundo/datos/curvas.js';
 import * as PM from './combate-paneles-modelo.mjs';
 import { crearPaneles } from './combate-paneles.js';
+import { instalarDeshacer, botonJuego } from './campo-comun.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 
@@ -73,14 +74,32 @@ export async function montarCombate(ctx) {
         sim = null;
         ctx.puente.enviarDatos(n, archivos[n].datos);
         btnGuardar.disabled = !algunoSucio() || !ctx.servidor.escritura;
+        hist.anotar();
         if (repintar === 'todo') pintar(); else { pintarLinea(); pintarResumen(); pintarProblemas(); }
         pintarCurva();
     };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C): todos los archivos juntos
+    const hist = instalarDeshacer(ctx, {
+        pestana: 'combate', idBoton: 'co-descartar',
+        leer: () => JSON.stringify(Object.fromEntries(Object.entries(archivos).map(([n, a]) => [n, a.datos]))),
+        poner: x => {
+            const ds = JSON.parse(x);
+            for (const n of Object.keys(archivos)) if (JSON.stringify(archivos[n].datos) !== JSON.stringify(ds[n])) { archivos[n].datos = ds[n]; ctx.puente.enviarDatos(n, ds[n]); }
+            baseRapidez = null; elegida = null; sim = null; iClave = -1;
+            btnGuardar.disabled = !algunoSucio() || !ctx.servidor.escritura;
+            pintar(); pintarCurva();
+        }
+    });
+    ctx.sucios.combate = algunoSucio;
+
+    // «↺ valor del juego» de una clave opcional de la acción: la borra y manda el valor del código
+    const quitarDe = (def, k) => ({ tiene: () => k in def, quitar: () => { delete def[k]; cambio(); } });
 
     // ---------- Controles chicos ----------
     const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto !== undefined) e.textContent = texto; return e; };
     const boton = (es, en, f, clase = 'boton chico') => { const b = el('button', clase, t(es, en)); b.type = 'button'; b.addEventListener('click', f); return b; };
-    function numero(etiqueta, valor, min, max, paso, fijarValor) {
+    // `volver` (opcional) = { tiene(), quitar() }: el campo lleva «Del juego» (volver al valor del juego)
+    function numero(etiqueta, valor, min, max, paso, fijarValor, volver) {
         const fila = el('label', 'campo');
         const rg = el('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = valor;
         const n = el('input'); n.type = 'number'; n.min = min; n.max = max; n.step = paso; n.value = valor; n.style.width = '5em';
@@ -88,6 +107,7 @@ export async function montarCombate(ctx) {
         rg.addEventListener('input', () => fijar(Number(rg.value)));
         n.addEventListener('change', () => fijar(Number(n.value)));
         const d = el('div', 'fila-botones'); d.append(rg, n);
+        if (volver) d.append(botonJuego(ctx, { ...volver, repintar: () => pintar() }));
         fila.append(el('span', '', etiqueta), d); return fila;
     }
     function lista(etiqueta, opciones, valor, fijarValor) {
@@ -511,7 +531,7 @@ export async function montarCombate(ctx) {
         if (ataque) {
             const pG = panel(t('Golpe', 'Hit'));
             pG.appendChild(lista(t('Altura', 'Height'), M.ALTURAS.map(a => [a, a]), def.altura, v => { def.altura = v; cambio(); }));
-            for (const [k, es, en, min, max, paso] of M.CAMPOS_ATAQUE.simple) pG.appendChild(numero(t(es, en), def[k] ?? 0, min, max, paso, v => { def[k] = v; cambio(); }));
+            for (const [k, es, en, min, max, paso] of M.CAMPOS_ATAQUE.simple) pG.appendChild(numero(t(es, en), def[k] ?? 0, min, max, paso, v => { def[k] = v; cambio(); }, quitarDe(def, k)));
         }
         // -- Ventanas (lista para agregar y borrar; se arrastran en la línea) --
         const pV = panel(t('Ventanas', 'Windows'));
@@ -551,10 +571,10 @@ export async function montarCombate(ctx) {
             if (niveles.length) det.appendChild(lista(t('Peso del golpe (hitstop)', 'Hit weight (hitstop)'), niveles.map(k => [k, k]), def.hitstop, v => { if (v) def.hitstop = v; else delete def.hitstop; cambio(); }));
             const reac = [...new Set([...Object.keys(archivos.combate.datos.reacciones || {}), ...Object.keys(archivos[estilo].datos.reacciones || {})])];
             det.appendChild(lista(t('Reacción del rival', 'Rival reaction'), [[null, t('la de la tabla', 'from the table')], ...reac.map(k => [k, k])], def.reaccion, v => { if (v) def.reaccion = v; else delete def.reaccion; cambio(); }));
-            for (const [k, es, en, min, max, paso] of M.CAMPOS_ATAQUE.avanzado) det.appendChild(numero(t(es, en), def[k] ?? (k === 'velocidadMax' ? 0.6 : 0), min, max, paso, v => { def[k] = v; cambio(); }));
+            for (const [k, es, en, min, max, paso] of M.CAMPOS_ATAQUE.avanzado) det.appendChild(numero(t(es, en), def[k] ?? (k === 'velocidadMax' ? 0.6 : 0), min, max, paso, v => { def[k] = v; cambio(); }, quitarDe(def, k)));
             const arco = Array.isArray(def.arco) ? def.arco : [-60, 60];
-            det.appendChild(numero(t('Arco: desde (grados)', 'Arc: from (degrees)'), arco[0], -180, 0, 5, v => { def.arco = [v, arco[1]]; arco[0] = v; cambio(); }));
-            det.appendChild(numero(t('Arco: hasta (grados)', 'Arc: to (degrees)'), arco[1], 0, 180, 5, v => { def.arco = [arco[0], v]; arco[1] = v; cambio(); }));
+            det.appendChild(numero(t('Arco: desde (grados)', 'Arc: from (degrees)'), arco[0], -180, 0, 5, v => { def.arco = [v, arco[1]]; arco[0] = v; cambio(); }, quitarDe(def, 'arco')));
+            det.appendChild(numero(t('Arco: hasta (grados)', 'Arc: to (degrees)'), arco[1], 0, 180, 5, v => { def.arco = [arco[0], v]; arco[1] = v; cambio(); }, quitarDe(def, 'arco')));
             for (const [k, es, en] of M.CASILLAS_ATAQUE) det.appendChild(casilla(t(es, en), def[k], v => { if (v) def[k] = true; else delete def[k]; cambio(); }));
         }
         det.appendChild(el('p', 'mensaje', t('Marcas guardadas (para revisar): ', 'Saved marks (to review): ') + JSON.stringify({ cancelar: def.cancelar, iframes: def.iframes, armadura: def.armadura })));
@@ -596,7 +616,7 @@ export async function montarCombate(ctx) {
     btnGuardar.addEventListener('click', guardar);
     $('co-descartar').addEventListener('click', () => {
         for (const n of Object.keys(archivos)) if (sucio(n)) { archivos[n].datos = clonar(archivos[n].original); ctx.puente.enviarDatos(n, archivos[n].datos); }
-        baseRapidez = null; elegida = null; sim = null; iClave = -1; pintar(); pintarCurva();
+        baseRapidez = null; elegida = null; sim = null; iClave = -1; hist.anotar(); btnGuardar.disabled = !algunoSucio() || !ctx.servidor.escritura; pintar(); pintarCurva();
     });
     window.addEventListener('keydown', e => {
         if (ctx.pestana === 'combate' && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (!btnGuardar.disabled) guardar(); }

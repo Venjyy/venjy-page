@@ -69,6 +69,7 @@ export async function montarEscenas(ctx) {
     const durLinea = () => (motor && motor.durLinea) || durLineaCopia;
     const personas = Object.keys(FRASES_AMISTAD);
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
+    ctx.sucios.escenas = sucio; // punto en la pestaña (campo-comun.js, B0-C)
     const enviarAlJuego = () => puente.enviarDatos('escenas', datos);
     const listoElJuego = () => puente.estado.listo;
     function rotular(es, en, clase = '') { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); }

@@ -5,6 +5,7 @@
 // tocarlo. Cada cambio va en vivo (mensaje `datos` 'arena'); los botones mandan el mensaje `arena` ({ accion }).
 // Guardar escribe con If-Match, como Carrera y Vida, y conserva las claves que la pestaña no muestra (planos, marcas…).
 // =========================================================
+import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta } from './campo-comun.js';
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v && typeof v === 'object' && !Array.isArray(v);
 // [es, en, min, max, paso] de cada número (mínimos y máximos, del esquema)
@@ -187,7 +188,10 @@ export async function montarArena(ctx) {
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     const rotular = (es, en, clase = '') => { msg.textContent = t(es, en); msg.className = 'mensaje' + (clase ? ' ' + clase : ''); };
-    const cambio = (enviar = true) => { if (enviar) ctx.puente.enviarDatos('arena', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; };
+    const cambio = (enviar = true) => { if (enviar) ctx.puente.enviarDatos('arena', datos); btnGuardar.disabled = !sucio() || !ctx.servidor.escritura; hist.anotar(); };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C)
+    const hist = instalarDeshacer(ctx, { pestana: 'arena', idBoton: 'ar-descartar', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); cambio(); pintar(); } });
+    ctx.sucios.arena = sucio;
     // Lee una ruta: primero el JSON, luego el código; `por` si ninguno la tiene
     const leer = (ruta, por) => {
         for (const raiz of [datos, base]) {
@@ -214,7 +218,8 @@ export async function montarArena(ctx) {
         const s = document.createElement('span'); s.textContent = etiqueta;
         l.appendChild(s); hijos.forEach(h => l.appendChild(h)); return l;
     };
-    function numero(etiqueta, valor, min, max, paso, fijarValor) {
+    // `ruta` (opcional): dónde vive el ajuste en el JSON; con ella el campo lleva «Del juego» (volver al valor del juego)
+    function numero(etiqueta, valor, min, max, paso, fijarValor, ruta) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
         const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = valor;
@@ -223,9 +228,10 @@ export async function montarArena(ctx) {
         rg.addEventListener('input', () => fijar(Number(rg.value)));
         n.addEventListener('change', () => fijar(Number(n.value)));
         const d = document.createElement('div'); d.className = 'fila-botones'; d.append(rg, n);
+        if (ruta) d.append(botonJuego(ctx, { tiene: () => tieneRuta(datos, ruta), quitar: () => { quitarRuta(datos, ruta); cambio(); }, repintar: pintar }));
         fila.append(s, d); return fila;
     }
-    const num = (ruta, [es, en, min, max, paso]) => numero(t(es, en), leer(ruta, min), min, max, paso, v => poner(ruta, v));
+    const num = (ruta, [es, en, min, max, paso]) => numero(t(es, en), leer(ruta, min), min, max, paso, v => poner(ruta, v), ruta);
     const texto = (etiqueta, ruta, ancho = '16em', maxLen = 80) => {
         const i = document.createElement('input'); i.type = 'text'; i.value = leer(ruta, '') ?? ''; i.maxLength = maxLen; i.style.width = ancho;
         i.addEventListener('change', () => poner(ruta, i.value)); return campo(etiqueta, i);

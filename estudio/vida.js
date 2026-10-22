@@ -13,6 +13,7 @@
 // fogata.js) y `poses` (sentarse en el suelo, en un tronco, en cuclillas y calentarse, pose-jugador.js). En vivo.
 // =========================================================
 import { NAV_BASE } from '../mundo/navegacion.js';
+import { instalarDeshacer, botonJuego } from './campo-comun.js';
 import { PASEO_BASE } from '../mundo/supervivencia/paseos-datos.js';
 import { SEGUIR_BASE } from '../mundo/seguir.js';
 import { PELEA_BASE } from '../mundo/supervivencia/acompanante-pelea.js';
@@ -188,7 +189,19 @@ export async function montarVida(ctx) {
     const cambio = (nombre = 'navegacion') => {
         ctx.puente.enviarDatos(nombre, A[nombre].datos);
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
+        hist.anotar();
     };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C): los tres archivos juntos
+    const hist = instalarDeshacer(ctx, {
+        pestana: 'vida', idBoton: 'vi-descartar',
+        leer: () => JSON.stringify(Object.fromEntries(Object.keys(A).map(n => [n, A[n].datos]))),
+        poner: x => {
+            const ds = JSON.parse(x);
+            for (const n of Object.keys(A)) if (JSON.stringify(A[n].datos) !== JSON.stringify(ds[n])) { A[n].datos = ds[n]; ctx.puente.enviarDatos(n, ds[n]); }
+            pintar();
+        }
+    });
+    ctx.sucios.vida = sucio;
     // Nombres de gestos para sugerir (los mismos que entiende moldes.js en el juego)
     (async () => {
         try {
@@ -203,7 +216,8 @@ export async function montarVida(ctx) {
         } catch (e) { console.warn('[estudio] sin lista de gestos', e); }
     })();
 
-    function numero(etiqueta, valor, min, max, paso, poner) {
+    // `volver` (opcional) = { tiene(), quitar() }: el campo lleva «Del juego» (volver al valor del juego)
+    function numero(etiqueta, valor, min, max, paso, poner, volver) {
         const fila = document.createElement('label'); fila.className = 'campo';
         const s = document.createElement('span'); s.textContent = etiqueta;
         const rg = document.createElement('input'); rg.type = 'range'; rg.min = min; rg.max = max; rg.step = paso; rg.value = valor;
@@ -212,6 +226,7 @@ export async function montarVida(ctx) {
         rg.addEventListener('input', () => fijar(Number(rg.value)));
         n.addEventListener('change', () => fijar(Number(n.value)));
         const d = document.createElement('div'); d.className = 'fila-botones'; d.append(rg, n);
+        if (volver) d.append(botonJuego(ctx, { ...volver, repintar: pintar }));
         fila.append(s, d);
         return fila;
     }
@@ -251,7 +266,7 @@ export async function montarVida(ctx) {
         const d = () => A[archivo].datos[parte];
         for (const [k, [es, en, min, max, paso]] of Object.entries(campos)) {
             const v = Number.isFinite(d()[k]) ? d()[k] : base[k];
-            const fila = numero(t(es, en) + (k in d() ? ' *' : ''), v, min, max, paso, x => { d()[k] = x; cambio(archivo); });
+            const fila = numero(t(es, en) + (k in d() ? ' *' : ''), v, min, max, paso, x => { d()[k] = x; cambio(archivo); }, { tiene: () => k in d(), quitar: () => { delete d()[k]; cambio(archivo); } });
             sec.appendChild(fila);
         }
         sec.appendChild(boton('Volver a los valores del código', 'Back to the code values', () => { A[archivo].datos[parte] = {}; cambio(archivo); pintar(); }));
@@ -441,7 +456,7 @@ export async function montarVida(ctx) {
                 const d = act.poses[p] || {};
                 const v = Number.isFinite(d[c]) ? d[c] : base;
                 const [min, max, paso] = c === 'f' ? [0, 10, 0.1] : c === 'vaiven' ? [0, 1, 0.01] : c === 'y' ? [-1, 1, 0.01] : [-3.2, 3.2, 0.01];
-                secP.appendChild(numero(c + (c in d ? ' *' : ''), v, min, max, paso, x => { act.poses[p] = { ...(act.poses[p] || {}), [c]: x }; cambio('actividades'); }));
+                secP.appendChild(numero(c + (c in d ? ' *' : ''), v, min, max, paso, x => { act.poses[p] = { ...(act.poses[p] || {}), [c]: x }; cambio('actividades'); }, { tiene: () => c in (act.poses[p] || {}), quitar: () => { delete act.poses[p][c]; if (!Object.keys(act.poses[p]).length) delete act.poses[p]; cambio('actividades'); } }));
             }
         }
         secP.appendChild(boton('Volver a las poses del código', 'Back to the code poses', () => { act.poses = {}; cambio('actividades'); pintar(); }));

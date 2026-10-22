@@ -12,6 +12,7 @@
 import { agarre, fijarDatosObjetosMano, TIPOS } from '../mundo/supervivencia/objetos-mano-datos.js';
 import { OBJETOS } from '../mundo/supervivencia/objetos.js';
 import { ARMAS } from '../mundo/supervivencia/modelos-mano.js';
+import { instalarDeshacer } from './campo-comun.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const RAD = 180 / Math.PI;
@@ -48,7 +49,11 @@ export async function montarObjetos(ctx) {
         fijarDatosObjetosMano(datos);
         ctx.puente.enviarDatos('objetos-mano', datos);
         btnGuardar.disabled = !sucio() || !ctx.servidor.escritura;
+        hist.anotar();
     };
+    // Deshacer (botón y Ctrl+Z) y punto en la pestaña (campo-comun.js, B0-C)
+    const hist = instalarDeshacer(ctx, { pestana: 'objetos', idBoton: 'ob-descartar', leer: () => JSON.stringify(datos), poner: x => { datos = JSON.parse(x); cambio(); pintar(); } });
+    ctx.sucios.objetos = sucio;
 
     // Lo que se puede editar: los 3 tipos y cada objeto de OBJETOS (clave en minúscula)
     const objetos = OBJETOS.filter(Boolean).map(d => ({ clave: d.clave.toLowerCase(), tipo: tipoDe(d), nombre: d.nombre }));
