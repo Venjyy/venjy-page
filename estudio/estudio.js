@@ -7,6 +7,8 @@
 // Salonas: ajustes, reglas y textos de La Gira, salonas.json (S9). Ritmo: su partitura en línea de tiempo y ajustes a mano (S10a).
 // Combate: ataques, ventanas y fases de cada estilo de pelea, estilo-*.json y combate.json (bloque 8 · N6).
 // Vida: cómo caminan los amigos al dejar su sitio y sus visitas por horario, navegacion.json y rutinas.json (6d etapa 2, §25).
+// Estudio simple (Etapa B, 0b · B0, §39): pestañas en grupos, franja de ayuda por pestaña y vista Simple / Avanzado
+// (ctx.vista; en Simple se esconde todo lo que tenga la clase `solo-avanzado`; ctx.alVista avisa a quien lo necesite).
 // =========================================================
 import { montarLayout } from './layout.js';
 import { montarJuego } from './juego.js';
@@ -27,6 +29,7 @@ import { montarRitmo } from './ritmo.js';
 import { montarMusica } from './musica.js';
 import { montarVida } from './vida.js';
 import { crearCliente } from './puente-cliente.js';
+import { textoAyuda, vistaValida } from './ayuda-modelo.mjs';
 
 const ctx = {
     idioma: 'es',
@@ -35,6 +38,8 @@ const ctx = {
     alIdioma: [],
     pestana: 'layout',
     alPestana: [], // f(clave) al cambiar de pestaña (posiciones pone y quita el gizmo)
+    vista: 'simple', // 'simple' | 'avanzado' (botones de la barra; se recuerda en este navegador)
+    alVista: [], // f(vista) al cambiarla
     puente: crearCliente(), // canal con el juego (fase 2); layout.js manda cada cambio por aquí
     juego: null
 };
@@ -54,7 +59,32 @@ function aplicarIdioma(idioma) {
         const t = el.dataset[idioma] || el.dataset.es;
         if (el.children.length === 0 || el.tagName === 'OPTION') el.textContent = t;
     }
-    for (const b of document.querySelectorAll('[data-idioma]')) b.classList.toggle('activo', b.dataset.idioma === idioma);
+    // Vista Simple / Avanzado y ayuda de la pestaña (las dos se recuerdan; sin almacenamiento, Simple y con ayuda)
+const leer = (k, base) => { try { return localStorage.getItem(k) ?? base; } catch (e) { return base; } };
+const escribir = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento */ } };
+function aplicarVista(vista) {
+    ctx.vista = vistaValida(vista);
+    document.body.dataset.vista = ctx.vista;
+    for (const b of document.querySelectorAll('[data-vista]')) if (b.tagName === 'BUTTON') b.classList.toggle('activo', b.dataset.vista === ctx.vista);
+    escribir('estudioVista', ctx.vista);
+    for (const f of ctx.alVista) f(ctx.vista);
+}
+function pintarAyuda() {
+    const a = textoAyuda(ctx.pestana, ctx.idioma), caja = document.getElementById('ayuda-pestana');
+    const ver = leer('estudioAyuda', 'si') !== 'no';
+    caja.hidden = !a || !ver;
+    document.getElementById('ayuda-alternar').classList.toggle('activo', ver);
+    if (!a) return;
+    document.getElementById('ayuda-que').textContent = a.que;
+    document.getElementById('ayuda-empezar').textContent = (ctx.idioma === 'en' ? 'To start: ' : 'Para empezar: ') + a.empezar;
+}
+for (const b of document.querySelectorAll('button[data-vista]')) b.addEventListener('click', () => aplicarVista(b.dataset.vista));
+document.getElementById('ayuda-alternar').addEventListener('click', () => { escribir('estudioAyuda', leer('estudioAyuda', 'si') === 'no' ? 'si' : 'no'); pintarAyuda(); });
+ctx.alIdioma.push(pintarAyuda);
+ctx.alPestana.push(pintarAyuda);
+aplicarVista(leer('estudioVista', 'simple'));
+
+for (const b of document.querySelectorAll('[data-idioma]')) b.classList.toggle('activo', b.dataset.idioma === idioma);
     try { localStorage.setItem('preferredLanguage', idioma); } catch (e) { /* sin almacenamiento */ }
     for (const f of ctx.alIdioma) f(idioma);
 }

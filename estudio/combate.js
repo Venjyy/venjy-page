@@ -543,7 +543,7 @@ export async function montarCombate(ctx) {
         }));
         pB.appendChild(fd);
         // -- Avanzado --
-        const det = el('details', 'panel'); det.open = avanzado; det.addEventListener('toggle', () => { avanzado = det.open; });
+        const det = el('details', 'panel solo-avanzado'); det.open = avanzado; det.addEventListener('toggle', () => { avanzado = det.open; });
         det.appendChild(el('summary', '', t('Avanzado', 'Advanced')));
         if (ataque) {
             det.appendChild(lista(t('Peligro (aviso rojo)', 'Peril (red warning)'), M.PELIGROS.map(p => [p, p || t('ninguno', 'none')]), def.peligro, v => { def.peligro = v; cambio(); }));

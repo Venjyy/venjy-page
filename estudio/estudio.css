@@ -624,3 +624,14 @@ a.boton.enlace { display: inline-block; text-decoration: none; }
 .boton.capturando { color: var(--amarillo); }
 .co-voz { border-left: 3px solid var(--gris); padding-left: 8px; margin-bottom: 8px; }
 #panel-combate h3 { font-size: 0.8rem; margin: 10px 0 4px; color: var(--amarillo); }
+
+/* Estudio simple (Etapa B, 0b · B0, DISENO §39): grupos de pestañas, vista Simple / Avanzado y franja de ayuda */
+.barra { flex-wrap: wrap; row-gap: 6px; }
+.barra h1 { margin-right: auto; }
+.pestanas { order: 10; flex: 1 1 100%; flex-wrap: wrap; align-items: center; row-gap: 4px; }
+.grupo-pestanas { font-size: 0.7rem; color: var(--gris); margin-left: 8px; }
+.grupo-pestanas:first-child { margin-left: 0; }
+body[data-vista="simple"] .solo-avanzado { display: none !important; }
+.ayuda-pestana { margin: 0; padding: 6px 16px; background: #1c140c; border-bottom: 3px solid #000; color: var(--blanco); font-size: 0.85rem; }
+.ayuda-pestana[hidden] { display: none; }
+.ayuda-empezar { color: var(--amarillo); }

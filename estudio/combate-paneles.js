@@ -19,7 +19,7 @@ export function crearPaneles(h) {
     let nivel = 'medio', material = 'carne', perfil = null, capturando = null;
     const avanzado = {};
     const detalles = (clave, caja) => {
-        const d = el('details', 'panel'); d.open = !!avanzado[clave];
+        const d = el('details', 'panel solo-avanzado'); d.open = !!avanzado[clave];
         d.addEventListener('toggle', () => { avanzado[clave] = d.open; });
         d.appendChild(el('summary', '', t('Avanzado', 'Advanced')));
         caja.appendChild(d); return d;
