@@ -742,6 +742,8 @@ Solo diseño: esquema, piloto con paridad y partición en 3 PR para Sonnet. Nada
 
 ### Qué queda en JS (y por qué)
 
+> Etapa B, punto 3 (2026-10-21): cómo pasa cada fila de esta tabla a datos, en §40.
+
 | Queda en JS | Por qué |
 |---|---|
 | `fusion`, `seguidos`, `espejo`, `con`, `desplazar` y los moldes compuestos | Son funciones de funciones; en datos serían un lenguaje nuevo |
@@ -1283,3 +1285,151 @@ Las más cargadas, en orden: **Vida, Carrera, Mesa y Salonas** (muros de número
 - **Objetos con arrastre** (rama `claude/b0v-objetos-arrastre`): un gizmo en el juego no calza (en 1.ª persona el objeto va pegado a la cámara y en 3.ª sigue al brazo animado), así que cada vista trae un panel «Arrastra aquí» en el Estudio y el resultado se ve en vivo en el juego. «Mover»: de lado = x, arriba/abajo = y, rueda = más lejos o cerca; «Girar»: de lado gira (y), arriba/abajo inclina (x), rueda ladea (z). Cuánto por px y por muesca, en `objetos-simple.mjs` (`PX_*`, `RUEDA_*`). Los botones de a un paso se quedan para lo fino.
 - **Formas con arrastre** (rama `claude/b0v-formas-arrastre`): «Arrastra las cajas» encima de las cajas de cada forma, con dos dibujos de 16×16 (`VISTAS`: desde arriba, x y z con el norte arriba; de frente, x e y). Se toma la caja elegida primero; del medio se mueve (`moverCaja`) y a menos de `BORDE` (0,8/16) de un borde se estira (`estirarCaja`), siempre de a 1/16 y dentro del bloque. Mientras se arrastra solo se redibuja; al soltar se repinta el panel (medidas al día). Un gizmo en el juego no se usó: las cajas son chicas y van dentro de un bloque ya mallado.
 - Prueba: `estudio-simple.mjs` suma Arena (cada perilla y la vida de cada uno se leen igual, cumplen el esquema, la opción del juego no deja claves, un valor a mano = «a mano»; la base «cerca» no toca el golpe final), Objetos (mover y girar de ida y vuelta, giro en rango, tamaño, esquema) y Formas (medidas dentro del bloque sin tocar los otros ejes, subir y bajar, perilla de paso, esquema).
+
+## 40. Etapa B · punto 3: motor genérico de escenas (diseño, 2026-10-21)
+
+Solo diseño: nada del juego cambia en este PR. Resuelve los casos de «Qué queda en JS» (§13) para que una bienvenida, un
+momento, un reencuentro o un grupo nuevos sean **solo datos** en `escenas.json` y se armen en la pestaña Escenas. El punto 4
+de la Etapa B migra los que ya existen con estas piezas.
+
+### Lo que se midió
+
+Todas las escenas de JS ya terminan en el guion de ejecución de §13 (`lineas`, `pista`, `golpes`, `corazones`, `actores`,
+`T`, `r` son datos). Lo que es código, por familia (`grep` de `extra`, `yaw`, `pegar`, `caja`, `sprite`, `mover`, `efecto`,
+`SONIDOS`):
+
+| Familia | Archivos | Lo que es código |
+|---|---|---|
+| Bienvenidas | 13 (`bienvenidas/*.js`) | `encadenar` y tiempos derivados (`HB = a(2) + 2.4`); gestos propios (`frotaM`, `sopla`, `salta`, `botas`); `secreto`/`abrazo`/`pareja` corridos (`desplazar` + `pz × 1,7`); un sonido o un efecto en un instante (`cuadro` con bandera); `yaw` en 2; cajas pegadas en 2. |
+| Momentos | 13 (`momentos/*.js`) | Tiempos ya absolutos (como `lona.js`); objetos pegados a un hueso o al mundo (`caja`, `sprite`, `pegar`: bufanda, agujas, guitarra) que aparecen, crecen o cambian de textura; `yaw` en 6; efectos. |
+| Reencuentros | 1 (`reencuentros.js`, 16 pares) | Dos plantillas (`corto`, `largo`) sobre una tabla de textos (`REENCUENTROS`); `reparto` por personaje; tu clon con `radio`. |
+| Grupos | 3 + `comun.js` | Variantes por skin (`VARIANTES`); `ordenar` (relleno en los huecos); `centro`/`colocar` desde la casa de un amigo; caminar (`api.mover` + `api.girar`); objetos en la mano de todos; plano manual (`api.camara`) en 2. |
+
+Casi todo el `extra` es lo mismo repetido: **«en el segundo X suena algo, salta una chispa o aparece algo en la mano»**.
+Lo de verdad único (el camino de la concha de Braulio, la nieve de Coyhaique, el plano del salto de la atalaya) es poco.
+
+### Decisiones
+
+1. **El motor sigue tonto y los datos siguen absolutos** (§13, decisión 3). El juego solo lee números ya calculados. Lo
+   «relativo» (encadenar frases, «el choque 2,4 s después de la frase 3») lo resuelve **el editor**, no el juego: cada
+   tramo, marca, efecto u objeto puede llevar un **`ancla`** opcional que el juego ignora y el editor usa para mover lo que
+   depende de una frase cuando esa frase se mueve, se estira o cambia de texto:
+   `"ancla": { "frase": 3, "de": "inicio" | "fin", "mas": 2.4 }` (frase = índice en `lineas`; `mas` en segundos, puede ser
+   negativo). La paridad sigue exacta porque el número guardado es el que corre.
+   - **«Acomodar frases»** (botón, vista simple): cada `a` = fin de la anterior + 0,15 (+ su pausa `antes`), cada `d` =
+     `durLinea(texto)` si falta o quedó apurada, y arrastra todo lo anclado. Es `encadenar` hecho una vez, a la vista.
+   - Sin `ancla`, el bloque se queda donde está (como hoy).
+2. **Variantes = escenas aparte.** Una variante por skin (grupos) o por pareja (el momento de Lona con Venjy) es otra
+   escena completa con su propio `dispara`. El editor trae «Duplicar como variante» (copia y cambia solo `dispara.skin`).
+   Más archivo, pero cada variante se ve y se ajusta entera, sin reglas para mezclar tiempos.
+3. **Plantillas solo para partir, no en el juego.** Los 16 reencuentros se **materializan** en el punto 4: un script corre
+   `reencuentro(base, clave)` y guarda cada resultado como una escena. Las plantillas `corto` y `largo` quedan como **bases
+   para partir** en «Nueva escena». Así no hay huecos de texto ni tiempos que se calculen al jugar. Lo mismo con las
+   variantes de grupo: 7 escenas de Tomatitos, no una con 7 ramas.
+4. **Gestos propios a `poses.json`** (se mantiene §13, decisión 4). El esquema de poses ya tiene claves (`ruta`), senos
+   (`forma: abs` da los saltitos), `salto` y `pz`: `frotaM`, `sopla`, `salta` y `botas` caben tal cual. Van con el nombre
+   de la escena delante (`lalo-botas`) para no chocar. Lo que no cabe (`fusion`, `seguidos`) sigue en `MOLDES`.
+5. **Opciones del tramo** (reemplazan `desplazar`, `con` y `espejo` en el caso común): un 4.º elemento opcional
+   `[gesto, desde, hasta, { "reloj": s, "escala": { "pz": 1.7 }, "espejo": true }]`.
+   - `reloj`: el gesto lee `t − reloj` (lo que hace `desplazar`; los gestos de 6b leen el tiempo de la escena). El editor
+     lo pone solo al soltar `secreto`, `abrazo` o `pareja` (= `desde − 0,4`, como `bienvenidas/comun.js`): el dueño no lo ve.
+   - `escala` multiplica canales (`abrazoB` = `abrazo` con `pz × 1,7`); `espejo` cambia derecha por izquierda.
+   - Sin el 4.º elemento, igual que hoy. El `relleno` de `ordenar` **no** entra: el script del punto 4 guarda los tramos ya
+     ordenados.
+6. **Quién es quién sin `reparto` por función.** En los datos, `q` (frases, pistas, giros, objetos) acepta `n`, `j`, un
+   actor declarado **o la clave de una persona** (`pony`). Al jugar, el motor arma el `reparto` con quién es el amigo y
+   cuál es tu skin (lo que hoy hace a mano cada archivo). La misma escena sirve en las dos direcciones.
+7. **`dispara`: cuándo corre una escena** (reemplaza los cargadores por archivo). Clave nueva y opcional:
+   - `{ "tipo": "bienvenida", "skin": "lalo" }`
+   - `{ "tipo": "momento", "persona": "lona", "skin": "venjy" }` (sin `skin`: cualquiera)
+   - `{ "tipo": "reencuentro", "personas": ["pony", "salonas"] }` (sin orden)
+   - `{ "tipo": "grupo", "grupo": "tomatitos", "skin": "pony" }`
+
+   `bienvenida(base)`, `momento(clave)`, `reencuentro(base, clave)` y `grupo(nombre, base)` **primero buscan en
+   `escenas.json`** una escena con ese `dispara` (la más específica gana: con `skin` antes que sin ella) y, si no hay,
+   cargan el módulo de JS como hoy. Es la regla de siempre: el JSON reemplaza y el código es la base. Sin `dispara`, la
+   escena solo se juega con `/amistad guion` y desde el Estudio (§13, decisión 7). Qué eventos existen (llegar a la
+   fogata, amistad 100) sigue en JS; la escena elige a cuál responde.
+8. **Lugar del grupo, sin coordenadas fijas.** `lugar` reemplaza `centro` y `colocar` con posiciones relativas al sitio de
+   alguien (AGENTS.md: nada amarrado a un punto del mapa):
+   `"lugar": { "centro": { "desde": "hadad", "mas": [2.65, 0, -0.5] }, "jugador": { "desde": "centro", "mas": [0, 0, -2.15] } }`.
+   `desde` = un actor (su sitio de siempre), `n` o `centro`. Se ajusta con el gizmo de Posiciones (mismo mensaje, punto
+   nuevo `escena:<clave>:centro`).
+9. **Giros y caminos como claves de tiempo.**
+   - `giros: { q: [[t, mira]] }`, con `mira` = `"centro"`, un actor, grados del mundo o `null` (el motor decide, como hoy).
+     Entre dos claves, giro suave por el lado corto. Reemplaza `yaw: { q: t => … }` de los archivos que lo usan.
+   - `caminos: { q: [[t, a]] }`, con `a` = `"sitio"` (su lugar), `{ "hacia": "nacho", "dist": 1 }` o
+     `{ "desde": "centro", "mas": [x, y, z] }`. El motor interpola (con `ruta`), gira al actor hacia donde camina y al
+     terminar o saltar lo devuelve (lo que hace `api.mover` hoy). El gesto `camina` lo pone el editor solo en ese tramo.
+10. **Objetos, efectos y sonidos de un catálogo cerrado** (reemplazan casi todo el `extra`):
+    - `objetos: [{ "id", "dibujo", "tam", "en", "desde", "hasta", "crece", "cambia" }]`
+      - `dibujo`: un ícono de `iconos.json` (los pinta el dueño en Píxeles), una entrada de `PIX` (`celular`, `concha`,
+        `tomate`) o `{ "caja": [ancho, alto, largo], "color" }`.
+      - `en`: `{ "q": "j", "hueso": "brazoD" | "brazoI" | "cabeza" | "cuerpo", "mas": [x, y, z] }` o
+        `{ "desde": "centro", "mas": [...] }` (en el mundo). Con hueso, el objeto **sigue a la mano solo** (personaje
+        reactivo, CLAUDE.md). `q: "todos"` = uno igual para cada actor (los celulares y tomates del grupo).
+      - `desde`/`hasta`: cuándo se ve. `crece: [[t, escala]]` (la bufanda). `cambia: [[t, dibujo]]` (el tomate que pasa a
+        Tomás).
+    - `efectos: [[t, "chispa" | "corazon" | "humo" | "nieve", { "en": q | "centro", "alto", "tam", "n" }]]`
+    - `sonidos: [[t, "golpe" | "visto" | "mar" | …]]` (las claves de `SONIDOS` y `sonidos`).
+    - Cada uno una vez, con la regla de `eventos()`: volver atrás con `irA` lo vuelve a permitir (capturas y editor).
+    - `golpes` y `corazones` siguen como están (chispa entre las manos + sonido).
+11. **Lo de verdad único va por nombre** (salida de emergencia, como los gestos): `"codigo": "concha-braulio"` busca una
+    función en un registro `CODIGO_ESCENAS` de JS (cargado con `import()` solo si la escena lo pide). Recibe `api` y **las
+    marcas con nombre** de la escena, `"marcas": { "llega": 3.2, "vuelta": 7.8 }`, que el dueño mueve en la línea de
+    tiempo: el código no trae números propios. Candidatos hoy: la nieve de Coyhaique, el camino de la concha si `caminos`
+    no basta y el plano manual del salto de la atalaya (`api.camara`; §13, decisión 6 deja los planos manuales fuera de
+    los datos). Un nombre que no existe es error de `validar`.
+12. **Las escenas de skin (`escenas-skin.js`) siguen fuera**: otro motor (humo, iglú, globos propios). Se revisan al
+    terminar el punto 4; si para entonces el catálogo cubre lo que usan, se pasan con este mismo formato.
+
+### Forma (claves nuevas en `escenas.<clave>`, tipo `guion`; todas opcionales, solo se añaden)
+
+```
+{ "tipo": "guion", "T", "r", "lineas", "pista", "golpes", "corazones", "actores", "camara",   ← como hoy (§13)
+  "dispara":  { "tipo": "bienvenida" | "momento" | "reencuentro" | "grupo", … },             ← decisión 7
+  "lugar":    { "centro": {…}, "jugador": {…} },                                              ← decisión 8
+  "giros":    { "<q>": [[t, mira]] },  "caminos": { "<q>": [[t, a]] },                       ← decisión 9
+  "objetos":  [ {…} ],  "efectos": [[t, tipo, {…}]],  "sonidos": [[t, nombre]],              ← decisión 10
+  "marcas":   { "<nombre>": t },  "codigo": "<nombre>",                                       ← decisión 11
+  "base":     "<clave de la escena de la que partió>" }                                       ← solo el editor
+```
+
+En `lineas`, `pista`, `efectos`, `objetos` y `marcas`: `ancla` opcional (decisión 1). En `pista`, el 4.º elemento (decisión 5).
+El esquema no se toca en este PR: lo escribe B3a junto con el convertidor, para no aceptar claves que el juego todavía ignora.
+
+### Reglas nuevas de `validar` (`reglasEscenas`)
+
+- `dispara`: personas, skins y grupos que existen (`PERSONAJES`, `GRUPOS`); **error** si dos escenas tienen el mismo
+  `dispara` (no se sabría cuál corre).
+- `ancla.frase` dentro de `lineas`; **aviso** si el número guardado no coincide con lo que da el ancla (alguien lo cambió a
+  mano en el JSON; el editor lo reacomoda al abrir).
+- `giros`, `caminos`, `objetos`, `efectos`, `sonidos`: tiempos crecientes y `< T`; `q` válido (decisión 6); `dibujo`,
+  efecto y sonido del catálogo; `hueso` de la lista.
+- `codigo`: el nombre existe en `CODIGO_ESCENAS`. Toda escena con `caminos` vuelve al sitio antes de `T` (hoy
+  `amistad.mjs` lo comprueba para los grupos).
+
+### Estudio (pestaña Escenas): vista simple
+
+- **«Nueva escena»** pregunta qué es (bienvenida, momento, reencuentro, grupo o suelta), con quién, y **parte de una
+  parecida**: las plantillas `corto`/`largo` del reencuentro, una bienvenida de relación 1, 2 o 3, o cualquier escena ya
+  hecha. El `dispara` se llena con esas respuestas.
+- **Frases como lista** (quién dice qué, ES y EN) con «Acomodar frases»: los tiempos se calculan solos. La línea de tiempo
+  queda en «Avanzado».
+- **Gestos con nombre común y miniatura** (los de `poses-simple.mjs`); soltar `secreto`, `abrazo` o `pareja` pone su
+  `reloj` y sus marcas solo.
+- **Objetos**: elegir un dibujo de Píxeles, «¿en qué mano?» y «¿desde qué frase hasta cuál?» (crea el `ancla`). Efectos y
+  sonidos: «en esta frase, suena…». Los números finos (`mas`, `tam`) en «Avanzado».
+- **Lugar** del grupo: botón «Mover el centro» (gizmo de Posiciones), no números.
+
+### Plan (PR chicos)
+
+| PR | Qué | Modelo |
+|---|---|---|
+| B3a | Esquema (las claves de arriba) + `guionDeDatos` las convierte al guion de ejecución (puro) + reglas nuevas de `reglasEscenas` + pruebas en Node. Sin cambios en el juego. | **Sonnet** |
+| B3b | Juego: `dispara` en los 4 cargadores, `reparto` automático, opciones del tramo, `lugar`, `giros`, `caminos`, catálogo de objetos, efectos y sonidos, y `CODIGO_ESCENAS`. Paridad: una bienvenida (Lalo) y un momento (Lona) escritos a mano en JSON dan el mismo cuadro que el JS cada 1/120 s (gestos, `u`, peso, giros, objetos visibles). | **Opus** (toca el motor) |
+| B3c | Editor: anclas y «Acomodar frases», «Duplicar como variante», filas de objetos, efectos y sonidos, la vista simple de arriba. | **Sonnet** + Haiku para la prueba de navegador |
+| B4 | Script que corre cada cargador de JS y guarda el guion como escena (gestos propios a `poses.json`, tramos ya ordenados, `extra` traducido al catálogo; lo que no cabe, a `codigo`). Una familia por PR: reencuentros → bienvenidas → momentos → grupos. Los JS quedan como base hasta el cierre (B7). | **Sonnet** + Haiku |
+
+**Textos**: los que se migran ya están aprobados (`mundo/DIALOGOS.md`): se copian tal cual y `revisado` lo pone el dueño.
+**Carga**: nada nuevo al iniciar; `escenas.json` ya se pide solo al usar una escena.
