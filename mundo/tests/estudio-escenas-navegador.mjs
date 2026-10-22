@@ -43,6 +43,7 @@ try {
     await pag.waitForSelector('#estado-servidor.ok');
     ok(await pag.isEnabled('.pestana[data-pestana="escenas"]'), 'la pestaña Escenas está habilitada');
     await pag.click('.pestana[data-pestana="escenas"]');
+    await pag.click('button[data-vista="avanzado"]'); // B3c: la línea de tiempo está en Avanzado (en Simple, las frases son una lista)
     ok(await pag.isVisible('#es-linea') && await pag.isVisible('#juego') && await pag.isVisible('#panel-escenas'), 'Escenas enseña la línea, el juego y su panel');
 
     // el juego carga primero: abrir el mundo es lo que captura el mouse, y el editor tiene que soltarlo (puntero libre)
@@ -236,6 +237,7 @@ try {
 
     // escena nueva de guion: aparece en la lista, válida y reproducible por clave
     await pag.click('#es-nueva');
+    await pag.click('#es-n-crear'); // B3c: el formulario parte «Suelta» y «En blanco»
     ok(await pag.evaluate(() => window.__estudioEscenas.actual === 'escena'), 'Nueva escena crea «escena» y la elige');
     await pag.click('.es-bloque.frase');
     ok(await pag.isVisible('#es-texto-es') && (await pag.inputValue('#es-texto-es')) === 'Hola', 'la frase de guion se edita en el panel');
