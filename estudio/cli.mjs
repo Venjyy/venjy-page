@@ -515,12 +515,17 @@ async function nombresDeEscenas() {
 async function nombresDeEscenasImport() {
     const { GESTOS } = await import('../mundo/supervivencia/escenas-skin.js');
     const { ANIMACIONES, GESTOS_AMISTAD } = await import('../mundo/supervivencia/escena-amistad-datos.js');
-    const { MOLDES } = await import('../mundo/supervivencia/moldes.js');
+    const { MOLDES, PIX, SONIDOS } = await import('../mundo/supervivencia/moldes.js');
     const { durLinea } = await import('../mundo/supervivencia/reencuentros.js');
+    const { PERSONAJES, GRUPOS } = await import('../mundo/supervivencia/amistad.js');
+    let iconos = [];
+    try { iconos = Object.keys(JSON.parse(fs.readFileSync(path.join(DATOS, 'iconos.json'), 'utf8')).iconos || {}); } catch (e) { /* sin iconos.json válido */ }
     let poses = [];
     try { poses = gestosDeDatos(JSON.parse(fs.readFileSync(path.join(DATOS, 'poses.json'), 'utf8'))).map(([k]) => k); } catch (e) { /* sin poses.json válido: solo el código */ }
     const codigo = new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD)]);
-    return { gestos: new Set([...codigo, ...Object.keys(MOLDES), ...poses]), codigo, moldes: new Set(Object.keys(MOLDES)), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea };
+    return { gestos: new Set([...codigo, ...Object.keys(MOLDES), ...poses]), codigo, moldes: new Set(Object.keys(MOLDES)), animaciones: new Set(Object.keys(ANIMACIONES)), durLinea,
+        // B3 (DISENO §40): catálogos de las claves nuevas de escenas.json. CODIGO_ESCENAS llega con B3b: hasta entonces ningún `codigo` vale
+        personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(iconos), pix: new Set(Object.keys(PIX)), sonidos: new Set(Object.keys(SONIDOS)), codigos: new Set() };
 }
 
 // Reglas de contenido que el esquema no expresa
