@@ -9,7 +9,8 @@
 // =========================================================
 import { FORMAS_BASE, AJUSTES_BASE, NOMBRES_FORMA, fijarFormas, forma, ajustesFormas } from '../mundo/formas.js';
 import { B } from '../mundo/texturas.js';
-import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta } from './campo-comun.js';
+import { instalarDeshacer, botonJuego, tieneRuta, quitarRuta, filaPerilla } from './campo-comun.js';
+import { MEDIDAS, medida, conMedida, subir, PERILLAS, leerPerilla, ponerPerilla } from './formas-simple.mjs';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const NOMBRE = {
@@ -91,8 +92,12 @@ export async function montarFormas(ctx) {
     function pintarGeneral() {
         const a = ajustesFormas();
         const s1 = seccion(t('Jugador', 'Player'));
-        s1.appendChild(numero(t('paso: sube solo (bloques; 0 = saltar)', 'step: climbs by itself (blocks; 0 = jump)'), a.paso, 0, 1, 0.05, v => { datos.paso = v; cambio(); }, ['paso']));
-        s1.appendChild(numero(t('suavizado de la cámara al subir (más = más rápido; 0 = de golpe)', 'camera smoothing when stepping up (higher = faster; 0 = instant)'), a.suavizado, 0, 60, 1, v => { datos.suavizado = v; cambio(); }, ['suavizado']));
+        // Vista simple (B0-V): «sube escalones solo» con palabras; los números, en Avanzado
+        for (const p of PERILLAS) s1.appendChild(filaPerilla(ctx, p, leerPerilla(p, datos, AJUSTES_BASE), x => { ponerPerilla(p, datos, x, AJUSTES_BASE); cambio(); pintar(); }));
+        const fino = document.createElement('div'); fino.className = 'solo-avanzado';
+        s1.appendChild(fino);
+        fino.appendChild(numero(t('paso: sube solo (bloques; 0 = saltar)', 'step: climbs by itself (blocks; 0 = jump)'), a.paso, 0, 1, 0.05, v => { datos.paso = v; cambio(); }, ['paso']));
+        fino.appendChild(numero(t('suavizado de la cámara al subir (más = más rápido; 0 = de golpe)', 'camera smoothing when stepping up (higher = faster; 0 = instant)'), a.suavizado, 0, 60, 1, v => { datos.suavizado = v; cambio(); }, ['suavizado']));
         const s2 = seccion(t('Contorno del bloque apuntado', 'Outline of the targeted block'));
         const fila = document.createElement('label'); fila.className = 'campo';
         const sp = document.createElement('span'); sp.textContent = 'color';
@@ -117,8 +122,21 @@ export async function montarFormas(ctx) {
         const cajas = real.cajas;
         cajas.forEach((c, i) => {
             const sec = seccion(t(`Caja ${i + 1}`, `Box ${i + 1}`) + (c.lado ? ` (${c.lado})` : ''));
+            // Vista simple (B0-V): ancho, alto y largo, y subir o bajar; «desde» y «hasta» por eje, en Avanzado
+            // (al arrastrar no se repinta, para no cortar el arrastre, y se mide desde la caja de antes: se repinta al soltar)
+            const ponerCaja = (n, repintar = true) => { const f = propia(); f.cajas[i] = { ...f.cajas[i], a: n.a, b: n.b }; cambio(); if (repintar) pintar(); };
+            for (const [, es, en, j] of MEDIDAS) {
+                const fila = numero(`${t(es, en)} (1/16)`, medida(c, j), 1, 16, 1, v => ponerCaja(conMedida(c, j, v), false));
+                fila.addEventListener('change', pintar);
+                sec.appendChild(fila);
+            }
+            const fb = document.createElement('div'); fb.className = 'fila-botones';
+            fb.append(boton('Subir', 'Up', () => ponerCaja(subir(propia().cajas[i], 1))), boton('Bajar', 'Down', () => ponerCaja(subir(propia().cajas[i], -1))));
+            sec.appendChild(fb);
+            const fino = document.createElement('div'); fino.className = 'solo-avanzado';
+            sec.appendChild(fino);
             for (const [extremo, es, en] of [['a', 'desde', 'from'], ['b', 'hasta', 'to']]) {
-                EJES.forEach((e, j) => sec.appendChild(numero(`${t(es, en)} ${e} (1/16)`, c[extremo][j], 0, 16, 1, v => {
+                EJES.forEach((e, j) => fino.appendChild(numero(`${t(es, en)} ${e} (1/16)`, c[extremo][j], 0, 16, 1, v => {
                     const f = propia();
                     f.cajas[i][extremo][j] = v;
                     cambio();

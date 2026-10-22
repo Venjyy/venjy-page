@@ -60,7 +60,12 @@ function aplicarIdioma(idioma) {
         const t = el.dataset[idioma] || el.dataset.es;
         if (el.children.length === 0 || el.tagName === 'OPTION') el.textContent = t;
     }
-    // Vista Simple / Avanzado y ayuda de la pestaña (las dos se recuerdan; sin almacenamiento, Simple y con ayuda)
+    for (const b of document.querySelectorAll('[data-idioma]')) b.classList.toggle('activo', b.dataset.idioma === idioma);
+    try { localStorage.setItem('preferredLanguage', idioma); } catch (e) { /* sin almacenamiento */ }
+    for (const f of ctx.alIdioma) f(idioma);
+}
+
+// Vista Simple / Avanzado y ayuda de la pestaña (las dos se recuerdan; sin almacenamiento, Simple y con ayuda)
 const leer = (k, base) => { try { return localStorage.getItem(k) ?? base; } catch (e) { return base; } };
 const escribir = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento */ } };
 function aplicarVista(vista) {
@@ -84,11 +89,6 @@ document.getElementById('ayuda-alternar').addEventListener('click', () => { escr
 ctx.alIdioma.push(pintarAyuda);
 ctx.alPestana.push(pintarAyuda);
 aplicarVista(leer('estudioVista', 'simple'));
-
-for (const b of document.querySelectorAll('[data-idioma]')) b.classList.toggle('activo', b.dataset.idioma === idioma);
-    try { localStorage.setItem('preferredLanguage', idioma); } catch (e) { /* sin almacenamiento */ }
-    for (const f of ctx.alIdioma) f(idioma);
-}
 
 async function buscarServidor() {
     const estado = document.getElementById('estado-servidor');

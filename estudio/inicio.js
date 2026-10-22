@@ -43,6 +43,9 @@ export async function montarInicio(ctx) {
     // Aquí se edita sobre lo real (código + JSON): «volver al valor del juego» pone el valor que trae el código en esa ruta
     const BASE = completar({});
     const enRuta = (o, ruta) => ruta.reduce((x, k) => (x == null ? x : x[k]), o);
+    // Vista simple (B0-V): textos, frases, colores y planos con nombre y duración; pesos, tamaños, tiempos, ajustes del
+    // fondo y posiciones de los planos, en Avanzado
+    const avanzado = el => { el.classList.add('solo-avanzado'); return el; };
 
     function vista() {
         const T = datos.titulo, L = ctx.idioma;
@@ -96,7 +99,7 @@ export async function montarInicio(ctx) {
         for (const k of ORDEN_CARGA) {
             const e = C.etapas[k];
             for (const L of ['es', 'en']) caja.appendChild(campoTexto(`${t('Etapa', 'Stage')} ${k} ${L.toUpperCase()}`, e.nombre[L], v => { e.nombre[L] = v || INICIO.carga.etapas[k].nombre[L]; etapaVista = k; cambio(); }));
-            caja.appendChild(campoNumero(`${t('Peso en la barra', 'Bar weight')} · ${k}`, e.peso, 0.1, 100, 0.5, n => { e.peso = n; etapaVista = k; cambio(); }, ['carga', 'etapas', k, 'peso']));
+            caja.appendChild(avanzado(campoNumero(`${t('Peso en la barra', 'Bar weight')} · ${k}`, e.peso, 0.1, 100, 0.5, n => { e.peso = n; etapaVista = k; cambio(); }, ['carga', 'etapas', k, 'peso'])));
         }
         const sel = $('in-c-sel'); sel.textContent = '';
         for (const k of ORDEN_CARGA) { const o = document.createElement('option'); o.value = k; o.textContent = k; o.selected = k === etapaVista; sel.appendChild(o); }
@@ -104,9 +107,9 @@ export async function montarInicio(ctx) {
         const a = C.aspecto;
         for (const [k, es, en] of [['fondo', 'Tierra (tono 1)', 'Dirt (tone 1)'], ['fondo2', 'Tierra (tono 2)', 'Dirt (tone 2)'], ['barra', 'Barra', 'Bar'], ['barraFondo', 'Fondo de la barra', 'Bar background'], ['texto', 'Texto', 'Text']])
             ac.appendChild(campoColor(t(es, en), a[k], v => { a[k] = v; cambio(); }));
-        ac.appendChild(campoNumero(t('Tamaño del cuadro de tierra (px)', 'Dirt tile size (px)'), a.cuadro, 8, 256, 1, n => { a.cuadro = n; cambio(); }, ['carga', 'aspecto', 'cuadro']));
-        ac.appendChild(campoNumero(t('Tiempo mínimo visible (s)', 'Minimum time shown (s)'), C.tiempos.minimo, 0, 10, 0.1, n => { C.tiempos.minimo = n; cambio(); }, ['carga', 'tiempos', 'minimo']));
-        ac.appendChild(campoNumero(t('Desvanecido (s)', 'Fade out (s)'), C.tiempos.salida, 0, 3, 0.05, n => { C.tiempos.salida = n; cambio(); }, ['carga', 'tiempos', 'salida']));
+        ac.appendChild(avanzado(campoNumero(t('Tamaño del cuadro de tierra (px)', 'Dirt tile size (px)'), a.cuadro, 8, 256, 1, n => { a.cuadro = n; cambio(); }, ['carga', 'aspecto', 'cuadro'])));
+        ac.appendChild(avanzado(campoNumero(t('Tiempo mínimo visible (s)', 'Minimum time shown (s)'), C.tiempos.minimo, 0, 10, 0.1, n => { C.tiempos.minimo = n; cambio(); }, ['carga', 'tiempos', 'minimo'])));
+        ac.appendChild(avanzado(campoNumero(t('Desvanecido (s)', 'Fade out (s)'), C.tiempos.salida, 0, 3, 0.05, n => { C.tiempos.salida = n; cambio(); }, ['carga', 'tiempos', 'salida'])));
         const lc = $('in-consejos'); lc.textContent = '';
         C.consejos.forEach((f, n) => {
             const fila = document.createElement('div'); fila.className = 'fila-texto in-fila';
@@ -152,7 +155,7 @@ export async function montarInicio(ctx) {
             const s = document.createElement('span'); s.textContent = t(es, en);
             const i = document.createElement('input'); i.type = 'number'; i.min = min; i.max = max; i.step = paso; i.value = v[k];
             i.addEventListener('input', () => { const n = Number(i.value); if (i.value !== '' && Number.isFinite(n)) { v[k] = Math.min(max, Math.max(min, n)); cambio(); } });
-            l.append(s, i); caja.appendChild(l);
+            l.append(s, i); caja.appendChild(avanzado(l));
         }
     }
     function pintarFrases() {
@@ -228,10 +231,10 @@ export async function montarInicio(ctx) {
         const a = P.aspecto;
         for (const [k, es, en] of [['fondo', 'Fondo', 'Background'], ['texto', 'Nombre', 'Name'], ['sombra', 'Sombra del nombre', 'Name shadow'], ['lema', 'Lema', 'Tagline']])
             caja.appendChild(campoColor(t(es, en), a[k], v => { a[k] = v; cambio(); }));
-        caja.appendChild(campoNumero(t('Tamaño de cada píxel del logo (px)', 'Logo pixel size (px)'), a.pixel, 1, 24, 1, n => { a.pixel = n; cambio(); }, ['presentacion', 'aspecto', 'pixel']));
+        caja.appendChild(avanzado(campoNumero(t('Tamaño de cada píxel del logo (px)', 'Logo pixel size (px)'), a.pixel, 1, 24, 1, n => { a.pixel = n; cambio(); }, ['presentacion', 'aspecto', 'pixel'])));
         const T = P.tiempos;
         for (const [k, es, en, min, max] of [['minimo', 'Mínimo visible (s)', 'Minimum shown (s)', 0, 15], ['maximo', 'Máximo (s)', 'Maximum (s)', 0.5, 30], ['entrada', 'Aparición (s)', 'Appear (s)', 0, 3], ['salida', 'Desvanecido (s)', 'Fade out (s)', 0, 3]])
-            caja.appendChild(campoNumero(t(es, en), T[k], min, max, 0.1, n => { T[k] = n; cambio(); }, ['presentacion', 'tiempos', k]));
+            caja.appendChild(avanzado(campoNumero(t(es, en), T[k], min, max, 0.1, n => { T[k] = n; cambio(); }, ['presentacion', 'tiempos', k])));
         pintarPaleta();
         vistaPresentacion();
     }
@@ -247,7 +250,7 @@ export async function montarInicio(ctx) {
             ['fps', 'Tope de cuadros/s', 'Max frames/s', 10, 60, 1], ['hora', 'Hora (0-1; 0,5 mediodía)', 'Time (0-1; 0.5 noon)', 0, 1, 0.01],
             ['fov', 'Campo de visión (°)', 'Field of view (°)', 20, 110, 1], ['oscurecer', 'Velo bajo el menú (0-1)', 'Veil under the menu (0-1)', 0, 1, 0.05],
             ['fundido', 'Fundido a negro (s)', 'Fade to black (s)', 0, 5, 0.1], ['esperaMax', 'Espera máx. en negro (s)', 'Max wait in black (s)', 0, 20, 0.5]
-        ]) caja.appendChild(campoNumero(t(es, en), F[k], min, max, paso, n => { F[k] = paso === 1 && max <= 12 ? Math.round(n) : n; cambio(); }, ['fondo', k]));
+        ]) caja.appendChild(avanzado(campoNumero(t(es, en), F[k], min, max, paso, n => { F[k] = paso === 1 && max <= 12 ? Math.round(n) : n; cambio(); }, ['fondo', k])));
         const l = document.createElement('label'); l.className = 'campo';
         const s = document.createElement('span'); s.textContent = t('Orden de los planos', 'Shot order');
         const sel = document.createElement('select');
@@ -289,7 +292,7 @@ export async function montarInicio(ctx) {
                     cambio();
                 };
                 ins.forEach(i => i.addEventListener('input', leer));
-                fila.appendChild(v);
+                fila.appendChild(avanzado(v));
             }
             lista.appendChild(fila);
         });
