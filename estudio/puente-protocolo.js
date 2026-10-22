@@ -34,7 +34,8 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
 //                                  devuelve un objeto que viaja en `escena` de la respuesta o lanza
 //   objeto({ clave })             pone en tu mano ese objeto de OBJETOS (o un id numérico), dándotelo si no lo tienes (pestaña Objetos)
-//   mesa({ accion })              'abrir' | 'cerrar' | 'vista': la mesa del Duelo de Cartas junto a Lucho
+//   mesa({ accion })              'abrir' | 'cerrar' | 'vista' | 'animar' | 'tutorial' | 'sobre': la mesa del Duelo de Cartas junto
+//                                  a Lucho; 'mover' | 'girar' le ponen un gizmo (B0-V, devuelve { giro, dist, lado }) y 'soltar' lo quita
 //   carrera({ accion })           'ver' | 'mila' | 'gala' | 'terminar': la carrera de gatas (7h-1; 'ver' = la sala sin menú)
 //   salonas({ accion, cancion?, dificultad?, seccion? })
 //                                  'probar' abre esa canción de La Gira en Práctica, solo con esa sección (índice) y con los ajustes a mano
@@ -127,11 +128,12 @@ export function crearManejador(juego) {
                 }
                 case 'mesa': {
                     // Mesa del Duelo de Cartas (7h-2b): abrir, cerrar, cambiar de vista, repetir la animación de la última jugada
-                    // o jugar el tutorial desde el principio
-                    if (!['abrir', 'cerrar', 'vista', 'animar', 'tutorial'].includes(m.accion)) return error('accion de mesa no válida');
+                    // o jugar el tutorial desde el principio; probar el sobre; y (B0-V) mover o girar la mesa con un gizmo
+                    // ('mover' | 'girar' devuelven { giro, dist, lado } en `mesa`; 'soltar' quita el gizmo)
+                    if (!['abrir', 'cerrar', 'vista', 'animar', 'tutorial', 'sobre', 'mover', 'girar', 'soltar'].includes(m.accion)) return error('accion de mesa no válida');
                     if (!juego.mesa) return error('este juego no tiene la mesa de cartas');
-                    await juego.mesa({ accion: m.accion });
-                    return { ...base, tipo: 'ok' };
+                    const r = await juego.mesa({ accion: m.accion });
+                    return { ...base, tipo: 'ok', mesa: r || null };
                 }
                 case 'carrera': {
                     // Carrera de gatas (7h-1): abrirla con Mila o con Gala, o terminarla; `pista` = la que se edita

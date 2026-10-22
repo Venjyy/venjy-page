@@ -9,7 +9,7 @@
 // Duelo entre jugadores donde están: grupos «retar», «sobre un tronco», «en el piso» y «Cámara que mira al otro jugador».
 // =========================================================
 import { instalarDeshacer, botonJuego, filaPerilla } from './campo-comun.js';
-import { perillasDisponibles, leerPerilla, ponerPerilla, CAMARAS, baseDeCamara, camaraDeBase, GRUPOS_SIMPLES } from './mesa-simple.mjs';
+import { perillasDisponibles, leerPerilla, ponerPerilla, CAMARAS, baseDeCamara, camaraDeBase, GRUPOS_SIMPLES, frasePosicion } from './mesa-simple.mjs';
 const clonar = o => JSON.parse(JSON.stringify(o));
 // Grupos en el orden del panel, con su nombre y qué es cada número
 const GRUPOS = [
@@ -135,8 +135,57 @@ export async function montarMesa(ctx) {
         sec.open = true;
         caja.appendChild(sec);
     }
+    // Dónde va la mesa (vista simple): una frase y el gizmo en el juego (gizmo-mesa.js); los números, en Avanzado («Mesa»)
+    let gizmo = null; // 'mover' | 'girar' | null
+    function pintarLugar() {
+        const m = datos.mesa || (datos.mesa = {}), ref = inicial.mesa || {};
+        const lugar = { giro: m.giro ?? ref.giro ?? 0, dist: m.dist ?? ref.dist ?? 0.75, lado: m.lado ?? ref.lado ?? 0 };
+        const p = document.createElement('p'); p.className = 'nota'; p.textContent = frasePosicion(lugar, ctx.idioma);
+        const fb = document.createElement('div'); fb.className = 'fila-botones';
+        for (const [modo, es, en] of [['mover', 'Mover la mesa', 'Move the table'], ['girar', 'Girar la mesa', 'Turn the table']]) {
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'boton chico' + (gizmo === modo ? '' : ' secundario');
+            b.textContent = t(es, en); b.addEventListener('click', () => ponerGizmo(modo));
+            fb.appendChild(b);
+        }
+        const soltar = document.createElement('button'); soltar.type = 'button'; soltar.className = 'boton chico secundario';
+        soltar.textContent = t('Listo', 'Done'); soltar.disabled = !gizmo; soltar.addEventListener('click', quitarGizmo);
+        fb.appendChild(soltar);
+        const ayuda = document.createElement('p'); ayuda.className = 'nota';
+        ayuda.textContent = t('Aparece una copia de la mesa junto a Lucho: arrastra las flechas (o el aro, para girarla) en el juego.', 'A copy of the table shows up next to Lucho: drag the arrows (or the ring, to turn it) in the game.');
+        const sec = bloque(t('Dónde va la mesa', 'Where the table goes'), [p, fb, ayuda]);
+        sec.open = true;
+        caja.appendChild(sec);
+    }
+    async function ponerGizmo(modo) {
+        try {
+            rotular('Poniendo la mesa…', 'Placing the table…');
+            ctx.puente.enviarDatos('cartas-mesa', datos);
+            await ctx.puente.tp('lucho').catch(() => {}); // junto a Lucho, para verla
+            await ctx.puente.enviar('mesa', { accion: modo });
+            gizmo = modo;
+            rotular('Arrástrala en el juego (Esc suelta el mouse).', 'Drag it in the game (Esc frees the mouse).', 'ok');
+        } catch (e) { rotular(e.message, e.message, 'error'); }
+        pintar();
+    }
+    async function quitarGizmo() {
+        if (!gizmo) return;
+        gizmo = null;
+        try { await ctx.puente.enviar('mesa', { accion: 'soltar' }); } catch (e) { /* sin juego: nada que quitar */ }
+        pintar();
+    }
+    // El juego avisa al soltar el gizmo: solo cambian giro, dist y lado (las medidas siguen en Avanzado)
+    ctx.puente.alMensaje(m => {
+        if (m.tipo !== 'cambio' || m.nombre !== 'cartas-mesa' || m.ruta !== 'mesa' || !m.valor) return;
+        const mesa = datos.mesa || (datos.mesa = {});
+        for (const k of ['giro', 'dist', 'lado']) if (Number.isFinite(m.valor[k])) mesa[k] = m.valor[k];
+        cambio(); pintar();
+        rotular(frasePosicion(mesa, ctx.idioma) + '.', frasePosicion(mesa, 'en') + '.', 'ok');
+    });
+    ctx.alPestana.push(clave => { if (clave !== 'mesa') quitarGizmo(); });
+
     function pintar() {
         caja.textContent = '';
+        pintarLugar();
         pintarBasico();
         // Los grupos de números son lo fino (Avanzado), salvo las listas por carta (colección inicial, precios, pesos)
         for (const [clave, es, en, nombres] of GRUPOS) if (datos[clave]) {
@@ -195,7 +244,7 @@ export async function montarMesa(ctx) {
         try { await ctx.puente.enviar('mesa', { accion }); rotular('Listo.', 'Done.', 'ok'); }
         catch (e) { rotular(e.message, e.message, 'error'); }
     };
-    $('me-abrir').addEventListener('click', async () => { await mesa('abrir'); ctx.puente.enviarDatos('cartas-mesa', datos); });
+    $('me-abrir').addEventListener('click', async () => { gizmo = null; await mesa('abrir'); pintar(); ctx.puente.enviarDatos('cartas-mesa', datos); });
     $('me-vista').addEventListener('click', () => mesa('vista'));
     $('me-animar').addEventListener('click', () => mesa('animar'));
     $('me-tutorial').addEventListener('click', async () => { await mesa('tutorial'); ctx.puente.enviarDatos('cartas-mesa', datos); });

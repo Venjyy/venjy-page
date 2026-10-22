@@ -17,6 +17,7 @@ const MUNDO = 'Estudio';
 // escenas: escena-amistad.js (se carga aquí si todavía no estaba; la próxima escena que se juegue ya usa los datos nuevos)
 // poses: mundo/datos/gestos.js cambia GESTOS y GESTOS_AMISTAD en el lugar (el próximo cuadro ya usa el gesto nuevo)
 let gizmo = null; // estudio/gizmo-juego.js, solo después del primer `elegir`
+let gizmoMesa = null; // estudio/gizmo-mesa.js, solo después del primer «Mover la mesa»
 async function aplicar(nombre, datos) {
     if (nombre === 'dialogos') {
         const m = await import('../mundo/supervivencia/dialogos-datos.js');
@@ -38,6 +39,7 @@ async function aplicar(nombre, datos) {
         const v = window.__venjy;
         if (v) v.datosMesa = datos;
         if (v && v.mesaCartas) v.mesaCartas.aplicarDatos(datos);
+        if (gizmoMesa) gizmoMesa.sincronizar();
     } else if (nombre === 'objetos-mano') {
         const m = await import('../mundo/supervivencia/objetos-mano-datos.js');
         m.aplicarDatosVivos(datos); // mano.js y pose-jugador.js se reacomodan solos al notar la versión nueva
@@ -269,6 +271,18 @@ const responder = crearManejador({
     async mesa({ accion }) {
         const v = window.__venjy;
         if (!v || !v.abrirMesa) throw new Error('el juego todavía no está listo');
+        // Gizmo de la mesa (B0-V): una copia junto a Lucho con la mesa cerrada; TransformControls se baja la primera vez
+        if (accion === 'mover' || accion === 'girar' || accion === 'soltar') {
+            if (!gizmoMesa) {
+                if (accion === 'soltar') return null;
+                if (!juegoListo()) throw new Error('el juego todavía no está listo');
+                const m = await import('./gizmo-mesa.js');
+                gizmoMesa = m.crearGizmoMesa(v, valor => decir({ tipo: 'cambio', nombre: 'cartas-mesa', ruta: 'mesa', valor }));
+                v.estudioGizmoMesa = gizmoMesa; // depuración y pruebas
+            }
+            return gizmoMesa.elegir(accion === 'soltar' ? null : accion);
+        }
+        if (gizmoMesa) gizmoMesa.quitar(); // abrir o probar algo de la mesa suelta la copia
         if (accion === 'abrir') {
             if (!(v.mesaCartas && v.mesaCartas.activo)) v.abrirMesa('facil');
         } else if (accion === 'tutorial') {
