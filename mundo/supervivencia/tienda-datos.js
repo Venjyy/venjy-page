@@ -214,3 +214,23 @@ export const TIENDAS = {
         noAlcanza: t('Hasta en el Inicio hay cuentas: todavía te falta para esto.', 'Even at the Start there are accounts: you are still short for this.')
     }
 };
+
+// ---- mundo/datos/tienda.json: ofertas y compras NUEVAS, al final de las de arriba (solo suma; amigo sin tienda arriba se ignora) ----
+const BASE_OFERTAS = new Map(Object.entries(TIENDAS).map(([k, v]) => [k, [v.ofertas.slice(), v.compra.slice()]]));
+const idDe = nombre => { const k = String(nombre).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
+const pila = ([nombre, n]) => { const id = idDe(nombre); return id === undefined ? null : [id, n]; };
+export function fijarTienda(datos) {
+    for (const [k, [ofertas, compra]] of BASE_OFERTAS) { TIENDAS[k].ofertas = ofertas.slice(); TIENDAS[k].compra = compra.slice(); }
+    for (const [amigo, t] of Object.entries((datos && datos.tiendas) || {})) {
+        const def = TIENDAS[amigo];
+        if (!def) continue;
+        for (const o of t.ofertas || []) {
+            const da = o.da.map(pila), pide = o.pide.map(pila);
+            if (!da.includes(null) && !pide.includes(null)) def.ofertas.push(of(da, pide, o.req));
+        }
+        for (const v of t.compra || []) {
+            const da = pila(v.da);
+            if (da) def.compra.push(vende(da[0], da[1], v.esm));
+        }
+    }
+}

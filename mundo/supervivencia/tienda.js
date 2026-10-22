@@ -4,7 +4,7 @@
 // y vender cosas a cambio de esmeraldas. Los datos y los diálogos únicos viven en tienda-datos.js.
 // Un amigo con `cartas: true` (Lucho) vende además cartas del Duelo: cartas-tienda-ui.js con import() la primera vez.
 // =========================================================
-import { TIENDAS } from './tienda-datos.js';
+import { TIENDAS, fijarTienda } from './tienda-datos.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
 import { sonidos } from './sonidos.js';
@@ -23,6 +23,7 @@ const TXT = {
 // decir(clave, texto), abrirPanel, volver(clave) (vuelve al panel de misión), conversar(clave) (pestaña «Hablar»),
 // precio(clave, oferta) -> { da, pide, rebaja } (descuento por amistad), alComprar(clave), alAbrir(clave, el), cerrarPanel
 export function crearTienda(ctx) {
+    cargarDatos('tienda').then(d => { if (d) fijarTienda(d); });
     const { inventario, hud, hechas, tituloDe, nombres, dar, decir, abrirPanel, volver, cerrarPanel } = ctx;
     const precio = (clave, o) => (ctx.precio ? ctx.precio(clave, o) : { da: o.da, pide: o.pide, rebaja: false });
     let idioma = ctx.idioma || 'es';

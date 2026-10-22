@@ -34,7 +34,7 @@
     },
     "tienda": {
       "esquema": "tienda",
-      "lee": null,
+      "lee": "mundo/supervivencia/tienda-datos.js",
       "fase": 3,
       "que": "Ofertas nuevas de la tienda por nombre de objeto (como /dar); las de hoy siguen en tienda-datos.js"
     },
