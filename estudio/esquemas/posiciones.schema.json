@@ -21,14 +21,15 @@
       "additionalProperties": { "$ref": "#/$defs/punto" }
     },
     "lugares": {
-      "description": "Construcciones movidas (Etapa B 6e, pestaña Posiciones → Construcciones): clave (molino, atalaya, campamento, portal, iglu, naufragio, escenario, corral-vacas, corral-ovejas; CONSTRUCCIONES de mundo/datos/posiciones.js) -> bloque central en el mapa. Sin la clave, el juego busca su sitio solo, como siempre. Solo la supervivencia lo lee (al armar el terreno: el cambio se ve al recargar); quienes cuelgan de ese lugar se mueven con él.",
+      "description": "Construcciones movidas (Etapa B 6e, pestaña Posiciones → Construcciones): clave (molino, atalaya, campamento, portal, iglu, naufragio, escenario, corral-vacas, corral-ovejas; CONSTRUCCIONES de mundo/datos/posiciones.js, o una nueva de construcciones.json) -> bloque central en el mapa y giro. Las nuevas solo se arman si tienen su clave aquí. Sin la clave, el juego busca su sitio solo, como siempre. Solo la supervivencia lo lee (al armar el terreno: el cambio se ve al recargar); quienes cuelgan de ese lugar se mueven con él.",
       "type": "object",
-      "propertyNames": { "enum": ["molino", "atalaya", "campamento", "portal", "iglu", "naufragio", "escenario", "corral-vacas", "corral-ovejas"] },
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
       "additionalProperties": {
         "type": "object",
         "properties": {
           "x": { "description": "Bloque central, este-oeste (las coordenadas de /tp y /pos).", "type": "integer", "minimum": 0, "maximum": 4096 },
           "z": { "description": "Bloque central, norte-sur.", "type": "integer", "minimum": 0, "maximum": 4096 },
+          "giro": { "description": "Hacia dónde mira la puerta, en grados: 0 sur (como siempre), 90 este, 180 norte, 270 oeste. Quienes cuelgan del lugar giran con él. El escenario y los corrales lo ignoran: se orientan solos.", "enum": [0, 90, 180, 270] },
           "nota": { "$ref": "comun.schema.json#/$defs/nota" }
         },
         "required": ["x", "z"],

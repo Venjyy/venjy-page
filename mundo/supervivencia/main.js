@@ -82,6 +82,7 @@ import { ONLINE_ACTIVO } from '../online/config.js';
 import { nivelDeMs, barrasDeMs } from '../online/ping.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
 import { sitiosDe } from '../datos/posiciones.js';
+import { propiasDe } from '../datos/construcciones.js';
 import { datosInicio, fraseAlAzar, consejoAlAzar, avanceCarga, fondoActivo } from './inicio-datos.js';
 import { presentacion } from './presentacion.js';
 import { crearFondoMenu } from './fondo-menu.js';
@@ -249,7 +250,8 @@ function mostrar(id) {
 
 const datos = generarDatos('h');
 // B6e: construcciones movidas en posiciones.json → lugares (la misma promesa que ya pidió criaturas/amigos.js: no suma descargas)
-const terreno = prepararTerreno(datos, { supervivencia: true, sitios: sitiosDe(await cargarDatos('posiciones')) });
+// Construcciones movidas o giradas (posiciones.json → lugares) y las nuevas de construcciones.json que tienen sitio
+const terreno = prepararTerreno(datos, { supervivencia: true, sitios: sitiosDe(await cargarDatos('posiciones'), propiasDe(await cargarDatos('construcciones'))) });
 
 // Menú de inicio: pantalla de título (logo, pie y una frase al azar de mundo/datos/inicio.json)
 async function pintarTitulo() {

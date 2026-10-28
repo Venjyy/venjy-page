@@ -6,6 +6,7 @@
 // sitio, se nivela el terreno y se arma una lista de bloques que colocarDecor pone.
 // =========================================================
 import { B } from './texturas.js';
+import { cuartos, girarXZ, girarBloque } from './datos/construcciones.js';
 
 // Decorado a partir de una función que coloca bloques: { t: 'bloques', bloques: [x, y, z, id, …], … }
 export function aDecor(construir) {
@@ -100,16 +101,47 @@ export function nivelar(t, x0, z0, w, d, h, sup = null, borde = 1) {
 // ---------------------------------------------------------
 const RESERVA = 4; // ES de un sitio automático reservado: buscarSitio no lo usa y colocarLugares lo trata como plaza
 
-// { x0, z0, h } con el centro (x0 + w >> 1, z0 + d >> 1) en el punto del JSON, o null si la clave no tiene sitio fijo
+// { x0, z0, h, q, w, d } con el centro (x0 + w >> 1, z0 + d >> 1) en el punto del JSON, o null si la clave no tiene
+// sitio fijo. q: cuartos de vuelta del giro (sitiosDe solo lo trae en las que giran); con 90 o 270, w y d se cambian.
 export function sitioFijo(t, clave, w, d) {
     const p = t.sitios && t.sitios[clave];
     if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.z)) return null;
+    const q = cuartos(p.giro);
+    if (q % 2) [w, d] = [d, w];
     const { BW, BD, HT, NIVEL_AGUA } = t;
     const x0 = Math.max(3, Math.min(BW - w - 4, Math.round(p.x) - (w >> 1)));
     const z0 = Math.max(3, Math.min(BD - d - 4, Math.round(p.z) - (d >> 1)));
     let mn = Infinity, mx = -Infinity;
     for (let z = z0; z < z0 + d; z++) for (let x = x0; x < x0 + w; x++) { const h = HT[z * BW + x]; if (h < mn) mn = h; if (h > mx) mx = h; }
-    return { x0, z0, h: Math.max(NIVEL_AGUA + 1, Math.round((mn + mx) / 2)) };
+    return { x0, z0, h: Math.max(NIVEL_AGUA + 1, Math.round((mn + mx) / 2)), q, w, d };
+}
+
+// poner(x, y, z, id) que gira q cuartos alrededor del bloque (cx, cz): los constructores escriben con la puerta al sur
+function ponerGirado(poner, cx, cz, q) {
+    if (!q) return poner;
+    return (x, y, z, id) => { const [rx, rz] = girarXZ(x - cx, z - cz, q); poner(cx + rx, y, cz + rz, girarBloque(id, q)); };
+}
+
+// Construcciones nuevas (construcciones.json): solo las que tienen sitio en posiciones.json (sitiosDe las trae con su
+// lista de bloques en `propia`). No buscan sitio automático: se arman al final con armarFijos, como las movidas.
+export function colocarPropias(t) {
+    for (const [clave, p] of Object.entries(t.sitios || {})) {
+        const c = p && p.propia;
+        if (!c || !Array.isArray(c.bloques)) continue;
+        const sf = sitioFijo(t, clave, c.w, c.d);
+        if (sf) (t.diferidos || (t.diferidos = [])).push(() => ({ tipo: 'lugar', r: armarPropia(t, clave, c, sf) }));
+    }
+}
+
+function armarPropia(t, clave, c, s) {
+    const { x0, z0, h, q, w, d } = s;
+    nivelar(t, x0, z0, w, d, h, null, 1);
+    const cx = x0 + (w >> 1), cz = z0 + (d >> 1), y = h + 1, b = c.bloques;
+    const decor = aDecor(poner => {
+        const p = ponerGirado(poner, cx, cz, q);
+        for (let i = 0; i < b.length; i += 4) p(cx + b[i], y + b[i + 1], cz + b[i + 2], b[i + 3]);
+    });
+    return { clave, nombre: c.nombre, x: cx + 0.5, z: cz + 0.5, bx: cx, bz: cz, y, radio: Math.max(w, d) + 6, decor, giro: q * 90, propia: true };
 }
 
 // Si `clave` tiene sitio fijo: reserva el automático `s` (con el borde que nivela) y deja `armar(sitio)` para el final.
@@ -474,31 +506,34 @@ export function colocarLugares(t) {
 }
 
 // Nivela el sitio s = { x0, z0, h } del lugar L y lo construye. Devuelve la entrada de terreno.lugares.
+// Con giro (s.q, sitio fijo) el sitio ya viene con w y d cambiados y los bloques giran alrededor del central.
 function armarLugar(t, L, s) {
     const { BW, HT, ES, SUP, NIVEL_AGUA } = t;
     let { x0, z0, h } = s;
+    const q = s.q || 0, W = q % 2 ? L.d : L.w, D = q % 2 ? L.w : L.d;
+    const cxL = x0 + (W >> 1), czL = z0 + (D >> 1);
     if (L.playa) { // el naufragio no se nivela: se apoya en el fondo, con el casco a la altura del agua
         h = NIVEL_AGUA;
-        for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) ES[z * BW + x] = 3;
+        for (let z = z0 - 1; z <= z0 + D; z++) for (let x = x0 - 1; x <= x0 + W; x++) ES[z * BW + x] = 3;
     } else {
         const sup = L.nieve ? B.NIEVE : null;
-        nivelar(t, x0, z0, L.w, L.d, h, sup, 1);
-        if (sup !== null) for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) SUP[z * BW + x] = sup;
-        if (L.nieve) { // pasillo plano frente al túnel del iglú (al sur), para entrar caminando
-            const cxL = x0 + (L.w >> 1);
-            for (let z = z0 + L.d; z < z0 + L.d + 7; z++) {
-                for (let x = cxL - 2; x <= cxL + 2; x++) {
-                    const o = z * BW + x;
+        nivelar(t, x0, z0, W, D, h, sup, 1);
+        if (sup !== null) for (let z = z0 - 1; z <= z0 + D; z++) for (let x = x0 - 1; x <= x0 + W; x++) SUP[z * BW + x] = sup;
+        if (L.nieve) { // pasillo plano frente al túnel del iglú (al sur sin giro), para entrar caminando
+            for (let dz = L.d - (L.d >> 1); dz < L.d - (L.d >> 1) + 7; dz++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    const [rx, rz] = girarXZ(dx, dz, q);
+                    const o = (czL + rz) * BW + cxL + rx;
                     if (ES[o] === 1) continue;
                     ES[o] = 3; HT[o] = h; SUP[o] = B.NIEVE;
                 }
             }
         }
     }
-    const cxL = x0 + (L.w >> 1), czL = z0 + (L.d >> 1);
-    const decor = aDecor(poner => CONSTRUIR[L.clave](poner, cxL, h + 1, czL, h, t));
-    // bx, bz, y: bloque central y primer bloque sobre el suelo (para ubicar a los NPCs)
-    return { clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, bx: cxL, bz: czL, y: h + 1, radio: Math.max(L.w, L.d) + 6, decor };
+    const decor = aDecor(poner => CONSTRUIR[L.clave](ponerGirado(poner, cxL, czL, q), cxL, h + 1, czL, h, t));
+    // bx, bz, y: bloque central y primer bloque sobre el suelo (para ubicar a los NPCs); giro en grados (lugares-motivos,
+    // amigos y Venjys giran con él: enLugar de mundo/datos/posiciones.js)
+    return { clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, bx: cxL, bz: czL, y: h + 1, radio: Math.max(L.w, L.d) + 6, decor, giro: q * 90 };
 }
 
 // Constructores: (poner, cx, y, cz, h) con y = primer bloque sobre el suelo y h = altura del suelo

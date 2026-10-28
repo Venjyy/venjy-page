@@ -9,7 +9,7 @@ import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION, TILE } from './textura
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
 import { actualizarLuz, campoChunk, ABORTAR } from './luz-incremental.js';
 import { llenarSubsuelo } from './supervivencia/subsuelo.js';
-import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares, armarFijos } from './construcciones.js';
+import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares, colocarPropias, armarFijos } from './construcciones.js';
 import { colocarCaminos } from './caminos.js';
 import { colocarMotivos } from './lugares-motivos.js';
 import { colocarRuinas } from './ruinas.js';
@@ -334,6 +334,7 @@ function prepararTerrenoBase(datos, sitios = null) {
     let escenario = colocarEscenario(tt);
     const corrales = colocarCorrales(tt);
     const lugares = colocarLugares(tt); // molino, atalaya, campamento, portal, iglú y naufragio
+    colocarPropias(tt); // construcciones nuevas de construcciones.json con sitio (se arman con armarFijos)
     // Los que tienen sitio fijo en posiciones.json se arman al final (sin sitios no hay ninguno: el creativo no cambia)
     for (const { tipo, r } of armarFijos(tt)) {
         if (tipo === 'escenario') escenario = r; else if (tipo === 'corral') corrales.push(r); else lugares.push(r);

@@ -23,6 +23,7 @@ import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 import { reglasPersonajes, esDelCodigo, lugarDe, horarioDe, posturaDe, frasesDe } from '../mundo/datos/personajes.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
 import { CONSTRUCCIONES } from '../mundo/datos/posiciones.js';
+import { idBloque, propiasDe, cuartos } from '../mundo/datos/construcciones.js';
 import { USOS, mapaTiempo } from '../mundo/supervivencia/musica-motor.js';
 import { reglasCombate, reglasEstilo, lineaDeTiempo } from '../mundo/supervivencia/combate/reglas.js';
 import { largoFases } from '../mundo/supervivencia/combate/datos.js';
@@ -651,10 +652,18 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
         for (const r of reglasPoses(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
     if (nombre === 'posiciones' && refs) {
-        // B6e: dos construcciones movidas que se pisan (el terreno nivela las dos y la segunda tapa a la primera)
-        const movidas = Object.entries(datos.lugares || {}).filter(([k]) => CONSTRUCCIONES[k]);
+        // B6e: dos construcciones movidas que se pisan (el terreno nivela las dos y la segunda tapa a la primera).
+        // También las nuevas de construcciones.json; con giro 90 o 270, ancho y fondo se cambian.
+        let propias = {};
+        try { propias = propiasDe(leerDatos('construcciones')); } catch (e) { /* sin construcciones.json */ }
+        const tam = (k, p) => { const c = CONSTRUCCIONES[k] || propias[k]; return cuartos(p.giro) % 2 ? { w: c.d, d: c.w } : c; };
+        for (const [k, p] of Object.entries(datos.lugares || {})) {
+            if (!CONSTRUCCIONES[k] && !propias[k]) mal(`$.lugares.${k}: no es una construcción (CONSTRUCCIONES de mundo/datos/posiciones.js ni construcciones.json sin borrador)`);
+            else if (p.giro && CONSTRUCCIONES[k] && !CONSTRUCCIONES[k].gira) problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.lugares.${k}.giro: el juego lo ignora, se orienta solo` });
+        }
+        const movidas = Object.entries(datos.lugares || {}).filter(([k]) => CONSTRUCCIONES[k] || propias[k]);
         for (let i = 0; i < movidas.length; i++) for (let j = i + 1; j < movidas.length; j++) {
-            const [ka, a] = movidas[i], [kb, b] = movidas[j], A = CONSTRUCCIONES[ka], B = CONSTRUCCIONES[kb];
+            const [ka, a] = movidas[i], [kb, b] = movidas[j], A = tam(ka, a), B = tam(kb, b);
             if (Math.abs(a.x - b.x) * 2 < A.w + B.w + 4 && Math.abs(a.z - b.z) * 2 < A.d + B.d + 4) problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.lugares: ${ka} y ${kb} se pisan (sepáralas unos bloques)` });
         }
         for (const [grupo, puntos] of Object.entries({ personas: datos.personas, objetos: datos.objetos, poi: datos.poi })) {
@@ -665,6 +674,20 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
                     problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.personas.${clave}.giro: el juego lo ignora, ${refs.giroCalculado[clave]}` });
                 }
             }
+        }
+    }
+    if (nombre === 'construcciones') {
+        // Nombres de bloque que el juego no conoce, claves de las 9 del código y bloques repetidos en la misma celda
+        for (const [k, c] of Object.entries(datos.construcciones || {})) {
+            if (CONSTRUCCIONES[k]) mal(`$.construcciones.${k}: esa clave es de una construcción del código (elige otro nombre)`);
+            const celdas = new Set();
+            (c.bloques || []).forEach((b, i) => {
+                if (!Array.isArray(b)) return;
+                if (idBloque(b[3]) === null) mal(`$.construcciones.${k}.bloques[${i}]: «${b[3]}» no es un bloque (claves de B en mundo/texturas.js)`);
+                const celda = b.slice(0, 3).join(',');
+                if (celdas.has(celda)) problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.construcciones.${k}.bloques[${i}]: ya hay un bloque en ${celda} (gana el último)` });
+                celdas.add(celda);
+            });
         }
     }
     if (nombre === 'dialogos') {
