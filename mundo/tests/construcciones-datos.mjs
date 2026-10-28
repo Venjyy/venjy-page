@@ -8,6 +8,8 @@
 //  4. Molino girado 90: cada bloque es el del molino sin girar, girado alrededor del bloque central; la cama
 //     del molino gira con él y los demás lugares no se corren.
 //  5. Una construcción nueva con sitio y giro se arma con sus bloques girados, igual en el worker.
+//  6. «Guardar como construcción»: bloquesDeZona copia la zona (piso dy −1, centro, giro de escalones, topes) y
+//     vuelve por propiasDe a los mismos ids; claveDe no repite claves.
 // Sale con código 0 si todo coincide, 1 si no.
 // =========================================================
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -112,6 +114,32 @@ const W = V.prepararTerreno(generarDatos('h'), { supervivencia: true, sitios: T.
 const N = V.CHUNK, cx = Math.floor(cas.bx / N), cz = Math.floor(cas.bz / N);
 const a = V.llenarChunk(T, cx, cz), b = V.llenarChunk(W, cx, cz);
 ok(huella(a.vox, a.luz) === huella(b.vox, b.luz), 'el worker arma el mismo chunk');
+
+// 6
+{
+    const mapa = new Map();
+    const poner = (x, y, z, id) => mapa.set(`${x},${y},${z}`, id);
+    const leer = (x, y, z) => (x > 200 ? -1 : mapa.get(`${x},${y},${z}`) || 0);
+    for (let x = 10; x <= 14; x++) for (let z = 20; z <= 22; z++) poner(x, 60, z, B.PASTO ?? B.TIERRA);
+    poner(12, 61, 21, B.TABLONES); poner(12, 62, 21, B.TABLONES); poner(10, 61, 20, B.ESCALONES_PIEDRA + 1);
+    poner(13, 90, 21, B.TABLONES); // fuera del alto: no entra
+    const r = C.bloquesDeZona(leer, { x: 14, y: 60, z: 22 }, { x: 10, y: 60, z: 20 });
+    ok(!r.error && r.ancho === 5 && r.fondo === 3 && r.alto === 3, 'medidas de la zona');
+    ok(r.centro && r.centro.x === 12 && r.centro.z === 21 && r.centro.y === 60, 'bloque central y piso');
+    ok(r.bloques.length === 15 + 3, 'piso + 3 bloques');
+    ok(r.bloques.some(b => b[0] === 0 && b[1] === 0 && b[2] === 0 && b[3] === 'TABLONES'), 'dy 0 sobre el piso');
+    ok(r.bloques.some(b => b[0] === -2 && b[1] === 0 && b[2] === -1 && b[3] === 'ESCALONES_PIEDRA' && b[4] === 1), 'escalón con su giro');
+    ok(r.bloques.filter(b => b[1] === -1).length === 15, 'el piso va en dy -1');
+    const vuelta = C.propiasDe({ construcciones: { z: { nombre: { es: 'Z' }, bloques: r.bloques } } }).z;
+    ok(vuelta && vuelta.w === 5 && vuelta.d === 3 && vuelta.bloques.includes(B.ESCALONES_PIEDRA + 1), 'propiasDe la lee igual');
+    ok(C.bloquesDeZona(leer, { x: 0, y: 60, z: 0 }, { x: 32, y: 60, z: 0 }).error, 'más de 32 de lado: error');
+    ok(C.bloquesDeZona(leer, { x: 0, y: 60, z: 0 }, { x: 0, y: 84, z: 0 }).error, 'más de 24 de alto: error');
+    ok(C.bloquesDeZona(leer, { x: 13, y: 60, z: 22 }, { x: 14, y: 60, z: 22 }).error, 'solo piso: error');
+    ok(C.bloquesDeZona(leer, { x: 199, y: 60, z: 0 }, { x: 201, y: 60, z: 0 }).error, 'sin cargar: error');
+    ok(C.claveDe('Casa del Árbol') === 'casa-del-arbol', 'clave sin tildes');
+    ok(C.claveDe('Casa del árbol', ['casa-del-arbol', 'casa-del-arbol-2']) === 'casa-del-arbol-3', 'clave sin repetir');
+    ok(C.claveDe('123') === 'construccion-123' && C.claveDe('') === 'construccion', 'clave que empieza con letra');
+}
 
 console.log(`${fallos ? 'FALLÓ' : 'OK'}: construcciones-datos (${n} comprobaciones)`);
 process.exit(fallos ? 1 : 0);

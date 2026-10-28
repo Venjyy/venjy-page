@@ -30,6 +30,9 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //   elegir({ clave, modo, objeto }) pone el gizmo sobre una persona (clave null lo quita); devuelve su punto actual
 //                                  { ancla, marco?, dx, dy, dz, giro } o lanza si no existe en este mundo. Con objeto «lugar»
 //                                  (B6e) lo pone sobre una construcción (CONSTRUCCIONES) y devuelve { x, z }
+//   zona({ accion })              (§44) 'marcar' toma la esquina que mira la mira (devuelve { esquinas, ancho?, fondo?, alto?,
+//                                  bloques?, error? }), 'copiar' devuelve { bloques, ancho, fondo, alto, centro } en el formato
+//                                  de construcciones.json y 'quitar' borra las marcas. Viaja en `zona` de la respuesta
 //   escena({ accion, clave?, persona?, t?, v? })
 //                                  juega, pausa, salta a un instante o detiene una escena de amistad (fase 5); `puntero` con v
 //                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
@@ -100,6 +103,12 @@ export function crearManejador(juego) {
                     if (!juego.elegir) return error('este juego no sabe poner el gizmo');
                     const punto = await juego.elegir(nada ? { clave: null } : { clave: m.clave, modo, objeto: m.objeto });
                     return { ...base, tipo: 'elegido', objeto: nada ? null : m.objeto, clave: nada ? null : m.clave, punto: punto || null };
+                }
+                case 'zona': {
+                    if (!['marcar', 'copiar', 'quitar'].includes(m.accion)) return error('zona pide accion marcar, copiar o quitar');
+                    if (!juego.zona) return error('este juego no sabe copiar construcciones');
+                    const r = await juego.zona({ accion: m.accion });
+                    return { ...base, tipo: 'ok', zona: r || null };
                 }
                 case 'escena': {
                     if (!ACCIONES_ESCENA.includes(m.accion)) return error(`escena pide accion ${ACCIONES_ESCENA.join(', ')}`);

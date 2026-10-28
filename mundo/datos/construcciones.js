@@ -53,6 +53,52 @@ export function nombreBloque(id) {
     return b === undefined ? [NOMBRE.get(id) ?? id, 0] : [NOMBRE.get(b), id - b];
 }
 
+// «Guardar como construcción» (§44, parte 3): la zona entre dos esquinas, hasta 32×32 y 24 de alto
+export const ZONA_MAX = { lado: 32, alto: 24 };
+
+// Copia la zona entre las esquinas a y b ({ x, y, z } del mundo) a la lista del JSON. leer(x, y, z) -> id (0 aire,
+// -1 sin cargar). Lo horizontal lo dan las esquinas; la esquina más baja es el piso (dy −1: se mira el suelo al marcar)
+// y hacia arriba llega hasta el bloque más alto que haya (o la esquina más alta), sin pasar de 24 capas con el piso.
+// El bloque central es el del medio (la puerta se supone al sur: si no, se gira en Posiciones).
+// Devuelve { bloques, ancho, fondo, alto, centro: { x, y, z } } o { error } (en español, para el Estudio).
+export function bloquesDeZona(leer, a, b) {
+    const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), z0 = Math.min(a.z, b.z), z1 = Math.max(a.z, b.z);
+    const y0 = Math.min(a.y, b.y), yEsq = Math.max(a.y, b.y);
+    const ancho = x1 - x0 + 1, fondo = z1 - z0 + 1;
+    if (ancho > ZONA_MAX.lado || fondo > ZONA_MAX.lado) return { error: `la zona mide ${ancho}×${fondo}: el máximo es ${ZONA_MAX.lado}×${ZONA_MAX.lado}` };
+    if (yEsq - y0 + 1 > ZONA_MAX.alto) return { error: `la zona tiene ${yEsq - y0 + 1} de alto: el máximo es ${ZONA_MAX.alto}` };
+    const cx = Math.floor((x0 + x1) / 2), cz = Math.floor((z0 + z1) / 2);
+    const bloques = [];
+    let tope = yEsq, encima = 0;
+    for (let y = y0; y < y0 + ZONA_MAX.alto; y++) {
+        for (let z = z0; z <= z1; z++) {
+            for (let x = x0; x <= x1; x++) {
+                const id = leer(x, y, z);
+                if (id === -1) return { error: 'parte de la zona no está cargada: acércate y vuelve a marcar' };
+                if (!(id > 0)) continue;
+                const [nombre, giro] = nombreBloque(id);
+                bloques.push(giro ? [x - cx, y - y0 - 1, z - cz, nombre, giro] : [x - cx, y - y0 - 1, z - cz, nombre]);
+                if (y > y0) encima++;
+                if (y > tope) tope = y;
+            }
+        }
+    }
+    if (!encima) return { error: 'no hay nada construido sobre el piso de la zona' };
+    return { bloques, ancho, fondo, alto: tope - y0 + 1, centro: { x: cx, y: y0, z: cz } };
+}
+
+// Nombre en español -> clave nueva para construcciones.json («Casa del árbol» -> casa-del-arbol), sin repetir ninguna
+// de `ocupadas` (las del código y las que ya hay)
+export function claveDe(nombre, ocupadas = []) {
+    let base = String(nombre || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '');
+    if (!/^[a-z]/.test(base)) base = 'construccion' + (base ? '-' + base : '');
+    const usadas = new Set(ocupadas);
+    let clave = base, n = 2;
+    while (usadas.has(clave)) clave = `${base}-${n++}`;
+    return clave;
+}
+
 // Tamaño del sitio que nivela: rectángulo centrado en el bloque central que cubre todos los bloques (impar)
 export function medidas(bloques) {
     let mx = 0, mz = 0;
@@ -71,7 +117,7 @@ export function propiasDe(datos) {
         const bloques = [];
         for (const b of c.bloques.slice(0, MAX_BLOQUES)) {
             if (!Array.isArray(b) || b.length < 4 || !b.slice(0, 3).every(Number.isInteger)) continue;
-            const id = idBloque(b[3], cuartos(b[4] ?? 0));
+            const id = idBloque(b[3], (Number(b[4]) | 0) & 3); // giro del bloque: 0..3, no grados
             if (id !== null) bloques.push(b[0], b[1], b[2], id);
         }
         if (!bloques.length) continue;
