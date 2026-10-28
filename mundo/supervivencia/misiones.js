@@ -7,7 +7,8 @@
 // Coordenadas: los amigos viven en el mapa original (y sin desplazar) dentro de `grupo`.
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
-import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO, repartirKit } from './misiones-datos.js';
+import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO, repartirKit, fijarMisiones } from './misiones-datos.js';
+import { cargarDatos } from '../datos/cargador.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
 import { crearGlobo, zonasPantalla, COLOR_GLOBO } from '../criaturas/cuerpo.js';
@@ -37,6 +38,7 @@ const TXT = {
 
 export function crearMisiones(ctx) {
     const { grupo, dy, jugador, camara, inventario, entidades, vida, dia, hud, terreno, npcs, amigos, venjys, abrirPanel, cerrarPanel } = ctx;
+    cargarDatos('misiones').then(d => { if (d) fijarMisiones(d); }); // B6b: misiones nuevas de mundo/datos/misiones.json
     let idioma = ctx.idioma || 'es';
     const tx = () => TXT[idioma];
     const L = o => (o ? o[idioma] || o.es : '');

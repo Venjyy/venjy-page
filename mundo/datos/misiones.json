@@ -1,0 +1,6 @@
+{
+  "$schema": "../../estudio/esquemas/misiones.schema.json",
+  "version": 1,
+  "nota": "Misiones nuevas por nombre de objeto (como /dar). Las de hoy siguen en mundo/supervivencia/misiones-datos.js. Una persona nueva de personajes.json las tiene en su panel.",
+  "misiones": {}
+}

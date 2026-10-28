@@ -11,7 +11,7 @@ export const vistaValida = v => (VISTAS.includes(v) ? v : VISTA_BASE);
 
 // [clave, es, en, pestañas]
 export const GRUPOS = [
-    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'personajes', 'tienda', 'vida', 'objetos', 'formas']],
+    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'personajes', 'tienda', 'misiones', 'vida', 'objetos', 'formas']],
     ['historias', 'Historias', 'Stories', ['textos', 'escenas', 'poses']],
     ['minijuegos', 'Minijuegos', 'Minigames', ['mesa', 'carrera', 'arena', 'combate', 'salonas', 'ritmo']],
     ['arte', 'Arte y sonido', 'Art and sound', ['pixeles', 'musica', 'inicio']]
@@ -38,6 +38,10 @@ export const AYUDA = {
     tienda: {
         que: ['Lo que vende y compra cada persona: agrega ofertas nuevas a las que ya tiene, o dale tienda a alguien nuevo.', 'What each person sells and buys: add new offers to the ones they have, or give a new person a shop.'],
         empezar: ['Elige a alguien, escoge una oferta parecida en «Partir de» y toca «Agregar oferta»; cambia el objeto o la cantidad y mira si avisa que regala. «Guardar» la deja en el juego.', 'Pick someone, choose a similar offer in «Start from» and press «Add offer»; change the object or amount and see if it warns that it gives value away. «Save» keeps it in the game.']
+    },
+    misiones: {
+        que: ['Los encargos que da cada persona: entregar cosas, eliminar monstruos o sobrevivir una noche. Una persona nueva también puede darlos.', 'The quests each person gives: hand in things, defeat monsters or survive a night. A new person can give them too.'],
+        empezar: ['Elige a alguien, escoge una misión parecida en «Partir de», toca «Crear misión» y escribe sus textos en español e inglés; «Guardar» la deja en el juego.', 'Pick someone, choose a similar quest in «Start from», press «Create quest» and write its Spanish and English texts; «Save» keeps it in the game.']
     },
     vida: {
         que: ['Cómo caminan los amigos, a quién visitan y a qué hora, y la fogata.', 'How friends walk, whom they visit and when, and the campfire.'],

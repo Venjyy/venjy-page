@@ -17,6 +17,7 @@
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
             <button class="pestana" type="button" data-pestana="personajes" data-es="Personajes" data-en="People">Personajes</button>
             <button class="pestana" type="button" data-pestana="tienda" data-es="Tienda" data-en="Shop">Tienda</button>
+            <button class="pestana" type="button" data-pestana="misiones" data-es="Misiones" data-en="Quests">Misiones</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
@@ -791,6 +792,34 @@
                     <button id="ti-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
                 </div>
                 <p id="ti-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-misiones" class="seccion" hidden>
+        <section class="escritorio">
+            <div id="mi-form" class="pj-form"></div>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Misiones de" data-en="Quests of">Misiones de</h2>
+                <label class="campo"><span data-es="Elige a alguien" data-en="Pick someone">Elige a alguien</span><select id="mi-persona"></select></label>
+                <div class="fila-botones">
+                    <button id="mi-ir" class="boton chico secundario" type="button" data-es="Ir a verla en el juego" data-en="Go see them in the game">Ir a verla en el juego</button>
+                </div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Nueva misión" data-en="New quest">Nueva misión</h2>
+                <label class="campo"><span data-es="Qué hay que hacer" data-en="What to do">Qué hay que hacer</span><select id="mi-tipo"></select></label>
+                <label class="campo"><span data-es="Partir de" data-en="Start from">Partir de</span><select id="mi-base"></select></label>
+                <button id="mi-nueva" class="boton chico" type="button" data-es="Crear misión" data-en="Create quest">Crear misión</button>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="mi-descartar" class="boton chico" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    <button id="mi-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                </div>
+                <p id="mi-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

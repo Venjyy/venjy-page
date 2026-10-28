@@ -1561,3 +1561,10 @@ Un PR por parte: **6a tienda** (hecho), 6b misiones, 6c recetas, 6d objetos (al 
 - `validar` avisa de una clave de `tiendas` que no es una de las 13 ni una persona de `personajes.json`.
 - Decisión: la tienda de una persona vive en `tienda.json` (no dentro de `personajes.json`): un solo lugar para las 13 y las nuevas. Los textos de `tienda.json` y `indice.json` que dicen «el juego todavía no lo lee» quedan como están (valor del dueño); el esquema ya está al día.
 - Pruebas: `mundo/tests/tienda.mjs` (crea la tienda de una persona nueva) y `mundo/tests/estudio-tienda.mjs`.
+
+**6b · Misiones.** `mundo/datos/misiones.json` (esquema `misiones.schema.json`): misiones **nuevas** por id, que `fijarMisiones` (`misiones-datos.js`) suma al final de `MISIONES` (las de hoy no se tocan).
+- Tipos: `entregar`, `matar` (`mob`, `n`, `noche`) y `noche`; `visitar` y `hablar` quedan en el código (dependen de lugares fijos). Objetos por nombre (como `/dar`), `kit` opcional (con herramienta prestada `[nombre, 1, amigo]`).
+- El id empieza con la clave del amigo y no repite uno del código; una misión incompleta o con un objeto inexistente se ignora entera (el juego usa lo demás). Una persona nueva de `personajes.json` las tiene en su panel (`NOMBRES_AMIGO` ya la conoce); sin misiones va directo a «Hablar».
+- Pestaña **Misiones** (`estudio/misiones.js`, parte pura `misiones-modelo.mjs`): elegir persona, «Nueva misión» con tipo y «Partir de» una parecida (id automático), textos ES/EN, qué pide o qué monstruo, premio; kit y herramienta prestada en Avanzado; avisa lo que falta y si el kit pasa de 1/3 del premio (regla de `mundo/tests/misiones.mjs`). Lo incompleto no se manda al juego ni se guarda. En vivo con `?estudio`.
+- Controles comunes con Tienda en `estudio/campos-datos.js` (`crearCampos`).
+- `validar`: persona desconocida, id que no empieza con el amigo, objetos inexistentes. Pruebas: `mundo/tests/misiones-datos.mjs`, `estudio-misiones.mjs`.

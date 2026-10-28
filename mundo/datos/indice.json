@@ -38,6 +38,12 @@
       "fase": 3,
       "que": "Ofertas nuevas de la tienda por nombre de objeto (como /dar); las de hoy siguen en tienda-datos.js"
     },
+    "misiones": {
+      "esquema": "misiones",
+      "lee": "mundo/supervivencia/misiones-datos.js",
+      "fase": 3,
+      "que": "Misiones nuevas (entregar, matar, noche) de amigos y personas nuevas, con los objetos por nombre; se suman al final de las de misiones-datos.js; se aplica en vivo con supervivencia.html?estudio"
+    },
     "cartas-mesa": {
       "esquema": "cartas-mesa",
       "lee": "mundo/supervivencia/cartas-mesa.js",

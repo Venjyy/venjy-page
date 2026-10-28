@@ -41,6 +41,10 @@ async function aplicar(nombre, datos) {
         // B6: ofertas nuevas y tiendas de personas nuevas; el panel de la tienda lee TIENDAS al abrirse
         const m = await import('../mundo/supervivencia/tienda-datos.js');
         m.fijarTienda(datos);
+    } else if (nombre === 'misiones') {
+        // B6b: misiones nuevas; el panel de misiones lee MISIONES al abrirse
+        const m = await import('../mundo/supervivencia/misiones-datos.js');
+        m.fijarMisiones(datos);
     } else if (nombre === 'posiciones') {
         const v = window.__venjy;
         if (!v || !v.amigos || !v.amigos.posiciones) throw new Error('el juego todavía no está listo');
