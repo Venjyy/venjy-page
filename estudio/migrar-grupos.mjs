@@ -5,7 +5,8 @@
 // dispara { tipo: 'grupo', grupo, skin } (estudio/DISENO.md §40, decisiones 2, 7 y 8). Los gestos nuevos de comun.js
 // (GESTOS_GRUPO) van a poses.json como `grupo-<nombre>`; `centro` y `colocar` pasan a `lugar`; celulares, tomates, concha, el
 // tomate gigante, las chispas y los sonidos, al catálogo (objetos, efectos y sonidos); el paseo de Braulio, a `caminos` y `giros`.
-// Hecho: Tomatitos (7 escenas). Falta: atalaya y Coyhaique (planos manuales, salto, ping y nieve): B4d, segunda parte.
+// Hecho: Tomatitos (7 escenas) y Coyhaique (3; la cámara manual y la bola de nieve van a `codigo`: grupo-coyhaique). Falta la
+// atalaya: su centro se mide entre cuatro puntos (uno es el Venjy del mirador, que no está en datos) y pide una pieza nueva.
 // Solo añade claves: lo que ya existe no se toca. Los textos no llevan `revisado`.
 // Prueba: node mundo/tests/escenas-grupos.mjs (paridad con el JS).
 // =========================================================
@@ -35,6 +36,8 @@ export const GESTOS_GRUPO = {
     tapaOidos: { reloj: 't', canales: { bDx: -2.5, bDz: 0.6, bIx: -2.5, bIz: -0.6, cx: 0.2, rz: osc(0, seno(0.05, 8)) } },
     // Doblado de risa: cintura con las piernas rectas (apoya) y temblor de carcajada
     doblaRisa: { reloj: 't', apoya: true, canales: { inc: osc(0.35, seno(0.04, 15)), bDx: osc(-0.9, seno(0.1, 15)), bDz: 0.3, bIx: osc(-0.9, seno(-0.1, 15)), bIz: -0.3, cx: 0.3 } },
+    // Camina con el pico al hombro (el Venjy de la mina llega por el túnel)
+    caminaPico: { reloj: 't', canales: { pDx: osc(0, seno(0.55, 9)), pIx: osc(0, seno(-0.55, 9)), bDx: -2.6, bDz: 0.35, bIx: osc(0, seno(0.4, 9)), bIz: -0.08, y: osc(0, { forma: 'abs', amp: 0.04, frec: 9 }) } },
     mira: { reloj: 't', canales: {} }
 };
 const nombreGesto = n => (GESTOS_GRUPO[n] ? `grupo-${n}` : n);
@@ -50,7 +53,7 @@ async function tiemposDe(g, SONIDOS) {
     const sprite = () => ({ visible: true, material: {}, userData: {}, position: { set() {} }, scale: { set() {} }, add() {} });
     const api = {
         e: { t: 0, T: g.T, hechos: new Set() }, posG: () => pos, actor: () => ({ p: {} }), origen: () => pos, mover() {}, girar() {}, camara() {},
-        pegar: o => o, caja: sprite, sprite, efecto: (tipo, x, y, z, op = {}) => sucesos.push({ t, k: 'efecto', tam: op.tam }),
+        pegar: o => o, caja: sprite, sprite, efecto: (tipo, x, y, z, op = {}) => { sucesos.push({ t, k: 'efecto', tam: op.tam, vida: op.vida }); return sprite(); },
         sonidos: { golpe() { sucesos.push({ t, k: 'golpe' }); } }
     };
     api.e.centro = g.centro(api);
@@ -59,12 +62,16 @@ async function tiemposDe(g, SONIDOS) {
     Object.assign(SONIDOS, orig);
     const primero = k => { const s = sucesos.find(x => x.k === k); return s && r2(s.t); };
     const todos = k => sucesos.filter(x => x.k === k).map(x => r2(x.t));
-    return { ding: primero('mensaje'), visto: todos('visto'), mar: primero('mar'), golpes: todos('golpe') };
+    // Chispas y copos en lotes del mismo instante: [{ t, n, vida }]
+    const lotes = [];
+    for (const e of sucesos.filter(x => x.k === 'efecto')) { const t2 = r2(e.t), l = lotes.find(x => x.t === t2); if (l) l.n++; else lotes.push({ t: t2, n: 1, vida: e.vida }); }
+    return { ding: primero('mensaje'), visto: todos('visto'), mar: primero('mar'), golpes: todos('golpe'), lotes };
 }
 
 // Guion de un grupo y una skin -> { escena, gestos }
 export async function escenaDeGrupo(nombreGrupo, base, mod, SONIDOS) {
-    if (nombreGrupo !== 'tomatitos') throw new Error('B4d, primera parte: solo tomatitos');
+    if (nombreGrupo === 'coyhaique') return coyhaique(base, mod, SONIDOS);
+    if (nombreGrupo !== 'tomatitos') throw new Error('B4d: falta ' + nombreGrupo);
     const g = mod.grupo(base);
     const { VARIANTES, COMUN, NPCS } = mod;
     const V = VARIANTES[base];
@@ -131,7 +138,55 @@ export async function escenaDeGrupo(nombreGrupo, base, mod, SONIDOS) {
     return { escena, gestos };
 }
 
-export const GRUPOS_MIGRADOS = [{ grupo: 'tomatitos', skins: ['venjy', 'pony', 'hadad', 'andy', 'nacho', 'braulio', 'conejeros'] }];
+// ---- Coyhaique: Moisés es el ancla (el iglú se mide desde su asiento), Lalo actor extra y 'v' el Venjy de la mina ----
+async function coyhaique(base, mod, SONIDOS) {
+    const g = mod.grupo(base);
+    const { NPCS, VENJY } = mod;
+    const { lotes } = await tiemposDe(g, SONIDOS);
+    const caminaPico = g.pista.v.find(x => x[0] === 'caminaPico');
+    const entra = caminaPico[1];
+    const llega = lotes.find(l => l.n === 8).t;
+    const golpes = lotes.filter(l => l.n === 6).map(l => l.t); // el copo de las dos bolas: tiro + VUELO (0,5)
+    const tiro = golpes.map(t => r2(t - 0.5));
+    // Moisés se para un paso al norte y el Venjy entra por el túnel (todo medido desde el asiento de Moisés); al final los
+    // dos vuelven a su sitio en un instante (lo que hacía el motor al terminar la escena)
+    const desde = mas => ({ desde: 'moises', mas });
+    const cola = [[r10(g.T - 0.1), 0], [r10(g.T - 0.05), 'sitio']];
+    const moises = desde([-0.1, 0, -1.3]);
+    const dentro = desde([1.2, 0, -1.9]);
+    const caminos = {
+        moises: [[0, moises], [cola[0][0], moises], cola[1]],
+        v: [[entra, desde([1.1, 0, 6.6])], [llega, dentro], [cola[0][0], dentro], cola[1]]
+    };
+    const copos = (t, q, alto, n, mas0, vida, tam, vy) => Array.from({ length: n }, (_, i) => [t, 'copo', { en: q, alto: r10(alto(i)), mas: mas0(i).map(r10), tam, vida, vy }]);
+    const efectos = [
+        ...copos(llega, 'v', i => 1.2 + (i % 3) * 0.3, 8, i => [Math.sin(i * 2.1) * 0.35, 0, Math.cos(i * 2.1) * 0.35], 0.9, 0.14, -0.9),
+        ...copos(golpes[0], 'j', () => 1.8, 6, i => [Math.sin(i) * 0.25, 0, Math.cos(i * 1.7) * 0.25], 0.7, 0.16, -0.6),
+        ...copos(golpes[1], 'lalo', () => 2.1, 6, i => [Math.sin(i) * 0.25, 0, Math.cos(i * 1.7) * 0.25], 0.7, 0.16, -0.6)
+    ];
+    const pista = Object.fromEntries(Object.entries(g.pista).map(([q, tr]) => [q, tr.map(([n, a, b]) => [nombreGesto(n), r10(a), r10(b)])]));
+    const escena = {
+        tipo: 'guion',
+        dispara: { tipo: 'grupo', grupo: 'coyhaique', skin: base },
+        T: g.T,
+        r: g.r,
+        // El Venjy de la mina es otro actor; si tu skin es de uno de los dos, su NPC no es tu clon
+        actores: { v: VENJY, ...(NPCS.includes(base) ? { [base]: base } : {}) },
+        lineas: g.lineas.map(l => ({ q: l.q, a: l.a, d: l.d, texto: l.texto })),
+        pista,
+        lugar: { centro: desde([0.6, 0, 0.9]), jugador: desde([-1.1, 0, -0.8]) },
+        caminos,
+        efectos,
+        sonidos: golpes.map(t => [t, 'bolaNieve']),
+        marcas: { llega, tiro1: tiro[0], tiro2: tiro[1] },
+        codigo: 'grupo-coyhaique'
+    };
+    const usados = new Set(Object.values(pista).flat().map(x => x[0]));
+    const gestos = Object.fromEntries(Object.entries(GESTOS_GRUPO).filter(([n]) => usados.has(`grupo-${n}`)).map(([n, d]) => [`grupo-${n}`, d]));
+    return { escena, gestos };
+}
+
+export const GRUPOS_MIGRADOS = [{ grupo: 'tomatitos', skins: ['venjy', 'pony', 'hadad', 'andy', 'nacho', 'braulio', 'conejeros'] }, { grupo: 'coyhaique', skins: ['venjy', 'lalo', 'moises'] }];
 export const nombreEscena = (grupo, skin) => `grupo-${grupo}-${skin}`;
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

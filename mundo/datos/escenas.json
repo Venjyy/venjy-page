@@ -5415,6 +5415,1158 @@
         ]
       ],
       "sonidos": [[6.2, "mensaje"], [13.4, "visto"], [16.55, "visto"], [24.1, "golpe"]]
+    },
+    "grupo-coyhaique-venjy": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "coyhaique", "skin": "venjy" },
+      "T": 28.15,
+      "r": 1.3,
+      "actores": { "v": "venjy@mina" },
+      "lineas": [
+        {
+          "q": "j",
+          "a": 0.6,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Otro yo minando? Yo vine directo al iglú.",
+            "en": "Another me mining? I came straight to the igloo."
+          }
+        },
+        {
+          "q": "v",
+          "a": 4.45,
+          "d": 2.8,
+          "texto": {
+            "es": "Vengo de la mina. Ni un diamante, pero llegué.",
+            "en": "I'm coming from the mine. Not one diamond, but I made it."
+          }
+        },
+        {
+          "q": "moises",
+          "a": 7.4,
+          "d": 3.2,
+          "texto": {
+            "es": "Hermano, ¿te acuerdas de las guerras de nieve en Coyhaique?",
+            "en": "Bro, remember the snowball fights in Coyhaique?"
+          }
+        },
+        {
+          "q": "lalo",
+          "a": 10.75,
+          "d": 2.3,
+          "texto": { "es": "Ahya, ¡y siempre perdías tú!", "en": "Ahya, and you always lost!" }
+        },
+        {
+          "q": "j",
+          "a": 13.2,
+          "d": 2.3,
+          "texto": { "es": "¡Oye! Eso fue a traición.", "en": "Hey! That was a sneak attack." }
+        },
+        {
+          "q": "moises",
+          "a": 15.65,
+          "d": 2.5,
+          "texto": { "es": "En Coyhaique no había reglas, hermano.", "en": "There were no rules in Coyhaique, bro." }
+        },
+        {
+          "q": "lalo",
+          "a": 18.7,
+          "d": 2.3,
+          "texto": { "es": "Ahya, ¡me diste en el sombrero!", "en": "Ahya, you hit my hat!" }
+        },
+        {
+          "q": "todos",
+          "a": 21.25,
+          "d": 2.3,
+          "texto": { "es": "¡Coyhaique, presente!", "en": "Coyhaique, present!" }
+        },
+        {
+          "q": "j",
+          "a": 23.9,
+          "d": 3.2,
+          "texto": {
+            "es": "Desde los trece, hermanos. Y todavía perdiendo en la nieve.",
+            "en": "Since thirteen, bros. And still losing in the snow."
+          }
+        }
+      ],
+      "pista": {
+        "j": [["grupo-mira", 0.3, 11.45], ["sorpresa", 11.45, 12.35], ["grupo-mira", 12.35, 17.6], ["lanza", 17.6, 18.6], ["grupo-mira", 18.6, 21.05], ["brazosArriba", 21.05, 23.95], ["grupo-mira", 23.95, 27.25]],
+        "v": [["grupo-caminaPico", 0.5, 3.45], ["sacude", 3.45, 4.65], ["grupo-mira", 4.65, 18.65], ["risa", 18.65, 21], ["brazosArriba", 21.05, 23.95], ["asiente", 24.2, 27.4]],
+        "moises": [["grupo-mira", 0.3, 7.4], ["recuerda", 7.4, 10.6], ["grupo-mira", 10.6, 18.65], ["risa", 18.65, 21], ["brazosArriba", 21.05, 23.95], ["asiente", 24.2, 27.4]],
+        "lalo": [["grupo-mira", 0.3, 10.5], ["lanza", 10.5, 11.5], ["risa", 11.55, 13.25], ["grupo-mira", 13.25, 18.55], ["rasca", 18.55, 21], ["brazosArriba", 21.05, 23.95], ["asiente", 24.2, 27.4]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "moises",
+          "mas": [0.6, 0, 0.9]
+        },
+        "jugador": {
+          "desde": "moises",
+          "mas": [-1.1, 0, -0.8]
+        }
+      },
+      "caminos": {
+        "moises": [
+          [
+            0,
+            {
+              "desde": "moises",
+              "mas": [-0.1, 0, -1.3]
+            }
+          ],
+          [
+            28.05,
+            {
+              "desde": "moises",
+              "mas": [-0.1, 0, -1.3]
+            }
+          ],
+          [28.1, "sitio"]
+        ],
+        "v": [
+          [
+            0.5,
+            {
+              "desde": "moises",
+              "mas": [1.1, 0, 6.6]
+            }
+          ],
+          [
+            3.45,
+            {
+              "desde": "moises",
+              "mas": [1.2, 0, -1.9]
+            }
+          ],
+          [
+            28.05,
+            {
+              "desde": "moises",
+              "mas": [1.2, 0, -1.9]
+            }
+          ],
+          [28.1, "sitio"]
+        ]
+      },
+      "efectos": [
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0, 0, 0.35],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.3021232783, 0, -0.1766961366],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.8,
+            "mas": [-0.3050515203, 0, -0.1715912875],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0.0058848652, 0, 0.3499505227],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.2991096178, 0, -0.1817510289],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.8,
+            "mas": [-0.307893516, 0, -0.1664379248],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0.0117680665, 0, 0.3498021049],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          3.45,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.2960113909, 0, -0.1867545353],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          11.45,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0, 0, 0.25],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          11.45,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.2103677462, 0, -0.0322111236],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          11.45,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.2273243567, 0, -0.2416995481],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          11.45,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.035280002, 0, 0.0944944357],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          11.45,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [-0.1892006238, 0, 0.2173493726],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          11.45,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [-0.2397310687, 0, -0.1505029757],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          18.55,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0, 0, 0.25],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          18.55,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.2103677462, 0, -0.0322111236],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          18.55,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.2273243567, 0, -0.2416995481],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          18.55,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.035280002, 0, 0.0944944357],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          18.55,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [-0.1892006238, 0, 0.2173493726],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          18.55,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [-0.2397310687, 0, -0.1505029757],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ]
+      ],
+      "sonidos": [[11.45, "bolaNieve"], [18.55, "bolaNieve"]],
+      "marcas": { "llega": 3.45, "tiro1": 10.95, "tiro2": 18.05 },
+      "codigo": "grupo-coyhaique"
+    },
+    "grupo-coyhaique-lalo": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "coyhaique", "skin": "lalo" },
+      "T": 30.8,
+      "r": 1.3,
+      "actores": { "v": "venjy@mina", "lalo": "lalo" },
+      "lineas": [
+        {
+          "q": "lalo",
+          "a": 0.6,
+          "d": 2.8,
+          "texto": {
+            "es": "Ahya, ¿otro Lalo? Uno de los dos es el original.",
+            "en": "Ahya, another Lalo? One of us is the original."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.55,
+          "d": 2.4,
+          "texto": { "es": "Ahya, el original soy yo, hermano.", "en": "Ahya, I'm the original, bro." }
+        },
+        {
+          "q": "v",
+          "a": 7.1,
+          "d": 2.8,
+          "texto": {
+            "es": "Vengo de la mina. Ni un diamante, pero llegué.",
+            "en": "I'm coming from the mine. Not one diamond, but I made it."
+          }
+        },
+        {
+          "q": "moises",
+          "a": 10.05,
+          "d": 3.2,
+          "texto": {
+            "es": "Hermano, ¿te acuerdas de las guerras de nieve en Coyhaique?",
+            "en": "Bro, remember the snowball fights in Coyhaique?"
+          }
+        },
+        {
+          "q": "lalo",
+          "a": 13.4,
+          "d": 2.3,
+          "texto": { "es": "Ahya, ¡y siempre perdías tú!", "en": "Ahya, and you always lost!" }
+        },
+        {
+          "q": "j",
+          "a": 15.85,
+          "d": 2.3,
+          "texto": { "es": "¡Me tiraste a mí mismo!", "en": "You threw it at yourself!" }
+        },
+        {
+          "q": "moises",
+          "a": 18.3,
+          "d": 2.5,
+          "texto": { "es": "En Coyhaique no había reglas, hermano.", "en": "There were no rules in Coyhaique, bro." }
+        },
+        {
+          "q": "lalo",
+          "a": 21.35,
+          "d": 2.3,
+          "texto": { "es": "Ahya, ¡me diste en el sombrero!", "en": "Ahya, you hit my hat!" }
+        },
+        {
+          "q": "todos",
+          "a": 23.9,
+          "d": 2.3,
+          "texto": { "es": "¡Coyhaique, presente!", "en": "Coyhaique, present!" }
+        },
+        {
+          "q": "j",
+          "a": 26.55,
+          "d": 3.2,
+          "texto": {
+            "es": "Ahya, dos Lalos, un Moisés y un Venjy. El iglú quedó chico.",
+            "en": "Ahya, two Lalos, one Moisés and one Venjy. The igloo got too small."
+          }
+        }
+      ],
+      "pista": {
+        "lalo": [["doble", 0.3, 1.9], ["grupo-mira", 1.9, 13.15], ["lanza", 13.15, 14.15], ["risa", 14.2, 15.9], ["grupo-mira", 15.9, 21.2], ["rasca", 21.2, 23.65], ["brazosArriba", 23.7, 26.6], ["asiente", 26.85, 30.05]],
+        "j": [["grupo-mira", 0.3, 14.1], ["sorpresa", 14.1, 15], ["grupo-mira", 15, 20.25], ["lanza", 20.25, 21.25], ["grupo-mira", 21.25, 23.7], ["brazosArriba", 23.7, 26.6], ["grupo-mira", 26.6, 29.9]],
+        "v": [["grupo-caminaPico", 0.5, 6.1], ["sacude", 6.1, 7.3], ["grupo-mira", 7.3, 21.3], ["risa", 21.3, 23.65], ["brazosArriba", 23.7, 26.6], ["asiente", 26.85, 30.05]],
+        "moises": [["grupo-mira", 0.3, 10.05], ["recuerda", 10.05, 13.25], ["grupo-mira", 13.25, 21.3], ["risa", 21.3, 23.65], ["brazosArriba", 23.7, 26.6], ["asiente", 26.85, 30.05]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "moises",
+          "mas": [0.6, 0, 0.9]
+        },
+        "jugador": {
+          "desde": "moises",
+          "mas": [-1.1, 0, -0.8]
+        }
+      },
+      "caminos": {
+        "moises": [
+          [
+            0,
+            {
+              "desde": "moises",
+              "mas": [-0.1, 0, -1.3]
+            }
+          ],
+          [
+            30.7,
+            {
+              "desde": "moises",
+              "mas": [-0.1, 0, -1.3]
+            }
+          ],
+          [30.75, "sitio"]
+        ],
+        "v": [
+          [
+            0.5,
+            {
+              "desde": "moises",
+              "mas": [1.1, 0, 6.6]
+            }
+          ],
+          [
+            6.1,
+            {
+              "desde": "moises",
+              "mas": [1.2, 0, -1.9]
+            }
+          ],
+          [
+            30.7,
+            {
+              "desde": "moises",
+              "mas": [1.2, 0, -1.9]
+            }
+          ],
+          [30.75, "sitio"]
+        ]
+      },
+      "efectos": [
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0, 0, 0.35],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.3021232783, 0, -0.1766961366],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.8,
+            "mas": [-0.3050515203, 0, -0.1715912875],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0.0058848652, 0, 0.3499505227],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.2991096178, 0, -0.1817510289],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.8,
+            "mas": [-0.307893516, 0, -0.1664379248],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0.0117680665, 0, 0.3498021049],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.1,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.2960113909, 0, -0.1867545353],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          14.1,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0, 0, 0.25],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.1,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.2103677462, 0, -0.0322111236],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.1,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.2273243567, 0, -0.2416995481],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.1,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.035280002, 0, 0.0944944357],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.1,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [-0.1892006238, 0, 0.2173493726],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.1,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [-0.2397310687, 0, -0.1505029757],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.2,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0, 0, 0.25],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.2,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.2103677462, 0, -0.0322111236],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.2,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.2273243567, 0, -0.2416995481],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.2,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.035280002, 0, 0.0944944357],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.2,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [-0.1892006238, 0, 0.2173493726],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.2,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [-0.2397310687, 0, -0.1505029757],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ]
+      ],
+      "sonidos": [[14.1, "bolaNieve"], [21.2, "bolaNieve"]],
+      "marcas": { "llega": 6.1, "tiro1": 13.6, "tiro2": 20.7 },
+      "codigo": "grupo-coyhaique"
+    },
+    "grupo-coyhaique-moises": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "coyhaique", "skin": "moises" },
+      "T": 31,
+      "r": 1.3,
+      "actores": { "v": "venjy@mina", "moises": "moises" },
+      "lineas": [
+        {
+          "q": "moises",
+          "a": 0.6,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Y tú? Te pareces a mí, pero más abrigado.",
+            "en": "And you? You look like me, but more bundled up."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.45,
+          "d": 2.8,
+          "texto": {
+            "es": "Soy el Moisés de visita. El de la casa eres tú.",
+            "en": "I'm the visiting Moisés. You're the one who lives here."
+          }
+        },
+        {
+          "q": "v",
+          "a": 7.4,
+          "d": 2.8,
+          "texto": {
+            "es": "Vengo de la mina. Ni un diamante, pero llegué.",
+            "en": "I'm coming from the mine. Not one diamond, but I made it."
+          }
+        },
+        {
+          "q": "moises",
+          "a": 10.35,
+          "d": 3.2,
+          "texto": {
+            "es": "Hermano, ¿te acuerdas de las guerras de nieve en Coyhaique?",
+            "en": "Bro, remember the snowball fights in Coyhaique?"
+          }
+        },
+        {
+          "q": "lalo",
+          "a": 13.7,
+          "d": 2.3,
+          "texto": { "es": "Ahya, ¡y siempre perdías tú!", "en": "Ahya, and you always lost!" }
+        },
+        {
+          "q": "j",
+          "a": 16.15,
+          "d": 2.4,
+          "texto": { "es": "¡Lalo! ¿A mí? Si vivimos juntos.", "en": "Lalo! Me? We live together." }
+        },
+        {
+          "q": "moises",
+          "a": 18.7,
+          "d": 2.5,
+          "texto": { "es": "En Coyhaique no había reglas, hermano.", "en": "There were no rules in Coyhaique, bro." }
+        },
+        {
+          "q": "lalo",
+          "a": 21.75,
+          "d": 2.3,
+          "texto": { "es": "Ahya, ¡me diste en el sombrero!", "en": "Ahya, you hit my hat!" }
+        },
+        {
+          "q": "todos",
+          "a": 24.3,
+          "d": 2.3,
+          "texto": { "es": "¡Coyhaique, presente!", "en": "Coyhaique, present!" }
+        },
+        {
+          "q": "j",
+          "a": 26.95,
+          "d": 3,
+          "texto": {
+            "es": "Coyhaique en el corazón, hermanos. Y nieve en la cara.",
+            "en": "Coyhaique in our hearts, bros. And snow in our faces."
+          }
+        }
+      ],
+      "pista": {
+        "moises": [["doble", 0.3, 1.9], ["grupo-mira", 1.9, 10.35], ["recuerda", 10.35, 13.55], ["grupo-mira", 13.55, 21.7], ["risa", 21.7, 24.05], ["brazosArriba", 24.1, 27], ["asiente", 27.25, 30.25]],
+        "j": [["grupo-mira", 0.3, 14.4], ["sorpresa", 14.4, 15.3], ["grupo-mira", 15.3, 20.65], ["lanza", 20.65, 21.65], ["grupo-mira", 21.65, 24.1], ["brazosArriba", 24.1, 27], ["grupo-mira", 27, 30.1]],
+        "v": [["grupo-caminaPico", 0.5, 6.4], ["sacude", 6.4, 7.6], ["grupo-mira", 7.6, 21.7], ["risa", 21.7, 24.05], ["brazosArriba", 24.1, 27], ["asiente", 27.25, 30.25]],
+        "lalo": [["grupo-mira", 0.3, 13.45], ["lanza", 13.45, 14.45], ["risa", 14.5, 16.2], ["grupo-mira", 16.2, 21.6], ["rasca", 21.6, 24.05], ["brazosArriba", 24.1, 27], ["asiente", 27.25, 30.25]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "moises",
+          "mas": [0.6, 0, 0.9]
+        },
+        "jugador": {
+          "desde": "moises",
+          "mas": [-1.1, 0, -0.8]
+        }
+      },
+      "caminos": {
+        "moises": [
+          [
+            0,
+            {
+              "desde": "moises",
+              "mas": [-0.1, 0, -1.3]
+            }
+          ],
+          [
+            30.9,
+            {
+              "desde": "moises",
+              "mas": [-0.1, 0, -1.3]
+            }
+          ],
+          [30.95, "sitio"]
+        ],
+        "v": [
+          [
+            0.5,
+            {
+              "desde": "moises",
+              "mas": [1.1, 0, 6.6]
+            }
+          ],
+          [
+            6.4,
+            {
+              "desde": "moises",
+              "mas": [1.2, 0, -1.9]
+            }
+          ],
+          [
+            30.9,
+            {
+              "desde": "moises",
+              "mas": [1.2, 0, -1.9]
+            }
+          ],
+          [30.95, "sitio"]
+        ]
+      },
+      "efectos": [
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0, 0, 0.35],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.3021232783, 0, -0.1766961366],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.8,
+            "mas": [-0.3050515203, 0, -0.1715912875],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0.0058848652, 0, 0.3499505227],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.2991096178, 0, -0.1817510289],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.8,
+            "mas": [-0.307893516, 0, -0.1664379248],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.2,
+            "mas": [0.0117680665, 0, 0.3498021049],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          6.4,
+          "copo",
+          {
+            "en": "v",
+            "alto": 1.5,
+            "mas": [0.2960113909, 0, -0.1867545353],
+            "tam": 0.14,
+            "vida": 0.9,
+            "vy": -0.9
+          }
+        ],
+        [
+          14.4,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0, 0, 0.25],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.4,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.2103677462, 0, -0.0322111236],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.4,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.2273243567, 0, -0.2416995481],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.4,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [0.035280002, 0, 0.0944944357],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.4,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [-0.1892006238, 0, 0.2173493726],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          14.4,
+          "copo",
+          {
+            "en": "j",
+            "alto": 1.8,
+            "mas": [-0.2397310687, 0, -0.1505029757],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.6,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0, 0, 0.25],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.6,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.2103677462, 0, -0.0322111236],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.6,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.2273243567, 0, -0.2416995481],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.6,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [0.035280002, 0, 0.0944944357],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.6,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [-0.1892006238, 0, 0.2173493726],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ],
+        [
+          21.6,
+          "copo",
+          {
+            "en": "lalo",
+            "alto": 2.1,
+            "mas": [-0.2397310687, 0, -0.1505029757],
+            "tam": 0.16,
+            "vida": 0.7,
+            "vy": -0.6
+          }
+        ]
+      ],
+      "sonidos": [[14.4, "bolaNieve"], [21.6, "bolaNieve"]],
+      "marcas": { "llega": 6.4, "tiro1": 13.9, "tiro2": 21.1 },
+      "codigo": "grupo-coyhaique"
     }
   }
 }
