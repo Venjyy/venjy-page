@@ -88,6 +88,15 @@ const texto = o => (o && typeof o.es === 'string' ? { es: o.es, en: typeof o.en 
 const accion = o => (o ? { gesto: typeof o.gesto === 'string' && o.gesto ? o.gesto : null, texto: texto(o.texto) } : { gesto: null, texto: null });
 
 // Aplica rutinas.json entero. Ignora lo que no sea válido (el Estudio y validar ya lo revisan con el esquema).
+// B5: horario base de una persona de personajes.json, como si viniera del código (rutinas.json lo ajusta igual).
+// Si rutinas.json ya trajo su horario, ese se queda. quitarHorarioBase lo deshace (el Estudio rehace en vivo)
+export function sumarHorarioBase(clave, h) {
+    HORARIOS_CODIGO[clave] = { ancla: h.ancla, de: h.de, a: h.a, lugar: h.lugar };
+    if (!LUGARES_CODIGO[h.ancla]) LUGARES_CODIGO[h.ancla] = h.lugar;
+    if (!LUGARES[h.ancla]) LUGARES[h.ancla] = h.lugar;
+    if (!HORARIOS[clave]) HORARIOS[clave] = { ...HORARIOS_CODIGO[clave], lugar: LUGARES[h.ancla] || h.lugar };
+}
+export function quitarHorarioBase(clave) { delete HORARIOS_CODIGO[clave]; delete HORARIOS[clave]; }
 export function fijarRutinas(datos) {
     ajustes = { ...RUTINA_BASE };
     const a = datos && datos.ajustes;

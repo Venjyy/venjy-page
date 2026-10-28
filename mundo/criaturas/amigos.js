@@ -17,6 +17,7 @@ import { pasoLejano } from './lod.js';
 import { cargarDatos } from '../datos/cargador.js';
 import { resolverAncla, puntoAMundo, mundoAPunto } from '../datos/posiciones.js';
 import { agregarParpadeo } from './parpadeo.js';
+import { descriptorDe, aparienciasCodigo, nombreDe, posturaDe, globoDe, lugarDe, frasesDe } from '../datos/personajes.js';
 
 // mundo/datos/posiciones.json: dónde está cada persona, relativo a su lugar. Si no llegó o le falta una clave, valen los
 // números del código (los de hoy). Llega por fetch: si tarda más que la generación del mundo, aplicarPosiciones() reubica.
@@ -91,28 +92,34 @@ const CHARLAS = {
     ]
 };
 
-export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, idioma: idiomaInicial = 'es' }) {
+// personajes (solo la supervivencia, Etapa B · B5): mundo/datos/personajes.json. Cambia la apariencia de los de PERSONAS y
+// deja sumar personas nuevas con agregar(); el creativo no lo pasa y queda como siempre.
+export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, idioma: idiomaInicial = 'es', personajes = null }) {
     let idioma = idiomaInicial;
     const tinte = crearTinte();
     const lista = [];
     const rnd = (a, b) => a + Math.random() * (b - a);
     const lugar = k => (terreno.lugares || []).find(l => l.clave === k);
     const tex = (w, h, sem, color, f = 0.18) => texturaPixeles(w, h, sem, liso(color, f));
+    const cambios = personajes ? aparienciasCodigo(personajes) : {};
+    // Lugar base de las personas nuevas (personajes.json → lugar); posiciones.json, si trae la clave, gana
+    const lugarBase = {};
 
     // ---------------------------------------------------------
     // Crear una persona con sus accesorios de volumen
     // ---------------------------------------------------------
     // Sitio de una persona según posiciones.json, o null (sin archivo, sin entrada o sin esa ancla en este mundo)
     function sitioDe(clave) {
-        const p = datosPos && datosPos.personas && datosPos.personas[clave];
+        const p = (datosPos && datosPos.personas && datosPos.personas[clave]) || lugarBase[clave];
         if (!p || !Number.isFinite(p.dx) || !Number.isFinite(p.dz)) return null;
         const A = resolverAncla(terreno, p.ancla);
         return A ? { ...puntoAMundo(A, p), giro: Number.isFinite(p.giro) } : null;
     }
-    function nuevo(clave, x, y, z, yaw, semilla) {
+    // propia: { d, color } de una persona nueva (agregar); sin ella, PERSONAS con su cambio de personajes.json
+    function nuevo(clave, x, y, z, yaw, semilla, propia = null) {
         const sitio = sitioDe(clave);
         if (sitio) { x = sitio.x; y = sitio.y; z = sitio.z; if (sitio.giro) yaw = sitio.yaw; }
-        const d = PERSONAS[clave];
+        const d = propia ? propia.d : cambios[clave] ? { ...descriptorDe(cambios[clave], PERSONAS[clave]), nombre: PERSONAS[clave].nombre } : PERSONAS[clave];
         const piel = pielDe(d);
         const p = crearPersona(tinte, piel, semilla);
         const escala = d.escala || 1;
@@ -122,7 +129,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         scene.add(p.g);
         const n = {
             clave, p, escala, x, y, z, yaw, t: Math.random() * 10, fase: 0,
-            nombre: crearNombre(scene, d.nombre), globo: crearGlobo(scene, { nombre: d.nombre, color: COLOR_GLOBO[clave] }),
+            nombre: crearNombre(scene, d.nombre), globo: crearGlobo(scene, { nombre: d.nombre, color: propia ? propia.color : COLOR_GLOBO[clave] }),
             frase: null, cerca: false, cambioFrase: 0, charla: null, visible: false
         };
         lista.push(n);
@@ -157,7 +164,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     const posiciones = {
         aplicar: aplicarPosiciones,
         aplicarMiradas: calcularMiradas,
-        previo: clave => (datosPos && datosPos.personas && datosPos.personas[clave]) || null,
+        previo: clave => (datosPos && datosPos.personas && datosPos.personas[clave]) || lugarBase[clave] || null,
         ancla(clave) {
             const p = posiciones.previo(clave);
             return p ? resolverAncla(terreno, p.ancla) : null;
@@ -845,6 +852,66 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     }
 
     // ---------------------------------------------------------
+    // Personas nuevas de personajes.json (Etapa B · B5, estudio/DISENO.md §41): nacen solo con datos
+    // ---------------------------------------------------------
+    // Semilla estable por clave (las texturas salen iguales cada vez)
+    const semillaDe = clave => 6000 + [...clave].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7);
+    function agregar(clave, def) {
+        quitar(clave);
+        lugarBase[clave] = lugarDe(def);
+        if (!sitioDe(clave)) { delete lugarBase[clave]; return null; } // ese lugar no existe en este mundo
+        const d = { ...descriptorDe(def.apariencia), nombre: nombreDe(clave, def) };
+        const n = nuevo(clave, 0, 0, 0, 0, semillaDe(clave), { d, color: globoDe(def) });
+        n.animar = animarGenerica;
+        n.generico = { postura: posturaDe(def), frases: frasesDe(def), ocio: rnd(4, 9), mira: 0 };
+        n.cargado = !sitioDe(clave).suelo;
+        return n;
+    }
+    function quitar(clave) {
+        const i = lista.findIndex(n => n.clave === clave && n.generico);
+        if (i < 0) return false;
+        const n = lista[i];
+        lista.splice(i, 1);
+        scene.remove(n.p.g); scene.remove(n.nombre.sp); scene.remove(n.globo.sp);
+        delete lugarBase[clave];
+        return true;
+    }
+    // Respira, mira al jugador si está cerca y, de vez en cuando, mira alrededor. La pose sale de su postura
+    function animarGenerica(n, dt, t, dJ) {
+        const { p } = n, g = n.generico;
+        if (!n.cargado) {
+            const y = sueloArena(n.x, n.z);
+            if (!y) return false;
+            n.y = y; n.cargado = true;
+        }
+        const resp = Math.sin(n.t * 1.7);
+        if (g.postura === 'sentado') {
+            sentadoEnSuelo(p);
+            ir(p.brazoD.rotation, 'x', -0.55, k(dt, 5)); ir(p.brazoI.rotation, 'x', -0.5, k(dt, 5));
+            ir(p.brazoD.rotation, 'z', 0.12, k(dt, 5)); ir(p.brazoI.rotation, 'z', -0.12, k(dt, 5));
+        } else {
+            p.cuerpo.position.y = resp * 0.008;
+            p.piernaD.rotation.x = p.piernaI.rotation.x = 0;
+            if (g.postura === 'brazos cruzados') {
+                ir(p.brazoD.rotation, 'x', -1.2, k(dt, 5)); ir(p.brazoD.rotation, 'z', 0.9, k(dt, 5));
+                ir(p.brazoI.rotation, 'x', -1.05, k(dt, 5)); ir(p.brazoI.rotation, 'z', -0.9, k(dt, 5));
+            } else if (g.postura === 'manos atras') {
+                ir(p.brazoD.rotation, 'x', 0.45, k(dt, 5)); ir(p.brazoD.rotation, 'z', -0.12, k(dt, 5));
+                ir(p.brazoI.rotation, 'x', 0.45, k(dt, 5)); ir(p.brazoI.rotation, 'z', 0.12, k(dt, 5));
+            } else { // de pie: los brazos cuelgan y se mecen apenas con la respiración
+                ir(p.brazoD.rotation, 'x', resp * 0.04, k(dt, 5)); ir(p.brazoD.rotation, 'z', 0.04, k(dt, 5));
+                ir(p.brazoI.rotation, 'x', -resp * 0.04, k(dt, 5)); ir(p.brazoI.rotation, 'z', -0.04, k(dt, 5));
+            }
+        }
+        if (dJ < 6) mirarA(n, jugador.pos.x, jugador.pos.z, dt, 1);
+        else {
+            if ((g.ocio -= dt) <= 0) { g.ocio = rnd(4, 9); g.mira = Math.random() < 0.4 ? 0 : rnd(-0.9, 0.9); }
+            ir(p.cuello.rotation, 'y', g.mira, k(dt, 2)); ir(p.cuello.rotation, 'x', 0, k(dt, 3));
+        }
+        return true;
+    }
+
+    // ---------------------------------------------------------
     // Bucle
     // ---------------------------------------------------------
     for (const g of grupos) g.charla.setIdioma(idioma);
@@ -855,6 +922,9 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     return {
         lista,
         posiciones,
+        // B5: personas nuevas de personajes.json (supervivencia/personajes.js); el Estudio las rehace en vivo
+        agregar,
+        quitar,
         actualizar(dt, oculto = false) {
             tiempo += dt;
             dt = Math.min(dt, 0.05);
@@ -886,7 +956,7 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 // n.escena (escenas de la supervivencia) reemplaza la animación; recibe la normal por si quiere usarla.
                 // n.paseo (supervivencia/paseos.js): fuera de su sitio camina o queda de pie, sin su animación de siempre
                 if (visible) {
-                    const base = (d = dt) => ANIMAR[n.clave](n, d, tiempo, dJ);
+                    const base = (d = dt) => (n.animar || ANIMAR[n.clave])(n, d, tiempo, dJ);
                     visible = (n.escena ? n.escena(dt, base) : n.paseo ? n.paseo.animar(dt) : base()) !== false;
                     // Vida entre amigos (supervivencia/vida-amigos.js): sus gestos van encima de la animación normal
                     if (visible && !n.escena && !n.paseo && n.vida) n.vida.animar(dt);
@@ -911,9 +981,9 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
                 else {
                     const cerca = dJ < 6;
                     if (cerca && (!n.cerca || (n.cambioFrase -= dt) <= 0)) {
-                        const f = FRASES[n.clave];
-                        let nueva;
-                        do nueva = f[Math.floor(Math.random() * f.length)]; while (f.length > 1 && nueva === n.frase);
+                        const f = n.generico ? n.generico.frases : FRASES[n.clave];
+                        let nueva = null;
+                        if (f && f.length) do nueva = f[Math.floor(Math.random() * f.length)]; while (f.length > 1 && nueva === n.frase);
                         n.frase = nueva; n.cambioFrase = 7;
                     }
                     n.cerca = cerca;

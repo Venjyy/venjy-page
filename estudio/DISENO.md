@@ -1494,3 +1494,59 @@ Lo que fijó: el primer punto es Boris (es `n` salvo con tu skin de Boris: enton
 
 **Textos**: los que se migran ya están aprobados (`mundo/DIALOGOS.md`): se copian tal cual y `revisado` lo pone el dueño.
 **Carga**: nada nuevo al iniciar; `escenas.json` ya se pide solo al usar una escena.
+
+## 41. Etapa B · punto 5: personajes en datos (2026-10-28)
+
+**Meta**: sumar una persona al juego es solo datos: nombre, cómo se ve, dónde está, a qué hora, qué hace mientras espera,
+qué dice en el globo y en «Hablar», qué le gusta y a quién conoce. Se hace desde la pestaña **Personajes** del Estudio,
+sin tocar JS. Un solo PR (pedido del dueño).
+
+**Archivo**: `mundo/datos/personajes.json` (`personas.<clave>`, esquema `estudio/esquemas/personajes.schema.json`). Modelo
+puro en `mundo/datos/personajes.js` (lo comparten juego, Estudio, CLI y prueba). Campos de una persona nueva:
+
+| Campo | Qué es | Quién lo usa |
+|---|---|---|
+| `nombre` | Nombre propio (igual en ES y EN) | `NOMBRES_AMIGO`, cartel, globo |
+| `apariencia` | Mismo formato que `PERSONAS` de `criaturas/amigos.js`, con colores `#rrggbb` | `pielDe` (`descriptorDe` convierte) |
+| `lugar` | Un punto de `posiciones.json` (ancla, dx, dz, giro, dy o `suelo`) | Valor base: si `posiciones.json` trae la clave, gana (gizmo de Posiciones) |
+| `postura` | `de pie` · `brazos cruzados` · `manos atras` · `sentado` | Animación genérica de `amigos.js` |
+| `horario` | `de`, `a` (0-24) y, si el lugar no tiene nombre conocido, `lugar` {es,en} | Valor base de `HORARIOS`; `rutinas.json → horarios` lo ajusta (pestaña Vida) |
+| `globo` | Color de su globo | `COLOR_GLOBO` |
+| `frases` | Lo que dice al acercarte | Globo de `amigos.js` |
+| `hablar` | `saludo` {bajo, alto}, `temas`, `regalo`, `opiniones`, `gestoRegalo`: formato de `dialogos.json` | `dialogos-datos.js` lo suma; si `dialogos.json` trae la persona, gana ese |
+| `regalo` | Objetos favoritos por nombre (como `/dar`) | `FAVORITOS` |
+| `amigos` | Relación con cada uno, 0 (no se conocen) a 4 (pareja) | `PARES` (amistad inicial y «¿Qué opinas de…?») |
+| `borrador` | No sale en el juego | Todo lo ignora |
+
+**Decisiones**
+
+1. **Base + ajuste, como siempre**: las 13 personas de hoy siguen en su JS. Para los 9 de `amigos.js` el JSON solo
+   puede traer `apariencia` (se escribe encima de la del código al crearlos; sus accesorios propios, como el hacha
+   de Boris, siguen igual). Pony, Salonas y Lona (`npcs.js`) y Venjy tienen la piel **pintada a mano**: no se cambian
+   desde aquí (**no editable aún**; haría falta describirlas con `pielDe` y perder detalle).
+2. **Una persona = una entrada**: todo lo suyo en un sitio, para que «sumar a alguien» no obligue a tocar cinco archivos.
+   Los textos de «Hablar» usan el formato de `dialogos.json`; si más adelante se pasan a ese archivo, ese gana.
+3. **Dónde nace**: `supervivencia/personajes.js` registra la persona en los sistemas que van por clave (nombres,
+   globo, amistad, regalos, relaciones, horario) y le pide a `amigos.js` que la cree (`amigos.agregar`). Entra a
+   `amigos.lista`, así que rutinas, paseos, acompañante, el panel de misiones y el gizmo de Posiciones la tratan como
+   a cualquiera. Sin misiones ni tienda: el panel dice «sin más encargos» y tiene la pestaña «Hablar».
+4. **Animación genérica** por `postura` (respira, cambia el peso, mira al jugador cerca, gesto ocioso de vez en
+   cuando). Lo propio de cada uno (Boris cortando leña, el bong) sigue siendo código: no se pide para sumar a alguien.
+5. **El creativo no cambia**: `crearAmigos` lee `personajes` solo si se lo pasa la supervivencia (`opciones.personajes`).
+6. **Carga**: `personajes.json` se pide al importar `main.js` y se espera en la etapa «amigos» (archivo chico, en
+   paralelo con el mundo). Sin archivo o con `?sin-datos`, todo como antes.
+7. **En vivo** (`?estudio`): las personas nuevas se rehacen al recibir el archivo (`amigos.quitar` + `agregar`); un
+   cambio de apariencia de alguien del código se ve al recargar el juego (rehacer su cuerpo perdería sus accesorios).
+8. **Validar**: esquema + `reglasPersonajes` (lugar existe, regalo es un objeto, amigos y opiniones de personas que
+   existen, horario en orden, temas sin repetir, avisos de lo que se ignora). `posiciones.json` acepta las claves de
+   `personajes.json`. `resumen personajes` las lista.
+9. **Pestaña Personajes** (grupo «Pantalla y mundo»). Vista simple: elegir persona o «Nueva persona» partiendo de
+   alguien parecido (copia su apariencia) o de una base; colores y listas con nombres comunes; vista previa de frente
+   y de lado con las mismas pieles del juego; lugar de una lista, horario con dos horas, postura, frases, saludo,
+   temas (pregunta y respuesta), regalo favorito y a quién conoce. Avanzado: desplazamiento y giro, tamaño exacto,
+   estampado, color de barba, requisitos de los temas, opiniones y gesto al regalo. Para moverla en el mundo:
+   pestaña Posiciones (la lista ya la incluye).
+
+**Fuera de B5 (anotado)**: misiones y tienda de una persona nueva (B6: `misiones-datos.js` y `tienda-datos.js` a JSON);
+su bienvenida y momento (ya se pueden escribir en `escenas.json` con `dispara`, pero la skin del jugador no existe para
+alguien nuevo); su carta del Duelo; charlas de la vida entre amigos (`vida-amigos-datos.js`, punto 4).

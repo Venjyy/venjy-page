@@ -50,6 +50,17 @@ const PARES = {
     'nacho-braulio': 1, 'nacho-conejeros': 1,
     'braulio-conejeros': 2
 };
+// B5 (personajes.json → amigos): relaciones de una persona nueva. Solo suma pares que no estén en la tabla; quitar
+// borra solo los que se sumaron (el Estudio rehace las personas nuevas en vivo)
+const SUMADOS = new Set();
+export function sumarRelacion(a, b, nivel) {
+    if (!a || !b || a === b || PARES[`${a}-${b}`] !== undefined || PARES[`${b}-${a}`] !== undefined) return false;
+    PARES[`${a}-${b}`] = nivel; SUMADOS.add(`${a}-${b}`);
+    return true;
+}
+export function quitarRelacionesDe(clave) {
+    for (const par of [...SUMADOS]) if (par.split('-').includes(clave)) { delete PARES[par]; SUMADOS.delete(par); }
+}
 export function relacion(a, b) {
     if (!a || !b || a === b) return 0;
     return PARES[`${a}-${b}`] ?? PARES[`${b}-${a}`] ?? 0;

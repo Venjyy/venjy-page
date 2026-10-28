@@ -17,7 +17,7 @@ import { crearNPCs } from '../criaturas/npcs.js';
 import { crearAnimales } from '../criaturas/animales.js';
 import { crearAmigos } from '../criaturas/amigos.js';
 import { crearVenjys } from '../criaturas/venjy.js';
-import { silenciarMundo, mundoSilenciado } from '../criaturas/cuerpo.js';
+import { silenciarMundo, mundoSilenciado, COLOR_GLOBO } from '../criaturas/cuerpo.js';
 import { destinos as destinosZonas } from '../portafolio/zonas.js';
 import { listarMundos, cargarMundo, guardarMundo, borrarMundo, exportarMundo, descargarMundo, guardarCopiaConTope, importarMundo, nuevoId, serializarEdiciones, cargarEdiciones, MAX_MUNDOS } from './guardado.js';
 import { Inventario } from './inventario.js';
@@ -86,8 +86,11 @@ import { presentacion } from './presentacion.js';
 import { crearFondoMenu } from './fondo-menu.js';
 import { aplicarPoses } from '../datos/gestos.js';
 import { fijarLimites } from './pose-jugador.js';
+import { crearPersonajes } from './personajes.js';
 
 fijarAlto(ALTO_SUPERVIVENCIA);
+// B5: personajes.json (personas nuevas y apariencias) se pide ya y se espera en la etapa «amigos» (archivo chico)
+const cargaPersonajes = cargarDatos('personajes');
 const DY = DESNIVEL_SUPERVIVENCIA;
 // Lo que el acompañante no rompe aunque se lo pongan encima (7i PR 2): lo que guarda cosas o se usa
 const NO_ROMPE_ACOMPANANTE = new Set([B.COFRE, B.BARRIL, B.HORNO, B.HORNO_ENCENDIDO, B.MESA, B.CAMA, B.MESA_DUELO, B.MESA_DUELO_Z]);
@@ -751,7 +754,10 @@ async function arrancar(guardado, cx = null) {
     const gatas = crearGatas(vista.grupo, ctxCriaturas);
     const animales = crearAnimales(vista.grupo, ctxCriaturas);
     const npcs = crearNPCs(vista.grupo, { ...ctxCriaturas, gatas, carteles: null, idioma });
-    const amigos = crearAmigos(vista.grupo, { ...ctxCriaturas, npcs, idioma });
+    const datosPersonajes = await cargaPersonajes;
+    const amigos = crearAmigos(vista.grupo, { ...ctxCriaturas, npcs, idioma, personajes: datosPersonajes || { personas: {} } });
+    // B5: las personas nuevas de personajes.json nacen aquí (nombre, amistad, horario y cuerpo; «Hablar» lo suma dialogos-datos.js)
+    const personajes = crearPersonajes(datosPersonajes, { amigos, colores: COLOR_GLOBO });
     // Vida entre amigos (bloque 6d): charlas y bromas en la fogata y el iglú sin el jugador; los guiones se cargan al acercarse
     const vidaAmigos = crearVidaAmigos({ amigos, jugador: vista.jugador, idioma: () => idioma, libre: () => !vida.muerto });
     // 6d etapa 2: los amigos dejan su sitio y caminan buscando camino sobre el terreno (mundo/navegacion.js)
@@ -2194,7 +2200,7 @@ async function arrancar(guardado, cx = null) {
     // ---- Depuración ----
     window.__venjy = {
         datos, terreno, mundo, jugador, camara, renderer, scene, cielo, inventario, vida, dia, entidades, contenedores, agricultura, minado, hud, ventanas,
-        gatas, animales, npcs, amigos, venjys, minimapa, vidaAmigos, paseos, rutinas, acompanante, vista, guardarYa, estadoActual,
+        gatas, animales, npcs, amigos, personajes, venjys, minimapa, vidaAmigos, paseos, rutinas, acompanante, vista, guardarYa, estadoActual,
         particulas, ganado, enemigos, proyectiles, combate, pesca, mano, misiones, facilidades, jefes, final, camaras, ponerSkin, musica, consola, recorrido, escenas, caricias, escenasGatas, escenaCuello, ronda, minijuegos, ruleta,
         get coop() { return coop; }, cofresComp, guardian: escenaGuardian,
         // Animaciones de amistad (bloque 6b): se cargan al usarse; cargarAmistad() las trae para depurar

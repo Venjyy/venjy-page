@@ -97,6 +97,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `mundo/fauna.js` (~180) + `fauna.js` (~140) | 7f-3 parte 5: fauna de ambiente (mariposas, abejas, peces que saltan, luciérnagas), tope 64. `mundo/fauna.js` es puro: `colocarFauna` (anclas `flores`/`lago`/`bosque`, determinista, despejadas de obras; **no** la llama `prepararTerreno`: la pide el cliente al cargar) · `criaturaEn` (posición como función del tiempo, sin estado) · `FAUNA`/`TOPES`/`TOPE_TOTAL`. `supervivencia/fauna.js`: `crearFauna` (4 `InstancedMesh`, anclas a < 56 bloques, luciérnagas de noche, el resto de día). Se carga con `import()` desde `main.js`. `plantaEn` de `voxeles.js` da la flor de cada columna (la comparte con `llenarChunk`) |
 | `misiones.js` (499) | Panel de cada amigo y misión activa. `crearMisiones:38` `cumplida:114` `aceptar:273` `completar:284` `hablar:321` `hablarVenjy:343` |
 | `tienda-datos.js` (215) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `crearTienda:21` `comprar:110` `vender:123` |
+| `personajes.js` (~55) | B5: personas nuevas de `mundo/datos/personajes.json` (modelo puro en `mundo/datos/personajes.js`, §41). `registrarPersonajes` (nombre, globo, amistad, favoritos, relaciones, horario base; sin DOM) · `crearPersonajes` (+ `amigos.agregar`; `aplicar` en vivo) |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |
 | `hablar.js` (332) | Pestaña «Hablar»; carga por `import()`. `crearHablar:38` `abrir:184` `regalar:282` `actualizar:316` |
 | `dialogos-datos.js` (50) | Fachada de `mundo/datos/dialogos.json` (Estudio, fase 3): `TEMAS` `OPINIONES` `SALUDOS` `REGALOS` `GESTO_REGALO` y `aplicarDatosVivos:40`; fetch en el navegador, `fs` en Node |
@@ -195,7 +196,7 @@ Servidor, editor y CLI en `estudio/` (no se publica); datos que lee el juego en 
 | `cuerpo.js` (597) | Texturas, cuerpo de cajas, nombre y globo. `textura:43` `lerp:14` `angulo:16` |
 | `pieles.js` (227) | Pieles a partir de una descripción. `pielDe:19` `agregarExtras:187` |
 | `npcs.js` (857) | Amigos reales como personas de cajas. `crearNPCs:223` |
-| `amigos.js` (948) | Más amigos en los lugares; su sitio sale de `posiciones.json` (`sitioDe:104` en `nuevo:110`; `aplicarPosiciones:142`, expuesto como `amigos.posiciones` para el Estudio). `PERSONAS:30` `crearAmigos:92` |
+| `amigos.js` (~1010) | B5: `agregar(clave, def)`/`quitar` (personas de `personajes.json`, animación genérica por postura) y apariencia de `personajes` (solo si la supervivencia lo pasa). Más amigos en los lugares; su sitio sale de `posiciones.json` (`sitioDe:104` en `nuevo:110`; `aplicarPosiciones:142`, expuesto como `amigos.posiciones` para el Estudio). `PERSONAS:30` `crearAmigos:92` |
 | `venjy.js` (581) | Venjy en persona. `VENJY:16` `crearVenjys:99` |
 | `animales.js` (630) | Granja y manadas. `crearAnimales:360` |
 | `charla.js` (34) | Conversaciones de grupo. `crearCharla:9` |

@@ -429,6 +429,8 @@ export function crearMisiones(ctx) {
             return;
         }
         const m = siguienteDe(clave);
+        // B5: una persona de personajes.json no tiene misiones: su panel abre directo en «Hablar»
+        if (!m && !MISIONES.some(x => x.amigo === clave)) { conversar(clave); return; }
         if (!m) { panel(clave, [parrafo(L(TEXTOS_VENJY.sinMas), 'dialogo')], [[tx().cerrar, () => cerrarPanel()]]); return; }
         if (activa) {
             panel(clave, [parrafo(L(m.pedido), 'dialogo'), parrafo(tx().ocupado(NOMBRES_AMIGO[activa.amigo || 'venjy']), 'aviso')],

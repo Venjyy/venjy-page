@@ -1,0 +1,6 @@
+{
+  "$schema": "../../estudio/esquemas/personajes.schema.json",
+  "version": 1,
+  "nota": "Etapa B · B5 (estudio/DISENO.md §41): una persona nueva = una entrada en personas (se arma en la pestaña Personajes del Estudio). Para Hadad, Andy, Nacho, Braulio, Moisés, Lalo, Boris, Lucho y Conejeros solo vale «apariencia».",
+  "personas": {}
+}

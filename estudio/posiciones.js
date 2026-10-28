@@ -8,6 +8,7 @@
 // =========================================================
 import { formatear } from './formato.mjs';
 import { GIRO_CALCULADO } from '../mundo/datos/posiciones.js';
+import { personasNuevas, lugarDe, nombreDe as nombrePersonaje } from '../mundo/datos/personajes.js';
 
 const NOMBRES = {
     hadad: 'Hadad', andy: 'Andy', nacho: 'Nacho', moises: 'Moisés', lalo: 'Lalo', boris: 'Boris', lucho: 'Lucho',
@@ -31,6 +32,21 @@ export async function montarPosiciones(ctx) {
     const r = await fetch('../mundo/datos/posiciones.json', { cache: 'no-cache' });
     let etag = r.headers.get('ETag');
     let original = JSON.parse(await r.text());
+    // B5: las personas nuevas de personajes.json salen en la lista con su lugar de ahí; si nadie las mueve, no se escriben
+    // en posiciones.json (su lugar base sigue en personajes.json). Al moverlas, posiciones.json suma su clave y gana.
+    const basePersonajes = {};
+    try {
+        const rp = await fetch('../mundo/datos/personajes.json', { cache: 'no-cache' });
+        for (const { clave, def } of personasNuevas(await rp.json())) {
+            NOMBRES[clave] = nombrePersonaje(clave, def);
+            if (!original.personas[clave]) { basePersonajes[clave] = lugarDe(def); original.personas[clave] = clonar(basePersonajes[clave]); }
+        }
+    } catch (e) { /* sin personajes.json: solo los del código */ }
+    const paraGuardar = () => {
+        const d = clonar(datos);
+        for (const [k, b] of Object.entries(basePersonajes)) if (JSON.stringify(d.personas[k]) === JSON.stringify(b)) delete d.personas[k];
+        return d;
+    };
     let datos = clonar(original);
     let actual = Object.keys(datos.personas)[0] || null;
     let modo = 'mover';
@@ -139,7 +155,7 @@ export async function montarPosiciones(ctx) {
             const resp = await fetch('../api/datos/posiciones', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Estudio': '1', 'If-Match': etag || '*' },
-                body: JSON.stringify(datos)
+                body: JSON.stringify(paraGuardar())
             });
             const j = await resp.json().catch(() => ({}));
             if (resp.ok) {
@@ -162,7 +178,7 @@ export async function montarPosiciones(ctx) {
     }
     function descargar() {
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([formatear(datos)], { type: 'application/json' }));
+        a.href = URL.createObjectURL(new Blob([formatear(paraGuardar())], { type: 'application/json' }));
         a.download = 'posiciones.json';
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);

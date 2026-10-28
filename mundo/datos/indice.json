@@ -116,6 +116,12 @@
       "fase": 14,
       "que": "Rutinas y visitas de los amigos (6d etapa 2): quién visita a quién o a qué lugar, de qué hora a qué hora, qué gesto y frase hacen al llegar y al recibir; horarios y nombres de lugar del panel de cada amigo y sus líneas «Está de visita donde…»; main.js lo pide al crear el mundo; se edita en la pestaña Vida (sección Rutinas) y se aplica en vivo con supervivencia.html?estudio"
     },
+    "personajes": {
+      "esquema": "personajes",
+      "lee": "mundo/supervivencia/personajes.js",
+      "fase": 15,
+      "que": "Personajes en datos (Etapa B · B5, DISENO §41): personas nuevas solo con datos (nombre, apariencia, lugar, postura, horario, globo, frases, «Hablar», regalo favorito y a quién conoce) y cambios de apariencia de los 9 de amigos.js; main.js lo pide al arrancar (amigos.js, personajes.js y dialogos-datos.js lo leen); se edita en la pestaña Personajes y se aplica en vivo con supervivencia.html?estudio"
+    },
     "actividades": {
       "esquema": "actividades",
       "lee": "mundo/supervivencia/fogata.js",

@@ -20,6 +20,7 @@ import { avisosDeTexto, esPar } from './avisos-textos.js';
 import { leerGlifos, tablaDeRangos } from './glifos.mjs';
 import { reglasEscenas, sonidosDeEscena } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
+import { reglasPersonajes, esDelCodigo, lugarDe, horarioDe, posturaDe, frasesDe } from '../mundo/datos/personajes.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
 import { USOS, mapaTiempo } from '../mundo/supervivencia/musica-motor.js';
 import { reglasCombate, reglasEstilo, lineaDeTiempo } from '../mundo/supervivencia/combate/reglas.js';
@@ -102,6 +103,11 @@ const RESUMEN_JSON = {
         return `${n} tienda${n === 1 ? '' : 's'} con ofertas nuevas, ${o} ofertas`;
     },
     posiciones: d => `${Object.keys(d.personas || {}).length} personas`,
+    personajes: d => {
+        const e = Object.entries(d.personas || {});
+        const nuevas = e.filter(([k]) => !esDelCodigo(k)), b = nuevas.filter(([, p]) => p.borrador).length;
+        return `${nuevas.length} personas nuevas (${b} en borrador), ${e.length - nuevas.length} cambios de apariencia`;
+    },
     poses: d => `${Object.keys(d.poses || {}).length} poses, ${Object.keys(d.gestos || {}).length} gestos`,
     escenas: d => {
         const e = Object.values(d.escenas || {});
@@ -227,6 +233,17 @@ function filasTextos(d, filtro, op) {
             if (filtro && !clave.startsWith(filtro)) continue;
             filas.push({ clave, texto: idioma === 'ambos' ? `${t.es} | ${t.en}` : t[idioma] || t.es, extra: t.revisado ? '' : '[sin revisar]' });
         }
+    }
+    return filas;
+}
+
+function filasPersonajes(d, filtro) {
+    const filas = [];
+    for (const [k, p] of Object.entries(d.personas || {})) {
+        if (filtro && !k.startsWith(filtro)) continue;
+        if (esDelCodigo(k)) { filas.push({ clave: k, texto: 'del código: cambia ' + Object.keys(p.apariencia || {}).join(', '), extra: p.borrador ? '[borrador]' : '' }); continue; }
+        const l = lugarDe(p), h = horarioDe(p), hb = p.hablar || {};
+        filas.push({ clave: k, texto: `${p.nombre || '(sin nombre)'} · ${l.ancla} ${h.de}-${h.a} h · ${posturaDe(p)} · ${frasesDe(p).length} frases, ${(hb.temas || []).length} temas`, extra: p.borrador ? '[borrador]' : '' });
     }
     return filas;
 }
@@ -394,7 +411,7 @@ function filasCombate(d, filtro) {
     ];
 }
 
-const FILAS_JSON = { musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, poses: filasPoses, escenas: filasEscenas };
+const FILAS_JSON = { musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {
@@ -498,6 +515,8 @@ async function referenciasDePosiciones() {
     const bloque = (fuente.match(/export const PERSONAS = \{([\s\S]*?)\r?\n\};/) || [])[1] || '';
     const personas = new Set([...bloque.matchAll(/^ {4}([a-z0-9_]+): \{/gm)].map(m => m[1]));
     const { ANCLAS_ESCENARIO, ANCLAS_PUNTO, GIRO_CALCULADO } = await import('../mundo/datos/posiciones.js');
+    // B5: las personas nuevas de personajes.json también tienen sitio en posiciones.json
+    try { for (const k of Object.keys(JSON.parse(fs.readFileSync(path.join(DATOS, 'personajes.json'), 'utf8')).personas || {})) personas.add(k); } catch (e) { /* sin personajes.json */ }
     return { anclas: new Set([...LUGARES.map(l => l.clave), ...ANCLAS_ESCENARIO, ...ANCLAS_PUNTO]), personas, giroCalculado: GIRO_CALCULADO };
 }
 
@@ -577,7 +596,7 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     if (nombre === 'posiciones' && refs) {
         for (const [grupo, puntos] of Object.entries({ personas: datos.personas, objetos: datos.objetos, poi: datos.poi })) {
             for (const [clave, p] of Object.entries(puntos || {})) {
-                if (grupo === 'personas' && !refs.personas.has(clave)) mal(`$.personas.${clave}: no existe esa persona (PERSONAS de criaturas/amigos.js)`);
+                if (grupo === 'personas' && !refs.personas.has(clave)) mal(`$.personas.${clave}: no existe esa persona (PERSONAS de criaturas/amigos.js ni personajes.json)`);
                 if (!refs.anclas.has(p.ancla)) mal(`$.${grupo}.${clave}.ancla: «${p.ancla}» no se resuelve en el juego (valen ${[...refs.anclas].join(', ')})`);
                 if (grupo === 'personas' && refs.giroCalculado[clave] && p.giro) {
                     problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.personas.${clave}.giro: el juego lo ignora, ${refs.giroCalculado[clave]}` });
@@ -596,6 +615,9 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
             }
         }
         for (const persona of Object.keys(datos.saludos || {})) if (!datos.temas[persona]) mal(`$.saludos.${persona}: no tiene temas`);
+    }
+    if (nombre === 'personajes' && refs && objetos) {
+        for (const r of reglasPersonajes(datos, { anclas: refs.anclas, objeto: n => objetos.has(String(n).toLowerCase()), gestos: escenas && escenas.gestos })) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
     if (nombre === 'tienda' && objetos) {
         const revisa = (ruta, pila) => { if (Array.isArray(pila) && !objetos.has(pila[0])) mal(`${ruta}: no existe el objeto «${pila[0]}» (los nombres son los de /dar)`); };
@@ -635,9 +657,9 @@ async function validarCmd(pos, op) {
     const problemas = [];
     let limpios = 0;
     const rangos = leerRangos();
-    const objetos = nombres.includes('tienda') ? await nombresDeObjetos() : null;
-    const refs = nombres.includes('posiciones') ? await referenciasDePosiciones() : null;
-    const escenas = nombres.includes('escenas') || nombres.includes('poses') ? await nombresDeEscenas() : null;
+    const objetos = nombres.includes('tienda') || nombres.includes('personajes') ? await nombresDeObjetos() : null;
+    const refs = nombres.includes('posiciones') || nombres.includes('personajes') ? await referenciasDePosiciones() : null;
+    const escenas = nombres.some(n => ['escenas', 'poses', 'personajes'].includes(n)) ? await nombresDeEscenas() : null;
     const pix = nombres.some(n => ['iconos', 'cartas-arte', 'borradores'].includes(n)) ? await refsPixeles() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
 

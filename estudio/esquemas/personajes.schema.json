@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "personajes.schema.json",
+  "title": "Personajes en datos (mundo/datos/personajes.json)",
+  "description": "Etapa B · B5 (estudio/DISENO.md §41). Una persona nueva es solo una entrada aquí: nombre, apariencia, lugar, postura, horario, globo, frases, «Hablar», regalo favorito y a quién conoce. Para los 9 de criaturas/amigos.js (PERSONAS) solo vale `apariencia`, que se escribe encima de la del código. Pony, Salonas, Lona y Venjy tienen la piel pintada a mano: el juego ignora sus entradas. Modelo y reglas: mundo/datos/personajes.js. Se edita en la pestaña Personajes del Estudio.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "personas": {
+      "description": "Clave de la persona -> cómo es. Clave nueva = persona nueva; clave de PERSONAS = cambio de apariencia.",
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/persona" }
+    }
+  },
+  "required": ["version", "personas"],
+  "additionalProperties": false,
+  "$defs": {
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "hora": { "type": "number", "minimum": 0, "maximum": 24 },
+    "persona": {
+      "type": "object",
+      "properties": {
+        "nombre": { "description": "Nombre propio, igual en ES y EN (sale en su cartel, su globo y su panel).", "type": "string", "minLength": 1, "maxLength": 24 },
+        "borrador": { "description": "true: todavía no sale en el juego.", "type": "boolean" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+        "apariencia": { "$ref": "#/$defs/apariencia" },
+        "lugar": {
+          "description": "Dónde está parada al cargar el mundo (formato de posiciones.json). Si posiciones.json trae esta clave, gana (gizmo de la pestaña Posiciones).",
+          "$ref": "posiciones.schema.json#/$defs/punto"
+        },
+        "postura": { "description": "Qué hace mientras espera.", "enum": ["de pie", "brazos cruzados", "manos atras", "sentado"] },
+        "horario": {
+          "description": "De qué hora a qué hora está en su lugar (lo dice su panel). rutinas.json → horarios lo ajusta (pestaña Vida).",
+          "type": "object",
+          "properties": {
+            "de": { "$ref": "#/$defs/hora" },
+            "a": { "$ref": "#/$defs/hora" },
+            "lugar": { "description": "Cómo nombra su panel el lugar («en el molino»), si no es uno conocido.", "$ref": "comun.schema.json#/$defs/texto" }
+          },
+          "additionalProperties": false
+        },
+        "globo": { "description": "Color de la pestaña y el marco de su globo.", "$ref": "#/$defs/color" },
+        "frases": { "description": "Lo que dice en el globo al acercarte (una al azar cada 7 s).", "type": "array", "items": { "$ref": "comun.schema.json#/$defs/texto" }, "maxItems": 40 },
+        "hablar": {
+          "description": "Pestaña «Hablar», con el formato de dialogos.json para una persona. Si dialogos.json ya trae a esta persona, gana ese.",
+          "type": "object",
+          "properties": {
+            "saludo": {
+              "type": "object",
+              "properties": {
+                "bajo": { "$ref": "comun.schema.json#/$defs/texto" },
+                "alto": { "$ref": "comun.schema.json#/$defs/texto" },
+                "skin": { "$ref": "dialogos.schema.json#/$defs/porSkin" }
+              },
+              "required": ["bajo", "alto"],
+              "additionalProperties": false
+            },
+            "temas": { "type": "array", "items": { "$ref": "dialogos.schema.json#/$defs/tema" }, "maxItems": 40 },
+            "regalo": { "description": "Lo que dice al recibir su regalo favorito.", "$ref": "comun.schema.json#/$defs/texto" },
+            "gestoRegalo": { "description": "Gesto al recibir el regalo (por defecto, risa).", "$ref": "comun.schema.json#/$defs/clave" },
+            "opiniones": {
+              "description": "De quién opina -> texto (solo salen las de quienes conoce, según `amigos`).",
+              "type": "object",
+              "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+              "additionalProperties": { "$ref": "comun.schema.json#/$defs/texto" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "regalo": { "description": "Objetos favoritos por nombre, como /dar (PAN, MANZANA, LANA…).", "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9_]+$" }, "maxItems": 6 },
+        "amigos": {
+          "description": "Relación con cada persona: 0 no se conocen, 1 conocidos, 2 amigos, 3 mejores amigos, 4 pareja (tabla de 6c). Solo suma: no cambia pares que ya estén en amistad.js.",
+          "type": "object",
+          "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+          "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 4 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "apariencia": {
+      "description": "Igual que PERSONAS de criaturas/amigos.js (pielDe), con colores #rrggbb. Lo que falte sale de la persona del código o de una base.",
+      "type": "object",
+      "properties": {
+        "piel": { "$ref": "#/$defs/color" },
+        "pelo": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "estilo": { "enum": ["muy corto", "corto", "ordenado", "desordenado", "largo", "rulos"] }
+          },
+          "additionalProperties": false
+        },
+        "ojos": { "$ref": "#/$defs/color" },
+        "ojosRojos": { "type": "boolean" },
+        "barba": { "type": "boolean" },
+        "barbaEstilo": { "enum": ["completa", "chivo"] },
+        "barbaColor": { "$ref": "#/$defs/color" },
+        "lunar": { "type": "boolean" },
+        "lentes": { "type": "boolean" },
+        "sombrero": { "enum": ["", "paja"] },
+        "gorro": { "description": "Color del gorro de lana, o \"\" para quitarlo.", "anyOf": [{ "$ref": "#/$defs/color" }, { "const": "" }] },
+        "ropa": {
+          "type": "object",
+          "properties": {
+            "tipo": { "enum": ["polera", "polera ancha", "poleron", "camisa cuadros", "traje"] },
+            "color": { "$ref": "#/$defs/color" },
+            "estampado": { "description": "Color de la banda estampada de la polera, o \"\" sin estampado.", "anyOf": [{ "$ref": "#/$defs/color" }, { "const": "" }] }
+          },
+          "additionalProperties": false
+        },
+        "pantalon": { "$ref": "#/$defs/color" },
+        "zapatillas": { "enum": ["blancas", "negras", "jordan", "botas"] },
+        "escala": { "description": "Tamaño (1 = normal).", "type": "number", "minimum": 0.7, "maximum": 1.3 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

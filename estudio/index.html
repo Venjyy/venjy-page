@@ -15,6 +15,7 @@
             <button class="pestana activa" type="button" data-pestana="layout" data-es="Layout" data-en="Layout">Layout</button>
             <button class="pestana" type="button" data-pestana="juego" data-es="Juego" data-en="Game">Juego</button>
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
+            <button class="pestana" type="button" data-pestana="personajes" data-es="Personajes" data-en="People">Personajes</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
@@ -736,6 +737,37 @@
                 <h2 data-es="Datos" data-en="Data">Datos</h2>
                 <button id="juego-datos" class="boton secundario" type="button" data-es="Aplicar los archivos guardados" data-en="Apply the saved files">Aplicar los archivos guardados</button>
                 <p id="datos-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-personajes" class="seccion" hidden>
+        <section class="escritorio">
+            <div id="pj-form" class="pj-form"></div>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Persona" data-en="Person">Persona</h2>
+                <label class="campo"><span data-es="Elige a alguien" data-en="Pick someone">Elige a alguien</span><select id="pj-persona"></select></label>
+                <canvas id="pj-vista" class="pj-vista" width="200" height="360" aria-label="Vista previa de frente"></canvas>
+                <div class="fila-botones">
+                    <button id="pj-ir" class="boton chico secundario" type="button" data-es="Ir a verla en el juego" data-en="Go see them in the game">Ir a verla en el juego</button>
+                    <button id="pj-quitar" class="boton chico secundario" type="button" data-es="Borrar" data-en="Delete">Borrar</button>
+                </div>
+                <div id="pj-avisos" class="pj-avisos"></div>
+            </section>
+            <section class="panel">
+                <h2 data-es="Nueva persona" data-en="New person">Nueva persona</h2>
+                <label class="campo"><span data-es="Nombre" data-en="Name">Nombre</span><input id="pj-nombre" type="text" maxlength="24" autocomplete="off"></label>
+                <label class="campo"><span data-es="Partir de" data-en="Start from">Partir de</span><select id="pj-base"></select></label>
+                <button id="pj-nueva" class="boton chico" type="button" data-es="Crear persona" data-en="Create person">Crear persona</button>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="pj-descartar" class="boton chico" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    <button id="pj-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                </div>
+                <p id="pj-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>
