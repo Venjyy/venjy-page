@@ -20,6 +20,21 @@
       "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
       "additionalProperties": { "$ref": "#/$defs/punto" }
     },
+    "lugares": {
+      "description": "Construcciones movidas (Etapa B 6e, pestaña Posiciones → Construcciones): clave (molino, atalaya, campamento, portal, iglu, naufragio, escenario, corral-vacas, corral-ovejas; CONSTRUCCIONES de mundo/datos/posiciones.js) -> bloque central en el mapa. Sin la clave, el juego busca su sitio solo, como siempre. Solo la supervivencia lo lee (al armar el terreno: el cambio se ve al recargar); quienes cuelgan de ese lugar se mueven con él.",
+      "type": "object",
+      "propertyNames": { "enum": ["molino", "atalaya", "campamento", "portal", "iglu", "naufragio", "escenario", "corral-vacas", "corral-ovejas"] },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "x": { "description": "Bloque central, este-oeste (las coordenadas de /tp y /pos).", "type": "integer", "minimum": 0, "maximum": 4096 },
+          "z": { "description": "Bloque central, norte-sur.", "type": "integer", "minimum": 0, "maximum": 4096 },
+          "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+        },
+        "required": ["x", "z"],
+        "additionalProperties": false
+      }
+    },
     "poi": {
       "description": "Puntos de interés nuevos (destinos de /tp, marcas de misión, sitios de escena): clave -> punto.",
       "type": "object",

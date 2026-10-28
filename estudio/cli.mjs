@@ -22,6 +22,7 @@ import { reglasEscenas, sonidosDeEscena } from '../mundo/datos/escenas.js';
 import { reglasPoses, gestosDeDatos } from '../mundo/datos/gestos.js';
 import { reglasPersonajes, esDelCodigo, lugarDe, horarioDe, posturaDe, frasesDe } from '../mundo/datos/personajes.js';
 import { revisarDibujo, MEDIDAS } from '../mundo/datos/pixeles.js';
+import { CONSTRUCCIONES } from '../mundo/datos/posiciones.js';
 import { USOS, mapaTiempo } from '../mundo/supervivencia/musica-motor.js';
 import { reglasCombate, reglasEstilo, lineaDeTiempo } from '../mundo/supervivencia/combate/reglas.js';
 import { largoFases } from '../mundo/supervivencia/combate/datos.js';
@@ -105,7 +106,7 @@ const RESUMEN_JSON = {
     recetas: d => `${(d.recetas || []).length} recetas nuevas, ${Object.keys(d.fundicion || {}).length} fundiciones`,
     objetos: d => { const n = Object.keys(d.objetos || {}).length; return `${n} objeto${n === 1 ? '' : 's'} nuevo${n === 1 ? '' : 's'}, siguiente id ${d.siguienteId}`; },
     misiones: d => { const n = Object.keys(d.misiones || {}).length; return `${n} misión${n === 1 ? '' : 'es'} nueva${n === 1 ? '' : 's'}`; },
-    posiciones: d => `${Object.keys(d.personas || {}).length} personas`,
+    posiciones: d => `${Object.keys(d.personas || {}).length} personas` + (Object.keys(d.lugares || {}).length ? `, ${Object.keys(d.lugares).length} construcciones movidas` : ''),
     personajes: d => {
         const e = Object.entries(d.personas || {});
         const nuevas = e.filter(([k]) => !esDelCodigo(k)), b = nuevas.filter(([, p]) => p.borrador).length;
@@ -278,6 +279,11 @@ function filasPosiciones(d, filtro) {
     for (const [k, p] of Object.entries(d.personas || {})) {
         if (filtro && !k.startsWith(filtro)) continue;
         filas.push({ clave: k, texto: `${p.ancla}${p.marco === 'ancla' ? ' (ejes del ancla)' : ''} ${num(p.dx ?? 0)},${p.dy === 'suelo' ? 'suelo' : num(p.dy ?? 0)},${num(p.dz ?? 0)} giro ${p.giro ?? 0}`, extra: p.nota ? '# ' + p.nota : '' });
+    }
+    // B6e: construcciones movidas (las demás están en su sitio automático)
+    for (const [k, p] of Object.entries(d.lugares || {})) {
+        if (filtro && !k.startsWith(filtro)) continue;
+        filas.push({ clave: 'lugar ' + k, texto: `centro ${p.x},${p.z}`, extra: p.nota ? '# ' + p.nota : '' });
     }
     return filas;
 }
@@ -645,6 +651,12 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
         for (const r of reglasPoses(datos, escenas)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
     if (nombre === 'posiciones' && refs) {
+        // B6e: dos construcciones movidas que se pisan (el terreno nivela las dos y la segunda tapa a la primera)
+        const movidas = Object.entries(datos.lugares || {}).filter(([k]) => CONSTRUCCIONES[k]);
+        for (let i = 0; i < movidas.length; i++) for (let j = i + 1; j < movidas.length; j++) {
+            const [ka, a] = movidas[i], [kb, b] = movidas[j], A = CONSTRUCCIONES[ka], B = CONSTRUCCIONES[kb];
+            if (Math.abs(a.x - b.x) * 2 < A.w + B.w + 4 && Math.abs(a.z - b.z) * 2 < A.d + B.d + 4) problemas.push({ archivo: arch, tipo: 'aviso', texto: `$.lugares: ${ka} y ${kb} se pisan (sepáralas unos bloques)` });
+        }
         for (const [grupo, puntos] of Object.entries({ personas: datos.personas, objetos: datos.objetos, poi: datos.poi })) {
             for (const [clave, p] of Object.entries(puntos || {})) {
                 if (grupo === 'personas' && !refs.personas.has(clave)) mal(`$.personas.${clave}: no existe esa persona (PERSONAS de criaturas/amigos.js ni personajes.json)`);
@@ -697,6 +709,12 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
             if (!id.startsWith(m.amigo)) mal(`${r}: el id debe empezar con la clave del amigo («${m.amigo}»)`);
             if (m.tipo === 'entregar' && !(m.pide || []).length) mal(`${r}.pide: una misión de entregar necesita qué entregar`);
             if (m.tipo === 'matar' && (!m.mob || !m.n)) mal(`${r}: una misión de matar necesita mob y n`);
+            // B6e: visitar por lugares y hablar con alguien
+            if (m.tipo === 'visitar' && !(m.lugares || []).length) mal(`${r}.lugares: una misión de visitar necesita adónde ir`);
+            if (m.tipo === 'visitar' && m.n > (m.lugares || []).length) mal(`${r}.n: pide ${m.n} lugares y solo nombra ${(m.lugares || []).length}`);
+            if (m.tipo === 'hablar' && !m.con) mal(`${r}.con: una misión de hablar necesita con quién`);
+            if (m.tipo === 'hablar' && m.con && conTienda && !conTienda.has(m.con)) mal(`${r}.con: no existe esa persona (las 13 del juego o una de personajes.json)`);
+            if (m.tipo === 'hablar' && m.con === m.amigo) mal(`${r}.con: tiene que ser otra persona, no quien da la misión`);
             (m.pide || []).forEach((p, j) => revisa(`${r}.pide[${j}]`, p));
             (m.premio || []).forEach((p, j) => revisa(`${r}.premio[${j}]`, p));
             (m.kit || []).forEach((p, j) => revisa(`${r}.kit[${j}]`, p));

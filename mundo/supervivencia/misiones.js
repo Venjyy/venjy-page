@@ -8,6 +8,7 @@
 // =========================================================
 import * as THREE from '../../vendor/three.module.js';
 import { MISIONES, JEFES, TEXTOS_VENJY, NOMBRES_AMIGO, repartirKit, fijarMisiones } from './misiones-datos.js';
+import { CONSTRUCCIONES, centrosDe } from '../datos/posiciones.js';
 import { cargarDatos } from '../datos/cargador.js';
 import { O, nombreDe } from './objetos.js';
 import { icono } from './iconos.js';
@@ -27,11 +28,13 @@ const TXT = {
     es: { aceptar: 'Aceptar', entregar: 'Entregar', cerrar: 'Cerrar', abandonar: 'Abandonar misión', premio: 'Premio', progreso: 'Progreso',
         ocupado: n => `Ya tienes una misión activa con ${n}. Termínala o abandónala primero.`, falta: 'Todavía te falta:', mision: 'Misión',
         matar: (m, n) => `Eliminar ${n} × ${m}`, cualquiera: 'monstruos', deNoche: ' (de noche)', visitar: n => `Visitar los ${n} lugares`, noche: 'Sobrevivir una noche sin dormir', hablar: 'Hablar con ella',
+        visitarEstos: l => `Visitar: ${l}`, visitarDe: (n, l) => `Visitar ${n} de: ${l}`, hablarCon: (p, l) => `Hablar con ${p}` + (l ? ` en ${l}` : ''),
         completas: (n, t) => `Misiones: ${n}/${t}`, nueva: 'Nueva misión', listo: '¡Listo para entregar!', abandonada: 'Misión abandonada', recibes: 'Recibes:', jefe: 'Pelea de jefe',
         usarAltar: 'Usa el objeto en el altar (clic derecho)', kitLleno: n => `Inventario lleno: ${n} quedó en el suelo`, kitRecibes: 'Kit de misión:', vidaExtra: '+1 corazón máximo', subeAmistad: (n, nv) => `Amistad con ${n}: ${nv}` },
     en: { aceptar: 'Accept', entregar: 'Hand in', cerrar: 'Close', abandonar: 'Abandon quest', premio: 'Reward', progreso: 'Progress',
         ocupado: n => `You already have an active quest with ${n}. Finish or abandon it first.`, falta: 'You still need:', mision: 'Quest',
         matar: (m, n) => `Defeat ${n} × ${m}`, cualquiera: 'monsters', deNoche: ' (at night)', visitar: n => `Visit the ${n} places`, noche: 'Survive a night without sleeping', hablar: 'Talk to her',
+        visitarEstos: l => `Visit: ${l}`, visitarDe: (n, l) => `Visit ${n} of: ${l}`, hablarCon: (p, l) => `Talk to ${p}` + (l ? ` at ${l}` : ''),
         completas: (n, t) => `Quests: ${n}/${t}`, nueva: 'New quest', listo: 'Ready to hand in!', abandonada: 'Quest abandoned', recibes: 'You get:', jefe: 'Boss fight',
         usarAltar: 'Use the item on the altar (right click)', kitLleno: n => `Inventory full: ${n} left on the ground`, kitRecibes: 'Quest kit:', vidaExtra: '+1 max heart', subeAmistad: (n, nv) => `Friendship with ${n}: ${nv}` }
 };
@@ -73,6 +76,7 @@ export function crearMisiones(ctx) {
     // (también al abrir Misión o Tienda: el amigo queda quieto y te mira mientras su panel esté abierto)
     let hablarUI = null, cargandoHablar = null;
     function conversar(clave) {
+        alHablar(clave);
         if (hablarUI) return hablarUI.abrir(clave);
         cargarHablar().then(h => { if (h) h.abrir(clave); });
     }
@@ -195,7 +199,7 @@ export function crearMisiones(ctx) {
             case 'entregar': return m.pide.every(([p, n]) => cuenta(p) >= n);
             case 'matar': case 'visitar': return estado.progreso >= m.n;
             case 'noche': return estado.noche === 'lista';
-            case 'hablar': return true;
+            case 'hablar': return !m.con || estado.progreso >= 1; // las del JSON (B6e): al hablar con `con`
             default: return false; // jefes: los marca jefes.js
         }
     }
@@ -213,9 +217,14 @@ export function crearMisiones(ctx) {
         switch (m.tipo) {
             case 'entregar': return m.pide.map(([p, n]) => `${nombreDe([].concat(p)[0], idioma)} ${Math.min(cuenta(p), n)}/${n}`).join(' · ');
             case 'matar': return tx().matar(m.mob === '*' ? tx().cualquiera : L(NOMBRES_MOB[m.mob]), m.n) + (m.noche ? tx().deNoche : '') + `  ${Math.min(estado.progreso, m.n)}/${m.n}`;
-            case 'visitar': return tx().visitar(m.n) + `  ${Math.min(estado.progreso, m.n)}/${m.n}`;
+            case 'visitar': {
+                const cuenta = `  ${Math.min(estado.progreso, m.n)}/${m.n}`;
+                if (!m.lugares) return tx().visitar(m.n) + cuenta;
+                const l = m.lugares.map(nombreLugar).join(', ');
+                return (m.n < m.lugares.length ? tx().visitarDe(m.n, l) : tx().visitarEstos(l)) + cuenta;
+            }
             case 'noche': return tx().noche + (estado.noche === 'lista' ? ' ✓' : '');
-            case 'hablar': return tx().hablar;
+            case 'hablar': return m.con ? tx().hablarCon(NOMBRES_AMIGO[m.con] || m.con, m.lugar ? nombreLugar(m.lugar) : '') + (estado.progreso >= 1 ? ' ✓' : '') : tx().hablar;
             default: return '';
         }
     }
@@ -379,7 +388,7 @@ export function crearMisiones(ctx) {
         decirEspecial(m.amigo || 'venjy', L(m.aceptar));
         cerrarPanel();
         hud.mensaje(`${tx().nueva}: ${L(m.titulo)}`);
-        if (m.tipo === 'hablar') completar(m); // en espera: se completa al hablar
+        if (m.tipo === 'hablar' && !m.con) completar(m); // en espera: se completa al hablar (la 3 de Lona)
     }
 
     function completar(m) {
@@ -500,6 +509,22 @@ export function crearMisiones(ctx) {
     }
 
     // ---------------------------------------------------------
+    // B6e: dónde se cumple un «visitar» o el `lugar` de un «hablar» del JSON. Sale del terreno, así que sigue a una construcción
+    // movida en posiciones.json; el radio es el de terreno.lugares (el lado mayor del sitio + 6)
+    const destinosVisita = () => Object.entries(centrosDe(terreno)).map(([clave, c]) => ({
+        clave, x: c.bx + 0.5, z: c.bz + 0.5, radio: Math.max(CONSTRUCCIONES[clave].w, CONSTRUCCIONES[clave].d) + 6
+    }));
+    const nombreLugar = c => (CONSTRUCCIONES[c] ? CONSTRUCCIONES[c][idioma] || CONSTRUCCIONES[c].es : c);
+    const cerca = clave => destinosVisita().some(l => l.clave === clave && Math.hypot(l.x - jugador.pos.x, l.z - jugador.pos.z) < l.radio);
+    // Un «hablar» del JSON se cumple al abrir el «Hablar» de `con` (estando en `lugar`, si lo pide); se entrega a quien la dio
+    function alHablar(clave) {
+        const m = misionDe(estado.activa);
+        if (!m || m.tipo !== 'hablar' || !m.con || m.con !== clave || estado.progreso >= 1) return;
+        if (m.lugar && !cerca(m.lugar)) return;
+        estado.progreso = 1;
+        hud.mensaje(tx().listo);
+        sonidos.nivel();
+    }
     let relojVisita = 0;
     function actualizar(dt) {
         const m = misionDe(estado.activa);
@@ -508,7 +533,9 @@ export function crearMisiones(ctx) {
             relojVisita += dt;
             if (relojVisita > 1) {
                 relojVisita = 0;
-                for (const l of terreno.lugares || []) if (Math.hypot(l.x - jugador.pos.x, l.z - jugador.pos.z) < l.radio) estado.visitados.add(l.clave);
+                // Las del código cuentan los seis lugares; las del JSON (B6e), solo los que nombran (también escenario y corrales)
+                const lista = m.lugares ? destinosVisita().filter(l => m.lugares.includes(l.clave)) : terreno.lugares || [];
+                for (const l of lista) if (Math.hypot(l.x - jugador.pos.x, l.z - jugador.pos.z) < l.radio) estado.visitados.add(l.clave);
                 const antes = estado.progreso;
                 estado.progreso = estado.visitados.size;
                 if (estado.progreso >= m.n && antes < m.n) { hud.mensaje(tx().listo); sonidos.nivel(); }

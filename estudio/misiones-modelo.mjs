@@ -5,8 +5,10 @@
 // Lo prueba mundo/tests/estudio-misiones.mjs.
 // =========================================================
 import { pilaValida } from './tienda-modelo.mjs';
+import { CONSTRUCCIONES } from '../mundo/datos/posiciones.js';
 
-export const TIPOS = [['entregar', 'Entregar objetos', 'Hand in objects'], ['matar', 'Eliminar monstruos', 'Defeat monsters'], ['noche', 'Sobrevivir una noche', 'Survive a night']];
+export const TIPOS = [['entregar', 'Entregar objetos', 'Hand in objects'], ['matar', 'Eliminar monstruos', 'Defeat monsters'], ['noche', 'Sobrevivir una noche', 'Survive a night'],
+    ['visitar', 'Ir a unos lugares', 'Go to some places'], ['hablar', 'Hablar con alguien', 'Talk to someone']];
 export const MOBS = [['*', 'Cualquiera', 'Any'], ['zombi', 'Zombi', 'Zombie'], ['esqueleto', 'Esqueleto', 'Skeleton'], ['arana', 'Araña', 'Spider'], ['creeper', 'Creeper', 'Creeper'], ['trauco', 'Trauco', 'Trauco'], ['lepisma', 'Lepisma', 'Silverfish']];
 export const TEXTOS = [['titulo', 'Título', 'Title'], ['pedido', 'Lo que pide', 'What they ask'], ['aceptar', 'Al aceptar', 'On accepting'], ['completada', 'Al terminar', 'On finishing']];
 
@@ -25,6 +27,8 @@ export function misionNueva(tipo, amigo) {
     const m = { amigo, tipo, premio: [['esmeralda', 1]], titulo: { es: '', en: '' }, pedido: { es: '', en: '' }, aceptar: { es: '', en: '' }, completada: { es: '', en: '' } };
     if (tipo === 'entregar') m.pide = [['pan', 3]];
     if (tipo === 'matar') { m.mob = 'zombi'; m.n = 5; }
+    if (tipo === 'visitar') m.lugares = ['molino'];
+    if (tipo === 'hablar') m.con = '';
     return m;
 }
 
@@ -35,6 +39,16 @@ export function faltaDeMision(m) {
     if (!Array.isArray(m.premio) || !m.premio.length || !m.premio.every(pilaValida)) return ['El premio tiene un objeto o una cantidad que no vale.', 'The reward has an object or amount that is not valid.'];
     if (m.tipo === 'entregar' && (!Array.isArray(m.pide) || !m.pide.length || !m.pide.every(pilaValida))) return ['Lo que pide entregar tiene un objeto o una cantidad que no vale.', 'What it asks for has an object or amount that is not valid.'];
     if (m.tipo === 'matar' && (!MOBS.some(x => x[0] === m.mob) || !Number.isInteger(m.n) || m.n < 1)) return ['Falta qué monstruo y cuántos.', 'Which monster and how many is missing.'];
+    if (m.tipo === 'visitar') {
+        const l = Array.isArray(m.lugares) ? m.lugares : [];
+        if (!l.length || !l.every(x => CONSTRUCCIONES[x]) || new Set(l).size !== l.length) return ['Elige al menos un lugar adonde ir.', 'Pick at least one place to go to.'];
+        if (m.n !== undefined && (!Number.isInteger(m.n) || m.n < 1 || m.n > l.length)) return [`«Cuántos» tiene que ir de 1 a ${l.length}.`, `«How many» must go from 1 to ${l.length}.`];
+    }
+    if (m.tipo === 'hablar') {
+        if (typeof m.con !== 'string' || !/^[a-z][a-z0-9-]*$/.test(m.con)) return ['Falta con quién hay que hablar.', 'Who to talk to is missing.'];
+        if (m.con === m.amigo) return ['Tiene que ser con otra persona (no con quien da la misión).', 'It must be someone else (not who gives the quest).'];
+        if (m.lugar !== undefined && !CONSTRUCCIONES[m.lugar]) return ['El lugar no vale.', 'The place is not valid.'];
+    }
     for (const k of m.kit || []) if (!pilaValida([k[0], k[1]]) || (k.length === 3 && k[1] !== 1)) return ['El kit tiene un objeto o una cantidad que no vale.', 'The kit has an object or amount that is not valid.'];
     return null;
 }
@@ -59,6 +73,8 @@ export function limpiarMision(m) {
     const o = { amigo: m.amigo, tipo: m.tipo };
     if (m.tipo === 'entregar') o.pide = m.pide;
     if (m.tipo === 'matar') { o.mob = m.mob; o.n = m.n; if (m.noche) o.noche = true; }
+    if (m.tipo === 'visitar') { o.lugares = m.lugares; if (m.n !== undefined && m.n < m.lugares.length) o.n = m.n; }
+    if (m.tipo === 'hablar') { o.con = m.con; if (m.lugar) o.lugar = m.lugar; }
     o.premio = m.premio;
     if (Array.isArray(m.kit) && m.kit.length) o.kit = m.kit;
     for (const [k] of TEXTOS) o[k] = { es: (m[k].es || '').trim(), en: (m[k].en || '').trim() };

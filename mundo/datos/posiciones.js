@@ -76,6 +76,42 @@ export function mundoAPunto(ancla, pos, previo = {}) {
     return punto;
 }
 
+// Construcciones que se pueden mover (Etapa B 6e, posiciones.json → lugares.<clave> = { x, z }: bloque central en el mapa,
+// las mismas coordenadas de /tp). w × d: el sitio que nivelan (la prueba mundo/tests/lugares-fijos.mjs lo compara con
+// construcciones.js). La caseta del pescador no está: va pegada al muelle del lago.
+export const CONSTRUCCIONES = {
+    molino: { es: 'Molino viejo', en: 'Old windmill', w: 9, d: 9 },
+    atalaya: { es: 'Atalaya del bosque', en: 'Forest watchtower', w: 9, d: 13 },
+    campamento: { es: 'Campamento', en: 'Campsite', w: 13, d: 11 },
+    portal: { es: 'Portal en ruinas', en: 'Ruined portal', w: 11, d: 9 },
+    iglu: { es: 'Iglú', en: 'Igloo', w: 11, d: 11 },
+    naufragio: { es: 'Naufragio', en: 'Shipwreck', w: 15, d: 9 },
+    escenario: { es: 'Escenario de Salonas', en: 'Salonas stage', w: 11, d: 9 },
+    'corral-vacas': { es: 'Corral de las vacas', en: 'Cow pen', w: 18, d: 14 },
+    'corral-ovejas': { es: 'Corral de las ovejas', en: 'Sheep pen', w: 15, d: 13 }
+};
+
+// posiciones.json -> { clave: { x, z } } con las construcciones movidas que valen (clave conocida, x y z números), o null
+export function sitiosDe(datos) {
+    const l = datos && datos.lugares;
+    if (!l || typeof l !== 'object') return null;
+    const salida = {};
+    for (const [k, p] of Object.entries(l)) {
+        if (CONSTRUCCIONES[k] && p && Number.isFinite(p.x) && Number.isFinite(p.z)) salida[k] = { x: Math.round(p.x), z: Math.round(p.z) };
+    }
+    return Object.keys(salida).length ? salida : null;
+}
+
+// Dónde quedó cada construcción en este terreno: { clave: { bx, bz, y } } (bloque central), para el gizmo y el Estudio
+export function centrosDe(terreno) {
+    const salida = {};
+    if (!terreno) return salida;
+    for (const l of [...(terreno.lugares || []), terreno.escenario, ...(terreno.corrales || [])]) {
+        if (l && l.clave && CONSTRUCCIONES[l.clave]) salida[l.clave] = { bx: l.bx, bz: l.bz, y: l.y ?? (l.h + 1) };
+    }
+    return salida;
+}
+
 // Quién ignora `giro` porque el juego lo calcula con otra regla (ver amigos.js, `calcularMiradas`).
 export const GIRO_CALCULADO = {
     moises: 'mira a Lalo (y viceversa), con una inclinación fija',

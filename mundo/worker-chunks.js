@@ -24,7 +24,7 @@ self.onmessage = e => {
         if (m.t === 'init') {
             if (m.alto) fijarAlto(m.alto);
             if (m.formas) fijarFormas(m.formas); // 7f-2: formas.json (losas, escalones, vallas…)
-            terreno = prepararTerreno(generarDatos(m.orient), { supervivencia: !!m.supervivencia });
+            terreno = prepararTerreno(generarDatos(m.orient), { supervivencia: !!m.supervivencia, sitios: m.sitios || null });
             for (const [x, y, z, id] of m.ediciones || []) guardarEdicion(terreno, x, y, z, id);
             self.postMessage({ t: 'listo' });
         } else if (m.t === 'formas') {

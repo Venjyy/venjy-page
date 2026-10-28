@@ -28,8 +28,8 @@ export const AYUDA = {
         empezar: ['Juega normal. Las demás pestañas de «Pantalla y mundo», «Historias» y «Minijuegos» usan esta misma ventana.', 'Play as usual. The other tabs in «Screen and world», «Stories» and «Minigames» use this same window.']
     },
     posiciones: {
-        que: ['Dónde está parado cada amigo.', 'Where each friend stands.'],
-        empezar: ['Elige a alguien de la lista y arrástralo en el juego con las flechas de colores.', 'Pick someone from the list and drag them in the game with the colored arrows.']
+        que: ['Dónde está parado cada amigo y dónde va cada construcción (molino, campamento, escenario, corrales…).', 'Where each friend stands and where each building goes (windmill, campsite, stage, pens…).'],
+        empezar: ['Elige a alguien de la lista y arrástralo en el juego con las flechas de colores. Para una construcción, elígela en «Construcciones», arrastra la caja amarilla y guarda: el juego se recarga con ella en su sitio nuevo.', 'Pick someone from the list and drag them in the game with the colored arrows. For a building, pick it in «Buildings», drag the yellow box and save: the game reloads with it in its new spot.']
     },
     personajes: {
         que: ['Las personas del mundo: crear a alguien nuevo (cómo se ve, dónde vive, a qué hora está, qué dice y a quién conoce) o cambiar cómo se ve un amigo.', 'The people in the world: create someone new (looks, where they live, when they are there, what they say and whom they know) or change how a friend looks.'],
