@@ -103,6 +103,7 @@ const RESUMEN_JSON = {
         return `${n} tienda${n === 1 ? '' : 's'} con ofertas nuevas, ${o} ofertas`;
     },
     recetas: d => `${(d.recetas || []).length} recetas nuevas, ${Object.keys(d.fundicion || {}).length} fundiciones`,
+    objetos: d => { const n = Object.keys(d.objetos || {}).length; return `${n} objeto${n === 1 ? '' : 's'} nuevo${n === 1 ? '' : 's'}, siguiente id ${d.siguienteId}`; },
     misiones: d => { const n = Object.keys(d.misiones || {}).length; return `${n} misión${n === 1 ? '' : 'es'} nueva${n === 1 ? '' : 's'}`; },
     posiciones: d => `${Object.keys(d.personas || {}).length} personas`,
     personajes: d => {
@@ -198,6 +199,12 @@ function filasRecetas(d, filtro) {
     const filas = [];
     (d.recetas || []).forEach((r, i) => { const k = `receta${i}`; if (coincide(k, filtro) || coincide(r.da[0], filtro)) filas.push({ clave: k, texto: `${r.forma ? r.forma.join('/') : (r.sin || []).map(p => [].concat(p)[0]).join(' + ')} -> ${r.da[1]} ${r.da[0]}` }); });
     for (const [a, b] of Object.entries(d.fundicion || {})) if (coincide(a, filtro)) filas.push({ clave: `fundicion.${a}`, texto: `${a} -> ${b}` });
+    return filas;
+}
+
+function filasObjetos(d, filtro) {
+    const filas = [];
+    for (const [k, o] of Object.entries(d.objetos || {})) if (coincide(k, filtro)) filas.push({ clave: k, texto: `#${o.id} ${(o.nombre || {}).es} / ${(o.nombre || {}).en} · ícono ${o.icono}${o.color ? '/' + o.color : ''}`, extra: [o.comida ? `come ${o.comida.join('/')}` : '', o.efecto || '', o.devuelve ? `devuelve ${o.devuelve}` : '', o.apila && o.apila !== 64 ? `apila ${o.apila}` : '', o.combustible ? `fuego ${o.combustible}` : '', o.encargo ? 'encargo' : ''].filter(Boolean).join(' · ') });
     return filas;
 }
 
@@ -429,7 +436,7 @@ function filasCombate(d, filtro) {
     ];
 }
 
-const FILAS_JSON = { recetas: filasRecetas, misiones: filasMisiones, musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
+const FILAS_JSON = { recetas: filasRecetas, objetos: filasObjetos, misiones: filasMisiones, musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {
@@ -511,10 +518,26 @@ function recorrer(v, ruta, alHallar, glifos) {
 
 // Nombres que acepta /dar: claves de O y de B en minúsculas (sin agua ni lava ni el aire)
 // Claves de objetos (en minúscula) y de cartas, para revisar iconos, cartas-arte y borradores
+// B6d: claves de mundo/datos/objetos.json (en Node objetos.js no lo carga: el juego sí, al arrancar)
+function clavesObjetosNuevos() {
+    try { return Object.keys(JSON.parse(fs.readFileSync(path.join(DATOS, 'objetos.json'), 'utf8')).objetos || {}); } catch (e) { return []; }
+}
+
+// B6d: lo que necesitan las reglas de objetos.json (claves del código y de bloques, íconos del código, dibujos y colores)
+async function contextoObjetosNuevos() {
+    const { O, OBJETOS, COLORES } = await import('../mundo/supervivencia/objetos.js');
+    const { B } = await import('../mundo/texturas.js');
+    const { reglasObjetos } = await import('./objetos-nuevos-modelo.mjs');
+    let dibujos = new Set();
+    try { dibujos = new Set(Object.keys(JSON.parse(fs.readFileSync(path.join(DATOS, 'iconos.json'), 'utf8')).iconos || {})); } catch (e) { /* sin iconos.json */ }
+    const ocupada = k => O[String(k).toUpperCase()] !== undefined || B[String(k).toUpperCase()] !== undefined;
+    return { reglas: reglasObjetos, ocupada, iconos: new Set(OBJETOS.filter(Boolean).map(o => o.icono)), dibujos, colores: new Set(Object.keys(COLORES)) };
+}
+
 async function refsPixeles() {
     const { O } = await import('../mundo/supervivencia/objetos.js');
     const { CARTAS } = await import('../mundo/supervivencia/cartas-datos.js');
-    return { objetos: new Set(Object.keys(O).map(k => k.toLowerCase())), cartas: new Set(Object.keys(CARTAS)) };
+    return { objetos: new Set([...Object.keys(O).map(k => k.toLowerCase()), ...clavesObjetosNuevos()]), cartas: new Set(Object.keys(CARTAS)) };
 }
 
 // Quién puede tener tienda o misiones en tienda.json y misiones.json: las 13 de hoy (tienda-datos.js) y las personas nuevas de personajes.json
@@ -531,6 +554,7 @@ async function nombresDeObjetos() {
     const { B } = await import('../mundo/texturas.js');
     const nombres = new Set(Object.keys(O).map(k => k.toLowerCase()));
     for (const [k, id] of Object.entries(B)) if (id > 0 && k !== 'AGUA' && k !== 'LAVA') nombres.add(k.toLowerCase());
+    for (const k of clavesObjetosNuevos()) nombres.add(k);
     return nombres;
 }
 
@@ -579,7 +603,7 @@ async function nombresDeEscenasImport() {
 }
 
 // Reglas de contenido que el esquema no expresa
-function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix, conTienda) {
+function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix, conTienda, nuevos) {
     const mal = texto => problemas.push({ archivo: arch, tipo: 'error', texto });
     const aviso = texto => problemas.push({ archivo: arch, tipo: 'aviso', texto });
     const dibujo = (ruta, d, [w, h]) => { if (d) for (const e of revisarDibujo(d, w, h)) mal(`${ruta}: ${e} (${w}×${h})`); };
@@ -645,6 +669,9 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     }
     if (nombre === 'personajes' && refs && objetos) {
         for (const r of reglasPersonajes(datos, { anclas: refs.anclas, objeto: n => objetos.has(String(n).toLowerCase()), gestos: escenas && escenas.gestos })) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
+    }
+    if (nombre === 'objetos' && nuevos) {
+        for (const r of nuevos.reglas(datos, nuevos)) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
     if (nombre === 'recetas' && objetos) {
         const revisa = (ruta, n) => { if (typeof n === 'string' && !objetos.has(n)) mal(`${ruta}: no existe el objeto «${n}» (los nombres son los de /dar)`); };
@@ -719,6 +746,7 @@ async function validarCmd(pos, op) {
     const conTienda = nombres.includes('tienda') || nombres.includes('misiones') ? await personasDelJuego() : null;
     const escenas = nombres.some(n => ['escenas', 'poses', 'personajes'].includes(n)) ? await nombresDeEscenas() : null;
     const pix = nombres.some(n => ['iconos', 'cartas-arte', 'borradores'].includes(n)) ? await refsPixeles() : null;
+    const nuevos = nombres.includes('objetos') ? await contextoObjetosNuevos() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
 
     for (const nombre of nombres) {
@@ -741,7 +769,7 @@ async function validarCmd(pos, op) {
             if (aviso) problemas.push({ archivo: arch, tipo: nivel === 'aviso' ? 'aviso' : 'error', texto: `${ruta}: ${aviso}` });
             else if (EMOJI.test(valor)) problemas.push({ archivo: arch, tipo: 'error', texto: `${ruta}: emoji en «${valor}» (los íconos se dibujan, no se escriben)` });
         }, rangos);
-        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix, conTienda);
+        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix, conTienda, nuevos);
         if (op.contra) {
             const viejo = enHEAD(op.contra, nombre);
             if (viejo) {

@@ -9,7 +9,17 @@ import { B } from '../mundo/texturas.js';
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 // Objetos y bloques con nombre, en minúscula como /dar
-export const NOMBRES = [...Object.keys(O), ...Object.keys(B).filter(k => B[k] > 0 && k !== 'AGUA' && k !== 'LAVA')].map(k => k.toLowerCase()).sort();
+const listaNombres = () => [...Object.keys(O), ...Object.keys(B).filter(k => B[k] > 0 && k !== 'AGUA' && k !== 'LAVA')].map(k => k.toLowerCase()).sort();
+export const NOMBRES = listaNombres();
+// B6d: la pestaña Objetos nuevos cambió O (fijarObjetos en el Estudio): rehace NOMBRES en el lugar y la lista para buscar,
+// así Tienda, Misiones y Recetas ya aceptan los objetos nuevos sin recargar
+export function refrescarNombres(idioma = 'es') {
+    NOMBRES.splice(0, NOMBRES.length, ...listaNombres());
+    const lista = typeof document !== 'undefined' && document.getElementById('ti-objetos');
+    if (!lista) return;
+    lista.textContent = '';
+    for (const n of NOMBRES) lista.appendChild(Object.assign(document.createElement('option'), { value: n, label: nombreDe(idDe(n), idioma) }));
+}
 export const idDe = n => { const k = String(n).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
 export const nombreDeId = id => (Object.keys(O).find(k => O[k] === id) || Object.keys(B).find(k => B[k] === id) || '').toLowerCase();
 export const aNombres = pilas => pilas.map(([id, n]) => [nombreDeId(id), n]);

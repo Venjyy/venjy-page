@@ -678,3 +678,7 @@ body[data-vista="simple"] .solo-avanzado { display: none !important; }
 .pj-avisos p { margin: 4px 0; font-size: 0.75rem; padding: 3px 6px; border-left: 4px solid var(--amarillo); background: rgb(0 0 0 / 0.3); }
 .pj-avisos p.error { border-left-color: var(--rojo); }
 @media (max-width: 700px) { .pj-par { grid-template-columns: 1fr; } }
+/* Pestaña Objetos nuevos (Etapa B · B6d, DISENO §42) */
+.on-cabeza { display: flex; gap: 8px; align-items: center; }
+.on-cabeza .pj-titulo { margin: 0; }
+.on-icono { width: 48px; height: 48px; image-rendering: pixelated; background: rgb(0 0 0 / 0.35); border: 3px solid #000; flex: none; }
