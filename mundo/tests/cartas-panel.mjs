@@ -52,6 +52,15 @@ globalThis.document = { body: nodo('body'), createElement: nodo, addEventListene
 
 const { crearPanelCartas } = await importar('mundo/supervivencia/cartas-panel.js');
 const ok = (cond, msg) => { if (!cond) throw new Error(`cartas-panel: ${msg}`); };
+// El panel baraja con Math.random: semilla fija para que la prueba no dependa de la suerte.
+let semilla = Number(process.env.SEMILLA ?? 12345) >>> 0;
+Math.random = () => { semilla = (semilla + 0x6D2B79F5) >>> 0; let t = semilla; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const esCriatura = x => x.children.some(c => c.textContent.startsWith('ATK '));
+// Algunas criaturas traen a otra al entrar (Lona a Mila, Venjy invita): se sigue a la elegida por su nombre.
+const nombre = x => x.children[0]?.textContent;
+const propias = () => root.querySelectorAll('.cartas-mesa.propia')[0].querySelectorAll('.carta-pixel');
+// Toca una zona libre; si la criatura pide objetivo al entrar (Caleuche, Puntería), toca el primero.
+const tocarZona = () => { for (let i = 0; i < 2; i++) root.querySelectorAll('.cartas-zona').find(z => z.classList.contains('valida'))?.click(); };
 const panel = crearPanelCartas({ idioma: 'es' });
 const root = document.body.children[0];
 panel.abrir('facil');
@@ -59,13 +68,15 @@ ok(!!botonTexto(root, 'Fácil'), 'muestra la selección de nivel');
 botonTexto(root, 'Fácil').click();
 avanzar(400); // robo automático del jugador
 
-// La segunda carta inicial es una criatura: se elige Ataque y una zona libre.
+// Se elige una criatura de la mano: el panel muestra Ataque/Defensa y una zona libre.
 let mano = root.querySelectorAll('.en-mano');
 ok(mano.length >= 2, 'hay mano después del robo');
-mano[1].click();
+ok(mano.some(esCriatura), 'hay una criatura en la mano inicial');
+const primera = nombre(mano.find(esCriatura));
+mano.find(esCriatura).click();
 ok(root.querySelectorAll('.cartas-postura').length === 1, 'muestra selector de postura');
-root.querySelectorAll('.cartas-zona').find(z => z.classList.contains('valida')).click();
-let mesa = root.querySelectorAll('.carta-pixel').filter(x => !x.classList.contains('en-mano'));
+tocarZona();
+const mesa = propias().filter(x => nombre(x) === primera);
 ok(mesa.length === 1, 'invoca en Ataque sin trabarse');
 ok(!mesa[0].classList.contains('defensa'), 'primera criatura en Ataque');
 
@@ -75,13 +86,15 @@ botonTexto(root, 'Terminar turno').click();
 for (let i = 0; i < 30 && !tieneTexto(root, 'Tu turno'); i++) avanzar(700);
 avanzar(400);
 mano = root.querySelectorAll('.en-mano');
-const criatura = mano.find(x => x.children[0]?.textContent.includes('Salonas') || x.children[0]?.textContent.includes('Creeper') || x.children[0]?.textContent.includes('Basilisco'));
+const criatura = mano.find(esCriatura);
 ok(criatura, 'hay otra criatura disponible tras el turno de Lucho');
 criatura.click();
+const segunda = nombre(criatura);
+const enDefensa = () => propias().filter(x => nombre(x) === segunda && x.classList.contains('defensa')).length, defensaAntes = enDefensa();
 const posturas = root.querySelectorAll('.cartas-postura')[0].children;
 posturas[1].click(); // Defensa
-root.querySelectorAll('.cartas-zona').find(z => z.classList.contains('valida')).click();
-ok(root.querySelectorAll('.carta-pixel.defensa').length === 1, 'segunda criatura en Defensa');
+tocarZona();
+ok(enDefensa() === defensaAntes + 1, 'segunda criatura en Defensa');
 
 // Terminar turnos del jugador y dejar correr la IA hasta un final válido.
 let termino = false;
