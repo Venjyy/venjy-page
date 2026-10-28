@@ -27,7 +27,7 @@ const seg = () => ((Date.now() - t0) / 1000).toFixed(1) + 's';
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA: ' + m + '  [' + seg() + ']'); } };
 const errores = [];
-const tope = setTimeout(async () => { console.log('TOPE de tiempo'); try { await nav.close(); } catch (e) { /* ya cerrado */ } fs.writeFileSync(archivo, original); process.exit(1); }, 420000);
+const tope = setTimeout(async () => { console.log('TOPE de tiempo'); try { await nav.close(); } catch (e) { /* ya cerrado */ } fs.writeFileSync(archivo, original); process.exit(1); }, 900000);
 try {
     const ctx = await nav.newContext({ viewport: { width: 1500, height: 900 } });
     const pag = await ctx.newPage();
@@ -38,6 +38,8 @@ try {
     await pag.goto(base + '/estudio/');
     await pag.waitForSelector('#estado-servidor.ok');
     await pag.click('.pestana[data-pestana="posiciones"]');
+    ok(!(await pag.isVisible('#ps-giro')) && await pag.isVisible('#ps-lugar'), 'vista simple: los números van en Avanzado; las construcciones se ven');
+    await pag.click('[data-vista="avanzado"]');
     ok(await pag.isVisible('#panel-posiciones') && await pag.isVisible('#juego'), 'la pestaña Posiciones enseña el juego y su panel');
     await espera(() => { const e = document.getElementById('juego-estado'); return e.textContent.includes('listo') || e.className.includes('error'); }, null, 240000);
     ok(/Juego listo/.test(await pag.textContent('#juego-estado')), 'el juego queda listo');
@@ -150,6 +152,35 @@ try {
     await pag.selectOption('#ps-persona', 'moises');
     await pag.waitForTimeout(300);
     ok(/ignora|ignore|no se usa|not used/i.test(await pag.textContent('#ps-giro-nota')), 'moises avisa que su giro se calcula');
+
+    // B6e: construcciones. Elegir el molino pone la caja sobre su centro (y suelta a la persona)
+    const centroMolino = () => marco.evaluate(() => { const l = window.__venjy.terreno.lugares.find(q => q.clave === 'molino'); return { bx: l.bx, bz: l.bz }; });
+    const m0 = await centroMolino();
+    await pag.selectOption('#ps-lugar', 'molino');
+    await espera(() => /Gizmo en Molino|Error|error/.test(document.getElementById('ps-mensaje').textContent), null, 30000);
+    const g0 = await marco.evaluate(() => ({ activo: window.__venjy.estudioGizmoLugar && window.__venjy.estudioGizmoLugar.activo, punto: window.__venjy.estudioGizmoLugar && window.__venjy.estudioGizmoLugar.punto(), persona: window.__venjy.estudioGizmo && window.__venjy.estudioGizmo.activo }));
+    ok(g0.activo === 'molino' && g0.punto.x === m0.bx && g0.punto.z === m0.bz && !g0.persona, 'caja del molino en su centro: ' + JSON.stringify({ g0, m0 }));
+    // X a mano (Avanzado): la caja va allá; la construcción se mueve al guardar
+    await pag.fill('#ps-lugar-x', String(m0.bx + 30));
+    await pag.dispatchEvent('#ps-lugar-x', 'change');
+    await pag.fill('#ps-lugar-z', String(m0.bz));
+    await pag.dispatchEvent('#ps-lugar-z', 'change');
+    await marco.waitForFunction(x => window.__venjy.estudioGizmoLugar.punto().x === x, m0.bx + 30, { timeout: 10000 });
+    ok(true, 'la caja sigue a los números');
+    await pag.click('#ps-guardar');
+    await espera(() => /^Guardado|^Saved/.test(document.getElementById('ps-mensaje').textContent), null, 20000);
+    ok(JSON.parse(fs.readFileSync(archivo, 'utf8')).lugares.molino.x === m0.bx + 30, 'el archivo trae lugares.molino');
+    // el juego se recarga solo y arma el molino en su sitio nuevo
+    await marco.waitForFunction(x => { const v = window.__venjy; const l = v && v.terreno && v.terreno.lugares.find(q => q.clave === 'molino'); return l && l.bx === x && v.consola; }, m0.bx + 30, { timeout: 240000, polling: 500 });
+    ok(true, 'tras guardar, el juego se recargó con el molino movido');
+    // volver a su sitio de siempre
+    await espera(() => /listo/.test(document.getElementById('juego-estado').textContent), null, 120000);
+    await pag.click('#ps-lugar-auto');
+    await pag.click('#ps-guardar');
+    await espera(() => /^Guardado|^Saved/.test(document.getElementById('ps-mensaje').textContent), null, 20000);
+    ok(!('lugares' in JSON.parse(fs.readFileSync(archivo, 'utf8'))), 'sin construcciones movidas no queda la clave lugares');
+    await marco.waitForFunction(x => { const v = window.__venjy; const l = v && v.terreno && v.terreno.lugares.find(q => q.clave === 'molino'); return l && l.bx === x && v.consola; }, m0.bx, { timeout: 240000, polling: 500 });
+    ok(true, 'el molino vuelve a su sitio de siempre');
 } catch (e) {
     fallos++;
     console.log('ERROR: ' + (e && e.message));

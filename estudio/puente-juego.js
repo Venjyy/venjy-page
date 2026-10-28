@@ -20,6 +20,8 @@ const MUNDO = 'Estudio';
 // de apariencia de alguien del código se ve al recargar el juego (rehacer su cuerpo perdería sus accesorios)
 let gizmo = null; // estudio/gizmo-juego.js, solo después del primer `elegir`
 let gizmoMesa = null; // estudio/gizmo-mesa.js, solo después del primer «Mover la mesa»
+let gizmoLugar = null; // estudio/gizmo-lugar.js (B6e), solo después de elegir la primera construcción
+let posicionesVivas = null; // lo último de posiciones.json que llegó (la caja del gizmo de lugares parte de aquí)
 async function aplicar(nombre, datos) {
     if (nombre === 'dialogos') {
         const m = await import('../mundo/supervivencia/dialogos-datos.js');
@@ -59,6 +61,8 @@ async function aplicar(nombre, datos) {
         if (!v || !v.amigos || !v.amigos.posiciones) throw new Error('el juego todavía no está listo');
         v.amigos.posiciones.aplicar(datos);
         if (gizmo) gizmo.sincronizar();
+        posicionesVivas = datos;
+        if (gizmoLugar) gizmoLugar.sincronizar(datos); // las construcciones se mueven al recargar (escucharDisco)
     } else if (nombre === 'cartas-mesa') {
         // La mesa del duelo: si ya se abrió alguna vez la rearma; si no, la próxima vez que se abra lee estos datos
         // (también el panel de armar mazo: reglas y colección inicial)
@@ -144,6 +148,19 @@ const decir = m => canal.postMessage({ de: 'juego', ...m });
 // Gizmo de posiciones: TransformControls (vendor/three-addons) se descarga la primera vez que se elige a alguien
 async function elegir(o) {
     if (!juegoListo()) throw new Error('el juego todavía no está listo');
+    // B6e: construcciones (una caja de alambre del tamaño del sitio; solo X y Z). Elegir una suelta a la persona y viceversa
+    if (o.objeto === 'lugar' || (o.clave === null && gizmoLugar && gizmoLugar.activo)) {
+        if (gizmo) gizmo.quitar();
+        if (!gizmoLugar) {
+            if (o.clave === null) return null;
+            const m = await import('./gizmo-lugar.js');
+            gizmoLugar = m.crearGizmoLugar(window.__venjy, (clave, punto) => decir({ tipo: 'cambio', nombre: 'posiciones', ruta: `lugares.${clave}`, valor: punto }));
+            gizmoLugar.sincronizar(posicionesVivas);
+            window.__venjy.estudioGizmoLugar = gizmoLugar; // depuración y pruebas
+        }
+        return gizmoLugar.elegir({ clave: o.clave });
+    }
+    if (gizmoLugar) gizmoLugar.quitar();
     if (!gizmo) {
         if (o.clave === null) return null;
         const m = await import('./gizmo-juego.js');
@@ -421,6 +438,12 @@ canal.onmessage = async e => {
 };
 
 // Cambios guardados en disco (el Estudio, o un agente): se vuelven a leer y se aplican
+async function lugaresCambiaron(d) {
+    const v = window.__venjy;
+    if (!v || !v.terreno) return false;
+    const { sitiosDe } = await import('../mundo/datos/posiciones.js');
+    return JSON.stringify(sitiosDe(d)) !== JSON.stringify(v.terreno.sitios || null);
+}
 function escucharDisco() {
     if (typeof EventSource === 'undefined') return;
     const fuente = new EventSource(new URL('../api/eventos', import.meta.url));
@@ -429,7 +452,11 @@ function escucharDisco() {
         if (!DATOS_VIVOS.includes(nombre)) return;
         try {
             const r = await fetch(new URL(`../mundo/datos/${nombre}.json`, import.meta.url), { cache: 'no-cache' });
-            if (r.ok) await aplicar(nombre, await r.json());
+            if (!r.ok) return;
+            const d = await r.json();
+            // B6e: si cambió dónde va una construcción, el terreno hay que armarlo de nuevo: se recarga el juego
+            if (nombre === 'posiciones' && await lugaresCambiaron(d)) { location.reload(); return; }
+            await aplicar(nombre, d);
         } catch (err) { console.warn('[estudio] no se pudo recargar', nombre, err); }
     });
 }

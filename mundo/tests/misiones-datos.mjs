@@ -29,6 +29,18 @@ ok(m2.mob === 'zombi' && m2.n === 4 && m2.noche === true && m2.kit === null, 'ma
 ok(m3.tipo === 'noche' && m3.titulo.en === 'Bread', 'noche con sus textos');
 ok(!MISIONES.some(m => m.id === 'pony1' && m.tipo === 'noche'), 'un id del código no se pisa');
 ok(misionDeDatos('rosa1', null) === null && misionDeDatos(5, base) === null, 'misionDeDatos: basura = null');
+// B6e: visitar por lugares de datos y hablar con alguien (en un lugar, si se pide)
+const v1 = misionDeDatos('rosa8', { ...base, tipo: 'visitar', lugares: ['molino', 'iglu', 'molino'] });
+ok(v1 && v1.lugares.join() === 'molino,iglu' && v1.n === 2, 'visitar: lugares sin repetir y n = todos');
+const v2 = misionDeDatos('rosa8', { ...base, tipo: 'visitar', lugares: ['escenario', 'corral-vacas', 'portal'], n: 2 });
+ok(v2 && v2.n === 2 && v2.lugares.length === 3, 'visitar: n de los lugares (también escenario y corrales)');
+ok(misionDeDatos('rosa8', { ...base, tipo: 'visitar', lugares: ['luna'] }) === null, 'visitar: lugar que no existe = null');
+ok(misionDeDatos('rosa8', { ...base, tipo: 'visitar', lugares: ['molino'], n: 2 }) === null, 'visitar: n mayor que los lugares = null');
+const h1 = misionDeDatos('rosa9', { ...base, tipo: 'hablar', con: 'boris', lugar: 'atalaya' });
+ok(h1 && h1.con === 'boris' && h1.lugar === 'atalaya', 'hablar: con y lugar');
+ok(misionDeDatos('rosa9', { ...base, tipo: 'hablar' }) === null, 'hablar sin con = null (la de Lona sigue en el código)');
+ok(misionDeDatos('rosa9', { ...base, tipo: 'hablar', con: 'rosa' }) === null, 'hablar consigo misma = null');
+ok(misionDeDatos('rosa9', { ...base, tipo: 'hablar', con: 'boris', lugar: 'luna' }) === null, 'hablar en un lugar que no existe = null');
 fijarMisiones({ misiones: { rosa1: { ...base, tipo: 'noche' } } });
 ok(MISIONES.length === antes + 1, 'volver a fijar rehace las nuevas (no las duplica)');
 fijarMisiones(null);

@@ -1,6 +1,7 @@
 // =========================================================
 // VENJY · Estudio · pestaña Misiones (Etapa B · B6b, estudio/DISENO.md §42)
-// Edita mundo/datos/misiones.json: misiones NUEVAS de cada persona (entregar, eliminar monstruos o sobrevivir una noche),
+// Edita mundo/datos/misiones.json: misiones NUEVAS de cada persona (entregar, eliminar monstruos, sobrevivir una noche y, desde
+// B6e, ir a unos lugares o hablar con alguien; los lugares son las construcciones de posiciones.js, que se mueven en Posiciones),
 // que el juego suma al final de las de misiones-datos.js; una persona nueva de personajes.json las tiene en su panel.
 // Vista simple: «Nueva misión» partiendo de una parecida, textos ES/EN, qué pide y el premio. Kit, herramienta prestada
 // y lo que ya hay en el código, en Avanzado. Avisa si falta algo (el juego ignora una misión incompleta) y si el kit
@@ -12,6 +13,7 @@ import { esDelCodigo } from '../mundo/datos/personajes.js';
 import { TIPOS, MOBS, TEXTOS, idSiguiente, misionNueva, faltaDeMision, avisosMision, limpiarMision } from './misiones-modelo.mjs';
 import { instalarDeshacer } from './campo-comun.js';
 import { crearCampos, idDe, aNombres } from './campos-datos.js';
+import { CONSTRUCCIONES } from '../mundo/datos/posiciones.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -64,7 +66,7 @@ export async function montarMisiones(ctx) {
     }
     function resumenCodigo(m) {
         const pilas = l => l.map(([id, n]) => `${n} ${nombreObj(aNombres([[id, n]])[0][0])}`).join(' + ');
-        const que = m.tipo === 'entregar' ? t('entregar ', 'hand in ') + pilas(m.pide) : m.tipo === 'matar' ? t(`eliminar ${m.n} ${m.mob === '*' ? 'monstruos' : m.mob}`, `defeat ${m.n} ${m.mob === '*' ? 'monsters' : m.mob}`) : m.tipo === 'visitar' ? t('visitar lugares', 'visit places') : t('sobrevivir la noche', 'survive the night');
+        const que = m.tipo === 'entregar' ? t('entregar ', 'hand in ') + pilas(m.pide) : m.tipo === 'matar' ? t(`eliminar ${m.n} ${m.mob === '*' ? 'monstruos' : m.mob}`, `defeat ${m.n} ${m.mob === '*' ? 'monsters' : m.mob}`) : m.tipo === 'visitar' ? t('visitar lugares', 'visit places') : m.tipo === 'hablar' ? t('hablar', 'talk') : t('sobrevivir la noche', 'survive the night');
         return `${m.id} · ${L(m.titulo)} — ${que}`;
     }
     function kitFila(m, k, i, al) {
@@ -100,6 +102,42 @@ export async function montarMisiones(ctx) {
             const sn = document.createElement('span'); sn.textContent = t('Solo cuentan de noche', 'Only count at night'); dn.append(cn, sn);
             const par2 = document.createElement('div'); par2.className = 'pj-par'; par2.append(campo('Monstruo', 'Monster', mob), campo('Cuántos', 'How many', n));
             fila.append(par2, dn);
+        }
+        const nombreLugar = c => t(CONSTRUCCIONES[c].es, CONSTRUCCIONES[c].en);
+        if (m.tipo === 'visitar') {
+            // B6e: casillas con las construcciones (dónde estén lo dice el juego); «cuántos de ellos», en Avanzado
+            if (!Array.isArray(m.lugares)) m.lugares = [];
+            const caja2 = document.createElement('div'); caja2.className = 'pj-lista';
+            caja2.append(titulo('Adónde hay que ir', 'Where to go'));
+            for (const c of Object.keys(CONSTRUCCIONES)) {
+                const et = document.createElement('label'); et.className = 'casilla-marca';
+                const ch = document.createElement('input'); ch.type = 'checkbox'; ch.checked = m.lugares.includes(c);
+                ch.addEventListener('change', () => {
+                    m.lugares = Object.keys(CONSTRUCCIONES).filter(k => (k === c ? ch.checked : m.lugares.includes(k)));
+                    if (m.n !== undefined && m.n > m.lugares.length) delete m.n;
+                    al(true);
+                });
+                et.append(ch, Object.assign(document.createElement('span'), { textContent: nombreLugar(c) }));
+                caja2.append(et);
+            }
+            const n = document.createElement('input'); n.type = 'number'; n.min = 1; n.max = Math.max(1, m.lugares.length); n.step = 1; n.value = m.n ?? m.lugares.length;
+            n.addEventListener('change', () => { const v = Math.round(Number(n.value)) || 1; if (v >= m.lugares.length) delete m.n; else m.n = Math.max(1, v); al(); });
+            fila.append(caja2, avanzado(campo('Cuántos de ellos (si no, todos)', 'How many of them (otherwise all)', n)));
+        }
+        if (m.tipo === 'hablar') {
+            // B6e: con quién (otra persona) y, si se quiere, dónde; se cumple al abrir su «Hablar» y se entrega a quien la dio
+            const con = document.createElement('select');
+            con.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: t('Elige a alguien', 'Pick someone') }));
+            for (const k of claves()) if (k !== m.amigo && k !== 'venjy') con.appendChild(Object.assign(document.createElement('option'), { value: k, textContent: nombreDePersona(k) }));
+            con.value = m.con || '';
+            con.addEventListener('change', () => { m.con = con.value; al(); });
+            const lug = document.createElement('select');
+            lug.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: t('En cualquier parte', 'Anywhere') }));
+            for (const c of Object.keys(CONSTRUCCIONES)) lug.appendChild(Object.assign(document.createElement('option'), { value: c, textContent: nombreLugar(c) }));
+            lug.value = m.lugar || '';
+            lug.addEventListener('change', () => { if (lug.value) m.lugar = lug.value; else delete m.lugar; al(); });
+            const par3 = document.createElement('div'); par3.className = 'pj-par'; par3.append(campo('Hablar con', 'Talk to', con), avanzado(campo('Dónde', 'Where', lug)));
+            fila.append(par3);
         }
         fila.append(listaPilas(m.premio, 'Premio', 'Reward', al));
         if (!Array.isArray(m.kit)) m.kit = [];
@@ -148,6 +186,7 @@ export async function montarMisiones(ctx) {
         if (b) {
             if (b.pide) m.pide = aNombres(b.pide);
             if (b.mob) { m.mob = b.mob; m.n = b.n; if (b.noche) m.noche = true; }
+            if (b.tipo === 'visitar') m.lugares = b.lugares ? [...b.lugares] : ['molino', 'atalaya', 'campamento', 'portal', 'iglu', 'naufragio']; // la de Braulio: los seis
             m.premio = aNombres(b.premio);
         }
         datos.misiones[id] = m;

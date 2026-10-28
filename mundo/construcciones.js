@@ -93,6 +93,51 @@ export function nivelar(t, x0, z0, w, d, h, sup = null, borde = 1) {
 }
 
 // ---------------------------------------------------------
+// Sitios fijos (Etapa B 6e): posiciones.json → lugares.<clave> = { x, z } pone el bloque central de una construcción
+// en ese punto. Solo supervivencia (t.sitios; el creativo no lo trae y queda igual). Para que mover una no corra a las
+// demás, cada una busca igual su sitio automático, lo reserva mientras las otras buscan (ES 4) y se arma al final
+// (armarFijos), ya con las reservas liberadas. Claves: las de LUGARES, escenario, corral-vacas y corral-ovejas.
+// ---------------------------------------------------------
+const RESERVA = 4; // ES de un sitio automático reservado: buscarSitio no lo usa y colocarLugares lo trata como plaza
+
+// { x0, z0, h } con el centro (x0 + w >> 1, z0 + d >> 1) en el punto del JSON, o null si la clave no tiene sitio fijo
+export function sitioFijo(t, clave, w, d) {
+    const p = t.sitios && t.sitios[clave];
+    if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.z)) return null;
+    const { BW, BD, HT, NIVEL_AGUA } = t;
+    const x0 = Math.max(3, Math.min(BW - w - 4, Math.round(p.x) - (w >> 1)));
+    const z0 = Math.max(3, Math.min(BD - d - 4, Math.round(p.z) - (d >> 1)));
+    let mn = Infinity, mx = -Infinity;
+    for (let z = z0; z < z0 + d; z++) for (let x = x0; x < x0 + w; x++) { const h = HT[z * BW + x]; if (h < mn) mn = h; if (h > mx) mx = h; }
+    return { x0, z0, h: Math.max(NIVEL_AGUA + 1, Math.round((mn + mx) / 2)) };
+}
+
+// Si `clave` tiene sitio fijo: reserva el automático `s` (con el borde que nivela) y deja `armar(sitio)` para el final.
+function diferir(t, clave, s, w, d, armar) {
+    const sf = sitioFijo(t, clave, w, d);
+    if (!sf) return false;
+    // El sitio automático queda anotado (terreno.automaticos): el Estudio lleva el gizmo allí al «Volver a su sitio»
+    (t.automaticos || (t.automaticos = {}))[clave] = s ? { bx: s.x0 + (w >> 1), bz: s.z0 + (d >> 1) } : null;
+    if (s) {
+        const { BW, ES } = t;
+        for (let z = s.z0 - 1; z <= s.z0 + d; z++) for (let x = s.x0 - 1; x <= s.x0 + w; x++) {
+            const o = z * BW + x;
+            if (ES[o] === 0) ES[o] = RESERVA;
+        }
+    }
+    (t.diferidos || (t.diferidos = [])).push(() => armar(sf));
+    return true;
+}
+
+// Libera las reservas y arma las construcciones con sitio fijo. Devuelve [{ tipo: 'escenario' | 'corral' | 'lugar', r }].
+export function armarFijos(t) {
+    if (!t.diferidos || !t.diferidos.length) return [];
+    const { ES } = t;
+    for (let o = 0; o < ES.length; o++) if (ES[o] === RESERVA) ES[o] = 0;
+    return t.diferidos.splice(0).map(f => f()).filter(x => x.r);
+}
+
+// ---------------------------------------------------------
 // Caseta del pescador (Pony): en la orilla del lago del puente más largo.
 // Busca una columna de orilla baja con al menos 9 bloques de agua en línea recta hacia
 // un lado cardinal, lejos del tablero del puente. Arma caseta en tierra y muelle sobre el agua.
@@ -239,12 +284,17 @@ function pescadorJunto(t, p) {
 // focos de piedra luminosa en postes y alfombra roja. Mira hacia el camino.
 // ---------------------------------------------------------
 export function colocarEscenario(t) {
-    const { BW, SUP, datos, ESCALA } = t;
+    const { datos, ESCALA } = t;
     const [ax, az] = datos.P.aldea;
     const cx = ax * ESCALA + 2, cz = az * ESCALA + 2;
     const s = buscarSitio(t, { cx, cz, rmin: 18, rmax: 70, w: 11, d: 9, desnivel: 2 })
         || buscarSitio(t, { cx, cz, rmin: 18, rmax: 130, w: 11, d: 9, desnivel: 3 });
-    if (!s) return null;
+    if (diferir(t, 'escenario', s, 11, 9, sf => ({ tipo: 'escenario', r: armarEscenario(t, sf) }))) return null;
+    return s ? armarEscenario(t, s) : null;
+}
+
+function armarEscenario(t, s) {
+    const { BW, SUP } = t;
     const { x0, z0, h } = s;
     // Hacia dónde está el camino más cercano: el escenario mira a ese lado
     let mejor = null, dm = Infinity;
@@ -295,7 +345,7 @@ export function colocarEscenario(t) {
         }
     });
     return {
-        decor, yaw: Math.atan2(dx, dz),
+        clave: 'escenario', bx: ccx, bz: ccz, decor, yaw: Math.atan2(dx, dz),
         x: ccx + 0.5, z: ccz + 0.5, y: h + 2, // sobre la tarima
         cartel: { x: ccx + 0.5 - dx * 2, z: ccz + 0.5 - dz * 2, y: h + 8 },
         rect: { x0: x0 - 1, z0: z0 - 1, x1: x0 + 11, z1: z0 + 9 }
@@ -314,42 +364,47 @@ export function colocarCorrales(t) {
     for (const [tipo, w, d] of [['vacas', 16, 12], ['ovejas', 13, 11]]) {
         const s = buscarSitio(t, { cx, cz, rmin: 20, rmax: 90, w: w + 2, d: d + 2, desnivel: 2 })
             || buscarSitio(t, { cx, cz, rmin: 20, rmax: 140, w: w + 2, d: d + 2, desnivel: 3 });
-        if (!s) continue;
-        const x0 = s.x0 + 1, z0 = s.z0 + 1, h = s.h;
-        nivelar(t, s.x0, s.z0, w + 2, d + 2, h, null, 1);
-        // Portón: en el lado más cercano al centro de la aldea
-        const mx = x0 + w / 2, mz = z0 + d / 2;
-        const ddx = cx - mx, ddz = cz - mz;
-        const lado = Math.abs(ddx) > Math.abs(ddz) ? (ddx > 0 ? 'e' : 'o') : (ddz > 0 ? 's' : 'n');
-        const decor = aDecor(poner => {
-            const y = h + 1;
-            for (let x = x0 - 1; x <= x0 + w; x++) {
-                for (let z = z0 - 1; z <= z0 + d; z++) {
-                    const bx = x === x0 - 1 || x === x0 + w, bz = z === z0 - 1 || z === z0 + d;
-                    if (!bx && !bz) continue;
-                    const porton = (lado === 'n' && z === z0 - 1 || lado === 's' && z === z0 + d) && Math.abs(x - Math.floor(mx)) <= 0
-                        || (lado === 'o' && x === x0 - 1 || lado === 'e' && x === x0 + w) && Math.abs(z - Math.floor(mz)) <= 0;
-                    if (porton) continue;
-                    const esquina = bx && bz, poste = esquina || (bx ? (z - z0) % 4 === 0 : (x - x0) % 4 === 0);
-                    poner(x, y, z, poste ? B.TRONCO : B.VALLA);
-                    if (esquina) poner(x, y + 1, z, B.ANTORCHA);
-                }
-            }
-            // Bebedero de 3 bloques con borde de piedra labrada, hundido en el suelo
-            const bx = x0 + 1, bz = z0 + 1;
-            for (let k = -1; k <= 3; k++) {
-                for (let j = -1; j <= 1; j++) {
-                    const borde = k === -1 || k === 3 || j !== 0;
-                    poner(bx + k, h, bz + 1 + j, borde ? B.LABRADA : B.AGUA);
-                }
-            }
-            // Fardos de heno apilados en una esquina
-            const hx = x0 + w - 2, hz = z0 + d - 2;
-            poner(hx, y, hz, B.HENO); poner(hx - 1, y, hz, B.HENO); poner(hx, y, hz - 1, B.HENO); poner(hx, y + 1, hz, B.HENO);
-        });
-        lista.push({ tipo, decor, h, rect: { x0: x0 + 0.6, z0: z0 + 0.6, x1: x0 + w - 0.6, z1: z0 + d - 0.6 }, evitar: [{ x0: x0, z0: z0, x1: x0 + 5, z1: z0 + 3.5 }, { x0: x0 + w - 3.5, z0: z0 + d - 3.5, x1: x0 + w, z1: z0 + d }] });
+        if (diferir(t, 'corral-' + tipo, s, w + 2, d + 2, sf => ({ tipo: 'corral', r: armarCorral(t, tipo, w, d, sf, cx, cz) }))) continue;
+        if (s) lista.push(armarCorral(t, tipo, w, d, s, cx, cz));
     }
     return lista;
+}
+
+// s: sitio de w + 2 × d + 2 (el cerco va en el borde); cx, cz: centro de la aldea (el portón mira hacia allá)
+function armarCorral(t, tipo, w, d, s, cx, cz) {
+    const x0 = s.x0 + 1, z0 = s.z0 + 1, h = s.h;
+    nivelar(t, s.x0, s.z0, w + 2, d + 2, h, null, 1);
+    // Portón: en el lado más cercano al centro de la aldea
+    const mx = x0 + w / 2, mz = z0 + d / 2;
+    const ddx = cx - mx, ddz = cz - mz;
+    const lado = Math.abs(ddx) > Math.abs(ddz) ? (ddx > 0 ? 'e' : 'o') : (ddz > 0 ? 's' : 'n');
+    const decor = aDecor(poner => {
+        const y = h + 1;
+        for (let x = x0 - 1; x <= x0 + w; x++) {
+            for (let z = z0 - 1; z <= z0 + d; z++) {
+                const bx = x === x0 - 1 || x === x0 + w, bz = z === z0 - 1 || z === z0 + d;
+                if (!bx && !bz) continue;
+                const porton = (lado === 'n' && z === z0 - 1 || lado === 's' && z === z0 + d) && Math.abs(x - Math.floor(mx)) <= 0
+                    || (lado === 'o' && x === x0 - 1 || lado === 'e' && x === x0 + w) && Math.abs(z - Math.floor(mz)) <= 0;
+                if (porton) continue;
+                const esquina = bx && bz, poste = esquina || (bx ? (z - z0) % 4 === 0 : (x - x0) % 4 === 0);
+                poner(x, y, z, poste ? B.TRONCO : B.VALLA);
+                if (esquina) poner(x, y + 1, z, B.ANTORCHA);
+            }
+        }
+        // Bebedero de 3 bloques con borde de piedra labrada, hundido en el suelo
+        const bx = x0 + 1, bz = z0 + 1;
+        for (let k = -1; k <= 3; k++) {
+            for (let j = -1; j <= 1; j++) {
+                const borde = k === -1 || k === 3 || j !== 0;
+                poner(bx + k, h, bz + 1 + j, borde ? B.LABRADA : B.AGUA);
+            }
+        }
+        // Fardos de heno apilados en una esquina
+        const hx = x0 + w - 2, hz = z0 + d - 2;
+        poner(hx, y, hz, B.HENO); poner(hx - 1, y, hz, B.HENO); poner(hx, y, hz - 1, B.HENO); poner(hx, y + 1, hz, B.HENO);
+    });
+    return { tipo, clave: 'corral-' + tipo, bx: s.x0 + ((w + 2) >> 1), bz: s.z0 + ((d + 2) >> 1), decor, h, rect: { x0: x0 + 0.6, z0: z0 + 0.6, x1: x0 + w - 0.6, z1: z0 + d - 0.6 }, evitar: [{ x0: x0, z0: z0, x1: x0 + 5, z1: z0 + 3.5 }, { x0: x0 + w - 3.5, z0: z0 + d - 3.5, x1: x0 + w, z1: z0 + d }] };
 }
 
 // ---------------------------------------------------------
@@ -371,7 +426,7 @@ export function colocarLugares(t) {
     const { BW, BD, HT, ES, SUP, datos, ESCALA, NIVEL_AGUA } = t;
     const { W, T, P } = datos;
     const puntos = Object.values(P).map(([x, z]) => [x * ESCALA + 2, z * ESCALA + 2]);
-    const hechos = [];
+    const hechos = [], ocupados = []; // ocupados: centros automáticos (también de los que tienen sitio fijo)
     const bosqueCerca = (x, z, rad) => {
         const cx = Math.floor(x / ESCALA), cz = Math.floor(z / ESCALA);
         let n = 0;
@@ -383,7 +438,7 @@ export function colocarLugares(t) {
         const filtro = ({ x0, z0 }) => {
             const mx = x0 + L.w / 2, mz = z0 + L.d / 2;
             if (puntos.some(([px, pz]) => Math.hypot(px - mx, pz - mz) < (L.nieve ? 40 : 70))) return false;
-            if (hechos.some(h => Math.hypot(h.x - mx, h.z - mz) < 90)) return false;
+            if (ocupados.some(h => Math.hypot(h.x - mx, h.z - mz) < 90)) return false;
             // Ni encima de la llanura de las letras del título
             const ti = datos.titulo, M0 = 90;
             if (mx > ti.tx0 * ESCALA - M0 && mx < (ti.tx0 + ti.anchoT) * ESCALA + M0 && mz > ti.ty0 * ESCALA - M0 && mz < (ti.ty0 + ti.altoT) * ESCALA + M0) return false;
@@ -393,7 +448,7 @@ export function colocarLugares(t) {
                 for (let x = x0 - M; x < x0 + L.w + M; x += 2) {
                     if (x < 0 || z < 0 || x >= BW || z >= BD) return false;
                     const o = z * BW + x;
-                    if (SUP[o] === B.CAMINO || SUP[o] === B.TABLONES || ES[o] === 1 || ES[o] === 3) return false;
+                    if (SUP[o] === B.CAMINO || SUP[o] === B.TABLONES || ES[o] === 1 || ES[o] === 3 || ES[o] === RESERVA) return false;
                 }
             }
             if (L.bosque && bosqueCerca(mx, mz, 4) < 10) return false;
@@ -410,32 +465,40 @@ export function colocarLugares(t) {
         if (L.nieve) s = buscarSitio(t, { ...op, desnivel: 4, materiales: [B.NIEVE, B.PIEDRA, B.GRIS], hMin: NIVEL_AGUA + 10 });
         else if (L.playa) s = buscarSitio(t, { ...op, rmax: 800, paso: 3, desnivel: 6, materiales: [B.ARENA], hMin: NIVEL_AGUA - 3, hMax: NIVEL_AGUA + 3 });
         else s = buscarSitio(t, { ...op, desnivel: L.alto ? 4 : 2 }) || buscarSitio(t, { ...op, desnivel: 3, rmax: 500 });
-        if (!s) continue;
-        let { x0, z0, h } = s;
-        if (L.playa) { // el naufragio no se nivela: se apoya en el fondo, con el casco a la altura del agua
-            h = NIVEL_AGUA;
-            for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) ES[z * BW + x] = 3;
-        } else {
-            const sup = L.nieve ? B.NIEVE : null;
-            nivelar(t, x0, z0, L.w, L.d, h, sup, 1);
-            if (sup !== null) for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) SUP[z * BW + x] = sup;
-            if (L.nieve) { // pasillo plano frente al túnel del iglú (al sur), para entrar caminando
-                const cxL = x0 + (L.w >> 1);
-                for (let z = z0 + L.d; z < z0 + L.d + 7; z++) {
-                    for (let x = cxL - 2; x <= cxL + 2; x++) {
-                        const o = z * BW + x;
-                        if (ES[o] === 1) continue;
-                        ES[o] = 3; HT[o] = h; SUP[o] = B.NIEVE;
-                    }
+        // Con sitio fijo (posiciones.json) se reserva el automático y se arma al final (armarFijos)
+        if (s) ocupados.push({ x: s.x0 + L.w / 2, z: s.z0 + L.d / 2 });
+        if (diferir(t, L.clave, s, L.w, L.d, sf => ({ tipo: 'lugar', r: armarLugar(t, L, sf) }))) continue;
+        if (s) hechos.push(armarLugar(t, L, s));
+    }
+    return hechos;
+}
+
+// Nivela el sitio s = { x0, z0, h } del lugar L y lo construye. Devuelve la entrada de terreno.lugares.
+function armarLugar(t, L, s) {
+    const { BW, HT, ES, SUP, NIVEL_AGUA } = t;
+    let { x0, z0, h } = s;
+    if (L.playa) { // el naufragio no se nivela: se apoya en el fondo, con el casco a la altura del agua
+        h = NIVEL_AGUA;
+        for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) ES[z * BW + x] = 3;
+    } else {
+        const sup = L.nieve ? B.NIEVE : null;
+        nivelar(t, x0, z0, L.w, L.d, h, sup, 1);
+        if (sup !== null) for (let z = z0 - 1; z <= z0 + L.d; z++) for (let x = x0 - 1; x <= x0 + L.w; x++) SUP[z * BW + x] = sup;
+        if (L.nieve) { // pasillo plano frente al túnel del iglú (al sur), para entrar caminando
+            const cxL = x0 + (L.w >> 1);
+            for (let z = z0 + L.d; z < z0 + L.d + 7; z++) {
+                for (let x = cxL - 2; x <= cxL + 2; x++) {
+                    const o = z * BW + x;
+                    if (ES[o] === 1) continue;
+                    ES[o] = 3; HT[o] = h; SUP[o] = B.NIEVE;
                 }
             }
         }
-        const cxL = x0 + (L.w >> 1), czL = z0 + (L.d >> 1);
-        const decor = aDecor(poner => CONSTRUIR[L.clave](poner, cxL, h + 1, czL, h, t));
-        // bx, bz, y: bloque central y primer bloque sobre el suelo (para ubicar a los NPCs)
-        hechos.push({ clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, bx: cxL, bz: czL, y: h + 1, radio: Math.max(L.w, L.d) + 6, decor });
     }
-    return hechos;
+    const cxL = x0 + (L.w >> 1), czL = z0 + (L.d >> 1);
+    const decor = aDecor(poner => CONSTRUIR[L.clave](poner, cxL, h + 1, czL, h, t));
+    // bx, bz, y: bloque central y primer bloque sobre el suelo (para ubicar a los NPCs)
+    return { clave: L.clave, nombre: L.nombre, x: cxL + 0.5, z: czL + 0.5, bx: cxL, bz: czL, y: h + 1, radio: Math.max(L.w, L.d) + 6, decor };
 }
 
 // Constructores: (poner, cx, y, cz, h) con y = primer bloque sobre el suelo y h = altura del suelo

@@ -311,28 +311,28 @@
                             <span data-es="Ancla (el lugar del que cuelga)" data-en="Anchor (the place it hangs from)">Ancla (el lugar del que cuelga)</span>
                             <select id="ps-ancla"></select>
                         </label>
-                        <label class="campo">
+                        <label class="campo solo-avanzado">
                             <span data-es="Ejes" data-en="Axes">Ejes</span>
                             <select id="ps-marco">
                                 <option value="lugar" data-es="Del mundo (este +X, sur +Z)" data-en="World (east +X, south +Z)">Del mundo (este +X, sur +Z)</option>
                                 <option value="ancla" data-es="Del ancla (gira con ella)" data-en="Anchor (turns with it)">Del ancla (gira con ella)</option>
                             </select>
                         </label>
-                        <div class="campos">
+                        <div class="campos solo-avanzado">
                             <label class="campo"><span>dx</span><input id="ps-dx" type="number" step="0.05" min="-200" max="200"></label>
                             <label class="campo"><span>dy</span><input id="ps-dy" type="number" step="0.05" min="-64" max="64"></label>
                             <label class="campo"><span>dz</span><input id="ps-dz" type="number" step="0.05" min="-200" max="200"></label>
                         </div>
-                        <label class="casilla-marca">
+                        <label class="casilla-marca solo-avanzado">
                             <input id="ps-suelo" type="checkbox">
                             <span data-es="Buscar el suelo solo (dy «suelo»)" data-en="Find the ground by itself (dy “suelo”)">Buscar el suelo solo (dy «suelo»)</span>
                         </label>
-                        <label class="campo">
+                        <label class="campo solo-avanzado">
                             <span data-es="Giro en grados (0 = +Z, 90 = +X, 180 = de espaldas)" data-en="Rotation in degrees (0 = +Z, 90 = +X, 180 = back turned)">Giro en grados (0 = +Z, 90 = +X, 180 = de espaldas)</span>
                             <input id="ps-giro" type="number" step="5" min="-360" max="360">
                         </label>
                         <p id="ps-giro-nota" class="mensaje" hidden></p>
-                        <label class="campo">
+                        <label class="campo solo-avanzado">
                             <span data-es="Nota" data-en="Note">Nota</span>
                             <input id="ps-nota" type="text" maxlength="200" autocomplete="off" spellcheck="false">
                         </label>
@@ -351,6 +351,28 @@
                         </div>
                     </div>
                     <p id="ps-resumen" class="mensaje"></p>
+                </section>
+                <section class="panel">
+                    <h2 data-es="Construcciones" data-en="Buildings">Construcciones</h2>
+                    <p class="mensaje" data-es="Elige una y arrastra la caja amarilla en el juego. Quienes viven ahí se mueven con ella. Se ve en su sitio nuevo al guardar: el juego se recarga solo." data-en="Pick one and drag the yellow box in the game. Whoever lives there moves with it. You see it in its new spot when you save: the game reloads by itself.">Elige una y arrastra la caja amarilla en el juego. Quienes viven ahí se mueven con ella. Se ve en su sitio nuevo al guardar: el juego se recarga solo.</p>
+                    <label class="campo">
+                        <span data-es="Construcción" data-en="Building">Construcción</span>
+                        <select id="ps-lugar"></select>
+                    </label>
+                    <div class="fila-botones">
+                        <button id="ps-lugar-mover" class="boton chico" type="button" data-es="Mover con el gizmo" data-en="Move with the gizmo">Mover con el gizmo</button>
+                        <button id="ps-lugar-ir" class="boton chico" type="button" data-es="Ir a verla" data-en="Go see it">Ir a verla</button>
+                        <button id="ps-lugar-auto" class="boton chico secundario" type="button" data-es="Volver a su sitio de siempre" data-en="Back to its usual spot">Volver a su sitio de siempre</button>
+                    </div>
+                    <div class="campos solo-avanzado">
+                        <label class="campo"><span data-es="X (bloque central)" data-en="X (center block)">X (bloque central)</span><input id="ps-lugar-x" type="number" step="1"></label>
+                        <label class="campo"><span data-es="Z (bloque central)" data-en="Z (center block)">Z (bloque central)</span><input id="ps-lugar-z" type="number" step="1"></label>
+                    </div>
+                    <label class="campo solo-avanzado">
+                        <span data-es="Nota" data-en="Note">Nota</span>
+                        <input id="ps-lugar-nota" type="text" maxlength="200" autocomplete="off" spellcheck="false">
+                    </label>
+                    <p id="ps-lugar-estado" class="mensaje"></p>
                 </section>
                 <section class="panel acciones">
                     <div class="fila-botones">

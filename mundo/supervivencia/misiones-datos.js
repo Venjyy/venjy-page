@@ -8,6 +8,7 @@
 // =========================================================
 import { B } from '../texturas.js';
 import { O, info } from './objetos.js';
+import { CONSTRUCCIONES } from '../datos/posiciones.js';
 
 const t = (es, en) => ({ es, en });
 const COCIDO = [O.FILETE, O.CHULETA, O.POLLO_ASADO, O.CORDERO_ASADO];
@@ -261,11 +262,15 @@ export const KITS = {
 for (const m of MISIONES) m.kit = KITS[m.id] || null;
 
 // ---- mundo/datos/misiones.json (B6b): misiones NUEVAS, al final de las de arriba (solo suma; las de hoy no se tocan) ----
-// Cada una: { amigo, tipo: entregar | matar | noche, pide, mob, n, noche, premio, kit, titulo, pedido, aceptar, completada }, con los
-// objetos por nombre (como /dar). El id empieza con la clave del amigo (pony4, rosa1). `visitar` y `hablar` quedan en el código.
+// Cada una: { amigo, tipo: entregar | matar | noche | visitar | hablar, pide, mob, n, noche, lugares, con, lugar, premio, kit, titulo,
+// pedido, aceptar, completada }, con los objetos por nombre (como /dar). El id empieza con la clave del amigo (pony4, rosa1).
+// B6e: `visitar` lleva `lugares` (claves de CONSTRUCCIONES, mundo/datos/posiciones.js; dónde estén lo dice el terreno, así que
+// siguen a una construcción movida) y `n` (cuántos de ellos; por defecto todos). `hablar` lleva `con` (la persona) y, si se
+// quiere, `lugar` (hay que hablarle estando ahí); se cumple al abrir su «Hablar» y se entrega a quien la dio.
 // Una persona nueva de personajes.json las tiene en su panel como cualquier amigo; una mal escrita se ignora entera.
 const BASE_MISIONES = MISIONES.slice();
-const TIPOS_NUEVOS = ['entregar', 'matar', 'noche'];
+const TIPOS_NUEVOS = ['entregar', 'matar', 'noche', 'visitar', 'hablar'];
+const CLAVE_PERSONA = /^[a-z][a-z0-9-]*$/;
 const idObjeto = nombre => { const k = String(nombre).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
 const pilaId = ([nombre, n, amigo]) => { const id = idObjeto(nombre); return id === undefined ? null : (amigo ? [id, n, amigo] : [id, n]); };
 const textoOk = x => !!x && typeof x.es === 'string' && x.es !== '' && typeof x.en === 'string' && x.en !== '';
@@ -284,6 +289,19 @@ export function misionDeDatos(id, d) {
         if (!d.mob || !Number.isInteger(d.n) || d.n < 1) return null;
         m.mob = d.mob; m.n = d.n;
         if (d.noche) m.noche = true;
+    }
+    if (d.tipo === 'visitar') {
+        const lugares = Array.isArray(d.lugares) ? [...new Set(d.lugares)] : [];
+        if (!lugares.length || !lugares.every(l => CONSTRUCCIONES[l])) return null;
+        const n = d.n === undefined ? lugares.length : d.n;
+        if (!Number.isInteger(n) || n < 1 || n > lugares.length) return null;
+        m.lugares = lugares; m.n = n;
+    }
+    if (d.tipo === 'hablar') {
+        if (typeof d.con !== 'string' || !CLAVE_PERSONA.test(d.con) || d.con === d.amigo) return null;
+        if (d.lugar !== undefined && !CONSTRUCCIONES[d.lugar]) return null;
+        m.con = d.con;
+        if (d.lugar) m.lugar = d.lugar;
     }
     const kit = (d.kit || []).map(pilaId);
     if (kit.includes(null)) return null;

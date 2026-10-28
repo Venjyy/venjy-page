@@ -9,7 +9,7 @@ import { B, TIPO, BLOQUES, TAM, COLS, FILAS, LUZ_EMISION, TILE } from './textura
 import { geometriaSobreMi, levantarSobreMi } from './portafolio/sobremi.js';
 import { actualizarLuz, campoChunk, ABORTAR } from './luz-incremental.js';
 import { llenarSubsuelo } from './supervivencia/subsuelo.js';
-import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares } from './construcciones.js';
+import { colocarPescador, colocarEscenario, colocarCorrales, colocarLugares, armarFijos } from './construcciones.js';
 import { colocarCaminos } from './caminos.js';
 import { colocarMotivos } from './lugares-motivos.js';
 import { colocarRuinas } from './ruinas.js';
@@ -66,8 +66,11 @@ const MATERIAL_ESTRUCTURA = {
 // ---------------------------------------------------------
 // Terreno: altura y materiales por columna de bloques
 // ---------------------------------------------------------
+// opciones.sitios (solo supervivencia): posiciones.json → lugares, { clave: { x, z } } con el bloque central de cada construcción movida
 export function prepararTerreno(datos, opciones = {}) {
-    const terreno = prepararTerrenoBase(datos);
+    const sitios = opciones.supervivencia && opciones.sitios && Object.keys(opciones.sitios).length ? opciones.sitios : null;
+    const terreno = prepararTerrenoBase(datos, sitios);
+    terreno.sitios = sitios; // los workers lo reciben en `init` para armar el mismo terreno
     // Supervivencia: el mapa entero sube `dy` bloques (todo lo de arriba se calcula igual que en creativo,
     // en coordenadas del creativo, y se desplaza al llenar la ventana); debajo va el subsuelo
     if (opciones.supervivencia) {
@@ -98,7 +101,7 @@ export function fijarAlto(n) {
     reservarLuz();
 }
 
-function prepararTerrenoBase(datos) {
+function prepararTerrenoBase(datos, sitios = null) {
     const { W, H, E, T, F } = datos;
     const ruidoAltura = crearRuido(31337); // rompe las curvas de nivel rectas sin tocar las zonas planas
     const BW = W * ESCALA, BD = H * ESCALA;
@@ -326,11 +329,15 @@ function prepararTerrenoBase(datos) {
         }
     }
     // Lugares nuevos (construcciones.js): caseta del pescador y escenario de Salonas
-    const tt = { BW, BD, HT, SUP, SUB, ES, datos, ESCALA, NIVEL_AGUA };
+    const tt = { BW, BD, HT, SUP, SUB, ES, datos, ESCALA, NIVEL_AGUA, sitios };
     const pescador = colocarPescador(tt, puentes);
-    const escenario = colocarEscenario(tt);
+    let escenario = colocarEscenario(tt);
     const corrales = colocarCorrales(tt);
     const lugares = colocarLugares(tt); // molino, atalaya, campamento, portal, iglú y naufragio
+    // Los que tienen sitio fijo en posiciones.json se arman al final (sin sitios no hay ninguno: el creativo no cambia)
+    for (const { tipo, r } of armarFijos(tt)) {
+        if (tipo === 'escenario') escenario = r; else if (tipo === 'corral') corrales.push(r); else lugares.push(r);
+    }
     const decor = [
         ...puentes,
         ...[pescador, escenario, ...corrales, ...lugares].filter(Boolean).map(l => l.decor).filter(Boolean),
@@ -345,7 +352,7 @@ function prepararTerrenoBase(datos) {
     const zonasLuz = decor.map(d => d.luz || { x0: d.cx - d.r, z0: d.cz - d.r, x1: d.cx + d.r, z1: d.cz + d.r });
     zonasLuz.push({ x0: faro.x - 12, z0: faro.z - 12, x1: faro.x + 12, z1: faro.z + 12 });
     for (const c of casas) zonasLuz.push({ x0: c.minx - 1, z0: c.minz - 1, x1: c.maxx + 1, z1: c.maxz + 1 });
-    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, pescador, escenario, corrales, lugares, ediciones: new Map() };
+    return { BW, BD, HT, SUP, SUB, ES, HUECO, faro, decor, casas, zonasLuz, datos, sobreMi, registro, gatera, correo, pescador, escenario, corrales, lugares, automaticos: tt.automaticos || null, ediciones: new Map() };
 }
 
 // ---------------------------------------------------------
@@ -1492,7 +1499,7 @@ export class MundoVoxel {
                     else if (m.t === 'error') { console.error('worker de chunks:', m.mensaje); est.pedidos = Math.max(0, est.pedidos - 1); if (m.k) { this.mallando.delete(m.k); this.rehaciendo.delete(m.k); this.enVuelo.delete(m.k); } }
                 };
                 w.onerror = err => { console.error('worker de chunks:', err.message); est.listo = false; };
-                w.postMessage({ t: 'init', orient, ediciones: this.listaEdiciones(), supervivencia: !!this.terreno.supervivencia, alto: ALTO, formas: formasCrudas() });
+                w.postMessage({ t: 'init', orient, ediciones: this.listaEdiciones(), supervivencia: !!this.terreno.supervivencia, sitios: this.terreno.sitios || null, alto: ALTO, formas: formasCrudas() });
             }
         } catch (e) { /* sin workers: se malla en el hilo principal */ }
     }

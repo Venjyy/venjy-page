@@ -5,9 +5,12 @@
 // pone un gizmo (estudio/gizmo-juego.js) y al soltarlo manda `cambio` con el punto nuevo. Los campos numéricos
 // hacen lo mismo sin arrastrar. Cada cambio se aplica en vivo (mensaje `datos`); Guardar escribe el JSON con
 // If-Match. Contrato: estudio/DISENO.md §6 y §12.
+// B6e: sección «Construcciones» (posiciones.json → lugares.<clave> = { x, z }): el gizmo de lugares (gizmo-lugar.js)
+// mueve una caja del tamaño del sitio; la construcción se arma en su sitio nuevo al guardar (el juego se recarga).
+// Vista simple: persona, lugar y los botones; los números (dx, dy, dz, giro, x, z) y las notas, en Avanzado.
 // =========================================================
 import { formatear } from './formato.mjs';
-import { GIRO_CALCULADO } from '../mundo/datos/posiciones.js';
+import { GIRO_CALCULADO, CONSTRUCCIONES } from '../mundo/datos/posiciones.js';
 import { personasNuevas, lugarDe, nombreDe as nombrePersonaje } from '../mundo/datos/personajes.js';
 
 const NOMBRES = {
@@ -44,6 +47,7 @@ export async function montarPosiciones(ctx) {
     } catch (e) { /* sin personajes.json: solo los del código */ }
     const paraGuardar = () => {
         const d = clonar(datos);
+        if (d.lugares && !Object.keys(d.lugares).length) delete d.lugares; // sin construcciones movidas no se escribe la clave
         for (const [k, b] of Object.entries(basePersonajes)) if (JSON.stringify(d.personas[k]) === JSON.stringify(b)) delete d.personas[k];
         return d;
     };
@@ -51,6 +55,10 @@ export async function montarPosiciones(ctx) {
     let actual = Object.keys(datos.personas)[0] || null;
     let modo = 'mover';
     const historial = [];
+    let lugar = Object.keys(CONSTRUCCIONES)[0];
+    const lugarCampo = { sel: $('ps-lugar'), x: $('ps-lugar-x'), z: $('ps-lugar-z'), nota: $('ps-lugar-nota'), estado: $('ps-lugar-estado') };
+    const nombreLugar = c => (CONSTRUCCIONES[c] ? CONSTRUCCIONES[c][ctx.idioma === 'en' ? 'en' : 'es'] : c);
+    const lugaresDe = d => d.lugares || {};
 
     const sucio = () => JSON.stringify(datos) !== JSON.stringify(original);
     ctx.sucios.posiciones = sucio; // punto en la pestaña (campo-comun.js, B0-C)
@@ -91,14 +99,36 @@ export async function montarPosiciones(ctx) {
         $('ps-restablecer').disabled = JSON.stringify(p) === JSON.stringify(meta);
         for (const b of document.querySelectorAll('[data-modo]')) b.classList.toggle('activo', b.dataset.modo === modo);
     }
+    function pintarLugares() {
+        const sel = lugarCampo.sel;
+        sel.textContent = '';
+        for (const clave of Object.keys(CONSTRUCCIONES)) {
+            const o = document.createElement('option');
+            o.value = clave;
+            const cambiado = JSON.stringify(lugaresDe(datos)[clave]) !== JSON.stringify(lugaresDe(original)[clave]);
+            o.textContent = nombreLugar(clave) + (lugaresDe(datos)[clave] ? ` (${t('movida', 'moved')})` : '') + (cambiado ? ' •' : '');
+            sel.appendChild(o);
+        }
+        sel.value = lugar;
+        const p = lugaresDe(datos)[lugar];
+        lugarCampo.x.value = p ? p.x : '';
+        lugarCampo.z.value = p ? p.z : '';
+        lugarCampo.nota.value = (p && p.nota) || '';
+        lugarCampo.nota.disabled = !p;
+        $('ps-lugar-auto').disabled = !p;
+        lugarCampo.estado.textContent = p
+            ? t(`Movida: su centro va en ${p.x}, ${p.z}.`, `Moved: its center goes at ${p.x}, ${p.z}.`)
+            : t('En su sitio de siempre (el juego lo busca solo).', 'In its usual spot (the game finds it by itself).');
+    }
     function pintarResumen() {
-        const n = Object.keys(datos.personas).filter(k => JSON.stringify(datos.personas[k]) !== JSON.stringify(original.personas[k])).length;
+        const n = Object.keys(datos.personas).filter(k => JSON.stringify(datos.personas[k]) !== JSON.stringify(original.personas[k])).length
+            + Object.keys(CONSTRUCCIONES).filter(k => JSON.stringify(lugaresDe(datos)[k]) !== JSON.stringify(lugaresDe(original)[k])).length;
         btnGuardar.disabled = !ctx.servidor.escritura || !sucio();
         $('ps-deshacer').disabled = !historial.length;
         $('ps-descartar').disabled = !sucio();
-        $('ps-resumen').textContent = n ? t(`${n} persona(s) con cambios sin guardar.`, `${n} person(s) with unsaved changes.`) : t('Sin cambios.', 'No changes.');
+        $('ps-resumen').textContent = n ? t(`${n} cambio(s) sin guardar.`, `${n} unsaved change(s).`) : t('Sin cambios.', 'No changes.');
     }
-    function pintar() { pintarLista(); pintarCampos(); pintarResumen(); }
+    function pintar() { pintarLista(); pintarCampos(); pintarLugares(); pintarResumen(); }
 
     // ---------- Cambios ----------
     function snapshot() { historial.push(JSON.stringify(datos)); if (historial.length > 60) historial.shift(); }
@@ -148,6 +178,40 @@ export async function montarPosiciones(ctx) {
         try { await ctx.puente.enviar('elegir', { objeto: 'nada' }); } catch (e) { /* sin juego: nada que quitar */ }
     }
 
+    // ---------- Construcciones (B6e) ----------
+    // p: { x, z } nuevo o null (vuelve a su sitio de siempre). La nota se conserva mientras siga movida.
+    function moverLugar(clave, p, desdeJuego = false) {
+        snapshot();
+        const previo = lugaresDe(datos)[clave];
+        if (!datos.lugares) datos.lugares = {};
+        if (p) datos.lugares[clave] = { x: Math.round(p.x), z: Math.round(p.z), ...(previo && previo.nota ? { nota: previo.nota } : {}) };
+        else delete datos.lugares[clave];
+        if (!Object.keys(datos.lugares).length && !original.lugares) delete datos.lugares; // sin cambios vuelve a estar limpio
+        lugar = clave;
+        pintar();
+        if (!desdeJuego) enviarAlJuego();
+    }
+    async function gizmoLugar(ir) {
+        if (!listoElJuego()) { rotular('El juego todavía no está listo: espera a que cargue el mundo.', 'The game is not ready yet: wait for the world to load.', 'error'); return; }
+        try {
+            await ctx.puente.enviar('datos', { nombre: 'posiciones', datos });
+            const r = await ctx.puente.enviar('elegir', { objeto: 'lugar', clave: lugar });
+            const c = r && r.punto;
+            if (ir && c) {
+                await ctx.puente.tp({ x: c.x + 0.5, z: c.z + CONSTRUCCIONES[lugar].d / 2 + 10 });
+                await ctx.puente.enviar('elegir', { objeto: 'lugar', clave: lugar }); // vuelve a mirar la caja desde donde quedaste
+            }
+            rotular(`Gizmo en ${nombreLugar(lugar)}: arrastra la caja amarilla (Esc suelta el mouse).`, `Gizmo on ${nombreLugar(lugar)}: drag the yellow box (Esc frees the mouse).`, 'ok');
+        } catch (e) {
+            rotular(e.message, e.message, 'error');
+        }
+    }
+    function alCampoLugar() {
+        const x = lugarCampo.x.valueAsNumber, z = lugarCampo.z.valueAsNumber;
+        if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+        moverLugar(lugar, { x, z });
+    }
+
     // ---------- Guardar ----------
     async function guardar() {
         rotular('Guardando…', 'Saving…');
@@ -159,10 +223,12 @@ export async function montarPosiciones(ctx) {
             });
             const j = await resp.json().catch(() => ({}));
             if (resp.ok) {
+                const conLugares = JSON.stringify(lugaresDe(datos)) !== JSON.stringify(lugaresDe(original));
                 original = clonar(datos);
                 etag = j.etag;
                 historial.length = 0;
-                rotular(`Guardado (${j.bytes} B).`, `Saved (${j.bytes} B).`, 'ok');
+                if (conLugares) rotular(`Guardado (${j.bytes} B). El juego se recarga para armar las construcciones en su sitio.`, `Saved (${j.bytes} B). The game reloads to build the buildings in their spot.`, 'ok');
+                else rotular(`Guardado (${j.bytes} B).`, `Saved (${j.bytes} B).`, 'ok');
             } else if (resp.status === 412) {
                 rotular('El archivo cambió en disco: recarga y vuelve a mover.', 'The file changed on disk: reload and move again.', 'error');
             } else if (resp.status === 422 && j.errores) {
@@ -212,9 +278,31 @@ export async function montarPosiciones(ctx) {
     btnGuardar.addEventListener('click', guardar);
     $('ps-descargar').addEventListener('click', descargar);
 
+    lugarCampo.sel.addEventListener('change', () => { lugar = lugarCampo.sel.value; pintarLugares(); if (ctx.pestana === 'posiciones' && listoElJuego()) gizmoLugar(false); });
+    $('ps-lugar-mover').addEventListener('click', () => gizmoLugar(false));
+    $('ps-lugar-ir').addEventListener('click', () => gizmoLugar(true));
+    $('ps-lugar-auto').addEventListener('click', () => { moverLugar(lugar, null); rotular(`${nombreLugar(lugar)} vuelve a su sitio de siempre al guardar.`, `${nombreLugar(lugar)} goes back to its usual spot when you save.`, 'ok'); });
+    lugarCampo.x.addEventListener('change', alCampoLugar);
+    lugarCampo.z.addEventListener('change', alCampoLugar);
+    lugarCampo.nota.addEventListener('change', () => {
+        const p = lugaresDe(datos)[lugar];
+        if (!p) return;
+        snapshot();
+        const nota = lugarCampo.nota.value.trim();
+        datos.lugares[lugar] = { x: p.x, z: p.z, ...(nota ? { nota } : {}) };
+        pintar();
+    });
+
     // El juego avisa cuando se suelta el gizmo
     ctx.puente.alMensaje(m => {
         if (m.tipo !== 'cambio' || m.nombre !== 'posiciones' || !m.valor) return;
+        if (String(m.ruta || '').startsWith('lugares.')) {
+            const clave = m.ruta.slice(8);
+            if (!CONSTRUCCIONES[clave]) return;
+            moverLugar(clave, m.valor, true);
+            rotular(`${nombreLugar(clave)}: ${m.valor.x}, ${m.valor.z}. Guarda para verla ahí.`, `${nombreLugar(clave)}: ${m.valor.x}, ${m.valor.z}. Save to see it there.`, 'ok');
+            return;
+        }
         const clave = String(m.ruta || '').replace(/^personas\./, '');
         if (!datos.personas[clave]) return;
         actual = clave;

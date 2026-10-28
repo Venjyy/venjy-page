@@ -22,7 +22,18 @@ const completa = tipo => { const m = misionNueva(tipo, 'rosa'); for (const [k] o
 ok(idSiguiente('pony', MISIONES.map(m => m.id)) === 'pony4', 'idSiguiente sigue a pony3');
 ok(idSiguiente('rosa', ['rosa1', 'rosa2', 'pony9']) === 'rosa3' && idSiguiente('rosa', []) === 'rosa1', 'idSiguiente de una persona nueva');
 ok(idSiguiente('lo', ['lona5']) === 'lo1', 'idSiguiente no confunde claves que empiezan igual');
-ok(TIPOS.map(t => t[0]).join() === 'entregar,matar,noche' && MOBS[0][0] === '*', 'tipos y monstruos');
+ok(TIPOS.map(t => t[0]).join() === 'entregar,matar,noche,visitar,hablar' && MOBS[0][0] === '*', 'tipos y monstruos');
+// B6e: visitar (lugares de posiciones.js) y hablar (con otra persona, en un lugar si se quiere)
+const vis = completa('visitar');
+ok(!faltaDeMision(vis) && misionDeDatos('rosa1', limpiarMision(vis)), 'visitar nueva (el molino) vale y el juego la acepta');
+ok(faltaDeMision({ ...vis, lugares: [] }) && faltaDeMision({ ...vis, lugares: ['luna'] }) && faltaDeMision({ ...vis, n: 2 }), 'visitar: sin lugar, lugar raro o n de más');
+const vis2 = { ...vis, lugares: ['molino', 'escenario'], n: 1 };
+ok(limpiarMision(vis2).n === 1 && limpiarMision({ ...vis2, n: 2 }).n === undefined, 'visitar: n solo se guarda si es menos que todos');
+const hab = completa('hablar');
+ok(faltaDeMision(hab), 'hablar sin con avisa');
+const hab2 = { ...hab, con: 'boris', lugar: 'atalaya' };
+ok(!faltaDeMision(hab2) && misionDeDatos('rosa1', limpiarMision(hab2)).lugar === 'atalaya', 'hablar con Boris en la atalaya');
+ok(faltaDeMision({ ...hab2, con: 'rosa' }) && faltaDeMision({ ...hab2, lugar: 'luna' }), 'hablar: consigo misma o lugar raro');
 
 ok(faltaDeMision(misionNueva('noche', 'rosa')) !== null, 'sin textos falta algo');
 for (const tipo of ['entregar', 'matar', 'noche']) {

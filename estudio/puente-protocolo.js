@@ -27,8 +27,9 @@ const esObjeto = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 //   aplicarDatos(nombre, datos)    aplica un JSON sin recargar (puede ser asíncrona; lanza si no puede)
 //   teletransportar(destino)       destino: { destino } | { x, y, z }; devuelve { x, y, z } o lanza
 //   globo(persona, texto)          muestra `texto` en el globo de esa persona (vista previa del editor de textos)
-//   elegir({ clave, modo })        pone el gizmo sobre una persona (clave null lo quita); devuelve su punto actual
-//                                  { ancla, marco?, dx, dy, dz, giro } o lanza si no existe en este mundo
+//   elegir({ clave, modo, objeto }) pone el gizmo sobre una persona (clave null lo quita); devuelve su punto actual
+//                                  { ancla, marco?, dx, dy, dz, giro } o lanza si no existe en este mundo. Con objeto «lugar»
+//                                  (B6e) lo pone sobre una construcción (CONSTRUCCIONES) y devuelve { x, z }
 //   escena({ accion, clave?, persona?, t?, v? })
 //                                  juega, pausa, salta a un instante o detiene una escena de amistad (fase 5); `puntero` con v
 //                                  true/false suelta el mouse del juego (o lo devuelve) mientras el editor trabaja sobre él;
@@ -92,13 +93,13 @@ export function crearManejador(juego) {
                 }
                 case 'elegir': {
                     const nada = m.objeto === 'nada';
-                    if (!nada && m.objeto !== 'persona') return error('elegir pide objeto «persona» o «nada»');
+                    if (!nada && m.objeto !== 'persona' && m.objeto !== 'lugar') return error('elegir pide objeto «persona», «lugar» o «nada»');
                     if (!nada && (typeof m.clave !== 'string' || !NOMBRE_DESTINO.test(m.clave))) return error('clave de persona no válida');
                     const modo = m.modo === undefined ? 'mover' : m.modo;
                     if (!MODOS_GIZMO.includes(modo)) return error(`modo no válido (${MODOS_GIZMO.join(' o ')})`);
                     if (!juego.elegir) return error('este juego no sabe poner el gizmo');
-                    const punto = await juego.elegir(nada ? { clave: null } : { clave: m.clave, modo });
-                    return { ...base, tipo: 'elegido', clave: nada ? null : m.clave, punto: punto || null };
+                    const punto = await juego.elegir(nada ? { clave: null } : { clave: m.clave, modo, objeto: m.objeto });
+                    return { ...base, tipo: 'elegido', objeto: nada ? null : m.objeto, clave: nada ? null : m.clave, punto: punto || null };
                 }
                 case 'escena': {
                     if (!ACCIONES_ESCENA.includes(m.accion)) return error(`escena pide accion ${ACCIONES_ESCENA.join(', ')}`);
