@@ -11,7 +11,7 @@ export const vistaValida = v => (VISTAS.includes(v) ? v : VISTA_BASE);
 
 // [clave, es, en, pestañas]
 export const GRUPOS = [
-    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'personajes', 'tienda', 'misiones', 'recetas', 'vida', 'objetos', 'formas']],
+    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'personajes', 'tienda', 'misiones', 'recetas', 'nuevos', 'vida', 'objetos', 'formas']],
     ['historias', 'Historias', 'Stories', ['textos', 'escenas', 'poses']],
     ['minijuegos', 'Minijuegos', 'Minigames', ['mesa', 'carrera', 'arena', 'combate', 'salonas', 'ritmo']],
     ['arte', 'Arte y sonido', 'Art and sound', ['pixeles', 'musica', 'inicio']]
@@ -46,6 +46,10 @@ export const AYUDA = {
     recetas: {
         que: ['Cómo se fabrican las cosas: recetas nuevas en una rejilla como la mesa de crafteo, y qué se funde en el horno.', 'How things are crafted: new recipes on a grid like the crafting table, and what melts in the furnace.'],
         empezar: ['Elige una receta parecida en «Partir de», toca «Agregar receta» y cambia las casillas y lo que fabrica; si ya existe una igual, te avisa. «Guardar» la deja en el juego.', 'Pick a similar recipe in «Start from», press «Add recipe» and change the cells and what it makes; if an identical one exists, it warns you. «Save» keeps it in the game.']
+    },
+    nuevos: {
+        que: ['Cosas nuevas para el inventario: su nombre, cómo se ven, si se comen y cuántas caben en una casilla.', 'New things for the inventory: their name, how they look, whether they can be eaten and how many fit in a slot.'],
+        empezar: ['Elige uno parecido en «Partir de», toca «Agregar objeto», ponle nombre en español e inglés y elige cómo se ve. Después dale una receta, véndelo en la Tienda o ponlo de premio en Misiones. «Guardar» lo deja en el juego.', 'Pick a similar one in «Start from», press «Add object», name it in Spanish and English and choose how it looks. Then give it a recipe, sell it in the Shop or make it a Quest reward. «Save» keeps it in the game.']
     },
     vida: {
         que: ['Cómo caminan los amigos, a quién visitan y a qué hora, y la fogata.', 'How friends walk, whom they visit and when, and the campfire.'],

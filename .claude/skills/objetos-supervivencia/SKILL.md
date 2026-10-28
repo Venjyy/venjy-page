@@ -13,7 +13,9 @@ Mapa del módulo: `mundo/supervivencia/MAPA.md` (tabla de archivos con funciones
 1. **Registro** en `objetos.js` con `obj('CLAVE', 'Nombre ES', 'Name EN', { icono: 'nombre', ... })`.
    - **Siempre después del último `obj(`** (`grep -n "^obj(" objetos.js | tail -1`). Los ids se asignan en
      orden y viajan en el guardado y el cooperativo: insertar en medio cambia los ids de todo lo que
-     sigue y rompe las partidas guardadas.
+     sigue y rompe las partidas guardadas. Los del código deben quedar bajo `ID_DATOS` (1024): desde ahí son los de
+     `mundo/datos/objetos.json` (pestaña Objetos nuevos), con id fijo. Un objeto que solo necesita nombre, ícono, comida o
+     combustible puede ir ahí en vez del código (DISENO §42, 6d).
    - Campos que ya existen y conviene copiar: `apila` (1, 16 o 64), `color` (clave de `COLORES`),
      `comida: [hambre, saturación]`, `efecto`, `devuelve: 'CLAVE'`, `combustible`, `durabilidad`,
      `herramienta`, `encargo: true` (no se vende). Buscar uno parecido con `grep -n "obj('" objetos.js`.

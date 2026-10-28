@@ -45,6 +45,11 @@ async function aplicar(nombre, datos) {
         // B6b: misiones nuevas; el panel de misiones lee MISIONES al abrirse
         const m = await import('../mundo/supervivencia/misiones-datos.js');
         m.fijarMisiones(datos);
+    } else if (nombre === 'objetos') {
+        // B6d: objetos nuevos (objetos.js los registra; iconos.js les da celda en el atlas y repinta)
+        const m = await import('../mundo/supervivencia/objetos.js');
+        m.fijarObjetos(datos);
+        (await import('../mundo/supervivencia/iconos.js')).refrescarObjetos();
     } else if (nombre === 'recetas') {
         // B6c: recetas y fundiciones nuevas; el libro de recetas y el horno leen RECETAS y FUNDICION al usarse
         const m = await import('../mundo/supervivencia/recetas.js');

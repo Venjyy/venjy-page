@@ -50,6 +50,12 @@
       "fase": 3,
       "que": "Recetas de fabricación (con y sin forma) y fundiciones del horno nuevas, con los objetos por nombre; se suman después de las de recetas.js; se aplica en vivo con supervivencia.html?estudio"
     },
+    "objetos": {
+      "esquema": "objetos",
+      "lee": "mundo/supervivencia/objetos.js",
+      "fase": 3,
+      "que": "Objetos nuevos del inventario (nombre ES/EN, ícono, apila, comida, efecto, devuelve, combustible) con id fijo desde 1024; objetos.js los registra al cargar, antes que recetas, tienda y misiones; se edita en la pestaña Objetos nuevos y se aplica en vivo con supervivencia.html?estudio"
+    },
     "cartas-mesa": {
       "esquema": "cartas-mesa",
       "lee": "mundo/supervivencia/cartas-mesa.js",

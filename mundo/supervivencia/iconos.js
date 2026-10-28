@@ -398,6 +398,8 @@ const PINTORES = {
 let dibujos = new Map(); // clave en minúscula -> 256 colores
 let versionIconos = 0;
 const oyentes = new Set();
+// B6d: objetos.json cambió (Estudio en vivo): los nuevos toman celda en el atlas y se repintan los íconos
+export function refrescarObjetos() { versionIconos++; repintar(); }
 export function aplicarIconos(d) {
     dibujos = new Map();
     for (const [k, dib] of Object.entries((d && d.iconos) || {})) if (listoParaJuego(dib, 16, 16)) dibujos.set(k, decodificar(dib, 16, 16));
@@ -413,24 +415,29 @@ if (typeof location !== 'undefined') cargarDatos('iconos').then(d => { if (d) ap
 // Atlas de objetos (para los objetos tirados en 3D) y caché de íconos de la interfaz
 // ---------------------------------------------------------
 const COLS_OBJ = 16;
+const FILAS_DATOS = 16; // B6d: filas libres para los objetos de objetos.json (pueden llegar en vivo desde el Estudio)
 let atlasObjetos = null;
-const celdaObjeto = new Map(); // id -> índice de celda en el atlas
+const celdaObjeto = new Map(); // id -> índice de celda en el atlas (fija: un objeto nuevo toma la siguiente libre)
+function ubicarObjetos() {
+    const tope = (atlasObjetos.height / 16) * COLS_OBJ;
+    OBJETOS.forEach((o, id) => { if (o && !celdaObjeto.has(id) && celdaObjeto.size < tope) celdaObjeto.set(id, celdaObjeto.size); });
+}
 export function crearAtlasObjetos() {
     if (atlasObjetos) return atlasObjetos;
-    const ids = OBJETOS.map((o, i) => (o ? i : null)).filter(i => i !== null);
-    const filas = Math.ceil(ids.length / COLS_OBJ);
+    const n = OBJETOS.filter(Boolean).length;
     const c = document.createElement('canvas');
-    c.width = COLS_OBJ * 16; c.height = Math.max(16, filas * 16);
+    c.width = COLS_OBJ * 16; c.height = (Math.ceil(n / COLS_OBJ) + FILAS_DATOS) * 16;
     atlasObjetos = c;
-    pintarAtlas(ids);
+    pintarAtlas();
     return c;
 }
-function pintarAtlas(ids = [...celdaObjeto.keys()]) {
+function pintarAtlas() {
+    ubicarObjetos();
     const c = atlasObjetos;
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(c.width, c.height);
-    ids.forEach((id, n) => {
-        celdaObjeto.set(id, n);
+    celdaObjeto.forEach((n, id) => {
+        if (!OBJETOS[id]) return;
         const p = pintarObjeto(id);
         const ox = (n % COLS_OBJ) * 16, oy = Math.floor(n / COLS_OBJ) * 16;
         for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
@@ -444,6 +451,7 @@ function pintarAtlas(ids = [...celdaObjeto.keys()]) {
 }
 export function uvObjeto(id) {
     crearAtlasObjetos();
+    if (!celdaObjeto.has(id) && OBJETOS[id]) repintar();
     const n = celdaObjeto.get(id) ?? 0;
     const W = atlasObjetos.width, H = atlasObjetos.height;
     const x = (n % COLS_OBJ) * 16, y = Math.floor(n / COLS_OBJ) * 16;

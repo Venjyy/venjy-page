@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objetos.schema.json",
+  "title": "Objetos nuevos (mundo/datos/objetos.json)",
+  "description": "Objetos NUEVOS del inventario, por clave en minúscula (el nombre de /dar, que usan recetas, tienda y misiones). El juego los registra al cargar mundo/supervivencia/objetos.js (fijarObjetos), antes que nadie lea O. Cada objeto guarda su id fijo entre 1024 y 4095: el Estudio lo asigna con siguienteId y no se cambia ni se reusa nunca, así una partida guardada sigue apuntando al mismo objeto (los del código quedan bajo 1024). Una clave del código o de un bloque, un id ocupado o un objeto mal escrito se ignora entero. Solo campos que el juego ya usa sin código propio; lo que necesita lógica (clic derecho, herramienta, armadura, modelo 3D) sigue en objetos.js.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "siguienteId": { "description": "El id que tomará el próximo objeto nuevo. Solo sube (al borrar un objeto su id no se vuelve a usar).", "type": "integer", "minimum": 1024, "maximum": 4096 },
+    "objetos": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/nombreObjeto" },
+      "additionalProperties": { "$ref": "#/$defs/objeto" }
+    }
+  },
+  "required": ["version", "siguienteId", "objetos"],
+  "additionalProperties": false,
+  "$defs": {
+    "nombreObjeto": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "objeto": {
+      "type": "object",
+      "properties": {
+        "id": { "description": "Id fijo (viaja en el guardado y el cooperativo). No cambiarlo.", "type": "integer", "minimum": 1024, "maximum": 4095 },
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "icono": { "description": "Ícono del código que usa (el de un objeto parecido: pan, botella, lingote…). Un dibujo del dueño en iconos.json con la misma clave lo reemplaza.", "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "color": { "description": "Colores del ícono (los íconos de familia, como lingote, botella o carne): una clave de COLORES de objetos.js.", "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "apila": { "description": "Cuántos caben en una casilla.", "enum": [1, 16, 64] },
+        "comida": { "description": "[hambre que quita, saturación], como en Minecraft (pan: [5, 6]).", "type": "array", "prefixItems": [{ "type": "number", "minimum": 1, "maximum": 20 }, { "type": "number", "minimum": 0, "maximum": 20 }], "minItems": 2, "maxItems": 2 },
+        "efecto": { "description": "Efecto al comerlo (solo con comida): hambre, hambre30 (30 % de las veces), veneno o leche (quita veneno y hambre).", "enum": ["hambre", "hambre30", "veneno", "leche"] },
+        "devuelve": { "description": "Lo que queda en la mano al comerlo o usarlo (cubo, botella, cuenco): nombre de un objeto del código o de este archivo.", "$ref": "#/$defs/nombreObjeto" },
+        "combustible": { "description": "Segundos de fuego en el horno (cocinar una cosa toma 10).", "type": "number", "minimum": 0, "maximum": 1000 },
+        "encargo": { "description": "true: no se vende en las tiendas (es de una misión o un encargo).", "type": "boolean" },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["id", "nombre", "icono"],
+      "additionalProperties": false
+    }
+  }
+}

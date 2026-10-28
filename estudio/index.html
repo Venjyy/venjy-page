@@ -19,6 +19,7 @@
             <button class="pestana" type="button" data-pestana="tienda" data-es="Tienda" data-en="Shop">Tienda</button>
             <button class="pestana" type="button" data-pestana="misiones" data-es="Misiones" data-en="Quests">Misiones</button>
             <button class="pestana" type="button" data-pestana="recetas" data-es="Recetas" data-en="Recipes">Recetas</button>
+            <button class="pestana" type="button" data-pestana="nuevos" data-es="Objetos nuevos" data-en="New items">Objetos nuevos</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
@@ -842,6 +843,26 @@
                     <button id="re-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
                 </div>
                 <p id="re-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-nuevos" class="seccion" hidden>
+        <section class="escritorio">
+            <div id="on-form" class="pj-form"></div>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Nuevo objeto" data-en="New object">Nuevo objeto</h2>
+                <label class="campo"><span data-es="Partir de" data-en="Start from">Partir de</span><select id="on-base"></select></label>
+                <button id="on-nuevo" class="boton chico" type="button" data-es="Agregar objeto" data-en="Add object">Agregar objeto</button>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="on-descartar" class="boton chico" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    <button id="on-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                </div>
+                <p id="on-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

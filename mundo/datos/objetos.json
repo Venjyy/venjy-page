@@ -1,0 +1,7 @@
+{
+  "$schema": "../../estudio/esquemas/objetos.schema.json",
+  "version": 1,
+  "nota": "Objetos nuevos (pestaña Objetos nuevos del Estudio). Cada uno guarda su id fijo desde 1024: nunca se cambia ni se reusa (siguienteId), así las partidas guardadas no se rompen. Los de hoy siguen en mundo/supervivencia/objetos.js.",
+  "siguienteId": 1024,
+  "objetos": {}
+}

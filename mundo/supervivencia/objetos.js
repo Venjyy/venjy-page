@@ -7,6 +7,7 @@
 // Los íconos se pintan por código (sin imágenes): ver iconos.js.
 // =========================================================
 import { B, BLOQUES, TIPO } from '../texturas.js';
+import { cargarDatos } from '../datos/cargador.js';
 
 // ---------------------------------------------------------
 // Objetos (ids >= 256)
@@ -393,3 +394,57 @@ export const COLORES = {
     lava: ['#ec7818', '#a03a0a', '#ffd25a'],
     leche: ['#f4f2ea', '#c8c6bc', '#ffffff']
 };
+
+// ---------------------------------------------------------
+// B6d: objetos nuevos de mundo/datos/objetos.json (pestaña Objetos nuevos del Estudio; estudio/DISENO.md §42)
+// Cada uno trae su id fijo, entre ID_DATOS y ID_DATOS_TOPE: el Estudio lo asigna con `siguienteId` y nunca lo reusa, así una
+// partida guardada sigue apuntando al mismo objeto aunque el código agregue objetos al final de los suyos (que quedan bajo
+// ID_DATOS). Clave en minúscula (como /dar); una clave del código, un id ocupado o un objeto mal escrito se ignora entero.
+// Solo campos que el juego ya usa sin código propio: nombre, ícono (+ color), apila, comida y efecto, devuelve,
+// combustible, encargo. Lo que necesita lógica (clic derecho, herramienta, armadura) sigue en el código.
+// ---------------------------------------------------------
+export const ID_DATOS = 1024, ID_DATOS_TOPE = 4096;
+export const EFECTOS = ['hambre', 'hambre30', 'veneno', 'leche'];
+const delCodigo = new Set(Object.keys(O));
+const deDatos = new Set(); // ids que puso fijarObjetos
+const textoOk = t => t && typeof t.es === 'string' && t.es.trim() && typeof t.en === 'string' && t.en.trim();
+const numero = (v, a, z) => typeof v === 'number' && Number.isFinite(v) && v >= a && v <= z;
+// clave (minúscula), d -> definición lista para OBJETOS, o null si no vale. `claves`: las del archivo (para `devuelve`)
+export function objetoDeDatos(clave, d, claves = []) {
+    const K = String(clave).toUpperCase();
+    if (!/^[a-z][a-z0-9_]*$/.test(clave) || delCodigo.has(K) || B[K] !== undefined) return null;
+    if (!d || !Number.isInteger(d.id) || d.id < ID_DATOS || d.id >= ID_DATOS_TOPE || !textoOk(d.nombre)) return null;
+    if (typeof d.icono !== 'string' || !d.icono) return null;
+    const o = { id: d.id, clave: K, nombre: { es: d.nombre.es.trim(), en: d.nombre.en.trim() }, apila: 64, icono: d.icono, datos: true };
+    if (d.color !== undefined) { if (!COLORES[d.color]) return null; o.color = d.color; }
+    if (d.apila !== undefined) { if (![1, 16, 64].includes(d.apila)) return null; o.apila = d.apila; }
+    if (d.comida !== undefined) {
+        if (!Array.isArray(d.comida) || d.comida.length !== 2 || !numero(d.comida[0], 1, 20) || !numero(d.comida[1], 0, 20)) return null;
+        o.comida = [d.comida[0], d.comida[1]];
+    }
+    if (d.efecto !== undefined) { if (!o.comida || !EFECTOS.includes(d.efecto)) return null; o.efecto = d.efecto; }
+    if (d.devuelve !== undefined) {
+        const r = String(d.devuelve).toUpperCase();
+        if (!delCodigo.has(r) && !claves.includes(d.devuelve)) return null;
+        o.devuelve = r;
+    }
+    if (d.combustible !== undefined) { if (!numero(d.combustible, 0, 1000)) return null; o.combustible = d.combustible; }
+    if (d.encargo === true) o.encargo = true;
+    return o;
+}
+export function fijarObjetos(datos) {
+    for (const id of deDatos) { delete O[OBJETOS[id].clave]; delete OBJETOS[id]; }
+    deDatos.clear();
+    const lista = Object.entries((datos && datos.objetos) || {});
+    const claves = lista.map(([k]) => k);
+    for (const [k, d] of lista) {
+        const o = objetoDeDatos(k, d, claves);
+        if (!o || OBJETOS[o.id] || O[o.clave] !== undefined) continue;
+        OBJETOS[o.id] = o; O[o.clave] = o.id; deDatos.add(o.id);
+    }
+    // `devuelve` a un objeto del archivo que al final no entró: se quita para no dejar una referencia rota
+    for (const id of deDatos) if (OBJETOS[id].devuelve && O[OBJETOS[id].devuelve] === undefined) delete OBJETOS[id].devuelve;
+}
+// Antes que nadie lea O: recetas, tienda, misiones, regalos y el guardado ya ven los objetos nuevos (top-level await;
+// sin servidor o con ?sin-datos, cargarDatos da null enseguida y queda solo el código)
+if (typeof location !== 'undefined') fijarObjetos(await cargarDatos('objetos'));
