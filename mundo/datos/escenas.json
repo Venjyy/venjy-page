@@ -1749,6 +1749,841 @@
         ]
       },
       "golpes": [11.95]
+    },
+    "bienvenida-boris": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "boris" },
+      "T": 26.8,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Boris! ¿Y el auto? Pensé que venías a buscarme.",
+            "en": "Boris! Where's the car? I thought you came to pick me up."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.55,
+          "texto": { "es": "Súbete, que este auto no necesita calles.", "en": "Get in, this car doesn't need roads." }
+        },
+        {
+          "q": "n",
+          "a": 6.3,
+          "texto": {
+            "es": "¡Cuidado con el bache! Igual que llegando a Linares.",
+            "en": "Watch the pothole! Just like driving into Linares."
+          }
+        },
+        {
+          "q": "j",
+          "a": 9.45,
+          "texto": { "es": "Llegamos. Te extrañaba, compadre.", "en": "We're here. I missed you, mate." }
+        },
+        {
+          "q": "n",
+          "a": 16.45,
+          "texto": {
+            "es": "¿Te acuerdas de la última en tu PC? Perdimos por el jungla.",
+            "en": "Remember the last game on your PC? We lost because of the jungler."
+          }
+        },
+        {
+          "q": "j",
+          "a": 19.8,
+          "texto": {
+            "es": "Perdimos por ti. Pero ya, te perdono.",
+            "en": "We lost because of you. But fine, I forgive you."
+          }
+        },
+        {
+          "q": "n",
+          "a": 22.45,
+          "texto": {
+            "es": "Gracias por venir. Próxima vez en Linares: unas chelitas y revancha.",
+            "en": "Thanks for coming. Next time in Linares: a couple of beers and a rematch."
+          }
+        }
+      ],
+      "pista": {
+        "n": [
+          ["boris-busca", 0.3, 3.55],
+          [
+            "ventana",
+            3.55,
+            6.3,
+            { "espejo": true }
+          ],
+          ["boris-ventanaB", 6.3, 7.5],
+          [
+            "ventana",
+            7.5,
+            9.45,
+            { "espejo": true }
+          ],
+          [
+            "secreto",
+            9.75,
+            14.35,
+            { "reloj": 9.35 }
+          ],
+          [
+            "abrazo",
+            14.45,
+            18.95,
+            {
+              "reloj": 14.05,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["recuerda", 18.95, 19.75],
+          ["asiente", 19.75, 22.3],
+          ["habla", 22.45, 25.85]
+        ],
+        "j": [
+          ["maneja", 3.55, 6.3],
+          ["boris-manejaB", 6.3, 7.5],
+          ["maneja", 7.5, 9.45],
+          [
+            "secreto",
+            9.75,
+            14.35,
+            { "reloj": 9.35 }
+          ],
+          [
+            "abrazo",
+            14.45,
+            18.95,
+            {
+              "reloj": 14.05,
+              "escala": { "pz": 1.7 }
+            }
+          ],
+          ["habla", 19.8, 22.3]
+        ]
+      },
+      "golpes": [10.55, 11.55, 12.45, 13.35],
+      "sonidos": [[6.6, "golpe"]],
+      "yaw": {
+        "n": {
+          "k": [[3.55, 0], [4.45, -1.5707963267948966], [9.25, -1.5707963267948966], [9.95, 0]]
+        },
+        "j": {
+          "k": [[3.55, 0], [4.45, 1.5707963267948966], [9.25, 1.5707963267948966], [9.95, 0]]
+        }
+      }
+    },
+    "bienvenida-conejeros": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "conejeros" },
+      "T": 19.3,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Conejeros! Bienvenido. ¿Una foto para el recuerdo?",
+            "en": "Conejeros! Welcome. A photo to remember?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.65,
+          "texto": { "es": "Obvio. Sonríe, que va a quedar épica.", "en": "Of course. Smile, it's going to be epic." }
+        },
+        {
+          "q": "n",
+          "a": 7.6,
+          "texto": { "es": "¿Me pusiste orejas de conejo?", "en": "Did you give me bunny ears?" }
+        },
+        {
+          "q": "j",
+          "a": 10.05,
+          "texto": { "es": "Es mi firma, compadre.", "en": "It's my signature, mate." }
+        },
+        {
+          "q": "n",
+          "a": 12.5,
+          "texto": {
+            "es": "Gracias por pasarte. Hay harto que probar con tu skin, disfrútalo.",
+            "en": "Thanks for dropping by. There's lots to try with your skin, enjoy it."
+          }
+        },
+        {
+          "q": "j",
+          "a": 16.05,
+          "texto": { "es": "Lo voy a dibujar todo.", "en": "I'm going to draw all of it." }
+        }
+      ],
+      "pista": {
+        "n": [["habla", 0.3, 3.5], ["selfie", 3.6, 6.15], ["celular", 6.25, 10.1], ["habla", 12.5, 15.9], ["asiente", 16, 19.1]],
+        "j": [["conejeros-orejitasJ", 3.85, 6.25], ["habla", 10.05, 12.35], ["traza", 16.05, 19]]
+      },
+      "sonidos": [[6.25, "foto"]],
+      "efectos": [
+        [
+          6.25,
+          "flash",
+          {
+            "en": "n",
+            "alto": 1.6,
+            "mas": [0, 0, 0.3],
+            "tam": 0.9,
+            "vida": 0.35
+          }
+        ]
+      ],
+      "objetos": [
+        {
+          "id": "celular",
+          "dibujo": {
+            "caja": [0.22, 0.3, 0.04],
+            "pix": "celular"
+          },
+          "en": {
+            "q": "n",
+            "hueso": "brazoD",
+            "mas": [0, -0.7, 0.12]
+          },
+          "desde": 3.6,
+          "hasta": 10.3
+        },
+        {
+          "id": "oreja-i",
+          "dibujo": {
+            "caja": [0.1, 0.34, 0.06],
+            "color": "#f4eded"
+          },
+          "en": {
+            "q": "n",
+            "hueso": "cabeza",
+            "mas": [-0.14, 0.42, 0]
+          },
+          "desde": 5.05
+        },
+        {
+          "id": "oreja-d",
+          "dibujo": {
+            "caja": [0.1, 0.34, 0.06],
+            "color": "#f4eded"
+          },
+          "en": {
+            "q": "n",
+            "hueso": "cabeza",
+            "mas": [0.14, 0.42, 0]
+          },
+          "desde": 5.05
+        }
+      ]
+    },
+    "bienvenida-hadad": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "hadad" },
+      "T": 19.2,
+      "r": 1.6,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Hadad! Qué bueno que te pasaste por el mundo.",
+            "en": "Hadad! So glad you dropped by the world."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.55,
+          "texto": {
+            "es": "Me dijeron que había fogata y nada de Fortnite, así que vine a ver.",
+            "en": "They told me there was a campfire and no Fortnite, so I came to see."
+          }
+        },
+        {
+          "q": "n",
+          "a": 7.1,
+          "texto": {
+            "es": "Toma, para el camino. De tu marca, obvio.",
+            "en": "Here, for the road. Your brand, obviously."
+          }
+        },
+        {
+          "q": "j",
+          "a": 9.85,
+          "texto": { "es": "Auspiciado por mí mismo.", "en": "Sponsored by myself." }
+        },
+        {
+          "q": "n",
+          "a": 12.3,
+          "texto": {
+            "es": "Gracias por venir. Prueba todo con tu skin, hay harto que descubrir.",
+            "en": "Thanks for coming. Try everything with your skin, there's lots to discover."
+          }
+        },
+        {
+          "q": "j",
+          "a": 15.85,
+          "texto": { "es": "Trato hecho. Parto por la fogata.", "en": "Deal. I'll start with the campfire." }
+        }
+      ],
+      "pista": {
+        "n": [["saluda", 0.3, 3.4], ["asiente", 3.5, 7], ["pasa", 7.1, 8.2], ["asiente", 8.3, 18.9]],
+        "j": [["habla", 3.55, 6.95], ["hadad-recibe", 7.2, 8.6], ["hadad-pulgar", 8.7, 18.9]]
+      },
+      "sonidos": [[8.7, "visto"]],
+      "efectos": [
+        [
+          8.7,
+          "visto",
+          {
+            "en": "j",
+            "alto": 1.9,
+            "mas": [0.5, 0, 0],
+            "tam": 0.3,
+            "vida": 1
+          }
+        ]
+      ],
+      "objetos": [
+        {
+          "id": "bolsa-venjy",
+          "dibujo": {
+            "caja": [0.32, 0.42, 0.12],
+            "pix": "bolsa"
+          },
+          "en": {
+            "q": "n",
+            "hueso": "brazoD",
+            "mas": [0, -0.7, 0.12]
+          },
+          "desde": 7.1,
+          "hasta": 8
+        },
+        {
+          "id": "bolsa-tuya",
+          "dibujo": {
+            "caja": [0.32, 0.42, 0.12],
+            "pix": "bolsa"
+          },
+          "en": {
+            "q": "j",
+            "hueso": "brazoI",
+            "mas": [0, -0.7, 0.12]
+          },
+          "desde": 8
+        }
+      ]
+    },
+    "bienvenida-lona": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "lona" },
+      "T": 21.5,
+      "r": 0.9,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": { "es": "¿Amor? ¿Tú también estás en el juego?", "en": "Love? You're in the game too?" }
+        },
+        {
+          "q": "j",
+          "a": 3.25,
+          "texto": {
+            "es": "Vine a ver el mundo que tanto me contabas.",
+            "en": "I came to see the world you kept telling me about."
+          }
+        },
+        {
+          "q": "n",
+          "a": 6.1,
+          "texto": { "es": "Entonces, antes del recorrido, un baile.", "en": "Then, before the tour, a dance." }
+        },
+        {
+          "q": "j",
+          "a": 8.85,
+          "texto": {
+            "es": "Sin música y todo. Eres un tontito.",
+            "en": "Without music and everything. You're such a goof."
+          }
+        },
+        {
+          "q": "n",
+          "a": 11.5,
+          "texto": {
+            "es": "Te estaba esperando. Ahora sí está completo.",
+            "en": "I was waiting for you. Now it's complete."
+          }
+        },
+        {
+          "q": "j",
+          "a": 14.35,
+          "texto": {
+            "es": "Las gatas se quedaron cuidando la casa... o eso espero.",
+            "en": "The cats stayed home looking after the house... or so I hope."
+          }
+        },
+        {
+          "q": "n",
+          "a": 17.6,
+          "texto": {
+            "es": "Mila debe estar durmiendo y Gala botando algo. Ya, te muestro todo.",
+            "en": "Mila must be asleep and Gala knocking something over. Okay, let me show you everything."
+          }
+        }
+      ],
+      "pista": {
+        "n": [
+          ["habla", 0.6, 3.1],
+          ["lona-ofrece", 6.1, 8.8],
+          ["lona-mece", 8.9, 14.3],
+          [
+            "pareja",
+            14.4,
+            20.4,
+            { "reloj": 14 }
+          ]
+        ],
+        "j": [
+          ["asiente", 0.6, 3.1],
+          ["lona-toma", 6.2, 8.8],
+          ["lona-mece", 8.9, 14.3],
+          [
+            "pareja",
+            14.4,
+            20.4,
+            { "reloj": 14 }
+          ]
+        ]
+      },
+      "corazones": [17.2, 18.2, 19.4],
+      "yaw": {
+        "n": {
+          "base": 0,
+          "osc": [
+            {
+              "forma": "sin",
+              "amp": 0.25,
+              "frec": 1,
+              "en": {
+                "k": [[8.9, 0], [14.3, 6.283185307179586]],
+                "interp": "lineal"
+              }
+            }
+          ]
+        },
+        "j": {
+          "base": 0,
+          "osc": [
+            {
+              "forma": "sin",
+              "amp": 0.25,
+              "frec": 1,
+              "en": {
+                "k": [[8.9, 0], [14.3, 6.283185307179586]],
+                "interp": "lineal"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "bienvenida-lucho": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "lucho" },
+      "T": 25.3,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Primo! A ver, déjame explicarte el árbol...",
+            "en": "Cousin! Wait, let me explain the family tree..."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.45,
+          "texto": {
+            "es": "Yo soy primo de tu mamá, entonces tú eres...",
+            "en": "I'm your mom's cousin, so you're my..."
+          }
+        },
+        {
+          "q": "n",
+          "a": 6.3,
+          "texto": { "es": "Ya me perdí.", "en": "I'm lost already." }
+        },
+        {
+          "q": "j",
+          "a": 8.75,
+          "texto": { "es": "Primo es primo. Fin del árbol.", "en": "Cousin is cousin. End of the tree." }
+        },
+        {
+          "q": "n",
+          "a": 11.2,
+          "texto": {
+            "es": "¿Te acuerdas cuando nos presentaron como primos? Nadie preguntó más.",
+            "en": "Remember when they introduced us as cousins? Nobody asked any more."
+          }
+        },
+        {
+          "q": "j",
+          "a": 14.75,
+          "texto": {
+            "es": "Y desde ahí, primos. Ya no hay vuelta atrás.",
+            "en": "And since then, cousins. No going back now."
+          }
+        },
+        {
+          "q": "n",
+          "a": 17.6,
+          "texto": {
+            "es": "Gracias por venir. Esta noche, dúo en Apex: tú me revives.",
+            "en": "Thanks for coming. Tonight, Apex duos: you revive me."
+          }
+        }
+      ],
+      "pista": {
+        "n": [
+          ["habla", 0.6, 3.3],
+          ["traza", 3.4, 8.4],
+          ["rasca", 8.6, 11],
+          ["recuerda", 11.2, 14.6],
+          [
+            "secreto",
+            15.6,
+            20.2,
+            { "reloj": 15.2 }
+          ],
+          [
+            "abrazo",
+            20.3,
+            24.8,
+            {
+              "reloj": 19.9,
+              "escala": { "pz": 1.7 }
+            }
+          ]
+        ],
+        "j": [
+          ["asiente", 0.6, 3.3],
+          ["habla", 3.45, 6.15],
+          ["asiente", 6.3, 8.6],
+          ["barre", 8.8, 11],
+          ["asiente", 11.2, 14.6],
+          [
+            "secreto",
+            15.6,
+            20.2,
+            { "reloj": 15.2 }
+          ],
+          [
+            "abrazo",
+            20.3,
+            24.8,
+            {
+              "reloj": 19.9,
+              "escala": { "pz": 1.7 }
+            }
+          ]
+        ]
+      },
+      "golpes": [16.4, 17.4, 18.3, 19.2],
+      "efectos": [
+        [
+          3.4,
+          "trazo",
+          {
+            "en": { "q": "n", "mano": "D" },
+            "tam": 0.55,
+            "cada": 0.2,
+            "hasta": 8.4,
+            "encoge": [8.8, 10.9]
+          }
+        ]
+      ]
+    },
+    "bienvenida-nacho": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "nacho" },
+      "T": 18.9,
+      "r": 2.2,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Nacho! Te escuché reír desde el Inicio.",
+            "en": "Nacho! I heard you laughing from the Start."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.35,
+          "texto": { "es": "Jajaja, ¿tan fuerte?", "en": "Haha, that loud?" }
+        },
+        {
+          "q": "n",
+          "a": 5.8,
+          "texto": { "es": "Hasta los creepers se dieron vuelta.", "en": "Even the creepers turned around." }
+        },
+        {
+          "q": "j",
+          "a": 8.45,
+          "texto": { "es": "Jajaja, ¡no puedo! ¡Los creepers!", "en": "Haha, I can't! The creepers!" }
+        },
+        {
+          "q": "n",
+          "a": 12,
+          "texto": {
+            "es": "Gracias por venir. Ojalá lo disfrutes, y prueba todo con tu skin.",
+            "en": "Thanks for coming. I hope you enjoy it, and try everything with your skin."
+          }
+        },
+        {
+          "q": "j",
+          "a": 15.55,
+          "texto": { "es": "Jajaja, voy. Pero primero respiro.", "en": "Haha, I will. But first I need to breathe." }
+        }
+      ],
+      "pista": {
+        "n": [["habla", 0.3, 3.2], ["risa", 3.3, 8.35], ["nacho-doblaRisa", 8.35, 11.05], ["nacho-seca", 11.15, 11.9], ["habla", 12, 15.4], ["asiente", 15.5, 18.7]],
+        "j": [["nacho-doblaRisa", 3.05, 11.05], ["nacho-seca", 11.15, 18.7]]
+      },
+      "efectos": [
+        [
+          11.15,
+          "gota",
+          {
+            "en": "n",
+            "alto": 1.6,
+            "mas": [0.2, 0, 0],
+            "tam": 0.22,
+            "vida": 0.9,
+            "vy": -0.4
+          }
+        ],
+        [
+          11.15,
+          "gota",
+          {
+            "en": "j",
+            "alto": 1.6,
+            "mas": [0.2, 0, 0],
+            "tam": 0.22,
+            "vida": 0.9,
+            "vy": -0.4
+          }
+        ]
+      ]
+    },
+    "bienvenida-pony": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "pony" },
+      "T": 17.5,
+      "r": 1.64,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": { "es": "¿Pony? Me dijeron que venías...", "en": "Pony? They told me you were coming..." }
+        },
+        {
+          "q": "j",
+          "a": 3.05,
+          "texto": { "es": "Estoy aquí abajo, weón.", "en": "I'm down here, dude." }
+        },
+        {
+          "q": "n",
+          "a": 5.5,
+          "texto": {
+            "es": "¡Ahí estás! Puño bajito, para que llegues.",
+            "en": "There you are! Low fist, so you can reach."
+          }
+        },
+        {
+          "q": "j",
+          "a": 8.35,
+          "texto": {
+            "es": "El chico seré yo, pero el weón eres tú.",
+            "en": "I might be the short one, but you're the goof."
+          }
+        },
+        {
+          "q": "n",
+          "a": 11.1,
+          "texto": {
+            "es": "Gracias por venir, Pony. El muelle te está esperando.",
+            "en": "Thanks for coming, Pony. The pier is waiting for you."
+          }
+        },
+        {
+          "q": "j",
+          "a": 14.25,
+          "texto": { "es": "Si no pica nada, te culpo a ti.", "en": "If nothing bites, I'm blaming you." }
+        }
+      ],
+      "pista": {
+        "n": [["pony-busca", 0.3, 3], ["pony-miraAbajo", 3, 5.4], ["pony-punoBajo", 5.6, 8.4], ["risa", 8.5, 10.9], ["ping", 11, 12.6], ["habla", 12.6, 14], ["asiente", 14.4, 16.4]],
+        "j": [
+          ["saluda", 3.05, 5.2],
+          [
+            "puno",
+            6.4,
+            8.35,
+            { "reloj": 5.95 }
+          ],
+          ["pony-empujonLargo", 8.4, 10.3],
+          ["tu", 14.15, 16.3]
+        ]
+      },
+      "golpes": [7.4],
+      "sonidos": [[9.1, "golpe"]]
+    },
+    "bienvenida-salonas": {
+      "tipo": "guion",
+      "dispara": { "tipo": "bienvenida", "skin": "salonas" },
+      "T": 25.3,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "n",
+          "a": 0.6,
+          "texto": {
+            "es": "¡Socio! ¿Vienes a revisar el último commit?",
+            "en": "Partner! Here to review the latest commit?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.45,
+          "texto": {
+            "es": "Vengo a ver si compila. Con lo tuyo, uno nunca sabe.",
+            "en": "I came to see if it compiles. With your stuff, you never know."
+          }
+        },
+        {
+          "q": "n",
+          "a": 6.6,
+          "texto": { "es": "Ya, a la cuenta de tres, enter.", "en": "Okay, on three, hit enter." }
+        },
+        {
+          "q": "j",
+          "a": 9.05,
+          "texto": { "es": "¡Compiló! Esto amerita un solo de bajo.", "en": "It compiled! This calls for a bass solo." }
+        },
+        {
+          "q": "n",
+          "a": 11.8,
+          "texto": {
+            "es": "¿Te acuerdas de la primera versión de ProcedimientoSeguro? Un formulario y puro entusiasmo.",
+            "en": "Remember the first version of ProcedimientoSeguro? One form and pure enthusiasm."
+          }
+        },
+        {
+          "q": "j",
+          "a": 15.55,
+          "texto": {
+            "es": "Y mira dónde llegó. Todavía me da orgullo, socio.",
+            "en": "And look how far it got. I'm still proud of it, partner."
+          }
+        },
+        {
+          "q": "n",
+          "a": 18.6,
+          "texto": {
+            "es": "Gracias por venir. Tú pones el bajo y yo el código.",
+            "en": "Thanks for coming. You bring the bass and I'll bring the code."
+          }
+        }
+      ],
+      "pista": {
+        "n": [
+          ["habla", 0.6, 3],
+          ["teclea", 3, 8.9],
+          ["salonas-cabecea", 9, 11.6],
+          ["recuerda", 11.8, 15.4],
+          [
+            "secreto",
+            15.6,
+            20.2,
+            { "reloj": 15.2 }
+          ],
+          [
+            "abrazo",
+            20.3,
+            24.8,
+            {
+              "reloj": 19.9,
+              "escala": { "pz": 1.7 }
+            }
+          ]
+        ],
+        "j": [
+          ["teclea", 3, 8.9],
+          ["salonas-bajoJ", 9, 11.6],
+          ["asiente", 11.8, 15.4],
+          [
+            "secreto",
+            15.6,
+            20.2,
+            { "reloj": 15.2 }
+          ],
+          [
+            "abrazo",
+            20.3,
+            24.8,
+            {
+              "reloj": 19.9,
+              "escala": { "pz": 1.7 }
+            }
+          ]
+        ]
+      },
+      "golpes": [16.4, 17.4, 18.3, 19.2],
+      "sonidos": [
+        [8.9, "visto"],
+        [
+          9.2,
+          "bajo",
+          { "nota": 0 }
+        ],
+        [
+          9.6,
+          "bajo",
+          { "nota": 1 }
+        ],
+        [
+          10,
+          "bajo",
+          { "nota": 2 }
+        ],
+        [
+          10.4,
+          "bajo",
+          { "nota": 3 }
+        ],
+        [
+          10.8,
+          "bajo",
+          { "nota": 4 }
+        ],
+        [
+          11.2,
+          "bajo",
+          { "nota": 5 }
+        ]
+      ],
+      "efectos": [
+        [
+          8.9,
+          "visto",
+          { "alto": 2.3, "tam": 0.5, "vida": 1.6, "vy": 0.2 }
+        ]
+      ]
     }
   }
 }

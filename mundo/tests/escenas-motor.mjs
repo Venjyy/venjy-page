@@ -20,7 +20,7 @@ import { funcionGesto } from '../datos/gestos.js';
 globalThis.window ??= { addEventListener() {} };
 const { GESTOS } = await import('../supervivencia/escenas-skin.js');
 const { GESTOS_AMISTAD } = await import('../supervivencia/escena-amistad-datos.js');
-const { MOLDES, desplazar, espejo, SONIDOS } = await import('../supervivencia/moldes.js');
+const { MOLDES, desplazar, espejo, SONIDOS, PIX } = await import('../supervivencia/moldes.js');
 const { durLinea } = await import('../supervivencia/reencuentros.js');
 const { PERSONAJES, GRUPOS } = await import('../supervivencia/amistad.js');
 const { CODIGO_ESCENAS } = await import('../supervivencia/codigo-escenas.js');
@@ -101,7 +101,7 @@ ok(validar(paridad.escenas, 'escenas').length === 0, 'escenas-paridad.json: las 
 ok(validar(paridad.poses, 'poses').length === 0, 'escenas-paridad.json: los gestos cumplen el esquema de poses ' + JSON.stringify(validar(paridad.poses, 'poses').slice(0, 3)));
 const propios = Object.keys(paridad.poses.gestos);
 const nombres = { gestos: new Set([...Object.keys(GESTOS), ...Object.keys(GESTOS_AMISTAD), ...Object.keys(MOLDES), ...propios]), animaciones: new Set(), durLinea,
-    personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(), pix: new Set(), sonidos: new Set(Object.keys(cat)), codigos: new Set(Object.keys(CODIGO_ESCENAS)) };
+    personas: new Set(PERSONAJES), grupos: new Set(Object.keys(GRUPOS)), iconos: new Set(), pix: new Set(Object.keys(PIX)), sonidos: new Set(Object.keys(cat)), codigos: new Set(Object.keys(CODIGO_ESCENAS)) };
 const errores = reglasEscenas(paridad.escenas, nombres).filter(p => p.tipo === 'error');
 ok(errores.length === 0, 'escenas-paridad.json: sin errores de reglas ' + JSON.stringify(errores.slice(0, 3)));
 

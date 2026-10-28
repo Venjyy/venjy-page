@@ -18,6 +18,7 @@
 import { GESTOS } from './escenas-skin.js';
 import { GESTOS_AMISTAD } from './escena-amistad-datos.js';
 import { ruido, tono } from './sonidos.js';
+import { registrarMoldes } from '../datos/gestos.js';
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -77,6 +78,8 @@ export const MOLDES = {
     // Se sacude la nieve: palmotea los brazos y menea el cuerpo
     sacude: (u, t) => ({ bDx: -0.4 + Math.sin(t * 24) * 0.3, bDz: 0.65, bIx: -0.4 + Math.sin(t * 24 + 2) * 0.3, bIz: -0.65, rz: Math.sin(t * 17) * 0.1, cx: 0.2 })
 };
+// Los gestos de poses.json con `extiende` (DISENO §40, decisión 13) también parten de un molde
+registrarMoldes(MOLDES);
 
 // Cualquier molde con la firma (u, t, info): nuevo, de 6b o de las escenas de skin (que reciben s y j sueltos)
 export function molde(nombre) {

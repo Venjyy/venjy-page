@@ -13,6 +13,7 @@
 //   claveEn, valorEn, caminoEn, objetoEn, eventosEn, sonidosDeEscena
 // =========================================================
 import { PLANOS_AMISTAD, PLANOS_GRUPO, PLANOS_GRUPO_TECHO } from '../supervivencia/escena-amistad-datos.js';
+import { espejar, valorCanal } from './gestos.js';
 
 // Una escena «amistad» del JSON, sin tipo, camara ni nota, es exactamente la entrada de ANIMACIONES
 // (la prueba mundo/tests/estudio-escenas.mjs lo comprueba con paridad exacta). La cámara va aparte: planosDe / opcionesCamara.
@@ -41,8 +42,10 @@ export function guionDeDatos(def, { durLinea, moldes, personajes } = {}) {
     };
     if (pista) salida.pista = Object.fromEntries(Object.entries(pista).map(([q, tramos]) => [q, tramos.map(tramoDeDatos)]));
     if (objetos) salida.objetos = objetos.map(o => objetoDeDatos(o, def.T));
-    if (efectos) salida.efectos = efectos.map(([t, tipoEfecto, op]) => [t, tipoEfecto, quitarAncla(op || {})]);
-    if (sonidos) salida.sonidos = sonidos.map(x => [x[0], x[1]]);
+    if (efectos) salida.efectos = efectos.flatMap(efectoDeDatos);
+    if (sonidos) salida.sonidos = sonidos.map(x => (x[2] && x[2].nota !== undefined ? [x[0], x[1], x[2].nota] : [x[0], x[1]]));
+    // Giro relativo (decisión 16): un canal de poses.json por actor -> t => radianes, como el `yaw` de los JS
+    if (def.yaw) salida.yaw = Object.fromEntries(Object.entries(def.yaw).map(([q, c]) => [q, t => valorCanal(c, t)]));
     if (marcas) salida.marcas = Object.fromEntries(Object.entries(marcas).map(([k, m]) => [k, typeof m === 'number' ? m : m.t]));
     if (personajes) {
         const p = personasUsadas(def, new Set(personajes));
@@ -52,6 +55,14 @@ export function guionDeDatos(def, { durLinea, moldes, personajes } = {}) {
 }
 
 const quitarAncla = ({ ancla, ...resto }) => resto;
+// [t, tipo, op] -> uno o, con `cada` + `hasta` (decisión 17), uno por repetición (sin cada ni hasta) hasta antes de `hasta`
+function efectoDeDatos([t, tipo, op]) {
+    const { cada, hasta, ...resto } = quitarAncla(op || {});
+    if (!(cada > 0) || hasta === undefined) return [[t, tipo, resto]];
+    const salida = [];
+    for (let k = 0; t + k * cada < hasta - 1e-9; k++) salida.push([t + k * cada, tipo, resto]);
+    return salida;
+}
 // [gesto, desde, hasta, { reloj, escala, espejo, ancla }] -> el mismo sin `ancla`; sin opciones queda de 3 elementos
 function tramoDeDatos(t) {
     if (t.length < 4) return t;
@@ -70,11 +81,11 @@ export function personasUsadas(def, personajes) {
     const usadas = new Set();
     const ver = q => { if (typeof q === 'string' && !declarados.has(q) && personajes.has(q)) usadas.add(q); };
     for (const l of def.lineas || []) ver(l.q);
-    for (const k of ['pista', 'giros', 'caminos']) for (const q of Object.keys(def[k] || {})) ver(q);
+    for (const k of ['pista', 'giros', 'caminos', 'yaw']) for (const q of Object.keys(def[k] || {})) ver(q);
     for (const [, mira] of Object.values(def.giros || {}).flat()) ver(mira);
     for (const [, a] of Object.values(def.caminos || {}).flat()) if (a && typeof a === 'object') { ver(a.hacia); ver(a.desde); }
     for (const o of def.objetos || []) { ver(o.en && o.en.q); ver(o.en && o.en.desde); }
-    for (const e of def.efectos || []) ver(e[2] && e[2].en);
+    for (const e of def.efectos || []) { const en = e[2] && e[2].en; ver(en && typeof en === 'object' ? en.q : en); }
     return [...usadas].sort();
 }
 
@@ -270,6 +281,7 @@ function reglasB3(clave, e, ctx) {
     (e.objetos || []).forEach((o, i) => {
         const ruta = `${donde}.objetos[${i}]`;
         if (ids.has(o.id)) mal(`${ruta}.id: «${o.id}» repetido`); else ids.add(o.id);
+        if (pix && o.dibujo && o.dibujo.pix !== undefined && !pix.has(o.dibujo.pix)) mal(`${ruta}.dibujo.pix: «${o.dibujo.pix}» no es un dibujo de PIX`);
         const verDibujo = (d, rutaDibujo) => { if (dibujos && typeof d === 'string' && !dibujos.has(d)) mal(`${rutaDibujo}: el dibujo «${d}» no es un ícono de iconos.json ni de PIX`); };
         verDibujo(o.dibujo, `${ruta}.dibujo`);
         (o.cambia || []).forEach(([, d], j) => verDibujo(d, `${ruta}.cambia[${j}]`));
@@ -287,9 +299,15 @@ function reglasB3(clave, e, ctx) {
 
     const efectos = e.efectos || [];
     enOrden(`${donde}.efectos`, efectos.map(x => x[0]), false);
-    efectos.forEach(([t, , op], i) => {
+    efectos.forEach(([t, tipo, op], i) => {
         const ruta = `${donde}.efectos[${i}]`;
-        if (op && op.en !== undefined && !qOCentro(op.en)) mal(`${ruta}.en: «${op.en}» no es centro ni un actor`);
+        if (!EFECTOS_ESCENA.includes(tipo) && pix && !pix.has(tipo)) mal(`${ruta}: «${tipo}» no es un efecto (${EFECTOS_ESCENA.join(', ')}) ni un dibujo de PIX`);
+        const en = op && op.en;
+        if (en !== undefined && typeof en === 'object') { if (!esQ(en.q)) mal(`${ruta}.en.q: «${en.q}» no es un actor (valen ${validos})`); }
+        else if (en !== undefined && !qOCentro(en)) mal(`${ruta}.en: «${en}» no es centro ni un actor`);
+        if (op && (op.cada !== undefined) !== (op.hasta !== undefined)) mal(`${ruta}: cada y hasta van juntos`);
+        if (op && op.hasta !== undefined && !(op.hasta > t && op.hasta <= T)) mal(`${ruta}.hasta: ${op.hasta} tiene que estar entre ${t} y T ${T}`);
+        if (op && op.encoge && !(op.encoge[0] < op.encoge[1] && op.encoge[1] <= T)) mal(`${ruta}.encoge: [a, b] con a < b ≤ T`);
         if (op) ancla(ruta, op.ancla, t);
     });
     const sonidos = e.sonidos || [];
@@ -304,6 +322,11 @@ function reglasB3(clave, e, ctx) {
         const t = typeof m === 'number' ? m : m.t;
         if (t >= T) mal(`${donde}.marcas.${k}: ${t} tiene que ser menor que T ${T}`);
         if (typeof m === 'object') ancla(`${donde}.marcas.${k}`, m.ancla, t);
+    }
+
+    for (const [q, c] of Object.entries(e.yaw || {})) {
+        if (!esQ(q)) mal(`${donde}.yaw.${q}: actor no declarado (valen ${validos})`);
+        if (c && c.k) enOrden(`${donde}.yaw.${q}.k`, c.k.map(x => x[0]), true);
     }
 
     const codigos = catalogo('codigos');
@@ -386,7 +409,7 @@ export function repartirGuion(guion) {
     if (guion.giros) salida.giros = porRol(Object.fromEntries(Object.entries(guion.giros).map(([q, cs]) => [q, cs.map(([t, m]) => [t, rol(m)])])));
     if (guion.caminos) salida.caminos = porRol(Object.fromEntries(Object.entries(guion.caminos).map(([q, cs]) => [q, cs.map(([t, a]) => [t, destino(a)])])));
     if (guion.objetos) salida.objetos = guion.objetos.map(o => ({ ...o, en: o.en.hueso !== undefined ? { ...o.en, q: rol(o.en.q) } : sitio(o.en) }));
-    if (guion.efectos) salida.efectos = guion.efectos.map(([t, tipo, op]) => [t, tipo, op && op.en !== undefined ? { ...op, en: rol(op.en) } : op]);
+    if (guion.efectos) salida.efectos = guion.efectos.map(([t, tipo, op]) => [t, tipo, op && op.en !== undefined ? { ...op, en: typeof op.en === 'object' ? { ...op.en, q: rol(op.en.q) } : rol(op.en) } : op]);
     if (guion.lugar) salida.lugar = { ...(guion.lugar.centro ? { centro: sitio(guion.lugar.centro) } : {}), ...(guion.lugar.jugador ? { jugador: sitio(guion.lugar.jugador) } : {}) };
     return salida;
 }
@@ -411,16 +434,6 @@ export function metaTramo(tr, t, info, buscar) {
     if (op.escala) { m = { ...m }; for (const k of Object.keys(op.escala)) if (m[k] !== undefined) m[k] *= op.escala[k]; }
     if (op.espejo) m = espejar(m);
     return m;
-}
-function espejar(m) {
-    const o = { ...m };
-    delete o.bDx; delete o.bDz; delete o.bIx; delete o.bIz;
-    if (m.bIx !== undefined) o.bDx = m.bIx;
-    if (m.bIz !== undefined) o.bDz = -m.bIz;
-    if (m.bDx !== undefined) o.bIx = m.bDx;
-    if (m.bDz !== undefined) o.bIz = -m.bDz;
-    for (const k of ['cy', 'cz', 'rz']) if (m[k] !== undefined) o[k] = -m[k];
-    return o;
 }
 
 export function claveEn(claves, t) {
