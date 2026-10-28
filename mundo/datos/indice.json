@@ -50,6 +50,12 @@
       "fase": 3,
       "que": "Recetas de fabricación (con y sin forma) y fundiciones del horno nuevas, con los objetos por nombre; se suman después de las de recetas.js; se aplica en vivo con supervivencia.html?estudio"
     },
+    "construcciones": {
+      "esquema": "construcciones",
+      "lee": "mundo/construcciones.js",
+      "fase": 4,
+      "que": "Construcciones nuevas como lista de bloques (relativos al bloque central, con la puerta al sur); el juego arma las que tienen sitio en posiciones.json → lugares (x, z, giro) al cargar el terreno; se ponen, mueven y giran en la pestaña Posiciones → Construcciones"
+    },
     "objetos": {
       "esquema": "objetos",
       "lee": "mundo/supervivencia/objetos.js",

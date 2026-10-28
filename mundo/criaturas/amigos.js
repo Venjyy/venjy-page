@@ -15,7 +15,7 @@ import { pielDe, agregarExtras } from './pieles.js';
 import { crearCharla } from './charla.js';
 import { pasoLejano } from './lod.js';
 import { cargarDatos } from '../datos/cargador.js';
-import { resolverAncla, puntoAMundo, mundoAPunto } from '../datos/posiciones.js';
+import { resolverAncla, puntoAMundo, mundoAPunto, enLugar, yawLugar } from '../datos/posiciones.js';
 import { agregarParpadeo } from './parpadeo.js';
 import { descriptorDe, aparienciasCodigo, nombreDe, posturaDe, globoDe, lugarDe, frasesDe } from '../datos/personajes.js';
 
@@ -100,6 +100,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     const lista = [];
     const rnd = (a, b) => a + Math.random() * (b - a);
     const lugar = k => (terreno.lugares || []).find(l => l.clave === k);
+    // Punto escrito con el lugar L sin girar (puerta al sur) -> [x, z] con su giro (posiciones.json → lugares.<clave>.giro)
+    const en = (L, x, z) => { const q = enLugar(L, x, z); return [q.x, q.z]; };
     const tex = (w, h, sem, color, f = 0.18) => texturaPixeles(w, h, sem, liso(color, f));
     const cambios = personajes ? aparienciasCodigo(personajes) : {};
     // Lugar base de las personas nuevas (personajes.json → lugar); posiciones.json, si trae la clave, gana
@@ -303,16 +305,18 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     const C = lugar('campamento');
     let hadad, andy, nacho, charlaCamp;
     if (C) {
-        hadad = nuevo('hadad', C.bx - 2.15, C.y, C.bz + 2, Math.PI / 2, 4100); // al borde del tronco, hacia la fogata
-        nacho = nuevo('nacho', C.bx + 3.15, C.y, C.bz + 2, -Math.PI / 2, 4200);
-        andy = nuevo('andy', C.bx + 1.3, C.y, C.bz + 3.6, Math.PI, 4300);
+        const gC = yawLugar(C), [hx, hz] = en(C, C.bx - 2.15, C.bz + 2), [nx, nz] = en(C, C.bx + 3.15, C.bz + 2), [ax, az] = en(C, C.bx + 1.3, C.bz + 3.6);
+        hadad = nuevo('hadad', hx, C.y, hz, Math.PI / 2 + gC, 4100); // al borde del tronco, hacia la fogata
+        nacho = nuevo('nacho', nx, C.y, nz, -Math.PI / 2 + gC, 4200);
+        andy = nuevo('andy', ax, C.y, az, Math.PI + gC, 4300);
         sentadoEnTronco(hadad.p); sentadoEnTronco(nacho.p);
         andy.baile = 0; nacho.risa = 0;
         charlaCamp = crearCharla(CHARLAS.campamento, {
             alEvento: (ev) => { if (ev === 'baile') andy.baile = 3.2; if (ev === 'risa') nacho.risa = 2.4; }
         });
         for (const n of [hadad, nacho, andy]) n.charla = charlaCamp;
-        grupos.push({ charla: charlaCamp, x: C.bx + 0.5, z: C.bz + 1.5, fuego: { x: C.bx + 0.5, y: C.y + 0.7, z: C.bz + 1.5 } });
+        const [fx, fz] = en(C, C.bx + 0.5, C.bz + 1.5);
+        grupos.push({ charla: charlaCamp, x: fx, z: fz, fuego: { x: fx, y: C.y + 0.7, z: fz } });
     }
     // Fogata: cuatro troncos cruzados (dos abajo, dos encima) y llamas de píxeles que titilan
     let fogata = null;
@@ -352,7 +356,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
             m.position.y = 0.5; m.rotation.y = r + Math.PI / 4; g.add(m);
             return m;
         });
-        g.position.set(C.bx + 0.5, C.y, C.bz + 1.5);
+        const [fx, fz] = en(C, C.bx + 0.5, C.bz + 1.5);
+        g.position.set(fx, C.y, fz);
         scene.add(g);
         fogata = { g, llamas, cuadros, matLlama, cuadro: 0, reloj: 0 };
     }
@@ -431,8 +436,9 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     let moises, lalo, charlaIglu, bongO, pitoO, pase = null, proximoPase = rnd(18, 30);
     const POS_PITO = [0.02, -0.76, 0.1];
     if (I) {
-        moises = nuevo('moises', I.bx - 0.6, I.y, I.bz + 1.4, 0, 4400);
-        lalo = nuevo('lalo', I.bx + 1.6, I.y, I.bz + 0.6, 0, 4500);
+        const [mx, mz] = en(I, I.bx - 0.6, I.bz + 1.4), [lx, lz] = en(I, I.bx + 1.6, I.bz + 0.6);
+        moises = nuevo('moises', mx, I.y, mz, yawLugar(I), 4400);
+        lalo = nuevo('lalo', lx, I.y, lz, yawLugar(I), 4500);
         miradaIglu();
         sentadoEnSuelo(moises.p);
         // Dónde queda el bong cuando no lo usa: en el suelo (sentado) o en la mano izquierda (de pie)
@@ -617,9 +623,10 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     let boris, lucho, charlaLena;
     const astillas = [];
     if (A) {
-        const toconX = A.bx - 0.5, toconZ = A.bz + 5.5;
-        boris = nuevo('boris', toconX, A.y, toconZ + 1.65, Math.PI, 4800);
-        lucho = nuevo('lucho', A.bx + 2.3, A.y, A.bz + 6.5, 0, 4900);
+        const gA = yawLugar(A), [toconX, toconZ] = en(A, A.bx - 0.5, A.bz + 5.5);
+        const [bx, bz] = en(A, A.bx - 0.5, A.bz + 7.15), [ux, uz] = en(A, A.bx + 2.3, A.bz + 6.5);
+        boris = nuevo('boris', bx, A.y, bz, Math.PI + gA, 4800);
+        lucho = nuevo('lucho', ux, A.y, uz, gA, 4900);
         miradaLucho();
         // Hacha: mango de madera y hoja de metal, en las manos (sale del brazo derecho)
         const hacha = new THREE.Group();
@@ -642,7 +649,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
         lucho.rasca = rnd(4, 8);
         charlaLena = crearCharla(CHARLAS.lenera, { radio: 10 });
         boris.charla = lucho.charla = charlaLena;
-        grupos.push({ charla: charlaLena, x: toconX + 1, z: toconZ + 1 });
+        const [cx, cz] = en(A, A.bx + 0.5, A.bz + 6.5);
+        grupos.push({ charla: charlaLena, x: cx, z: cz });
     }
     // Astillas sueltas en un punto (las usa también el duelo de hachas de la supervivencia)
     let astillaSig = 6;
@@ -723,7 +731,8 @@ export function crearAmigos(scene, { terreno, mundo, jugador, materiales, npcs, 
     const N = lugar('naufragio');
     let braulio;
     if (N) {
-        braulio = nuevo('braulio', N.x + 4, 0, N.z + 4, 0, 5000);
+        const [rx, rz] = en(N, N.x + 4, N.z + 4);
+        braulio = nuevo('braulio', rx, 0, rz, yawLugar(N), 5000);
         braulio.estado = 'espera'; braulio.reloj = 1; braulio.ruta = null; braulio.cargado = false;
         // Hacia dónde está el mar (promedio de las columnas con agua alrededor)
         let mx = 0, mz = 0;

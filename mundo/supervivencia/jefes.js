@@ -21,6 +21,7 @@ import { moverCuerpo, solidoEn } from '../fisica.js';
 import { lanzarRayo } from '../rayo.js';
 import { O } from './objetos.js';
 import { sonidos } from './sonidos.js';
+import { enLugar } from '../datos/posiciones.js';
 
 const ajustar = ([r, g, b], f) => [r * f, g * f, b * f];
 const mota = (c, f = 0.2) => (x, y, r) => ajustar(c, 1 - f / 2 + r() * f);
@@ -48,7 +49,10 @@ export function crearJefes(ctx) {
         const mina = (terreno.decor || []).find(d => d.t === 'mina');
         if (mina) { const y0 = (mina.y ?? BASE_ESTRUCTURA + 1) + dy; l.imbunche = { x: mina.x, y: y0, z: mina.z - 22 }; }
         const portal = (terreno.lugares || []).find(p => p.clave === 'portal');
-        if (portal) l.chonchon = { x: Math.floor(portal.x) + 7, z: Math.floor(portal.z) + 1, y: sup(portal.x + 7, portal.z + 1) };
+        if (portal) { // al este del portal sin girar; con lugares.portal.giro, gira con él
+            const p = enLugar(portal, Math.floor(portal.x) + 7.5, Math.floor(portal.z) + 1.5), x = Math.floor(p.x), z = Math.floor(p.z);
+            l.chonchon = { x, z, y: sup(x, z) };
+        }
         const nau = (terreno.lugares || []).find(p => p.clave === 'naufragio');
         if (nau) {
             // En tierra firme, lo más cerca posible del naufragio

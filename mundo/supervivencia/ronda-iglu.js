@@ -35,6 +35,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { crearGlobo, COLOR_GLOBO, crearTinte, caja, texturaPixeles } from '../criaturas/cuerpo.js';
 import { tipoSkin } from './escenas-skin.js';
+import { enLugar } from '../datos/posiciones.js';
 
 const suave = u => u * u * (3 - 2 * u);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -116,7 +117,8 @@ export function crearRondaIglu(ctx) {
     const mitad = { x: (mo.x + ln.x) / 2, z: (mo.z + ln.z) / 2 };
     const ex = ln.x - mo.x, ez = ln.z - mo.z, lon = Math.hypot(ex, ez);
     let px = -ez / lon, pz = ex / lon;
-    if (pz > 0) { px = -px; pz = -pz; }               // hacia el fondo (−z)
+    const fondo = enLugar(I, CX, CZ - 1);             // el fondo (−z sin girar; gira con lugares.iglu.giro)
+    if (px * (fondo.x - CX) + pz * (fondo.z - CZ) < 0) { px = -px; pz = -pz; }
     const COJIN = { x: mitad.x + px * 1.8, z: mitad.z + pz * 1.8 };
     const personas = { lalo: ln, moises: mo };
 

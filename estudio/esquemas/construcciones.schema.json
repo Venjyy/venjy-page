@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "construcciones.schema.json",
+  "title": "Construcciones nuevas (mundo/datos/construcciones.json)",
+  "description": "Construcciones NUEVAS como lista de bloques, por clave. Cada bloque es [dx, dy, dz, \"BLOQUE\", giro?]: desplazamiento desde el bloque central (dy 0 = primer bloque sobre el suelo, negativo para cimientos), el nombre del bloque (las claves de B en mundo/texturas.js: TABLONES, LANA_ROJA, ESCALONES_PIEDRA…) y, en escalones y trampilla abierta, hacia dónde miran (0 norte, 1 este, 2 sur, 3 oeste). Se escribe con la puerta al sur. El juego solo arma las que tienen sitio en posiciones.json → lugares.<clave> = { x, z, giro } (pestaña Posiciones → Construcciones): el terreno nivela el rectángulo que cubren y las coloca girándolas entera. Las 9 del código (molino, atalaya…) siguen en mundo/construcciones.js como valor base: esta lista no las reemplaza.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "construcciones": {
+      "type": "object",
+      "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
+      "additionalProperties": { "$ref": "#/$defs/construccion" }
+    }
+  },
+  "required": ["version", "construcciones"],
+  "additionalProperties": false,
+  "$defs": {
+    "construccion": {
+      "type": "object",
+      "properties": {
+        "nombre": { "$ref": "comun.schema.json#/$defs/texto" },
+        "borrador": { "description": "true: el juego no la arma aunque tenga sitio (para dejarla a medias).", "type": "boolean" },
+        "bloques": {
+          "description": "Bloques relativos al bloque central. Máximo 20000 (el resto se ignora).",
+          "type": "array",
+          "maxItems": 20000,
+          "items": { "$ref": "#/$defs/bloque" }
+        },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["nombre", "bloques"],
+      "additionalProperties": false
+    },
+    "bloque": {
+      "type": "array",
+      "prefixItems": [
+        { "description": "dx: este (+) u oeste (−) del bloque central.", "type": "integer", "minimum": -64, "maximum": 64 },
+        { "description": "dy: 0 es el primer bloque sobre el suelo.", "type": "integer", "minimum": -16, "maximum": 64 },
+        { "description": "dz: sur (+) o norte (−). La puerta va al sur.", "type": "integer", "minimum": -64, "maximum": 64 },
+        { "description": "Nombre del bloque (clave de B en mundo/texturas.js, como TABLONES) o su id.", "anyOf": [{ "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }, { "type": "integer", "minimum": 0, "maximum": 255 }] },
+        { "description": "Hacia dónde mira (solo escalones y trampilla abierta): 0 norte, 1 este, 2 sur, 3 oeste.", "enum": [0, 1, 2, 3] }
+      ],
+      "minItems": 4,
+      "maxItems": 5
+    }
+  }
+}

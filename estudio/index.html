@@ -354,19 +354,26 @@
                 </section>
                 <section class="panel">
                     <h2 data-es="Construcciones" data-en="Buildings">Construcciones</h2>
-                    <p class="mensaje" data-es="Elige una y arrastra la caja amarilla en el juego. Quienes viven ahí se mueven con ella. Se ve en su sitio nuevo al guardar: el juego se recarga solo." data-en="Pick one and drag the yellow box in the game. Whoever lives there moves with it. You see it in its new spot when you save: the game reloads by itself.">Elige una y arrastra la caja amarilla en el juego. Quienes viven ahí se mueven con ella. Se ve en su sitio nuevo al guardar: el juego se recarga solo.</p>
+                    <p class="mensaje" data-es="Elige una y arrastra la caja amarilla en el juego; «Girar» la da vuelta (la placa roja es la puerta). Quienes viven ahí se mueven y giran con ella. Se ve en su sitio nuevo al guardar: el juego se recarga solo." data-en="Pick one and drag the yellow box in the game; «Turn» rotates it (the red plate is the door). Whoever lives there moves and turns with it. You see it in its new spot when you save: the game reloads by itself.">Elige una y arrastra la caja amarilla en el juego; «Girar» la da vuelta (la placa roja es la puerta). Quienes viven ahí se mueven y giran con ella. Se ve en su sitio nuevo al guardar: el juego se recarga solo.</p>
                     <label class="campo">
                         <span data-es="Construcción" data-en="Building">Construcción</span>
                         <select id="ps-lugar"></select>
                     </label>
                     <div class="fila-botones">
                         <button id="ps-lugar-mover" class="boton chico" type="button" data-es="Mover con el gizmo" data-en="Move with the gizmo">Mover con el gizmo</button>
+                        <button id="ps-lugar-girar" class="boton chico" type="button" data-es="Girar 90°" data-en="Turn 90°">Girar 90°</button>
                         <button id="ps-lugar-ir" class="boton chico" type="button" data-es="Ir a verla" data-en="Go see it">Ir a verla</button>
                         <button id="ps-lugar-auto" class="boton chico secundario" type="button" data-es="Volver a su sitio de siempre" data-en="Back to its usual spot">Volver a su sitio de siempre</button>
                     </div>
                     <div class="campos solo-avanzado">
                         <label class="campo"><span data-es="X (bloque central)" data-en="X (center block)">X (bloque central)</span><input id="ps-lugar-x" type="number" step="1"></label>
                         <label class="campo"><span data-es="Z (bloque central)" data-en="Z (center block)">Z (bloque central)</span><input id="ps-lugar-z" type="number" step="1"></label>
+                        <label class="campo"><span data-es="Puerta hacia" data-en="Door facing">Puerta hacia</span><select id="ps-lugar-giro">
+                            <option value="0" data-es="Sur (0°)" data-en="South (0°)">Sur (0°)</option>
+                            <option value="90" data-es="Este (90°)" data-en="East (90°)">Este (90°)</option>
+                            <option value="180" data-es="Norte (180°)" data-en="North (180°)">Norte (180°)</option>
+                            <option value="270" data-es="Oeste (270°)" data-en="West (270°)">Oeste (270°)</option>
+                        </select></label>
                     </div>
                     <label class="campo solo-avanzado">
                         <span data-es="Nota" data-en="Note">Nota</span>

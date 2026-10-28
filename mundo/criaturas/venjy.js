@@ -13,6 +13,7 @@ import {
 } from './cuerpo.js';
 import { pielDe, agregarExtras } from './pieles.js';
 import { pasoLejano } from './lod.js';
+import { enLugar, yawLugar } from '../datos/posiciones.js';
 
 export const VENJY = {
     piel: [240, 212, 192], pelo: { color: [56, 34, 22], estilo: 'rulos' }, ojos: [74, 50, 30],
@@ -490,12 +491,14 @@ export function crearVenjys(scene, { terreno, mundo, jugador, materiales, destin
     }
     // Lugares para explorar
     const L = clave => (terreno.lugares || []).find(l => l.clave === clave);
+    // Puntos escritos con la puerta al sur; enLugar los gira con el lugar (posiciones.json → lugares.<clave>.giro)
+    const en = (l, x, z) => { const q = enLugar(l, x, z); return [q.x, q.z]; };
     const at = L('atalaya');
-    if (at) nuevo('atalaya', at.bx - 0.5, at.bz - 1.5, Math.PI, { y: at.y + 11, anim: A.observa, frases: DICHOS.atalaya });
+    if (at) { const [x, z] = en(at, at.bx - 0.5, at.bz - 1.5); nuevo('atalaya', x, z, Math.PI + yawLugar(at), { y: at.y + 11, anim: A.observa, frases: DICHOS.atalaya }); }
     const mo = L('molino');
-    if (mo) nuevo('molino', mo.bx - 0.85, mo.bz + 0.5, -Math.PI / 2, { y: mo.y, anim: A.duerme, frases: DICHOS.molino, candidatos: [[mo.bx - 0.85, mo.bz + 0.5]] });
+    if (mo) { const [x, z] = en(mo, mo.bx - 0.85, mo.bz + 0.5); nuevo('molino', x, z, -Math.PI / 2 + yawLugar(mo), { y: mo.y, anim: A.duerme, frases: DICHOS.molino, candidatos: [[x, z]] }); }
     const po = L('portal');
-    if (po) nuevo('portal', po.bx + 0.5, po.bz + 2.6, Math.PI, { anim: A.rasca, frases: DICHOS.portal, candidatos: [[po.bx + 0.5, po.bz + 2.6], [po.bx + 1.5, po.bz + 3]] });
+    if (po) { const c = [en(po, po.bx + 0.5, po.bz + 2.6), en(po, po.bx + 1.5, po.bz + 3)]; nuevo('portal', c[0][0], c[0][1], Math.PI + yawLugar(po), { anim: A.rasca, frases: DICHOS.portal, candidatos: c }); }
     const corral = (terreno.corrales || [])[0];
     if (corral) {
         // Afuera del cerco (la valla está a ~0,6 del borde del rectángulo), mirando al centro del corral

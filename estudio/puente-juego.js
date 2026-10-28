@@ -22,6 +22,7 @@ let gizmo = null; // estudio/gizmo-juego.js, solo después del primer `elegir`
 let gizmoMesa = null; // estudio/gizmo-mesa.js, solo después del primer «Mover la mesa»
 let gizmoLugar = null; // estudio/gizmo-lugar.js (B6e), solo después de elegir la primera construcción
 let posicionesVivas = null; // lo último de posiciones.json que llegó (la caja del gizmo de lugares parte de aquí)
+let construccionesVivas = null; // lo último de construcciones.json (tamaño de la caja de las construcciones nuevas)
 async function aplicar(nombre, datos) {
     if (nombre === 'dialogos') {
         const m = await import('../mundo/supervivencia/dialogos-datos.js');
@@ -63,6 +64,10 @@ async function aplicar(nombre, datos) {
         if (gizmo) gizmo.sincronizar();
         posicionesVivas = datos;
         if (gizmoLugar) gizmoLugar.sincronizar(datos); // las construcciones se mueven al recargar (escucharDisco)
+    } else if (nombre === 'construcciones') {
+        // Construcciones nuevas: el terreno las arma al cargar; aquí solo cambia la caja del gizmo
+        construccionesVivas = datos;
+        if (gizmoLugar) gizmoLugar.definir(datos);
     } else if (nombre === 'cartas-mesa') {
         // La mesa del duelo: si ya se abrió alguna vez la rearma; si no, la próxima vez que se abra lee estos datos
         // (también el panel de armar mazo: reglas y colección inicial)
@@ -155,6 +160,7 @@ async function elegir(o) {
             if (o.clave === null) return null;
             const m = await import('./gizmo-lugar.js');
             gizmoLugar = m.crearGizmoLugar(window.__venjy, (clave, punto) => decir({ tipo: 'cambio', nombre: 'posiciones', ruta: `lugares.${clave}`, valor: punto }));
+            gizmoLugar.definir(construccionesVivas || await leerDato('construcciones'));
             gizmoLugar.sincronizar(posicionesVivas);
             window.__venjy.estudioGizmoLugar = gizmoLugar; // depuración y pruebas
         }
@@ -438,11 +444,21 @@ canal.onmessage = async e => {
 };
 
 // Cambios guardados en disco (el Estudio, o un agente): se vuelven a leer y se aplican
-async function lugaresCambiaron(d) {
+async function leerDato(nombre) {
+    try {
+        const r = await fetch(new URL(`../mundo/datos/${nombre}.json`, import.meta.url), { cache: 'no-cache' });
+        return r.ok ? await r.json() : null;
+    } catch (e) { return null; }
+}
+// nombre: 'posiciones' o 'construcciones' (d, lo que llegó); el otro se lee del disco
+async function lugaresCambiaron(nombre, d) {
     const v = window.__venjy;
     if (!v || !v.terreno) return false;
     const { sitiosDe } = await import('../mundo/datos/posiciones.js');
-    return JSON.stringify(sitiosDe(d)) !== JSON.stringify(v.terreno.sitios || null);
+    const { propiasDe } = await import('../mundo/datos/construcciones.js');
+    const pos = nombre === 'posiciones' ? d : await leerDato('posiciones');
+    const cons = nombre === 'construcciones' ? d : await leerDato('construcciones');
+    return JSON.stringify(sitiosDe(pos, propiasDe(cons))) !== JSON.stringify(v.terreno.sitios || null);
 }
 function escucharDisco() {
     if (typeof EventSource === 'undefined') return;
@@ -455,7 +471,8 @@ function escucharDisco() {
             if (!r.ok) return;
             const d = await r.json();
             // B6e: si cambió dónde va una construcción, el terreno hay que armarlo de nuevo: se recarga el juego
-            if (nombre === 'posiciones' && await lugaresCambiaron(d)) { location.reload(); return; }
+            // (también si cambió una construcción nueva que ya tiene sitio, o se giró una)
+            if ((nombre === 'posiciones' || nombre === 'construcciones') && await lugaresCambiaron(nombre, d)) { location.reload(); return; }
             await aplicar(nombre, d);
         } catch (err) { console.warn('[estudio] no se pudo recargar', nombre, err); }
     });

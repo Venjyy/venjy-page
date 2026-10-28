@@ -1,0 +1,6 @@
+{
+  "$schema": "../../estudio/esquemas/construcciones.schema.json",
+  "version": 1,
+  "nota": "Construcciones nuevas: lista de bloques relativos al bloque central (dy 0 = primer bloque sobre el suelo; la puerta mira al sur). Dónde van y su giro, en posiciones.json → lugares (pestaña Posiciones → Construcciones). Las 9 de siempre siguen en mundo/construcciones.js.",
+  "construcciones": {}
+}
