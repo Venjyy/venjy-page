@@ -127,6 +127,7 @@ export const con = (a, extra) => { const A = f(a); return (u, t, i) => ({ ...A(u
 // ---------------------------------------------------------
 // Dibujos píxel (filas + colores) para api.caja / api.sprite / api.efecto
 // ---------------------------------------------------------
+const COL_TOMATE = { r: '#d8352a', R: '#ff7a5c', o: '#a8221a', g: '#4caf3a', G: '#2e7d22', k: '#1b0f0f', m: '#5a3214', w: '#ffffff' };
 export const PIX = {
     bolsa: { filas: ['yyyyyyyy', 'yyrrrryy', 'rrrrrrrr', 'ywkwwkwy', 'ywwkkwwy', 'ywwwwwwy', 'yyyyyyyy', 'yyyyyyyy'], colores: { y: '#f2c230', r: '#c62828', w: '#f7e27a', k: '#8a5a1a' } },
     celular: { filas: ['kkkkkk', 'kbbbbk', 'kbccbk', 'kbccbk', 'kbbbbk', 'kbbbbk', 'kbbbbk', 'kkwkkk'], colores: { k: '#1d1d22', b: '#3b8fd9', c: '#a8dcff', w: '#d0d0d0' } },
@@ -137,8 +138,14 @@ export const PIX = {
     nota: { filas: ['...kkk', '...k.k', '...k.k', '...k..', '.kkk..', 'kkkk..', '.kk...'], colores: { k: '#20202a' } },
     trazo: { filas: ['a......', '.a.....', '..a.a..', '...a.a.', '....a..', '.....a.', '......a'], colores: { a: '#ffffff' } },
     gota: { filas: ['.a.', 'aba', 'aba', '.a.'], colores: { a: '#5aa8e8', b: '#c4e6ff' } },
-    estrella: { filas: ['...a...', '..aba..', 'abbbbba', '.abbba.', '.ab.ba.', 'a.....a'], colores: { a: '#c99a10', b: '#ffd84a' } }
+    estrella: { filas: ['...a...', '..aba..', 'abbbbba', '.abbba.', '.ab.ba.', 'a.....a'], colores: { a: '#c99a10', b: '#ffd84a' } },
+    // Tomatitos (grupos/tomatitos.js): el tomate con bigote, Tomás (con la cara dibujada), la cara del gigante (un bloque) y sus hojas
+    tomate: { filas: ['.....gg.....', '...gGggGg...', '..rrgGGgrr..', '.rrRRrrrrrr.', 'rrRRrrrrrrrr', 'rRrrkrrkrrrr', 'rRrrkrrkrrrr', 'rmrrrrrrrrmr', 'rmmrmmmmrmmr', 'rrmmmrrmmmrr', '.rrrrrrrrro.', '...rrrrroo..'], colores: COL_TOMATE },
+    tomas: { filas: ['.....gg.....', '...gGggGg...', '..rrgGGgrr..', '.rwwwrrwwwr.', 'rrwkwrrwkwrr', 'rRwwwrrwwwrr', 'rRrrrrrrrrrr', 'rmrrrrrrrrmr', 'rmmrmmmmrmmr', 'rrmmmrrmmmrr', '.rwrrrrrrwr.', '...wwwwww...'], colores: COL_TOMATE },
+    hojas: { filas: ['GgGgGgGg', 'gGgggGgG', 'GgGGgGgg', 'gggGgGgG', 'GgGgggGg', 'gGgGgGgG', 'GggGgGgg', 'gGgGgGgG'], colores: COL_TOMATE }
 };
+// La cara del tomate gigante es un bloque: sin bordes transparentes (arriba todo rojo, los huecos en el color oscuro)
+PIX['tomate-bloque'] = { filas: PIX.tomate.filas.map((f, i) => (i < 3 ? 'rrrrrrrrrrrr' : f.replace(/\./g, 'o'))), colores: PIX.tomate.colores };
 
 // ---------------------------------------------------------
 // Sonidos sintetizados (no hay archivos de audio)
@@ -152,6 +159,8 @@ export const SONIDOS = {
     ping() { tono({ f0: 1760, f1: 1700, dur: 0.09, vol: 0.12, forma: 'triangle' }); tono({ f0: 2350, f1: 2250, dur: 0.12, vol: 0.12, forma: 'triangle', retardo: 0.11 }); },
     // Visto bueno: dos notas que suben
     visto() { tono({ f0: 660, f1: 660, dur: 0.1, vol: 0.09, forma: 'triangle' }); tono({ f0: 990, f1: 990, dur: 0.16, vol: 0.09, forma: 'triangle', retardo: 0.1 }); },
+    // Mensaje de WhatsApp: dos notas suaves que suben
+    mensaje() { tono({ f0: 1046, f1: 1046, dur: 0.08, vol: 0.08, forma: 'sine' }); tono({ f0: 1568, f1: 1568, dur: 0.12, vol: 0.08, forma: 'sine', retardo: 0.1 }); },
     // Aterrizaje con polvo
     polvo() { ruido({ dur: 0.35, frec: 260, q: 0.6, vol: 0.3, tipo: 'lowpass' }); },
     // Cuerda grave (bajo de aire)

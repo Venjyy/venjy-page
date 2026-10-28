@@ -1626,6 +1626,119 @@
           "k": [[0, 0], [0.2, 0.15], [0.8, 0.15], [1, 0]]
         }
       }
+    },
+    "grupo-alto": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -2.55,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 4 }
+          ]
+        },
+        "bDz": 0.12,
+        "bIx": -0.2,
+        "cx": -0.18
+      }
+    },
+    "grupo-reparte": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -1.35,
+        "bDz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.4, "frec": 3 }
+          ]
+        },
+        "bIx": -0.9,
+        "bIz": -0.3,
+        "cx": 0.15
+      }
+    },
+    "grupo-mira": {
+      "reloj": "t",
+      "canales": {}
+    },
+    "grupo-tapaOidos": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -2.5,
+        "bDz": 0.6,
+        "bIx": -2.5,
+        "bIz": -0.6,
+        "cx": 0.2,
+        "rz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.05, "frec": 8 }
+          ]
+        }
+      }
+    },
+    "grupo-doblaRisa": {
+      "reloj": "t",
+      "apoya": true,
+      "canales": {
+        "inc": {
+          "base": 0.35,
+          "osc": [
+            { "forma": "sin", "amp": 0.04, "frec": 15 }
+          ]
+        },
+        "bDx": {
+          "base": -0.9,
+          "osc": [
+            { "forma": "sin", "amp": 0.1, "frec": 15 }
+          ]
+        },
+        "bDz": 0.3,
+        "bIx": {
+          "base": -0.9,
+          "osc": [
+            { "forma": "sin", "amp": -0.1, "frec": 15 }
+          ]
+        },
+        "bIz": -0.3,
+        "cx": 0.3
+      }
+    },
+    "grupo-camina": {
+      "reloj": "t",
+      "canales": {
+        "pDx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.55, "frec": 9 }
+          ]
+        },
+        "pIx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": -0.55, "frec": 9 }
+          ]
+        },
+        "bDx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": -0.4, "frec": 9 }
+          ]
+        },
+        "bIx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.4, "frec": 9 }
+          ]
+        },
+        "bDz": 0.08,
+        "bIz": -0.08,
+        "y": {
+          "base": 0,
+          "osc": [
+            { "forma": "abs", "amp": 0.04, "frec": 9 }
+          ]
+        }
+      }
     }
   }
 }

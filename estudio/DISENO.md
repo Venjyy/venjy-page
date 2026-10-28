@@ -1468,6 +1468,14 @@ Reparto de lo que había en `extra`: **catálogo** = chispas (`efectos` sin `en`
 
 Prueba de paridad: `mundo/tests/escenas-momentos.mjs`. Cada 1/120 s compara frases, tramos (u, peso, canales), giro relativo, `rapidez`, golpes y corazones; y, con un mundo de mentira hecho con THREE de verdad, el `extra` del JS contra catálogo + código: mismas chispas y sonidos por cuadro y en los mismos puntos, mismos objetos visibles y, para los del código, la misma matriz de mundo, visibilidad y opacidad en cada cuadro.
 
+**B4d, primera parte (2026-10-27): grupos, Tomatitos.** `estudio/migrar-grupos.mjs` corre `grupo(base)` y guarda una escena por skin (`grupo-tomatitos-<skin>`, 7; `dispara` tipo grupo). Sin piezas nuevas del motor; sí del catálogo: `PIX` suma `tomate`, `tomas`, `tomate-bloque` y `hojas` (`grupos/comun.js` los lee de ahí) y `SONIDOS` suma `mensaje`. Lo que fijó:
+- **Quién es `n`**: el que da `amigoDeEscena`: Hadad (el fuego se mide desde él: `lugar.centro` = `{ desde: 'hadad', mas: [2.65, 0, -0.5] }`, `jugador` = centro + `[0, 0, -2.15]`) o Andy cuando tu skin es Hadad. En el JS el ancla era Andy: solo cambia el nombre del papel. Si tu skin es Hadad, Andy o Nacho, la escena declara `actores: { <skin>: <skin> }` para que su NPC no pase a ser tu clon (`repartoDe` cambia por `'j'` a toda persona nombrada que sea tu skin).
+- **Objetos** (uno por actor, no `todos`: Conejeros lleva el tomate en la izquierda y se vuelve Tomás con `cambia`, Braulio lleva una concha): celular `tam` 0,2, tomate o concha. El tomate gigante son dos objetos (bloque y hojas) pegados al centro.
+- **Efectos y sonidos**: las chispas son `en: <persona | 'centro'>` con `alto`; el brindis son tres chispas con `mas` y `alto` propios. Los instantes que `grupo()` no devuelve se sacan barriendo su `extra` con un mundo de mentira cada milésima (salen de `r2()`, así que redondear a 0,01 es exacto).
+- **Paseo de Braulio**: `caminos.j` va a `{ hacia: 'nacho', dist: 1 }` y vuelve a `'sitio'`; `giros.j` mira a Nacho mientras está allá. Diferencia: el JS medía el destino a 1 bloque de un punto 0,4 al oeste de Nacho; el motor mide desde Nacho (≤ 0,4 bloques). No se mide en la prueba (mundo de mentira); `pendiente del dueño`.
+- **Gestos**: los de `GESTOS_GRUPO` que usan los Tomatitos van a `poses.json` como `grupo-<nombre>` (`doblaRisa` con `apoya`).
+Falta (B4d, segunda parte): atalaya (grúa y plano del ping con `api.camara`, salto en arco, ping) y Coyhaique (dos planos manuales, la bola de nieve y la nieve): van a `codigo` con `marcas`.
+
 ### Plan (PR chicos)
 
 | PR | Qué | Modelo |
