@@ -179,3 +179,41 @@ export const FUNDICION = new Map([
     [O.VACUNO, O.FILETE], [O.CERDO, O.CHULETA], [O.POLLO, O.POLLO_ASADO], [O.CORDERO, O.CORDERO_ASADO],
     [O.BACALAO, O.BACALAO_COCIDO], [O.SALMON, O.SALMON_COCIDO], [O.PAPA, O.PAPA_ASADA]
 ]);
+
+// ---------------------------------------------------------
+// mundo/datos/recetas.json (B6c): recetas y fundiciones NUEVAS, después de las de arriba (solo suma: gana la primera que calza)
+// Con forma: { forma: ['WW', 'WW'], ingredientes: { W: 'tablones' | ['tronco', 'tronco_pino'] }, da: ['mesa', 1] }.
+// Sin forma: { sin: ['hilo', ['tronco', 'tronco_pino']], da: ['lana', 1] }. Objetos por nombre (como /dar); una receta mal escrita
+// se ignora entera. `fundicion`: { entrada: salida } por nombre; una entrada que el código ya funde no se cambia.
+// ---------------------------------------------------------
+const BASE_RECETAS = RECETAS.length;
+const BASE_FUNDICION = new Set(FUNDICION.keys());
+const idNombre = n => { const k = String(n).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
+const pedidoId = p => { const ids = [].concat(p).map(idNombre); return ids.length && !ids.includes(undefined) ? (Array.isArray(p) ? ids : ids[0]) : null; };
+export function recetaDeDatos(d) {
+    if (!d || !Array.isArray(d.da) || d.da.length !== 2 || !Number.isInteger(d.da[1]) || d.da[1] < 1 || d.da[1] > 64) return null;
+    const id = idNombre(d.da[0]);
+    if (id === undefined) return null;
+    if (d.forma !== undefined) {
+        if (d.sin !== undefined || !Array.isArray(d.forma) || !d.forma.length || d.forma.length > 3 || !d.forma.every(f => typeof f === 'string' && f.length >= 1 && f.length <= 3) || !d.ingredientes) return null;
+        const clave = {};
+        for (const ch of new Set(d.forma.join('').replace(/ /g, ''))) {
+            const p = d.ingredientes[ch] === undefined ? null : pedidoId(d.ingredientes[ch]);
+            if (p === null) return null;
+            clave[ch] = p;
+        }
+        return { forma: d.forma.slice(), clave, da: [id, d.da[1]] };
+    }
+    if (!Array.isArray(d.sin) || !d.sin.length || d.sin.length > 9) return null;
+    const sin = d.sin.map(pedidoId);
+    return sin.includes(null) ? null : { sin, da: [id, d.da[1]] };
+}
+export function fijarRecetas(datos) {
+    RECETAS.length = BASE_RECETAS;
+    for (const k of [...FUNDICION.keys()]) if (!BASE_FUNDICION.has(k)) FUNDICION.delete(k);
+    for (const d of (datos && datos.recetas) || []) { const r = recetaDeDatos(d); if (r) RECETAS.push(r); }
+    for (const [entra, sale] of Object.entries((datos && datos.fundicion) || {})) {
+        const a = idNombre(entra), b = idNombre(sale);
+        if (a !== undefined && b !== undefined && !FUNDICION.has(a)) FUNDICION.set(a, b);
+    }
+}

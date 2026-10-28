@@ -1,0 +1,7 @@
+{
+  "$schema": "../../estudio/esquemas/recetas.schema.json",
+  "version": 1,
+  "nota": "Recetas y fundiciones nuevas por nombre de objeto (como /dar). Las de hoy siguen en mundo/supervivencia/recetas.js.",
+  "recetas": [],
+  "fundicion": {}
+}

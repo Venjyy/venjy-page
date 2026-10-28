@@ -11,7 +11,7 @@ export const vistaValida = v => (VISTAS.includes(v) ? v : VISTA_BASE);
 
 // [clave, es, en, pestañas]
 export const GRUPOS = [
-    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'personajes', 'tienda', 'misiones', 'vida', 'objetos', 'formas']],
+    ['mundo', 'Pantalla y mundo', 'Screen and world', ['layout', 'juego', 'posiciones', 'personajes', 'tienda', 'misiones', 'recetas', 'vida', 'objetos', 'formas']],
     ['historias', 'Historias', 'Stories', ['textos', 'escenas', 'poses']],
     ['minijuegos', 'Minijuegos', 'Minigames', ['mesa', 'carrera', 'arena', 'combate', 'salonas', 'ritmo']],
     ['arte', 'Arte y sonido', 'Art and sound', ['pixeles', 'musica', 'inicio']]
@@ -42,6 +42,10 @@ export const AYUDA = {
     misiones: {
         que: ['Los encargos que da cada persona: entregar cosas, eliminar monstruos o sobrevivir una noche. Una persona nueva también puede darlos.', 'The quests each person gives: hand in things, defeat monsters or survive a night. A new person can give them too.'],
         empezar: ['Elige a alguien, escoge una misión parecida en «Partir de», toca «Crear misión» y escribe sus textos en español e inglés; «Guardar» la deja en el juego.', 'Pick someone, choose a similar quest in «Start from», press «Create quest» and write its Spanish and English texts; «Save» keeps it in the game.']
+    },
+    recetas: {
+        que: ['Cómo se fabrican las cosas: recetas nuevas en una rejilla como la mesa de crafteo, y qué se funde en el horno.', 'How things are crafted: new recipes on a grid like the crafting table, and what melts in the furnace.'],
+        empezar: ['Elige una receta parecida en «Partir de», toca «Agregar receta» y cambia las casillas y lo que fabrica; si ya existe una igual, te avisa. «Guardar» la deja en el juego.', 'Pick a similar recipe in «Start from», press «Add recipe» and change the cells and what it makes; if an identical one exists, it warns you. «Save» keeps it in the game.']
     },
     vida: {
         que: ['Cómo caminan los amigos, a quién visitan y a qué hora, y la fogata.', 'How friends walk, whom they visit and when, and the campfire.'],

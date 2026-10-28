@@ -102,6 +102,7 @@ const RESUMEN_JSON = {
         const o = Object.values(d.tiendas || {}).reduce((s, t) => s + (t.ofertas || []).length + (t.compra || []).length, 0);
         return `${n} tienda${n === 1 ? '' : 's'} con ofertas nuevas, ${o} ofertas`;
     },
+    recetas: d => `${(d.recetas || []).length} recetas nuevas, ${Object.keys(d.fundicion || {}).length} fundiciones`,
     misiones: d => { const n = Object.keys(d.misiones || {}).length; return `${n} misión${n === 1 ? '' : 'es'} nueva${n === 1 ? '' : 's'}`; },
     posiciones: d => `${Object.keys(d.personas || {}).length} personas`,
     personajes: d => {
@@ -190,6 +191,13 @@ function filasTienda(d, filtro) {
         (t.ofertas || []).forEach((o, i) => { const k = `${amigo}.oferta${i}`; if (coincide(k, filtro)) filas.push({ clave: k, texto: `${pilas(o.da)} <- ${pilas(o.pide)}`, extra: o.req ? `[req ${o.req}]` : '' }); });
         (t.compra || []).forEach((v, i) => { const k = `${amigo}.compra${i}`; if (coincide(k, filtro)) filas.push({ clave: k, texto: `${pilas([v.da])} -> ${v.esm} esmeralda` }); });
     }
+    return filas;
+}
+
+function filasRecetas(d, filtro) {
+    const filas = [];
+    (d.recetas || []).forEach((r, i) => { const k = `receta${i}`; if (coincide(k, filtro) || coincide(r.da[0], filtro)) filas.push({ clave: k, texto: `${r.forma ? r.forma.join('/') : (r.sin || []).map(p => [].concat(p)[0]).join(' + ')} -> ${r.da[1]} ${r.da[0]}` }); });
+    for (const [a, b] of Object.entries(d.fundicion || {})) if (coincide(a, filtro)) filas.push({ clave: `fundicion.${a}`, texto: `${a} -> ${b}` });
     return filas;
 }
 
@@ -421,7 +429,7 @@ function filasCombate(d, filtro) {
     ];
 }
 
-const FILAS_JSON = { misiones: filasMisiones, musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
+const FILAS_JSON = { recetas: filasRecetas, misiones: filasMisiones, musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {
@@ -638,6 +646,22 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     if (nombre === 'personajes' && refs && objetos) {
         for (const r of reglasPersonajes(datos, { anclas: refs.anclas, objeto: n => objetos.has(String(n).toLowerCase()), gestos: escenas && escenas.gestos })) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
+    if (nombre === 'recetas' && objetos) {
+        const revisa = (ruta, n) => { if (typeof n === 'string' && !objetos.has(n)) mal(`${ruta}: no existe el objeto «${n}» (los nombres son los de /dar)`); };
+        (datos.recetas || []).forEach((r, i) => {
+            const p = `$.recetas[${i}]`;
+            revisa(`${p}.da`, r.da && r.da[0]);
+            for (const [ch, v] of Object.entries(r.ingredientes || {})) [].concat(v).forEach(n => revisa(`${p}.ingredientes.${ch}`, n));
+            (r.sin || []).forEach((v, j) => [].concat(v).forEach(n => revisa(`${p}.sin[${j}]`, n)));
+            if (r.forma) {
+                const letras = new Set(r.forma.join('').replace(/ /g, ''));
+                for (const ch of letras) if (!(r.ingredientes || {})[ch]) mal(`${p}.forma: la letra «${ch}» no tiene ingrediente`);
+                for (const ch of Object.keys(r.ingredientes || {})) if (!letras.has(ch)) mal(`${p}.ingredientes.${ch}: la letra no está en la forma`);
+                if (new Set(r.forma.map(f => f.length)).size > 1 && r.forma.some(f => f.length < Math.max(...r.forma.map(x => x.length)))) problemas.push({ archivo: arch, tipo: 'aviso', texto: `${p}.forma: filas de distinto largo (se completan con vacío a la derecha)` });
+            }
+        });
+        for (const [a, b] of Object.entries(datos.fundicion || {})) { revisa(`$.fundicion.${a}`, a); revisa(`$.fundicion.${a}`, b); }
+    }
     if (nombre === 'misiones' && objetos) {
         const revisa = (ruta, pila) => { if (Array.isArray(pila) && !objetos.has(pila[0])) mal(`${ruta}: no existe el objeto «${pila[0]}» (los nombres son los de /dar)`); };
         for (const [id, m] of Object.entries(datos.misiones || {})) {
@@ -690,7 +714,7 @@ async function validarCmd(pos, op) {
     const problemas = [];
     let limpios = 0;
     const rangos = leerRangos();
-    const objetos = nombres.includes('tienda') || nombres.includes('misiones') || nombres.includes('personajes') ? await nombresDeObjetos() : null;
+    const objetos = nombres.includes('tienda') || nombres.includes('misiones') || nombres.includes('recetas') || nombres.includes('personajes') ? await nombresDeObjetos() : null;
     const refs = nombres.includes('posiciones') || nombres.includes('personajes') ? await referenciasDePosiciones() : null;
     const conTienda = nombres.includes('tienda') || nombres.includes('misiones') ? await personasDelJuego() : null;
     const escenas = nombres.some(n => ['escenas', 'poses', 'personajes'].includes(n)) ? await nombresDeEscenas() : null;

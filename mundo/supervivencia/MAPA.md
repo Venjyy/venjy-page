@@ -98,6 +98,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `misiones.js` (499) | Panel de cada amigo y misión activa. `crearMisiones:38` `cumplida:114` `aceptar:273` `completar:284` `hablar:321` `hablarVenjy:343` |
 | `tienda-datos.js` (~240) / `tienda.js` (136) | Ofertas por amigo · pestaña «Tienda». `TIENDAS:17` · `fijarTienda` (suma a las 13 y crea la tienda de personas nuevas desde `tienda.json`, B6a) · `crearTienda:21` `comprar:110` `vender:123` |
 | `misiones-datos.js` (~350) | B6b: `fijarMisiones`/`misionDeDatos` suman las misiones de `mundo/datos/misiones.json` al final de `MISIONES` (`misiones.js` lo pide con `cargarDatos('misiones')`) |
+| `recetas.js` (+`fijarRecetas`/`recetaDeDatos`) | B6c: suma las recetas y fundiciones de `mundo/datos/recetas.json` después de las del código (`ui-inventario.js` lo pide con `cargarDatos('recetas')`) |
 | `tienda-valor.js` (~30) | B6a: `valor`/`suma` de objetos para calibrar precios (puro; lo usan `mundo/tests/tienda.mjs` y la pestaña Tienda del Estudio) |
 | `personajes.js` (~55) | B5: personas nuevas de `mundo/datos/personajes.json` (modelo puro en `mundo/datos/personajes.js`, §41). `registrarPersonajes` (nombre, globo, amistad, favoritos, relaciones, horario base; sin DOM) · `crearPersonajes` (+ `amigos.agregar`; `aplicar` en vivo) |
 | `amistad.js` (196) | Lógica pura 0-100 y 5 niveles. `PERSONAJES:15` `NIVELES:17` `relacion:52` `nivelDe:66` |

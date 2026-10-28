@@ -8,7 +8,8 @@
 // =========================================================
 import { icono } from './iconos.js';
 import { info, nombreDe, apilaDe, combustibleDe } from './objetos.js';
-import { buscarReceta, RECETAS, ingredientes, anchoDe, FUNDICION } from './recetas.js';
+import { buscarReceta, RECETAS, ingredientes, anchoDe, FUNDICION, fijarRecetas } from './recetas.js';
+import { cargarDatos } from '../datos/cargador.js';
 import { clicCasilla, pila, nombrePila } from './inventario.js';
 import { sonidos } from './sonidos.js';
 
@@ -20,6 +21,7 @@ const TXT = {
 const esTactil = () => (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
 
 export function crearVentanas({ inventario, contenedores, idioma: idiomaIni = 'es', soltar, alCerrar, alFabricar }) {
+    cargarDatos('recetas').then(d => { if (d) fijarRecetas(d); }); // B6c: recetas nuevas de mundo/datos/recetas.json
     let idioma = idiomaIni;
     const t = () => TXT[idioma] || TXT.es;
     const raiz = document.getElementById('ventana');

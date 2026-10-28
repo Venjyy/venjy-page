@@ -44,6 +44,12 @@
       "fase": 3,
       "que": "Misiones nuevas (entregar, matar, noche) de amigos y personas nuevas, con los objetos por nombre; se suman al final de las de misiones-datos.js; se aplica en vivo con supervivencia.html?estudio"
     },
+    "recetas": {
+      "esquema": "recetas",
+      "lee": "mundo/supervivencia/recetas.js",
+      "fase": 3,
+      "que": "Recetas de fabricación (con y sin forma) y fundiciones del horno nuevas, con los objetos por nombre; se suman después de las de recetas.js; se aplica en vivo con supervivencia.html?estudio"
+    },
     "cartas-mesa": {
       "esquema": "cartas-mesa",
       "lee": "mundo/supervivencia/cartas-mesa.js",
