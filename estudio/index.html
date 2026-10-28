@@ -379,7 +379,25 @@
                         <span data-es="Nota" data-en="Note">Nota</span>
                         <input id="ps-lugar-nota" type="text" maxlength="200" autocomplete="off" spellcheck="false">
                     </label>
+                    <label id="ps-lugar-en-campo" class="campo solo-avanzado" hidden>
+                        <span data-es="Nombre en inglés (se guarda al cambiarlo)" data-en="English name (saved when you change it)">Nombre en inglés (se guarda al cambiarlo)</span>
+                        <input id="ps-lugar-en" type="text" maxlength="40" autocomplete="off">
+                    </label>
                     <p id="ps-lugar-estado" class="mensaje"></p>
+                    <h3 data-es="Guardar como construcción" data-en="Save as a building">Guardar como construcción</h3>
+                    <p class="mensaje" data-es="En el juego, mira el suelo de una esquina de lo que construiste y pulsa «Marcar esquina»; luego mira la esquina opuesta y vuelve a pulsarlo (hasta 32×32 y 24 de alto; la altura se calcula sola). Ponle nombre y guárdala: queda en la lista de arriba para ponerla y girarla donde quieras." data-en="In the game, look at the ground of one corner of what you built and press «Mark corner»; then look at the opposite corner and press it again (up to 32×32 and 24 high; the height is worked out by itself). Name it and save it: it shows up in the list above so you can place and turn it wherever you like.">En el juego, mira el suelo de una esquina de lo que construiste y pulsa «Marcar esquina»; luego mira la esquina opuesta y vuelve a pulsarlo (hasta 32×32 y 24 de alto; la altura se calcula sola). Ponle nombre y guárdala: queda en la lista de arriba para ponerla y girarla donde quieras.</p>
+                    <div class="fila-botones">
+                        <button id="ps-zona-marcar" class="boton chico" type="button" data-es="Marcar esquina" data-en="Mark corner">Marcar esquina</button>
+                        <button id="ps-zona-quitar" class="boton chico secundario" type="button" data-es="Borrar marcas" data-en="Clear marks">Borrar marcas</button>
+                    </div>
+                    <label class="campo">
+                        <span data-es="Nombre" data-en="Name">Nombre</span>
+                        <input id="ps-zona-nombre" type="text" maxlength="40" autocomplete="off">
+                    </label>
+                    <div class="fila-botones">
+                        <button id="ps-zona-guardar" class="boton chico" type="button" disabled data-es="Guardar construcción" data-en="Save building">Guardar construcción</button>
+                    </div>
+                    <p id="ps-zona-estado" class="mensaje"></p>
                 </section>
                 <section class="panel acciones">
                     <div class="fila-botones">
