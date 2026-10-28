@@ -18,6 +18,7 @@
             <button class="pestana" type="button" data-pestana="personajes" data-es="Personajes" data-en="People">Personajes</button>
             <button class="pestana" type="button" data-pestana="tienda" data-es="Tienda" data-en="Shop">Tienda</button>
             <button class="pestana" type="button" data-pestana="misiones" data-es="Misiones" data-en="Quests">Misiones</button>
+            <button class="pestana" type="button" data-pestana="recetas" data-es="Recetas" data-en="Recipes">Recetas</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
@@ -820,6 +821,27 @@
                     <button id="mi-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
                 </div>
                 <p id="mi-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-recetas" class="seccion" hidden>
+        <section class="escritorio">
+            <div id="re-form" class="pj-form"></div>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Nueva receta" data-en="New recipe">Nueva receta</h2>
+                <label class="campo"><span data-es="Cómo se arma" data-en="How it is made">Cómo se arma</span><select id="re-tipo"></select></label>
+                <label class="campo"><span data-es="Partir de" data-en="Start from">Partir de</span><select id="re-base"></select></label>
+                <button id="re-nueva" class="boton chico" type="button" data-es="Agregar receta" data-en="Add recipe">Agregar receta</button>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="re-descartar" class="boton chico" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    <button id="re-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                </div>
+                <p id="re-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

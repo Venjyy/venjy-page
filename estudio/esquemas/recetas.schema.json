@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recetas.schema.json",
+  "title": "Recetas nuevas (mundo/datos/recetas.json)",
+  "description": "Recetas de fabricación y fundiciones NUEVAS, con los objetos por su nombre (el mismo de /dar), nunca por id numérico. El juego las suma después de las de mundo/supervivencia/recetas.js (fijarRecetas); las de hoy no se tocan y, si dos calzan con la misma rejilla, gana la primera. Con forma (`forma` + `ingredientes`, hasta 3×3, se puede mover y espejar) o sin forma (`sin`, hasta 9). Una receta mal escrita se ignora entera. `fundicion` es entrada -> salida del horno; una entrada que el código ya funde no se cambia.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "$ref": "comun.schema.json#/$defs/version" },
+    "nota": { "$ref": "comun.schema.json#/$defs/nota" },
+    "recetas": { "type": "array", "items": { "$ref": "#/$defs/receta" } },
+    "fundicion": {
+      "description": "nombre de lo que entra al horno -> nombre de lo que sale.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/nombreObjeto" },
+      "additionalProperties": { "$ref": "#/$defs/nombreObjeto" }
+    }
+  },
+  "required": ["version", "recetas"],
+  "additionalProperties": false,
+  "$defs": {
+    "nombreObjeto": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "pedido": {
+      "description": "Un objeto, o una lista de objetos de los que sirve cualquiera (como los troncos).",
+      "anyOf": [{ "$ref": "#/$defs/nombreObjeto" }, { "type": "array", "items": { "$ref": "#/$defs/nombreObjeto" }, "minItems": 1, "maxItems": 8 }]
+    },
+    "receta": {
+      "type": "object",
+      "properties": {
+        "forma": { "description": "Filas de la rejilla (1 a 3 filas de 1 a 3 letras; el espacio es casilla vacía).", "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z ]{1,3}$" }, "minItems": 1, "maxItems": 3 },
+        "ingredientes": { "description": "Letra de la forma -> qué va ahí.", "type": "object", "propertyNames": { "pattern": "^[A-Za-z]$" }, "additionalProperties": { "$ref": "#/$defs/pedido" } },
+        "sin": { "description": "Receta sin forma: lo que se junta, en cualquier casilla.", "type": "array", "items": { "$ref": "#/$defs/pedido" }, "minItems": 1, "maxItems": 9 },
+        "da": { "description": "[nombre, cantidad] de lo que se fabrica.", "type": "array", "prefixItems": [{ "$ref": "#/$defs/nombreObjeto" }, { "type": "integer", "minimum": 1, "maximum": 64 }], "minItems": 2, "maxItems": 2 },
+        "nota": { "$ref": "comun.schema.json#/$defs/nota" }
+      },
+      "required": ["da"],
+      "oneOf": [{ "required": ["forma", "ingredientes"] }, { "required": ["sin"] }],
+      "additionalProperties": false
+    }
+  }
+}
