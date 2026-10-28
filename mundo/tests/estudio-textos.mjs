@@ -141,7 +141,7 @@ assert.deepStrictEqual(D.GESTO_REGALO, dialogos.gestoRegalo || {});
     ok((await m('globo', { persona: 'pony', texto: '' })).tipo === 'error', 'globo sin texto es error');
     ok((await m('globo', { persona: 'pony', texto: 'x'.repeat(401) })).tipo === 'error', 'globo de más de 400 caracteres es error');
     ok((await m('globo', { persona: '../x', texto: 'Hola' })).tipo === 'error', 'globo con persona no válida es error');
-    ok((await m('datos', { nombre: 'tienda', datos: {} })).tipo === 'error', 'tienda todavía no se aplica en vivo');
+    ok((await m('datos', { nombre: 'inventado', datos: {} })).tipo === 'error', 'un archivo que no se aplica en vivo da error');
 }
 
 // ---------- 6. tienda.json y su esquema ----------
@@ -182,7 +182,7 @@ assert.deepStrictEqual(D.GESTO_REGALO, dialogos.gestoRegalo || {});
 {
     const indice = json('mundo/datos/indice.json');
     ok(indice.archivos.dialogos && indice.archivos.dialogos.lee === 'mundo/supervivencia/dialogos-datos.js', 'indice.json: dialogos lo lee dialogos-datos.js');
-    ok(indice.archivos.tienda && indice.archivos.tienda.lee === null, 'indice.json: tienda es referencia (lee: null)');
+    ok(indice.archivos.tienda && indice.archivos.tienda.lee, 'indice.json: tienda la lee el juego (6a)');
     ok(fs.existsSync(path.join(RAIZ, 'estudio', 'esquemas', 'dialogos.schema.json')) && fs.existsSync(path.join(RAIZ, 'estudio', 'esquemas', 'tienda.schema.json')), 'esquemas de fase 3 presentes');
 }
 

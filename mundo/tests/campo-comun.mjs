@@ -52,7 +52,7 @@ for (const [f, clave] of [['layout', 'layout'], ['textos', 'textos'], ['posicion
     ok(lee(f + '.js').includes('ctx.sucios.' + clave + ' ='), f + ' registra su punto');
 const html = fs.readFileSync(path.join(RAIZ, 'estudio', 'index.html'), 'utf8');
 for (const m of html.matchAll(/data-pestana="([a-z]+)"/g)) if (m[1] !== 'juego') {
-    const f = lee(m[1] + '.js');
+    const f = lee((m[1] === 'nuevos' ? 'objetos-nuevos' : m[1]) + '.js');
     ok(f.includes('ctx.sucios.' + m[1] + ' ='), 'la pestaña ' + m[1] + ' registra su punto');
 }
 

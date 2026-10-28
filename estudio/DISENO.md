@@ -1588,3 +1588,11 @@ Un PR por parte: **6a tienda** (hecho), 6b misiones, 6c recetas, 6d objetos (al 
 - Atlas de objetos: 16 filas libres y celdas fijas por id (`ubicarObjetos`), para que los que llegan en vivo no muevan a los demás; `refrescarObjetos` repinta.
 - Pestaña **Objetos nuevos** (clave `nuevos`; `estudio/objetos-nuevos.js`, parte pura `objetos-nuevos-modelo.mjs`): «Partir de» uno parecido (copia ícono, color, comida, apila, devuelve), nombre ES/EN (el nombre interno sale del español hasta que se guarda; después queda fijo), «Se ve como» con la vista del ícono, «Cuántos caben», «Se come» y cuánto llena (la saturación se calcula: ×1,2). En Avanzado: saturación, efecto, qué deja en la mano, fuego en el horno, «no se vende», nombre interno y número. Cada cambio hace `fijarObjetos` en el propio Estudio y `refrescarNombres` (Tienda, Misiones y Recetas ya aceptan el objeto) y va al juego en vivo. Lo incompleto no se manda ni se guarda.
 - `validar`: clave del código, id repetido o ≥ `siguienteId`, `devuelve` o `color` inexistentes, `efecto` sin comida; aviso si el ícono no es del código ni tiene dibujo. Pruebas: `mundo/tests/objetos-datos.mjs`, `estudio-objetos-nuevos.mjs`.
+
+## 43. Etapa B · punto 7: cierre (2026-10-28)
+
+Validación final y lista de lo que quedó en JS, con su motivo (la lista completa, en `mundo/PENDIENTES.md`, Etapa B punto 7).
+- `node estudio/cli.mjs validar --contra HEAD`: sin errores en 30 archivos; solo avisos de `escenas.json` (textos «sin revisar», que marca el dueño, y frases apuradas).
+- Pruebas de Node: todas pasan salvo `paridad.mjs` y `cartas-panel.mjs`, que ya fallaban en `main`. `campo-comun.mjs` y `estudio-textos.mjs` estaban desfasadas tras 6a y 6d y se actualizaron.
+- No pasó a JSON: el giro de las construcciones y la caseta del pescador (§42, 6e), el mapa por semilla (`mundo-datos.js`), las escenas con código propio (`CODIGO_ESCENAS`, `escenas-skin.js`) y los `*-datos.js` que mezclan texto con funciones.
+- Tag `portafolio-v1`: pendiente de confirmación del dueño.
