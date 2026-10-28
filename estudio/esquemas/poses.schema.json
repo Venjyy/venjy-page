@@ -65,10 +65,10 @@
           "properties": {
             "base": { "description": "Valor de partida si no hay k (por defecto 0).", "type": "number" },
             "k": {
-              "description": "Claves [tiempo, valor] en orden creciente de tiempo, en el reloj del gesto. Antes de la primera y después de la última se mantiene el valor del extremo (como ruta()).",
+              "description": "Claves [tiempo, valor] en orden creciente de tiempo, en el reloj del gesto. Antes de la primera y después de la última se mantiene el valor del extremo (como ruta()). Una clave puede traer un 3.er elemento (suave | lineal | paso) que manda en el tramo que empieza en ella (DISENO §40, decisión 21: subida suave y bajada lineal).",
               "type": "array",
               "minItems": 1,
-              "items": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }], "minItems": 2, "maxItems": 2 }
+              "items": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "number" }, { "enum": ["suave", "lineal", "paso"] }], "minItems": 2, "maxItems": 3 }
             },
             "interp": { "description": "suave (smoothstep, como ruta(); por defecto), lineal o paso.", "enum": ["suave", "lineal", "paso"] },
             "osc": { "type": "array", "items": { "$ref": "#/$defs/oscilador" } },

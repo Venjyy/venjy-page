@@ -13,9 +13,9 @@ function clave(k, t, interp) {
     if (t <= k[0][0]) return k[0][1];
     for (let i = 1; i < k.length; i++) {
         if (t <= k[i][0]) {
-            const [t0, v0] = k[i - 1], [t1, v1] = k[i];
-            const f = (t - t0) / (t1 - t0);
-            return interp === 'paso' ? v0 : v0 + (v1 - v0) * (interp === 'lineal' ? f : suave(f));
+            const [t0, v0, i0] = k[i - 1], [t1, v1] = k[i];
+            const f = (t - t0) / (t1 - t0), ip = i0 || interp; // 3.er elemento de la clave: interp del tramo que empieza en ella (§40, decisión 21)
+            return ip === 'paso' ? (t < t1 ? v0 : v1) : v0 + (v1 - v0) * (ip === 'lineal' ? f : suave(f));
         }
     }
     return k[k.length - 1][1];
