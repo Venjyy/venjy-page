@@ -799,6 +799,11 @@ export async function montarEscenas(ctx) {
         cont.appendChild(el('h3', '', t('Lugar del grupo', 'Group place')));
         for (const [parte, etq] of [['centro', t('Centro (lo que todos miran)', 'Center (what everyone looks at)')], ['jugador', t('Dónde te paras', 'Where you stand')]]) {
             const v = (d.lugar && d.lugar[parte]) || null;
+            // Centro entre varios puntos (la atalaya, decisión 24): todavía solo en el JSON; así no se pisa al tocar la fila
+            if (v && v.promedio) {
+                cont.appendChild(el('p', 'mensaje', t(`${etq}: entre ${v.promedio.length} puntos (se edita en el JSON).`, `${etq}: between ${v.promedio.length} points (edited in the JSON).`)));
+                continue;
+            }
             const fila = el('div', 'es-extra-fila');
             fila.dataset.parte = parte;
             const actores = [...M.filasDe(d), ...listaPersonas().filter(p => !M.filasDe(d).includes(p))].map(q => [q, M.filasDe(d).includes(q) ? etiquetaFila(q, d) : nombreDe(q)]);

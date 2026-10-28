@@ -5,7 +5,7 @@
 // terminar?(api) }, lo mismo que el `extra` de los guiones de JS. `marcas` son los instantes con nombre de la escena
 // ({ llega: 3.2 }), que el dueño mueve en la línea de tiempo: el código no trae números propios.
 // Un nombre que no está aquí es error de `node estudio/cli.mjs validar`. B4c llenó los momentos (un módulo por momento en
-// codigo-escenas/); B4d sumará lo que falte de los grupos (la nieve de Coyhaique, el plano manual del salto de la atalaya).
+// codigo-escenas/); B4d, lo de los grupos (los planos y la bola de Coyhaique, el salto, la grúa y el ping de la atalaya).
 //   CODIGO_ESCENAS = { 'nieve-coyhaique': () => import('./codigo-escenas/nieve-coyhaique.js') }
 // =========================================================
 export const CODIGO_ESCENAS = {
@@ -23,5 +23,6 @@ export const CODIGO_ESCENAS = {
     'momento-venjy': () => import('./codigo-escenas/momento-venjy.js'),
     'momento-venjy-pareja': () => import('./codigo-escenas/momento-venjy-pareja.js'),
     // Grupos (B4d)
-    'grupo-coyhaique': () => import('./codigo-escenas/grupo-coyhaique.js')
+    'grupo-coyhaique': () => import('./codigo-escenas/grupo-coyhaique.js'),
+    'grupo-atalaya': () => import('./codigo-escenas/grupo-atalaya.js')
 };

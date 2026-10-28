@@ -4,13 +4,14 @@
 // Cada 1/120 s compara frases, tramo de cada actor (u, peso y metas de cada canal), T y r. Lo que el JS hacía en `extra` se
 // compara con el catálogo: mismas chispas y sonidos por cuadro y en los mismos puntos, mismos objetos visibles. También el
 // lugar (centro y dónde te paras), el paseo de Braulio (que vuelva a su sitio), el esquema, las reglas y el `dispara`.
-// Hecho: Tomatitos (7 skins) y Coyhaique (3). Falta la atalaya.
+// Hecho: Tomatitos (7 skins), Coyhaique (3) y la atalaya (3: el centro con `promedio`, el salto, la grúa, el polvo y el ping
+// contra el código, con y sin árboles en medio).
 // =========================================================
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validar } from '../../estudio/validar.mjs';
-import { guionDeDatos, reglasEscenas, escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo, eventosEn, objetoEn, sonidosDeEscena, caminoEn } from '../datos/escenas.js';
+import { guionDeDatos, reglasEscenas, escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo, eventosEn, objetoEn, sonidosDeEscena, caminoEn, sitioEn } from '../datos/escenas.js';
 import { funcionGesto } from '../datos/gestos.js';
 import { GRUPOS_MIGRADOS, escenaDeGrupo, nombreEscena } from '../../estudio/migrar-grupos.mjs';
 
@@ -140,10 +141,105 @@ async function pruebaCoyhaique(mod, skin) {
     ok(def.sonidos.length === 2 && def.sonidos.every(([t, n], i) => n === 'bolaNieve' && cerca(t, def.marcas[i ? 'tiro2' : 'tiro1'] + 0.5, 1e-9)), `${nombre}: un golpe de nieve por bola`);
 }
 
+// ---- Atalaya: el centro (promedio de cuatro puntos) y tu lugar contra centro() y colocar(); el Venjy, la cámara, el ping, el
+// polvo, los giros y los sonidos contra el código, cuadro a cuadro, con el aire libre y con árboles que tapan la grúa ----
+async function pruebaAtalaya(mod, skin) {
+    const grupo = 'atalaya', nombre = nombreEscena(grupo, skin), def = datos.escenas[nombre];
+    ok(!!def, `${nombre}: está en escenas.json`);
+    if (!def) return;
+    const { escena } = await escenaDeGrupo(grupo, skin, mod, SONIDOS);
+    const { revisado, ...guardada } = def;
+    if (JSON.stringify(guardada) !== JSON.stringify(escena)) console.log(`  aviso: ${nombre} ya no es el que da el script (¿lo ajustó el dueño?)`);
+    const amigo = amigoDeEscena(def, def.dispara, skin, GRUPOS[grupo].miembros);
+    ok(escenaQueDispara(datos.escenas, { tipo: 'grupo', grupo, skin }) === nombre, `${nombre}: la elige su dispara`);
+    ok(amigo === (skin === 'boris' ? 'lucho' : 'boris'), `${nombre}: el amigo (n) es ${amigo}`);
+    const js = mod.grupo(skin);
+    let d = guionDeDatos(def, { durLinea, moldes: MOLDES, personajes: PERSONAJES });
+    const r = repartoDe(d.personas, amigo, skin, d.actores);
+    d = repartirGuion({ ...d, reparto: r.reparto, actores: r.actores });
+    const persona = q => (q === 'n' ? amigo : q);
+    ok(js.T === d.T && js.r === d.r, `${nombre}: T y r`);
+    ok(JSON.stringify(Object.keys(js.pista).sort()) === JSON.stringify(Object.keys(d.pista).map(persona).sort()), `${nombre}: los mismos actores en la pista`);
+    ok(def.codigo === 'grupo-atalaya' && !!CODIGO_ESCENAS[def.codigo], `${nombre}: su código está registrado`);
+    // Lucho a otra altura que Boris (el centro toma la de Boris) y el Venjy 11 bloques arriba
+    const sitios = { boris: { x: 1, y: 0, z: 2 }, lucho: { x: 3.4, y: 0.3, z: 1.2 }, v: { x: 2.5, y: 11, z: -3 }, j: { x: 0.5, y: 0, z: -2 } };
+    const rolJS = q => ({ n: 'boris', lucho: 'lucho', v: 'v', j: 'j' })[q];
+    const rolD = q => (q === 'n' ? amigo : q === amigo ? null : sitios[q] ? q : null);
+    const arboles = (x, y, z) => (Math.floor(x) * 7 + Math.floor(y) * 3 + Math.floor(z) * 5) % 11 === 0;
+    for (const [aire, opaco] of [['libre', () => false], ['con árboles', arboles]]) {
+        // Sitios por persona; el JS llama 'n' a Boris y los datos al amigo: movs y giros se guardan por persona
+        const mundoDe = (conRol, T) => {
+            const registro = [], movs = {}, giros = {}, ef = [];
+            const nuevo = () => ({ visible: true, material: { map: {} }, userData: {}, position: { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } }, scale: { k: null, set(k) { this.k = k; } } });
+            const api = { e: { t: 0, T, hechos: new Set() }, posG: q => sitios[conRol(q)], origen: q => sitios[conRol(q)], actor: q => (conRol(q) ? { p: {} } : null),
+                mover(q, x, y, z) { movs[conRol(q)] = { x, y, z }; }, girar(q, yaw) { giros[conRol(q)] = yaw; }, camara(f) { api.fcamara = f; }, opaco,
+                sprite: nuevo, caja: nuevo, pegar: (o, q, h, pos) => { if (pos) o.position.set(...pos); registro.push(o); return o; },
+                efecto(tipo, x, y, z, op = {}) { ef.push([api.e.t, x, y, z, op.tam, op.vida, op.vy].map(v => v.toFixed(9)).join('|')); return nuevo(); },
+                oidos: [], sonidos: { golpe() { api.oidos.push(api.e.t + ':golpe'); } } };
+            return { api, registro, movs, giros, ef };
+        };
+        const A = mundoDe(rolJS, js.T), B = mundoDe(rolD, d.T);
+        A.api.e.centro = js.centro(A.api);
+        B.api.e.centro = sitioEn(d.lugar.centro, q => sitios[rolD(q)]);
+        const cJS = A.api.e.centro, cD = B.api.e.centro, jJS = js.colocar(A.api), jD = sitioEn(d.lugar.jugador, q => (q === 'centro' ? cD : sitios[rolD(q)]));
+        if (aire === 'libre') {
+            ok(cerca(cJS.x, cD.x) && cerca(cJS.y, cD.y) && cerca(cJS.z, cD.z), `${nombre}: el centro del lugar (promedio)`);
+            ok(cerca(jJS.x, jD.x) && cerca(jJS.y, jD.y) && cerca(jJS.z, jD.z), `${nombre}: dónde te paras`);
+        }
+        // Los sonidos del JS (SONIDOS.ping y polvo, el golpe del api) por cuadro, contra los de los datos
+        const orig = { ping: SONIDOS.ping, polvo: SONIDOS.polvo };
+        for (const k of Object.keys(orig)) SONIDOS[k] = () => A.api.oidos.push(A.api.e.t + ':' + k);
+        js.extra.iniciar(A.api);
+        const extraD = (await CODIGO_ESCENAS[def.codigo]()).default(d.marcas);
+        extraD.iniciar(B.api);
+        const bJS = buscador(js.gestos), bD = buscador(d.gestos);
+        const hechos = new Set(), oidosD = [];
+        let malos = 0, t0 = 0;
+        const malo = m => { if (malos++ < 5) console.error(`  ${nombre} (${aire}): ${m}`); };
+        const iguales = (a, b) => a === b || (!!a && !!b && ['x', 'y', 'z'].every(k => cerca(a[k], b[k])));
+        for (let n = 0; n / 120 < js.T; n++) {
+            const t = n / 120; cuadros++;
+            A.api.e.t = B.api.e.t = t;
+            const frases = (g, f) => g.lineas.filter(l => t >= l.a && t < l.a + l.d).map(l => f(l.q) + ':' + l.texto.es).join('|');
+            if (frases(js, x => x) !== frases(d, persona)) malo(`t=${t.toFixed(3)} frases`);
+            for (const q of Object.keys(js.pista)) {
+                const qd = q === amigo ? 'n' : q;
+                const x = tramoEn(js.pista[q], t), y = tramoEn(d.pista[qd], t);
+                if (!x !== !y) { malo(`t=${t.toFixed(3)} ${q}: tramo ${x && x.g} ≠ ${y && y.g}`); continue; }
+                if (!x) continue;
+                if (!cerca(x.u, y.u) || !cerca(x.w, y.w)) malo(`t=${t.toFixed(3)} ${q}: u/w`);
+                const i = { s: false, otroS: false, j: q === 'j', esc: 1 };
+                const ma = metaTramo(x, t, i, bJS), mb = metaTramo(y, t, i, bD);
+                for (const k of new Set([...Object.keys(ma), ...Object.keys(mb)])) if (!(ma[k] === mb[k] || cerca(ma[k], mb[k]))) malo(`t=${t.toFixed(3)} ${q} ${x.g}/${y.g}.${k}: ${ma[k]} ≠ ${mb[k]}`);
+            }
+            js.extra.cuadro(A.api);
+            extraD.cuadro(B.api);
+            for (const i of eventosEn(d.sonidos, t0, t, hechos, 's')) oidosD.push(t + ':' + d.sonidos[i][1]);
+            t0 = t;
+            // El Venjy (dónde está), los giros de cada persona, la cámara y el rombo del ping. Se excusa el cuadro que cae justo
+            // en una marca: el JS la calculaba (6,6 - 0,3) y los datos la guardan redondeada (6,3); de qué lado cae es ruido
+            if (Object.values(d.marcas).some(m => Math.abs(t - m) < 1e-6)) continue;
+            if (!iguales(A.movs.v, B.movs.v)) malo(`t=${t.toFixed(3)} el Venjy ${JSON.stringify(A.movs.v)} ≠ ${JSON.stringify(B.movs.v)}`);
+            for (const p of new Set([...Object.keys(A.giros), ...Object.keys(B.giros)])) if (!(A.giros[p] === B.giros[p] || cerca(A.giros[p], B.giros[p]))) malo(`t=${t.toFixed(3)} giro de ${p}: ${A.giros[p]} ≠ ${B.giros[p]}`);
+            const cj = A.api.fcamara && A.api.fcamara(), cd = B.api.fcamara && B.api.fcamara();
+            if (!cj !== !cd || (cj && ![...cj.pos, ...cj.mira].every((v, k) => cerca(v, [...cd.pos, ...cd.mira][k])))) malo(`t=${t.toFixed(3)} cámara`);
+            const mj = A.registro[0], md = B.registro[0];
+            if (mj.visible !== md.visible || !iguales(mj.position, md.position) || (mj.visible && !cerca(mj.scale.k, md.scale.k))) malo(`t=${t.toFixed(3)} el ping`);
+        }
+        Object.assign(SONIDOS, orig);
+        ok(malos === 0, `${nombre} (${aire}): mismo cuadro que el JS cada 1/120 s`);
+        ok(A.ef.length === 7 && JSON.stringify(A.ef) === JSON.stringify(B.ef), `${nombre} (${aire}): el mismo polvo al aterrizar (${A.ef.length} / ${B.ef.length})`);
+        const ordena = l => [...l].sort().join(',');
+        const oj = ordena(A.api.oidos), od = ordena(oidosD);
+        ok(oj === od && oidosD.length === 3, `${nombre} (${aire}): los mismos sonidos (ping, polvo y golpe)` + (oj === od ? '' : `\n    JS: ${oj}\n    datos: ${od}`));
+    }
+}
+
 for (const { grupo, skins } of GRUPOS_MIGRADOS) {
     const mod = await import(`../supervivencia/grupos/${grupo}.js`);
     for (const skin of skins) {
         if (grupo === 'coyhaique') { await pruebaCoyhaique(mod, skin); continue; }
+        if (grupo === 'atalaya') { await pruebaAtalaya(mod, skin); continue; }
         const nombre = nombreEscena(grupo, skin);
         const def = datos.escenas[nombre];
         ok(!!def, `${nombre}: está en escenas.json`);

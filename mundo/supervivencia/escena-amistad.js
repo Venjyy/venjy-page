@@ -47,7 +47,7 @@ import { sonidos } from './sonidos.js';
 import { PERSONAJES, relacion, GRUPOS } from './amistad.js';
 import { cargarDatos, fusionar } from '../datos/cargador.js';
 import { animacionDeDatos, guionDeDatos, opcionesCamara, escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo, claveEn, caminoEn, objetoEn,
-    eventosEn, sonidosDeEscena } from '../datos/escenas.js';
+    eventosEn, sonidosDeEscena, sitioEn } from '../datos/escenas.js';
 import { CODIGO_ESCENAS } from './codigo-escenas.js';
 
 // Estudio, fase 5: mundo/datos/escenas.json (escenas «amistad» reemplazan a ANIMACIONES por clave; las de «guion» solo
@@ -474,12 +474,10 @@ export function crearEscenaAmistad(ctx) {
         } : null;
     }
     // ---- B3b: lugar, caminos, giros, objetos y efectos de escenas.json (estudio/DISENO.md §40) ----
-    // Un punto { desde, mas } en coordenadas del grupo: desde = 'centro' o un actor (su sitio de partida)
+    // Un punto { desde, mas } en coordenadas del grupo: desde = 'centro' o un actor (su sitio de partida); o { promedio } entre
+    // varios (la atalaya, decisión 24)
     function sitioDe(s) {
-        const b = s.desde === 'centro' ? e.centro : origen(s.desde);
-        if (!b) return null;
-        const m = s.mas || [0, 0, 0];
-        return { x: b.x + m[0], y: (b.y ?? (e.actores.n.n.y ?? 0)) + m[1], z: b.z + m[2] };
+        return sitioEn(s, d => (d === 'centro' ? e.centro : origen(d)), e.actores.n.n.y ?? 0);
     }
     // Adónde va q en una clave de camino: 'sitio', { hacia, dist } (a dist bloques de alguien, del lado de donde viene q) o un punto
     function destinoDe(q, a) {

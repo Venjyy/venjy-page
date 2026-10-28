@@ -271,7 +271,9 @@ function reglasB3(clave, e, ctx) {
 
     const lugar = e.lugar;
     if (lugar) {
-        if (lugar.centro && (lugar.centro.desde === 'centro' || !qOCentro(lugar.centro.desde))) mal(`${donde}.lugar.centro.desde: «${lugar.centro.desde}» tiene que ser un actor (no puede partir de sí mismo)`);
+        const malCentro = (d, r) => { if (d === 'centro' || !qOCentro(d)) mal(`${r}: «${d}» tiene que ser un actor (no puede partir de sí mismo)`); };
+        if (lugar.centro && lugar.centro.promedio) lugar.centro.promedio.forEach((p, i) => malCentro(p.desde, `${donde}.lugar.centro.promedio[${i}].desde`));
+        else if (lugar.centro) malCentro(lugar.centro.desde, `${donde}.lugar.centro.desde`);
         if (lugar.jugador && !qOCentro(lugar.jugador.desde)) mal(`${donde}.lugar.jugador.desde: «${lugar.jugador.desde}» no es centro ni un actor`);
     }
 
@@ -346,6 +348,7 @@ function reglasB3(clave, e, ctx) {
 //   valorEn(claves, t, porDefecto)        claves [t, v] interpoladas con suavizado (crece), como ruta()
 //   caminoEn(claves, t, punto)            dónde va un actor que camina { x, y, z, rumbo } o null
 //   objetoEn(o, t)                        { visible, escala, dibujo } de un objeto del catálogo
+//   sitioEn(s, base)                      punto de `lugar` ({ desde, mas } o { promedio, mas }); base(desde) da de dónde parte
 //   eventosEn(lista, t0, t, hechos, pre)  índices de efectos o sonidos que tocan en este cuadro (una vez cada uno)
 //   sonidosDeEscena(...tablas)            nombre -> función, de las tablas de sonidos sin argumentos
 // ---------------------------------------------------------
@@ -372,12 +375,14 @@ export function escenaQueDispara(escenas, c) {
 }
 
 // 'n' de una escena disparada: el Venjy del Inicio (bienvenida), la persona (momento), el otro de la pareja (reencuentro)
-// o, en un grupo, de quien parte el centro (`lugar.centro.desde`) o el primer miembro que sale en la escena y no es tu skin.
+// o, en un grupo, de quien parte el centro (`lugar.centro.desde`, o el primer punto de `promedio`) o el primer miembro que
+// sale en la escena y no es tu skin.
 export function amigoDeEscena(def, dp, skin, miembros = []) {
     if (dp.tipo === 'bienvenida') return 'venjy';
     if (dp.tipo === 'momento') return dp.persona;
     if (dp.tipo === 'reencuentro') return dp.personas[0] === skin ? dp.personas[1] : dp.personas[0];
-    const desde = def.lugar && def.lugar.centro && def.lugar.centro.desde;
+    const c = def.lugar && def.lugar.centro;
+    const desde = c && (c.promedio ? c.promedio[0].desde : c.desde);
     if (desde && desde !== skin && miembros.includes(desde)) return desde;
     const usadas = personasUsadas(def, new Set(miembros));
     return usadas.find(p => p !== skin) || miembros.find(p => p !== skin) || null;
@@ -404,7 +409,7 @@ export function repartirGuion(guion) {
     const rol = q => (typeof q === 'string' && rep[q] !== undefined ? rep[q] : q);
     const porRol = o => (o ? Object.fromEntries(Object.entries(o).map(([q, v]) => [rol(q), v])) : o);
     const destino = a => (a && typeof a === 'object' ? { ...a, ...(a.hacia !== undefined ? { hacia: rol(a.hacia) } : {}), ...(a.desde !== undefined ? { desde: rol(a.desde) } : {}) } : a);
-    const sitio = s => (s ? { ...s, desde: rol(s.desde) } : s);
+    const sitio = s => (s ? (s.promedio ? { ...s, promedio: s.promedio.map(p => ({ ...p, desde: rol(p.desde) })) } : { ...s, desde: rol(s.desde) }) : s);
     const salida = { ...guion, lineas: (guion.lineas || []).map(l => ({ ...l, q: rol(l.q) })), pista: porRol(guion.pista), yaw: porRol(guion.yaw) };
     if (guion.giros) salida.giros = porRol(Object.fromEntries(Object.entries(guion.giros).map(([q, cs]) => [q, cs.map(([t, m]) => [t, rol(m)])])));
     if (guion.caminos) salida.caminos = porRol(Object.fromEntries(Object.entries(guion.caminos).map(([q, cs]) => [q, cs.map(([t, a]) => [t, destino(a)])])));
@@ -490,4 +495,20 @@ export function sonidosDeEscena(...tablas) {
     const salida = {};
     for (const tabla of tablas) for (const [k, f] of Object.entries(tabla || {})) if (typeof f === 'function' && f.length === 0 && !(k in salida)) salida[k] = f;
     return salida;
+}
+
+// Un punto de `lugar` (decisiones 8 y 24): { desde, mas } relativo al sitio de alguien, o { promedio: [puntos], mas }: x y z
+// promediados, la altura del primero (el suelo del grupo, aunque otro punto parta de alguien que está en alto). base(desde)
+// devuelve { x, y, z } o null; altura0 es la y cuando la base no trae una. Si falta una base, null.
+export function sitioEn(s, base, altura0 = 0) {
+    const m = s.mas || [0, 0, 0];
+    if (s.promedio) {
+        const ps = s.promedio.map(p => sitioEn(p, base, altura0));
+        if (ps.some(p => !p)) return null;
+        const k = ps.length;
+        return { x: ps.reduce((a, p) => a + p.x, 0) / k + m[0], y: ps[0].y + m[1], z: ps.reduce((a, p) => a + p.z, 0) / k + m[2] };
+    }
+    const b = base(s.desde);
+    if (!b) return null;
+    return { x: b.x + m[0], y: (b.y ?? altura0) + m[1], z: b.z + m[2] };
 }

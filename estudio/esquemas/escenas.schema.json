@@ -263,7 +263,17 @@
     "lugar": {
       "description": "Dónde queda el grupo sin coordenadas fijas. centro: el punto que todos miran (no puede partir de `centro`); jugador: dónde se para el jugador (puede partir de `centro`).",
       "type": "object",
-      "properties": { "centro": { "$ref": "#/$defs/sitio" }, "jugador": { "$ref": "#/$defs/sitio" } },
+      "properties": {
+        "centro": { "anyOf": [{ "$ref": "#/$defs/sitio" }, { "$ref": "#/$defs/promedio" }] },
+        "jugador": { "$ref": "#/$defs/sitio" }
+      },
+      "additionalProperties": false
+    },
+    "promedio": {
+      "description": "Centro entre varios puntos (DISENO §40, decisión 24): x y z son el promedio de los puntos; la altura, la del primero (el suelo del grupo, aunque otro punto parta de alguien que está en alto). mas: desplazamiento después del promedio.",
+      "type": "object",
+      "properties": { "promedio": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "$ref": "#/$defs/sitio" } }, "mas": { "$ref": "#/$defs/vector" } },
+      "required": ["promedio"],
       "additionalProperties": false
     },
     "giros": {
