@@ -2,19 +2,30 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "tienda.schema.json",
   "title": "Ofertas nuevas de la tienda (mundo/datos/tienda.json)",
-  "description": "Ofertas y compras NUEVAS de la tienda de cada amigo, con los objetos por su nombre (el mismo de /dar: esmeralda, bacalao, piedra_luminosa), nunca por id numérico: los ids de objetos.js cambian al agregar objetos. Las ofertas de hoy siguen en mundo/supervivencia/tienda-datos.js; este archivo solo suma. Hoy es referencia (`lee: null` en indice.json): nadie lo lee todavía, pero `validar` ya comprueba que cada nombre exista y que los precios no rompan mundo/tests/tienda.mjs.",
+  "description": "Ofertas y compras NUEVAS de la tienda de cada amigo, con los objetos por su nombre (el mismo de /dar: esmeralda, bacalao, piedra_luminosa), nunca por id numérico: los ids de objetos.js cambian al agregar objetos. Las ofertas de hoy siguen en mundo/supervivencia/tienda-datos.js; este archivo solo suma. El juego lo lee (tienda-datos.js, fijarTienda): suma al final de las ofertas de las 13 tiendas de hoy y le da su tienda a una persona nueva de personajes.json (B6). `validar` comprueba que cada nombre exista; los precios no deben regalar (la pestaña Tienda avisa).",
   "type": "object",
   "properties": {
     "$schema": { "type": "string" },
     "version": { "$ref": "comun.schema.json#/$defs/version" },
     "nota": { "$ref": "comun.schema.json#/$defs/nota" },
     "tiendas": {
-      "description": "amigo -> sus ofertas nuevas. La clave es la del amigo (pony, salonas, lona...).",
+      "description": "amigo -> sus ofertas nuevas. La clave es la del amigo (pony, salonas, lona...) o la de una persona nueva de personajes.json: con al menos una oferta válida ya tiene tienda.",
       "type": "object",
       "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
       "additionalProperties": {
         "type": "object",
         "properties": {
+          "textos": {
+            "description": "Lo que dice al abrir la tienda y al cerrar un trato. Solo cuenta en una persona nueva (los 13 de hoy tienen los suyos en tienda-datos.js); lo que falte usa un texto genérico.",
+            "type": "object",
+            "properties": {
+              "saludo": { "$ref": "comun.schema.json#/$defs/texto" },
+              "compraOk": { "$ref": "comun.schema.json#/$defs/texto" },
+              "ventaOk": { "$ref": "comun.schema.json#/$defs/texto" },
+              "noAlcanza": { "$ref": "comun.schema.json#/$defs/texto" }
+            },
+            "additionalProperties": false
+          },
           "ofertas": {
             "description": "Lo que el amigo te da a cambio de lo que pide (esmeraldas o trueque). Se muestran después de las de hoy.",
             "type": "array",

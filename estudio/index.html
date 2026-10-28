@@ -16,6 +16,7 @@
             <button class="pestana" type="button" data-pestana="juego" data-es="Juego" data-en="Game">Juego</button>
             <button class="pestana" type="button" data-pestana="posiciones" data-seccion="juego" data-es="Posiciones" data-en="Positions">Posiciones</button>
             <button class="pestana" type="button" data-pestana="personajes" data-es="Personajes" data-en="People">Personajes</button>
+            <button class="pestana" type="button" data-pestana="tienda" data-es="Tienda" data-en="Shop">Tienda</button>
             <button class="pestana" type="button" data-pestana="vida" data-seccion="juego" data-es="Vida" data-en="Life">Vida</button>
             <button class="pestana" type="button" data-pestana="objetos" data-seccion="juego" data-es="Objetos" data-en="Objects">Objetos</button>
             <button class="pestana" type="button" data-pestana="formas" data-seccion="juego" data-es="Formas" data-en="Shapes">Formas</button>
@@ -768,6 +769,28 @@
                     <button id="pj-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
                 </div>
                 <p id="pj-mensaje" class="mensaje" role="status"></p>
+            </section>
+        </aside>
+    </main>
+
+    <main id="seccion-tienda" class="seccion" hidden>
+        <section class="escritorio">
+            <div id="ti-form" class="pj-form"></div>
+        </section>
+        <aside class="lateral">
+            <section class="panel">
+                <h2 data-es="Tienda de" data-en="Shop of">Tienda de</h2>
+                <label class="campo"><span data-es="Elige a alguien" data-en="Pick someone">Elige a alguien</span><select id="ti-persona"></select></label>
+                <div class="fila-botones">
+                    <button id="ti-ir" class="boton chico secundario" type="button" data-es="Ir a verla en el juego" data-en="Go see it in the game">Ir a verla en el juego</button>
+                </div>
+            </section>
+            <section class="panel acciones">
+                <div class="fila-botones">
+                    <button id="ti-descartar" class="boton chico" type="button" data-es="Descartar cambios" data-en="Discard changes">Descartar cambios</button>
+                    <button id="ti-guardar" class="boton" type="button" disabled data-es="Guardar" data-en="Save">Guardar</button>
+                </div>
+                <p id="ti-mensaje" class="mensaje" role="status"></p>
             </section>
         </aside>
     </main>

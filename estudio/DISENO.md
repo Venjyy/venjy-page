@@ -1550,3 +1550,14 @@ puro en `mundo/datos/personajes.js` (lo comparten juego, Estudio, CLI y prueba).
 **Fuera de B5 (anotado)**: misiones y tienda de una persona nueva (B6: `misiones-datos.js` y `tienda-datos.js` a JSON);
 su bienvenida y momento (ya se pueden escribir en `escenas.json` con `dispara`, pero la skin del jugador no existe para
 alguien nuevo); su carta del Duelo; charlas de la vida entre amigos (`vida-amigos-datos.js`, punto 4).
+
+## 42. Etapa B · punto 6: misiones, objetos, recetas y tienda en datos (2026-10-28)
+
+Un PR por parte: **6a tienda** (hecho), 6b misiones, 6c recetas, 6d objetos (al final); los lugares con el gizmo de Posiciones, aparte.
+
+**6a · Tienda.** `mundo/datos/tienda.json` ya lo leía el juego (`fijarTienda`); ahora:
+- Una persona **nueva** de `personajes.json` tiene su tienda solo con datos: `tiendas.<clave>` con al menos una oferta válida crea `TIENDAS[clave]`, y `textos` (`saludo`, `compraOk`, `ventaOk`, `noAlcanza`, ES/EN) le da la voz; lo que falte usa `TEXTOS_TIENDA`. Las 13 de hoy siguen sumando solo al final (sus textos no se tocan).
+- Pestaña **Tienda** (`estudio/tienda.js`, parte pura `estudio/tienda-modelo.mjs`): elegir persona, ver lo que ya vende (en Avanzado), «Partir de» una oferta existente + «Agregar oferta», un objeto por lado en Simple (varios y la misión requerida en Avanzado), «Lo que te compra», «Lo que dice» (personas nuevas). Avisa si la oferta **regala** (mismo cálculo que `mundo/tests/tienda.mjs`, ahora en `mundo/supervivencia/tienda-valor.js`). En vivo con `?estudio` (`tienda` en `DATOS_VIVOS`).
+- `validar` avisa de una clave de `tiendas` que no es una de las 13 ni una persona de `personajes.json`.
+- Decisión: la tienda de una persona vive en `tienda.json` (no dentro de `personajes.json`): un solo lugar para las 13 y las nuevas. Los textos de `tienda.json` y `indice.json` que dicen «el juego todavía no lo lee» quedan como están (valor del dueño); el esquema ya está al día.
+- Pruebas: `mundo/tests/tienda.mjs` (crea la tienda de una persona nueva) y `mundo/tests/estudio-tienda.mjs`.

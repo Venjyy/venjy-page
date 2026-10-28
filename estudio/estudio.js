@@ -30,6 +30,7 @@ import { montarRitmo } from './ritmo.js';
 import { montarMusica } from './musica.js';
 import { montarVida } from './vida.js';
 import { montarPersonajes } from './personajes.js';
+import { montarTienda } from './tienda.js';
 import { crearCliente } from './puente-cliente.js';
 import { textoAyuda, vistaValida } from './ayuda-modelo.mjs';
 
@@ -131,6 +132,7 @@ await montarMusica(ctx); // antes que Ritmo: Ritmo comparte sus datos (ctx.music
 await montarRitmo(ctx);
 await montarVida(ctx);
 await montarPersonajes(ctx); // B5: personas nuevas solo con datos (personajes.json, §41)
+await montarTienda(ctx); // B6: tienda.json, ofertas nuevas y tiendas de personas nuevas (§42)
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.

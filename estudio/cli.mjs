@@ -499,6 +499,15 @@ async function refsPixeles() {
     return { objetos: new Set(Object.keys(O).map(k => k.toLowerCase())), cartas: new Set(Object.keys(CARTAS)) };
 }
 
+// Quién puede tener tienda en tienda.json: las 13 de hoy (tienda-datos.js) y las personas nuevas de personajes.json
+async function personasConTienda() {
+    const { TIENDAS } = await import('../mundo/supervivencia/tienda-datos.js');
+    const { esDelCodigo } = await import('../mundo/datos/personajes.js');
+    const nuevas = new Set();
+    try { for (const k of Object.keys(JSON.parse(fs.readFileSync(path.join(DATOS, 'personajes.json'), 'utf8')).personas || {})) if (!esDelCodigo(k)) nuevas.add(k); } catch (e) { /* sin personajes.json: solo las 13 */ }
+    return new Set([...Object.keys(TIENDAS), ...nuevas]);
+}
+
 async function nombresDeObjetos() {
     const { O } = await import('../mundo/supervivencia/objetos.js');
     const { B } = await import('../mundo/texturas.js');
@@ -552,7 +561,7 @@ async function nombresDeEscenasImport() {
 }
 
 // Reglas de contenido que el esquema no expresa
-function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix) {
+function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix, conTienda) {
     const mal = texto => problemas.push({ archivo: arch, tipo: 'error', texto });
     const aviso = texto => problemas.push({ archivo: arch, tipo: 'aviso', texto });
     const dibujo = (ruta, d, [w, h]) => { if (d) for (const e of revisarDibujo(d, w, h)) mal(`${ruta}: ${e} (${w}×${h})`); };
@@ -622,6 +631,7 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     if (nombre === 'tienda' && objetos) {
         const revisa = (ruta, pila) => { if (Array.isArray(pila) && !objetos.has(pila[0])) mal(`${ruta}: no existe el objeto «${pila[0]}» (los nombres son los de /dar)`); };
         for (const [amigo, t] of Object.entries(datos.tiendas || {})) {
+            if (conTienda && !conTienda.has(amigo)) mal(`$.tiendas.${amigo}: no existe esa persona (las 13 de tienda-datos.js o una de personajes.json)`);
             (t.ofertas || []).forEach((o, i) => {
                 (o.da || []).forEach((p, j) => revisa(`$.tiendas.${amigo}.ofertas[${i}].da[${j}]`, p));
                 (o.pide || []).forEach((p, j) => revisa(`$.tiendas.${amigo}.ofertas[${i}].pide[${j}]`, p));
@@ -659,6 +669,7 @@ async function validarCmd(pos, op) {
     const rangos = leerRangos();
     const objetos = nombres.includes('tienda') || nombres.includes('personajes') ? await nombresDeObjetos() : null;
     const refs = nombres.includes('posiciones') || nombres.includes('personajes') ? await referenciasDePosiciones() : null;
+    const conTienda = nombres.includes('tienda') ? await personasConTienda() : null;
     const escenas = nombres.some(n => ['escenas', 'poses', 'personajes'].includes(n)) ? await nombresDeEscenas() : null;
     const pix = nombres.some(n => ['iconos', 'cartas-arte', 'borradores'].includes(n)) ? await refsPixeles() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
@@ -683,7 +694,7 @@ async function validarCmd(pos, op) {
             if (aviso) problemas.push({ archivo: arch, tipo: nivel === 'aviso' ? 'aviso' : 'error', texto: `${ruta}: ${aviso}` });
             else if (EMOJI.test(valor)) problemas.push({ archivo: arch, tipo: 'error', texto: `${ruta}: emoji en «${valor}» (los íconos se dibujan, no se escriben)` });
         }, rangos);
-        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix);
+        revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas, pix, conTienda);
         if (op.contra) {
             const viejo = enHEAD(op.contra, nombre);
             if (viejo) {
