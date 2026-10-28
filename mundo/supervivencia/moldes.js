@@ -145,6 +145,8 @@ export const PIX = {
     // Coyhaique (grupos/coyhaique.js): la bola de nieve y el copo que cae al pegar
     bola: { filas: ['.aaaa.', 'abbbba', 'abbbba', 'abbbca', 'abbcca', '.aaaa.'], colores: { a: '#c8d8e8', b: '#ffffff', c: '#dde8f2' } },
     copo: { filas: ['.a.', 'aba', '.a.'], colores: { a: '#e8f2ff', b: '#ffffff' } },
+    // Atalaya (grupos/atalaya.js): el rombo naranjo del ping de enemigo
+    ping: { filas: ['....aa....', '...abba...', '..abbbba..', '.abbkkbba.', 'abbbkkbbba', 'abbbkkbbba', '.abbbbbba.', '..abkkba..', '...abba...', '....aa....'], colores: { a: '#7a2a00', b: '#ff8a1c', k: '#2a0e00' } },
     hojas: { filas: ['GgGgGgGg', 'gGgggGgG', 'GgGGgGgg', 'gggGgGgG', 'GgGgggGg', 'gGgGgGgG', 'GggGgGgg', 'gGgGgGgG'], colores: COL_TOMATE }
 };
 // La cara del tomate gigante es un bloque: sin bordes transparentes (arriba todo rojo, los huecos en el color oscuro)

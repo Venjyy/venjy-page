@@ -88,7 +88,7 @@ export const HOJAS = PIX.hojas;
 export const BOLA = PIX.bola;
 export const NIEVE = PIX.copo;
 // Marca de ping (como la de los juegos de disparos: rombo naranjo con signo de alerta)
-export const PING = { filas: ['....aa....', '...abba...', '..abbbba..', '.abbkkbba.', 'abbbkkbbba', 'abbbkkbbba', '.abbbbbba.', '..abkkba..', '...abba...', '....aa....'], colores: { a: '#7a2a00', b: '#ff8a1c', k: '#2a0e00' } };
+export const PING = PIX.ping;
 
 // Sonido de mensaje de WhatsApp (dos notas suaves que suben)
 export function mensaje() { SONIDOS.mensaje(); }

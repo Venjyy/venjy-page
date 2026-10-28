@@ -5,8 +5,9 @@
 // dispara { tipo: 'grupo', grupo, skin } (estudio/DISENO.md §40, decisiones 2, 7 y 8). Los gestos nuevos de comun.js
 // (GESTOS_GRUPO) van a poses.json como `grupo-<nombre>`; `centro` y `colocar` pasan a `lugar`; celulares, tomates, concha, el
 // tomate gigante, las chispas y los sonidos, al catálogo (objetos, efectos y sonidos); el paseo de Braulio, a `caminos` y `giros`.
-// Hecho: Tomatitos (7 escenas) y Coyhaique (3; la cámara manual y la bola de nieve van a `codigo`: grupo-coyhaique). Falta la
-// atalaya: su centro se mide entre cuatro puntos (uno es el Venjy del mirador, que no está en datos) y pide una pieza nueva.
+// Hecho: Tomatitos (7 escenas), Coyhaique (3; la cámara manual y la bola de nieve van a `codigo`: grupo-coyhaique) y la atalaya
+// (3; su centro es el promedio de cuatro puntos, `lugar.centro.promedio`, decisión 24; el salto, la grúa, el polvo y el ping
+// van a `codigo`: grupo-atalaya).
 // Solo añade claves: lo que ya existe no se toca. Los textos no llevan `revisado`.
 // Prueba: node mundo/tests/escenas-grupos.mjs (paridad con el JS).
 // =========================================================
@@ -38,7 +39,12 @@ export const GESTOS_GRUPO = {
     doblaRisa: { reloj: 't', apoya: true, canales: { inc: osc(0.35, seno(0.04, 15)), bDx: osc(-0.9, seno(0.1, 15)), bDz: 0.3, bIx: osc(-0.9, seno(-0.1, 15)), bIz: -0.3, cx: 0.3 } },
     // Camina con el pico al hombro (el Venjy de la mina llega por el túnel)
     caminaPico: { reloj: 't', canales: { pDx: osc(0, seno(0.55, 9)), pIx: osc(0, seno(-0.55, 9)), bDx: -2.6, bDz: 0.35, bIx: osc(0, seno(0.4, 9)), bIz: -0.08, y: osc(0, { forma: 'abs', amp: 0.04, frec: 9 }) } },
-    mira: { reloj: 't', canales: {} }
+    mira: { reloj: 't', canales: {} },
+    // La atalaya: mira arriba con la mano de visera, grita con las manos en la boca, se agarra la rodilla, señala el ping
+    miraArriba: { reloj: 't', canales: { cx: -0.45, cy: osc(0, seno(0.15, 1.3)), bDx: -2.3, bDz: 0.75 } },
+    grita: { reloj: 't', canales: { bDx: -1.9, bDz: 0.55, bIx: -1.9, bIz: -0.55, cx: 0.35, y: osc(0, { forma: 'abs', amp: 0.04, frec: 8 }) } },
+    rodilla: { reloj: 't', canales: { inc: 0.35, pDx: -0.35, pIx: -0.35, y: 0.04, bDx: -0.55, bDz: 0.25, bIx: -0.55, bIz: -0.25, cx: 0.1, rz: osc(0, seno(0.04, 6)) } },
+    apunta: { reloj: 't', canales: { bDx: osc(-1.65, seno(0.04, 9)), bDz: 0, bIx: -0.2, cx: -0.08 } }
 };
 const nombreGesto = n => (GESTOS_GRUPO[n] ? `grupo-${n}` : n);
 
@@ -71,6 +77,7 @@ async function tiemposDe(g, SONIDOS) {
 // Guion de un grupo y una skin -> { escena, gestos }
 export async function escenaDeGrupo(nombreGrupo, base, mod, SONIDOS) {
     if (nombreGrupo === 'coyhaique') return coyhaique(base, mod, SONIDOS);
+    if (nombreGrupo === 'atalaya') return atalaya(base, mod);
     if (nombreGrupo !== 'tomatitos') throw new Error('B4d: falta ' + nombreGrupo);
     const g = mod.grupo(base);
     const { VARIANTES, COMUN, NPCS } = mod;
@@ -186,7 +193,45 @@ async function coyhaique(base, mod, SONIDOS) {
     return { escena, gestos };
 }
 
-export const GRUPOS_MIGRADOS = [{ grupo: 'tomatitos', skins: ['venjy', 'pony', 'hadad', 'andy', 'nacho', 'braulio', 'conejeros'] }, { grupo: 'coyhaique', skins: ['venjy', 'lalo', 'moises'] }];
+// ---- Atalaya: Boris es el ancla, Lucho actor extra y 'v' el Venjy del mirador (salta y cae junto a la leñera) ----
+// El centro es el promedio de Boris, Lucho, el aterrizaje (medido desde el Venjy, que está en alto: la altura es la de Boris)
+// y tu lugar (desde Boris, al otro lado del tocón). Los instantes que el código necesita salen de las frases con las mismas
+// cuentas de grupo() y van a `marcas`; los sonidos (ping, polvo y golpe al aterrizar), al catálogo.
+const SALTO = 1.15; // segundos en el aire (grupos/atalaya.js)
+async function atalaya(base, mod) {
+    const g = mod.grupo(base);
+    const { NPCS, VENJY, COMUN } = mod;
+    const linea = x => g.lineas.find(l => l.texto.es === x[1].es);
+    const fin = l => l.a + l.d;
+    const c1 = linea(COMUN[0]), c5 = linea(COMUN[4]), c6 = linea(COMUN[5]);
+    const asoma = r2(Math.max(0.4, c1.a - 1.2)), salto = r2(fin(c1) + 0.05), suelo = r2(salto + SALTO), ping = r2(c5.a + 0.15);
+    const marcas = {
+        asoma, plano: r10(c1.a - 0.3), borde: r10(asoma + 1.0), salto, suelo, giro: r10(suelo + 0.4), finPlano: r10(suelo + 0.6),
+        mira: r10(c5.a - 0.05), planoPing: r10(ping - 0.1), ping, finPing: r10(fin(c6)), finMira: r10(fin(c6) + 0.1)
+    };
+    const pista = Object.fromEntries(Object.entries(g.pista).map(([q, tr]) => [q, tr.map(([n, a, b]) => [nombreGesto(n), r10(a), r10(b)])]));
+    const jugador = { desde: 'boris', mas: [-1.9, 0, -1.5] };
+    const escena = {
+        tipo: 'guion',
+        dispara: { tipo: 'grupo', grupo: 'atalaya', skin: base },
+        T: g.T,
+        r: g.r,
+        // El Venjy del mirador es otro actor; si tu skin es de uno de los dos, su NPC no es tu clon
+        actores: { v: VENJY, ...(NPCS.includes(base) ? { [base]: base } : {}) },
+        lineas: g.lineas.map(l => ({ q: l.q, a: l.a, d: l.d, texto: l.texto })),
+        pista,
+        lugar: { centro: { promedio: [{ desde: 'boris' }, { desde: 'lucho' }, { desde: 'v', mas: [0.8, 0, 6.1] }, jugador] }, jugador },
+        sonidos: [[suelo, 'polvo'], [suelo, 'golpe'], [ping, 'ping']],
+        marcas,
+        codigo: 'grupo-atalaya'
+    };
+    const usados = new Set(Object.values(pista).flat().map(x => x[0]));
+    const gestos = Object.fromEntries(Object.entries(GESTOS_GRUPO).filter(([n]) => usados.has(`grupo-${n}`)).map(([n, d]) => [`grupo-${n}`, d]));
+    return { escena, gestos };
+}
+
+export const GRUPOS_MIGRADOS = [{ grupo: 'tomatitos', skins: ['venjy', 'pony', 'hadad', 'andy', 'nacho', 'braulio', 'conejeros'] }, { grupo: 'coyhaique', skins: ['venjy', 'lalo', 'moises'] },
+    { grupo: 'atalaya', skins: ['venjy', 'boris', 'lucho'] }];
 export const nombreEscena = (grupo, skin) => `grupo-${grupo}-${skin}`;
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

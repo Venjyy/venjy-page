@@ -1771,6 +1771,70 @@
           ]
         }
       }
+    },
+    "grupo-miraArriba": {
+      "reloj": "t",
+      "canales": {
+        "cx": -0.45,
+        "cy": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.15, "frec": 1.3 }
+          ]
+        },
+        "bDx": -2.3,
+        "bDz": 0.75
+      }
+    },
+    "grupo-grita": {
+      "reloj": "t",
+      "canales": {
+        "bDx": -1.9,
+        "bDz": 0.55,
+        "bIx": -1.9,
+        "bIz": -0.55,
+        "cx": 0.35,
+        "y": {
+          "base": 0,
+          "osc": [
+            { "forma": "abs", "amp": 0.04, "frec": 8 }
+          ]
+        }
+      }
+    },
+    "grupo-rodilla": {
+      "reloj": "t",
+      "canales": {
+        "inc": 0.35,
+        "pDx": -0.35,
+        "pIx": -0.35,
+        "y": 0.04,
+        "bDx": -0.55,
+        "bDz": 0.25,
+        "bIx": -0.55,
+        "bIz": -0.25,
+        "cx": 0.1,
+        "rz": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.04, "frec": 6 }
+          ]
+        }
+      }
+    },
+    "grupo-apunta": {
+      "reloj": "t",
+      "canales": {
+        "bDx": {
+          "base": -1.65,
+          "osc": [
+            { "forma": "sin", "amp": 0.04, "frec": 9 }
+          ]
+        },
+        "bDz": 0,
+        "bIx": -0.2,
+        "cx": -0.08
+      }
     }
   }
 }
