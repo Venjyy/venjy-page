@@ -215,22 +215,42 @@ export const TIENDAS = {
     }
 };
 
-// ---- mundo/datos/tienda.json: ofertas y compras NUEVAS, al final de las de arriba (solo suma; amigo sin tienda arriba se ignora) ----
+// ---- mundo/datos/tienda.json: ofertas y compras NUEVAS, al final de las de arriba (solo suma). Una persona sin tienda arriba
+// (las de personajes.json, B6) tiene la suya solo con datos: `textos` (saludo, compraOk, ventaOk, noAlcanza; sin ellos, los de abajo) y al menos una oferta válida ----
 const BASE_OFERTAS = new Map(Object.entries(TIENDAS).map(([k, v]) => [k, [v.ofertas.slice(), v.compra.slice()]]));
 const idDe = nombre => { const k = String(nombre).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
 const pila = ([nombre, n]) => { const id = idDe(nombre); return id === undefined ? null : [id, n]; };
+export const TEXTOS_TIENDA = {
+    saludo: t('¿Qué necesitas? Mira lo que tengo.', 'What do you need? Have a look at what I have.'),
+    compraOk: t('Trato hecho.', 'Deal done.'),
+    ventaOk: t('Gracias, me viene bien.', 'Thanks, this is useful.'),
+    noAlcanza: t('Te falta algo para este trato.', 'You are short of something for this deal.')
+};
+const textoDe = (v, base) => (v && typeof v.es === 'string' && v.es && typeof v.en === 'string' && v.en ? t(v.es, v.en) : base);
+let nuevas = [];
 export function fijarTienda(datos) {
+    for (const k of nuevas) delete TIENDAS[k];
+    nuevas = [];
     for (const [k, [ofertas, compra]] of BASE_OFERTAS) { TIENDAS[k].ofertas = ofertas.slice(); TIENDAS[k].compra = compra.slice(); }
-    for (const [amigo, t] of Object.entries((datos && datos.tiendas) || {})) {
-        const def = TIENDAS[amigo];
-        if (!def) continue;
-        for (const o of t.ofertas || []) {
+    for (const [amigo, d] of Object.entries((datos && datos.tiendas) || {})) {
+        const propia = !BASE_OFERTAS.has(amigo);
+        const ofertas = [], compra = [];
+        for (const o of d.ofertas || []) {
             const da = o.da.map(pila), pide = o.pide.map(pila);
-            if (!da.includes(null) && !pide.includes(null)) def.ofertas.push(of(da, pide, o.req));
+            if (!da.includes(null) && !pide.includes(null)) ofertas.push(of(da, pide, o.req));
         }
-        for (const v of t.compra || []) {
+        for (const v of d.compra || []) {
             const da = pila(v.da);
-            if (da) def.compra.push(vende(da[0], da[1], v.esm));
+            if (da) compra.push(vende(da[0], da[1], v.esm));
+        }
+        if (propia) {
+            if (!ofertas.length) continue;
+            const x = d.textos || {};
+            TIENDAS[amigo] = { ofertas, compra, saludo: textoDe(x.saludo, TEXTOS_TIENDA.saludo), compraOk: textoDe(x.compraOk, TEXTOS_TIENDA.compraOk), ventaOk: textoDe(x.ventaOk, TEXTOS_TIENDA.ventaOk), noAlcanza: textoDe(x.noAlcanza, TEXTOS_TIENDA.noAlcanza) };
+            nuevas.push(amigo);
+        } else {
+            TIENDAS[amigo].ofertas.push(...ofertas);
+            TIENDAS[amigo].compra.push(...compra);
         }
     }
 }
