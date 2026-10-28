@@ -6,8 +6,7 @@
 // objetos por lado y la misión que la desbloquea, en Avanzado. Avisa si la oferta regala (mismas reglas de mundo/tests/tienda.mjs).
 // Cada cambio se manda al juego (en vivo con ?estudio); Guardar escribe con If-Match.
 // =========================================================
-import { O, nombreDe } from '../mundo/supervivencia/objetos.js';
-import { B } from '../mundo/texturas.js';
+import { nombreDe } from '../mundo/supervivencia/objetos.js';
 import { TIENDAS, TEXTOS_TIENDA } from '../mundo/supervivencia/tienda-datos.js';
 import { NOMBRES_AMIGO, MISIONES } from '../mundo/supervivencia/misiones-datos.js';
 import { REQ_MINIJUEGOS } from '../mundo/supervivencia/minijuegos-datos.js';
@@ -15,15 +14,11 @@ import { VAL_ESMERALDA, valor, suma } from '../mundo/supervivencia/tienda-valor.
 import { esDelCodigo } from '../mundo/datos/personajes.js';
 import { avisosOferta, avisosCompra, limpiarTienda, ofertaValida, compraValida, resumenPilas, TEXTOS_CLAVES } from './tienda-modelo.mjs';
 import { instalarDeshacer } from './campo-comun.js';
+import { crearCampos, idDe, aNombres } from './campos-datos.js';
 
 const clonar = o => JSON.parse(JSON.stringify(o));
 const esObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
-// Objetos y bloques con nombre, en minúscula como /dar
-const NOMBRES = [...Object.keys(O), ...Object.keys(B).filter(k => B[k] > 0 && k !== 'AGUA' && k !== 'LAVA')].map(k => k.toLowerCase()).sort();
-const idDe = n => { const k = String(n).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
 const calc = { idDe, valor, suma, VAL_ESMERALDA };
-const nombreDeId = id => (Object.keys(O).find(k => O[k] === id) || Object.keys(B).find(k => B[k] === id) || '').toLowerCase();
-const aNombres = pilas => pilas.map(([id, n]) => [nombreDeId(id), n]);
 
 export async function montarTienda(ctx) {
     const $ = id => document.getElementById(id);
@@ -45,7 +40,6 @@ export async function montarTienda(ctx) {
     const nuevas = () => Object.keys(personas).filter(k => !esDelCodigo(k));
     const claves = () => [...Object.keys(TIENDAS).filter(base), ...nuevas().filter(k => !base(k))];
     const nombreDePersona = k => (personas[k] && personas[k].nombre) || NOMBRES_AMIGO[k] || k;
-    const nombreObj = n => { const id = idDe(n); return id === undefined ? n : nombreDe(id, ctx.idioma); };
     const tienda = () => {
         if (!esObj(datos.tiendas[actual])) datos.tiendas[actual] = {};
         return datos.tiendas[actual];
@@ -59,56 +53,7 @@ export async function montarTienda(ctx) {
         ctx.puente.enviarDatos('tienda', datos);
     }
 
-    // ---------- Campos ----------
-    const rotulo = (es, en) => { const s = document.createElement('span'); s.textContent = t(es, en); return s; };
-    const campo = (es, en, input) => { const l = document.createElement('label'); l.className = 'campo'; l.append(rotulo(es, en), input); return l; };
-    const avanzado = el => { el.classList.add('solo-avanzado'); return el; };
-    const titulo = (es, en) => { const h = document.createElement('h3'); h.className = 'pj-titulo'; h.textContent = t(es, en); return h; };
-    const nota = (es, en) => Object.assign(document.createElement('p'), { className: 'pj-nota', textContent: t(es, en) });
-    const boton = (es, en, f, clase = 'boton chico secundario') => { const b = document.createElement('button'); b.type = 'button'; b.className = clase; b.textContent = t(es, en); b.addEventListener('click', f); return b; };
-    function entradaObjeto(valorInicial, al) {
-        const i = document.createElement('input'); i.type = 'text'; i.setAttribute('list', 'ti-objetos'); i.value = valorInicial; i.maxLength = 40; i.autocomplete = 'off';
-        i.addEventListener('change', () => {
-            const v = i.value.trim().toLowerCase().replace(/\s+/g, '_');
-            if (NOMBRES.includes(v)) al(v);
-            else { i.value = valorInicial; rotular('Ese objeto no existe: escribe su nombre y elige de la lista.', 'That object does not exist: type its name and pick from the list.', 'error'); }
-        });
-        return i;
-    }
-    function entradaCantidad(valorInicial, al) {
-        const i = document.createElement('input'); i.type = 'number'; i.min = 1; i.max = 64; i.step = 1; i.value = valorInicial;
-        i.addEventListener('change', () => { const n = Math.round(Number(i.value)); if (Number.isFinite(n)) al(Math.min(64, Math.max(1, n))); });
-        return i;
-    }
-    // Lista de pilas [nombre, n] (da / pide): en Simple, una; «Agregar objeto» y quitar, en Avanzado
-    function listaPilas(pilas, rotuloEs, rotuloEn, alCambiar) {
-        const caja = document.createElement('div'); caja.className = 'pj-lista';
-        pilas.forEach((p, i) => {
-            const fila = document.createElement('div'); fila.className = 'pj-par';
-            fila.append(campo(rotuloEs, rotuloEn, entradaObjeto(p[0], v => { p[0] = v; alCambiar(); })), campo('Cantidad', 'Amount', entradaCantidad(p[1], n => { p[1] = n; alCambiar(); })));
-            if (i > 0) fila.appendChild(boton('Quitar', 'Remove', () => { pilas.splice(i, 1); alCambiar(true); }));
-            caja.appendChild(i > 0 ? avanzado(fila) : fila);
-        });
-        caja.appendChild(avanzado(boton('Agregar objeto', 'Add object', () => { pilas.push(['esmeralda', 1]); alCambiar(true); })));
-        return caja;
-    }
-    function avisos(lista) {
-        const d = document.createElement('div'); d.className = 'pj-avisos';
-        for (const [es, en] of lista) d.appendChild(Object.assign(document.createElement('p'), { textContent: t(es, en) }));
-        return d;
-    }
-    // Par ES/EN de lo que dice
-    function par(rotEs, rotEn, valorIni, al) {
-        const fila = document.createElement('div'); fila.className = 'pj-par';
-        const v = esObj(valorIni) ? clonar(valorIni) : { es: '', en: '' };
-        const poner = () => al(v.es && v.en ? { es: v.es, en: v.en } : null);
-        for (const [l, k] of [['ES', 'es'], ['EN', 'en']]) {
-            const i = document.createElement('input'); i.type = 'text'; i.maxLength = 160; i.value = v[k] || '';
-            i.addEventListener('change', () => { v[k] = i.value.trim(); poner(); });
-            fila.appendChild(campo(`${rotEs} (${l})`, `${rotEn} (${l})`, i));
-        }
-        return fila;
-    }
+    const { nombreObj, campo, avanzado, titulo, nota, boton, listaPilas, avisos, par } = crearCampos(ctx, rotular);
 
     // ---------- Pintar ----------
     function pintarLista() {
@@ -240,9 +185,6 @@ export async function montarTienda(ctx) {
     window.addEventListener('keydown', e => {
         if (ctx.pestana === 'tienda' && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (!btnGuardar.disabled) guardar(); }
     });
-    const lista = document.createElement('datalist'); lista.id = 'ti-objetos';
-    for (const n of NOMBRES) lista.appendChild(Object.assign(document.createElement('option'), { value: n, label: nombreObj(n) }));
-    document.body.appendChild(lista);
     ctx.alIdioma.push(() => pintar());
     actual = claves()[0] || null;
     btnGuardar.disabled = true;

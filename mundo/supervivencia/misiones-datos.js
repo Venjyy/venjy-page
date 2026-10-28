@@ -260,6 +260,47 @@ export const KITS = {
 };
 for (const m of MISIONES) m.kit = KITS[m.id] || null;
 
+// ---- mundo/datos/misiones.json (B6b): misiones NUEVAS, al final de las de arriba (solo suma; las de hoy no se tocan) ----
+// Cada una: { amigo, tipo: entregar | matar | noche, pide, mob, n, noche, premio, kit, titulo, pedido, aceptar, completada }, con los
+// objetos por nombre (como /dar). El id empieza con la clave del amigo (pony4, rosa1). `visitar` y `hablar` quedan en el código.
+// Una persona nueva de personajes.json las tiene en su panel como cualquier amigo; una mal escrita se ignora entera.
+const BASE_MISIONES = MISIONES.slice();
+const TIPOS_NUEVOS = ['entregar', 'matar', 'noche'];
+const idObjeto = nombre => { const k = String(nombre).toUpperCase(); return O[k] !== undefined ? O[k] : B[k]; };
+const pilaId = ([nombre, n, amigo]) => { const id = idObjeto(nombre); return id === undefined ? null : (amigo ? [id, n, amigo] : [id, n]); };
+const textoOk = x => !!x && typeof x.es === 'string' && x.es !== '' && typeof x.en === 'string' && x.en !== '';
+export function misionDeDatos(id, d) {
+    if (!d || typeof id !== 'string' || !TIPOS_NUEVOS.includes(d.tipo) || typeof d.amigo !== 'string' || !id.startsWith(d.amigo)) return null;
+    if (![d.titulo, d.pedido, d.aceptar, d.completada].every(textoOk) || !Array.isArray(d.premio) || !d.premio.length) return null;
+    const premio = d.premio.map(pilaId);
+    if (premio.includes(null)) return null;
+    const m = { id, amigo: d.amigo, tipo: d.tipo, premio, titulo: t(d.titulo.es, d.titulo.en), pedido: t(d.pedido.es, d.pedido.en), aceptar: t(d.aceptar.es, d.aceptar.en), completada: t(d.completada.es, d.completada.en) };
+    if (d.tipo === 'entregar') {
+        const pide = (d.pide || []).map(pilaId);
+        if (!pide.length || pide.includes(null)) return null;
+        m.pide = pide;
+    }
+    if (d.tipo === 'matar') {
+        if (!d.mob || !Number.isInteger(d.n) || d.n < 1) return null;
+        m.mob = d.mob; m.n = d.n;
+        if (d.noche) m.noche = true;
+    }
+    const kit = (d.kit || []).map(pilaId);
+    if (kit.includes(null)) return null;
+    m.kit = kit.length ? kit : null;
+    return m;
+}
+export function fijarMisiones(datos) {
+    MISIONES.length = 0;
+    MISIONES.push(...BASE_MISIONES);
+    const ids = new Set(BASE_MISIONES.map(m => m.id));
+    for (const [id, d] of Object.entries((datos && datos.misiones) || {})) {
+        if (ids.has(id)) continue;
+        const m = misionDeDatos(id, d);
+        if (m) { MISIONES.push(m); ids.add(id); }
+    }
+}
+
 // Entrega el kit de la misión `m` una sola vez: `kits` es el Set de misiones cuyo kit ya se dio.
 // Devuelve null si ya se había dado, o la lista de lo que no cupo: [[id, n, d, amigo]].
 export function repartirKit(m, kits, inventario) {

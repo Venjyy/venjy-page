@@ -102,6 +102,7 @@ const RESUMEN_JSON = {
         const o = Object.values(d.tiendas || {}).reduce((s, t) => s + (t.ofertas || []).length + (t.compra || []).length, 0);
         return `${n} tienda${n === 1 ? '' : 's'} con ofertas nuevas, ${o} ofertas`;
     },
+    misiones: d => { const n = Object.keys(d.misiones || {}).length; return `${n} misión${n === 1 ? '' : 'es'} nueva${n === 1 ? '' : 's'}`; },
     posiciones: d => `${Object.keys(d.personas || {}).length} personas`,
     personajes: d => {
         const e = Object.entries(d.personas || {});
@@ -190,6 +191,15 @@ function filasTienda(d, filtro) {
         (t.compra || []).forEach((v, i) => { const k = `${amigo}.compra${i}`; if (coincide(k, filtro)) filas.push({ clave: k, texto: `${pilas([v.da])} -> ${v.esm} esmeralda` }); });
     }
     return filas;
+}
+
+function filasMisiones(d, filtro) {
+    const pilas = l => (l || []).map(([n, c]) => `${c} ${n}`).join(' + ');
+    return Object.entries(d.misiones || {}).filter(([id, m]) => coincide(id, filtro) || coincide(m.amigo, filtro)).map(([id, m]) => ({
+        clave: id,
+        texto: `${m.amigo} · ${m.tipo === 'entregar' ? 'entregar ' + pilas(m.pide) : m.tipo === 'matar' ? `matar ${m.n} ${m.mob}${m.noche ? ' de noche' : ''}` : 'sobrevivir la noche'} -> ${pilas(m.premio)}`,
+        extra: m.titulo && m.titulo.es
+    }));
 }
 
 function textoBoton(b) {
@@ -411,7 +421,7 @@ function filasCombate(d, filtro) {
     ];
 }
 
-const FILAS_JSON = { musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
+const FILAS_JSON = { misiones: filasMisiones, musica: filasMusica, iconos: filasIconos, 'cartas-arte': filasCartasArte, borradores: filasBorradores, 'ui-layout': filasLayout, textos: filasTextos, dialogos: filasDialogos, tienda: filasTienda, posiciones: filasPosiciones, personajes: filasPersonajes, poses: filasPoses, escenas: filasEscenas };
 
 // ---------- DIALOGOS.md ----------
 async function dialogosMd(op) {
@@ -499,8 +509,8 @@ async function refsPixeles() {
     return { objetos: new Set(Object.keys(O).map(k => k.toLowerCase())), cartas: new Set(Object.keys(CARTAS)) };
 }
 
-// Quién puede tener tienda en tienda.json: las 13 de hoy (tienda-datos.js) y las personas nuevas de personajes.json
-async function personasConTienda() {
+// Quién puede tener tienda o misiones en tienda.json y misiones.json: las 13 de hoy (tienda-datos.js) y las personas nuevas de personajes.json
+async function personasDelJuego() {
     const { TIENDAS } = await import('../mundo/supervivencia/tienda-datos.js');
     const { esDelCodigo } = await import('../mundo/datos/personajes.js');
     const nuevas = new Set();
@@ -628,6 +638,19 @@ function revisarSemantica(nombre, datos, problemas, arch, objetos, refs, escenas
     if (nombre === 'personajes' && refs && objetos) {
         for (const r of reglasPersonajes(datos, { anclas: refs.anclas, objeto: n => objetos.has(String(n).toLowerCase()), gestos: escenas && escenas.gestos })) problemas.push({ archivo: arch, tipo: r.tipo, texto: r.texto });
     }
+    if (nombre === 'misiones' && objetos) {
+        const revisa = (ruta, pila) => { if (Array.isArray(pila) && !objetos.has(pila[0])) mal(`${ruta}: no existe el objeto «${pila[0]}» (los nombres son los de /dar)`); };
+        for (const [id, m] of Object.entries(datos.misiones || {})) {
+            const r = `$.misiones.${id}`;
+            if (conTienda && !conTienda.has(m.amigo)) mal(`${r}.amigo: no existe esa persona (las 13 del juego o una de personajes.json)`);
+            if (!id.startsWith(m.amigo)) mal(`${r}: el id debe empezar con la clave del amigo («${m.amigo}»)`);
+            if (m.tipo === 'entregar' && !(m.pide || []).length) mal(`${r}.pide: una misión de entregar necesita qué entregar`);
+            if (m.tipo === 'matar' && (!m.mob || !m.n)) mal(`${r}: una misión de matar necesita mob y n`);
+            (m.pide || []).forEach((p, j) => revisa(`${r}.pide[${j}]`, p));
+            (m.premio || []).forEach((p, j) => revisa(`${r}.premio[${j}]`, p));
+            (m.kit || []).forEach((p, j) => revisa(`${r}.kit[${j}]`, p));
+        }
+    }
     if (nombre === 'tienda' && objetos) {
         const revisa = (ruta, pila) => { if (Array.isArray(pila) && !objetos.has(pila[0])) mal(`${ruta}: no existe el objeto «${pila[0]}» (los nombres son los de /dar)`); };
         for (const [amigo, t] of Object.entries(datos.tiendas || {})) {
@@ -667,9 +690,9 @@ async function validarCmd(pos, op) {
     const problemas = [];
     let limpios = 0;
     const rangos = leerRangos();
-    const objetos = nombres.includes('tienda') || nombres.includes('personajes') ? await nombresDeObjetos() : null;
+    const objetos = nombres.includes('tienda') || nombres.includes('misiones') || nombres.includes('personajes') ? await nombresDeObjetos() : null;
     const refs = nombres.includes('posiciones') || nombres.includes('personajes') ? await referenciasDePosiciones() : null;
-    const conTienda = nombres.includes('tienda') ? await personasConTienda() : null;
+    const conTienda = nombres.includes('tienda') || nombres.includes('misiones') ? await personasDelJuego() : null;
     const escenas = nombres.some(n => ['escenas', 'poses', 'personajes'].includes(n)) ? await nombresDeEscenas() : null;
     const pix = nombres.some(n => ['iconos', 'cartas-arte', 'borradores'].includes(n)) ? await refsPixeles() : null;
     if (!rangos) problemas.push({ archivo: 'glifos.json', tipo: 'error', texto: 'falta estudio/glifos.json (genéralo con: node estudio/cli.mjs glifos)' });
