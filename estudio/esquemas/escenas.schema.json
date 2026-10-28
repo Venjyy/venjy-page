@@ -147,6 +147,7 @@
         },
         "golpes": { "description": "Contactos: sonido y chispas.", "$ref": "#/$defs/marcas" },
         "corazones": { "description": "Corazones que suben.", "$ref": "#/$defs/marcas" },
+        "rapidez": { "description": "Qué tan rápido pasa un actor de un gesto al siguiente (DISENO §40, decisión 20). Sin ella, 11 (el de siempre); más alta = cambios más bruscos (el dibujo .exe de Conejeros usa 22), más baja = más lentos (el monito de Moisés usa 9).", "type": "number", "minimum": 1, "maximum": 60 },
         "pista": { "$ref": "#/$defs/pista" },
         "camara": { "$ref": "#/$defs/camara" },
         "nota": { "$ref": "comun.schema.json#/$defs/nota" },

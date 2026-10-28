@@ -27,8 +27,10 @@ function clave(k, x, interp) {
     if (x <= k[0][0]) return k[0][1];
     for (let i = 1; i < k.length; i++) {
         if (x <= k[i][0]) {
-            const t0 = k[i - 1][0], v0 = k[i - 1][1], f = (x - t0) / (k[i][0] - t0);
-            return interp === 'paso' ? v0 : v0 + (k[i][1] - v0) * (interp === 'lineal' ? f : suave(f));
+            // Una clave puede traer un 3.er elemento (suave | lineal | paso) que manda en el tramo que empieza en ella (DISENO §40, decisión 21)
+            const t0 = k[i - 1][0], v0 = k[i - 1][1], f = (x - t0) / (k[i][0] - t0), ip = k[i - 1][2] || interp;
+            // paso: el valor nuevo vale desde el instante de su clave (floor(t / 0,4) en el instante exacto ya es el siguiente)
+            return ip === 'paso' ? (x < k[i][0] ? v0 : k[i][1]) : v0 + (k[i][1] - v0) * (ip === 'lineal' ? f : suave(f));
         }
     }
     return k[k.length - 1][1];
