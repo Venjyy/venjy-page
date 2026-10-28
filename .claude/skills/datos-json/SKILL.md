@@ -48,6 +48,7 @@ Además, según el archivo:
 | `escenas.json` | `node mundo/tests/estudio-escenas.mjs` |
 | `poses.json` | `node mundo/tests/estudio-poses.mjs` |
 | `posiciones.json` | `node mundo/tests/estudio-posiciones.mjs` |
+| `personajes.json` | `node mundo/tests/personajes.mjs` (una persona nueva = una entrada; los textos de personas reales los aprueba el dueño) |
 | `textos.json` | `node mundo/tests/estudio-textos.mjs` |
 | `objetos-mano.json` | `node mundo/tests/objetos-mano.mjs` |
 | `cartas-mesa.json` | `node mundo/tests/cartas-mesa.mjs` |

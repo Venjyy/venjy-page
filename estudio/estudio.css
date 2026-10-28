@@ -664,3 +664,17 @@ body[data-vista="simple"] .solo-avanzado { display: none !important; }
 /* Formas (B0-V): vista previa de las cajas, en 1/16 (8 px cada uno) */
 .vista-forma { width: 128px; height: 128px; cursor: grab; touch-action: none; image-rendering: pixelated;
     box-shadow: 0 0 0 3px var(--borde-oscuro); }
+
+/* Pestaña Personajes (Etapa B · B5, DISENO §41) */
+.pj-form { display: grid; gap: 8px; }
+.pj-titulo { margin: 14px 0 2px; font-size: 1rem; font-weight: normal; color: var(--amarillo); }
+.pj-grupo { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; align-items: end; }
+.pj-par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pj-lista { display: grid; gap: 6px; }
+.pj-fila { display: grid; gap: 4px; padding: 6px; border-left: 4px solid var(--gris); background: rgb(0 0 0 / 0.25); }
+.pj-fila > .boton { justify-self: start; }
+.pj-nota { margin: 4px 0; font-size: 0.8rem; color: var(--gris); }
+.pj-vista { display: block; margin: 8px auto; width: 200px; height: 360px; image-rendering: pixelated; background: rgb(0 0 0 / 0.25); border: 3px solid #000; }
+.pj-avisos p { margin: 4px 0; font-size: 0.75rem; padding: 3px 6px; border-left: 4px solid var(--amarillo); background: rgb(0 0 0 / 0.3); }
+.pj-avisos p.error { border-left-color: var(--rojo); }
+@media (max-width: 700px) { .pj-par { grid-template-columns: 1fr; } }

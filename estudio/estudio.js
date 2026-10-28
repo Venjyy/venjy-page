@@ -7,6 +7,7 @@
 // Salonas: ajustes, reglas y textos de La Gira, salonas.json (S9). Ritmo: su partitura en línea de tiempo y ajustes a mano (S10a).
 // Combate: ataques, ventanas y fases de cada estilo de pelea, estilo-*.json y combate.json (bloque 8 · N6).
 // Vida: cómo caminan los amigos al dejar su sitio y sus visitas por horario, navegacion.json y rutinas.json (6d etapa 2, §25).
+// Personajes: personas nuevas hechas solo con datos y la apariencia de los amigos, personajes.json (Etapa B · B5, §41).
 // Estudio simple (Etapa B, 0b · B0, §39): pestañas en grupos, franja de ayuda por pestaña y vista Simple / Avanzado
 // (ctx.vista; en Simple se esconde todo lo que tenga la clase `solo-avanzado`; ctx.alVista avisa a quien lo necesite).
 // =========================================================
@@ -28,6 +29,7 @@ import { montarSalonas } from './salonas.js';
 import { montarRitmo } from './ritmo.js';
 import { montarMusica } from './musica.js';
 import { montarVida } from './vida.js';
+import { montarPersonajes } from './personajes.js';
 import { crearCliente } from './puente-cliente.js';
 import { textoAyuda, vistaValida } from './ayuda-modelo.mjs';
 
@@ -128,6 +130,7 @@ await montarSalonas(ctx);
 await montarMusica(ctx); // antes que Ritmo: Ritmo comparte sus datos (ctx.musica)
 await montarRitmo(ctx);
 await montarVida(ctx);
+await montarPersonajes(ctx); // B5: personas nuevas solo con datos (personajes.json, §41)
 
 // Pestañas: cada una enseña la sección #seccion-<clave> (la del juego carga el iframe la primera vez).
 // Posiciones comparte la sección del juego (el gizmo se arrastra en el juego): data-seccion="juego" y el panel propio.
