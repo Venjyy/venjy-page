@@ -142,6 +142,9 @@ export const PIX = {
     // Tomatitos (grupos/tomatitos.js): el tomate con bigote, Tomás (con la cara dibujada), la cara del gigante (un bloque) y sus hojas
     tomate: { filas: ['.....gg.....', '...gGggGg...', '..rrgGGgrr..', '.rrRRrrrrrr.', 'rrRRrrrrrrrr', 'rRrrkrrkrrrr', 'rRrrkrrkrrrr', 'rmrrrrrrrrmr', 'rmmrmmmmrmmr', 'rrmmmrrmmmrr', '.rrrrrrrrro.', '...rrrrroo..'], colores: COL_TOMATE },
     tomas: { filas: ['.....gg.....', '...gGggGg...', '..rrgGGgrr..', '.rwwwrrwwwr.', 'rrwkwrrwkwrr', 'rRwwwrrwwwrr', 'rRrrrrrrrrrr', 'rmrrrrrrrrmr', 'rmmrmmmmrmmr', 'rrmmmrrmmmrr', '.rwrrrrrrwr.', '...wwwwww...'], colores: COL_TOMATE },
+    // Coyhaique (grupos/coyhaique.js): la bola de nieve y el copo que cae al pegar
+    bola: { filas: ['.aaaa.', 'abbbba', 'abbbba', 'abbbca', 'abbcca', '.aaaa.'], colores: { a: '#c8d8e8', b: '#ffffff', c: '#dde8f2' } },
+    copo: { filas: ['.a.', 'aba', '.a.'], colores: { a: '#e8f2ff', b: '#ffffff' } },
     hojas: { filas: ['GgGgGgGg', 'gGgggGgG', 'GgGGgGgg', 'gggGgGgG', 'GgGgggGg', 'gGgGgGgG', 'GggGgGgg', 'gGgGgGgG'], colores: COL_TOMATE }
 };
 // La cara del tomate gigante es un bloque: sin bordes transparentes (arriba todo rojo, los huecos en el color oscuro)
@@ -161,6 +164,8 @@ export const SONIDOS = {
     visto() { tono({ f0: 660, f1: 660, dur: 0.1, vol: 0.09, forma: 'triangle' }); tono({ f0: 990, f1: 990, dur: 0.16, vol: 0.09, forma: 'triangle', retardo: 0.1 }); },
     // Mensaje de WhatsApp: dos notas suaves que suben
     mensaje() { tono({ f0: 1046, f1: 1046, dur: 0.08, vol: 0.08, forma: 'sine' }); tono({ f0: 1568, f1: 1568, dur: 0.12, vol: 0.08, forma: 'sine', retardo: 0.1 }); },
+    // Una bola de nieve que pega: ruido corto y agudo
+    bolaNieve() { ruido({ dur: 0.12, frec: 900, q: 0.8, vol: 0.18, tipo: 'lowpass' }); },
     // Aterrizaje con polvo
     polvo() { ruido({ dur: 0.35, frec: 260, q: 0.6, vol: 0.3, tipo: 'lowpass' }); },
     // Cuerda grave (bajo de aire)

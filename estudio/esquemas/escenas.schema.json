@@ -118,10 +118,10 @@
           "propertyNames": { "$ref": "comun.schema.json#/$defs/clave" },
           "additionalProperties": {
             "anyOf": [
-              { "$ref": "comun.schema.json#/$defs/clave" },
+              { "$ref": "#/$defs/claveActor" },
               {
                 "type": "object",
-                "properties": { "clave": { "$ref": "comun.schema.json#/$defs/clave" }, "radio": { "type": "number", "minimum": 1, "maximum": 20 } },
+                "properties": { "clave": { "$ref": "#/$defs/claveActor" }, "radio": { "type": "number", "minimum": 1, "maximum": 20 } },
                 "required": ["clave"],
                 "additionalProperties": false
               }
@@ -416,6 +416,7 @@
       "minItems": 2,
       "maxItems": 3
     },
+    "claveActor": { "description": "Clave de una persona o del Venjy de un lugar (venjy@mina, venjy@atalaya; DISENO §40, decisión 23).", "type": "string", "pattern": "^[a-z][a-zA-Z0-9-]*(@[a-z][a-zA-Z0-9-]*)?$" },
     "marcasNombradas": {
       "description": "Instantes con nombre que mueve el dueño en la línea de tiempo y lee `codigo` (decisión 11). Cada uno: un número o { t, ancla }.",
       "type": "object",

@@ -85,8 +85,8 @@ export const TOMATE = PIX.tomate;
 export const TOMAS = PIX.tomas;
 export const TOMATE_BLOQUE = PIX['tomate-bloque'];
 export const HOJAS = PIX.hojas;
-export const BOLA = { filas: ['.aaaa.', 'abbbba', 'abbbba', 'abbbca', 'abbcca', '.aaaa.'], colores: { a: '#c8d8e8', b: '#ffffff', c: '#dde8f2' } };
-export const NIEVE = { filas: ['.a.', 'aba', '.a.'], colores: { a: '#e8f2ff', b: '#ffffff' } };
+export const BOLA = PIX.bola;
+export const NIEVE = PIX.copo;
 // Marca de ping (como la de los juegos de disparos: rombo naranjo con signo de alerta)
 export const PING = { filas: ['....aa....', '...abba...', '..abbbba..', '.abbkkbba.', 'abbbkkbbba', 'abbbkkbbba', '.abbbbbba.', '..abkkba..', '...abba...', '....aa....'], colores: { a: '#7a2a00', b: '#ff8a1c', k: '#2a0e00' } };
 

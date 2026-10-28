@@ -4,13 +4,13 @@
 // Cada 1/120 s compara frases, tramo de cada actor (u, peso y metas de cada canal), T y r. Lo que el JS hacía en `extra` se
 // compara con el catálogo: mismas chispas y sonidos por cuadro y en los mismos puntos, mismos objetos visibles. También el
 // lugar (centro y dónde te paras), el paseo de Braulio (que vuelva a su sitio), el esquema, las reglas y el `dispara`.
-// Hecho: Tomatitos (7 skins). Falta atalaya y Coyhaique (B4d, segunda parte).
+// Hecho: Tomatitos (7 skins) y Coyhaique (3). Falta la atalaya.
 // =========================================================
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validar } from '../../estudio/validar.mjs';
-import { guionDeDatos, reglasEscenas, escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo, eventosEn, objetoEn, sonidosDeEscena } from '../datos/escenas.js';
+import { guionDeDatos, reglasEscenas, escenaQueDispara, amigoDeEscena, repartoDe, repartirGuion, tramoEn, metaTramo, eventosEn, objetoEn, sonidosDeEscena, caminoEn } from '../datos/escenas.js';
 import { funcionGesto } from '../datos/gestos.js';
 import { GRUPOS_MIGRADOS, escenaDeGrupo, nombreEscena } from '../../estudio/migrar-grupos.mjs';
 
@@ -62,9 +62,88 @@ function mundo(g) {
 }
 
 let cuadros = 0;
+
+// ---- Coyhaique: pista y frases contra el JS, el paseo (caminos) contra api.mover, la cámara y la bola contra el código ----
+async function pruebaCoyhaique(mod, skin) {
+    const grupo = 'coyhaique', nombre = nombreEscena(grupo, skin), def = datos.escenas[nombre];
+    ok(!!def, `${nombre}: está en escenas.json`);
+    if (!def) return;
+    const { escena } = await escenaDeGrupo(grupo, skin, mod, SONIDOS);
+    const { revisado, ...guardada } = def;
+    if (JSON.stringify(guardada) !== JSON.stringify(escena)) console.log(`  aviso: ${nombre} ya no es el que da el script (¿lo ajustó el dueño?)`);
+    const amigo = amigoDeEscena(def, def.dispara, skin, GRUPOS[grupo].miembros);
+    ok(escenaQueDispara(datos.escenas, { tipo: 'grupo', grupo, skin }) === nombre, `${nombre}: la elige su dispara`);
+    ok(amigo === (skin === 'moises' ? 'lalo' : 'moises'), `${nombre}: el amigo (n) es ${amigo}`);
+    const js = mod.grupo(skin);
+    let d = guionDeDatos(def, { durLinea, moldes: MOLDES, personajes: PERSONAJES });
+    const r = repartoDe(d.personas, amigo, skin, d.actores);
+    d = repartirGuion({ ...d, reparto: r.reparto, actores: r.actores });
+    const persona = q => (q === 'n' ? amigo : q);
+    ok(js.T === d.T && js.r === d.r, `${nombre}: T y r`);
+    ok(JSON.stringify(Object.keys(js.pista).sort()) === JSON.stringify(Object.keys(d.pista).map(persona).sort()), `${nombre}: los mismos actores en la pista`);
+    ok(cerca(js.extra ? 1 : 0, 1) && def.codigo === 'grupo-coyhaique' && !!CODIGO_ESCENAS[def.codigo], `${nombre}: su código está registrado`);
+    // Sitios por persona; el JS los llama por papel (Moisés es 'n'), los datos por persona o 'n' (el amigo)
+    const sitios = { moises: { x: 1, y: 0, z: 2 }, lalo: { x: 3, y: 0, z: 1 }, v: { x: 40, y: 0, z: 30 }, j: { x: 0.5, y: 0, z: -2 } };
+    const mundoDe = (conRol, T) => {
+        const registro = [], movs = {}, ef = [];
+        const nuevo = () => ({ visible: true, material: { map: {} }, userData: {}, position: { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } }, scale: { set() {} } });
+        const api = { e: { t: 0, T, hechos: new Set() }, posG: q => sitios[conRol(q)], origen: q => sitios[conRol(q)], actor: q => (conRol(q) ? { p: {} } : null),
+            mover(q, x, y, z) { movs[q] = { x, y, z }; }, girar(q, yaw) { (movs.giros ||= {})[q] = yaw; }, camara(f) { api.fcamara = f; },
+            sprite: nuevo, caja: nuevo, pegar: o => { registro.push(o); return o; }, efecto() { ef.push(1); return nuevo(); }, sonidos: { golpe() {} } };
+        return { api, registro, movs, ef };
+    };
+    // JS: papeles moises→n, lalo, v, j. Datos: n→amigo; 'moises' solo existe como actor si tu skin es la suya
+    const A = mundoDe(q => ({ n: 'moises', lalo: 'lalo', v: 'v', j: 'j' })[q], js.T);
+    const B = mundoDe(q => (q === 'n' ? amigo : q === 'moises' ? (skin === 'moises' ? 'moises' : null) : q === 'lalo' ? (skin === 'moises' ? null : 'lalo') : sitios[q] ? q : null), d.T);
+    A.api.e.centro = js.centro(A.api);
+    js.extra.iniciar(A.api);
+    const extraD = (await CODIGO_ESCENAS[def.codigo]()).default(d.marcas);
+    extraD.iniciar(B.api);
+    const bJS = buscador(js.gestos), bD = buscador(d.gestos);
+    const origen = q => sitios[q === 'sitio' ? 'moises' : q];
+    // El punto { desde, mas } de los caminos: desde Moisés (su asiento)
+    const punto = (q, a) => { if (a === 'sitio') return q === 'v' ? { x: 40, y: 0, z: 30 } : sitios[q]; return { x: sitios.moises.x + a.mas[0], y: sitios.moises.y + a.mas[1], z: sitios.moises.z + a.mas[2] }; };
+    let malos = 0;
+    const malo = m => { if (malos++ < 5) console.error(`  ${nombre}: ${m}`); };
+    for (let n = 0; n / 120 < js.T; n++) {
+        const t = n / 120; cuadros++;
+        A.api.e.t = B.api.e.t = t;
+        const frases = (g, f) => g.lineas.filter(l => t >= l.a && t < l.a + l.d).map(l => f(l.q) + ':' + l.texto.es).join('|');
+        if (frases(js, x => x) !== frases(d, persona)) malo(`t=${t.toFixed(3)} frases`);
+        for (const q of Object.keys(js.pista)) {
+            const qd = q === amigo ? 'n' : q;
+            const x = tramoEn(js.pista[q], t), y = tramoEn(d.pista[qd], t);
+            if (!x !== !y) { malo(`t=${t.toFixed(3)} ${q}: tramo ${x && x.g} ≠ ${y && y.g}`); continue; }
+            if (!x) continue;
+            if (!cerca(x.u, y.u) || !cerca(x.w, y.w)) malo(`t=${t.toFixed(3)} ${q}: u/w`);
+            const i = { s: false, otroS: false, j: q === 'j', esc: 1 };
+            const ma = metaTramo(x, t, i, bJS), mb = metaTramo(y, t, i, bD);
+            for (const k of new Set([...Object.keys(ma), ...Object.keys(mb)])) if (!(ma[k] === mb[k] || cerca(ma[k], mb[k]))) malo(`t=${t.toFixed(3)} ${q} ${x.g}/${y.g}.${k}: ${ma[k]} ≠ ${mb[k]}`);
+        }
+        js.extra.cuadro(A.api);
+        extraD.cuadro(B.api);
+        // La bola: misma visibilidad y posición; la cámara: mismo plano
+        const bj = A.registro[0], bd = B.registro[0];
+        if (bj.visible !== bd.visible || (bj.visible && !(cerca(bj.position.x, bd.position.x) && cerca(bj.position.y, bd.position.y) && cerca(bj.position.z, bd.position.z)))) malo(`t=${t.toFixed(3)} bola`);
+        const cj = A.api.fcamara(), cd = B.api.fcamara();
+        if (![...cj.pos, ...cj.mira].every((v, k) => cerca(v, [...cd.pos, ...cd.mira][k]))) malo(`t=${t.toFixed(3)} cámara`);
+        // El paseo: lo que movía el JS (menos el último 0,1 s, que ahora es la vuelta al sitio) contra los caminos
+        if (t < js.T - 0.15) for (const [qd, qjs] of [['moises', 'n'], ['v', 'v']]) {
+            const p = caminoEn(def.caminos[qd], t, a => punto(qd, a));
+            const m = A.movs[qjs];
+            if (m && p && !(cerca(m.x, p.x, 1e-7) && cerca(m.y, p.y, 1e-7) && cerca(m.z, p.z, 1e-7))) malo(`t=${t.toFixed(3)} paseo de ${qd}`);
+        }
+    }
+    ok(malos === 0, `${nombre}: mismo cuadro que el JS cada 1/120 s`);
+    // Los copos: los mismos que soltaba el JS (8 al llegar el Venjy y 6 por bola), cada uno en el instante de su golpe
+    ok(A.ef.length === def.efectos.length && def.efectos.every(e => e[1] === 'copo'), `${nombre}: los mismos copos de nieve (${A.ef.length} / ${def.efectos.length})`);
+    ok(def.sonidos.length === 2 && def.sonidos.every(([t, n], i) => n === 'bolaNieve' && cerca(t, def.marcas[i ? 'tiro2' : 'tiro1'] + 0.5, 1e-9)), `${nombre}: un golpe de nieve por bola`);
+}
+
 for (const { grupo, skins } of GRUPOS_MIGRADOS) {
     const mod = await import(`../supervivencia/grupos/${grupo}.js`);
     for (const skin of skins) {
+        if (grupo === 'coyhaique') { await pruebaCoyhaique(mod, skin); continue; }
         const nombre = nombreEscena(grupo, skin);
         const def = datos.escenas[nombre];
         ok(!!def, `${nombre}: está en escenas.json`);

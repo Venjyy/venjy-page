@@ -1739,6 +1739,38 @@
           ]
         }
       }
+    },
+    "grupo-caminaPico": {
+      "reloj": "t",
+      "canales": {
+        "pDx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.55, "frec": 9 }
+          ]
+        },
+        "pIx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": -0.55, "frec": 9 }
+          ]
+        },
+        "bDx": -2.6,
+        "bDz": 0.35,
+        "bIx": {
+          "base": 0,
+          "osc": [
+            { "forma": "sin", "amp": 0.4, "frec": 9 }
+          ]
+        },
+        "bIz": -0.08,
+        "y": {
+          "base": 0,
+          "osc": [
+            { "forma": "abs", "amp": 0.04, "frec": 9 }
+          ]
+        }
+      }
     }
   }
 }

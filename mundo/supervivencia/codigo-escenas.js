@@ -21,5 +21,7 @@ export const CODIGO_ESCENAS = {
     'momento-pony': () => import('./codigo-escenas/momento-pony.js'),
     'momento-salonas': () => import('./codigo-escenas/momento-salonas.js'),
     'momento-venjy': () => import('./codigo-escenas/momento-venjy.js'),
-    'momento-venjy-pareja': () => import('./codigo-escenas/momento-venjy-pareja.js')
+    'momento-venjy-pareja': () => import('./codigo-escenas/momento-venjy-pareja.js'),
+    // Grupos (B4d)
+    'grupo-coyhaique': () => import('./codigo-escenas/grupo-coyhaique.js')
 };

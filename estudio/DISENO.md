@@ -1476,6 +1476,11 @@ Prueba de paridad: `mundo/tests/escenas-momentos.mjs`. Cada 1/120 s compara fras
 - **Gestos**: los de `GESTOS_GRUPO` que usan los Tomatitos van a `poses.json` como `grupo-<nombre>` (`doblaRisa` con `apoya`).
 Falta (B4d, segunda parte): atalaya (grúa y plano del ping con `api.camara`, salto en arco, ping) y Coyhaique (dos planos manuales, la bola de nieve y la nieve): van a `codigo` con `marcas`.
 
+**B4d, segunda parte (2026-10-27): Coyhaique.** Tres escenas (`grupo-coyhaique-<skin>`). Pieza nueva:
+23. **Clave de actor con lugar**: `actores` acepta `venjy@mina` y `venjy@atalaya` (el Venjy de ese lugar; antes el esquema solo dejaba claves simples). Su papel en la escena es `v`.
+Lo que fijó: `lugar` y `caminos` se miden desde el asiento de Moisés (`desde: 'moises'`: el iglú, el túnel por donde entra el Venjy y el sitio donde se para Moisés); Moisés es `n` salvo con tu skin de Moisés (entonces es el actor `moises` y `n` es Lalo). Los dos vuelven a su sitio en 0,05 s al final (el motor lo hacía al terminar; `validar` pide que el último punto del camino sea `sitio`). Los copos son `efectos` de tipo `copo` (`PIX.copo` es el dibujo de siempre) y el golpe, `SONIDOS.bolaNieve`. `codigo` `grupo-coyhaique`: los dos planos manuales de la cámara y la bola de nieve en arco, con `marcas` (`llega`, `tiro1`, `tiro2`); resuelve quién es quién con `api.actor`.
+**Atalaya, sin hacer**: su centro es el promedio de cuatro puntos (Boris, Lucho, el aterrizaje, que sale de dónde esté el Venjy del mirador, y tu lugar) y ese Venjy se coloca según el terreno: no hay un `desde` + `mas` fijo. Hace falta una pieza nueva (p. ej. `lugar.centro.promedio: [{ desde, mas }]`) además de la grúa, el salto en arco y el ping en `codigo`.
+
 ### Plan (PR chicos)
 
 | PR | Qué | Modelo |

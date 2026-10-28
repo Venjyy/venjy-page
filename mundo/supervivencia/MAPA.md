@@ -107,6 +107,7 @@ Estado, tareas y decisiones: `mundo/PENDIENTES.md` (solo la sección en curso).
 | `escena-amistad-datos.js` (212) | Animaciones por nivel. `ANIMACIONES:22` `GESTOS_AMISTAD:57` (registrada para `poses.json`) `FRASES_AMISTAD:108`; al final `PLANOS_AMISTAD`, `PLANOS_GRUPO`, `PLANOS_GRUPO_TECHO` (los lee `mundo/datos/escenas.js` → `planosDe`) |
 | `escena-amistad.js` (781) | Motor de guiones de amistad, bienvenidas y reencuentros. Lee `mundo/datos/escenas.json` al importarse (`await cargarDatos`; `aplicarDatosVivos:57` para el Estudio) y fusiona sus escenas `amistad` con `ANIMACIONES` en `guionGenerico`; `jugarGuion:715` juega las de tipo `guion`. `crearEscenaAmistad:80` `iniciar:228` `terminar:304` `aplicar:358`; B3b: los cargadores buscan antes su `dispara` en el JSON (`guionDeEscena:688`), `moverYGirar:504` (caminos y giros), objetos y efectos del catálogo |
 | `codigo-escenas.js` | `CODIGO_ESCENAS` (B3b): nombre → carga del módulo con lo único de una escena de `escenas.json` (`codigo`); B4c lo llenó con los momentos |
+| `codigo-escenas/grupo-coyhaique.js` | B4d: cámara manual y bola de nieve del grupo de Coyhaique |
 | `codigo-escenas/momento-*.js` (12) | B4c: lo que el catálogo no cubre de cada momento (tronco, cofre, sombrero, bufanda, monito, salmón, bloque...); `(marcas) => { iniciar, cuadro, terminar }`; `comun.js` trae las utilidades |
 | `moldes.js` (158) | Piezas de movimiento 6c. `ruta:29` `MOLDES:40` `molde:82` `fusion:91` `espejo:108` |
 | `reencuentros.js` (226) | Escenas entre amigos 6c-1. `REENCUENTROS:23` `reencuentro:212` |
