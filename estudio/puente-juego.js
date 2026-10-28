@@ -175,6 +175,16 @@ async function elegir(o) {
     }
     return gizmo.elegir(o);
 }
+// «Guardar como construcción» (§44): marcar dos esquinas y copiar la zona (estudio/zona-juego.js, se carga la primera vez)
+let zonaJuego = null;
+async function zona({ accion }) {
+    if (!juegoListo()) throw new Error('el juego todavía no está listo');
+    if (!zonaJuego) {
+        if (accion === 'quitar') return null;
+        zonaJuego = (await import('./zona-juego.js')).crearZona(window.__venjy);
+    }
+    return zonaJuego[accion]() || null;
+}
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 
 async function esperar(cond, tope, paso = 100) {
@@ -434,6 +444,7 @@ const responder = crearManejador({
     },
     teletransportar,
     elegir,
+    zona,
     escena,
     pose
 });

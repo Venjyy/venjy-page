@@ -9,12 +9,14 @@
 // mueve una caja del tamaño del sitio; la construcción se arma en su sitio nuevo al guardar (el juego se recarga).
 // Giro (lugares.<clave>.giro, 0/90/180/270): botón «Girar 90°»; el escenario y los corrales se orientan solos. Las
 // construcciones nuevas de construcciones.json salen en la misma lista: «Mover con el gizmo» la pone frente al jugador.
+// «Guardar como construcción» (§44, parte 3): el juego marca dos esquinas con la mira y copia la zona (zona-juego.js); aquí
+// se pide el nombre y se suma a construcciones.json (PUT con If-Match). El nombre en inglés, después, en Avanzado.
 // Vista simple: persona, lugar y los botones; los números (dx, dy, dz, giro, x, z), la puerta y las notas, en Avanzado.
 // =========================================================
 import { formatear } from './formato.mjs';
 import { GIRO_CALCULADO, CONSTRUCCIONES } from '../mundo/datos/posiciones.js';
 import { personasNuevas, lugarDe, nombreDe as nombrePersonaje } from '../mundo/datos/personajes.js';
-import { propiasDe } from '../mundo/datos/construcciones.js';
+import { propiasDe, claveDe } from '../mundo/datos/construcciones.js';
 
 const NOMBRES = {
     hadad: 'Hadad', andy: 'Andy', nacho: 'Nacho', moises: 'Moisés', lalo: 'Lalo', boris: 'Boris', lucho: 'Lucho',
@@ -133,6 +135,9 @@ export async function montarPosiciones(ctx) {
         $('ps-lugar-auto').disabled = !p;
         $('ps-lugar-auto').textContent = propias[lugar] ? t('Sacarla del mundo', 'Take it out of the world') : t('Volver a su sitio de siempre', 'Back to its usual spot');
         $('ps-lugar-girar').disabled = !gira(lugar);
+        $('ps-lugar-en-campo').hidden = !propias[lugar];
+        if (propias[lugar]) $('ps-lugar-en').value = propias[lugar].nombre.en;
+        $('ps-lugar-en').disabled = !ctx.servidor.escritura;
         const puerta = t(` Puerta ${PUERTA[g][0]}.`, ` Door facing ${PUERTA[g][1]}.`);
         lugarCampo.estado.textContent = !gira(lugar) && !p
             ? t('En su sitio de siempre (el juego lo busca solo). No gira: se orienta solo.', 'In its usual spot (the game finds it by itself). It does not turn: it faces the right way by itself.')
@@ -249,6 +254,78 @@ export async function montarPosiciones(ctx) {
         moverLugar(lugar, { x: p.x, z: p.z, giro });
         rotular(`${nombreLugar(lugar)}: puerta ${PUERTA[giro][0]}. Guarda para verla así.`, `${nombreLugar(lugar)}: door facing ${PUERTA[giro][1]}. Save to see it.`, 'ok');
     }
+    // ---------- Guardar como construcción (§44, parte 3) ----------
+    // construcciones.json se lee de nuevo justo antes de escribir (ETag fresco) y solo se le suma o cambia una clave
+    async function escribirConstrucciones(cambiar) {
+        const r = await fetch('../mundo/datos/construcciones.json', { cache: 'no-cache' });
+        if (!r.ok) throw new Error(t('No se pudo leer construcciones.json.', 'Could not read construcciones.json.'));
+        const etagC = r.headers.get('ETag');
+        const json = await r.json();
+        cambiar(json);
+        const resp = await fetch('../api/datos/construcciones', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-Estudio': '1', 'If-Match': etagC || '*' },
+            body: JSON.stringify(json)
+        });
+        const j = await resp.json().catch(() => ({}));
+        if (resp.status === 412) throw new Error(t('construcciones.json cambió mientras guardabas: vuelve a intentarlo.', 'construcciones.json changed while saving: try again.'));
+        if (resp.status === 422 && j.errores) throw new Error(t('No se guardó: ', 'Not saved: ') + j.errores.slice(0, 3).join(' · '));
+        if (!resp.ok) throw new Error(t(`No se guardó (${resp.status}): `, `Not saved (${resp.status}): `) + (j.error || ''));
+        propias = propiasDe(json);
+        return json;
+    }
+    const zonaEstado = (es, en, clase = '') => { const p = $('ps-zona-estado'); p.textContent = t(es, en); p.className = 'mensaje' + (clase ? ' ' + clase : ''); };
+    let zonaLista = false; // dos esquinas que se pueden copiar
+    function pintarZona() {
+        $('ps-zona-guardar').disabled = !zonaLista || !$('ps-zona-nombre').value.trim() || !ctx.servidor.escritura;
+    }
+    async function marcarEsquina() {
+        if (!listoElJuego()) { zonaEstado('El juego todavía no está listo: espera a que cargue el mundo.', 'The game is not ready yet: wait for the world to load.', 'error'); return; }
+        try {
+            const r = (await ctx.puente.enviar('zona', { accion: 'marcar' })).zona;
+            zonaLista = r.esquinas === 2 && !r.error;
+            if (r.esquinas === 1) zonaEstado('Primera esquina marcada. Ahora mira el suelo de la esquina opuesta y vuelve a marcar.', 'First corner marked. Now look at the ground of the opposite corner and mark again.', 'ok');
+            else if (r.error) zonaEstado(`La zona no sirve: ${r.error}. Marca de nuevo.`, `That area does not work: ${r.error}. Mark again.`, 'error');
+            else zonaEstado(`Zona de ${r.ancho}×${r.fondo} y ${r.alto} de alto (${r.bloques} bloques). Ponle nombre y guárdala.`, `Area of ${r.ancho}×${r.fondo}, ${r.alto} high (${r.bloques} blocks). Name it and save it.`, 'ok');
+        } catch (e) { zonaLista = false; zonaEstado(e.message, e.message, 'error'); }
+        pintarZona();
+    }
+    async function guardarZona() {
+        const nombre = $('ps-zona-nombre').value.trim();
+        if (!nombre || !zonaLista) return;
+        $('ps-zona-guardar').disabled = true;
+        zonaEstado('Guardando…', 'Saving…');
+        try {
+            const r = (await ctx.puente.enviar('zona', { accion: 'copiar' })).zona;
+            let clave = null;
+            await escribirConstrucciones(json => {
+                if (!json.construcciones) json.construcciones = {};
+                clave = claveDe(nombre, [...Object.keys(CONSTRUCCIONES), ...Object.keys(json.construcciones)]);
+                // El inglés se completa después (Avanzado → Nombre en inglés); mientras, el juego muestra el español
+                json.construcciones[clave] = { nombre: { es: nombre, en: nombre }, bloques: r.bloques };
+            });
+            await ctx.puente.enviar('zona', { accion: 'quitar' }).catch(() => {});
+            zonaLista = false;
+            $('ps-zona-nombre').value = '';
+            lugar = clave;
+            pintar();
+            zonaEstado(`«${nombre}» guardada (${r.bloques.length} bloques). Elígela arriba y pulsa «Mover con el gizmo» para ponerla en el mundo.`, `«${nombre}» saved (${r.bloques.length} blocks). Pick it above and press «Move with the gizmo» to put it in the world.`, 'ok');
+        } catch (e) { zonaEstado(e.message, e.message, 'error'); }
+        pintarZona();
+    }
+    async function nombreIngles() {
+        const en = $('ps-lugar-en').value.trim(), clave = lugar;
+        if (!propias[clave]) return;
+        try {
+            await escribirConstrucciones(json => {
+                const c = json.construcciones && json.construcciones[clave];
+                if (!c) throw new Error(t('Esa construcción ya no está en construcciones.json.', 'That building is no longer in construcciones.json.'));
+                c.nombre = { es: (c.nombre && c.nombre.es) || clave, en: en || (c.nombre && c.nombre.es) || clave };
+            });
+            pintar();
+            rotular('Nombre en inglés guardado.', 'English name saved.', 'ok');
+        } catch (e) { rotular(e.message, e.message, 'error'); }
+    }
     function alCampoLugar() {
         const x = lugarCampo.x.valueAsNumber, z = lugarCampo.z.valueAsNumber;
         if (!Number.isFinite(x) || !Number.isFinite(z)) return;
@@ -327,6 +404,15 @@ export async function montarPosiciones(ctx) {
     $('ps-lugar-girar').addEventListener('click', girarLugar);
     lugarCampo.giro.addEventListener('change', () => { const p = lugaresDe(datos)[lugar]; if (p) moverLugar(lugar, { x: p.x, z: p.z, giro: Number(lugarCampo.giro.value) }); });
     $('ps-lugar-auto').addEventListener('click', () => { moverLugar(lugar, null); rotular(`${nombreLugar(lugar)} vuelve a su sitio de siempre al guardar.`, `${nombreLugar(lugar)} goes back to its usual spot when you save.`, 'ok'); });
+    $('ps-lugar-en').addEventListener('change', nombreIngles);
+    $('ps-zona-marcar').addEventListener('click', marcarEsquina);
+    $('ps-zona-quitar').addEventListener('click', async () => {
+        zonaLista = false;
+        pintarZona();
+        try { await ctx.puente.enviar('zona', { accion: 'quitar' }); zonaEstado('Marcas borradas.', 'Marks cleared.'); } catch (e) { zonaEstado(e.message, e.message, 'error'); }
+    });
+    $('ps-zona-nombre').addEventListener('input', pintarZona);
+    $('ps-zona-guardar').addEventListener('click', guardarZona);
     lugarCampo.x.addEventListener('change', alCampoLugar);
     lugarCampo.z.addEventListener('change', alCampoLugar);
     lugarCampo.nota.addEventListener('change', () => {
@@ -368,4 +454,5 @@ export async function montarPosiciones(ctx) {
         pintarCampos(); pintarResumen();
     });
     pintar();
+    pintarZona();
 }
