@@ -3686,6 +3686,1735 @@
       },
       "marcas": { "aparece": 8.2, "pasa": 10, "llega": 10.4 },
       "codigo": "momento-venjy-pareja"
+    },
+    "grupo-tomatitos-venjy": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "venjy" },
+      "T": 27.55,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "hadad",
+          "a": 0.6,
+          "d": 3,
+          "texto": {
+            "es": "¡Venjy! Por fin sales del código y vienes a la fogata.",
+            "en": "Venjy! You finally leave the code and come to the campfire."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.75,
+          "d": 2.3,
+          "texto": { "es": "Vi el grupo y no podía faltar.", "en": "I saw the group chat and couldn't miss it." }
+        },
+        {
+          "q": "andy",
+          "a": 6.7,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 9.55,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 12.8,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "j",
+          "a": 15.25,
+          "d": 2.8,
+          "texto": {
+            "es": "Les traje el tomate oficial de los Tomatitos.",
+            "en": "I brought you the official Tomatitos tomato."
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 18.2,
+          "d": 2.5,
+          "texto": { "es": "Jajaja, ¡es más grande que el Pony!", "en": "Haha, it's bigger than Pony!" }
+        },
+        {
+          "q": "todos",
+          "a": 21,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 23.7,
+          "d": 2.8,
+          "texto": {
+            "es": "Esto es lo que más me gusta del mundo: ustedes.",
+            "en": "This is what I like most about the world: you guys."
+          }
+        }
+      ],
+      "pista": {
+        "hadad": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 6.4], ["celular", 6.4, 12.65], ["grupo-reparte", 12.8, 15.1], ["grupo-alto", 15.1, 21.05], ["brinda", 21.05, 23.9], ["asiente", 24, 26.8]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 6.4], ["celular", 6.4, 12.65], ["grupo-mira", 12.65, 14.9], ["grupo-alto", 14.9, 21.05], ["brinda", 21.05, 23.9], ["grupo-mira", 23.9, 26.65]],
+        "andy": [["grupo-mira", 0.3, 6.4], ["celular", 6.4, 12.65], ["grupo-mira", 12.65, 14.9], ["grupo-alto", 14.9, 21.05], ["brinda", 21.05, 23.9], ["asiente", 24, 26.8]],
+        "nacho": [["grupo-mira", 0.3, 6.4], ["celular", 6.4, 9.55], ["risa", 9.55, 12.85], ["grupo-mira", 12.85, 14.9], ["grupo-alto", 14.9, 21.05], ["brinda", 21.05, 23.9], ["asiente", 24, 26.8]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.4,
+          "hasta": 12.75
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.5
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.4,
+          "hasta": 12.75
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.5
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.4,
+          "hasta": 12.75
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.5
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.4,
+          "hasta": 12.75
+        },
+        {
+          "id": "tomate-j",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.5
+        },
+        {
+          "id": "tomate-gigante",
+          "dibujo": {
+            "caja": [0.95, 0.95, 0.95],
+            "pix": "tomate-bloque"
+          },
+          "en": {
+            "desde": "centro",
+            "mas": [0, 0.5, 0]
+          },
+          "desde": 16.15
+        },
+        {
+          "id": "tomate-gigante-hojas",
+          "dibujo": {
+            "caja": [0.7, 0.1, 0.7],
+            "pix": "hojas"
+          },
+          "en": {
+            "desde": "centro",
+            "mas": [0, 1.02, 0]
+          },
+          "desde": 16.15
+        }
+      ],
+      "efectos": [
+        [
+          13.5,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.5,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.5,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.5,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          16.15,
+          "chispa",
+          { "en": "centro", "alto": 1.2, "tam": 0.5 }
+        ],
+        [
+          22.3,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          22.3,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          22.3,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[6.3, "mensaje"], [13.5, "visto"], [16.15, "golpe"], [22.3, "golpe"]]
+    },
+    "grupo-tomatitos-pony": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "pony" },
+      "T": 27.35,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "andy",
+          "a": 0.6,
+          "d": 3.1,
+          "texto": {
+            "es": "¡Pony! Siéntate, pero no webees, que estamos tranquilos.",
+            "en": "Pony! Sit down, but no messing around, we're chilling."
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.85,
+          "d": 2.3,
+          "texto": { "es": "¿Yo webear? Si soy un angelito.", "en": "Me, mess around? I'm a little angel." }
+        },
+        {
+          "q": "andy",
+          "a": 6.8,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 9.65,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 12.9,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "j",
+          "a": 15.35,
+          "d": 2.5,
+          "texto": { "es": "¡Bajen los tomates, que no alcanzo!", "en": "Lower the tomatoes, I can't reach!" }
+        },
+        {
+          "q": "andy",
+          "a": 18,
+          "d": 2.3,
+          "texto": { "es": "Ya, por esta vez.", "en": "Okay, just this once." }
+        },
+        {
+          "q": "todos",
+          "a": 20.6,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 23.3,
+          "d": 3,
+          "texto": {
+            "es": "Lo mejor de la U fueron ustedes. No le digan a nadie.",
+            "en": "The best thing about uni was you guys. Don't tell anyone."
+          }
+        }
+      ],
+      "pista": {
+        "andy": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 6.5], ["celular", 6.5, 12.75], ["grupo-mira", 12.75, 15], ["grupo-alto", 15, 20.65], ["brinda", 20.65, 23.5], ["asiente", 23.6, 26.6]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 6.5], ["celular", 6.5, 12.75], ["grupo-mira", 12.75, 15], ["grupo-alto", 15, 20.65], ["brinda", 20.65, 23.5], ["grupo-mira", 23.5, 26.45]],
+        "hadad": [["grupo-mira", 0.3, 6.5], ["celular", 6.5, 12.75], ["grupo-reparte", 12.9, 15.2], ["grupo-alto", 15.2, 20.65], ["brinda", 20.65, 23.5], ["asiente", 23.6, 26.6]],
+        "nacho": [["grupo-mira", 0.3, 6.5], ["celular", 6.5, 9.65], ["risa", 9.65, 12.95], ["grupo-mira", 12.95, 15], ["grupo-alto", 15, 20.65], ["brinda", 20.65, 23.5], ["asiente", 23.6, 26.6]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.5,
+          "hasta": 12.85
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.6
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.5,
+          "hasta": 12.85
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.6
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.5,
+          "hasta": 12.85
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.6
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.5,
+          "hasta": 12.85
+        },
+        {
+          "id": "tomate-j",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.6
+        }
+      ],
+      "efectos": [
+        [
+          13.6,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.6,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.6,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.6,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          21.9,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          21.9,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          21.9,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[6.4, "mensaje"], [13.6, "visto"], [21.9, "golpe"]]
+    },
+    "grupo-tomatitos-hadad": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "hadad" },
+      "T": 30,
+      "r": 1.3,
+      "actores": { "hadad": "hadad" },
+      "lineas": [
+        {
+          "q": "hadad",
+          "a": 0.6,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Y tú quién eres? ¿Por qué tienes mi cara?",
+            "en": "And who are you? Why do you have my face?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.45,
+          "d": 2.6,
+          "texto": {
+            "es": "Lo mismo te pregunto. Levanta el brazo.",
+            "en": "I was going to ask you the same. Raise your arm."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 9.05,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 11.9,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 15.15,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "nacho",
+          "a": 17.6,
+          "d": 2.8,
+          "texto": {
+            "es": "Jajaja, ¡ahora hay dos que promocionan papas!",
+            "en": "Haha, now there are two promoting chips!"
+          }
+        },
+        {
+          "q": "j",
+          "a": 20.55,
+          "d": 2.3,
+          "texto": { "es": "Uno para cada bolsa.", "en": "One per bag." }
+        },
+        {
+          "q": "todos",
+          "a": 23.15,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 25.85,
+          "d": 3.1,
+          "texto": {
+            "es": "Dos Hadad en la fogata. El grupo no está listo para esto.",
+            "en": "Two Hadads at the campfire. The group isn't ready for this."
+          }
+        }
+      ],
+      "pista": {
+        "hadad": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 6.2], ["espejo", 6.2, 8.4], ["celular", 8.75, 15], ["grupo-reparte", 15.15, 17.45], ["grupo-alto", 17.45, 23.2], ["brinda", 23.2, 26.05], ["asiente", 26.15, 29.25]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 6.2], ["espejo", 6.2, 8.4], ["celular", 8.75, 15], ["grupo-mira", 15, 17.25], ["grupo-alto", 17.25, 23.2], ["brinda", 23.2, 26.05], ["grupo-mira", 26.05, 29.1]],
+        "andy": [["grupo-mira", 0.3, 6.2], ["doble", 6.2, 8.4], ["celular", 8.75, 15], ["grupo-mira", 15, 17.25], ["grupo-alto", 17.25, 23.2], ["brinda", 23.2, 26.05], ["asiente", 26.15, 29.25]],
+        "nacho": [["grupo-mira", 0.3, 6.2], ["doble", 6.2, 8.4], ["celular", 8.75, 11.9], ["risa", 11.9, 15.2], ["grupo-mira", 15.2, 17.25], ["grupo-alto", 17.25, 23.2], ["brinda", 23.2, 26.05], ["asiente", 26.15, 29.25]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.75,
+          "hasta": 15.1
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.85
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.75,
+          "hasta": 15.1
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.85
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.75,
+          "hasta": 15.1
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.85
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.75,
+          "hasta": 15.1
+        },
+        {
+          "id": "tomate-j",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.85
+        }
+      ],
+      "efectos": [
+        [
+          15.85,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.85,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.85,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.85,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          24.45,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          24.45,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          24.45,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[8.65, "mensaje"], [15.85, "visto"], [24.45, "golpe"]]
+    },
+    "grupo-tomatitos-andy": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "andy" },
+      "T": 29,
+      "r": 1.3,
+      "actores": { "andy": "andy" },
+      "lineas": [
+        {
+          "q": "andy",
+          "a": 0.6,
+          "d": 2.5,
+          "texto": {
+            "es": "¿Otro Andy? A ver, ¿te sabes el baile?",
+            "en": "Another Andy? Let's see, do you know the dance?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.25,
+          "d": 2.3,
+          "texto": { "es": "Me lo sé mejor que tú.", "en": "I know it better than you." }
+        },
+        {
+          "q": "andy",
+          "a": 8.95,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 11.8,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 15.05,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "hadad",
+          "a": 17.5,
+          "d": 2.5,
+          "texto": {
+            "es": "Dos Andy bailando y ninguno ganó nada.",
+            "en": "Two Andys dancing and neither of them won anything."
+          }
+        },
+        {
+          "q": "j",
+          "a": 20.15,
+          "d": 2.3,
+          "texto": { "es": "Todavía.", "en": "Yet." }
+        },
+        {
+          "q": "todos",
+          "a": 22.75,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 25.45,
+          "d": 2.5,
+          "texto": { "es": "Con ustedes hasta perder es divertido.", "en": "With you guys, even losing is fun." }
+        }
+      ],
+      "pista": {
+        "andy": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 5.7], ["baile", 5.7, 8.3], ["celular", 8.65, 14.9], ["grupo-mira", 14.9, 17.15], ["grupo-alto", 17.15, 22.8], ["brinda", 22.8, 25.65], ["risa", 25.75, 28.25]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 5.7], ["baile", 5.7, 8.3], ["celular", 8.65, 14.9], ["grupo-mira", 14.9, 17.15], ["grupo-alto", 17.15, 22.8], ["brinda", 22.8, 25.65], ["grupo-mira", 25.65, 28.1]],
+        "hadad": [["grupo-mira", 0.3, 6.1], ["risa", 6.1, 8.3], ["celular", 8.65, 14.9], ["grupo-reparte", 15.05, 17.35], ["grupo-alto", 17.35, 22.8], ["brinda", 22.8, 25.65], ["risa", 25.75, 28.25]],
+        "nacho": [["grupo-mira", 0.3, 6.1], ["risa", 6.1, 8.3], ["celular", 8.65, 11.8], ["risa", 11.8, 15.1], ["grupo-mira", 15.1, 17.15], ["grupo-alto", 17.15, 22.8], ["brinda", 22.8, 25.65], ["risa", 25.75, 28.25]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.65,
+          "hasta": 15
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.75
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.65,
+          "hasta": 15
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.75
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.65,
+          "hasta": 15
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.75
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.65,
+          "hasta": 15
+        },
+        {
+          "id": "tomate-j",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.75
+        }
+      ],
+      "efectos": [
+        [
+          15.75,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.75,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.75,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.75,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          24.05,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          24.05,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          24.05,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[8.55, "mensaje"], [15.75, "visto"], [24.05, "golpe"]]
+    },
+    "grupo-tomatitos-nacho": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "nacho" },
+      "T": 29.3,
+      "r": 1.3,
+      "actores": { "nacho": "nacho" },
+      "lineas": [
+        {
+          "q": "nacho",
+          "a": 0.6,
+          "d": 2.3,
+          "texto": { "es": "Jajaja, ¿otro Nacho?", "en": "Haha, another Nacho?" }
+        },
+        {
+          "q": "j",
+          "a": 3.05,
+          "d": 2.3,
+          "texto": { "es": "Jajaja, eso iba a decir yo.", "en": "Haha, that's what I was going to say." }
+        },
+        {
+          "q": "andy",
+          "a": 8.35,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 11.2,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 14.45,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "andy",
+          "a": 16.9,
+          "d": 2.7,
+          "texto": {
+            "es": "Una risa ya era fuerte. Dos es un concierto.",
+            "en": "One laugh was already loud. Two is a concert."
+          }
+        },
+        {
+          "q": "j",
+          "a": 19.75,
+          "d": 2.3,
+          "texto": { "es": "Jajaja, y viene el bis.", "en": "Haha, and here comes the encore." }
+        },
+        {
+          "q": "todos",
+          "a": 22.35,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 25.05,
+          "d": 3.2,
+          "texto": {
+            "es": "Jajaja, los quiero, Tomatitos. Aunque se rían de mi Tilted.",
+            "en": "Haha, love you, Tomatitos. Even if you laugh at my Tilted."
+          }
+        }
+      ],
+      "pista": {
+        "nacho": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 3.05], ["grupo-doblaRisa", 3.05, 7.7], ["grupo-mira", 7.7, 8.05], ["celular", 8.05, 11.2], ["risa", 11.2, 14.5], ["grupo-mira", 14.5, 16.55], ["grupo-alto", 16.55, 22.4], ["brinda", 22.4, 25.25], ["risa", 25.35, 28.55]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 3.05], ["grupo-doblaRisa", 3.05, 7.7], ["grupo-mira", 7.7, 8.05], ["celular", 8.05, 14.3], ["grupo-mira", 14.3, 16.55], ["grupo-alto", 16.55, 22.4], ["brinda", 22.4, 25.25], ["grupo-mira", 25.25, 28.4]],
+        "hadad": [["grupo-mira", 0.3, 5.8], ["risa", 5.8, 7.7], ["grupo-mira", 7.7, 8.05], ["celular", 8.05, 14.3], ["grupo-reparte", 14.45, 16.75], ["grupo-alto", 16.75, 22.4], ["brinda", 22.4, 25.25], ["risa", 25.35, 28.55]],
+        "andy": [["grupo-mira", 0.3, 5.5], ["grupo-tapaOidos", 5.5, 8], ["celular", 8.05, 14.3], ["grupo-mira", 14.3, 16.55], ["grupo-alto", 16.55, 22.4], ["brinda", 22.4, 25.25], ["risa", 25.35, 28.55]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.05,
+          "hasta": 14.4
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.15
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.05,
+          "hasta": 14.4
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.15
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.05,
+          "hasta": 14.4
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.15
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 8.05,
+          "hasta": 14.4
+        },
+        {
+          "id": "tomate-j",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 15.15
+        }
+      ],
+      "efectos": [
+        [
+          15.15,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.15,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.15,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          15.15,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          23.65,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          23.65,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          23.65,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[7.95, "mensaje"], [15.15, "visto"], [23.65, "golpe"]]
+    },
+    "grupo-tomatitos-braulio": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "braulio" },
+      "T": 27.25,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "nacho",
+          "a": 0.6,
+          "d": 2.8,
+          "texto": {
+            "es": "Jajaja, ¡Braulio! ¿Trajiste arena de la playa?",
+            "en": "Haha, Braulio! Did you bring sand from the beach?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.55,
+          "d": 2.4,
+          "texto": { "es": "Un poco. Viene incluida conmigo.", "en": "A little. It comes included with me." }
+        },
+        {
+          "q": "andy",
+          "a": 6.6,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 9.45,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 12.7,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "j",
+          "a": 15.15,
+          "d": 2.7,
+          "texto": {
+            "es": "Yo brindo con esto. Escuchen: se oye el mar.",
+            "en": "I'll toast with this. Listen: you can hear the sea."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 18,
+          "d": 2.6,
+          "texto": {
+            "es": "Se oye el mar y un cangrejo reclamando.",
+            "en": "You can hear the sea and a crab complaining."
+          }
+        },
+        {
+          "q": "todos",
+          "a": 20.9,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 23.6,
+          "d": 2.6,
+          "texto": { "es": "La próxima fogata la hacemos en la playa.", "en": "Next campfire we do on the beach." }
+        }
+      ],
+      "pista": {
+        "nacho": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 6.3], ["celular", 6.3, 9.45], ["risa", 9.45, 12.75], ["grupo-mira", 12.75, 14.8], ["grupo-alto", 14.8, 20.95], ["brinda", 20.95, 23.8], ["asiente", 23.9, 26.5]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 6.3], ["celular", 6.3, 12.55], ["grupo-mira", 12.55, 14.8], ["grupo-alto", 14.8, 20.95], ["grupo-camina", 20.95, 21.6], ["brinda", 21.6, 23.8], ["grupo-mira", 23.8, 26.35]],
+        "hadad": [["grupo-mira", 0.3, 6.3], ["celular", 6.3, 12.55], ["grupo-reparte", 12.7, 15], ["grupo-alto", 15, 20.95], ["brinda", 20.95, 23.8], ["asiente", 23.9, 26.5]],
+        "andy": [["grupo-mira", 0.3, 6.3], ["celular", 6.3, 12.55], ["grupo-mira", 12.55, 14.8], ["grupo-alto", 14.8, 20.95], ["brinda", 20.95, 23.8], ["asiente", 23.9, 26.5]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "caminos": {
+        "j": [
+          [14.85, "sitio"],
+          [
+            16.05,
+            { "hacia": "nacho", "dist": 1 }
+          ],
+          [
+            20.4,
+            { "hacia": "nacho", "dist": 1 }
+          ],
+          [21.6, "sitio"]
+        ]
+      },
+      "giros": {
+        "j": [[14.85, "nacho"], [20.4, null]]
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "concha-j",
+          "dibujo": "concha",
+          "tam": 0.3,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        }
+      ],
+      "efectos": [
+        [
+          13.4,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.4,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.4,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.4,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          22.2,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          22.2,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          22.2,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[6.2, "mensaje"], [13.4, "visto"], [16.25, "mar"], [22.2, "golpe"]]
+    },
+    "grupo-tomatitos-conejeros": {
+      "tipo": "guion",
+      "dispara": { "tipo": "grupo", "grupo": "tomatitos", "skin": "conejeros" },
+      "T": 29.35,
+      "r": 1.3,
+      "lineas": [
+        {
+          "q": "hadad",
+          "a": 0.6,
+          "d": 2.9,
+          "texto": {
+            "es": "¡Conejeros! ¿Vienes en modo normal o en modo .exe?",
+            "en": "Conejeros! Coming in normal mode or .exe mode?"
+          }
+        },
+        {
+          "q": "j",
+          "a": 3.65,
+          "d": 2.3,
+          "texto": { "es": "Modo normal. Por ahora.", "en": "Normal mode. For now." }
+        },
+        {
+          "q": "andy",
+          "a": 6.6,
+          "d": 2.7,
+          "texto": {
+            "es": "¿Quién mandó doscientos stickers al grupo?",
+            "en": "Who sent two hundred stickers to the group chat?"
+          }
+        },
+        {
+          "q": "nacho",
+          "a": 9.45,
+          "d": 3.1,
+          "texto": {
+            "es": "Jajaja, fue el Hadad. Son todos de él con papas fritas.",
+            "en": "Haha, it was Hadad. Every single one is him with chips."
+          }
+        },
+        {
+          "q": "hadad",
+          "a": 12.7,
+          "d": 2.3,
+          "texto": { "es": "Ya, Tomatitos: tomate en alto.", "en": "Alright, Tomatitos: tomatoes up." }
+        },
+        {
+          "q": "j",
+          "a": 16.85,
+          "d": 3.1,
+          "texto": {
+            "es": "Les presento a Tomás. Es un tomate, pero con sentimientos.",
+            "en": "Meet Tomás. He's a tomato, but with feelings."
+          }
+        },
+        {
+          "q": "andy",
+          "a": 20.1,
+          "d": 2.4,
+          "texto": { "es": "¿Y ahora cómo brindamos con Tomás?", "en": "And now how do we toast with Tomás?" }
+        },
+        {
+          "q": "todos",
+          "a": 22.8,
+          "d": 2.3,
+          "texto": { "es": "¡Por los Tomatitos!", "en": "To the Tomatitos!" }
+        },
+        {
+          "q": "j",
+          "a": 25.5,
+          "d": 2.8,
+          "texto": {
+            "es": "Tomás dice que los quiere. Yo también, un poco.",
+            "en": "Tomás says he loves you. Me too, a little."
+          }
+        }
+      ],
+      "pista": {
+        "hadad": [["saluda", 0.3, 1.8], ["grupo-mira", 1.8, 6.3], ["celular", 6.3, 12.55], ["grupo-reparte", 12.7, 15], ["grupo-alto", 15, 22.85], ["brinda", 22.85, 25.7], ["asiente", 25.8, 28.6]],
+        "j": [["grupo-mira", 0.3, 0.8], ["saluda", 0.8, 2.2], ["grupo-mira", 2.2, 6.3], ["celular", 6.3, 12.55], ["grupo-mira", 12.55, 14.8], ["grupo-alto", 14.8, 22.85], ["brinda", 22.85, 25.7], ["grupo-mira", 25.7, 28.45]],
+        "andy": [["grupo-mira", 0.3, 6.3], ["celular", 6.3, 12.55], ["grupo-mira", 12.55, 14.8], ["grupo-alto", 14.8, 22.85], ["brinda", 22.85, 25.7], ["asiente", 25.8, 28.6]],
+        "nacho": [["grupo-mira", 0.3, 6.3], ["celular", 6.3, 9.45], ["risa", 9.45, 12.75], ["grupo-mira", 12.75, 14.8], ["grupo-alto", 14.8, 22.85], ["brinda", 22.85, 25.7], ["asiente", 25.8, 28.6]]
+      },
+      "lugar": {
+        "centro": {
+          "desde": "hadad",
+          "mas": [2.65, 0, -0.5]
+        },
+        "jugador": {
+          "desde": "centro",
+          "mas": [0, 0, -2.15]
+        }
+      },
+      "objetos": [
+        {
+          "id": "celular-hadad",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-hadad",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "hadad",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        },
+        {
+          "id": "celular-andy",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-andy",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "andy",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        },
+        {
+          "id": "celular-nacho",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-nacho",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "nacho",
+            "hueso": "brazoD",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4
+        },
+        {
+          "id": "celular-j",
+          "dibujo": "celular",
+          "tam": 0.2,
+          "en": {
+            "q": "j",
+            "hueso": "brazoD",
+            "mas": [0, -0.8, 0.14]
+          },
+          "desde": 6.3,
+          "hasta": 12.65
+        },
+        {
+          "id": "tomate-j",
+          "dibujo": "tomate",
+          "tam": 0.34,
+          "en": {
+            "q": "j",
+            "hueso": "brazoI",
+            "mas": [0, -0.86, 0.14]
+          },
+          "desde": 13.4,
+          "cambia": [[16.55, "tomas"]]
+        }
+      ],
+      "efectos": [
+        [
+          13.4,
+          "chispa",
+          { "en": "hadad", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.4,
+          "chispa",
+          { "en": "andy", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.4,
+          "chispa",
+          { "en": "nacho", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          13.4,
+          "chispa",
+          { "en": "j", "alto": 1.6, "tam": 0.22 }
+        ],
+        [
+          16.55,
+          "chispa",
+          { "en": "j", "alto": 2.2 }
+        ],
+        [
+          24.1,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.5,
+            "mas": [-0.35, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          24.1,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.6,
+            "mas": [0, 0, 0],
+            "tam": 0.32
+          }
+        ],
+        [
+          24.1,
+          "chispa",
+          {
+            "en": "centro",
+            "alto": 2.7,
+            "mas": [0.35, 0, 0],
+            "tam": 0.32
+          }
+        ]
+      ],
+      "sonidos": [[6.2, "mensaje"], [13.4, "visto"], [16.55, "visto"], [24.1, "golpe"]]
     }
   }
 }

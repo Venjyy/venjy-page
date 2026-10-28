@@ -80,45 +80,18 @@ export const rumbo = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
 // ---------------------------------------------------------
 // Dibujos píxel
 // ---------------------------------------------------------
-const COL_TOMATE = { r: '#d8352a', R: '#ff7a5c', o: '#a8221a', g: '#4caf3a', G: '#2e7d22', k: '#1b0f0f', m: '#5a3214', w: '#ffffff' };
-// Tomate con bigote elegante: hojas arriba, ojos y bigote café de puntas curvas
-export const TOMATE = { filas: [
-    '.....gg.....',
-    '...gGggGg...',
-    '..rrgGGgrr..',
-    '.rrRRrrrrrr.',
-    'rrRRrrrrrrrr',
-    'rRrrkrrkrrrr',
-    'rRrrkrrkrrrr',
-    'rmrrrrrrrrmr',
-    'rmmrmmmmrmmr',
-    'rrmmmrrmmmrr',
-    '.rrrrrrrrro.',
-    '...rrrrroo..'], colores: COL_TOMATE };
-// Tomás: el tomate de Conejeros con la cara dibujada encima (ojos grandes y sonrisa de plumón blanco)
-export const TOMAS = { filas: [
-    '.....gg.....',
-    '...gGggGg...',
-    '..rrgGGgrr..',
-    '.rwwwrrwwwr.',
-    'rrwkwrrwkwrr',
-    'rRwwwrrwwwrr',
-    'rRrrrrrrrrrr',
-    'rmrrrrrrrrmr',
-    'rmmrmmmmrmmr',
-    'rrmmmrrmmmrr',
-    '.rwrrrrrrwr.',
-    '...wwwwww...'], colores: COL_TOMATE };
-// Cara del tomate gigante (un bloque: sin bordes transparentes)
-export const TOMATE_BLOQUE = { filas: TOMATE.filas.map((f, i) => (i < 3 ? 'rrrrrrrrrrrr' : f.replace(/\./g, 'o'))), colores: COL_TOMATE };
-export const HOJAS = { filas: ['GgGgGgGg', 'gGgggGgG', 'GgGGgGgg', 'gggGgGgG', 'GgGgggGg', 'gGgGgGgG', 'GggGgGgg', 'gGgGgGgG'], colores: COL_TOMATE };
+// El arte del tomate vive en PIX (moldes.js): lo comparten esta escena y escenas.json
+export const TOMATE = PIX.tomate;
+export const TOMAS = PIX.tomas;
+export const TOMATE_BLOQUE = PIX['tomate-bloque'];
+export const HOJAS = PIX.hojas;
 export const BOLA = { filas: ['.aaaa.', 'abbbba', 'abbbba', 'abbbca', 'abbcca', '.aaaa.'], colores: { a: '#c8d8e8', b: '#ffffff', c: '#dde8f2' } };
 export const NIEVE = { filas: ['.a.', 'aba', '.a.'], colores: { a: '#e8f2ff', b: '#ffffff' } };
 // Marca de ping (como la de los juegos de disparos: rombo naranjo con signo de alerta)
 export const PING = { filas: ['....aa....', '...abba...', '..abbbba..', '.abbkkbba.', 'abbbkkbbba', 'abbbkkbbba', '.abbbbbba.', '..abkkba..', '...abba...', '....aa....'], colores: { a: '#7a2a00', b: '#ff8a1c', k: '#2a0e00' } };
 
 // Sonido de mensaje de WhatsApp (dos notas suaves que suben)
-export function mensaje() { tono({ f0: 1046, f1: 1046, dur: 0.08, vol: 0.08, forma: 'sine' }); tono({ f0: 1568, f1: 1568, dur: 0.12, vol: 0.08, forma: 'sine', retardo: 0.1 }); }
+export function mensaje() { SONIDOS.mensaje(); }
 
 // ---------------------------------------------------------
 // Gestos nuevos de los grupos (firma de los moldes: (u, t, info) -> metas; rangos de rig.md)
